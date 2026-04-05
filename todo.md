@@ -1,0 +1,48 @@
+# RecoFree App TODO
+
+- [x] Configure theme colors (green brand palette)
+- [x] Add tab bar icons mapping (chat, mood, diary)
+- [x] Build AIProvider interface with AIResult type
+- [x] Build MockAIProvider with realistic Elias responses
+- [x] Build MockAIProvider with realistic Kim responses
+- [x] Build OpenAIProvider stub (for future backend integration)
+- [x] Build AI provider factory with environment toggle
+- [x] Build intake screen with user type selection
+- [x] Build intake state persistence (AsyncStorage)
+- [x] Build intake routing logic (Elias/Kim permanent assignment)
+- [x] Build user context provider (name, type, state)
+- [x] Build home screen with Elias/Kim greeting
+- [x] Build chat screen with message bubbles
+- [x] Build chat input bar with send button
+- [x] Build typing indicator animation
+- [x] Build chat context management (history, mood, rugzak)
+- [x] Build mood tracking screen with 4 sliders
+- [x] Build slider persistence (AsyncStorage)
+- [ ] Build mood history tracking
+- [x] Build diary screen with entry list
+- [x] Build diary entry editor
+- [x] Build diary persistence (AsyncStorage)
+- [x] Build crisis detection (regex patterns)
+- [x] Build failsafe response system
+- [x] Build emergency resources card
+- [ ] Build profile/settings screen
+- [x] Generate app icon (green heart with arrow)
+- [x] Configure splash screen
+- [x] Test intake flow end-to-end
+- [x] Test chat flow with mock responses
+- [x] Test mood tracking flow
+- [x] Test diary flow
+- [x] Test crisis detection flow
+- [x] Ensure emotion detection is owned by Elias/Kim logic layer, not AI provider
+- [x] AIResult advisory signals are optional hints only, not authoritative
+- [x] Extend intake to collect start_emotie (self-reported)
+- [x] Extend intake to collect urgentie (laag/midden/hoog)
+- [x] Extend intake to collect eerste context (vrije input)
+- [x] Store intake state as initial rugzak entry and session baseline
+- [x] Ensure userType is immutable after intake (no runtime switching)
+- [x] Convert all UI text and mock AI responses to English
+- [x] No multilingual support in initial version
+- [x] Add input language detection before processing
+- [x] Add input translation to English before Elias/Kim logic
+- [x] All internal processing (modules, triggers, state) in English only
+- [x] Mock phase: pass-through (assume English), backend phase: real translation
