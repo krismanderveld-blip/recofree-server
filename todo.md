@@ -72,3 +72,5 @@
 - [x] Fix all TypeScript errors after Rugzak refactor
 - [x] Fix crash: computeMoodTrajectory accessing .length on undefined moodHistory
 - [x] Add defensive null checks to all Rugzak property access in engine.ts
+- [x] Fix Backpack showing "0 of 0 sections" — sections not rendering (migration added)
+- [x] Ensure all 5 life-phase sections are visible and editable in Backpack

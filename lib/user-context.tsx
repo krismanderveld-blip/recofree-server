@@ -4,7 +4,7 @@ import type {
   UserType, UrgencyLevel, MoodSliders, Rugzak, LifePhaseId,
   ChatMessage, IntakeData, RugzakInfluence,
 } from './ai/types';
-import { createNewRugzak } from './ai/types';
+import { createNewRugzak, DEFAULT_RUGZAK_SECTIONS } from './ai/types';
 import {
   computeRugzakInfluence,
   addMessageToRugzak,
@@ -174,13 +174,37 @@ const UserContext = createContext<UserContextValue | null>(null);
 export function UserProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(userReducer, initialState);
 
-  // Restore persisted Rugzak on mount
+  // Restore persisted Rugzak on mount (with migration for older versions)
   useEffect(() => {
     (async () => {
       try {
         const json = await AsyncStorage.getItem(STORAGE_KEY);
         if (json) {
-          const rugzak: Rugzak = JSON.parse(json);
+          const raw = JSON.parse(json);
+          // Migrate: ensure all required fields exist (older persisted data may lack them)
+          const rugzak: Rugzak = {
+            naam: raw.naam ?? '',
+            userType: raw.userType ?? 'elias',
+            sections: (raw.sections && raw.sections.length > 0)
+              ? raw.sections
+              : DEFAULT_RUGZAK_SECTIONS.map((s: any) => ({ ...s })),
+            currentMood: raw.currentMood ?? { stemming: 5, craving: 0, overprikkeling: 3, sociaal: 5 },
+            moodHistory: raw.moodHistory ?? [],
+            chatHistory: raw.chatHistory ?? [],
+            moduleUsage: raw.moduleUsage ?? [],
+            triggerPatterns: raw.triggerPatterns ?? [],
+            intakeContext: raw.intakeContext ?? {
+              startEmotion: '',
+              urgency: 'midden' as const,
+              initialContext: '',
+              intakeDate: new Date().toISOString(),
+            },
+            lastSessionDate: raw.lastSessionDate ?? null,
+            totalSessions: raw.totalSessions ?? 0,
+            createdAt: raw.createdAt ?? new Date().toISOString(),
+          };
+          // Re-persist the migrated version
+          await persistRugzak(rugzak);
           dispatch({ type: 'RESTORE_RUGZAK', payload: rugzak });
         } else {
           dispatch({ type: 'SET_LOADING', payload: false });
