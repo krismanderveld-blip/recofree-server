@@ -21,6 +21,7 @@ const MAPPING = {
   "xmark.circle.fill": "cancel",
   "checkmark.circle.fill": "check-circle",
   "gear": "settings",
+  "backpack.fill": "backpack",
 } as IconMapping;
 
 export function IconSymbol({

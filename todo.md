@@ -46,3 +46,5 @@
 - [x] Add input translation to English before Elias/Kim logic
 - [x] All internal processing (modules, triggers, state) in English only
 - [x] Mock phase: pass-through (assume English), backend phase: real translation
+- [x] Build visible Rugzak (Backpack) screen with context entries
+- [x] Add Rugzak as 5th tab in tab bar
