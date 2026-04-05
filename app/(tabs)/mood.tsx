@@ -4,10 +4,11 @@ import Slider from '@react-native-community/slider';
 import { ScreenContainer } from '@/components/screen-container';
 import { useUser } from '@/lib/user-context';
 import { useColors } from '@/hooks/use-colors';
+import type { MoodSliders } from '@/lib/ai/types';
 import * as Haptics from 'expo-haptics';
 
 interface SliderConfig {
-  key: 'stemming' | 'craving' | 'overprikkeling' | 'sociaal';
+  key: keyof MoodSliders;
   label: string;
   description: string;
   lowLabel: string;
@@ -51,13 +52,14 @@ const SLIDERS: SliderConfig[] = [
 ];
 
 export default function MoodScreen() {
-  const { state, updateMood } = useUser();
+  const { updateMood, getMood } = useUser();
   const colors = useColors();
-  const [localSliders, setLocalSliders] = useState({ ...state.moodSliders });
+  const currentMood = getMood();
+  const [localSliders, setLocalSliders] = useState<MoodSliders>({ ...currentMood });
   const [saved, setSaved] = useState(false);
 
-  const handleSliderChange = useCallback((key: string, value: number) => {
-    setLocalSliders((prev) => ({ ...prev, [key]: Math.round(value) }));
+  const handleSliderChange = useCallback((key: keyof MoodSliders, value: number) => {
+    setLocalSliders((prev: MoodSliders) => ({ ...prev, [key]: Math.round(value) }));
     setSaved(false);
   }, []);
 

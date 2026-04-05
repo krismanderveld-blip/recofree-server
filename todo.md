@@ -48,3 +48,25 @@
 - [x] Mock phase: pass-through (assume English), backend phase: real translation
 - [x] Build visible Rugzak (Backpack) screen with context entries
 - [x] Add Rugzak as 5th tab in tab bar
+- [x] Rebuild Rugzak as structured therapeutic instrument with life-phase categories
+- [x] Add life-phase sections: childhood (6-12), adolescence (12-adult), work, current situation
+- [x] Update Rugzak UI to show categorized sections instead of flat key-value list
+- [x] Rebuild Rugzak as narrative document with 5 life-phase free-text sections
+- [x] Rugzak sections: Childhood (6-12), Adolescence (12-18), Adulthood (18-50), Family, Recurring Themes
+- [x] Each section is a free-text field, not a list of items
+- [x] Data stored locally, analyzed at start/end of each conversation
+- [x] User can always edit/expand their Rugzak
+- [x] Rebuild Rugzak as active therapeutic engine (not passive storage)
+- [x] Persistent cross-session state: mood, craving, stimuli, social, history, trigger patterns
+- [x] State does NOT reset per chat session — accumulates across sessions
+- [x] Rugzak actively influences: module selection, tone, crisis detection, suggestion intensity
+- [x] Build Rugzak influence engine (lib/rugzak/engine.ts)
+- [x] Update chat pipeline to read/update/store state on every message
+- [x] Track module usage history across sessions
+- [x] Detect and accumulate trigger patterns over time
+- [x] Build StateAnalyzer: analyzes Rugzak state (mood trends, risk level, emotional state, trigger context)
+- [x] Build message processing pipeline: Load → Analyze → Select Modules → Adjust Behavior → Crisis → AI Gen → State Update
+- [x] AI generates language ONLY, system makes ALL decisions (modules, tone, crisis, state)
+- [x] Rebuild chat screen to use mandatory pipeline
+- [x] Update mood screen to read/write from Rugzak
+- [x] Fix all TypeScript errors after Rugzak refactor

@@ -9,161 +9,150 @@ import {
   Platform,
   ActivityIndicator,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ScreenContainer } from '@/components/screen-container';
 import { useUser } from '@/lib/user-context';
 import { getAIProvider } from '@/lib/ai';
 import { preprocessInput } from '@/lib/ai/preprocessor';
-import { assessCrisis } from '@/lib/crisis/detector';
-import { getModuleRecommendations } from '@/lib/modules/module-system';
+import { processMessage, generateGreeting } from '@/lib/rugzak/pipeline';
 import { EmergencyCard } from '@/components/emergency-card';
-import type { ChatMessage, ChatContext } from '@/lib/ai/types';
+import type { ChatMessage, Rugzak } from '@/lib/ai/types';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useColors } from '@/hooks/use-colors';
 
+const RUGZAK_KEY = '@recofree_rugzak';
+
 export default function ChatScreen() {
-  const { state, addChatMessage, startSession, setCrisisLevel } = useUser();
+  const {
+    state,
+    startSession,
+    setCrisisLevel,
+    getUserName,
+    getChatHistory,
+  } = useUser();
   const colors = useColors();
   const [inputText, setInputText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [showEmergency, setShowEmergency] = useState(false);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const flatListRef = useRef<FlatList>(null);
+  const greetingSent = useRef(false);
 
-  // Start session on mount if not started
+  const userName = getUserName();
+  const companionName = state.userType === 'elias' ? 'Elias' : 'Kim';
+
+  // Load messages from Rugzak on mount
   useEffect(() => {
-    if (!state.sessionStartTime) {
-      startSession();
-    }
+    const history = getChatHistory();
+    setMessages(history);
   }, []);
 
-  // Auto-send initial greeting on first session
+  // Start session and send greeting on mount
   useEffect(() => {
-    if (state.chatHistory.length === 0 && state.intakeCompleted && !isTyping) {
-      sendGreeting();
+    if (state.intakeCompleted && state.rugzak && !greetingSent.current) {
+      greetingSent.current = true;
+      startSession();
+      sendGreetingViaP();
     }
-  }, [state.sessionStartTime]);
+  }, [state.intakeCompleted, state.rugzak]);
 
-  const sendGreeting = useCallback(async () => {
-    if (!state.userType) return;
+  /**
+   * Send greeting through the mandatory pipeline.
+   */
+  const sendGreetingViaP = useCallback(async () => {
+    if (!state.rugzak) return;
     setIsTyping(true);
 
-    const provider = getAIProvider();
-    const context: ChatContext = {
-      userType: state.userType,
-      userName: state.userName,
-      currentMessage: '',
-      conversationHistory: [],
-      moodSliders: state.moodSliders,
-      rugzak: state.rugzak || { naam: state.userName, userType: state.userType, entries: {} },
-      activeModules: [],
-      crisisLevel: state.crisisLevel,
-      detectedEmotion: state.detectedEmotion,
-      therapeuticStance: 'open',
-      sessionDurationMinutes: 0,
-      urgency: state.urgency,
-      startEmotion: state.startEmotion,
-    };
-
     try {
-      const result = await provider.generateResponse(context);
-      const aiMessage: ChatMessage = {
-        id: `msg_${Date.now()}`,
-        role: 'assistant',
-        content: result.response,
-        timestamp: new Date().toISOString(),
-      };
-      addChatMessage(aiMessage);
+      const provider = getAIProvider();
+      const result = await generateGreeting(state.rugzak, provider);
+
+      // Persist updated Rugzak
+      await AsyncStorage.setItem(RUGZAK_KEY, JSON.stringify(result.updatedRugzak));
+
+      // Update local messages
+      setMessages(result.updatedRugzak.chatHistory);
     } catch (error) {
       console.error('Greeting error:', error);
     } finally {
       setIsTyping(false);
     }
-  }, [state]);
+  }, [state.rugzak]);
 
+  /**
+   * MANDATORY MESSAGE PROCESSING PIPELINE
+   *
+   * Every message goes through:
+   * 1. LOAD state (Rugzak from AsyncStorage)
+   * 2. ANALYZE state (rule-based, NOT AI)
+   * 3. SELECT modules (rule-based, NOT AI)
+   * 4. ADJUST behavior (tone, pacing, intensity)
+   * 5. CRISIS layer (monitoring, threshold)
+   * 6. AI GENERATION (language only)
+   * 7. STATE UPDATE (mood, triggers, history)
+   *
+   * AI DOES NOT DECIDE MODULES OR STATE.
+   */
   const handleSend = useCallback(async () => {
     const rawText = inputText.trim();
-    if (!rawText || isTyping || !state.userType) return;
+    if (!rawText || isTyping || !state.rugzak) return;
 
     setInputText('');
 
-    // Step 1: Preprocess input (detect language, translate to English)
-    const preprocessed = await preprocessInput(rawText);
-    const processedText = preprocessed.processedText;
-
-    // Step 2: Add user message (show original text in UI)
-    const userMessage: ChatMessage = {
+    // Show user message immediately in UI
+    const tempUserMsg: ChatMessage = {
       id: `msg_${Date.now()}`,
       role: 'user',
       content: rawText,
       timestamp: new Date().toISOString(),
     };
-    addChatMessage(userMessage);
-
-    // Step 3: Crisis detection (on processed English text)
-    const crisisAssessment = assessCrisis(processedText, state.moodSliders);
-    if (crisisAssessment.level > state.crisisLevel) {
-      setCrisisLevel(crisisAssessment.level);
-    }
-
-    // Show emergency card for level 2 crisis
-    if (crisisAssessment.level >= 2) {
-      setShowEmergency(true);
-    }
-
-    // Step 4: Module recommendations (on processed English text)
-    const moduleRecs = getModuleRecommendations(
-      state.userType,
-      processedText,
-      state.moodSliders
-    );
-    const activeModuleIds = moduleRecs.slice(0, 3).map((r) => r.module.id);
-
-    // Step 5: Generate AI response
+    setMessages((prev) => [...prev, tempUserMsg]);
     setIsTyping(true);
 
-    const sessionStart = state.sessionStartTime ? new Date(state.sessionStartTime) : new Date();
-    const sessionMinutes = Math.floor((Date.now() - sessionStart.getTime()) / 60000);
-
-    const provider = getAIProvider();
-    const context: ChatContext = {
-      userType: state.userType,
-      userName: state.userName,
-      currentMessage: processedText, // English text for AI processing
-      conversationHistory: [...state.chatHistory, userMessage],
-      moodSliders: state.moodSliders,
-      rugzak: state.rugzak || { naam: state.userName, userType: state.userType, entries: {} },
-      activeModules: activeModuleIds,
-      crisisLevel: crisisAssessment.level,
-      detectedEmotion: state.detectedEmotion,
-      therapeuticStance: crisisAssessment.level >= 2 ? 'crisis' : 'open',
-      sessionDurationMinutes: sessionMinutes,
-      urgency: state.urgency,
-      startEmotion: state.startEmotion,
-    };
-
     try {
-      const result = await provider.generateResponse(context);
-      const aiMessage: ChatMessage = {
-        id: `msg_${Date.now() + 1}`,
-        role: 'assistant',
-        content: result.response,
-        timestamp: new Date().toISOString(),
-      };
-      addChatMessage(aiMessage);
+      // Step 0: Preprocess input (detect language, translate to English)
+      const preprocessed = await preprocessInput(rawText);
+      const processedText = preprocessed.processedText;
+
+      // Step 1: LOAD state — read latest Rugzak from storage
+      const rugzakJson = await AsyncStorage.getItem(RUGZAK_KEY);
+      const currentRugzak: Rugzak = rugzakJson
+        ? JSON.parse(rugzakJson)
+        : state.rugzak;
+
+      // Steps 2-7: Run through the mandatory pipeline
+      // Pipeline handles: Analyze → Select Modules → Adjust Behavior → Crisis → AI Gen → State Update
+      const provider = getAIProvider();
+      const result = await processMessage(currentRugzak, processedText, provider);
+
+      // Persist updated Rugzak (state is saved)
+      await AsyncStorage.setItem(RUGZAK_KEY, JSON.stringify(result.updatedRugzak));
+
+      // Update crisis level in context
+      if (result.crisisLevel > 0) {
+        setCrisisLevel(result.crisisLevel);
+      }
+
+      // Show emergency card if needed
+      if (result.showEmergency) {
+        setShowEmergency(true);
+      }
+
+      // Update local messages from the updated Rugzak (source of truth)
+      setMessages(result.updatedRugzak.chatHistory);
     } catch (error) {
-      console.error('Chat error:', error);
-      const errorMessage: ChatMessage = {
+      console.error('Pipeline error:', error);
+      const errorMsg: ChatMessage = {
         id: `msg_${Date.now() + 1}`,
         role: 'assistant',
-        content: 'Something went wrong. I\'m still here — please try again.',
+        content: "I'm still here with you. Something went wrong — please try again.",
         timestamp: new Date().toISOString(),
       };
-      addChatMessage(errorMessage);
+      setMessages((prev) => [...prev, errorMsg]);
     } finally {
       setIsTyping(false);
     }
-  }, [inputText, isTyping, state]);
-
-  const companionName = state.userType === 'elias' ? 'Elias' : 'Kim';
+  }, [inputText, isTyping, state.rugzak]);
 
   const renderMessage = useCallback(({ item }: { item: ChatMessage }) => {
     const isUser = item.role === 'user';
@@ -212,7 +201,7 @@ export default function ChatScreen() {
         {/* Messages */}
         <FlatList
           ref={flatListRef}
-          data={state.chatHistory}
+          data={messages}
           renderItem={renderMessage}
           keyExtractor={(item) => item.id}
           contentContainerStyle={{ padding: 16, flexGrow: 1, justifyContent: 'flex-end' }}

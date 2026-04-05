@@ -8,8 +8,11 @@ import { useColors } from '@/hooks/use-colors';
 
 export default function HomeScreen() {
   const router = useRouter();
-  const { state, startSession } = useUser();
+  const { state, startSession, getUserName, getMood } = useUser();
   const colors = useColors();
+
+  const userName = getUserName();
+  const mood = getMood();
 
   // Redirect to intake if not completed
   useEffect(() => {
@@ -28,7 +31,7 @@ export default function HomeScreen() {
 
   const isElias = state.userType === 'elias';
   const companionName = isElias ? 'Elias' : 'Kim';
-  const greeting = getGreeting(state.userName, companionName, isElias);
+  const greeting = getGreeting(userName, companionName, isElias);
 
   const handleStartChat = () => {
     startSession();
@@ -41,7 +44,7 @@ export default function HomeScreen() {
         {/* Header */}
         <View className="mb-6">
           <Text className="text-sm text-muted mb-1">
-            {getTimeGreeting()}, {state.userName}
+            {getTimeGreeting()}, {userName}
           </Text>
           <Text className="text-2xl font-bold text-foreground">
             {companionName} is here for you
@@ -55,16 +58,16 @@ export default function HomeScreen() {
           </Text>
         </View>
 
-        {/* Mood Summary */}
+        {/* Mood Summary — reads from Rugzak */}
         <View className="bg-surface rounded-2xl p-5 mb-5 border border-border">
           <Text className="text-sm font-semibold text-muted mb-3 uppercase tracking-wide">
             Your mood
           </Text>
           <View className="flex-row justify-between">
-            <MoodMini label="Mood" value={state.moodSliders.stemming} />
-            <MoodMini label="Craving" value={state.moodSliders.craving} invert />
-            <MoodMini label="Stimuli" value={state.moodSliders.overprikkeling} invert />
-            <MoodMini label="Social" value={state.moodSliders.sociaal} />
+            <MoodMini label="Mood" value={mood.stemming} />
+            <MoodMini label="Craving" value={mood.craving} invert />
+            <MoodMini label="Stimuli" value={mood.overprikkeling} invert />
+            <MoodMini label="Social" value={mood.sociaal} />
           </View>
         </View>
 

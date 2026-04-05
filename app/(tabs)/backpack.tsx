@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import {
   Text,
   View,
-  FlatList,
+  ScrollView,
   TextInput,
   Pressable,
   Alert,
@@ -10,197 +10,239 @@ import {
 } from 'react-native';
 import { ScreenContainer } from '@/components/screen-container';
 import { useUser } from '@/lib/user-context';
-import { IconSymbol } from '@/components/ui/icon-symbol';
+import type { LifePhaseId, LifePhaseSection } from '@/lib/ai/types';
 import { useColors } from '@/hooks/use-colors';
 
-interface RugzakEntry {
-  key: string;
-  value: string;
-}
+const SECTION_COLORS: Record<LifePhaseId, string> = {
+  childhood: '#FF6B6B',
+  adolescence: '#4ECDC4',
+  adulthood: '#45B7D1',
+  family: '#96CEB4',
+  themes: '#FFEAA7',
+};
+
+const SECTION_ICONS: Record<LifePhaseId, string> = {
+  childhood: '\u{1F9D2}',
+  adolescence: '\u{1F331}',
+  adulthood: '\u{1F3E0}',
+  family: '\u{1F468}\u200D\u{1F469}\u200D\u{1F467}\u200D\u{1F466}',
+  themes: '\u{1F504}',
+};
 
 export default function BackpackScreen() {
-  const { state, updateRugzak } = useUser();
+  const { state, updateRugzakSection } = useUser();
   const colors = useColors();
-  const [newKey, setNewKey] = useState('');
-  const [newValue, setNewValue] = useState('');
-  const [showAddForm, setShowAddForm] = useState(false);
+  const [expandedSection, setExpandedSection] = useState<LifePhaseId | null>(null);
+  const [editingSection, setEditingSection] = useState<LifePhaseId | null>(null);
+  const [editText, setEditText] = useState('');
 
-  const rugzak = state.rugzak;
-  const entries: RugzakEntry[] = rugzak
-    ? Object.entries(rugzak.entries).map(([key, value]) => ({ key, value }))
-    : [];
+  const sections = state.rugzak?.sections ?? [];
+  const filledCount = sections.filter((s) => s.content.trim().length > 0).length;
 
-  const handleAddEntry = async () => {
-    const trimmedKey = newKey.trim();
-    const trimmedValue = newValue.trim();
-
-    if (!trimmedKey || !trimmedValue) {
-      if (Platform.OS === 'web') {
-        alert('Please fill in both fields.');
-      } else {
-        Alert.alert('Missing info', 'Please fill in both fields.');
-      }
-      return;
+  const handleExpand = useCallback((sectionId: LifePhaseId) => {
+    if (expandedSection === sectionId) {
+      setExpandedSection(null);
+      setEditingSection(null);
+    } else {
+      setExpandedSection(sectionId);
+      setEditingSection(null);
     }
+  }, [expandedSection]);
 
-    await updateRugzak({ [trimmedKey]: trimmedValue });
-    setNewKey('');
-    setNewValue('');
-    setShowAddForm(false);
-  };
+  const handleStartEdit = useCallback((section: LifePhaseSection) => {
+    setEditingSection(section.id);
+    setEditText(section.content);
+  }, []);
 
-  const formatLabel = (key: string): string => {
-    return key
-      .replace(/_/g, ' ')
-      .replace(/\b\w/g, (c) => c.toUpperCase());
-  };
+  const handleSave = useCallback(async (sectionId: LifePhaseId) => {
+    await updateRugzakSection(sectionId, editText);
+    setEditingSection(null);
+    if (Platform.OS !== 'web') {
+      Alert.alert('Saved', 'Your story has been saved.');
+    }
+  }, [editText, updateRugzakSection]);
 
-  const formatDate = (value: string): string => {
-    try {
-      const date = new Date(value);
-      if (!isNaN(date.getTime())) {
-        return date.toLocaleDateString('en-US', {
-          year: 'numeric',
-          month: 'short',
-          day: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit',
-        });
-      }
-    } catch {}
-    return value;
-  };
+  const handleCancel = useCallback(() => {
+    setEditingSection(null);
+    setEditText('');
+  }, []);
 
-  const getCategoryIcon = (key: string): string => {
-    if (key.startsWith('intake_')) return '🌱';
-    if (key.includes('emotie') || key.includes('emotion')) return '💚';
-    if (key.includes('context') || key.includes('note')) return '📝';
-    if (key.includes('datum') || key.includes('date')) return '📅';
-    if (key.includes('urgentie') || key.includes('urgency')) return '⚡';
-    return '🎒';
-  };
-
-  const renderEntry = ({ item }: { item: RugzakEntry }) => {
-    const isDate = item.key.includes('datum') || item.key.includes('date');
-    const displayValue = isDate ? formatDate(item.value) : item.value;
-    const icon = getCategoryIcon(item.key);
+  const renderSection = (section: LifePhaseSection) => {
+    const isExpanded = expandedSection === section.id;
+    const isEditing = editingSection === section.id;
+    const hasContent = section.content.trim().length > 0;
+    const color = SECTION_COLORS[section.id];
+    const icon = SECTION_ICONS[section.id];
 
     return (
-      <View className="bg-surface border border-border rounded-xl p-4 mb-3">
-        <View className="flex-row items-center mb-1">
-          <Text className="text-base mr-2">{icon}</Text>
-          <Text className="text-xs text-muted uppercase tracking-wider flex-1">
-            {formatLabel(item.key)}
-          </Text>
-        </View>
-        <Text className="text-base text-foreground leading-relaxed ml-7">
-          {displayValue}
-        </Text>
+      <View key={section.id} className="mb-4">
+        {/* Section Header */}
+        <Pressable
+          onPress={() => handleExpand(section.id)}
+          style={({ pressed }) => [
+            { opacity: pressed ? 0.8 : 1, transform: [{ scale: pressed ? 0.98 : 1 }] },
+          ]}
+        >
+          <View
+            className="bg-surface border border-border rounded-2xl p-4"
+            style={{ borderLeftWidth: 4, borderLeftColor: color }}
+          >
+            <View className="flex-row items-center justify-between">
+              <View className="flex-row items-center flex-1 gap-3">
+                <Text className="text-2xl">{icon}</Text>
+                <View className="flex-1">
+                  <Text className="text-base font-semibold text-foreground">
+                    {section.label}
+                  </Text>
+                  <Text className="text-xs text-muted mt-0.5">{section.ageRange}</Text>
+                </View>
+              </View>
+              <View className="flex-row items-center gap-2">
+                {hasContent && (
+                  <View style={{ backgroundColor: `${color}22` }} className="rounded-full px-2 py-0.5">
+                    <Text style={{ color }} className="text-xs font-medium">Written</Text>
+                  </View>
+                )}
+                <Text className="text-muted text-lg">{isExpanded ? '\u25B2' : '\u25BC'}</Text>
+              </View>
+            </View>
+          </View>
+        </Pressable>
+
+        {/* Expanded Content */}
+        {isExpanded && (
+          <View className="bg-surface/50 border border-border border-t-0 rounded-b-2xl px-4 py-4 -mt-2">
+            {/* Prompt / Guide */}
+            <View className="bg-background rounded-xl p-3 mb-3 border border-border">
+              <Text className="text-sm text-muted italic leading-relaxed">
+                {section.prompt}
+              </Text>
+            </View>
+
+            {isEditing ? (
+              /* Edit Mode */
+              <View>
+                <TextInput
+                  className="bg-background border border-border rounded-xl p-4 text-base text-foreground min-h-[160px]"
+                  placeholder="Write your story here... Take your time."
+                  placeholderTextColor="#9E9E9E"
+                  value={editText}
+                  onChangeText={setEditText}
+                  multiline
+                  textAlignVertical="top"
+                  style={{ lineHeight: 24 }}
+                />
+                <View className="flex-row gap-3 mt-3">
+                  <Pressable
+                    onPress={handleCancel}
+                    style={({ pressed }) => [
+                      { opacity: pressed ? 0.7 : 1, flex: 1 },
+                    ]}
+                  >
+                    <View className="bg-surface border border-border rounded-xl py-3 items-center">
+                      <Text className="text-foreground font-medium">Cancel</Text>
+                    </View>
+                  </Pressable>
+                  <Pressable
+                    onPress={() => handleSave(section.id)}
+                    style={({ pressed }) => [
+                      { opacity: pressed ? 0.7 : 1, flex: 1 },
+                    ]}
+                  >
+                    <View className="bg-primary rounded-xl py-3 items-center">
+                      <Text className="text-white font-semibold">Save</Text>
+                    </View>
+                  </Pressable>
+                </View>
+              </View>
+            ) : hasContent ? (
+              /* View Mode */
+              <View>
+                <Text className="text-base text-foreground leading-relaxed">
+                  {section.content}
+                </Text>
+                {section.lastUpdated && (
+                  <Text className="text-xs text-muted mt-2">
+                    Last updated: {new Date(section.lastUpdated).toLocaleDateString()}
+                  </Text>
+                )}
+                <Pressable
+                  onPress={() => handleStartEdit(section)}
+                  style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1, marginTop: 12 }]}
+                >
+                  <View className="bg-surface border border-border rounded-xl py-2.5 items-center">
+                    <Text className="text-primary font-medium">Edit</Text>
+                  </View>
+                </Pressable>
+              </View>
+            ) : (
+              /* Empty State */
+              <View className="items-center py-4">
+                <Text className="text-muted text-sm mb-3">
+                  No story written yet for this phase.
+                </Text>
+                <Pressable
+                  onPress={() => handleStartEdit(section)}
+                  style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}
+                >
+                  <View className="bg-primary rounded-xl px-6 py-3">
+                    <Text className="text-white font-semibold">Start Writing</Text>
+                  </View>
+                </Pressable>
+              </View>
+            )}
+          </View>
+        )}
       </View>
     );
   };
 
   return (
     <ScreenContainer className="px-5 pt-4">
-      {/* Header */}
-      <View className="mb-5">
-        <Text className="text-2xl font-bold text-foreground">Backpack</Text>
-        <Text className="text-sm text-muted mt-1">
-          Your personal context — what {state.userType === 'elias' ? 'Elias' : 'Kim'} knows about you
-        </Text>
-      </View>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
+        {/* Header */}
+        <View className="mb-6">
+          <Text className="text-2xl font-bold text-foreground">My Backpack</Text>
+          <Text className="text-sm text-muted mt-1 leading-relaxed">
+            Your life story helps your companion understand you better.
+            Write at your own pace — everything stays on your device.
+          </Text>
+        </View>
 
-      {/* User Info Card */}
-      {rugzak && (
-        <View className="bg-primary/10 border border-primary/20 rounded-xl p-4 mb-4">
-          <View className="flex-row items-center">
-            <View className="bg-primary w-10 h-10 rounded-full items-center justify-center mr-3">
-              <Text className="text-white text-lg font-bold">
-                {rugzak.naam?.charAt(0)?.toUpperCase() || '?'}
-              </Text>
-            </View>
-            <View className="flex-1">
-              <Text className="text-base font-bold text-foreground">{rugzak.naam}</Text>
-              <Text className="text-xs text-muted capitalize">
-                {rugzak.userType === 'elias' ? 'Recovery journey' : 'Supporting a loved one'}
-              </Text>
-            </View>
+        {/* Progress */}
+        <View className="bg-surface border border-border rounded-2xl p-4 mb-6">
+          <View className="flex-row items-center justify-between mb-2">
+            <Text className="text-sm font-medium text-foreground">Progress</Text>
+            <Text className="text-sm text-muted">{filledCount} of {sections.length} sections</Text>
+          </View>
+          <View className="flex-row gap-1.5">
+            {sections.map((s) => (
+              <View
+                key={s.id}
+                className="flex-1 h-2 rounded-full"
+                style={{
+                  backgroundColor: s.content.trim().length > 0
+                    ? SECTION_COLORS[s.id]
+                    : colors.border,
+                }}
+              />
+            ))}
           </View>
         </View>
-      )}
 
-      {/* Entries List */}
-      <FlatList
-        data={entries}
-        renderItem={renderEntry}
-        keyExtractor={(item) => item.key}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 100 }}
-        ListEmptyComponent={
-          <View className="items-center justify-center py-12">
-            <Text className="text-4xl mb-3">🎒</Text>
-            <Text className="text-base text-muted text-center">
-              Your backpack is empty.{'\n'}Complete the intake to get started.
-            </Text>
-          </View>
-        }
-        ListFooterComponent={
-          <View className="mt-2">
-            {showAddForm ? (
-              <View className="bg-surface border border-border rounded-xl p-4">
-                <Text className="text-sm font-semibold text-foreground mb-3">Add a note</Text>
-                <TextInput
-                  className="bg-background border border-border rounded-lg px-3 py-2 text-base text-foreground mb-2"
-                  placeholder="Label (e.g., 'personal goal')"
-                  placeholderTextColor="#9E9E9E"
-                  value={newKey}
-                  onChangeText={setNewKey}
-                />
-                <TextInput
-                  className="bg-background border border-border rounded-lg px-3 py-2 text-base text-foreground mb-3"
-                  placeholder="Content"
-                  placeholderTextColor="#9E9E9E"
-                  value={newValue}
-                  onChangeText={setNewValue}
-                  multiline
-                />
-                <View className="flex-row gap-2">
-                  <Pressable
-                    onPress={() => {
-                      setShowAddForm(false);
-                      setNewKey('');
-                      setNewValue('');
-                    }}
-                    style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1, flex: 1 }]}
-                  >
-                    <View className="bg-surface border border-border rounded-lg py-3 items-center">
-                      <Text className="text-sm text-muted font-semibold">Cancel</Text>
-                    </View>
-                  </Pressable>
-                  <Pressable
-                    onPress={handleAddEntry}
-                    style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1, flex: 1 }]}
-                  >
-                    <View className="bg-primary rounded-lg py-3 items-center">
-                      <Text className="text-sm text-white font-semibold">Save</Text>
-                    </View>
-                  </Pressable>
-                </View>
-              </View>
-            ) : (
-              <Pressable
-                onPress={() => setShowAddForm(true)}
-                style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}
-              >
-                <View className="flex-row items-center justify-center py-3 bg-surface border border-border border-dashed rounded-xl">
-                  <IconSymbol name="plus.circle.fill" size={20} color={colors.primary} />
-                  <Text className="text-sm text-primary font-semibold ml-2">Add a note</Text>
-                </View>
-              </Pressable>
-            )}
-          </View>
-        }
-      />
+        {/* Sections */}
+        {sections.map(renderSection)}
+
+        {/* Tip */}
+        <View className="bg-surface border border-border rounded-2xl p-4 mt-2">
+          <Text className="text-sm text-muted leading-relaxed">
+            <Text className="font-semibold text-foreground">Tip: </Text>
+            You can always come back to add or edit your story. What you write here
+            is analyzed at the start and end of each conversation to give your
+            companion deeper context.
+          </Text>
+        </View>
+      </ScrollView>
     </ScreenContainer>
   );
 }
