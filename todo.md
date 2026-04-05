@@ -70,3 +70,5 @@
 - [x] Rebuild chat screen to use mandatory pipeline
 - [x] Update mood screen to read/write from Rugzak
 - [x] Fix all TypeScript errors after Rugzak refactor
+- [x] Fix crash: computeMoodTrajectory accessing .length on undefined moodHistory
+- [x] Add defensive null checks to all Rugzak property access in engine.ts

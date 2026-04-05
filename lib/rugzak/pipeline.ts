@@ -100,16 +100,16 @@ export async function processMessage(
     userType: rugzak.userType,
     userName: rugzak.naam,
     currentMessage: userMessage,
-    conversationHistory: rugzak.chatHistory,
-    moodSliders: rugzak.currentMood,
+    conversationHistory: rugzak.chatHistory || [],
+    moodSliders: rugzak.currentMood || { stemming: 5, craving: 0, overprikkeling: 0, sociaal: 5 },
     rugzak,
     activeModules: analysis.priorityModules,
     crisisLevel,
     detectedEmotion: analysis.emotionalState,
     therapeuticStance: buildTherapeuticStance(analysis),
     sessionDurationMinutes: sessionMinutes,
-    urgency: rugzak.intakeContext.urgency,
-    startEmotion: rugzak.intakeContext.startEmotion,
+    urgency: rugzak.intakeContext?.urgency ?? 'midden',
+    startEmotion: rugzak.intakeContext?.startEmotion ?? '',
   };
 
   let response: string;
@@ -135,7 +135,7 @@ export async function processMessage(
   };
   updatedRugzak = {
     ...updatedRugzak,
-    chatHistory: [...updatedRugzak.chatHistory, userMsg],
+    chatHistory: [...(updatedRugzak.chatHistory || []), userMsg],
   };
 
   // 7b. Add AI response to history
@@ -148,7 +148,7 @@ export async function processMessage(
   };
   updatedRugzak = {
     ...updatedRugzak,
-    chatHistory: [...updatedRugzak.chatHistory, aiMsg],
+    chatHistory: [...(updatedRugzak.chatHistory || []), aiMsg],
   };
 
   // 7c. Update trigger patterns (if signals detected)
@@ -157,7 +157,7 @@ export async function processMessage(
   if (newTriggers.length > 0) {
     updatedRugzak = {
       ...updatedRugzak,
-      triggerPatterns: updateTriggerPatterns(updatedRugzak.triggerPatterns, newTriggers),
+      triggerPatterns: updateTriggerPatterns(updatedRugzak.triggerPatterns || [], newTriggers),
     };
   }
 
@@ -193,16 +193,16 @@ export async function generateGreeting(
     userType: rugzak.userType,
     userName: rugzak.naam,
     currentMessage: '', // Empty for greeting
-    conversationHistory: rugzak.chatHistory,
-    moodSliders: rugzak.currentMood,
+    conversationHistory: rugzak.chatHistory || [],
+    moodSliders: rugzak.currentMood || { stemming: 5, craving: 0, overprikkeling: 0, sociaal: 5 },
     rugzak,
     activeModules: analysis.priorityModules,
     crisisLevel: 0,
     detectedEmotion: analysis.emotionalState,
     therapeuticStance: buildTherapeuticStance(analysis),
     sessionDurationMinutes: sessionMinutes,
-    urgency: rugzak.intakeContext.urgency,
-    startEmotion: rugzak.intakeContext.startEmotion,
+    urgency: rugzak.intakeContext?.urgency ?? 'midden',
+    startEmotion: rugzak.intakeContext?.startEmotion ?? '',
   };
 
   let response: string;
@@ -228,7 +228,7 @@ export async function generateGreeting(
 
   const updatedRugzak: Rugzak = {
     ...rugzak,
-    chatHistory: [...rugzak.chatHistory, aiMsg],
+    chatHistory: [...(rugzak.chatHistory || []), aiMsg],
   };
 
   return {

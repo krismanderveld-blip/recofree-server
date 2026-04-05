@@ -300,31 +300,41 @@ function buildStateSummary(
  * AI receives the output of this analysis and generates language ONLY.
  */
 export function analyzeState(
-  rugzak: Rugzak,
+  rugzak: Rugzak | null | undefined,
   inputText: string
 ): StateAnalysis {
+  // Default mood for safety
+  const defaultMood: MoodSliders = { stemming: 5, craving: 0, overprikkeling: 0, sociaal: 5 };
+
+  // Safe access to Rugzak properties
+  const currentMood = rugzak?.currentMood || defaultMood;
+  const moodHistory = rugzak?.moodHistory || [];
+  const triggerPatterns = rugzak?.triggerPatterns || [];
+  const userType = rugzak?.userType || 'elias';
+  const totalSessions = rugzak?.totalSessions || 0;
+
   // 1. Detect input signals (rule-based pattern matching)
   const signals = detectInputSignals(inputText);
 
   // 2. Analyze mood trend from history
-  const moodTrend = analyzeMoodTrend(rugzak.moodHistory);
+  const moodTrend = analyzeMoodTrend(moodHistory);
 
   // 3. Compute pattern accumulation
-  const patternAccumulation = computePatternAccumulation(rugzak.triggerPatterns);
+  const patternAccumulation = computePatternAccumulation(triggerPatterns);
 
   // 4. Get active triggers (accumulated + current)
-  const activeTriggers = getActiveTriggers(rugzak.triggerPatterns, signals);
+  const activeTriggers = getActiveTriggers(triggerPatterns, signals);
 
   // 5. Assess risk level (rule-based, NOT AI)
-  const riskLevel = assessRiskLevel(rugzak.currentMood, moodTrend, signals, patternAccumulation);
+  const riskLevel = assessRiskLevel(currentMood, moodTrend, signals, patternAccumulation);
 
   // 6. Assess emotional state
-  const emotionalState = assessEmotionalState(rugzak.currentMood, moodTrend, riskLevel, signals);
+  const emotionalState = assessEmotionalState(currentMood, moodTrend, riskLevel, signals);
 
   // 7. Select priority modules (rule-based, NOT AI)
   const priorityModules = selectPriorityModules(
-    rugzak.userType,
-    rugzak.currentMood,
+    userType,
+    currentMood,
     moodTrend,
     signals,
     activeTriggers
@@ -335,9 +345,9 @@ export function analyzeState(
   const pacing = determinePacing(riskLevel, emotionalState);
   const suggestionIntensity = computeSuggestionIntensity(
     riskLevel,
-    rugzak.currentMood,
+    currentMood,
     moodTrend,
-    rugzak.totalSessions
+    totalSessions
   );
 
   // 9. Crisis monitoring decisions
@@ -346,7 +356,7 @@ export function analyzeState(
 
   // 10. Build compressed state summary for AI prompt
   const stateSummary = buildStateSummary(
-    rugzak.currentMood,
+    currentMood,
     moodTrend,
     riskLevel,
     emotionalState,

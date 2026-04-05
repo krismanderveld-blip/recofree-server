@@ -20,12 +20,21 @@ import type {
   ChatMessage,
 } from '../ai/types';
 
+// ─── Default Mood (safe fallback) ──────────────────────────────
+
+const DEFAULT_MOOD: MoodSliders = {
+  stemming: 5,
+  craving: 0,
+  overprikkeling: 0,
+  sociaal: 5,
+};
+
 // ─── Mood Trajectory Analysis ───────────────────────────────────
 
 function computeMoodTrajectory(
-  moodHistory: MoodSnapshot[]
+  moodHistory?: MoodSnapshot[] | null
 ): 'improving' | 'stable' | 'declining' | 'volatile' {
-  if (moodHistory.length < 2) return 'stable';
+  if (!moodHistory || moodHistory.length < 2) return 'stable';
 
   // Take last 5 snapshots for trajectory
   const recent = moodHistory.slice(-5);
@@ -36,6 +45,8 @@ function computeMoodTrajectory(
   for (let i = 1; i < stemmingValues.length; i++) {
     diffs.push(stemmingValues[i] - stemmingValues[i - 1]);
   }
+
+  if (diffs.length === 0) return 'stable';
 
   const avgDiff = diffs.reduce((a, b) => a + b, 0) / diffs.length;
   const variance =
@@ -54,19 +65,21 @@ function computeMoodTrajectory(
 
 function determineTone(
   trajectory: 'improving' | 'stable' | 'declining' | 'volatile',
-  currentMood: MoodSliders,
+  currentMood: MoodSliders | null | undefined,
   crisisLevel: number
 ): 'warm' | 'grounding' | 'assertive' | 'crisis' {
   if (crisisLevel >= 2) return 'crisis';
 
+  const mood = currentMood || DEFAULT_MOOD;
+
   // Declining mood → warmer, more supportive
-  if (trajectory === 'declining' || currentMood.stemming <= 3) return 'warm';
+  if (trajectory === 'declining' || mood.stemming <= 3) return 'warm';
 
   // Volatile → grounding, stabilizing
   if (trajectory === 'volatile') return 'grounding';
 
   // High craving with stable/improving mood → assertive guidance
-  if (currentMood.craving >= 7) return 'assertive';
+  if (mood.craving >= 7) return 'assertive';
 
   // Default
   return 'warm';
@@ -75,18 +88,19 @@ function determineTone(
 // ─── Suggestion Intensity ───────────────────────────────────────
 
 function computeSuggestionIntensity(
-  currentMood: MoodSliders,
+  currentMood: MoodSliders | null | undefined,
   trajectory: 'improving' | 'stable' | 'declining' | 'volatile',
   totalSessions: number
 ): number {
+  const mood = currentMood || DEFAULT_MOOD;
   let intensity = 5; // baseline
 
   // High craving → more assertive
-  if (currentMood.craving >= 7) intensity += 2;
-  if (currentMood.craving >= 9) intensity += 1;
+  if (mood.craving >= 7) intensity += 2;
+  if (mood.craving >= 9) intensity += 1;
 
   // Low mood → slightly more assertive
-  if (currentMood.stemming <= 3) intensity += 1;
+  if (mood.stemming <= 3) intensity += 1;
 
   // Declining trajectory → more assertive
   if (trajectory === 'declining') intensity += 1;
@@ -98,7 +112,7 @@ function computeSuggestionIntensity(
   if (totalSessions < 3) intensity -= 1;
 
   // High overstimulation → dial back intensity
-  if (currentMood.overprikkeling >= 7) intensity -= 1;
+  if (mood.overprikkeling >= 7) intensity -= 1;
 
   return Math.max(1, Math.min(10, intensity));
 }
@@ -106,14 +120,16 @@ function computeSuggestionIntensity(
 // ─── Crisis Sensitivity Boost ───────────────────────────────────
 
 function computeCrisisSensitivityBoost(
-  triggerPatterns: TriggerPattern[],
+  triggerPatterns: TriggerPattern[] | null | undefined,
   trajectory: 'improving' | 'stable' | 'declining' | 'volatile',
-  currentMood: MoodSliders
+  currentMood: MoodSliders | null | undefined
 ): number {
+  const mood = currentMood || DEFAULT_MOOD;
+  const patterns = triggerPatterns || [];
   let boost = 0;
 
   // Recurring crisis-related triggers raise sensitivity
-  const crisisTriggers = triggerPatterns.filter(
+  const crisisTriggers = patterns.filter(
     (t) =>
       t.trigger === 'suicidal_active' ||
       t.trigger === 'suicidal_passive' ||
@@ -130,7 +146,7 @@ function computeCrisisSensitivityBoost(
   if (trajectory === 'declining') boost += 1;
 
   // Combined low mood + high craving
-  if (currentMood.stemming <= 3 && currentMood.craving >= 7) boost += 1;
+  if (mood.stemming <= 3 && mood.craving >= 7) boost += 1;
 
   return Math.min(boost, 5); // Cap at 5
 }
@@ -139,35 +155,37 @@ function computeCrisisSensitivityBoost(
 
 function computePriorityModules(
   userType: 'elias' | 'kim',
-  currentMood: MoodSliders,
-  triggerPatterns: TriggerPattern[],
+  currentMood: MoodSliders | null | undefined,
+  triggerPatterns: TriggerPattern[] | null | undefined,
   trajectory: 'improving' | 'stable' | 'declining' | 'volatile'
 ): string[] {
+  const mood = currentMood || DEFAULT_MOOD;
+  const patterns = triggerPatterns || [];
   const priorities: string[] = [];
 
   if (userType === 'elias') {
     // High craving → Craving Management
-    if (currentMood.craving >= 6) priorities.push('E01');
+    if (mood.craving >= 6) priorities.push('E01');
     // Low mood → Emotional Regulation
-    if (currentMood.stemming <= 4) priorities.push('E02');
+    if (mood.stemming <= 4) priorities.push('E02');
     // High overstimulation → Grounding
-    if (currentMood.overprikkeling >= 6) priorities.push('E04');
+    if (mood.overprikkeling >= 6) priorities.push('E04');
     // Low social → Social Skills
-    if (currentMood.sociaal <= 3) priorities.push('E05');
+    if (mood.sociaal <= 3) priorities.push('E05');
     // Declining trajectory → Relapse Prevention
     if (trajectory === 'declining') priorities.push('E03');
     // Recurring isolation pattern
-    if (triggerPatterns.some((t) => t.trigger === 'isolation' && t.count >= 2)) {
+    if (patterns.some((t) => t.trigger === 'isolation' && t.count >= 2)) {
       priorities.push('E05');
     }
   } else {
     // Kim modules
     // Low mood → Self-Care
-    if (currentMood.stemming <= 4) priorities.push('K03');
+    if (mood.stemming <= 4) priorities.push('K03');
     // High overstimulation → Stress Management
-    if (currentMood.overprikkeling >= 6) priorities.push('K04');
+    if (mood.overprikkeling >= 6) priorities.push('K04');
     // Recurring enabling pattern
-    if (triggerPatterns.some((t) => t.trigger === 'enabling' && t.count >= 2)) {
+    if (patterns.some((t) => t.trigger === 'enabling' && t.count >= 2)) {
       priorities.push('K02');
     }
     // Default → Boundary Setting
@@ -180,7 +198,8 @@ function computePriorityModules(
 
 // ─── Active Patterns ────────────────────────────────────────────
 
-function getActivePatterns(triggerPatterns: TriggerPattern[]): string[] {
+function getActivePatterns(triggerPatterns?: TriggerPattern[] | null): string[] {
+  if (!triggerPatterns || triggerPatterns.length === 0) return [];
   // Return triggers that have occurred 2+ times in recent history
   return triggerPatterns
     .filter((t) => t.count >= 2)
@@ -191,10 +210,10 @@ function getActivePatterns(triggerPatterns: TriggerPattern[]): string[] {
 // ─── Update Trigger Patterns ────────────────────────────────────
 
 export function updateTriggerPatterns(
-  existing: TriggerPattern[],
+  existing: TriggerPattern[] | null | undefined,
   newTriggers: string[]
 ): TriggerPattern[] {
-  const updated = [...existing];
+  const updated = [...(existing || [])];
   const now = new Date().toISOString();
 
   for (const trigger of newTriggers) {
@@ -226,7 +245,7 @@ export function addMessageToRugzak(
 ): Rugzak {
   return {
     ...rugzak,
-    chatHistory: [...rugzak.chatHistory, message],
+    chatHistory: [...(rugzak.chatHistory || []), message],
   };
 }
 
@@ -244,7 +263,7 @@ export function recordMoodSnapshot(
   return {
     ...rugzak,
     currentMood: { ...mood },
-    moodHistory: [...rugzak.moodHistory, snapshot],
+    moodHistory: [...(rugzak.moodHistory || []), snapshot],
   };
 }
 
@@ -258,7 +277,7 @@ export function recordModuleUsage(
   return {
     ...rugzak,
     moduleUsage: [
-      ...rugzak.moduleUsage,
+      ...(rugzak.moduleUsage || []),
       { moduleId, usedAt: new Date().toISOString(), context },
     ],
   };
@@ -270,7 +289,7 @@ export function startNewSession(rugzak: Rugzak): Rugzak {
   return {
     ...rugzak,
     lastSessionDate: new Date().toISOString(),
-    totalSessions: rugzak.totalSessions + 1,
+    totalSessions: (rugzak.totalSessions || 0) + 1,
   };
 }
 
@@ -279,17 +298,32 @@ export function startNewSession(rugzak: Rugzak): Rugzak {
 /**
  * Compute the Rugzak's active influence on the current interaction.
  * This is called on EVERY message before module selection and response generation.
+ *
+ * All property access is defensive — handles undefined/null Rugzak fields
+ * gracefully (e.g. fresh user with no history yet).
  */
 export function computeRugzakInfluence(
-  rugzak: Rugzak,
+  rugzak: Rugzak | null | undefined,
   crisisLevel: number = 0
 ): RugzakInfluence {
+  // If no rugzak at all, return safe defaults
+  if (!rugzak) {
+    return {
+      tone: crisisLevel >= 2 ? 'crisis' : 'warm',
+      moodTrajectory: 'stable',
+      suggestionIntensity: 4,
+      crisisSensitivityBoost: 0,
+      priorityModules: [],
+      activePatterns: [],
+    };
+  }
+
   const trajectory = computeMoodTrajectory(rugzak.moodHistory);
   const tone = determineTone(trajectory, rugzak.currentMood, crisisLevel);
   const suggestionIntensity = computeSuggestionIntensity(
     rugzak.currentMood,
     trajectory,
-    rugzak.totalSessions
+    rugzak.totalSessions || 0
   );
   const crisisSensitivityBoost = computeCrisisSensitivityBoost(
     rugzak.triggerPatterns,
@@ -297,7 +331,7 @@ export function computeRugzakInfluence(
     rugzak.currentMood
   );
   const priorityModules = computePriorityModules(
-    rugzak.userType,
+    rugzak.userType || 'elias',
     rugzak.currentMood,
     rugzak.triggerPatterns,
     trajectory
