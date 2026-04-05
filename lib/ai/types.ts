@@ -18,12 +18,92 @@ export type UserType = 'elias' | 'kim';
 /** Urgency level determined at intake */
 export type UrgencyLevel = 'laag' | 'midden' | 'hoog';
 
-/** Mood slider values (0-10 scale) */
-export interface MoodSliders {
-  stemming: number;
+/**
+ * Slider configuration per user type.
+ * Elias (addiction): Craving, Frustration, Despondency, Focus (0-7)
+ * Kim (loved one): Stress, Boundary Fatigue, Emotional Burden, Self-care (0-7)
+ */
+
+/** Elias slider keys */
+export interface EliasMoodSliders {
   craving: number;
-  overprikkeling: number;
-  sociaal: number;
+  frustration: number;
+  despondency: number;
+  focus: number;
+}
+
+/** Kim slider keys */
+export interface KimMoodSliders {
+  stress: number;
+  boundaryFatigue: number;
+  emotionalBurden: number;
+  selfCare: number;
+}
+
+/** Union type — runtime value depends on userType */
+export type MoodSliders = EliasMoodSliders | KimMoodSliders;
+
+/** Intervention threshold definition */
+export interface InterventionThreshold {
+  level: 'mild' | 'moderate' | 'severe';
+  value: number;
+}
+
+/** Slider metadata for UI rendering and logic */
+export interface SliderConfig {
+  key: string;
+  label: string;
+  min: number;
+  max: number;
+  thresholds: InterventionThreshold[];
+}
+
+/** Elias slider configuration (from RECOFREE_MODULE_1_INTAKE_SLIDERS.json) */
+export const ELIAS_SLIDER_CONFIG: SliderConfig[] = [
+  { key: 'craving', label: 'Craving', min: 0, max: 7, thresholds: [{ level: 'mild', value: 3 }, { level: 'moderate', value: 5 }, { level: 'severe', value: 7 }] },
+  { key: 'frustration', label: 'Frustration', min: 0, max: 7, thresholds: [{ level: 'mild', value: 2 }, { level: 'moderate', value: 4 }, { level: 'severe', value: 6 }] },
+  { key: 'despondency', label: 'Despondency', min: 0, max: 7, thresholds: [{ level: 'mild', value: 3 }, { level: 'moderate', value: 5 }, { level: 'severe', value: 7 }] },
+  { key: 'focus', label: 'Mental Focus', min: 0, max: 7, thresholds: [{ level: 'mild', value: 2 }, { level: 'moderate', value: 5 }, { level: 'severe', value: 7 }] },
+];
+
+/** Kim slider configuration (for loved ones) */
+export const KIM_SLIDER_CONFIG: SliderConfig[] = [
+  { key: 'stress', label: 'Stress', min: 0, max: 7, thresholds: [{ level: 'mild', value: 2 }, { level: 'moderate', value: 4 }, { level: 'severe', value: 6 }] },
+  { key: 'boundaryFatigue', label: 'Boundary Fatigue', min: 0, max: 7, thresholds: [{ level: 'mild', value: 2 }, { level: 'moderate', value: 4 }, { level: 'severe', value: 6 }] },
+  { key: 'emotionalBurden', label: 'Emotional Burden', min: 0, max: 7, thresholds: [{ level: 'mild', value: 3 }, { level: 'moderate', value: 5 }, { level: 'severe', value: 7 }] },
+  { key: 'selfCare', label: 'Self-care', min: 0, max: 7, thresholds: [{ level: 'mild', value: 2 }, { level: 'moderate', value: 5 }, { level: 'severe', value: 7 }] },
+];
+
+/** Get slider config for a given user type */
+export function getSliderConfig(userType: UserType): SliderConfig[] {
+  return userType === 'elias' ? ELIAS_SLIDER_CONFIG : KIM_SLIDER_CONFIG;
+}
+
+/** Create default slider values for a given user type */
+export function createDefaultSliders(userType: UserType): MoodSliders {
+  if (userType === 'elias') {
+    return { craving: 0, frustration: 0, despondency: 0, focus: 4 };
+  }
+  return { stress: 0, boundaryFatigue: 0, emotionalBurden: 0, selfCare: 4 };
+}
+
+/** Check which sliders exceed intervention thresholds */
+export function checkInterventions(sliders: MoodSliders, userType: UserType): { key: string; label: string; level: 'mild' | 'moderate' | 'severe' }[] {
+  const config = getSliderConfig(userType);
+  const alerts: { key: string; label: string; level: 'mild' | 'moderate' | 'severe' }[] = [];
+  for (const sc of config) {
+    const value = (sliders as any)[sc.key] as number;
+    if (value == null) continue;
+    // Check thresholds from severe to mild
+    const sorted = [...sc.thresholds].sort((a, b) => b.value - a.value);
+    for (const t of sorted) {
+      if (value >= t.value) {
+        alerts.push({ key: sc.key, label: sc.label, level: t.level });
+        break;
+      }
+    }
+  }
+  return alerts;
 }
 
 /** A single mood snapshot with timestamp */
@@ -177,7 +257,7 @@ export function createNewRugzak(intake: IntakeData): Rugzak {
     naam: intake.userName,
     userType: intake.userType,
     sections: DEFAULT_RUGZAK_SECTIONS.map((s) => ({ ...s })),
-    currentMood: { stemming: 5, craving: 0, overprikkeling: 3, sociaal: 5 },
+    currentMood: createDefaultSliders(intake.userType),
     moodHistory: [],
     chatHistory: [],
     moduleUsage: [],

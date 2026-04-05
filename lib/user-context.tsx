@@ -4,7 +4,7 @@ import type {
   UserType, UrgencyLevel, MoodSliders, Rugzak, LifePhaseId,
   ChatMessage, IntakeData, RugzakInfluence,
 } from './ai/types';
-import { createNewRugzak, DEFAULT_RUGZAK_SECTIONS } from './ai/types';
+import { createNewRugzak, DEFAULT_RUGZAK_SECTIONS, createDefaultSliders } from './ai/types';
 import {
   computeRugzakInfluence,
   addMessageToRugzak,
@@ -84,7 +84,7 @@ const STORAGE_KEY = '@recofree_rugzak';
 
 // ─── Default Mood ───────────────────────────────────────────────
 
-const DEFAULT_MOOD: MoodSliders = { stemming: 5, craving: 0, overprikkeling: 3, sociaal: 5 };
+// Default mood is created dynamically based on userType via createDefaultSliders()
 
 // ─── Initial State ──────────────────────────────────────────────
 
@@ -188,7 +188,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
             sections: (raw.sections && raw.sections.length > 0)
               ? raw.sections
               : DEFAULT_RUGZAK_SECTIONS.map((s: any) => ({ ...s })),
-            currentMood: raw.currentMood ?? { stemming: 5, craving: 0, overprikkeling: 3, sociaal: 5 },
+            currentMood: raw.currentMood ?? createDefaultSliders(raw.userType ?? 'elias'),
             moodHistory: raw.moodHistory ?? [],
             chatHistory: raw.chatHistory ?? [],
             moduleUsage: raw.moduleUsage ?? [],
@@ -324,7 +324,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   }, [state.rugzak]);
 
   const getMood = useCallback(() => {
-    return state.rugzak?.currentMood ?? DEFAULT_MOOD;
+    return state.rugzak?.currentMood ?? createDefaultSliders(state.userType ?? 'elias');
   }, [state.rugzak]);
 
   const getChatHistory = useCallback(() => {

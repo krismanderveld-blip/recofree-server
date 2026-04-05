@@ -5,10 +5,10 @@
  * - Module selection (trigger patterns + mood trajectory)
  * - Tone (mood trajectory + history depth adjusts warmth/directness)
  * - Crisis detection (pattern accumulation raises baseline sensitivity)
- * - Suggestion intensity (low engagement + high craving = more assertive)
+ * - Suggestion intensity (low engagement + high concern = more assertive)
  *
- * This engine computes a RugzakInfluence object on every message,
- * which is passed into module selection and response generation.
+ * Supports both Elias (addiction) and Kim (loved one) slider types.
+ * Uses generic slider access — never references old stemming/overprikkeling/sociaal keys.
  */
 
 import type {
@@ -18,32 +18,49 @@ import type {
   RugzakInfluence,
   TriggerPattern,
   ChatMessage,
+  UserType,
 } from '../ai/types';
+import { createDefaultSliders } from '../ai/types';
 
-// ─── Default Mood (safe fallback) ──────────────────────────────
+// ─── Generic Slider Access ─────────────────────────────────────
 
-const DEFAULT_MOOD: MoodSliders = {
-  stemming: 5,
-  craving: 0,
-  overprikkeling: 0,
-  sociaal: 5,
-};
+function getSlider(mood: MoodSliders, key: string): number {
+  return (mood as any)[key] ?? 0;
+}
+
+/** Distress score: average of negative sliders (higher = worse) */
+function getDistressScore(mood: MoodSliders, userType: UserType): number {
+  if (userType === 'elias') {
+    return (getSlider(mood, 'craving') + getSlider(mood, 'frustration') + getSlider(mood, 'despondency')) / 3;
+  }
+  return (getSlider(mood, 'stress') + getSlider(mood, 'boundaryFatigue') + getSlider(mood, 'emotionalBurden')) / 3;
+}
+
+/** Resilience score: positive slider (higher = better) */
+function getResilienceScore(mood: MoodSliders, userType: UserType): number {
+  return userType === 'elias' ? getSlider(mood, 'focus') : getSlider(mood, 'selfCare');
+}
+
+/** Primary concern: the most critical slider */
+function getPrimaryConcern(mood: MoodSliders, userType: UserType): number {
+  return userType === 'elias' ? getSlider(mood, 'craving') : getSlider(mood, 'stress');
+}
 
 // ─── Mood Trajectory Analysis ───────────────────────────────────
 
 function computeMoodTrajectory(
-  moodHistory?: MoodSnapshot[] | null
+  moodHistory?: MoodSnapshot[] | null,
+  userType: UserType = 'elias'
 ): 'improving' | 'stable' | 'declining' | 'volatile' {
   if (!moodHistory || moodHistory.length < 2) return 'stable';
 
-  // Take last 5 snapshots for trajectory
   const recent = moodHistory.slice(-5);
-  const stemmingValues = recent.map((s) => s.sliders.stemming);
+  // Use distress score for trajectory (rising distress = declining)
+  const values = recent.map((s) => getDistressScore(s.sliders, userType));
 
-  // Calculate trend
   const diffs: number[] = [];
-  for (let i = 1; i < stemmingValues.length; i++) {
-    diffs.push(stemmingValues[i] - stemmingValues[i - 1]);
+  for (let i = 1; i < values.length; i++) {
+    diffs.push(values[i] - values[i - 1]);
   }
 
   if (diffs.length === 0) return 'stable';
@@ -52,12 +69,10 @@ function computeMoodTrajectory(
   const variance =
     diffs.reduce((sum, d) => sum + Math.pow(d - avgDiff, 2), 0) / diffs.length;
 
-  // High variance = volatile
-  if (variance > 4) return 'volatile';
-  // Consistent positive trend
-  if (avgDiff > 0.5) return 'improving';
-  // Consistent negative trend
-  if (avgDiff < -0.5) return 'declining';
+  if (variance > 2) return 'volatile';
+  // Rising distress = declining
+  if (avgDiff > 0.3) return 'declining';
+  if (avgDiff < -0.3) return 'improving';
   return 'stable';
 }
 
@@ -66,22 +81,18 @@ function computeMoodTrajectory(
 function determineTone(
   trajectory: 'improving' | 'stable' | 'declining' | 'volatile',
   currentMood: MoodSliders | null | undefined,
+  userType: UserType,
   crisisLevel: number
 ): 'warm' | 'grounding' | 'assertive' | 'crisis' {
   if (crisisLevel >= 2) return 'crisis';
 
-  const mood = currentMood || DEFAULT_MOOD;
+  const mood = currentMood || createDefaultSliders(userType);
+  const distress = getDistressScore(mood, userType);
 
-  // Declining mood → warmer, more supportive
-  if (trajectory === 'declining' || mood.stemming <= 3) return 'warm';
-
-  // Volatile → grounding, stabilizing
+  if (trajectory === 'declining' || distress >= 4) return 'warm';
   if (trajectory === 'volatile') return 'grounding';
+  if (getPrimaryConcern(mood, userType) >= 5) return 'assertive';
 
-  // High craving with stable/improving mood → assertive guidance
-  if (mood.craving >= 7) return 'assertive';
-
-  // Default
   return 'warm';
 }
 
@@ -89,30 +100,28 @@ function determineTone(
 
 function computeSuggestionIntensity(
   currentMood: MoodSliders | null | undefined,
+  userType: UserType,
   trajectory: 'improving' | 'stable' | 'declining' | 'volatile',
   totalSessions: number
 ): number {
-  const mood = currentMood || DEFAULT_MOOD;
-  let intensity = 5; // baseline
+  const mood = currentMood || createDefaultSliders(userType);
+  let intensity = 5;
 
-  // High craving → more assertive
-  if (mood.craving >= 7) intensity += 2;
-  if (mood.craving >= 9) intensity += 1;
+  const primaryConcern = getPrimaryConcern(mood, userType);
+  const distress = getDistressScore(mood, userType);
+  const resilience = getResilienceScore(mood, userType);
 
-  // Low mood → slightly more assertive
-  if (mood.stemming <= 3) intensity += 1;
-
-  // Declining trajectory → more assertive
+  if (primaryConcern >= 5) intensity += 2;
+  if (primaryConcern >= 6) intensity += 1;
+  if (distress >= 4) intensity += 1;
   if (trajectory === 'declining') intensity += 1;
-
-  // Volatile → more assertive
   if (trajectory === 'volatile') intensity += 1;
 
-  // New users (< 3 sessions) → gentler
+  // Gentler for new users
   if (totalSessions < 3) intensity -= 1;
 
-  // High overstimulation → dial back intensity
-  if (mood.overprikkeling >= 7) intensity -= 1;
+  // Dial back if resilience very low (overwhelmed)
+  if (resilience <= 1) intensity -= 1;
 
   return Math.max(1, Math.min(10, intensity));
 }
@@ -122,13 +131,13 @@ function computeSuggestionIntensity(
 function computeCrisisSensitivityBoost(
   triggerPatterns: TriggerPattern[] | null | undefined,
   trajectory: 'improving' | 'stable' | 'declining' | 'volatile',
-  currentMood: MoodSliders | null | undefined
+  currentMood: MoodSliders | null | undefined,
+  userType: UserType
 ): number {
-  const mood = currentMood || DEFAULT_MOOD;
+  const mood = currentMood || createDefaultSliders(userType);
   const patterns = triggerPatterns || [];
   let boost = 0;
 
-  // Recurring crisis-related triggers raise sensitivity
   const crisisTriggers = patterns.filter(
     (t) =>
       t.trigger === 'suicidal_active' ||
@@ -142,57 +151,46 @@ function computeCrisisSensitivityBoost(
     else if (t.count >= 1) boost += 1;
   }
 
-  // Declining trajectory raises sensitivity
   if (trajectory === 'declining') boost += 1;
 
-  // Combined low mood + high craving
-  if (mood.stemming <= 3 && mood.craving >= 7) boost += 1;
+  const distress = getDistressScore(mood, userType);
+  if (distress >= 4.5 && getResilienceScore(mood, userType) <= 2) boost += 1;
 
-  return Math.min(boost, 5); // Cap at 5
+  return Math.min(boost, 5);
 }
 
 // ─── Priority Modules ──────────────────────────────────────────
 
 function computePriorityModules(
-  userType: 'elias' | 'kim',
+  userType: UserType,
   currentMood: MoodSliders | null | undefined,
   triggerPatterns: TriggerPattern[] | null | undefined,
   trajectory: 'improving' | 'stable' | 'declining' | 'volatile'
 ): string[] {
-  const mood = currentMood || DEFAULT_MOOD;
+  const mood = currentMood || createDefaultSliders(userType);
   const patterns = triggerPatterns || [];
   const priorities: string[] = [];
 
   if (userType === 'elias') {
-    // High craving → Craving Management
-    if (mood.craving >= 6) priorities.push('E01');
-    // Low mood → Emotional Regulation
-    if (mood.stemming <= 4) priorities.push('E02');
-    // High overstimulation → Grounding
-    if (mood.overprikkeling >= 6) priorities.push('E04');
-    // Low social → Social Skills
-    if (mood.sociaal <= 3) priorities.push('E05');
-    // Declining trajectory → Relapse Prevention
+    if (getSlider(mood, 'craving') >= 4) priorities.push('E01');
+    if (getSlider(mood, 'despondency') >= 4) priorities.push('E02');
+    if (getSlider(mood, 'frustration') >= 5) priorities.push('E04');
+    if (getSlider(mood, 'focus') <= 2) priorities.push('E07');
     if (trajectory === 'declining') priorities.push('E03');
-    // Recurring isolation pattern
     if (patterns.some((t) => t.trigger === 'isolation' && t.count >= 2)) {
       priorities.push('E05');
     }
   } else {
-    // Kim modules
-    // Low mood → Self-Care
-    if (mood.stemming <= 4) priorities.push('K03');
-    // High overstimulation → Stress Management
-    if (mood.overprikkeling >= 6) priorities.push('K04');
-    // Recurring enabling pattern
+    if (getSlider(mood, 'stress') >= 4) priorities.push('K04');
+    if (getSlider(mood, 'boundaryFatigue') >= 4) priorities.push('K01');
+    if (getSlider(mood, 'emotionalBurden') >= 4) priorities.push('K03');
+    if (getSlider(mood, 'selfCare') <= 2) priorities.push('K03');
     if (patterns.some((t) => t.trigger === 'enabling' && t.count >= 2)) {
       priorities.push('K02');
     }
-    // Default → Boundary Setting
     if (priorities.length === 0) priorities.push('K01');
   }
 
-  // Deduplicate
   return [...new Set(priorities)];
 }
 
@@ -200,7 +198,6 @@ function computePriorityModules(
 
 function getActivePatterns(triggerPatterns?: TriggerPattern[] | null): string[] {
   if (!triggerPatterns || triggerPatterns.length === 0) return [];
-  // Return triggers that have occurred 2+ times in recent history
   return triggerPatterns
     .filter((t) => t.count >= 2)
     .sort((a, b) => b.count - a.count)
@@ -295,18 +292,10 @@ export function startNewSession(rugzak: Rugzak): Rugzak {
 
 // ─── Main Engine: Compute Influence ─────────────────────────────
 
-/**
- * Compute the Rugzak's active influence on the current interaction.
- * This is called on EVERY message before module selection and response generation.
- *
- * All property access is defensive — handles undefined/null Rugzak fields
- * gracefully (e.g. fresh user with no history yet).
- */
 export function computeRugzakInfluence(
   rugzak: Rugzak | null | undefined,
   crisisLevel: number = 0
 ): RugzakInfluence {
-  // If no rugzak at all, return safe defaults
   if (!rugzak) {
     return {
       tone: crisisLevel >= 2 ? 'crisis' : 'warm',
@@ -318,20 +307,23 @@ export function computeRugzakInfluence(
     };
   }
 
-  const trajectory = computeMoodTrajectory(rugzak.moodHistory);
-  const tone = determineTone(trajectory, rugzak.currentMood, crisisLevel);
+  const userType: UserType = rugzak.userType || 'elias';
+  const trajectory = computeMoodTrajectory(rugzak.moodHistory, userType);
+  const tone = determineTone(trajectory, rugzak.currentMood, userType, crisisLevel);
   const suggestionIntensity = computeSuggestionIntensity(
     rugzak.currentMood,
+    userType,
     trajectory,
     rugzak.totalSessions || 0
   );
   const crisisSensitivityBoost = computeCrisisSensitivityBoost(
     rugzak.triggerPatterns,
     trajectory,
-    rugzak.currentMood
+    rugzak.currentMood,
+    userType
   );
   const priorityModules = computePriorityModules(
-    rugzak.userType || 'elias',
+    userType,
     rugzak.currentMood,
     rugzak.triggerPatterns,
     trajectory

@@ -4,15 +4,12 @@
  * Rule-based analysis of Rugzak state. This is NOT AI.
  * The system makes all decisions — AI only generates language.
  *
- * Analyzes:
- * - Mood trends (improving, declining, volatile, stable)
- * - Risk level (low, moderate, high, critical)
- * - Emotional state (stable, vulnerable, depleted, crisis)
- * - Trigger context (active triggers, pattern accumulation)
- * - Behavior adjustments (tone, pacing, intensity)
+ * Supports both Elias (addiction) and Kim (loved one) slider types.
+ * Uses generic slider access via helper functions.
  */
 
-import type { Rugzak, MoodSliders, MoodSnapshot, TriggerPattern } from '../ai/types';
+import type { Rugzak, MoodSliders, MoodSnapshot, TriggerPattern, UserType } from '../ai/types';
+import { createDefaultSliders, getSliderConfig } from '../ai/types';
 
 // ─── Output Types ───────────────────────────────────────────────
 
@@ -23,41 +20,75 @@ export type PacingDirective = 'normal' | 'slower' | 'very_slow';
 export type MoodTrend = 'improving' | 'stable' | 'declining' | 'volatile';
 
 export interface StateAnalysis {
-  // ── Core Assessment ──
   riskLevel: RiskLevel;
   emotionalState: EmotionalState;
   moodTrend: MoodTrend;
-
-  // ── Trigger Context ──
   activeTriggers: string[];
   triggerContextActive: boolean;
-  patternAccumulation: number; // 0-10 scale
-
-  // ── Behavior Directives (for AI prompt construction) ──
+  patternAccumulation: number;
   tone: ToneDirective;
   pacing: PacingDirective;
-  suggestionIntensity: number; // 1-10
+  suggestionIntensity: number;
   crisisMonitoring: boolean;
   crisisThresholdLowered: boolean;
-
-  // ── Module Priorities (rule-based, NOT AI) ──
   priorityModules: string[];
-
-  // ── Summary for AI prompt ──
   stateSummary: string;
 }
 
-// ─── Input Analysis (detect signals in user message) ────────────
+// ─── Generic Slider Access ─────────────────────────────────────
+
+/** Safely read a slider value by key from any MoodSliders type */
+function getSlider(mood: MoodSliders, key: string): number {
+  return (mood as any)[key] ?? 0;
+}
+
+/**
+ * Get the "distress" score (0-7) — a normalized measure of how bad things are.
+ * Elias: average of craving, frustration, despondency (higher = worse)
+ * Kim: average of stress, boundaryFatigue, emotionalBurden (higher = worse)
+ */
+function getDistressScore(mood: MoodSliders, userType: UserType): number {
+  if (userType === 'elias') {
+    return (getSlider(mood, 'craving') + getSlider(mood, 'frustration') + getSlider(mood, 'despondency')) / 3;
+  }
+  return (getSlider(mood, 'stress') + getSlider(mood, 'boundaryFatigue') + getSlider(mood, 'emotionalBurden')) / 3;
+}
+
+/**
+ * Get the "resilience" score (0-7) — a normalized measure of coping capacity.
+ * Elias: focus (higher = better)
+ * Kim: selfCare (higher = better)
+ */
+function getResilienceScore(mood: MoodSliders, userType: UserType): number {
+  if (userType === 'elias') {
+    return getSlider(mood, 'focus');
+  }
+  return getSlider(mood, 'selfCare');
+}
+
+/**
+ * Get the primary concern slider value (0-7).
+ * Elias: craving
+ * Kim: stress
+ */
+function getPrimaryConcern(mood: MoodSliders, userType: UserType): number {
+  if (userType === 'elias') {
+    return getSlider(mood, 'craving');
+  }
+  return getSlider(mood, 'stress');
+}
+
+// ─── Input Analysis ────────────────────────────────────────────
 
 export interface InputSignals {
-  passiveSuicidal: boolean;   // "giving up", "no point", "can't go on"
-  activeSuicidal: boolean;    // "want to die", "end it"
-  selfHarm: boolean;          // "hurt myself", "cutting"
-  cravingMention: boolean;    // "want to drink", "craving", "urge"
-  isolationSignal: boolean;   // "alone", "nobody", "no one cares"
-  hopelessness: boolean;      // "hopeless", "never get better", "giving up"
-  dissociation: boolean;      // "numb", "don't feel anything", "empty"
-  positiveSignal: boolean;    // "feeling better", "good day", "grateful"
+  passiveSuicidal: boolean;
+  activeSuicidal: boolean;
+  selfHarm: boolean;
+  cravingMention: boolean;
+  isolationSignal: boolean;
+  hopelessness: boolean;
+  dissociation: boolean;
+  positiveSignal: boolean;
 }
 
 export function detectInputSignals(text: string): InputSignals {
@@ -77,11 +108,12 @@ export function detectInputSignals(text: string): InputSignals {
 
 // ─── Mood Trend Analysis ────────────────────────────────────────
 
-function analyzeMoodTrend(moodHistory: MoodSnapshot[]): MoodTrend {
+function analyzeMoodTrend(moodHistory: MoodSnapshot[], userType: UserType): MoodTrend {
   if (moodHistory.length < 2) return 'stable';
 
   const recent = moodHistory.slice(-5);
-  const values = recent.map((s) => s.sliders.stemming);
+  // Use distress score for trend (higher = worse)
+  const values = recent.map((s) => getDistressScore(s.sliders, userType));
 
   const diffs: number[] = [];
   for (let i = 1; i < values.length; i++) {
@@ -91,9 +123,10 @@ function analyzeMoodTrend(moodHistory: MoodSnapshot[]): MoodTrend {
   const avgDiff = diffs.reduce((a, b) => a + b, 0) / diffs.length;
   const variance = diffs.reduce((sum, d) => sum + Math.pow(d - avgDiff, 2), 0) / diffs.length;
 
-  if (variance > 4) return 'volatile';
-  if (avgDiff > 0.5) return 'improving';
-  if (avgDiff < -0.5) return 'declining';
+  if (variance > 2) return 'volatile';
+  // Rising distress = declining
+  if (avgDiff > 0.3) return 'declining';
+  if (avgDiff < -0.3) return 'improving';
   return 'stable';
 }
 
@@ -101,24 +134,29 @@ function analyzeMoodTrend(moodHistory: MoodSnapshot[]): MoodTrend {
 
 function assessRiskLevel(
   mood: MoodSliders,
+  userType: UserType,
   moodTrend: MoodTrend,
   signals: InputSignals,
   patternAccumulation: number
 ): RiskLevel {
+  const distress = getDistressScore(mood, userType);
+  const primaryConcern = getPrimaryConcern(mood, userType);
+  const resilience = getResilienceScore(mood, userType);
+
   // Critical: active suicidal or self-harm signals
   if (signals.activeSuicidal || signals.selfHarm) return 'critical';
 
-  // High: passive suicidal + declining mood + high craving
-  if (signals.passiveSuicidal && (mood.stemming <= 3 || mood.craving >= 7)) return 'high';
-  if (mood.stemming <= 2 && mood.craving >= 8) return 'high';
+  // High: passive suicidal + high distress
+  if (signals.passiveSuicidal && (distress >= 4 || primaryConcern >= 5)) return 'high';
+  if (distress >= 5.5 && resilience <= 2) return 'high';
   if (signals.hopelessness && moodTrend === 'declining') return 'high';
 
   // Moderate: concerning combinations
-  if (mood.stemming <= 4 && mood.craving >= 6) return 'moderate';
+  if (distress >= 4 && primaryConcern >= 4) return 'moderate';
   if (moodTrend === 'declining' && patternAccumulation >= 3) return 'moderate';
-  if (signals.isolationSignal && mood.stemming <= 4) return 'moderate';
+  if (signals.isolationSignal && distress >= 3) return 'moderate';
   if (signals.dissociation) return 'moderate';
-  if (signals.cravingMention && mood.craving >= 5) return 'moderate';
+  if (signals.cravingMention && primaryConcern >= 4) return 'moderate';
 
   return 'low';
 }
@@ -127,6 +165,7 @@ function assessRiskLevel(
 
 function assessEmotionalState(
   mood: MoodSliders,
+  userType: UserType,
   moodTrend: MoodTrend,
   riskLevel: RiskLevel,
   signals: InputSignals
@@ -134,8 +173,11 @@ function assessEmotionalState(
   if (riskLevel === 'critical') return 'crisis';
   if (riskLevel === 'high') return 'depleted';
 
-  if (mood.stemming <= 3 || signals.hopelessness || signals.dissociation) return 'depleted';
-  if (moodTrend === 'declining' || mood.craving >= 6 || signals.isolationSignal) return 'vulnerable';
+  const distress = getDistressScore(mood, userType);
+  const primaryConcern = getPrimaryConcern(mood, userType);
+
+  if (distress >= 4.5 || signals.hopelessness || signals.dissociation) return 'depleted';
+  if (moodTrend === 'declining' || primaryConcern >= 4 || signals.isolationSignal) return 'vulnerable';
 
   return 'stable';
 }
@@ -160,12 +202,10 @@ function getActiveTriggers(
 ): string[] {
   const active: string[] = [];
 
-  // From accumulated patterns (count >= 2)
   for (const p of triggerPatterns) {
     if (p.count >= 2) active.push(p.trigger);
   }
 
-  // From current input signals
   if (signals.cravingMention) active.push('craving_active');
   if (signals.isolationSignal) active.push('isolation');
   if (signals.hopelessness) active.push('hopelessness');
@@ -196,22 +236,26 @@ function determinePacing(riskLevel: RiskLevel, emotionalState: EmotionalState): 
 function computeSuggestionIntensity(
   riskLevel: RiskLevel,
   mood: MoodSliders,
+  userType: UserType,
   moodTrend: MoodTrend,
   totalSessions: number
 ): number {
   let intensity = 5;
+  const distress = getDistressScore(mood, userType);
+  const primaryConcern = getPrimaryConcern(mood, userType);
+  const resilience = getResilienceScore(mood, userType);
 
-  if (mood.craving >= 7) intensity += 2;
-  if (mood.craving >= 9) intensity += 1;
-  if (mood.stemming <= 3) intensity += 1;
+  if (primaryConcern >= 5) intensity += 2;
+  if (primaryConcern >= 6) intensity += 1;
+  if (distress >= 4) intensity += 1;
   if (moodTrend === 'declining') intensity += 1;
   if (riskLevel === 'high' || riskLevel === 'critical') intensity += 1;
 
   // Gentler for new users
   if (totalSessions < 3) intensity -= 1;
 
-  // Dial back if overstimulated
-  if (mood.overprikkeling >= 7) intensity -= 1;
+  // Dial back if resilience is very low (overwhelmed)
+  if (resilience <= 1) intensity -= 1;
 
   return Math.max(1, Math.min(10, intensity));
 }
@@ -219,7 +263,7 @@ function computeSuggestionIntensity(
 // ─── Module Selection (RULE-BASED, NOT AI) ──────────────────────
 
 function selectPriorityModules(
-  userType: 'elias' | 'kim',
+  userType: UserType,
   mood: MoodSliders,
   moodTrend: MoodTrend,
   signals: InputSignals,
@@ -228,38 +272,57 @@ function selectPriorityModules(
   const modules: string[] = [];
 
   if (userType === 'elias') {
+    const craving = getSlider(mood, 'craving');
+    const frustration = getSlider(mood, 'frustration');
+    const despondency = getSlider(mood, 'despondency');
+    const focus = getSlider(mood, 'focus');
+
     // Craving active → E01
-    if (signals.cravingMention || mood.craving >= 6) modules.push('E01');
-    // Low mood / hopelessness → E02
-    if (mood.stemming <= 4 || signals.hopelessness) modules.push('E02');
+    if (signals.cravingMention || craving >= 4) modules.push('E01');
+    // Despondency / hopelessness → E02 (Emotional Regulation)
+    if (despondency >= 4 || signals.hopelessness) modules.push('E02');
     // Declining trend → E03 (Relapse Prevention)
     if (moodTrend === 'declining') modules.push('E03');
-    // Overstimulation → E04 (Grounding)
-    if (mood.overprikkeling >= 6 || signals.dissociation) modules.push('E04');
+    // Frustration high / dissociation → E04 (Grounding)
+    if (frustration >= 5 || signals.dissociation) modules.push('E04');
     // Isolation → E05 (Social)
-    if (signals.isolationSignal || mood.sociaal <= 3) modules.push('E05');
+    if (signals.isolationSignal) modules.push('E05');
+    // Low focus → E07 (Focus/Mindfulness)
+    if (focus <= 2) modules.push('E07');
     // Positive signal → E06 (Reinforcement)
     if (signals.positiveSignal) modules.push('E06');
 
-    // Default if nothing triggered
     if (modules.length === 0) modules.push('E02');
   } else {
-    // Kim modules
-    if (mood.stemming <= 4 || signals.hopelessness) modules.push('K03'); // Self-Care
-    if (mood.overprikkeling >= 6) modules.push('K04'); // Stress Management
-    if (activeTriggers.includes('enabling')) modules.push('K02'); // Enabling Patterns
-    if (signals.isolationSignal) modules.push('K05'); // Support Network
-    if (modules.length === 0) modules.push('K01'); // Boundary Setting
+    const stress = getSlider(mood, 'stress');
+    const boundaryFatigue = getSlider(mood, 'boundaryFatigue');
+    const emotionalBurden = getSlider(mood, 'emotionalBurden');
+    const selfCare = getSlider(mood, 'selfCare');
+
+    // High stress → K04 (Stress Management)
+    if (stress >= 4) modules.push('K04');
+    // Boundary fatigue → K01 (Boundary Setting)
+    if (boundaryFatigue >= 4) modules.push('K01');
+    // Emotional burden / hopelessness → K03 (Self-Care)
+    if (emotionalBurden >= 4 || signals.hopelessness) modules.push('K03');
+    // Low self-care → K03
+    if (selfCare <= 2) modules.push('K03');
+    // Enabling patterns detected → K02
+    if (activeTriggers.includes('enabling')) modules.push('K02');
+    // Isolation → K05 (Support Network)
+    if (signals.isolationSignal) modules.push('K05');
+
+    if (modules.length === 0) modules.push('K01');
   }
 
-  // Deduplicate and limit to 3
   return [...new Set(modules)].slice(0, 3);
 }
 
-// ─── Build State Summary (compressed, for AI prompt) ────────────
+// ─── Build State Summary ────────────────────────────────────────
 
 function buildStateSummary(
   mood: MoodSliders,
+  userType: UserType,
   moodTrend: MoodTrend,
   riskLevel: RiskLevel,
   emotionalState: EmotionalState,
@@ -267,102 +330,71 @@ function buildStateSummary(
   priorityModules: string[]
 ): string {
   const parts: string[] = [];
+  const config = getSliderConfig(userType);
 
-  parts.push(`Mood: ${mood.stemming}/10 (trend: ${moodTrend})`);
-  parts.push(`Craving: ${mood.craving}/10`);
-  parts.push(`Stimuli: ${mood.overprikkeling}/10`);
-  parts.push(`Social: ${mood.sociaal}/10`);
-  parts.push(`Risk: ${riskLevel}`);
-  parts.push(`Emotional state: ${emotionalState}`);
-
-  if (activeTriggers.length > 0) {
-    parts.push(`Active triggers: ${activeTriggers.join(', ')}`);
+  for (const sc of config) {
+    parts.push(`${sc.label}: ${getSlider(mood, sc.key)}/7`);
   }
 
-  parts.push(`Active modules: ${priorityModules.join(', ')}`);
+  parts.push(`Trend: ${moodTrend}`);
+  parts.push(`Risk: ${riskLevel}`);
+  parts.push(`State: ${emotionalState}`);
+
+  if (activeTriggers.length > 0) {
+    parts.push(`Triggers: ${activeTriggers.join(', ')}`);
+  }
+
+  parts.push(`Modules: ${priorityModules.join(', ')}`);
 
   return parts.join(' | ');
 }
 
 // ─── Main Analysis Function ────────────────────────────────────
 
-/**
- * Analyze the current Rugzak state + input signals.
- * This is called on EVERY message BEFORE AI generation.
- *
- * The system makes ALL decisions here:
- * - Risk level
- * - Emotional state
- * - Module selection
- * - Tone, pacing, intensity
- * - Crisis monitoring
- *
- * AI receives the output of this analysis and generates language ONLY.
- */
 export function analyzeState(
   rugzak: Rugzak | null | undefined,
   inputText: string
 ): StateAnalysis {
-  // Default mood for safety
-  const defaultMood: MoodSliders = { stemming: 5, craving: 0, overprikkeling: 0, sociaal: 5 };
+  const userType: UserType = rugzak?.userType ?? 'elias';
+  const defaultMood = createDefaultSliders(userType);
 
-  // Safe access to Rugzak properties
-  const currentMood = rugzak?.currentMood || defaultMood;
-  const moodHistory = rugzak?.moodHistory || [];
-  const triggerPatterns = rugzak?.triggerPatterns || [];
-  const userType = rugzak?.userType || 'elias';
-  const totalSessions = rugzak?.totalSessions || 0;
+  const currentMood = rugzak?.currentMood ?? defaultMood;
+  const moodHistory = rugzak?.moodHistory ?? [];
+  const triggerPatterns = rugzak?.triggerPatterns ?? [];
+  const totalSessions = rugzak?.totalSessions ?? 0;
 
-  // 1. Detect input signals (rule-based pattern matching)
+  // 1. Detect input signals
   const signals = detectInputSignals(inputText);
 
-  // 2. Analyze mood trend from history
-  const moodTrend = analyzeMoodTrend(moodHistory);
+  // 2. Analyze mood trend
+  const moodTrend = analyzeMoodTrend(moodHistory, userType);
 
-  // 3. Compute pattern accumulation
+  // 3. Pattern accumulation
   const patternAccumulation = computePatternAccumulation(triggerPatterns);
 
-  // 4. Get active triggers (accumulated + current)
+  // 4. Active triggers
   const activeTriggers = getActiveTriggers(triggerPatterns, signals);
 
-  // 5. Assess risk level (rule-based, NOT AI)
-  const riskLevel = assessRiskLevel(currentMood, moodTrend, signals, patternAccumulation);
+  // 5. Risk level (rule-based)
+  const riskLevel = assessRiskLevel(currentMood, userType, moodTrend, signals, patternAccumulation);
 
-  // 6. Assess emotional state
-  const emotionalState = assessEmotionalState(currentMood, moodTrend, riskLevel, signals);
+  // 6. Emotional state
+  const emotionalState = assessEmotionalState(currentMood, userType, moodTrend, riskLevel, signals);
 
-  // 7. Select priority modules (rule-based, NOT AI)
-  const priorityModules = selectPriorityModules(
-    userType,
-    currentMood,
-    moodTrend,
-    signals,
-    activeTriggers
-  );
+  // 7. Module selection (rule-based)
+  const priorityModules = selectPriorityModules(userType, currentMood, moodTrend, signals, activeTriggers);
 
-  // 8. Determine behavior directives
+  // 8. Behavior directives
   const tone = determineTone(riskLevel, emotionalState, moodTrend);
   const pacing = determinePacing(riskLevel, emotionalState);
-  const suggestionIntensity = computeSuggestionIntensity(
-    riskLevel,
-    currentMood,
-    moodTrend,
-    totalSessions
-  );
+  const suggestionIntensity = computeSuggestionIntensity(riskLevel, currentMood, userType, moodTrend, totalSessions);
 
-  // 9. Crisis monitoring decisions
+  // 9. Crisis monitoring
   const crisisMonitoring = riskLevel === 'high' || riskLevel === 'critical';
   const crisisThresholdLowered = patternAccumulation >= 3 || moodTrend === 'declining';
 
-  // 10. Build compressed state summary for AI prompt
-  const stateSummary = buildStateSummary(
-    currentMood,
-    moodTrend,
-    riskLevel,
-    emotionalState,
-    activeTriggers,
-    priorityModules
-  );
+  // 10. State summary
+  const stateSummary = buildStateSummary(currentMood, userType, moodTrend, riskLevel, emotionalState, activeTriggers, priorityModules);
 
   return {
     riskLevel,
@@ -383,10 +415,6 @@ export function analyzeState(
 
 // ─── Post-Response State Update ─────────────────────────────────
 
-/**
- * Determine which triggers to update after processing a message.
- * Called AFTER AI response is generated.
- */
 export function extractTriggersFromSignals(signals: InputSignals): string[] {
   const triggers: string[] = [];
 

@@ -5,6 +5,7 @@ import { ScreenContainer } from '@/components/screen-container';
 import { useUser } from '@/lib/user-context';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useColors } from '@/hooks/use-colors';
+import { getSliderConfig } from '@/lib/ai/types';
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -14,7 +15,6 @@ export default function HomeScreen() {
   const userName = getUserName();
   const mood = getMood();
 
-  // Redirect to intake if not completed
   useEffect(() => {
     if (!state.isLoading && !state.intakeCompleted) {
       router.replace('/intake' as Href);
@@ -32,6 +32,7 @@ export default function HomeScreen() {
   const isElias = state.userType === 'elias';
   const companionName = isElias ? 'Elias' : 'Kim';
   const greeting = getGreeting(userName, companionName, isElias);
+  const sliderConfig = getSliderConfig(state.userType ?? 'elias');
 
   const handleStartChat = () => {
     startSession();
@@ -58,16 +59,24 @@ export default function HomeScreen() {
           </Text>
         </View>
 
-        {/* Mood Summary — reads from Rugzak */}
+        {/* Mood Summary — dynamic based on userType */}
         <View className="bg-surface rounded-2xl p-5 mb-5 border border-border">
           <Text className="text-sm font-semibold text-muted mb-3 uppercase tracking-wide">
             Your mood
           </Text>
           <View className="flex-row justify-between">
-            <MoodMini label="Mood" value={mood.stemming} />
-            <MoodMini label="Craving" value={mood.craving} invert />
-            <MoodMini label="Stimuli" value={mood.overprikkeling} invert />
-            <MoodMini label="Social" value={mood.sociaal} />
+            {sliderConfig.map((slider) => {
+              const value = (mood as any)[slider.key] ?? 0;
+              return (
+                <MoodMini
+                  key={slider.key}
+                  label={slider.label}
+                  value={value}
+                  max={slider.max}
+                  invert={slider.key !== 'focus' && slider.key !== 'selfCare'}
+                />
+              );
+            })}
           </View>
         </View>
 
@@ -79,15 +88,10 @@ export default function HomeScreen() {
               { opacity: pressed ? 0.85 : 1, transform: [{ scale: pressed ? 0.97 : 1 }] },
             ]}
           >
-            <View className="bg-primary rounded-2xl p-5 flex-row items-center">
-              <IconSymbol name="bubble.left.fill" size={24} color="#FFFFFF" />
-              <View className="ml-4 flex-1">
-                <Text className="text-white text-lg font-bold">Start Chat</Text>
-                <Text className="text-white/70 text-sm">
-                  Talk to {companionName}
-                </Text>
-              </View>
-              <IconSymbol name="chevron.right" size={20} color="#FFFFFF" />
+            <View className="bg-primary rounded-2xl p-4 items-center">
+              <Text className="text-background font-bold text-base">
+                Start conversation with {companionName}
+              </Text>
             </View>
           </Pressable>
 
@@ -136,17 +140,18 @@ export default function HomeScreen() {
   );
 }
 
-function MoodMini({ label, value, invert = false }: { label: string; value: number; invert?: boolean }) {
+function MoodMini({ label, value, max = 7, invert = false }: { label: string; value: number; max?: number; invert?: boolean }) {
   const displayValue = Math.round(value);
-  const normalizedValue = invert ? 10 - value : value;
-  const color = normalizedValue >= 7 ? '#43A047' : normalizedValue >= 4 ? '#FB8C00' : '#E53935';
+  const normalized = invert ? max - value : value;
+  const ratio = normalized / max;
+  const color = ratio >= 0.7 ? '#43A047' : ratio >= 0.4 ? '#FB8C00' : '#E53935';
 
   return (
-    <View className="items-center">
+    <View className="items-center flex-1">
       <Text className="text-2xl font-bold" style={{ color }}>
         {displayValue}
       </Text>
-      <Text className="text-xs text-muted mt-1">{label}</Text>
+      <Text className="text-xs text-muted mt-1 text-center">{label}</Text>
     </View>
   );
 }

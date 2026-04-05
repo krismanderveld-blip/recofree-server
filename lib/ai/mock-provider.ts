@@ -96,12 +96,12 @@ export class MockAIProvider implements AIProvider {
       advisoryEmotion = 'neutral';
     }
     // Low mood slider
-    else if (context.moodSliders.stemming <= 3) {
+    else if ((context.moodSliders as any).despondency >= 4 || (context.moodSliders as any).emotionalBurden >= 4) {
       category = 'lowMood';
       advisoryEmotion = 'sadness';
     }
     // High craving (Elias only)
-    else if (context.userType === 'elias' && context.moodSliders.craving >= 7) {
+    else if (context.userType === 'elias' && (context.moodSliders as any).craving >= 5) {
       category = 'highCraving';
       advisoryEmotion = 'craving';
     }

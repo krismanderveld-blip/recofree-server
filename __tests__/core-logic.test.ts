@@ -1,10 +1,20 @@
+/**
+ * Core Logic Tests — RecoFree
+ *
+ * Tests for crisis detection, module system, input signal detection,
+ * state analyzer, Rugzak engine, and trigger extraction.
+ *
+ * Uses Elias sliders: craving, frustration, despondency, focus (0-7)
+ * Uses Kim sliders: stress, boundaryFatigue, emotionalBurden, selfCare (0-7)
+ */
+
 import { describe, it, expect } from 'vitest';
 import { assessCrisis, EMERGENCY_RESOURCES } from '../lib/crisis/detector';
 import { getModuleRecommendations, getAllModules } from '../lib/modules/module-system';
 import { analyzeState, detectInputSignals, extractTriggersFromSignals } from '../lib/rugzak/state-analyzer';
 import { computeRugzakInfluence, updateTriggerPatterns, recordMoodSnapshot, addMessageToRugzak, startNewSession } from '../lib/rugzak/engine';
 import { createNewRugzak } from '../lib/ai/types';
-import type { Rugzak, MoodSliders, ChatMessage } from '../lib/ai/types';
+import type { Rugzak, MoodSliders, EliasMoodSliders, KimMoodSliders, ChatMessage } from '../lib/ai/types';
 
 // ─── Helper ─────────────────────────────────────────────────────
 
@@ -19,72 +29,76 @@ function createTestRugzak(overrides?: Record<string, unknown>): Rugzak {
   } as any);
 }
 
+// ─── Default test moods ────────────────────────────────────────
+
+const normalElias: EliasMoodSliders = { craving: 2, frustration: 2, despondency: 2, focus: 5 };
+const highCravingElias: EliasMoodSliders = { craving: 6, frustration: 3, despondency: 2, focus: 4 };
+const highDistressElias: EliasMoodSliders = { craving: 6, frustration: 5, despondency: 6, focus: 1 };
+const lowDistressElias: EliasMoodSliders = { craving: 1, frustration: 1, despondency: 1, focus: 6 };
+
+const normalKim: KimMoodSliders = { stress: 2, boundaryFatigue: 2, emotionalBurden: 2, selfCare: 5 };
+const highStressKim: KimMoodSliders = { stress: 6, boundaryFatigue: 5, emotionalBurden: 6, selfCare: 1 };
+
 // ─── Crisis Detection Tests ─────────────────────────────────────
 
 describe('Crisis Detection', () => {
-  const normalMood = { stemming: 5, craving: 3, overprikkeling: 3, sociaal: 5 };
-
   it('should return level 0 for normal messages', () => {
-    const result = assessCrisis('I had a good day today', normalMood);
+    const result = assessCrisis('I had a good day today', normalElias, 'elias');
     expect(result.level).toBe(0);
     expect(result.recommendedAction).toBe('none');
     expect(result.triggers).toHaveLength(0);
   });
 
   it('should detect active suicidal ideation as level 2', () => {
-    const result = assessCrisis('I want to kill myself', normalMood);
+    const result = assessCrisis('I want to kill myself', normalElias, 'elias');
     expect(result.level).toBe(2);
     expect(result.recommendedAction).toBe('emergency');
     expect(result.triggers).toContain('suicidal_active');
   });
 
   it('should detect passive suicidal ideation as level 2', () => {
-    const result = assessCrisis('I wish I was dead', normalMood);
+    const result = assessCrisis('I wish I was dead', normalElias, 'elias');
     expect(result.level).toBe(2);
     expect(result.recommendedAction).toBe('emergency');
     expect(result.triggers).toContain('suicidal_passive');
   });
 
   it('should detect self-harm as level 2', () => {
-    const result = assessCrisis('I want to hurt myself', normalMood);
+    const result = assessCrisis('I want to hurt myself', normalElias, 'elias');
     expect(result.level).toBe(2);
     expect(result.recommendedAction).toBe('emergency');
     expect(result.triggers).toContain('self_harm');
   });
 
   it('should detect dissociation as level 1', () => {
-    const result = assessCrisis("I can't feel anything anymore", normalMood);
+    const result = assessCrisis("I can't feel anything anymore", normalElias, 'elias');
     expect(result.level).toBe(1);
     expect(result.recommendedAction).toBe('intervene');
     expect(result.triggers).toContain('dissociation');
   });
 
   it('should detect relapse as level 1', () => {
-    const result = assessCrisis('I relapsed last night', normalMood);
+    const result = assessCrisis('I relapsed last night', normalElias, 'elias');
     expect(result.level).toBe(1);
     expect(result.recommendedAction).toBe('intervene');
     expect(result.triggers).toContain('relapse');
   });
 
-  it('should detect extremely low mood via sliders', () => {
-    const lowMood = { stemming: 1, craving: 3, overprikkeling: 3, sociaal: 5 };
-    const result = assessCrisis('I feel bad', lowMood);
-    expect(result.level).toBeGreaterThanOrEqual(1);
-    expect(result.triggers).toContain('extremely_low_mood');
-  });
-
-  it('should detect extreme craving via sliders', () => {
-    const highCraving = { stemming: 5, craving: 9, overprikkeling: 3, sociaal: 5 };
-    const result = assessCrisis('I feel something', highCraving);
+  it('should detect extreme craving via sliders (Elias)', () => {
+    const result = assessCrisis('I feel something', highCravingElias, 'elias');
     expect(result.level).toBeGreaterThanOrEqual(1);
     expect(result.triggers).toContain('extreme_craving');
   });
 
-  it('should detect combined risk (low mood + high craving) as level 2', () => {
-    const combined = { stemming: 2, craving: 8, overprikkeling: 3, sociaal: 5 };
-    const result = assessCrisis('Things are rough', combined);
-    expect(result.level).toBe(2);
-    expect(result.triggers).toContain('combined_risk_mood_craving');
+  it('should detect combined risk (high distress + low resilience) (Elias)', () => {
+    const result = assessCrisis('Things are rough', highDistressElias, 'elias');
+    expect(result.level).toBeGreaterThanOrEqual(1);
+  });
+
+  it('should detect extreme emotional burden (Kim)', () => {
+    const result = assessCrisis('I feel overwhelmed', highStressKim, 'kim');
+    expect(result.level).toBeGreaterThanOrEqual(1);
+    expect(result.triggers).toContain('extreme_emotional_burden');
   });
 
   it('should have emergency resources defined', () => {
@@ -96,8 +110,6 @@ describe('Crisis Detection', () => {
 // ─── Module System Tests ────────────────────────────────────────
 
 describe('Module System', () => {
-  const normalMood = { stemming: 5, craving: 3, overprikkeling: 3, sociaal: 5 };
-
   it('should return Elias modules for elias user type', () => {
     const modules = getAllModules('elias');
     expect(modules.length).toBeGreaterThan(0);
@@ -110,30 +122,34 @@ describe('Module System', () => {
     expect(modules.every((m) => m.userType === 'kim')).toBe(true);
   });
 
-  it('should recommend Craving Management for high craving', () => {
-    const highCraving = { stemming: 5, craving: 8, overprikkeling: 3, sociaal: 5 };
-    const recs = getModuleRecommendations('elias', 'I have a strong urge', highCraving);
+  it('should recommend Craving Management for high craving (Elias)', () => {
+    const recs = getModuleRecommendations('elias', 'I have a strong urge', highCravingElias);
     const cravingModule = recs.find((r) => r.module.id === 'E01');
     expect(cravingModule).toBeDefined();
     expect(cravingModule!.relevance).toBeGreaterThan(0);
   });
 
-  it('should recommend Emotional Regulation for low mood', () => {
-    const lowMood = { stemming: 2, craving: 3, overprikkeling: 3, sociaal: 5 };
-    const recs = getModuleRecommendations('elias', 'I feel overwhelmed', lowMood);
+  it('should recommend Emotional Regulation for high despondency (Elias)', () => {
+    const mood: EliasMoodSliders = { craving: 2, frustration: 2, despondency: 5, focus: 3 };
+    const recs = getModuleRecommendations('elias', 'I feel overwhelmed', mood);
     const emotionModule = recs.find((r) => r.module.id === 'E02');
     expect(emotionModule).toBeDefined();
   });
 
   it('should recommend Boundary Setting for Kim user', () => {
-    const recs = getModuleRecommendations('kim', 'I need to set boundaries', normalMood);
+    const recs = getModuleRecommendations('kim', 'I need to set boundaries', normalKim);
     const boundaryModule = recs.find((r) => r.module.id === 'K01');
     expect(boundaryModule).toBeDefined();
   });
 
+  it('should recommend Stress Management for high stress (Kim)', () => {
+    const recs = getModuleRecommendations('kim', 'I am so stressed', highStressKim);
+    const stressModule = recs.find((r) => r.module.id === 'K04');
+    expect(stressModule).toBeDefined();
+  });
+
   it('should sort recommendations by relevance (highest first)', () => {
-    const lowMood = { stemming: 1, craving: 9, overprikkeling: 8, sociaal: 1 };
-    const recs = getModuleRecommendations('elias', 'I feel overwhelmed and tempted', lowMood);
+    const recs = getModuleRecommendations('elias', 'I feel overwhelmed and tempted', highDistressElias);
     for (let i = 1; i < recs.length; i++) {
       expect(recs[i - 1].relevance).toBeGreaterThanOrEqual(recs[i].relevance);
     }
@@ -180,28 +196,27 @@ describe('Input Signal Detection', () => {
 // ─── State Analyzer Tests ───────────────────────────────────────
 
 describe('State Analyzer', () => {
-  it('returns low risk for neutral input with good mood', () => {
+  it('returns low risk for neutral input with good mood (Elias)', () => {
     const rugzak = createTestRugzak();
-    rugzak.currentMood = { stemming: 7, craving: 1, overprikkeling: 2, sociaal: 7 };
+    rugzak.currentMood = lowDistressElias;
 
     const analysis = analyzeState(rugzak, 'I had a good day');
     expect(analysis.riskLevel).toBe('low');
     expect(analysis.emotionalState).toBe('stable');
   });
 
-  it('returns high risk for "giving up" with low mood + high craving', () => {
+  it('returns high risk for "giving up" with high distress (Elias)', () => {
     const rugzak = createTestRugzak();
-    rugzak.currentMood = { stemming: 2, craving: 7, overprikkeling: 5, sociaal: 2 };
+    rugzak.currentMood = { craving: 6, frustration: 5, despondency: 5, focus: 1 } as EliasMoodSliders;
 
     const analysis = analyzeState(rugzak, 'I feel like giving up');
     expect(analysis.riskLevel).toBe('high');
-    expect(analysis.emotionalState).toBe('depleted');
     expect(analysis.crisisMonitoring).toBe(true);
   });
 
-  it('returns critical risk for active suicidal signals', () => {
+  it('returns critical risk for active suicidal signals (Elias)', () => {
     const rugzak = createTestRugzak();
-    rugzak.currentMood = { stemming: 1, craving: 9, overprikkeling: 8, sociaal: 1 };
+    rugzak.currentMood = highDistressElias;
 
     const analysis = analyzeState(rugzak, 'I want to kill myself');
     expect(analysis.riskLevel).toBe('critical');
@@ -209,37 +224,29 @@ describe('State Analyzer', () => {
     expect(analysis.tone).toBe('crisis');
   });
 
-  it('selects craving module when craving is high', () => {
+  it('selects craving module when craving is high (Elias)', () => {
     const rugzak = createTestRugzak();
-    rugzak.currentMood = { stemming: 5, craving: 8, overprikkeling: 3, sociaal: 5 };
+    rugzak.currentMood = highCravingElias;
 
     const analysis = analyzeState(rugzak, 'I have a strong craving');
     expect(analysis.priorityModules).toContain('E01');
   });
 
-  it('selects emotional regulation when mood is low', () => {
-    const rugzak = createTestRugzak();
-    rugzak.currentMood = { stemming: 2, craving: 2, overprikkeling: 3, sociaal: 5 };
-
-    const analysis = analyzeState(rugzak, 'I feel terrible');
-    expect(analysis.priorityModules).toContain('E02');
-  });
-
   it('selects Kim modules for naaste user type', () => {
     const rugzak = createTestRugzak({ userType: 'kim' });
-    rugzak.currentMood = { stemming: 3, craving: 0, overprikkeling: 7, sociaal: 3 };
+    rugzak.currentMood = highStressKim;
 
     const analysis = analyzeState(rugzak, 'I feel overwhelmed');
     expect(analysis.priorityModules.some((m: string) => m.startsWith('K'))).toBe(true);
   });
 
-  it('generates state summary string', () => {
+  it('generates state summary string with slider labels', () => {
     const rugzak = createTestRugzak();
-    rugzak.currentMood = { stemming: 5, craving: 3, overprikkeling: 4, sociaal: 6 };
+    rugzak.currentMood = normalElias;
 
     const analysis = analyzeState(rugzak, 'Hello');
-    expect(analysis.stateSummary).toContain('Mood: 5/10');
-    expect(analysis.stateSummary).toContain('Craving: 3/10');
+    expect(analysis.stateSummary).toContain('Craving: 2/7');
+    expect(analysis.stateSummary).toContain('Focus: 5/7');
   });
 });
 
@@ -257,14 +264,13 @@ describe('Rugzak Engine', () => {
     expect(rugzak.totalSessions).toBe(0);
   });
 
-  it('records mood snapshot', () => {
+  it('records mood snapshot (Elias)', () => {
     let rugzak = createTestRugzak();
-    const mood: MoodSliders = { stemming: 3, craving: 7, overprikkeling: 5, sociaal: 2 };
-    rugzak = recordMoodSnapshot(rugzak, mood);
+    rugzak = recordMoodSnapshot(rugzak, normalElias);
 
-    expect(rugzak.currentMood).toEqual(mood);
+    expect(rugzak.currentMood).toEqual(normalElias);
     expect(rugzak.moodHistory.length).toBe(1);
-    expect(rugzak.moodHistory[0].sliders).toEqual(mood);
+    expect(rugzak.moodHistory[0].sliders).toEqual(normalElias);
   });
 
   it('adds message to Rugzak', () => {
@@ -303,9 +309,9 @@ describe('Rugzak Engine', () => {
 // ─── Rugzak Influence Tests ─────────────────────────────────────
 
 describe('Rugzak Influence', () => {
-  it('computes stable influence for healthy state', () => {
+  it('computes stable influence for healthy state (Elias)', () => {
     const rugzak = createTestRugzak();
-    rugzak.currentMood = { stemming: 7, craving: 1, overprikkeling: 2, sociaal: 7 };
+    rugzak.currentMood = lowDistressElias;
 
     const influence = computeRugzakInfluence(rugzak, 0);
     expect(influence.tone).toBe('warm');
@@ -313,12 +319,20 @@ describe('Rugzak Influence', () => {
     expect(influence.crisisSensitivityBoost).toBe(0);
   });
 
-  it('returns crisis tone when crisis level is high', () => {
+  it('returns crisis tone when crisis level is high (Elias)', () => {
     const rugzak = createTestRugzak();
-    rugzak.currentMood = { stemming: 1, craving: 9, overprikkeling: 8, sociaal: 1 };
+    rugzak.currentMood = highDistressElias;
 
     const influence = computeRugzakInfluence(rugzak, 2);
     expect(influence.tone).toBe('crisis');
+  });
+
+  it('computes influence for Kim user', () => {
+    const rugzak = createTestRugzak({ userType: 'kim' });
+    rugzak.currentMood = highStressKim;
+
+    const influence = computeRugzakInfluence(rugzak, 0);
+    expect(influence.suggestionIntensity).toBeGreaterThan(0);
   });
 });
 

@@ -74,3 +74,6 @@
 - [x] Add defensive null checks to all Rugzak property access in engine.ts
 - [x] Fix Backpack showing "0 of 0 sections" — sections not rendering (migration added)
 - [x] Ensure all 5 life-phase sections are visible and editable in Backpack
+- [x] Fix sliders: Elias uses Craving/Frustration/Despondency/Focus (0-7 scale with intervention thresholds)
+- [x] Fix sliders: Kim (naaste) uses Stress/Boundary Fatigue/Emotional Burden/Self-care (0-7 scale)
+- [x] Add intervention thresholds to slider logic

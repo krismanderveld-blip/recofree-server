@@ -7,16 +7,38 @@
  * This is a LOCAL analysis layer. The Elias/Kim logic layer on the backend
  * is the ultimate authority for crisis response decisions.
  *
+ * Supports both Elias and Kim slider types via generic access.
+ *
  * Crisis levels:
  *   0 = Normal
  *   1 = Concern (elevated monitoring)
  *   2 = Crisis (immediate intervention)
  */
 
+import type { MoodSliders, UserType } from '../ai/types';
+
 export interface CrisisAssessment {
   level: number;
   triggers: string[];
   recommendedAction: 'none' | 'monitor' | 'intervene' | 'emergency';
+}
+
+// Generic slider access
+function getSlider(mood: MoodSliders, key: string): number {
+  return (mood as any)[key] ?? 0;
+}
+
+/** Get distress score based on user type */
+function getDistress(mood: MoodSliders, userType: UserType): number {
+  if (userType === 'elias') {
+    return (getSlider(mood, 'craving') + getSlider(mood, 'frustration') + getSlider(mood, 'despondency')) / 3;
+  }
+  return (getSlider(mood, 'stress') + getSlider(mood, 'boundaryFatigue') + getSlider(mood, 'emotionalBurden')) / 3;
+}
+
+/** Get resilience score based on user type */
+function getResilience(mood: MoodSliders, userType: UserType): number {
+  return userType === 'elias' ? getSlider(mood, 'focus') : getSlider(mood, 'selfCare');
 }
 
 // Crisis keyword patterns (language-agnostic internal logic, English output)
@@ -47,7 +69,8 @@ const CRISIS_PATTERNS = {
 
 export function assessCrisis(
   message: string,
-  moodSliders: { stemming: number; craving: number; overprikkeling: number; sociaal: number }
+  moodSliders: MoodSliders,
+  userType: UserType = 'elias'
 ): CrisisAssessment {
   const triggers: string[] = [];
   let maxLevel = 0;
@@ -73,32 +96,44 @@ export function assessCrisis(
     }
   }
 
-  // Slider threshold analysis
-  if (moodSliders.stemming <= 1) {
-    triggers.push('extremely_low_mood');
+  // Slider threshold analysis (generic, works for both Elias and Kim)
+  const distress = getDistress(moodSliders, userType);
+  const resilience = getResilience(moodSliders, userType);
+
+  // Very high distress
+  if (distress >= 6) {
+    triggers.push('extreme_distress');
     maxLevel = Math.max(maxLevel, 1);
   }
 
-  if (moodSliders.craving >= 9) {
+  // Very low resilience
+  if (resilience <= 1) {
+    triggers.push('depleted_resilience');
+    maxLevel = Math.max(maxLevel, 1);
+  }
+
+  // Elias-specific: extreme craving
+  if (userType === 'elias' && getSlider(moodSliders, 'craving') >= 6) {
     triggers.push('extreme_craving');
     maxLevel = Math.max(maxLevel, 1);
   }
 
-  if (moodSliders.overprikkeling >= 9) {
-    triggers.push('extreme_overstimulation');
+  // Elias-specific: high despondency
+  if (userType === 'elias' && getSlider(moodSliders, 'despondency') >= 6) {
+    triggers.push('extreme_despondency');
     maxLevel = Math.max(maxLevel, 1);
   }
 
-  // Combined risk: low mood + high craving = elevated
-  if (moodSliders.stemming <= 2 && moodSliders.craving >= 8) {
-    triggers.push('combined_risk_mood_craving');
+  // Kim-specific: extreme emotional burden
+  if (userType === 'kim' && getSlider(moodSliders, 'emotionalBurden') >= 6) {
+    triggers.push('extreme_emotional_burden');
+    maxLevel = Math.max(maxLevel, 1);
+  }
+
+  // Combined risk: high distress + low resilience = elevated
+  if (distress >= 5 && resilience <= 1) {
+    triggers.push('combined_risk_distress_depleted');
     maxLevel = Math.max(maxLevel, 2);
-  }
-
-  // Combined risk: isolation + low mood
-  if (moodSliders.sociaal <= 1 && moodSliders.stemming <= 2) {
-    triggers.push('combined_risk_isolation_mood');
-    maxLevel = Math.max(maxLevel, 1);
   }
 
   let recommendedAction: CrisisAssessment['recommendedAction'];
