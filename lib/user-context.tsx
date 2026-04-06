@@ -49,6 +49,7 @@ type UserAction =
   | { type: 'SET_DETECTED_EMOTION'; payload: string }
   | { type: 'SET_INFLUENCE'; payload: RugzakInfluence }
   | { type: 'START_SESSION' }
+  | { type: 'END_SESSION'; payload: Rugzak }
   | { type: 'RESET' };
 
 interface UserContextValue {
@@ -69,6 +70,8 @@ interface UserContextValue {
   setCrisisLevel: (level: number) => void;
   setDetectedEmotion: (emotion: string) => void;
   startSession: () => Promise<void>;
+  /** End the current session — updates Rugzak with session-end analysis */
+  endSessionWithRugzak: (updatedRugzak: Rugzak) => Promise<void>;
   resetUser: () => Promise<void>;
   /** Convenience getters that read from Rugzak */
   getUserName: () => string;
@@ -157,6 +160,16 @@ function userReducer(state: UserState, action: UserAction): UserState {
         crisisLevel: 0,
         detectedEmotion: 'neutral',
         rugzak: startNewSession(state.rugzak),
+      };
+
+    case 'END_SESSION':
+      return {
+        ...state,
+        rugzak: action.payload,
+        sessionStartTime: null,
+        crisisLevel: 0,
+        detectedEmotion: 'neutral',
+        influence: null,
       };
 
     case 'RESET':
@@ -310,6 +323,13 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     }
   }, [state.rugzak]);
 
+  // ── End Session ──
+
+  const endSessionWithRugzak = useCallback(async (updatedRugzak: Rugzak) => {
+    dispatch({ type: 'END_SESSION', payload: updatedRugzak });
+    await persistRugzak(updatedRugzak);
+  }, []);
+
   // ── Reset ──
 
   const resetUser = useCallback(async () => {
@@ -353,6 +373,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         setCrisisLevel,
         setDetectedEmotion,
         startSession,
+        endSessionWithRugzak,
         resetUser,
         getUserName,
         getMood,

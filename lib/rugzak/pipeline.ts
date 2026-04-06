@@ -26,6 +26,7 @@ import {
   detectInputSignals,
   extractTriggersFromSignals,
   type StateAnalysis,
+  type InputSignals,
 } from './state-analyzer';
 import { updateTriggerPatterns, recordModuleUsage } from './engine';
 
@@ -238,6 +239,207 @@ export async function generateGreeting(
     crisisLevel: 0,
     showEmergency: false,
   };
+}
+
+// ─── Session End Pipeline ──────────────────────────────────────
+
+/**
+ * Session-end analysis result.
+ * Contains the full analysis of the session for local storage.
+ */
+export interface SessionEndResult {
+  /** Farewell message from Elias/Kim */
+  farewell: string;
+  /** Session summary (mood trends, themes, triggers detected) */
+  sessionSummary: SessionSummary;
+  /** Updated Rugzak after session-end analysis */
+  updatedRugzak: Rugzak;
+}
+
+export interface SessionSummary {
+  /** Number of messages exchanged */
+  messageCount: number;
+  /** Session duration in minutes */
+  durationMinutes: number;
+  /** Dominant emotional tone of the session */
+  dominantEmotion: string;
+  /** Themes detected in conversation */
+  themes: string[];
+  /** New triggers detected this session */
+  newTriggers: string[];
+  /** Modules activated during session */
+  modulesUsed: string[];
+  /** Mood change: start vs end */
+  moodDelta: {
+    distressChange: number; // positive = worse, negative = better
+    resilienceChange: number; // positive = better, negative = worse
+  };
+  /** Risk level at session end */
+  endRiskLevel: string;
+}
+
+/**
+ * End a chat session.
+ *
+ * This function:
+ * 1. Analyzes the full session (chat content, mood, triggers, rugzak)
+ * 2. Updates the Rugzak with session summary
+ * 3. Generates a farewell message through the AI provider
+ * 4. Persists the updated state
+ *
+ * This is the ONLY correct way to end a session.
+ */
+export async function endSession(
+  rugzak: Rugzak,
+  provider: AIProvider
+): Promise<SessionEndResult> {
+  // ── STEP 1: Analyze the full session ──
+  const sessionMessages = rugzak.chatHistory || [];
+  const sessionStart = rugzak.lastSessionDate ? new Date(rugzak.lastSessionDate) : new Date();
+  const durationMinutes = Math.floor((Date.now() - sessionStart.getTime()) / 60000);
+
+  // Detect themes from all user messages in this session
+  const userMessages = sessionMessages.filter((m) => m.role === 'user');
+  const allUserText = userMessages.map((m) => m.content).join(' ');
+  const signals = detectInputSignals(allUserText);
+  const themes = extractThemes(signals, allUserText);
+  const newTriggers = extractTriggersFromSignals(signals);
+
+  // Collect all modules used in this session
+  const modulesUsed = [...new Set(
+    sessionMessages
+      .filter((m) => m.modulesUsed && m.modulesUsed.length > 0)
+      .flatMap((m) => m.modulesUsed!)
+  )];
+
+  // Determine dominant emotion
+  const endAnalysis = analyzeState(rugzak, '');
+  const dominantEmotion = endAnalysis.emotionalState;
+
+  // Compute mood delta (approximate: compare first half vs second half of mood history)
+  const moodHistory = rugzak.moodHistory || [];
+  let distressChange = 0;
+  let resilienceChange = 0;
+  if (moodHistory.length >= 2) {
+    const firstSliders = moodHistory[0].sliders;
+    const lastSliders = moodHistory[moodHistory.length - 1].sliders;
+    const userType = rugzak.userType;
+    const firstDistress = userType === 'elias'
+      ? (((firstSliders as any).craving ?? 0) + ((firstSliders as any).frustration ?? 0) + ((firstSliders as any).despondency ?? 0)) / 3
+      : (((firstSliders as any).stress ?? 0) + ((firstSliders as any).boundaryFatigue ?? 0) + ((firstSliders as any).emotionalBurden ?? 0)) / 3;
+    const lastDistress = userType === 'elias'
+      ? (((lastSliders as any).craving ?? 0) + ((lastSliders as any).frustration ?? 0) + ((lastSliders as any).despondency ?? 0)) / 3
+      : (((lastSliders as any).stress ?? 0) + ((lastSliders as any).boundaryFatigue ?? 0) + ((lastSliders as any).emotionalBurden ?? 0)) / 3;
+    distressChange = lastDistress - firstDistress;
+    const firstResilience = userType === 'elias' ? ((firstSliders as any).focus ?? 5) : ((firstSliders as any).selfCare ?? 5);
+    const lastResilience = userType === 'elias' ? ((lastSliders as any).focus ?? 5) : ((lastSliders as any).selfCare ?? 5);
+    resilienceChange = lastResilience - firstResilience;
+  }
+
+  const sessionSummary: SessionSummary = {
+    messageCount: sessionMessages.length,
+    durationMinutes,
+    dominantEmotion,
+    themes,
+    newTriggers,
+    modulesUsed,
+    moodDelta: { distressChange, resilienceChange },
+    endRiskLevel: endAnalysis.riskLevel,
+  };
+
+  // ── STEP 2: Generate farewell through AI ──
+  const context: ChatContext = {
+    userType: rugzak.userType,
+    userName: rugzak.naam,
+    currentMessage: '__SESSION_END__',
+    conversationHistory: rugzak.chatHistory || [],
+    moodSliders: rugzak.currentMood || { craving: 0, frustration: 0, despondency: 0, focus: 5 } as any,
+    rugzak,
+    activeModules: [],
+    crisisLevel: 0,
+    detectedEmotion: dominantEmotion,
+    therapeuticStance: `SESSION_CLOSING | tone:warm | Summarize session briefly. Acknowledge what user shared. Confirm session is saved. Encourage them gently.`,
+    sessionDurationMinutes: durationMinutes,
+    urgency: rugzak.intakeContext?.urgency ?? 'midden',
+    startEmotion: rugzak.intakeContext?.startEmotion ?? '',
+  };
+
+  let farewell: string;
+  try {
+    const result = await provider.generateResponse(context);
+    farewell = result.response;
+  } catch (error) {
+    console.error('Farewell generation error:', error);
+    const name = rugzak.naam;
+    farewell = rugzak.userType === 'elias'
+      ? `${name}, I've saved everything from our conversation. You showed real courage today. Take care of yourself, and I'll be here whenever you need me.`
+      : `${name}, I've saved everything from our conversation. What you're doing for your loved one matters. Take care of yourself too, and I'll be here when you're ready.`;
+  }
+
+  // ── STEP 3: Update Rugzak ──
+  // Add farewell message to history
+  const farewellMsg: ChatMessage = {
+    id: `msg_${Date.now()}`,
+    role: 'assistant',
+    content: farewell,
+    timestamp: new Date().toISOString(),
+  };
+
+  let updatedRugzak: Rugzak = {
+    ...rugzak,
+    chatHistory: [...(rugzak.chatHistory || []), farewellMsg],
+  };
+
+  // Update trigger patterns
+  if (newTriggers.length > 0) {
+    updatedRugzak = {
+      ...updatedRugzak,
+      triggerPatterns: updateTriggerPatterns(updatedRugzak.triggerPatterns || [], newTriggers),
+    };
+  }
+
+  // Record mood snapshot at session end
+  if (updatedRugzak.currentMood) {
+    const snapshot = {
+      timestamp: new Date().toISOString(),
+      sliders: { ...updatedRugzak.currentMood },
+    };
+    updatedRugzak = {
+      ...updatedRugzak,
+      moodHistory: [...(updatedRugzak.moodHistory || []), snapshot],
+    };
+  }
+
+  return {
+    farewell,
+    sessionSummary,
+    updatedRugzak,
+  };
+}
+
+/**
+ * Extract conversation themes from input signals and text.
+ */
+function extractThemes(signals: InputSignals, text: string): string[] {
+  const themes: string[] = [];
+  if (signals.cravingMention) themes.push('craving');
+  if (signals.isolationSignal) themes.push('isolation');
+  if (signals.hopelessness) themes.push('hopelessness');
+  if (signals.dissociation) themes.push('dissociation');
+  if (signals.positiveSignal) themes.push('positive_progress');
+  if (signals.passiveSuicidal || signals.activeSuicidal) themes.push('suicidal_ideation');
+  if (signals.selfHarm) themes.push('self_harm');
+
+  // Additional keyword-based themes
+  const lower = text.toLowerCase();
+  if (/\b(family|parent|mother|father|sibling|brother|sister)\b/.test(lower)) themes.push('family');
+  if (/\b(work|job|boss|colleague|career)\b/.test(lower)) themes.push('work');
+  if (/\b(relationship|partner|spouse|boyfriend|girlfriend)\b/.test(lower)) themes.push('relationships');
+  if (/\b(sleep|insomnia|nightmare|tired|exhausted)\b/.test(lower)) themes.push('sleep');
+  if (/\b(anger|angry|rage|furious|frustrated)\b/.test(lower)) themes.push('anger');
+  if (/\b(guilt|shame|ashamed|regret)\b/.test(lower)) themes.push('guilt_shame');
+
+  return [...new Set(themes)];
 }
 
 // ─── Helper: Build therapeutic stance string for AI prompt ──────

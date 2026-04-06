@@ -358,3 +358,146 @@ describe('Trigger Extraction', () => {
     expect(triggers.length).toBe(0);
   });
 });
+
+// ─── Session End Pipeline Tests ────────────────────────────────
+
+import { endSession, type SessionEndResult, type SessionSummary } from '../lib/rugzak/pipeline';
+import { MockAIProvider } from '../lib/ai/mock-provider';
+
+describe('Session End Pipeline', () => {
+  const mockProvider = new MockAIProvider();
+
+  function createSessionRugzak(userType: 'elias' | 'kim' = 'elias'): Rugzak {
+    const rugzak = createTestRugzak({ userType });
+    // Simulate a session with some messages
+    rugzak.chatHistory = [
+      { id: 'msg_1', role: 'assistant', content: 'Welcome back. How are you feeling?', timestamp: '2025-04-06T10:00:00Z' },
+      { id: 'msg_2', role: 'user', content: 'I have a strong craving today and I feel alone', timestamp: '2025-04-06T10:01:00Z' },
+      { id: 'msg_3', role: 'assistant', content: 'I hear you. Let\'s work through this together.', timestamp: '2025-04-06T10:01:30Z' },
+      { id: 'msg_4', role: 'user', content: 'I feel like giving up sometimes', timestamp: '2025-04-06T10:03:00Z' },
+      { id: 'msg_5', role: 'assistant', content: 'That feeling is valid. You\'re not alone in this.', timestamp: '2025-04-06T10:03:30Z' },
+    ];
+    rugzak.lastSessionDate = '2025-04-06T10:00:00Z';
+    rugzak.totalSessions = 3;
+    rugzak.currentMood = { craving: 6, frustration: 4, despondency: 5, focus: 3 } as EliasMoodSliders;
+    rugzak.moodHistory = [
+      { sliders: { craving: 3, frustration: 2, despondency: 2, focus: 6 } as EliasMoodSliders, timestamp: '2025-04-05T10:00:00Z' },
+      { sliders: { craving: 6, frustration: 4, despondency: 5, focus: 3 } as EliasMoodSliders, timestamp: '2025-04-06T10:00:00Z' },
+    ];
+    return rugzak;
+  }
+
+  it('returns a farewell message', async () => {
+    const rugzak = createSessionRugzak();
+    const result = await endSession(rugzak, mockProvider);
+
+    expect(result.farewell).toBeTruthy();
+    expect(typeof result.farewell).toBe('string');
+    expect(result.farewell.length).toBeGreaterThan(10);
+  });
+
+  it('returns a session summary with correct message count', async () => {
+    const rugzak = createSessionRugzak();
+    const result = await endSession(rugzak, mockProvider);
+
+    expect(result.sessionSummary.messageCount).toBe(5);
+  });
+
+  it('detects themes from user messages', async () => {
+    const rugzak = createSessionRugzak();
+    const result = await endSession(rugzak, mockProvider);
+
+    // User mentioned craving and isolation
+    expect(result.sessionSummary.themes).toContain('craving');
+    expect(result.sessionSummary.themes).toContain('isolation');
+  });
+
+  it('detects new triggers from session content', async () => {
+    const rugzak = createSessionRugzak();
+    const result = await endSession(rugzak, mockProvider);
+
+    // User mentioned craving and isolation
+    expect(result.sessionSummary.newTriggers).toContain('craving');
+    expect(result.sessionSummary.newTriggers).toContain('isolation');
+  });
+
+  it('returns updated Rugzak with farewell in chat history', async () => {
+    const rugzak = createSessionRugzak();
+    const result = await endSession(rugzak, mockProvider);
+
+    // Farewell message should be added to chat history
+    const lastMsg = result.updatedRugzak.chatHistory[result.updatedRugzak.chatHistory.length - 1];
+    expect(lastMsg.role).toBe('assistant');
+    // Chat history should be longer than original
+    expect(result.updatedRugzak.chatHistory.length).toBeGreaterThan(rugzak.chatHistory.length);
+  });
+
+  it('updates trigger patterns in Rugzak', async () => {
+    const rugzak = createSessionRugzak();
+    rugzak.triggerPatterns = []; // Start with no patterns
+
+    const result = await endSession(rugzak, mockProvider);
+
+    // Should have detected craving and isolation triggers
+    expect(result.updatedRugzak.triggerPatterns.length).toBeGreaterThan(0);
+  });
+
+  it('adds a mood snapshot at session end', async () => {
+    const rugzak = createSessionRugzak();
+    const originalHistoryLength = rugzak.moodHistory.length;
+
+    const result = await endSession(rugzak, mockProvider);
+
+    // Should have one more mood snapshot
+    expect(result.updatedRugzak.moodHistory.length).toBe(originalHistoryLength + 1);
+  });
+
+  it('computes mood delta between first and last mood', async () => {
+    const rugzak = createSessionRugzak();
+    const result = await endSession(rugzak, mockProvider);
+
+    // Distress went up (craving 3→6, frustration 2→4, despondency 2→5)
+    expect(result.sessionSummary.moodDelta.distressChange).toBeGreaterThan(0);
+    // Resilience went down (focus 6→3)
+    expect(result.sessionSummary.moodDelta.resilienceChange).toBeLessThan(0);
+  });
+
+  it('works for Kim user type', async () => {
+    const rugzak = createTestRugzak({ userType: 'kim' });
+    rugzak.chatHistory = [
+      { id: 'msg_1', role: 'assistant', content: 'Hello, how are you doing?', timestamp: '2025-04-06T10:00:00Z' },
+      { id: 'msg_2', role: 'user', content: 'I feel so stressed and exhausted', timestamp: '2025-04-06T10:01:00Z' },
+    ];
+    rugzak.lastSessionDate = '2025-04-06T10:00:00Z';
+    rugzak.currentMood = { stress: 7, boundaryFatigue: 5, emotionalBurden: 6, selfCare: 2 } as KimMoodSliders;
+
+    const result = await endSession(rugzak, mockProvider);
+
+    expect(result.farewell).toBeTruthy();
+    expect(result.sessionSummary.messageCount).toBe(2);
+  });
+
+  it('handles empty chat history gracefully', async () => {
+    const rugzak = createTestRugzak();
+    rugzak.chatHistory = [];
+
+    const result = await endSession(rugzak, mockProvider);
+
+    expect(result.farewell).toBeTruthy();
+    expect(result.sessionSummary.messageCount).toBe(0);
+    expect(result.sessionSummary.themes).toEqual([]);
+  });
+
+  it('provides fallback farewell if AI provider fails', async () => {
+    const rugzak = createSessionRugzak();
+    const failingProvider = {
+      generateResponse: async () => { throw new Error('AI unavailable'); },
+    };
+
+    const result = await endSession(rugzak, failingProvider);
+
+    // Should use fallback farewell
+    expect(result.farewell).toBeTruthy();
+    expect(result.farewell).toContain('TestUser');
+  });
+});

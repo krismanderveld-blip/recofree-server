@@ -78,3 +78,11 @@
 - [x] Fix sliders: Kim (naaste) uses Stress/Boundary Fatigue/Emotional Burden/Self-care (0-7 scale)
 - [x] Add intervention thresholds to slider logic
 - [x] Change all sliders (Elias and Kim) from 0-7 to 0-10 scale for AI chat compatibility
+- [x] Build "End conversation" button in chat interface
+- [x] Build session analysis on end (chat content, mood, diary, rugzak)
+- [x] Build processing indicator ("Elias/Kim is processing your session...")
+- [x] Build confirmation message after analysis ("Session saved safely")
+- [x] Build post-session navigation (back to home / close app)
+- [x] Build failsafe: cache last chat if app closed before confirmation
+- [x] Update Rugzak state on session end (mood snapshot, trigger patterns, session count)
+- [x] Session-end pipeline tests (11 tests: farewell, summary, themes, triggers, rugzak update, mood delta, Kim support, empty history, fallback)
