@@ -84,17 +84,23 @@ export default function MoodScreen() {
 
         {/* Intervention Alerts */}
         {severeAlerts.length > 0 && (
-          <View className="bg-error/10 border border-error rounded-2xl p-4 mb-4">
-            <Text className="text-error font-bold text-sm mb-1">High alert</Text>
-            <Text className="text-error text-sm">
+          <View
+            className="rounded-2xl p-4 mb-4"
+            style={{ backgroundColor: colors.error + '20', borderWidth: 1, borderColor: colors.error }}
+          >
+            <Text style={{ color: colors.error }} className="font-bold text-sm mb-1">High alert</Text>
+            <Text style={{ color: colors.foreground }} className="text-sm">
               {severeAlerts.map((a) => a.label).join(', ')} {severeAlerts.length === 1 ? 'is' : 'are'} at a critical level. Consider reaching out or using the chat.
             </Text>
           </View>
         )}
         {moderateAlerts.length > 0 && severeAlerts.length === 0 && (
-          <View className="bg-warning/10 border border-warning rounded-2xl p-4 mb-4">
-            <Text className="text-warning font-bold text-sm mb-1">Heads up</Text>
-            <Text className="text-warning text-sm">
+          <View
+            className="rounded-2xl p-4 mb-4"
+            style={{ backgroundColor: colors.warning + '20', borderWidth: 1, borderColor: colors.warning }}
+          >
+            <Text style={{ color: colors.warning }} className="font-bold text-sm mb-1">Heads up</Text>
+            <Text style={{ color: colors.foreground }} className="text-sm">
               {moderateAlerts.map((a) => a.label).join(', ')} {moderateAlerts.length === 1 ? 'is' : 'are'} elevated. Take a moment to check in with yourself.
             </Text>
           </View>
