@@ -95,3 +95,6 @@
 - [x] Create server-side AI chat endpoint with OpenAI integration
 - [x] Update mobile app to call backend AI endpoint instead of mock provider
 - [x] Write tests for backend AI integration (8 tests: schema validation, GPT-4o integration, session end)
+- [x] Fix Elias slider-response mapping: high craving + low mood must trigger grounding/directive tone, slow pacing, sharp reflection
+- [x] Add compound slider rules to state-analyzer (e.g., craving>6 AND despondency>6 → crisis-adjacent behavior)
+- [x] Strengthen system prompt to enforce slider-driven behavior instructions (MANDATORY BEHAVIORAL INSTRUCTIONS block)

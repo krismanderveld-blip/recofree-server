@@ -447,30 +447,56 @@ function extractThemes(signals: InputSignals, text: string): string[] {
 function buildTherapeuticStance(analysis: StateAnalysis): string {
   const parts: string[] = [];
 
-  // Tone
-  parts.push(`tone:${analysis.tone}`);
+  // ── TONE INSTRUCTIONS ──
+  switch (analysis.tone) {
+    case 'crisis':
+      parts.push('TONE: CRISIS. Be calm, present, and direct. Do not ask exploratory questions. Acknowledge pain immediately. Offer safety resources.');
+      break;
+    case 'grounding':
+      parts.push('TONE: GROUNDING + DIRECTIVE. Be direct and structured. Name what you observe from the sliders. Do NOT ask open-ended questions like "what\'s on your mind?" — instead, reflect what the data shows and offer a concrete grounding technique or coping step. Keep it short and actionable.');
+      break;
+    case 'assertive':
+      parts.push('TONE: ASSERTIVE. Be honest and gently confrontational. Point out patterns you notice. Push toward action, but with compassion.');
+      break;
+    case 'warm':
+      parts.push('TONE: WARM. Be empathetic and open. Create space for the user to share. Use reflective listening.');
+      break;
+  }
 
-  // Pacing
+  // ── PACING INSTRUCTIONS ──
   if (analysis.pacing === 'very_slow') {
-    parts.push('Use short sentences. Pause between thoughts. Be very gentle.');
+    parts.push('PACING: VERY SLOW. Use 1-2 short sentences max. No lists. No multiple questions. One thought at a time.');
   } else if (analysis.pacing === 'slower') {
-    parts.push('Use shorter sentences. Allow space for reflection.');
+    parts.push('PACING: SLOWER. Use shorter sentences. Max 2-3 sentences. Allow space for reflection.');
+  } else {
+    parts.push('PACING: NORMAL. 2-4 sentences. Natural conversational flow.');
   }
 
-  // Intensity
-  if (analysis.suggestionIntensity >= 7) {
-    parts.push('Be slightly more directive. Offer concrete suggestions.');
+  // ── QUESTION LIMIT ──
+  if (analysis.suggestionIntensity >= 8) {
+    parts.push('QUESTIONS: MINIMAL (0-1). Be directive. State observations, offer techniques. Do not ask "how are you feeling" — the sliders already tell you.');
+  } else if (analysis.suggestionIntensity >= 6) {
+    parts.push('QUESTIONS: LIMITED (max 1). Combine observation with one focused question.');
   } else if (analysis.suggestionIntensity <= 3) {
-    parts.push('Be gentle. Listen more than suggest.');
+    parts.push('QUESTIONS: OPEN. Listen more than suggest. Let the user lead.');
   }
 
-  // Crisis
+  // ── REFLECTION DEPTH ──
+  if (analysis.emotionalState === 'depleted' || analysis.emotionalState === 'crisis') {
+    parts.push('REFLECTION: SHARP. Name the distress directly. "I can see your craving is very high and you\'re struggling." Do not sugarcoat.');
+  } else if (analysis.emotionalState === 'vulnerable') {
+    parts.push('REFLECTION: MODERATE. Acknowledge difficulty but also note any strengths visible in the data.');
+  } else {
+    parts.push('REFLECTION: LIGHT. Explore gently. The user seems relatively stable.');
+  }
+
+  // ── CRISIS MONITORING ──
   if (analysis.crisisMonitoring) {
-    parts.push('CRISIS MONITORING ACTIVE. Do not ignore passive signals.');
+    parts.push('CRISIS MONITORING ACTIVE. Watch for passive signals. Do not ignore hopelessness or withdrawal cues. Lower threshold for suggesting professional help.');
   }
 
-  // State summary
-  parts.push(`[${analysis.stateSummary}]`);
+  // ── STATE SUMMARY (for AI context) ──
+  parts.push(`[STATE: ${analysis.stateSummary}]`);
 
   return parts.join(' | ');
 }

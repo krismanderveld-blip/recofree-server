@@ -219,11 +219,39 @@ function getActiveTriggers(
 
 // ─── Behavior Directives ───────────────────────────────────────
 
-function determineTone(riskLevel: RiskLevel, emotionalState: EmotionalState, moodTrend: MoodTrend): ToneDirective {
+function determineTone(
+  riskLevel: RiskLevel,
+  emotionalState: EmotionalState,
+  moodTrend: MoodTrend,
+  mood: MoodSliders,
+  userType: UserType
+): ToneDirective {
   if (riskLevel === 'critical') return 'crisis';
+
+  const distress = getDistressScore(mood, userType);
+  const primaryConcern = getPrimaryConcern(mood, userType);
+  const resilience = getResilienceScore(mood, userType);
+
+  // HIGH DISTRESS COMPOUND RULES:
+  // craving > 6 AND (frustration > 6 OR despondency > 6) → grounding + directive
+  // stress > 6 AND emotionalBurden > 6 → grounding + directive (Kim)
+  if (primaryConcern > 6 && distress >= 6) return 'grounding';
+
+  // High distress + low resilience → grounding (user is overwhelmed, needs structure)
+  if (distress >= 6 && resilience <= 3) return 'grounding';
+
+  // Depleted but not in acute distress → warm
   if (emotionalState === 'depleted') return 'warm';
+
+  // Volatile mood → grounding (needs stability)
   if (moodTrend === 'volatile') return 'grounding';
-  if (emotionalState === 'vulnerable' && moodTrend === 'declining') return 'warm';
+
+  // Declining + vulnerable → assertive (gently push toward action)
+  if (emotionalState === 'vulnerable' && moodTrend === 'declining') return 'assertive';
+
+  // Moderate distress → warm
+  if (emotionalState === 'vulnerable') return 'warm';
+
   return 'warm';
 }
 
@@ -385,7 +413,7 @@ export function analyzeState(
   const priorityModules = selectPriorityModules(userType, currentMood, moodTrend, signals, activeTriggers);
 
   // 8. Behavior directives
-  const tone = determineTone(riskLevel, emotionalState, moodTrend);
+  const tone = determineTone(riskLevel, emotionalState, moodTrend, currentMood, userType);
   const pacing = determinePacing(riskLevel, emotionalState);
   const suggestionIntensity = computeSuggestionIntensity(riskLevel, currentMood, userType, moodTrend, totalSessions);
 
