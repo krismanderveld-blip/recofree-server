@@ -86,3 +86,4 @@
 - [x] Build failsafe: cache last chat if app closed before confirmation
 - [x] Update Rugzak state on session end (mood snapshot, trigger patterns, session count)
 - [x] Session-end pipeline tests (11 tests: farewell, summary, themes, triggers, rugzak update, mood delta, Kim support, empty history, fallback)
+- [x] Update color palette to Warm Sky Blue (#039BE5) — fresher, more inspiring look

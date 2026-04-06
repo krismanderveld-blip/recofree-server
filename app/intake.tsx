@@ -103,7 +103,7 @@ export default function IntakeScreen() {
             {step === 1 && (
               <View className="flex-1">
                 <View className="items-center mb-8">
-                  <Text className="text-5xl mb-3">💚</Text>
+                  <Text className="text-5xl mb-3">💙</Text>
                   <Text className="text-2xl font-bold text-foreground text-center">
                     Welcome to RecoFree
                   </Text>

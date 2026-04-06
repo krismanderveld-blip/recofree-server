@@ -144,7 +144,7 @@ function MoodMini({ label, value, max = 7, invert = false }: { label: string; va
   const displayValue = Math.round(value);
   const normalized = invert ? max - value : value;
   const ratio = normalized / max;
-  const color = ratio >= 0.7 ? '#43A047' : ratio >= 0.4 ? '#FB8C00' : '#E53935';
+  const color = ratio >= 0.7 ? '#10B981' : ratio >= 0.4 ? '#F59E0B' : '#EF4444';
 
   return (
     <View className="items-center flex-1">
