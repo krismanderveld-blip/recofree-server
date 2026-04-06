@@ -78,7 +78,7 @@ export default function MoodScreen() {
         <View className="mb-6">
           <Text className="text-2xl font-bold text-foreground">How are you feeling?</Text>
           <Text className="text-sm text-muted mt-1">
-            Adjust the sliders to reflect your current state (0–7).
+            Adjust the sliders to reflect your current state (0–10).
           </Text>
         </View>
 
