@@ -4,9 +4,9 @@ import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-// KeyboardProvider removed — react-native-keyboard-controller requires native modules (not available in Expo Go)
 import "react-native-reanimated";
-import { Platform } from "react-native";
+import { Platform, KeyboardAvoidingView } from "react-native";
+import { useKeyboardBehavior } from "@/hooks/use-keyboard-behavior";
 import "@/lib/_core/nativewind-pressable";
 import { ThemeProvider } from "@/lib/theme-provider";
 import {
@@ -27,6 +27,42 @@ const DEFAULT_WEB_FRAME: Rect = { x: 0, y: 0, width: 0, height: 0 };
 export const unstable_settings = {
   anchor: "(tabs)",
 };
+
+/**
+ * Inner component that wraps the app tree with KeyboardAvoidingView.
+ * Must be a separate component so the useKeyboardBehavior hook is called
+ * unconditionally (not inside a conditional render path).
+ */
+function AppTreeWithKeyboardAvoiding({
+  trpcClient,
+  queryClient,
+}: {
+  trpcClient: ReturnType<typeof createTRPCClient>;
+  queryClient: QueryClient;
+}) {
+  const behaviour = useKeyboardBehavior();
+
+  return (
+    <KeyboardAvoidingView
+      style={{ flex: 1, backgroundColor: "transparent" }}
+      behavior={behaviour}
+      keyboardVerticalOffset={0}
+    >
+      <UserProvider>
+        <trpc.Provider client={trpcClient} queryClient={queryClient}>
+          <QueryClientProvider client={queryClient}>
+            <Stack screenOptions={{ headerShown: false }}>
+              <Stack.Screen name="(tabs)" />
+              <Stack.Screen name="intake" options={{ gestureEnabled: false }} />
+              <Stack.Screen name="oauth/callback" />
+            </Stack>
+            <StatusBar style="auto" />
+          </QueryClientProvider>
+        </trpc.Provider>
+      </UserProvider>
+    </KeyboardAvoidingView>
+  );
+}
 
 export default function RootLayout() {
   const initialInsets = initialWindowMetrics?.insets ?? DEFAULT_WEB_INSETS;
@@ -57,9 +93,7 @@ export default function RootLayout() {
       new QueryClient({
         defaultOptions: {
           queries: {
-            // Disable automatic refetching on window focus for mobile
             refetchOnWindowFocus: false,
-            // Retry failed requests once
             retry: 1,
           },
         },
@@ -67,7 +101,7 @@ export default function RootLayout() {
   );
   const [trpcClient] = useState(() => createTRPCClient());
 
-  // Ensure minimum 8px padding for top and bottom on mobile
+  // Ensure minimum padding for top and bottom on mobile
   const providerInitialMetrics = useMemo(() => {
     const metrics = initialWindowMetrics ?? { insets: initialInsets, frame: initialFrame };
     return {
@@ -82,21 +116,10 @@ export default function RootLayout() {
 
   const content = (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <UserProvider>
-      <trpc.Provider client={trpcClient} queryClient={queryClient}>
-        <QueryClientProvider client={queryClient}>
-          {/* Default to hiding native headers so raw route segments don't appear (e.g. "(tabs)", "products/[id]"). */}
-          {/* If a screen needs the native header, explicitly enable it and set a human title via Stack.Screen options. */}
-          {/* in order for ios apps tab switching to work properly, use presentation: "fullScreenModal" for login page, whenever you decide to use presentation: "modal*/}
-          <Stack screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="(tabs)" />
-            <Stack.Screen name="intake" options={{ gestureEnabled: false }} />
-            <Stack.Screen name="oauth/callback" />
-          </Stack>
-          <StatusBar style="auto" />
-        </QueryClientProvider>
-      </trpc.Provider>
-      </UserProvider>
+      <AppTreeWithKeyboardAvoiding
+        trpcClient={trpcClient}
+        queryClient={queryClient}
+      />
     </GestureHandlerRootView>
   );
 

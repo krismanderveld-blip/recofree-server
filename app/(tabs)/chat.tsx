@@ -10,9 +10,7 @@ import {
   Alert,
   AppState,
   Keyboard,
-  KeyboardAvoidingView,
   type AppStateStatus,
-  type KeyboardEvent,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -50,7 +48,6 @@ export default function ChatScreen() {
   const [showEmergency, setShowEmergency] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [sessionPhase, setSessionPhase] = useState<SessionPhase>('active');
-  const [keyboardHeight, setKeyboardHeight] = useState(0);
   const flatListRef = useRef<FlatList>(null);
   const greetingSent = useRef(false);
   const appStateRef = useRef<AppStateStatus>(AppState.currentState);
@@ -58,27 +55,18 @@ export default function ChatScreen() {
   const userName = getUserName();
   const companionName = state.userType === 'elias' ? 'Elias' : 'Kim';
 
-  // ── Track keyboard height on Android ──
+  // ── Scroll to end when keyboard opens ──
   useEffect(() => {
     const showListener = Keyboard.addListener(
       Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
-      (e: KeyboardEvent) => {
-        setKeyboardHeight(e.endCoordinates.height);
-        // Scroll to end when keyboard opens
+      () => {
         setTimeout(() => {
           flatListRef.current?.scrollToEnd({ animated: true });
         }, 150);
       }
     );
-    const hideListener = Keyboard.addListener(
-      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
-      () => {
-        setKeyboardHeight(0);
-      }
-    );
     return () => {
       showListener.remove();
-      hideListener.remove();
     };
   }, []);
 
@@ -337,11 +325,7 @@ export default function ChatScreen() {
       </View>
 
       {/* Main content area: FlatList + Input */}
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? tabBarHeight : 0}
-      >
+      <View style={{ flex: 1 }}>
         {/* Messages */}
         <FlatList
           ref={flatListRef}
@@ -441,7 +425,7 @@ export default function ChatScreen() {
             style={{
               paddingHorizontal: 16,
               paddingTop: 10,
-              paddingBottom: Platform.OS === 'android' && keyboardHeight > 0 ? 10 : Math.max(10, tabBarHeight),
+              paddingBottom: Math.max(10, tabBarHeight),
               backgroundColor: colors.background,
               borderTopWidth: 0.5,
               borderTopColor: colors.border,
@@ -496,7 +480,7 @@ export default function ChatScreen() {
             </View>
           </View>
         )}
-      </KeyboardAvoidingView>
+      </View>
     </View>
   );
 }
