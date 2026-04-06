@@ -501,3 +501,62 @@ describe('Session End Pipeline', () => {
     expect(result.farewell).toContain('TestUser');
   });
 });
+
+// ─── Intervention Threshold Tests ──────────────────────────────
+
+import { checkInterventions } from '../lib/ai/types';
+
+describe('Intervention Thresholds', () => {
+  it('should NOT alert when focus is high (good)', () => {
+    const sliders: EliasMoodSliders = { craving: 2, frustration: 2, despondency: 2, focus: 9 };
+    const alerts = checkInterventions(sliders, 'elias');
+    const focusAlert = alerts.find((a) => a.key === 'focus');
+    expect(focusAlert).toBeUndefined();
+  });
+
+  it('should alert severe when focus is very low (bad)', () => {
+    const sliders: EliasMoodSliders = { craving: 2, frustration: 2, despondency: 2, focus: 1 };
+    const alerts = checkInterventions(sliders, 'elias');
+    const focusAlert = alerts.find((a) => a.key === 'focus');
+    expect(focusAlert).toBeDefined();
+    expect(focusAlert!.level).toBe('severe');
+  });
+
+  it('should alert moderate when focus is low', () => {
+    const sliders: EliasMoodSliders = { craving: 2, frustration: 2, despondency: 2, focus: 3 };
+    const alerts = checkInterventions(sliders, 'elias');
+    const focusAlert = alerts.find((a) => a.key === 'focus');
+    expect(focusAlert).toBeDefined();
+    expect(focusAlert!.level).toBe('moderate');
+  });
+
+  it('should alert severe when craving is very high (bad)', () => {
+    const sliders: EliasMoodSliders = { craving: 9, frustration: 2, despondency: 2, focus: 7 };
+    const alerts = checkInterventions(sliders, 'elias');
+    const cravingAlert = alerts.find((a) => a.key === 'craving');
+    expect(cravingAlert).toBeDefined();
+    expect(cravingAlert!.level).toBe('severe');
+  });
+
+  it('should NOT alert when craving is low (good)', () => {
+    const sliders: EliasMoodSliders = { craving: 2, frustration: 2, despondency: 2, focus: 7 };
+    const alerts = checkInterventions(sliders, 'elias');
+    const cravingAlert = alerts.find((a) => a.key === 'craving');
+    expect(cravingAlert).toBeUndefined();
+  });
+
+  it('should NOT alert when selfCare is high (good) for Kim', () => {
+    const sliders: KimMoodSliders = { stress: 2, boundaryFatigue: 2, emotionalBurden: 2, selfCare: 8 };
+    const alerts = checkInterventions(sliders, 'kim');
+    const selfCareAlert = alerts.find((a) => a.key === 'selfCare');
+    expect(selfCareAlert).toBeUndefined();
+  });
+
+  it('should alert severe when selfCare is very low (bad) for Kim', () => {
+    const sliders: KimMoodSliders = { stress: 2, boundaryFatigue: 2, emotionalBurden: 2, selfCare: 1 };
+    const alerts = checkInterventions(sliders, 'kim');
+    const selfCareAlert = alerts.find((a) => a.key === 'selfCare');
+    expect(selfCareAlert).toBeDefined();
+    expect(selfCareAlert!.level).toBe('severe');
+  });
+});

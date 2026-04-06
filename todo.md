@@ -89,3 +89,4 @@
 - [x] Update color palette to Warm Sky Blue (#039BE5) — fresher, more inspiring look
 - [x] Fix dark mode readability: lighten backgrounds, surfaces, borders, and improve text contrast
 - [x] Fix intervention alert cards (Heads up / High alert) readability in dark mode
+- [x] Fix intervention logic for positive sliders (focus, selfCare) — alerts should trigger on LOW values, not high

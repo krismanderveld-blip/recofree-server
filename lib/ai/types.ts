@@ -56,6 +56,8 @@ export interface SliderConfig {
   min: number;
   max: number;
   thresholds: InterventionThreshold[];
+  /** If true, higher values are GOOD (e.g., focus, selfCare). Alerts trigger on LOW values. */
+  inverted?: boolean;
 }
 
 /** Elias slider configuration (from RECOFREE_MODULE_1_INTAKE_SLIDERS.json) */
@@ -63,7 +65,7 @@ export const ELIAS_SLIDER_CONFIG: SliderConfig[] = [
   { key: 'craving', label: 'Craving', min: 0, max: 10, thresholds: [{ level: 'mild', value: 4 }, { level: 'moderate', value: 7 }, { level: 'severe', value: 9 }] },
   { key: 'frustration', label: 'Frustration', min: 0, max: 10, thresholds: [{ level: 'mild', value: 3 }, { level: 'moderate', value: 6 }, { level: 'severe', value: 8 }] },
   { key: 'despondency', label: 'Despondency', min: 0, max: 10, thresholds: [{ level: 'mild', value: 4 }, { level: 'moderate', value: 7 }, { level: 'severe', value: 9 }] },
-  { key: 'focus', label: 'Mental Focus', min: 0, max: 10, thresholds: [{ level: 'mild', value: 3 }, { level: 'moderate', value: 6 }, { level: 'severe', value: 9 }] },
+  { key: 'focus', label: 'Mental Focus', min: 0, max: 10, inverted: true, thresholds: [{ level: 'mild', value: 5 }, { level: 'moderate', value: 3 }, { level: 'severe', value: 1 }] },
 ];
 
 /** Kim slider configuration (for loved ones) */
@@ -71,7 +73,7 @@ export const KIM_SLIDER_CONFIG: SliderConfig[] = [
   { key: 'stress', label: 'Stress', min: 0, max: 10, thresholds: [{ level: 'mild', value: 3 }, { level: 'moderate', value: 6 }, { level: 'severe', value: 8 }] },
   { key: 'boundaryFatigue', label: 'Boundary Fatigue', min: 0, max: 10, thresholds: [{ level: 'mild', value: 3 }, { level: 'moderate', value: 6 }, { level: 'severe', value: 8 }] },
   { key: 'emotionalBurden', label: 'Emotional Burden', min: 0, max: 10, thresholds: [{ level: 'mild', value: 4 }, { level: 'moderate', value: 7 }, { level: 'severe', value: 9 }] },
-  { key: 'selfCare', label: 'Self-care', min: 0, max: 10, thresholds: [{ level: 'mild', value: 3 }, { level: 'moderate', value: 6 }, { level: 'severe', value: 9 }] },
+  { key: 'selfCare', label: 'Self-care', min: 0, max: 10, inverted: true, thresholds: [{ level: 'mild', value: 5 }, { level: 'moderate', value: 3 }, { level: 'severe', value: 1 }] },
 ];
 
 /** Get slider config for a given user type */
@@ -94,12 +96,26 @@ export function checkInterventions(sliders: MoodSliders, userType: UserType): { 
   for (const sc of config) {
     const value = (sliders as any)[sc.key] as number;
     if (value == null) continue;
-    // Check thresholds from severe to mild
-    const sorted = [...sc.thresholds].sort((a, b) => b.value - a.value);
-    for (const t of sorted) {
-      if (value >= t.value) {
-        alerts.push({ key: sc.key, label: sc.label, level: t.level });
-        break;
+
+    if (sc.inverted) {
+      // For positive sliders (focus, selfCare): LOW values are bad
+      // Thresholds are ordered: mild=5, moderate=3, severe=1
+      // Check from severe (lowest) to mild (highest)
+      const sorted = [...sc.thresholds].sort((a, b) => a.value - b.value);
+      for (const t of sorted) {
+        if (value <= t.value) {
+          alerts.push({ key: sc.key, label: sc.label, level: t.level });
+          break;
+        }
+      }
+    } else {
+      // For negative sliders (craving, frustration, etc.): HIGH values are bad
+      const sorted = [...sc.thresholds].sort((a, b) => b.value - a.value);
+      for (const t of sorted) {
+        if (value >= t.value) {
+          alerts.push({ key: sc.key, label: sc.label, level: t.level });
+          break;
+        }
       }
     }
   }
