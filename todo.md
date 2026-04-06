@@ -99,3 +99,4 @@
 - [x] Add compound slider rules to state-analyzer (e.g., craving>6 AND despondency>6 → crisis-adjacent behavior)
 - [x] Strengthen system prompt to enforce slider-driven behavior instructions (MANDATORY BEHAVIORAL INSTRUCTIONS block)
 - [x] Fix chat keyboard behavior: content must scroll up when keyboard opens so input field and messages stay visible
+- [x] Fix chat keyboard overlap on Android: use KeyboardStickyView from react-native-keyboard-controller to stick input above keyboard

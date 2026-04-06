@@ -5,7 +5,6 @@ import {
   TextInput,
   Pressable,
   FlatList,
-  KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
   Alert,
@@ -14,6 +13,7 @@ import {
   type AppStateStatus,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { KeyboardStickyView } from 'react-native-keyboard-controller';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import { ScreenContainer } from '@/components/screen-container';
@@ -72,13 +72,11 @@ export default function ChatScreen() {
         const pending = await AsyncStorage.getItem(PENDING_CLOSE_KEY);
         if (pending) {
           const data = JSON.parse(pending);
-          // Show warning that previous session wasn't properly closed
           Alert.alert(
             'Previous Session',
             `Your last session with ${companionName} wasn't fully saved. The data has been recovered and stored safely.`,
             [{ text: 'OK', onPress: () => AsyncStorage.removeItem(PENDING_CLOSE_KEY) }]
           );
-          // The pending data was already cached — just clear the flag
         }
       } catch (e) {
         console.error('Error checking pending close:', e);
@@ -95,7 +93,6 @@ export default function ChatScreen() {
         sessionPhase === 'active' &&
         messages.length > 0
       ) {
-        // Cache current chat state for recovery
         try {
           await AsyncStorage.setItem(
             PENDING_CLOSE_KEY,
@@ -130,9 +127,6 @@ export default function ChatScreen() {
     }
   }, [state.intakeCompleted, state.rugzak]);
 
-  /**
-   * Send greeting through the mandatory pipeline.
-   */
   const sendGreetingViaP = useCallback(async () => {
     if (!state.rugzak) return;
     setIsTyping(true);
@@ -140,11 +134,7 @@ export default function ChatScreen() {
     try {
       const provider = getAIProvider();
       const result = await generateGreeting(state.rugzak, provider);
-
-      // Persist updated Rugzak
       await AsyncStorage.setItem(RUGZAK_KEY, JSON.stringify(result.updatedRugzak));
-
-      // Update local messages
       setMessages(result.updatedRugzak.chatHistory);
     } catch (error) {
       console.error('Greeting error:', error);
@@ -161,8 +151,8 @@ export default function ChatScreen() {
     if (!rawText || isTyping || !state.rugzak || sessionPhase !== 'active') return;
 
     setInputText('');
+    Keyboard.dismiss();
 
-    // Show user message immediately in UI
     const tempUserMsg: ChatMessage = {
       id: `msg_${Date.now()}`,
       role: 'user',
@@ -173,34 +163,27 @@ export default function ChatScreen() {
     setIsTyping(true);
 
     try {
-      // Step 0: Preprocess input (detect language, translate to English)
       const preprocessed = await preprocessInput(rawText);
       const processedText = preprocessed.processedText;
 
-      // Step 1: LOAD state — read latest Rugzak from storage
       const rugzakJson = await AsyncStorage.getItem(RUGZAK_KEY);
       const currentRugzak: Rugzak = rugzakJson
         ? JSON.parse(rugzakJson)
         : state.rugzak;
 
-      // Steps 2-7: Run through the mandatory pipeline
       const provider = getAIProvider();
       const result = await processMessage(currentRugzak, processedText, provider);
 
-      // Persist updated Rugzak (state is saved)
       await AsyncStorage.setItem(RUGZAK_KEY, JSON.stringify(result.updatedRugzak));
 
-      // Update crisis level in context
       if (result.crisisLevel > 0) {
         setCrisisLevel(result.crisisLevel);
       }
 
-      // Show emergency card if needed
       if (result.showEmergency) {
         setShowEmergency(true);
       }
 
-      // Update local messages from the updated Rugzak (source of truth)
       setMessages(result.updatedRugzak.chatHistory);
     } catch (error) {
       console.error('Pipeline error:', error);
@@ -218,19 +201,10 @@ export default function ChatScreen() {
 
   /**
    * END CONVERSATION FLOW
-   *
-   * Per spec (CHAT_EINDE_ANALYSE_AFSLUITING_SAM_KIM.txt):
-   * 1. User clicks "End conversation"
-   * 2. Companion responds: "I'm going to analyze everything you shared..."
-   * 3. Background analysis runs (chat content, mood, triggers, rugzak update)
-   * 4. Processing indicator shown
-   * 5. Confirmation: "I've saved everything. Your session is safely stored."
-   * 6. Navigation options: Back to Home / Close
    */
   const handleEndConversation = useCallback(async () => {
     if (!state.rugzak || sessionPhase !== 'active') return;
 
-    // Phase 1: Show the "analyzing" message
     setSessionPhase('ending');
 
     const analyzingMsg: ChatMessage = {
@@ -242,7 +216,6 @@ export default function ChatScreen() {
     setMessages((prev) => [...prev, analyzingMsg]);
 
     try {
-      // Phase 2: Run session-end analysis pipeline
       const rugzakJson = await AsyncStorage.getItem(RUGZAK_KEY);
       const currentRugzak: Rugzak = rugzakJson
         ? JSON.parse(rugzakJson)
@@ -251,14 +224,11 @@ export default function ChatScreen() {
       const provider = getAIProvider();
       const result = await endSession(currentRugzak, provider);
 
-      // Phase 3: Persist the updated Rugzak
       await AsyncStorage.setItem(RUGZAK_KEY, JSON.stringify(result.updatedRugzak));
       await endSessionWithRugzak(result.updatedRugzak);
 
-      // Clear pending close flag (session ended properly)
       await AsyncStorage.removeItem(PENDING_CLOSE_KEY);
 
-      // Phase 4: Show farewell + confirmation
       const confirmationMsg: ChatMessage = {
         id: `msg_confirm_${Date.now()}`,
         role: 'assistant',
@@ -269,7 +239,6 @@ export default function ChatScreen() {
       setSessionPhase('completed');
     } catch (error) {
       console.error('End session error:', error);
-      // Fallback: still try to save state
       const fallbackMsg: ChatMessage = {
         id: `msg_fallback_${Date.now()}`,
         role: 'assistant',
@@ -314,8 +283,15 @@ export default function ChatScreen() {
     );
   }, [companionName]);
 
+  // Scroll to end when messages change
+  const scrollToEnd = useCallback(() => {
+    setTimeout(() => {
+      flatListRef.current?.scrollToEnd({ animated: true });
+    }, 100);
+  }, []);
+
   return (
-    <ScreenContainer>
+    <ScreenContainer edges={['top', 'left', 'right']}>
       {/* Header */}
       <View className="px-5 py-3 border-b border-border flex-row items-center justify-between">
         <View>
@@ -330,7 +306,6 @@ export default function ChatScreen() {
               : 'Online'}
           </Text>
         </View>
-        {/* End Conversation Button — only visible during active session with messages */}
         {sessionPhase === 'active' && messages.length > 1 && !isTyping && (
           <Pressable
             onPress={handleEndConversation}
@@ -349,102 +324,122 @@ export default function ChatScreen() {
         )}
       </View>
 
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        className="flex-1"
-        keyboardVerticalOffset={Platform.OS === 'ios' ? tabBarHeight : 0}
-      >
-        {/* Messages */}
-        <FlatList
-          ref={flatListRef}
-          data={messages}
-          renderItem={renderMessage}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={{ padding: 16, flexGrow: 1, justifyContent: 'flex-end' }}
-          onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
-          onLayout={() => flatListRef.current?.scrollToEnd({ animated: false })}
-          keyboardShouldPersistTaps="handled"
-          keyboardDismissMode="interactive"
-          automaticallyAdjustKeyboardInsets={true}
-          showsVerticalScrollIndicator={false}
-          ListHeaderComponent={
-            showEmergency ? (
-              <EmergencyCard
-                visible={showEmergency}
-                onDismiss={() => setShowEmergency(false)}
-              />
-            ) : null
-          }
-          ListEmptyComponent={
-            !isTyping ? (
-              <View className="flex-1 items-center justify-center">
-                <Text className="text-muted text-base">Starting conversation...</Text>
+      {/* Messages list — takes all available space */}
+      <FlatList
+        ref={flatListRef}
+        data={messages}
+        renderItem={renderMessage}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={{
+          padding: 16,
+          flexGrow: 1,
+          justifyContent: 'flex-end',
+        }}
+        onContentSizeChange={scrollToEnd}
+        onLayout={() => flatListRef.current?.scrollToEnd({ animated: false })}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive"
+        automaticallyAdjustKeyboardInsets={true}
+        showsVerticalScrollIndicator={false}
+        ListHeaderComponent={
+          showEmergency ? (
+            <EmergencyCard
+              visible={showEmergency}
+              onDismiss={() => setShowEmergency(false)}
+            />
+          ) : null
+        }
+        ListEmptyComponent={
+          !isTyping ? (
+            <View className="flex-1 items-center justify-center">
+              <Text className="text-muted text-base">Starting conversation...</Text>
+            </View>
+          ) : null
+        }
+        ListFooterComponent={
+          <>
+            {isTyping && sessionPhase === 'active' && (
+              <View className="self-start mb-3">
+                <Text className="text-xs text-muted mb-1 ml-1">{companionName}</Text>
+                <View className="bg-surface border border-border rounded-2xl rounded-bl-sm px-4 py-3">
+                  <ActivityIndicator size="small" color={colors.primary} />
+                </View>
               </View>
-            ) : null
-          }
-          ListFooterComponent={
-            <>
-              {/* Typing indicator */}
-              {isTyping && sessionPhase === 'active' && (
-                <View className="self-start mb-3">
-                  <Text className="text-xs text-muted mb-1 ml-1">{companionName}</Text>
-                  <View className="bg-surface border border-border rounded-2xl rounded-bl-sm px-4 py-3">
-                    <ActivityIndicator size="small" color={colors.primary} />
+            )}
+
+            {sessionPhase === 'ending' && (
+              <View className="self-center my-4 items-center gap-2">
+                <ActivityIndicator size="large" color={colors.primary} />
+                <Text className="text-sm text-muted text-center">
+                  {companionName} is processing your session...
+                </Text>
+              </View>
+            )}
+
+            {sessionPhase === 'completed' && (
+              <View className="self-center my-4 items-center gap-3 w-full">
+                <View className="flex-row items-center gap-2 mb-1">
+                  <IconSymbol name="checkmark.circle.fill" size={20} color={colors.success} />
+                  <Text className="text-sm font-medium text-success">Session saved</Text>
+                </View>
+
+                <Pressable
+                  onPress={handleBackToHome}
+                  style={({ pressed }) => [
+                    {
+                      opacity: pressed ? 0.8 : 1,
+                      transform: [{ scale: pressed ? 0.97 : 1 }],
+                    },
+                  ]}
+                >
+                  <View className="bg-primary rounded-full px-6 py-3 flex-row items-center gap-2">
+                    <IconSymbol name="house.fill" size={18} color="#FFFFFF" />
+                    <Text className="text-white font-semibold text-base">Back to Home</Text>
                   </View>
-                </View>
-              )}
+                </Pressable>
+              </View>
+            )}
+          </>
+        }
+      />
 
-              {/* Session ending indicator */}
-              {sessionPhase === 'ending' && (
-                <View className="self-center my-4 items-center gap-2">
-                  <ActivityIndicator size="large" color={colors.primary} />
-                  <Text className="text-sm text-muted text-center">
-                    {companionName} is processing your session...
-                  </Text>
-                </View>
-              )}
-
-              {/* Session completed — navigation options */}
-              {sessionPhase === 'completed' && (
-                <View className="self-center my-4 items-center gap-3 w-full">
-                  <View className="flex-row items-center gap-2 mb-1">
-                    <IconSymbol name="checkmark.circle.fill" size={20} color={colors.success} />
-                    <Text className="text-sm font-medium text-success">Session saved</Text>
-                  </View>
-
-                  <Pressable
-                    onPress={handleBackToHome}
-                    style={({ pressed }) => [
-                      {
-                        opacity: pressed ? 0.8 : 1,
-                        transform: [{ scale: pressed ? 0.97 : 1 }],
-                      },
-                    ]}
-                  >
-                    <View className="bg-primary rounded-full px-6 py-3 flex-row items-center gap-2">
-                      <IconSymbol name="house.fill" size={18} color="#FFFFFF" />
-                      <Text className="text-white font-semibold text-base">Back to Home</Text>
-                    </View>
-                  </Pressable>
-                </View>
-              )}
-            </>
-          }
-        />
-
-        {/* Input Bar — hidden when session is ending or completed */}
-        {sessionPhase === 'active' && (
-          <View className="px-4 py-3 border-t border-border bg-background">
-            <View className="flex-row items-end gap-2">
+      {/* Input Bar — uses KeyboardStickyView to stick above keyboard */}
+      {sessionPhase === 'active' && (
+        <KeyboardStickyView
+          offset={{ closed: 0, opened: Platform.OS === 'ios' ? -tabBarHeight : 0 }}
+        >
+          <View
+            style={{
+              paddingHorizontal: 16,
+              paddingVertical: 12,
+              paddingBottom: Platform.OS === 'web' ? 12 : 12,
+              backgroundColor: colors.background,
+              borderTopWidth: 0.5,
+              borderTopColor: colors.border,
+            }}
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 8 }}>
               <TextInput
-                className="flex-1 bg-surface border border-border rounded-2xl px-4 py-3 text-base text-foreground max-h-[120px]"
+                style={{
+                  flex: 1,
+                  backgroundColor: colors.surface,
+                  borderWidth: 1,
+                  borderColor: colors.border,
+                  borderRadius: 20,
+                  paddingHorizontal: 16,
+                  paddingVertical: 12,
+                  fontSize: 16,
+                  color: colors.foreground,
+                  maxHeight: 120,
+                }}
                 placeholder="Type a message..."
-                placeholderTextColor="#9E9E9E"
+                placeholderTextColor={colors.muted}
                 value={inputText}
                 onChangeText={setInputText}
                 multiline
                 returnKeyType="default"
                 editable={!isTyping}
+                onFocus={scrollToEnd}
               />
               <Pressable
                 onPress={handleSend}
@@ -456,14 +451,23 @@ export default function ChatScreen() {
                   },
                 ]}
               >
-                <View className="bg-primary w-12 h-12 rounded-full items-center justify-center">
+                <View
+                  style={{
+                    backgroundColor: colors.primary,
+                    width: 48,
+                    height: 48,
+                    borderRadius: 24,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
                   <IconSymbol name="paperplane.fill" size={20} color="#FFFFFF" />
                 </View>
               </Pressable>
             </View>
           </View>
-        )}
-      </KeyboardAvoidingView>
+        </KeyboardStickyView>
+      )}
     </ScreenContainer>
   );
 }
