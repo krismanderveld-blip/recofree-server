@@ -98,3 +98,4 @@
 - [x] Fix Elias slider-response mapping: high craving + low mood must trigger grounding/directive tone, slow pacing, sharp reflection
 - [x] Add compound slider rules to state-analyzer (e.g., craving>6 AND despondency>6 → crisis-adjacent behavior)
 - [x] Strengthen system prompt to enforce slider-driven behavior instructions (MANDATORY BEHAVIORAL INSTRUCTIONS block)
+- [x] Fix chat keyboard behavior: content must scroll up when keyboard opens so input field and messages stay visible

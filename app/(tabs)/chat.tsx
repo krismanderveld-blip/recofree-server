@@ -10,8 +10,10 @@ import {
   ActivityIndicator,
   Alert,
   AppState,
+  Keyboard,
   type AppStateStatus,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import { ScreenContainer } from '@/components/screen-container';
@@ -46,6 +48,11 @@ export default function ChatScreen() {
   } = useUser();
   const colors = useColors();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
+
+  // Tab bar height (must match _layout.tsx)
+  const bottomPadding = Platform.OS === 'web' ? 12 : Math.max(insets.bottom, 8);
+  const tabBarHeight = 56 + bottomPadding;
   const [inputText, setInputText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [showEmergency, setShowEmergency] = useState(false);
@@ -345,7 +352,7 @@ export default function ChatScreen() {
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         className="flex-1"
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? tabBarHeight : 0}
       >
         {/* Messages */}
         <FlatList
@@ -355,6 +362,10 @@ export default function ChatScreen() {
           keyExtractor={(item) => item.id}
           contentContainerStyle={{ padding: 16, flexGrow: 1, justifyContent: 'flex-end' }}
           onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
+          onLayout={() => flatListRef.current?.scrollToEnd({ animated: false })}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="interactive"
+          automaticallyAdjustKeyboardInsets={true}
           showsVerticalScrollIndicator={false}
           ListHeaderComponent={
             showEmergency ? (
