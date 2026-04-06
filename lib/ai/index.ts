@@ -8,13 +8,13 @@ export type { AIProvider, AIResult, ChatContext, ChatMessage, MoodSliders, Rugza
  * AI Provider Factory
  *
  * Creates the appropriate AI provider based on configuration.
- * Default: MockAIProvider (for UI/flow testing)
- * Production: OpenAIProvider (routes through backend)
+ * Default: OpenAIProvider (routes through backend to GPT-4o)
+ * Fallback: MockAIProvider (for offline UI/flow testing)
  *
- * Toggle via: USE_MOCK_AI environment variable or explicit parameter.
+ * Toggle via: USE_MOCK_AI flag below.
  */
 
-const USE_MOCK = true; // Set to false when backend is ready
+const USE_MOCK = false; // Set to true for offline testing without backend
 
 let providerInstance: AIProvider | null = null;
 
@@ -23,9 +23,7 @@ export function getAIProvider(): AIProvider {
     if (USE_MOCK) {
       providerInstance = new MockAIProvider();
     } else {
-      // Replace with actual backend URL when ready
-      const apiBaseUrl = process.env.EXPO_PUBLIC_API_URL || 'https://recofree-api.app';
-      providerInstance = new OpenAIProvider(apiBaseUrl);
+      providerInstance = new OpenAIProvider();
     }
   }
   return providerInstance;

@@ -2,6 +2,7 @@ import { COOKIE_NAME } from "../shared/const.js";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router } from "./_core/trpc";
+import { chatInputSchema, generateAIResponse } from "./ai-chat";
 
 export const appRouter = router({
   // if you need to use socket.io, read and register route in server/_core/index.ts, all api should start with '/api/' so that the gateway can route correctly
@@ -17,12 +18,31 @@ export const appRouter = router({
     }),
   }),
 
-  // TODO: add feature routers here, e.g.
-  // todo: router({
-  //   list: protectedProcedure.query(({ ctx }) =>
-  //     db.getUserTodos(ctx.user.id)
-  //   ),
-  // }),
+  // AI Chat endpoint — routes through OpenAI GPT-4o server-side
+  ai: router({
+    chat: publicProcedure
+      .input(chatInputSchema)
+      .mutation(async ({ input }) => {
+        try {
+          const result = await generateAIResponse(input);
+          return {
+            success: true as const,
+            response: result.response,
+            advisoryEmotion: result.advisoryEmotion,
+            advisoryConfidence: result.advisoryConfidence,
+          };
+        } catch (error) {
+          console.error("[AI Chat] Error:", error);
+          return {
+            success: false as const,
+            response:
+              "Something went wrong with the connection. I'm still here — please try again.",
+            advisoryEmotion: undefined,
+            advisoryConfidence: undefined,
+          };
+        }
+      }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;
