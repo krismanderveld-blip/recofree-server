@@ -100,3 +100,4 @@
 - [x] Strengthen system prompt to enforce slider-driven behavior instructions (MANDATORY BEHAVIORAL INSTRUCTIONS block)
 - [x] Fix chat keyboard behavior: content must scroll up when keyboard opens so input field and messages stay visible
 - [x] Fix chat keyboard overlap on Android: use KeyboardStickyView from react-native-keyboard-controller to stick input above keyboard
+- [ ] Fix Android keyboard overlap (attempt 3): try adjustResize + Keyboard listener approach since KeyboardStickyView didn't work
