@@ -4,8 +4,8 @@
  * Tests for crisis detection, module system, input signal detection,
  * state analyzer, Rugzak engine, and trigger extraction.
  *
- * Uses Elias sliders: craving, frustration, despondency, focus (0-7)
- * Uses Kim sliders: stress, boundaryFatigue, emotionalBurden, selfCare (0-7)
+ * Uses Elias sliders: craving, frustration, despondency, focus (0-10)
+ * Uses Kim sliders: stress, boundaryFatigue, emotionalBurden, selfCare (0-10)
  */
 
 import { describe, it, expect } from 'vitest';
@@ -31,13 +31,13 @@ function createTestRugzak(overrides?: Record<string, unknown>): Rugzak {
 
 // ─── Default test moods ────────────────────────────────────────
 
-const normalElias: EliasMoodSliders = { craving: 2, frustration: 2, despondency: 2, focus: 5 };
-const highCravingElias: EliasMoodSliders = { craving: 6, frustration: 3, despondency: 2, focus: 4 };
-const highDistressElias: EliasMoodSliders = { craving: 6, frustration: 5, despondency: 6, focus: 1 };
-const lowDistressElias: EliasMoodSliders = { craving: 1, frustration: 1, despondency: 1, focus: 6 };
+const normalElias: EliasMoodSliders = { craving: 2, frustration: 2, despondency: 2, focus: 7 };
+const highCravingElias: EliasMoodSliders = { craving: 8, frustration: 4, despondency: 3, focus: 5 };
+const highDistressElias: EliasMoodSliders = { craving: 9, frustration: 8, despondency: 9, focus: 1 };
+const lowDistressElias: EliasMoodSliders = { craving: 1, frustration: 1, despondency: 1, focus: 8 };
 
-const normalKim: KimMoodSliders = { stress: 2, boundaryFatigue: 2, emotionalBurden: 2, selfCare: 5 };
-const highStressKim: KimMoodSliders = { stress: 6, boundaryFatigue: 5, emotionalBurden: 6, selfCare: 1 };
+const normalKim: KimMoodSliders = { stress: 2, boundaryFatigue: 2, emotionalBurden: 2, selfCare: 7 };
+const highStressKim: KimMoodSliders = { stress: 8, boundaryFatigue: 7, emotionalBurden: 8, selfCare: 1 };
 
 // ─── Crisis Detection Tests ─────────────────────────────────────
 
@@ -130,7 +130,7 @@ describe('Module System', () => {
   });
 
   it('should recommend Emotional Regulation for high despondency (Elias)', () => {
-    const mood: EliasMoodSliders = { craving: 2, frustration: 2, despondency: 5, focus: 3 };
+    const mood: EliasMoodSliders = { craving: 2, frustration: 2, despondency: 7, focus: 4 };
     const recs = getModuleRecommendations('elias', 'I feel overwhelmed', mood);
     const emotionModule = recs.find((r) => r.module.id === 'E02');
     expect(emotionModule).toBeDefined();
@@ -207,7 +207,7 @@ describe('State Analyzer', () => {
 
   it('returns high risk for "giving up" with high distress (Elias)', () => {
     const rugzak = createTestRugzak();
-    rugzak.currentMood = { craving: 6, frustration: 5, despondency: 5, focus: 1 } as EliasMoodSliders;
+    rugzak.currentMood = { craving: 8, frustration: 7, despondency: 8, focus: 1 } as EliasMoodSliders;
 
     const analysis = analyzeState(rugzak, 'I feel like giving up');
     expect(analysis.riskLevel).toBe('high');
@@ -245,8 +245,8 @@ describe('State Analyzer', () => {
     rugzak.currentMood = normalElias;
 
     const analysis = analyzeState(rugzak, 'Hello');
-    expect(analysis.stateSummary).toContain('Craving: 2/7');
-    expect(analysis.stateSummary).toContain('Focus: 5/7');
+    expect(analysis.stateSummary).toContain('Craving: 2/10');
+    expect(analysis.stateSummary).toContain('Focus: 7/10');
   });
 });
 

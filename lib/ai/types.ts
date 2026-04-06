@@ -20,8 +20,8 @@ export type UrgencyLevel = 'laag' | 'midden' | 'hoog';
 
 /**
  * Slider configuration per user type.
- * Elias (addiction): Craving, Frustration, Despondency, Focus (0-7)
- * Kim (loved one): Stress, Boundary Fatigue, Emotional Burden, Self-care (0-7)
+ * Elias (addiction): Craving, Frustration, Despondency, Focus (0-10)
+ * Kim (loved one): Stress, Boundary Fatigue, Emotional Burden, Self-care (0-10)
  */
 
 /** Elias slider keys */
@@ -60,18 +60,18 @@ export interface SliderConfig {
 
 /** Elias slider configuration (from RECOFREE_MODULE_1_INTAKE_SLIDERS.json) */
 export const ELIAS_SLIDER_CONFIG: SliderConfig[] = [
-  { key: 'craving', label: 'Craving', min: 0, max: 7, thresholds: [{ level: 'mild', value: 3 }, { level: 'moderate', value: 5 }, { level: 'severe', value: 7 }] },
-  { key: 'frustration', label: 'Frustration', min: 0, max: 7, thresholds: [{ level: 'mild', value: 2 }, { level: 'moderate', value: 4 }, { level: 'severe', value: 6 }] },
-  { key: 'despondency', label: 'Despondency', min: 0, max: 7, thresholds: [{ level: 'mild', value: 3 }, { level: 'moderate', value: 5 }, { level: 'severe', value: 7 }] },
-  { key: 'focus', label: 'Mental Focus', min: 0, max: 7, thresholds: [{ level: 'mild', value: 2 }, { level: 'moderate', value: 5 }, { level: 'severe', value: 7 }] },
+  { key: 'craving', label: 'Craving', min: 0, max: 10, thresholds: [{ level: 'mild', value: 4 }, { level: 'moderate', value: 7 }, { level: 'severe', value: 9 }] },
+  { key: 'frustration', label: 'Frustration', min: 0, max: 10, thresholds: [{ level: 'mild', value: 3 }, { level: 'moderate', value: 6 }, { level: 'severe', value: 8 }] },
+  { key: 'despondency', label: 'Despondency', min: 0, max: 10, thresholds: [{ level: 'mild', value: 4 }, { level: 'moderate', value: 7 }, { level: 'severe', value: 9 }] },
+  { key: 'focus', label: 'Mental Focus', min: 0, max: 10, thresholds: [{ level: 'mild', value: 3 }, { level: 'moderate', value: 6 }, { level: 'severe', value: 9 }] },
 ];
 
 /** Kim slider configuration (for loved ones) */
 export const KIM_SLIDER_CONFIG: SliderConfig[] = [
-  { key: 'stress', label: 'Stress', min: 0, max: 7, thresholds: [{ level: 'mild', value: 2 }, { level: 'moderate', value: 4 }, { level: 'severe', value: 6 }] },
-  { key: 'boundaryFatigue', label: 'Boundary Fatigue', min: 0, max: 7, thresholds: [{ level: 'mild', value: 2 }, { level: 'moderate', value: 4 }, { level: 'severe', value: 6 }] },
-  { key: 'emotionalBurden', label: 'Emotional Burden', min: 0, max: 7, thresholds: [{ level: 'mild', value: 3 }, { level: 'moderate', value: 5 }, { level: 'severe', value: 7 }] },
-  { key: 'selfCare', label: 'Self-care', min: 0, max: 7, thresholds: [{ level: 'mild', value: 2 }, { level: 'moderate', value: 5 }, { level: 'severe', value: 7 }] },
+  { key: 'stress', label: 'Stress', min: 0, max: 10, thresholds: [{ level: 'mild', value: 3 }, { level: 'moderate', value: 6 }, { level: 'severe', value: 8 }] },
+  { key: 'boundaryFatigue', label: 'Boundary Fatigue', min: 0, max: 10, thresholds: [{ level: 'mild', value: 3 }, { level: 'moderate', value: 6 }, { level: 'severe', value: 8 }] },
+  { key: 'emotionalBurden', label: 'Emotional Burden', min: 0, max: 10, thresholds: [{ level: 'mild', value: 4 }, { level: 'moderate', value: 7 }, { level: 'severe', value: 9 }] },
+  { key: 'selfCare', label: 'Self-care', min: 0, max: 10, thresholds: [{ level: 'mild', value: 3 }, { level: 'moderate', value: 6 }, { level: 'severe', value: 9 }] },
 ];
 
 /** Get slider config for a given user type */
@@ -82,9 +82,9 @@ export function getSliderConfig(userType: UserType): SliderConfig[] {
 /** Create default slider values for a given user type */
 export function createDefaultSliders(userType: UserType): MoodSliders {
   if (userType === 'elias') {
-    return { craving: 0, frustration: 0, despondency: 0, focus: 4 };
+    return { craving: 0, frustration: 0, despondency: 0, focus: 5 };
   }
-  return { stress: 0, boundaryFatigue: 0, emotionalBurden: 0, selfCare: 4 };
+  return { stress: 0, boundaryFatigue: 0, emotionalBurden: 0, selfCare: 5 };
 }
 
 /** Check which sliders exceed intervention thresholds */

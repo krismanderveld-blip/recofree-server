@@ -89,9 +89,9 @@ function determineTone(
   const mood = currentMood || createDefaultSliders(userType);
   const distress = getDistressScore(mood, userType);
 
-  if (trajectory === 'declining' || distress >= 4) return 'warm';
+  if (trajectory === 'declining' || distress >= 5.5) return 'warm';
   if (trajectory === 'volatile') return 'grounding';
-  if (getPrimaryConcern(mood, userType) >= 5) return 'assertive';
+  if (getPrimaryConcern(mood, userType) >= 7) return 'assertive';
 
   return 'warm';
 }
@@ -111,9 +111,9 @@ function computeSuggestionIntensity(
   const distress = getDistressScore(mood, userType);
   const resilience = getResilienceScore(mood, userType);
 
-  if (primaryConcern >= 5) intensity += 2;
-  if (primaryConcern >= 6) intensity += 1;
-  if (distress >= 4) intensity += 1;
+  if (primaryConcern >= 7) intensity += 2;
+  if (primaryConcern >= 8) intensity += 1;
+  if (distress >= 5.5) intensity += 1;
   if (trajectory === 'declining') intensity += 1;
   if (trajectory === 'volatile') intensity += 1;
 
@@ -121,7 +121,7 @@ function computeSuggestionIntensity(
   if (totalSessions < 3) intensity -= 1;
 
   // Dial back if resilience very low (overwhelmed)
-  if (resilience <= 1) intensity -= 1;
+  if (resilience <= 2) intensity -= 1;
 
   return Math.max(1, Math.min(10, intensity));
 }
@@ -154,7 +154,7 @@ function computeCrisisSensitivityBoost(
   if (trajectory === 'declining') boost += 1;
 
   const distress = getDistressScore(mood, userType);
-  if (distress >= 4.5 && getResilienceScore(mood, userType) <= 2) boost += 1;
+  if (distress >= 6.5 && getResilienceScore(mood, userType) <= 3) boost += 1;
 
   return Math.min(boost, 5);
 }
@@ -172,19 +172,19 @@ function computePriorityModules(
   const priorities: string[] = [];
 
   if (userType === 'elias') {
-    if (getSlider(mood, 'craving') >= 4) priorities.push('E01');
-    if (getSlider(mood, 'despondency') >= 4) priorities.push('E02');
-    if (getSlider(mood, 'frustration') >= 5) priorities.push('E04');
-    if (getSlider(mood, 'focus') <= 2) priorities.push('E07');
+    if (getSlider(mood, 'craving') >= 6) priorities.push('E01');
+    if (getSlider(mood, 'despondency') >= 6) priorities.push('E02');
+    if (getSlider(mood, 'frustration') >= 7) priorities.push('E04');
+    if (getSlider(mood, 'focus') <= 3) priorities.push('E07');
     if (trajectory === 'declining') priorities.push('E03');
     if (patterns.some((t) => t.trigger === 'isolation' && t.count >= 2)) {
       priorities.push('E05');
     }
   } else {
-    if (getSlider(mood, 'stress') >= 4) priorities.push('K04');
-    if (getSlider(mood, 'boundaryFatigue') >= 4) priorities.push('K01');
-    if (getSlider(mood, 'emotionalBurden') >= 4) priorities.push('K03');
-    if (getSlider(mood, 'selfCare') <= 2) priorities.push('K03');
+    if (getSlider(mood, 'stress') >= 6) priorities.push('K04');
+    if (getSlider(mood, 'boundaryFatigue') >= 6) priorities.push('K01');
+    if (getSlider(mood, 'emotionalBurden') >= 6) priorities.push('K03');
+    if (getSlider(mood, 'selfCare') <= 3) priorities.push('K03');
     if (patterns.some((t) => t.trigger === 'enabling' && t.count >= 2)) {
       priorities.push('K02');
     }

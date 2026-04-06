@@ -43,7 +43,7 @@ function getSlider(mood: MoodSliders, key: string): number {
 }
 
 /**
- * Get the "distress" score (0-7) — a normalized measure of how bad things are.
+ * Get the "distress" score (0-10) — a normalized measure of how bad things are.
  * Elias: average of craving, frustration, despondency (higher = worse)
  * Kim: average of stress, boundaryFatigue, emotionalBurden (higher = worse)
  */
@@ -55,7 +55,7 @@ function getDistressScore(mood: MoodSliders, userType: UserType): number {
 }
 
 /**
- * Get the "resilience" score (0-7) — a normalized measure of coping capacity.
+ * Get the "resilience" score (0-10) — a normalized measure of coping capacity.
  * Elias: focus (higher = better)
  * Kim: selfCare (higher = better)
  */
@@ -67,7 +67,7 @@ function getResilienceScore(mood: MoodSliders, userType: UserType): number {
 }
 
 /**
- * Get the primary concern slider value (0-7).
+ * Get the primary concern slider value (0-10).
  * Elias: craving
  * Kim: stress
  */
@@ -147,16 +147,16 @@ function assessRiskLevel(
   if (signals.activeSuicidal || signals.selfHarm) return 'critical';
 
   // High: passive suicidal + high distress
-  if (signals.passiveSuicidal && (distress >= 4 || primaryConcern >= 5)) return 'high';
-  if (distress >= 5.5 && resilience <= 2) return 'high';
+  if (signals.passiveSuicidal && (distress >= 5.5 || primaryConcern >= 7)) return 'high';
+  if (distress >= 7.5 && resilience <= 3) return 'high';
   if (signals.hopelessness && moodTrend === 'declining') return 'high';
 
   // Moderate: concerning combinations
-  if (distress >= 4 && primaryConcern >= 4) return 'moderate';
+  if (distress >= 5.5 && primaryConcern >= 5.5) return 'moderate';
   if (moodTrend === 'declining' && patternAccumulation >= 3) return 'moderate';
-  if (signals.isolationSignal && distress >= 3) return 'moderate';
+  if (signals.isolationSignal && distress >= 4) return 'moderate';
   if (signals.dissociation) return 'moderate';
-  if (signals.cravingMention && primaryConcern >= 4) return 'moderate';
+  if (signals.cravingMention && primaryConcern >= 5.5) return 'moderate';
 
   return 'low';
 }
@@ -176,8 +176,8 @@ function assessEmotionalState(
   const distress = getDistressScore(mood, userType);
   const primaryConcern = getPrimaryConcern(mood, userType);
 
-  if (distress >= 4.5 || signals.hopelessness || signals.dissociation) return 'depleted';
-  if (moodTrend === 'declining' || primaryConcern >= 4 || signals.isolationSignal) return 'vulnerable';
+  if (distress >= 6.5 || signals.hopelessness || signals.dissociation) return 'depleted';
+  if (moodTrend === 'declining' || primaryConcern >= 5.5 || signals.isolationSignal) return 'vulnerable';
 
   return 'stable';
 }
@@ -245,9 +245,9 @@ function computeSuggestionIntensity(
   const primaryConcern = getPrimaryConcern(mood, userType);
   const resilience = getResilienceScore(mood, userType);
 
-  if (primaryConcern >= 5) intensity += 2;
-  if (primaryConcern >= 6) intensity += 1;
-  if (distress >= 4) intensity += 1;
+  if (primaryConcern >= 7) intensity += 2;
+  if (primaryConcern >= 8) intensity += 1;
+  if (distress >= 5.5) intensity += 1;
   if (moodTrend === 'declining') intensity += 1;
   if (riskLevel === 'high' || riskLevel === 'critical') intensity += 1;
 
@@ -255,7 +255,7 @@ function computeSuggestionIntensity(
   if (totalSessions < 3) intensity -= 1;
 
   // Dial back if resilience is very low (overwhelmed)
-  if (resilience <= 1) intensity -= 1;
+  if (resilience <= 2) intensity -= 1;
 
   return Math.max(1, Math.min(10, intensity));
 }
@@ -278,17 +278,17 @@ function selectPriorityModules(
     const focus = getSlider(mood, 'focus');
 
     // Craving active → E01
-    if (signals.cravingMention || craving >= 4) modules.push('E01');
+    if (signals.cravingMention || craving >= 6) modules.push('E01');
     // Despondency / hopelessness → E02 (Emotional Regulation)
-    if (despondency >= 4 || signals.hopelessness) modules.push('E02');
+    if (despondency >= 6 || signals.hopelessness) modules.push('E02');
     // Declining trend → E03 (Relapse Prevention)
     if (moodTrend === 'declining') modules.push('E03');
     // Frustration high / dissociation → E04 (Grounding)
-    if (frustration >= 5 || signals.dissociation) modules.push('E04');
+    if (frustration >= 7 || signals.dissociation) modules.push('E04');
     // Isolation → E05 (Social)
     if (signals.isolationSignal) modules.push('E05');
     // Low focus → E07 (Focus/Mindfulness)
-    if (focus <= 2) modules.push('E07');
+    if (focus <= 3) modules.push('E07');
     // Positive signal → E06 (Reinforcement)
     if (signals.positiveSignal) modules.push('E06');
 
@@ -300,13 +300,13 @@ function selectPriorityModules(
     const selfCare = getSlider(mood, 'selfCare');
 
     // High stress → K04 (Stress Management)
-    if (stress >= 4) modules.push('K04');
+    if (stress >= 6) modules.push('K04');
     // Boundary fatigue → K01 (Boundary Setting)
-    if (boundaryFatigue >= 4) modules.push('K01');
+    if (boundaryFatigue >= 6) modules.push('K01');
     // Emotional burden / hopelessness → K03 (Self-Care)
-    if (emotionalBurden >= 4 || signals.hopelessness) modules.push('K03');
+    if (emotionalBurden >= 6 || signals.hopelessness) modules.push('K03');
     // Low self-care → K03
-    if (selfCare <= 2) modules.push('K03');
+    if (selfCare <= 3) modules.push('K03');
     // Enabling patterns detected → K02
     if (activeTriggers.includes('enabling')) modules.push('K02');
     // Isolation → K05 (Support Network)
@@ -333,7 +333,7 @@ function buildStateSummary(
   const config = getSliderConfig(userType);
 
   for (const sc of config) {
-    parts.push(`${sc.label}: ${getSlider(mood, sc.key)}/7`);
+    parts.push(`${sc.label}: ${getSlider(mood, sc.key)}/${sc.max}`);
   }
 
   parts.push(`Trend: ${moodTrend}`);

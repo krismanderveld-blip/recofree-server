@@ -77,3 +77,4 @@
 - [x] Fix sliders: Elias uses Craving/Frustration/Despondency/Focus (0-7 scale with intervention thresholds)
 - [x] Fix sliders: Kim (naaste) uses Stress/Boundary Fatigue/Emotional Burden/Self-care (0-7 scale)
 - [x] Add intervention thresholds to slider logic
+- [x] Change all sliders (Elias and Kim) from 0-7 to 0-10 scale for AI chat compatibility
