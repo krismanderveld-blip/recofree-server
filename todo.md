@@ -102,3 +102,4 @@
 - [x] Fix chat keyboard overlap on Android: use KeyboardStickyView from react-native-keyboard-controller to stick input above keyboard
 - [ ] Fix Android keyboard overlap (attempt 3): try adjustResize + Keyboard listener approach since KeyboardStickyView didn't work
 - [x] Fix Android keyboard overlap (attempt 4): root-level KeyboardAvoidingView with dynamic behavior hook (height on Android, padding on iOS)
+- [x] Fix "Something went wrong with the connection" error in chat — switched to superjson serialization matching tRPC client, added auth headers and logging
