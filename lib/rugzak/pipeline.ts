@@ -104,6 +104,51 @@ export async function processMessage(
     };
   }
 
+  // ── STEP 0: MODULE 12 PRE-ANALYSIS FAILSAFE ──
+  // AI may NOT respond without sufficient input context.
+  // Check: sliders filled + (backpack has content OR diary entries exist)
+  const hasSliders = currentUserDat.currentMood &&
+    Object.values(currentUserDat.currentMood).some((v) => v !== 0 && v !== 5);
+  const hasBackpackContent = backpack.sections &&
+    backpack.sections.some((s) => s.content && s.content.trim().length > 10);
+  const hasDiary = (options?.diaryEntries ?? []).length > 0;
+  const hasTriggerHistory = (currentUserDat.triggerPatterns ?? []).length > 0;
+  const hasSessionHistory = (currentUserDat.totalSessions ?? 0) > 0;
+
+  // Module 12: If no meaningful input exists, return a passive response
+  const hasMinimalContext = hasSliders || hasBackpackContent || hasDiary || hasTriggerHistory || hasSessionHistory;
+  if (!hasMinimalContext) {
+    const passiveResponse = backpack.userType === 'elias'
+      ? `Ik weet nu nog weinig van je, ${backpack.naam}. Ik wacht tot jij iets deelt. Dan pas kan ik iets dragen. Vul je sliders in, schrijf iets in je dagboek, of deel je verhaal in je rugzak — dan kan ik je beter helpen.`
+      : `Hoi ${backpack.naam}. Ik heb nog niet genoeg context om je goed te kunnen helpen. Vul je sliders in of deel iets via je dagboek of rugzak, dan kan ik je gerichter ondersteunen.`;
+
+    const passiveMsg: ChatMessage = {
+      id: `msg_${Date.now()}`,
+      role: 'user',
+      content: userMessage,
+      timestamp: new Date().toISOString(),
+    };
+    const passiveAiMsg: ChatMessage = {
+      id: `msg_${Date.now() + 1}`,
+      role: 'assistant',
+      content: passiveResponse,
+      timestamp: new Date().toISOString(),
+    };
+    const updatedUserDat: UserDat = {
+      ...currentUserDat,
+      chatHistory: [...(currentUserDat.chatHistory || []), passiveMsg, passiveAiMsg],
+    };
+    const updatedRugzak = composeRugzak(backpack, updatedUserDat);
+    return {
+      response: passiveResponse,
+      analysis: analyzeState(rugzak, userMessage),
+      updatedRugzak,
+      updatedUserDat,
+      crisisLevel: 0,
+      showEmergency: false,
+    };
+  }
+
   // ── STEP 1: LOAD STATE ──
   // Both stores are loaded. Rugzak is the composed view for engine compatibility.
 
@@ -266,6 +311,41 @@ export async function generateGreeting(
       totalSessions: rugzak.totalSessions,
       lastSessionDate: rugzak.lastSessionDate,
       sessionAnalyses: [],
+    };
+  }
+
+  // ── MODULE 12 PRE-ANALYSIS FAILSAFE (greeting) ──
+  const hasSliders = currentUserDat.currentMood &&
+    Object.values(currentUserDat.currentMood).some((v) => v !== 0 && v !== 5);
+  const hasBackpackContent = backpack.sections &&
+    backpack.sections.some((s) => s.content && s.content.trim().length > 10);
+  const hasDiary = (diaryEntries ?? []).length > 0;
+  const hasTriggerHistory = (currentUserDat.triggerPatterns ?? []).length > 0;
+  const hasSessionHistory = (currentUserDat.totalSessions ?? 0) > 0;
+  const hasMinimalContext = hasSliders || hasBackpackContent || hasDiary || hasTriggerHistory || hasSessionHistory;
+
+  if (!hasMinimalContext) {
+    const passiveResponse = backpack.userType === 'elias'
+      ? `Hoi ${backpack.naam}. Ik ben er voor je, maar ik weet nu nog weinig van je. Vul je sliders in, schrijf iets in je dagboek, of deel je verhaal in je rugzak — dan kan ik je echt helpen.`
+      : `Hoi ${backpack.naam}. Ik ben er. Maar om je goed te kunnen helpen, heb ik meer context nodig. Vul je sliders in of deel iets via je dagboek of rugzak.`;
+    const passiveAiMsg: ChatMessage = {
+      id: `msg_${Date.now()}`,
+      role: 'assistant',
+      content: passiveResponse,
+      timestamp: new Date().toISOString(),
+    };
+    const updatedUserDat: UserDat = {
+      ...currentUserDat,
+      chatHistory: [...(currentUserDat.chatHistory || []), passiveAiMsg],
+    };
+    const updatedRugzak = composeRugzak(backpack, updatedUserDat);
+    return {
+      response: passiveResponse,
+      analysis: analyzeState(rugzak, ''),
+      updatedRugzak,
+      updatedUserDat,
+      crisisLevel: 0,
+      showEmergency: false,
     };
   }
 

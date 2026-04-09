@@ -132,3 +132,8 @@
 - [x] Update all tests for new dual-store architecture (90 tests passing, 14 AI chat tests)
 - [x] FIX: Send backpack+userDat only ONCE at session start, not with every message
 - [x] FIX: Integrate diary entries into AI context — last 10 diary entries sent at session start alongside backpack+userDat
+- [x] FIX P1: Anti-hallucinatie instructie + relatiekaart in system prompt — Elias mag NOOIT relaties/feiten verzinnen
+- [x] FIX P2: Elias-identiteit herschrijven op basis van canon (elias.dat + ELIAS_IDENTITEIT_COMPLETE_V2025.txt)
+- [x] FIX P3: Schema/modi-herkenning + relatiedetectie + patroonherkenning in system prompt
+- [x] FIX P4: Android toetsenbord bedekt chat — dynamische padding wanneer keyboard open is
+- [x] FIX P5: Module 12 vooranalyse/failsafe — geen AI-reactie zonder voldoende input (sliders/rugzak/dagboek)

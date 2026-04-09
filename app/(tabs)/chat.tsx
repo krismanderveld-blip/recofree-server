@@ -57,20 +57,27 @@ export default function ChatScreen() {
   const flatListRef = useRef<FlatList>(null);
   const greetingSent = useRef(false);
   const appStateRef = useRef<AppStateStatus>(AppState.currentState);
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
 
   const userName = getUserName();
   const companionName = state.userType === 'elias' ? 'Elias' : 'Kim';
 
-  // ── Scroll to end when keyboard opens ──
+  // ── Track keyboard visibility + scroll to end ──
   useEffect(() => {
     const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
     const showListener = Keyboard.addListener(showEvent, () => {
+      setKeyboardVisible(true);
       setTimeout(() => {
         flatListRef.current?.scrollToEnd({ animated: true });
       }, 100);
     });
+    const hideListener = Keyboard.addListener(hideEvent, () => {
+      setKeyboardVisible(false);
+    });
     return () => {
       showListener.remove();
+      hideListener.remove();
     };
   }, []);
 
@@ -471,7 +478,10 @@ export default function ChatScreen() {
             style={{
               paddingHorizontal: 16,
               paddingTop: 10,
-              paddingBottom: tabBarHeight,
+              // On Android with softwareKeyboardLayoutMode:resize, the system shrinks the window.
+              // When keyboard is open, the tab bar is already hidden by the system resize,
+              // so we only need minimal padding. When closed, we need tabBarHeight to clear the tab bar.
+              paddingBottom: Platform.OS === 'android' && keyboardVisible ? 8 : tabBarHeight,
               backgroundColor: colors.background,
               borderTopWidth: 0.5,
               borderTopColor: colors.border,
