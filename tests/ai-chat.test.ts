@@ -79,6 +79,7 @@ const validInput = {
   sessionDurationMinutes: 5,
   urgency: 'midden',
   startEmotion: 'anxious',
+  isSessionStart: true,
 };
 
 // ─── Schema Validation Tests ──────────────────────────────────────
@@ -211,16 +212,43 @@ describe('AI Chat Input Schema (Dual-Store)', () => {
     expect(result.success).toBe(true);
   });
 
-  it('should reject if backpack is missing', () => {
+  it('should accept input without backpack (follow-up message)', () => {
     const { backpack, ...noBackpack } = validInput;
-    const result = chatInputSchema.safeParse(noBackpack);
-    expect(result.success).toBe(false);
+    const result = chatInputSchema.safeParse({ ...noBackpack, isSessionStart: false });
+    expect(result.success).toBe(true);
   });
 
-  it('should reject if userDat is missing', () => {
+  it('should accept input without userDat (follow-up message)', () => {
     const { userDat, ...noUserDat } = validInput;
-    const result = chatInputSchema.safeParse(noUserDat);
-    expect(result.success).toBe(false);
+    const result = chatInputSchema.safeParse({ ...noUserDat, isSessionStart: false });
+    expect(result.success).toBe(true);
+  });
+
+  it('should accept diary entries at session start', () => {
+    const input = {
+      ...validInput,
+      diaryEntries: [
+        { content: 'Felt grateful for a walk in the park today.', moodTag: 'Grateful', timestamp: '2025-03-19T10:00:00Z' },
+        { content: 'Had a tough conversation with my brother.', moodTag: 'Sad', timestamp: '2025-03-20T14:30:00Z' },
+      ],
+    };
+    const result = chatInputSchema.safeParse(input);
+    expect(result.success).toBe(true);
+  });
+
+  it('should accept input without diary entries', () => {
+    const result = chatInputSchema.safeParse(validInput);
+    expect(result.success).toBe(true);
+    // diaryEntries is optional, not present in validInput
+  });
+
+  it('should default isSessionStart to false when not provided', () => {
+    const { isSessionStart, ...noFlag } = validInput;
+    const result = chatInputSchema.safeParse(noFlag);
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.isSessionStart).toBe(false);
+    }
   });
 });
 

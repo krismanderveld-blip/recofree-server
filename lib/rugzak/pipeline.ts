@@ -69,7 +69,8 @@ export async function processMessage(
   rugzakOrBackpack: Rugzak | Backpack,
   userMessage: string,
   provider: AIProvider,
-  userDat?: UserDat
+  userDat?: UserDat,
+  options?: { isSessionStart?: boolean; diaryEntries?: import('../ai/types').DiaryEntry[] }
 ): Promise<PipelineResult> {
   // Resolve the two stores
   let backpack: Backpack;
@@ -147,6 +148,8 @@ export async function processMessage(
     rugzak,
     backpack,
     userDat: currentUserDat,
+    isSessionStart: options?.isSessionStart ?? false,
+    diaryEntries: options?.diaryEntries ?? [],
     activeModules: analysis.priorityModules,
     crisisLevel,
     detectedEmotion: analysis.emotionalState,
@@ -233,7 +236,8 @@ export async function processMessage(
 export async function generateGreeting(
   rugzakOrBackpack: Rugzak | Backpack,
   provider: AIProvider,
-  userDat?: UserDat
+  userDat?: UserDat,
+  diaryEntries?: import('../ai/types').DiaryEntry[]
 ): Promise<PipelineResult> {
   // Resolve the two stores
   let backpack: Backpack;
@@ -279,6 +283,8 @@ export async function generateGreeting(
     rugzak,
     backpack,
     userDat: currentUserDat,
+    isSessionStart: true,
+    diaryEntries: diaryEntries ?? [],
     activeModules: analysis.priorityModules,
     crisisLevel: 0,
     detectedEmotion: analysis.emotionalState,
@@ -460,6 +466,8 @@ export async function endSession(
     rugzak,
     backpack,
     userDat: currentUserDat,
+    isSessionStart: false,
+    diaryEntries: [],
     activeModules: [],
     crisisLevel: 0,
     detectedEmotion: dominantEmotion,

@@ -33,12 +33,24 @@ export class OpenAIProvider implements AIProvider {
     try {
       const apiBaseUrl = getApiBaseUrl();
 
-      // Build the TWO separate payloads — BOTH sent in full, NEVER compressed
-      const backpackPayload = buildBackpackPayload(context.backpack);
-      const userDatPayload = buildUserDatPayload(context.userDat);
+      // SESSION-START ONLY: send backpack + userDat in full.
+      // Follow-up messages do NOT re-send them — GPT already has them in the system prompt.
+      const isSessionStart = context.isSessionStart;
+
+      const backpackPayload = isSessionStart ? buildBackpackPayload(context.backpack) : null;
+      const userDatPayload = isSessionStart ? buildUserDatPayload(context.userDat) : null;
+
+      // Diary entries — sent at session start so Elias/Kim knows what the user wrote
+      const diaryPayload = isSessionStart && context.diaryEntries.length > 0
+        ? context.diaryEntries.map((e) => ({
+            content: e.content,
+            moodTag: e.moodTag,
+            timestamp: e.timestamp,
+          }))
+        : null;
 
       // Build the input payload matching the server's chatInputSchema
-      const inputPayload = {
+      const inputPayload: Record<string, unknown> = {
         userType: context.userType,
         userName: context.userName,
         message: context.currentMessage,
@@ -47,8 +59,6 @@ export class OpenAIProvider implements AIProvider {
           content: m.content,
         })),
         moodSliders: context.moodSliders as unknown as Record<string, number>,
-        backpack: backpackPayload,
-        userDat: userDatPayload,
         activeModules: context.activeModules,
         crisisLevel: context.crisisLevel,
         detectedEmotion: context.detectedEmotion,
@@ -56,7 +66,13 @@ export class OpenAIProvider implements AIProvider {
         sessionDurationMinutes: context.sessionDurationMinutes,
         urgency: context.urgency,
         startEmotion: context.startEmotion,
+        isSessionStart,
       };
+
+      // Only include backpack + userDat + diary at session start
+      if (backpackPayload) inputPayload.backpack = backpackPayload;
+      if (userDatPayload) inputPayload.userDat = userDatPayload;
+      if (diaryPayload) inputPayload.diaryEntries = diaryPayload;
 
       // tRPC mutation via HTTP with superjson serialization
       const serialized = superjson.serialize(inputPayload);
@@ -71,11 +87,18 @@ export class OpenAIProvider implements AIProvider {
 
       const url = `${apiBaseUrl}/api/trpc/ai.chat`;
 
-      console.log('[OpenAIProvider] Calling:', url);
-      console.log('[OpenAIProvider] Backpack sections:', backpackPayload.lifeStory.length);
-      console.log('[OpenAIProvider] UserDat triggers:', userDatPayload.triggerPatterns.length);
-      console.log('[OpenAIProvider] UserDat sessions:', userDatPayload.totalSessions);
-      console.log('[OpenAIProvider] UserDat session analyses:', userDatPayload.sessionAnalyses.length);
+      console.log('[OpenAIProvider] Calling:', url, isSessionStart ? '(SESSION START — full payload)' : '(follow-up — lightweight)');
+      if (backpackPayload) {
+        console.log('[OpenAIProvider] Backpack sections:', backpackPayload.lifeStory.length);
+      }
+      if (userDatPayload) {
+        console.log('[OpenAIProvider] UserDat triggers:', userDatPayload.triggerPatterns.length);
+        console.log('[OpenAIProvider] UserDat sessions:', userDatPayload.totalSessions);
+        console.log('[OpenAIProvider] UserDat session analyses:', userDatPayload.sessionAnalyses.length);
+      }
+      if (diaryPayload) {
+        console.log('[OpenAIProvider] Diary entries:', diaryPayload.length);
+      }
 
       const response = await fetch(url, {
         method: 'POST',

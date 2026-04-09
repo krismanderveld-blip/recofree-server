@@ -401,6 +401,16 @@ export function createNewRugzak(intake: IntakeData): Rugzak {
   return composeRugzak(backpack, userDat);
 }
 
+// ─── Diary Entry (shared type for AI context) ────────────────
+
+/** A diary entry written by the user */
+export interface DiaryEntry {
+  id: string;
+  content: string;
+  moodTag: string;
+  timestamp: string;
+}
+
 // ─── Context Types ─────────────────────────────────────────────
 
 /** Full context passed to the AI provider for response generation */
@@ -416,6 +426,10 @@ export interface ChatContext {
   backpack: Backpack;
   /** The raw UserDat — sent in full to GPT, updated only at session end */
   userDat: UserDat;
+  /** Whether this is the first message of the session (backpack+userDat sent in full) */
+  isSessionStart: boolean;
+  /** Recent diary entries — included at session start for AI context */
+  diaryEntries: DiaryEntry[];
   activeModules: string[];
   crisisLevel: number;
   detectedEmotion: string;

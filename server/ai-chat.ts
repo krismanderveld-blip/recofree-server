@@ -40,7 +40,8 @@ interface ChatRequestInput {
     content: string;
   }>;
   moodSliders: Record<string, number>;
-  backpack: {
+  isSessionStart: boolean;
+  backpack?: {
     naam: string;
     userType: "elias" | "kim";
     lifeStory: Array<{
@@ -57,7 +58,7 @@ interface ChatRequestInput {
     };
     createdAt: string;
   };
-  userDat: {
+  userDat?: {
     totalSessions: number;
     triggerPatterns: Array<{
       trigger: string;
@@ -87,6 +88,11 @@ interface ChatRequestInput {
       endRiskLevel: string;
     }>;
   };
+  diaryEntries?: Array<{
+    content: string;
+    moodTag: string;
+    timestamp: string;
+  }>;
   activeModules: string[];
   crisisLevel: number;
   detectedEmotion: string;
@@ -109,6 +115,7 @@ export const chatInputSchema = z.object({
     })
   ),
   moodSliders: z.record(z.string(), z.number()),
+  isSessionStart: z.boolean().default(false),
   backpack: z.object({
     naam: z.string(),
     userType: z.enum(["elias", "kim"]),
@@ -127,7 +134,7 @@ export const chatInputSchema = z.object({
       intakeDate: z.string(),
     }),
     createdAt: z.string(),
-  }),
+  }).optional(),
   userDat: z.object({
     totalSessions: z.number(),
     triggerPatterns: z.array(
@@ -163,7 +170,14 @@ export const chatInputSchema = z.object({
         endRiskLevel: z.string(),
       })
     ),
-  }),
+  }).optional(),
+  diaryEntries: z.array(
+    z.object({
+      content: z.string(),
+      moodTag: z.string(),
+      timestamp: z.string(),
+    })
+  ).optional(),
   activeModules: z.array(z.string()),
   crisisLevel: z.number(),
   detectedEmotion: z.string(),
@@ -184,10 +198,45 @@ function buildSystemPrompt(input: ChatRequestInput): string {
     ? `You are Elias, a warm, empathetic companion for someone in addiction recovery. You speak from a place of understanding, never judgment. You use therapeutic techniques from ACT, CBT, DBT, and mindfulness — but naturally, never clinically. You are NOT a therapist; you are a supportive presence who helps the user explore their feelings and find their own strength.`
     : `You are Kim, a direct yet caring companion for someone who loves a person struggling with addiction. You help them set boundaries, recognize enabling patterns, and prioritize their own well-being. You are honest and sometimes confrontational — but always with love. You are NOT a therapist; you are a supportive presence.`;
 
-  // ══════════════════════════════════════════════════════════════════
-  // SECTION 1: BACKPACK — IDENTITY ANCHOR (NEVER MODIFIED BY SYSTEM)
-  // ══════════════════════════════════════════════════════════════════
-  const backpack = input.backpack;
+  // ── SHARED VARIABLES (used by both session-start and follow-up prompts) ──
+  const sliderEntries = Object.entries(input.moodSliders)
+    .map(([k, v]) => `${k}: ${v}/10`)
+    .join(", ");
+
+  const totalSessions = input.userDat?.totalSessions ?? 0;
+  const sessionInfo = `Session #${totalSessions + 1}. Duration: ${input.sessionDurationMinutes} minutes. Initial emotion: ${input.startEmotion}. Current detected emotion: ${input.detectedEmotion}.`;
+
+  let crisisInstructions = "";
+  if (input.crisisLevel >= 2) {
+    crisisInstructions = `\nCRISIS ACTIVE (level ${input.crisisLevel}). CRITICAL INSTRUCTIONS:\n- Acknowledge the user's pain immediately\n- Do NOT minimize or dismiss\n- Gently suggest professional help (113 Zelfmoordpreventie, 0800-0113, or 112 for immediate danger)\n- Stay present and calm\n- Do NOT try to "fix" — just be there`;
+  } else if (input.crisisLevel === 1) {
+    crisisInstructions = `\nELEVATED CONCERN. Monitor closely:\n- Be extra attentive to signals of distress\n- Ask gentle check-in questions\n- Lower the threshold for suggesting professional support`;
+  }
+
+  const moduleInstructions =
+    input.activeModules.length > 0
+      ? `Active therapeutic modules for this response: ${input.activeModules.join(", ")}. Weave these approaches naturally into your response.`
+      : "No specific modules active. Respond naturally based on what the user shares.";
+
+  const stance = input.therapeuticStance
+    ? `Therapeutic stance instructions: ${input.therapeuticStance}`
+    : "";
+
+  let sessionEndInstructions = "";
+  if (input.message === "__SESSION_END__") {
+    sessionEndInstructions = `\nThe user is ending this session. Generate a warm farewell that:\n1. Briefly acknowledges what was discussed (1-2 sentences)\n2. References something specific from their personal memory if relevant\n3. Affirms the user's courage/effort\n4. Confirms the session is saved\n5. Gently encourages them for next time\nKeep it concise (3-5 sentences max). Do NOT ask new questions.`;
+  }
+
+  // ── FOLLOW-UP MESSAGES (no backpack/userDat/diary) ──
+  if (!input.isSessionStart) {
+    return `${identity}\n\nThe user's name is ${name}. Always address them by name occasionally.\n\n=== MANDATORY BEHAVIORAL INSTRUCTIONS ===\n${stance}\n\nThese behavioral instructions are ABSOLUTE. They override your default conversational style.\nIf the tone says GROUNDING + DIRECTIVE, you MUST be direct and structured — not exploratory.\nIf questions say MINIMAL, you MUST NOT ask open-ended questions.\nIf reflection says SHARP, you MUST name the distress explicitly based on the slider values.\nThe sliders tell you exactly how the user is doing — USE them in your response.\n=== END MANDATORY INSTRUCTIONS ===\n\nCURRENT STATE:\n- Mood sliders: ${sliderEntries}\n- Urgency level: ${input.urgency}\n${sessionInfo}\n\n${moduleInstructions}\n${crisisInstructions}\n${sessionEndInstructions}\n\nRESPONSE RULES:\n- You KNOW ${name}. Use your personal memory naturally — reference their story, patterns, and history when relevant.\n- Respond in the same language the user writes in (Dutch or English)\n- Keep responses concise: follow the PACING instruction above strictly\n- Never diagnose, prescribe, or claim to be a professional\n- Never break character\n- Use \"I\" statements and reflective listening\n- Do NOT use bullet points or numbered lists in your response — speak naturally\n- Do NOT use emojis excessively (max 0-1 per message)\n- Be genuine, not performative`;
+  }
+
+  // ══════════════════════════════════════════════════════════════
+  // SESSION START: Full system prompt with backpack + userDat + diary
+  // ══════════════════════════════════════════════════════════════
+  // At session start, backpack MUST be present. If somehow missing, use empty defaults.
+  const backpack = input.backpack!;
 
   let identityMemory = `\n╔══════════════════════════════════════════════════════╗`;
   identityMemory += `\n║  BACKPACK — ${name.toUpperCase()}'s IDENTITY ANCHOR              ║`;
@@ -216,12 +265,35 @@ function buildSystemPrompt(input: ChatRequestInput): string {
     identityMemory += `\n${name} has not yet shared their life story with you. You can gently invite them to share when appropriate, but never pressure.`;
   }
 
-  // ══════════════════════════════════════════════════════════════════
-  // SECTION 2: USER.DAT — SESSION MEMORY (SYSTEM-MANAGED)
-  // ══════════════════════════════════════════════════════════════════
-  const userDat = input.userDat;
+  // ══════════════════════════════════════════════════════════════
+  // SECTION 1.5: DIARY — User's personal journal entries
+  // ══════════════════════════════════════════════════════════════
+  const diaryEntries = input.diaryEntries;
+  let diaryMemory = '';
+  if (diaryEntries && diaryEntries.length > 0) {
+    diaryMemory += `\n\n╔══════════════════════════════════════════════════════╗`;
+    diaryMemory += `\n║  DIARY — ${name}'s personal journal entries              ║`;
+    diaryMemory += `\n║  Written by ${name}. Read and reference naturally.      ║`;
+    diaryMemory += `\n╚══════════════════════════════════════════════════════╝`;
+    diaryMemory += `\n\n─── RECENT DIARY ENTRIES ───`;
+    for (const entry of diaryEntries) {
+      const date = new Date(entry.timestamp).toLocaleDateString();
+      diaryMemory += `\n\n[${date}] (mood: ${entry.moodTag}):\n${entry.content}`;
+    }
+    diaryMemory += `\n─── END DIARY ───`;
+    diaryMemory += `\nThese are ${name}'s own words from their diary. If they mention something related to a diary entry, you can gently reference it: "I noticed you wrote about that in your diary recently..." But do NOT quote their diary back at them unprompted.`;
+  }
 
-  let sessionMemory = `\n\n╔══════════════════════════════════════════════════════╗`;
+  // ══════════════════════════════════════════════════════════════
+  // SECTION 2: USER.DAT — SESSION MEMORY (SYSTEM-MANAGED)
+  // ══════════════════════════════════════════════════════════════
+  const userDat = input.userDat!;
+
+  let sessionMemory = '';
+  if (!userDat) {
+    sessionMemory = '\n\n(No session memory available for this message.)';
+  } else {
+  sessionMemory = `\n\n╔══════════════════════════════════════════════════════╗`;
   sessionMemory += `\n║  SESSION MEMORY — Dynamic data across ${userDat.totalSessions} sessions   ║`;
   sessionMemory += `\n║  Updated by the system after each session.            ║`;
   sessionMemory += `\n╚══════════════════════════════════════════════════════╝`;
@@ -266,60 +338,16 @@ function buildSystemPrompt(input: ChatRequestInput): string {
     sessionMemory += `\n─── END PAST SESSIONS ───`;
     sessionMemory += `\nUse this session history to notice patterns across sessions. If ${name}'s distress is increasing over time, or if the same themes keep returning, acknowledge this.`;
   }
+  } // end if (userDat)
 
-  // ── CURRENT STATE ──
-  const sliderEntries = Object.entries(input.moodSliders)
-    .map(([k, v]) => `${k}: ${v}/10`)
-    .join(", ");
-
-  const sessionInfo = `Session #${userDat.totalSessions + 1}. Duration: ${input.sessionDurationMinutes} minutes. Initial emotion: ${input.startEmotion}. Current detected emotion: ${input.detectedEmotion}.`;
-
-  // ── CRISIS HANDLING ──
-  let crisisInstructions = "";
-  if (input.crisisLevel >= 2) {
-    crisisInstructions = `
-CRISIS ACTIVE (level ${input.crisisLevel}). CRITICAL INSTRUCTIONS:
-- Acknowledge the user's pain immediately
-- Do NOT minimize or dismiss
-- Gently suggest professional help (113 Zelfmoordpreventie, 0800-0113, or 112 for immediate danger)
-- Stay present and calm
-- Do NOT try to "fix" — just be there`;
-  } else if (input.crisisLevel === 1) {
-    crisisInstructions = `
-ELEVATED CONCERN. Monitor closely:
-- Be extra attentive to signals of distress
-- Ask gentle check-in questions
-- Lower the threshold for suggesting professional support`;
-  }
-
-  // ── MODULE INSTRUCTIONS ──
-  const moduleInstructions =
-    input.activeModules.length > 0
-      ? `Active therapeutic modules for this response: ${input.activeModules.join(", ")}. Weave these approaches naturally into your response.`
-      : "No specific modules active. Respond naturally based on what the user shares.";
-
-  // ── THERAPEUTIC STANCE ──
-  const stance = input.therapeuticStance
-    ? `Therapeutic stance instructions: ${input.therapeuticStance}`
-    : "";
-
-  // ── SESSION END ──
-  let sessionEndInstructions = "";
-  if (input.message === "__SESSION_END__") {
-    sessionEndInstructions = `
-The user is ending this session. Generate a warm farewell that:
-1. Briefly acknowledges what was discussed (1-2 sentences)
-2. References something specific from their personal memory if relevant
-3. Affirms the user's courage/effort
-4. Confirms the session is saved
-5. Gently encourages them for next time
-Keep it concise (3-5 sentences max). Do NOT ask new questions.`;
-  }
+  // (sliderEntries, sessionInfo, crisisInstructions, moduleInstructions, stance, sessionEndInstructions
+  //  are already declared above the early return)
 
   return `${identity}
 
 The user's name is ${name}. Always address them by name occasionally.
 ${identityMemory}
+${diaryMemory}
 ${sessionMemory}
 
 === MANDATORY BEHAVIORAL INSTRUCTIONS ===
@@ -387,9 +415,17 @@ export async function generateAIResponse(
 
   console.log("[AI Chat] System prompt length:", systemPrompt.length, "chars");
   console.log("[AI Chat] Total messages:", messages.length);
-  console.log("[AI Chat] Backpack life story sections:", input.backpack.lifeStory.length);
-  console.log("[AI Chat] UserDat trigger patterns:", input.userDat.triggerPatterns.length);
-  console.log("[AI Chat] UserDat session analyses:", input.userDat.sessionAnalyses.length);
+  console.log("[AI Chat] Session start:", input.isSessionStart);
+  if (input.backpack) {
+    console.log("[AI Chat] Backpack life story sections:", input.backpack.lifeStory.length);
+  }
+  if (input.userDat) {
+    console.log("[AI Chat] UserDat trigger patterns:", input.userDat.triggerPatterns.length);
+    console.log("[AI Chat] UserDat session analyses:", input.userDat.sessionAnalyses.length);
+  }
+  if (input.diaryEntries) {
+    console.log("[AI Chat] Diary entries:", input.diaryEntries.length);
+  }
 
   const openaiResponse = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",

@@ -106,7 +106,7 @@
 - [x] Fix rugzak not being sent to GPT-4o: send FULL rugzak (life story sections, triggers, mood history, intake context)
 - [x] Rewrite system prompt to treat rugzak as persistent personal memory (not a side note)
 - [x] System prompt must instruct AI to USE rugzak data as if it knows the user personally
-- [ ] Check diary integration with rugzak — diary needs AI context access (future)
+- [x] Check diary integration with rugzak — diary entries now sent to GPT-4o at session start
 - [x] Fix Android keyboard: removed root-level KeyboardAvoidingView, rely on softwareKeyboardLayoutMode:resize for Android, KAV with padding for iOS only
 - [x] Rewrote server-side system prompt as personal memory backbone (life story, triggers, mood trajectory, intake context)
 - [x] Added 2 new rugzak schema validation tests (86 total tests passing)
@@ -130,3 +130,5 @@
 - [x] Update engine.ts for new UserDat type
 - [x] Migrate existing Rugzak data to backpack.json + user.dat on first load
 - [x] Update all tests for new dual-store architecture (90 tests passing, 14 AI chat tests)
+- [x] FIX: Send backpack+userDat only ONCE at session start, not with every message
+- [x] FIX: Integrate diary entries into AI context — last 10 diary entries sent at session start alongside backpack+userDat

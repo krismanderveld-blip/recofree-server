@@ -21,7 +21,7 @@ import { getAIProvider } from '@/lib/ai';
 import { preprocessInput } from '@/lib/ai/preprocessor';
 import { processMessage, generateGreeting, endSession } from '@/lib/rugzak/pipeline';
 import { EmergencyCard } from '@/components/emergency-card';
-import type { ChatMessage, Rugzak, Backpack, UserDat } from '@/lib/ai/types';
+import type { ChatMessage, Rugzak, Backpack, UserDat, DiaryEntry } from '@/lib/ai/types';
 import { composeRugzak } from '@/lib/ai/types';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useColors } from '@/hooks/use-colors';
@@ -29,6 +29,7 @@ import { useColors } from '@/hooks/use-colors';
 const BACKPACK_KEY = '@recofree_backpack';
 const USERDAT_KEY = '@recofree_userdat';
 const PENDING_CLOSE_KEY = '@recofree_pending_close';
+const DIARY_KEY = '@recofree_diary';
 
 type SessionPhase = 'active' | 'ending' | 'completed';
 
@@ -139,8 +140,22 @@ export default function ChatScreen() {
     if (!backpack || !userDat) return;
     setIsTyping(true);
     try {
+      // Load diary entries for session-start context
+      let diaryEntries: DiaryEntry[] = [];
+      try {
+        const diaryJson = await AsyncStorage.getItem(DIARY_KEY);
+        if (diaryJson) {
+          const allEntries: DiaryEntry[] = JSON.parse(diaryJson);
+          // Send last 10 diary entries (most recent first)
+          diaryEntries = allEntries.slice(0, 10);
+        }
+      } catch (e) {
+        console.warn('Could not load diary for AI context:', e);
+      }
+
       const provider = getAIProvider();
-      const result = await generateGreeting(backpack, provider, userDat);
+      // SESSION START: send full backpack + userDat + diary entries
+      const result = await generateGreeting(backpack, provider, userDat, diaryEntries);
       // Only persist userDat (backpack is NEVER modified by the system)
       await AsyncStorage.setItem(USERDAT_KEY, JSON.stringify(result.updatedUserDat));
       setMessages(result.updatedUserDat.chatHistory);
@@ -176,7 +191,8 @@ export default function ChatScreen() {
       // Backpack is always read from state (NEVER modified by system)
       const backpack = state.backpack!;
       const provider = getAIProvider();
-      const result = await processMessage(backpack, processedText, provider, currentUserDat);
+      // FOLLOW-UP MESSAGE: isSessionStart = false, no diary entries
+      const result = await processMessage(backpack, processedText, provider, currentUserDat, { isSessionStart: false, diaryEntries: [] });
       // Only persist userDat (backpack is NEVER modified)
       await AsyncStorage.setItem(USERDAT_KEY, JSON.stringify(result.updatedUserDat));
       if (result.crisisLevel > 0) setCrisisLevel(result.crisisLevel);
