@@ -110,3 +110,23 @@
 - [x] Fix Android keyboard: removed root-level KeyboardAvoidingView, rely on softwareKeyboardLayoutMode:resize for Android, KAV with padding for iOS only
 - [x] Rewrote server-side system prompt as personal memory backbone (life story, triggers, mood trajectory, intake context)
 - [x] Added 2 new rugzak schema validation tests (86 total tests passing)
+- [x] ARCHITECTURE: Split monolithic Rugzak into backpack.json + user.dat dual-store
+- [x] Define Backpack type (stable identity: name, userType, sections, intakeContext, createdAt)
+- [x] Define UserDat type (dynamic session memory: currentMood, moodHistory, chatHistory, moduleUsage, triggerPatterns, totalSessions, lastSessionDate, sessionAnalyses)
+- [x] Create dual-store persistence layer with separate AsyncStorage keys
+- [x] Rewrite user-context.tsx with dual-store state management
+- [x] Backpack is NEVER auto-modified — only user can edit via Backpack screen
+- [x] Backpack is NEVER summarized or truncated — always sent in full
+- [x] user.dat is updated ONLY at session end via analysis pipeline
+- [x] At session start: send BOTH backpack + user.dat in full to GPT-4o
+- [x] During session: AI reads both but modifies NEITHER
+- [x] At session end: only user.dat is updated (new triggers, mood snapshot, themes, session count)
+- [x] Update pipeline.ts to accept both stores separately
+- [x] Update OpenAI provider to send backpack + userDat as separate payloads
+- [x] Update server ai-chat.ts schema to accept backpack + userDat separately
+- [x] Update server system prompt to clearly distinguish identity anchor vs session memory
+- [x] Update Backpack UI screen — clarify it's the identity anchor (user-editable only)
+- [x] Update chat.tsx for dual-store session flow
+- [x] Update engine.ts for new UserDat type
+- [x] Migrate existing Rugzak data to backpack.json + user.dat on first load
+- [x] Update all tests for new dual-store architecture (90 tests passing, 14 AI chat tests)

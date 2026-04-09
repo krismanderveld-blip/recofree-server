@@ -1,15 +1,33 @@
 /**
- * RecoFree AI Provider Types
+ * RecoFree AI Provider Types — DUAL-STORE ARCHITECTURE
  *
- * CRITICAL ARCHITECTURE RULES:
- * 1. Emotion detection is owned by the Elias/Kim logic layer, NOT the AI provider.
- *    The AI provider may return advisory signals, but these are NEVER authoritative.
- * 2. userType is IMMUTABLE after intake. No runtime switching between Elias and Kim.
- * 3. The backend (Elias/Kim logic) is the single source of truth for:
- *    - Detected emotion, user state, module selection, crisis level, therapeutic stance
- * 4. The Rugzak is an ACTIVE therapeutic engine, not passive storage.
- *    It actively influences: module selection, tone, crisis detection, suggestion intensity.
- * 5. State persists across sessions — it does NOT reset per chat.
+ * TWO SEPARATE DATA SOURCES:
+ *
+ *   backpack.json → Stable, user-defined identity
+ *     - NEVER auto-modified by the system
+ *     - NEVER summarized or truncated
+ *     - Only the user can edit (via Backpack screen)
+ *     - Contains: name, userType, life story sections, intake context, createdAt
+ *
+ *   user.dat → Dynamic session memory
+ *     - Updated ONLY at session end via analysis pipeline
+ *     - Can grow over time (triggers, mood history, session analyses)
+ *     - Contains: currentMood, moodHistory, chatHistory, moduleUsage, triggerPatterns, totalSessions, etc.
+ *
+ * AT SESSION START:
+ *   Send BOTH completely to GPT. No compression, no character limits, no summarization.
+ *
+ * DURING SESSION:
+ *   AI reads both but does NOT modify them.
+ *
+ * AT SESSION END:
+ *   Only user.dat is updated via analysis.
+ *   The backpack remains unchanged unless explicitly edited by the user.
+ *
+ * CRITICAL RULE:
+ *   The backpack is the anchor of identity.
+ *   If it is reduced or summarized, the system loses consistency and reliability.
+ *   This is NOT a token optimization problem. This is a core architectural requirement.
  */
 
 /** User type determined at intake - IMMUTABLE after assignment */
@@ -18,11 +36,7 @@ export type UserType = 'elias' | 'kim';
 /** Urgency level determined at intake */
 export type UrgencyLevel = 'laag' | 'midden' | 'hoog';
 
-/**
- * Slider configuration per user type.
- * Elias (addiction): Craving, Frustration, Despondency, Focus (0-10)
- * Kim (loved one): Stress, Boundary Fatigue, Emotional Burden, Self-care (0-10)
- */
+// ─── Slider Types ──────────────────────────────────────────────
 
 /** Elias slider keys */
 export interface EliasMoodSliders {
@@ -60,7 +74,7 @@ export interface SliderConfig {
   inverted?: boolean;
 }
 
-/** Elias slider configuration (from RECOFREE_MODULE_1_INTAKE_SLIDERS.json) */
+/** Elias slider configuration */
 export const ELIAS_SLIDER_CONFIG: SliderConfig[] = [
   { key: 'craving', label: 'Craving', min: 0, max: 10, thresholds: [{ level: 'mild', value: 4 }, { level: 'moderate', value: 7 }, { level: 'severe', value: 9 }] },
   { key: 'frustration', label: 'Frustration', min: 0, max: 10, thresholds: [{ level: 'mild', value: 3 }, { level: 'moderate', value: 6 }, { level: 'severe', value: 8 }] },
@@ -68,7 +82,7 @@ export const ELIAS_SLIDER_CONFIG: SliderConfig[] = [
   { key: 'focus', label: 'Mental Focus', min: 0, max: 10, inverted: true, thresholds: [{ level: 'mild', value: 5 }, { level: 'moderate', value: 3 }, { level: 'severe', value: 1 }] },
 ];
 
-/** Kim slider configuration (for loved ones) */
+/** Kim slider configuration */
 export const KIM_SLIDER_CONFIG: SliderConfig[] = [
   { key: 'stress', label: 'Stress', min: 0, max: 10, thresholds: [{ level: 'mild', value: 3 }, { level: 'moderate', value: 6 }, { level: 'severe', value: 8 }] },
   { key: 'boundaryFatigue', label: 'Boundary Fatigue', min: 0, max: 10, thresholds: [{ level: 'mild', value: 3 }, { level: 'moderate', value: 6 }, { level: 'severe', value: 8 }] },
@@ -96,11 +110,7 @@ export function checkInterventions(sliders: MoodSliders, userType: UserType): { 
   for (const sc of config) {
     const value = (sliders as any)[sc.key] as number;
     if (value == null) continue;
-
     if (sc.inverted) {
-      // For positive sliders (focus, selfCare): LOW values are bad
-      // Thresholds are ordered: mild=5, moderate=3, severe=1
-      // Check from severe (lowest) to mild (highest)
       const sorted = [...sc.thresholds].sort((a, b) => a.value - b.value);
       for (const t of sorted) {
         if (value <= t.value) {
@@ -109,7 +119,6 @@ export function checkInterventions(sliders: MoodSliders, userType: UserType): { 
         }
       }
     } else {
-      // For negative sliders (craving, frustration, etc.): HIGH values are bad
       const sorted = [...sc.thresholds].sort((a, b) => b.value - a.value);
       for (const t of sorted) {
         if (value >= t.value) {
@@ -122,30 +131,19 @@ export function checkInterventions(sliders: MoodSliders, userType: UserType): { 
   return alerts;
 }
 
+// ─── Shared Sub-Types ──────────────────────────────────────────
+
 /** A single mood snapshot with timestamp */
 export interface MoodSnapshot {
   sliders: MoodSliders;
   timestamp: string;
 }
 
-/**
- * Intake data collected during onboarding.
- * This forms the initial state baseline for Elias or Kim.
- * userType is permanent and cannot be changed after intake.
- */
-export interface IntakeData {
-  userName: string;
-  userType: UserType;
-  startEmotion: string;
-  urgency: UrgencyLevel;
-  initialContext: string;
-}
-
-/** Life-phase section IDs for the Rugzak narrative document */
+/** Life-phase section IDs for the Backpack narrative document */
 export type LifePhaseId = 'childhood' | 'adolescence' | 'adulthood' | 'family' | 'themes';
 
 /**
- * A single life-phase section in the Rugzak.
+ * A single life-phase section in the Backpack.
  * Each section is a free-text narrative field where the user
  * writes their story for that life phase.
  */
@@ -162,7 +160,7 @@ export interface LifePhaseSection {
 export interface ModuleUsageRecord {
   moduleId: string;
   usedAt: string;
-  context: string; // Brief context of why it was triggered
+  context: string;
 }
 
 /** A detected trigger pattern */
@@ -173,58 +171,136 @@ export interface TriggerPattern {
   lastSeen: string;
 }
 
-/**
- * Rugzak (backpack) - ACTIVE therapeutic engine.
- *
- * The Rugzak is NOT passive storage. It is a living system that:
- * 1. Stores the user's life-story narrative (5 sections)
- * 2. Maintains persistent state (mood, craving, stimuli, social)
- * 3. Tracks full chat history across sessions
- * 4. Detects and accumulates trigger patterns over time
- * 5. Records module usage for context
- *
- * On EVERY message:
- * 1. Read current state
- * 2. Update state based on input
- * 3. Pass updated state into module selection + response generation
- * 4. Store state again
- *
- * The Rugzak ACTIVELY influences:
- * - Module selection (trigger patterns + mood trajectory)
- * - Tone (mood trajectory + history depth adjusts warmth/directness)
- * - Crisis detection (pattern accumulation raises baseline sensitivity)
- * - Suggestion intensity (low engagement + high craving = more assertive)
- */
-export interface Rugzak {
-  naam: string;
+/** Chat message in conversation history */
+export interface ChatMessage {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: string;
+  modulesUsed?: string[];
+}
+
+/** Intake data collected during onboarding */
+export interface IntakeData {
+  userName: string;
   userType: UserType;
+  startEmotion: string;
+  urgency: UrgencyLevel;
+  initialContext: string;
+}
 
-  // ── Narrative Layer ──
+// ─── BACKPACK (backpack.json) — STABLE IDENTITY ────────────────
+
+/**
+ * Backpack — the anchor of identity.
+ *
+ * RULES:
+ * - NEVER auto-modified by the system
+ * - NEVER summarized, truncated, or compressed
+ * - Only the user can edit (via Backpack screen)
+ * - Always sent in full to GPT at session start
+ * - This is NOT a token optimization problem
+ */
+export interface Backpack {
+  /** User's name */
+  naam: string;
+  /** User type — IMMUTABLE after intake */
+  userType: UserType;
+  /** Life story narrative sections — user-written, user-edited */
   sections: LifePhaseSection[];
-
-  // ── Persistent State Layer ──
-  currentMood: MoodSliders;
-  moodHistory: MoodSnapshot[]; // Accumulates across sessions
-  chatHistory: ChatMessage[]; // Full history, never reset
-  moduleUsage: ModuleUsageRecord[]; // What modules were used when
-  triggerPatterns: TriggerPattern[]; // Detected recurring triggers
-
-  // ── Intake Context ──
+  /** Intake context — captured once at onboarding */
   intakeContext: {
     startEmotion: string;
     urgency: UrgencyLevel;
     initialContext: string;
     intakeDate: string;
   };
+  /** When the backpack was created */
+  createdAt: string;
+}
 
-  // ── Meta ──
+// ─── USER.DAT — DYNAMIC SESSION MEMORY ─────────────────────────
+
+/**
+ * UserDat — dynamic session memory.
+ *
+ * RULES:
+ * - Updated ONLY at session end via analysis pipeline
+ * - Can grow over time (new triggers, mood snapshots, session analyses)
+ * - System-managed, not user-edited
+ * - Always sent in full to GPT at session start
+ */
+export interface UserDat {
+  /** Current mood slider values */
+  currentMood: MoodSliders;
+  /** Mood snapshots across sessions */
+  moodHistory: MoodSnapshot[];
+  /** Full chat history — never reset, accumulates across sessions */
+  chatHistory: ChatMessage[];
+  /** Module usage records */
+  moduleUsage: ModuleUsageRecord[];
+  /** Detected recurring trigger patterns */
+  triggerPatterns: TriggerPattern[];
+  /** Total number of completed sessions */
+  totalSessions: number;
+  /** Last session date */
+  lastSessionDate: string | null;
+  /** Session analysis summaries — grows after each session end */
+  sessionAnalyses: SessionAnalysisRecord[];
+}
+
+/** A record of a completed session's analysis */
+export interface SessionAnalysisRecord {
+  sessionNumber: number;
+  date: string;
+  messageCount: number;
+  durationMinutes: number;
+  dominantEmotion: string;
+  themes: string[];
+  newTriggers: string[];
+  modulesUsed: string[];
+  moodDelta: {
+    distressChange: number;
+    resilienceChange: number;
+  };
+  endRiskLevel: string;
+}
+
+// ─── RUGZAK — COMPOSED VIEW (backward compatibility) ───────────
+
+/**
+ * Rugzak — composed view of Backpack + UserDat.
+ *
+ * This type exists for backward compatibility with the engine,
+ * state-analyzer, and pipeline. It is a READ-ONLY view that
+ * combines both stores. It should NEVER be persisted directly.
+ *
+ * Use `composeRugzak(backpack, userDat)` to create this view.
+ */
+export interface Rugzak {
+  naam: string;
+  userType: UserType;
+  sections: LifePhaseSection[];
+  currentMood: MoodSliders;
+  moodHistory: MoodSnapshot[];
+  chatHistory: ChatMessage[];
+  moduleUsage: ModuleUsageRecord[];
+  triggerPatterns: TriggerPattern[];
+  intakeContext: {
+    startEmotion: string;
+    urgency: UrgencyLevel;
+    initialContext: string;
+    intakeDate: string;
+  };
   lastSessionDate: string | null;
   totalSessions: number;
   createdAt: string;
 }
 
-/** Default sections for a new Rugzak */
-export const DEFAULT_RUGZAK_SECTIONS: LifePhaseSection[] = [
+// ─── Factory Functions ─────────────────────────────────────────
+
+/** Default sections for a new Backpack */
+export const DEFAULT_BACKPACK_SECTIONS: LifePhaseSection[] = [
   {
     id: 'childhood',
     label: 'Childhood',
@@ -267,37 +343,65 @@ export const DEFAULT_RUGZAK_SECTIONS: LifePhaseSection[] = [
   },
 ];
 
-/** Create a fresh Rugzak for a new user */
-export function createNewRugzak(intake: IntakeData): Rugzak {
+// Keep old name as alias for backward compatibility in tests
+export const DEFAULT_RUGZAK_SECTIONS = DEFAULT_BACKPACK_SECTIONS;
+
+/** Create a new Backpack from intake data */
+export function createNewBackpack(intake: IntakeData): Backpack {
   return {
     naam: intake.userName,
     userType: intake.userType,
-    sections: DEFAULT_RUGZAK_SECTIONS.map((s) => ({ ...s })),
-    currentMood: createDefaultSliders(intake.userType),
-    moodHistory: [],
-    chatHistory: [],
-    moduleUsage: [],
-    triggerPatterns: [],
+    sections: DEFAULT_BACKPACK_SECTIONS.map((s) => ({ ...s })),
     intakeContext: {
       startEmotion: intake.startEmotion,
       urgency: intake.urgency,
       initialContext: intake.initialContext,
       intakeDate: new Date().toISOString(),
     },
-    lastSessionDate: null,
-    totalSessions: 0,
     createdAt: new Date().toISOString(),
   };
 }
 
-/** Chat message in conversation history */
-export interface ChatMessage {
-  id: string;
-  role: 'user' | 'assistant';
-  content: string;
-  timestamp: string;
-  modulesUsed?: string[];
+/** Create a new UserDat from intake data */
+export function createNewUserDat(userType: UserType): UserDat {
+  return {
+    currentMood: createDefaultSliders(userType),
+    moodHistory: [],
+    chatHistory: [],
+    moduleUsage: [],
+    triggerPatterns: [],
+    totalSessions: 0,
+    lastSessionDate: null,
+    sessionAnalyses: [],
+  };
 }
+
+/** Compose a Rugzak view from Backpack + UserDat (READ-ONLY, never persist this) */
+export function composeRugzak(backpack: Backpack, userDat: UserDat): Rugzak {
+  return {
+    naam: backpack.naam,
+    userType: backpack.userType,
+    sections: backpack.sections,
+    currentMood: userDat.currentMood,
+    moodHistory: userDat.moodHistory,
+    chatHistory: userDat.chatHistory,
+    moduleUsage: userDat.moduleUsage,
+    triggerPatterns: userDat.triggerPatterns,
+    intakeContext: backpack.intakeContext,
+    lastSessionDate: userDat.lastSessionDate,
+    totalSessions: userDat.totalSessions,
+    createdAt: backpack.createdAt,
+  };
+}
+
+/** Create a Rugzak from intake (backward compatibility for tests) */
+export function createNewRugzak(intake: IntakeData): Rugzak {
+  const backpack = createNewBackpack(intake);
+  const userDat = createNewUserDat(intake.userType);
+  return composeRugzak(backpack, userDat);
+}
+
+// ─── Context Types ─────────────────────────────────────────────
 
 /** Full context passed to the AI provider for response generation */
 export interface ChatContext {
@@ -306,7 +410,12 @@ export interface ChatContext {
   currentMessage: string;
   conversationHistory: ChatMessage[];
   moodSliders: MoodSliders;
+  /** The composed Rugzak view — for engine/analyzer compatibility */
   rugzak: Rugzak;
+  /** The raw Backpack — sent in full to GPT, NEVER modified */
+  backpack: Backpack;
+  /** The raw UserDat — sent in full to GPT, updated only at session end */
+  userDat: UserDat;
   activeModules: string[];
   crisisLevel: number;
   detectedEmotion: string;
@@ -320,8 +429,7 @@ export interface ChatContext {
  * Result returned by the AI provider.
  *
  * advisoryEmotion and advisoryConfidence are OPTIONAL HINTS from the LLM.
- * They are NOT authoritative. The Elias/Kim logic layer is the
- * single source of truth for emotion detection and state.
+ * They are NOT authoritative.
  */
 export interface AIResult {
   response: string;
@@ -332,7 +440,6 @@ export interface AIResult {
 /**
  * Abstract AI Provider interface.
  * The provider is ONLY responsible for language formulation.
- * All therapeutic logic happens in the Elias/Kim logic layer.
  */
 export interface AIProvider {
   generateResponse(context: ChatContext): Promise<AIResult>;
@@ -343,16 +450,10 @@ export interface AIProvider {
  * and passed into module selection + response generation.
  */
 export interface RugzakInfluence {
-  /** Adjusted tone: 'warm' | 'grounding' | 'assertive' | 'crisis' */
   tone: 'warm' | 'grounding' | 'assertive' | 'crisis';
-  /** Mood trajectory: 'improving' | 'stable' | 'declining' | 'volatile' */
   moodTrajectory: 'improving' | 'stable' | 'declining' | 'volatile';
-  /** How assertive suggestions should be (0-10) */
   suggestionIntensity: number;
-  /** Elevated crisis sensitivity based on pattern accumulation */
   crisisSensitivityBoost: number;
-  /** Module IDs that are especially relevant given history */
   priorityModules: string[];
-  /** Recurring trigger keywords detected over time */
   activePatterns: string[];
 }

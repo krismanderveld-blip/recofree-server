@@ -21,11 +21,13 @@ import { getAIProvider } from '@/lib/ai';
 import { preprocessInput } from '@/lib/ai/preprocessor';
 import { processMessage, generateGreeting, endSession } from '@/lib/rugzak/pipeline';
 import { EmergencyCard } from '@/components/emergency-card';
-import type { ChatMessage, Rugzak } from '@/lib/ai/types';
+import type { ChatMessage, Rugzak, Backpack, UserDat } from '@/lib/ai/types';
+import { composeRugzak } from '@/lib/ai/types';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useColors } from '@/hooks/use-colors';
 
-const RUGZAK_KEY = '@recofree_rugzak';
+const BACKPACK_KEY = '@recofree_backpack';
+const USERDAT_KEY = '@recofree_userdat';
 const PENDING_CLOSE_KEY = '@recofree_pending_close';
 
 type SessionPhase = 'active' | 'ending' | 'completed';
@@ -37,7 +39,10 @@ export default function ChatScreen() {
     setCrisisLevel,
     getUserName,
     getChatHistory,
+    getBackpack,
+    getUserDat,
     endSessionWithRugzak,
+    endSessionWithUserDat,
   } = useUser();
   const colors = useColors();
   const router = useRouter();
@@ -121,31 +126,34 @@ export default function ChatScreen() {
 
   // Start session and send greeting on mount
   useEffect(() => {
-    if (state.intakeCompleted && state.rugzak && !greetingSent.current) {
+    if (state.intakeCompleted && state.backpack && state.userDat && !greetingSent.current) {
       greetingSent.current = true;
       startSession();
       sendGreetingViaP();
     }
-  }, [state.intakeCompleted, state.rugzak]);
+  }, [state.intakeCompleted, state.backpack, state.userDat]);
 
   const sendGreetingViaP = useCallback(async () => {
-    if (!state.rugzak) return;
+    const backpack = getBackpack();
+    const userDat = getUserDat();
+    if (!backpack || !userDat) return;
     setIsTyping(true);
     try {
       const provider = getAIProvider();
-      const result = await generateGreeting(state.rugzak, provider);
-      await AsyncStorage.setItem(RUGZAK_KEY, JSON.stringify(result.updatedRugzak));
-      setMessages(result.updatedRugzak.chatHistory);
+      const result = await generateGreeting(backpack, provider, userDat);
+      // Only persist userDat (backpack is NEVER modified by the system)
+      await AsyncStorage.setItem(USERDAT_KEY, JSON.stringify(result.updatedUserDat));
+      setMessages(result.updatedUserDat.chatHistory);
     } catch (error) {
       console.error('Greeting error:', error);
     } finally {
       setIsTyping(false);
     }
-  }, [state.rugzak]);
+  }, [getBackpack, getUserDat]);
 
   const handleSend = useCallback(async () => {
     const rawText = inputText.trim();
-    if (!rawText || isTyping || !state.rugzak || sessionPhase !== 'active') return;
+    if (!rawText || isTyping || !state.backpack || !state.userDat || sessionPhase !== 'active') return;
 
     setInputText('');
     Keyboard.dismiss();
@@ -162,14 +170,18 @@ export default function ChatScreen() {
     try {
       const preprocessed = await preprocessInput(rawText);
       const processedText = preprocessed.processedText;
-      const rugzakJson = await AsyncStorage.getItem(RUGZAK_KEY);
-      const currentRugzak: Rugzak = rugzakJson ? JSON.parse(rugzakJson) : state.rugzak;
+      // Load latest userDat from storage (may have been updated by greeting)
+      const userDatJson = await AsyncStorage.getItem(USERDAT_KEY);
+      const currentUserDat: UserDat = userDatJson ? JSON.parse(userDatJson) : state.userDat!;
+      // Backpack is always read from state (NEVER modified by system)
+      const backpack = state.backpack!;
       const provider = getAIProvider();
-      const result = await processMessage(currentRugzak, processedText, provider);
-      await AsyncStorage.setItem(RUGZAK_KEY, JSON.stringify(result.updatedRugzak));
+      const result = await processMessage(backpack, processedText, provider, currentUserDat);
+      // Only persist userDat (backpack is NEVER modified)
+      await AsyncStorage.setItem(USERDAT_KEY, JSON.stringify(result.updatedUserDat));
       if (result.crisisLevel > 0) setCrisisLevel(result.crisisLevel);
       if (result.showEmergency) setShowEmergency(true);
-      setMessages(result.updatedRugzak.chatHistory);
+      setMessages(result.updatedUserDat.chatHistory);
     } catch (error) {
       console.error('Pipeline error:', error);
       const errorMsg: ChatMessage = {
@@ -182,10 +194,10 @@ export default function ChatScreen() {
     } finally {
       setIsTyping(false);
     }
-  }, [inputText, isTyping, state.rugzak, sessionPhase]);
+  }, [inputText, isTyping, state.backpack, state.userDat, sessionPhase]);
 
   const handleEndConversation = useCallback(async () => {
-    if (!state.rugzak || sessionPhase !== 'active') return;
+    if (!state.backpack || !state.userDat || sessionPhase !== 'active') return;
     setSessionPhase('ending');
     const analyzingMsg: ChatMessage = {
       id: `msg_end_${Date.now()}`,
@@ -195,12 +207,14 @@ export default function ChatScreen() {
     };
     setMessages((prev) => [...prev, analyzingMsg]);
     try {
-      const rugzakJson = await AsyncStorage.getItem(RUGZAK_KEY);
-      const currentRugzak: Rugzak = rugzakJson ? JSON.parse(rugzakJson) : state.rugzak;
+      const userDatJson = await AsyncStorage.getItem(USERDAT_KEY);
+      const currentUserDat: UserDat = userDatJson ? JSON.parse(userDatJson) : state.userDat!;
+      const backpack = state.backpack!;
       const provider = getAIProvider();
-      const result = await endSession(currentRugzak, provider);
-      await AsyncStorage.setItem(RUGZAK_KEY, JSON.stringify(result.updatedRugzak));
-      await endSessionWithRugzak(result.updatedRugzak);
+      const result = await endSession(backpack, provider, currentUserDat);
+      // Only persist userDat (backpack is NEVER modified)
+      await AsyncStorage.setItem(USERDAT_KEY, JSON.stringify(result.updatedUserDat));
+      await endSessionWithUserDat(result.updatedUserDat);
       await AsyncStorage.removeItem(PENDING_CLOSE_KEY);
       const confirmationMsg: ChatMessage = {
         id: `msg_confirm_${Date.now()}`,
@@ -221,7 +235,7 @@ export default function ChatScreen() {
       setMessages((prev) => [...prev, fallbackMsg]);
       setSessionPhase('completed');
     }
-  }, [state.rugzak, sessionPhase, userName, endSessionWithRugzak]);
+  }, [state.backpack, state.userDat, sessionPhase, userName, endSessionWithUserDat]);
 
   const handleBackToHome = useCallback(() => {
     router.replace('/(tabs)');

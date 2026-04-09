@@ -30,13 +30,13 @@ const SECTION_ICONS: Record<LifePhaseId, string> = {
 };
 
 export default function BackpackScreen() {
-  const { state, updateRugzakSection } = useUser();
+  const { state, updateBackpackSection } = useUser();
   const colors = useColors();
   const [expandedSection, setExpandedSection] = useState<LifePhaseId | null>(null);
   const [editingSection, setEditingSection] = useState<LifePhaseId | null>(null);
   const [editText, setEditText] = useState('');
 
-  const sections = state.rugzak?.sections ?? [];
+  const sections = state.backpack?.sections ?? [];
   const filledCount = sections.filter((s) => s.content.trim().length > 0).length;
 
   const handleExpand = useCallback((sectionId: LifePhaseId) => {
@@ -55,12 +55,12 @@ export default function BackpackScreen() {
   }, []);
 
   const handleSave = useCallback(async (sectionId: LifePhaseId) => {
-    await updateRugzakSection(sectionId, editText);
+    await updateBackpackSection(sectionId, editText);
     setEditingSection(null);
     if (Platform.OS !== 'web') {
       Alert.alert('Saved', 'Your story has been saved.');
     }
-  }, [editText, updateRugzakSection]);
+  }, [editText, updateBackpackSection]);
 
   const handleCancel = useCallback(() => {
     setEditingSection(null);
@@ -204,8 +204,9 @@ export default function BackpackScreen() {
         <View className="mb-6">
           <Text className="text-2xl font-bold text-foreground">My Backpack</Text>
           <Text className="text-sm text-muted mt-1 leading-relaxed">
-            Your life story helps your companion understand you better.
-            Write at your own pace — everything stays on your device.
+            Your life story is your identity anchor — it helps your companion
+            truly know you. Write at your own pace. Everything stays on your device
+            and is NEVER modified by the system.
           </Text>
         </View>
 
@@ -237,9 +238,9 @@ export default function BackpackScreen() {
         <View className="bg-surface border border-border rounded-2xl p-4 mt-2">
           <Text className="text-sm text-muted leading-relaxed">
             <Text className="font-semibold text-foreground">Tip: </Text>
-            You can always come back to add or edit your story. What you write here
-            is analyzed at the start and end of each conversation to give your
-            companion deeper context.
+            You can always come back to add or edit your story. Your backpack is
+            sent in full to your companion at the start of each conversation —
+            it is never summarized or reduced. Only you can change it.
           </Text>
         </View>
       </ScrollView>

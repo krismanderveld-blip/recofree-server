@@ -1,31 +1,41 @@
-import type { AIProvider, AIResult, ChatContext, Rugzak, MoodSnapshot, TriggerPattern, LifePhaseSection, ModuleUsageRecord } from './types';
+import type { AIProvider, AIResult, ChatContext, Backpack, UserDat, MoodSnapshot, TriggerPattern, LifePhaseSection, ModuleUsageRecord, SessionAnalysisRecord } from './types';
 import { getApiBaseUrl } from '@/constants/oauth';
 import * as Auth from '@/lib/_core/auth';
 import superjson from 'superjson';
 
 /**
- * OpenAIProvider - Routes through backend tRPC to OpenAI GPT-4o.
+ * OpenAIProvider — Routes through backend tRPC to OpenAI GPT-4o.
  *
- * ARCHITECTURE:
- *   App → Backend (tRPC ai.chat) → OpenAI GPT-4o → Backend → App
+ * DUAL-STORE ARCHITECTURE:
+ *   App sends BOTH stores in full → Backend builds system prompt → OpenAI GPT-4o → Backend → App
  *
- * The FULL rugzak is sent to the backend so GPT-4o has complete access to:
- *   - Life story sections (childhood, adolescence, adulthood, family, themes)
- *   - All trigger patterns with frequency and history
- *   - Mood history across sessions
- *   - Module usage history
- *   - Intake context (start emotion, urgency, initial context)
+ * TWO SEPARATE DATA SOURCES:
+ *   backpack (identity anchor):
+ *     - Life story sections (FULL text, NEVER truncated)
+ *     - Intake context
+ *     - User name, type, creation date
+ *     - NEVER auto-modified, NEVER summarized
  *
- * The rugzak IS the user's persistent memory. Without it, the AI cannot
- * know the user's personal history, relationships, or patterns.
+ *   userDat (session memory):
+ *     - Trigger patterns with frequency and history
+ *     - Mood history across sessions
+ *     - Module usage history
+ *     - Session analysis records
+ *     - Chat history
+ *
+ * CRITICAL RULE:
+ *   The backpack is the anchor of identity.
+ *   If it is reduced or summarized, the system loses consistency and reliability.
+ *   This is NOT a token optimization problem. This is a core architectural requirement.
  */
 export class OpenAIProvider implements AIProvider {
   async generateResponse(context: ChatContext): Promise<AIResult> {
     try {
       const apiBaseUrl = getApiBaseUrl();
 
-      // Build the FULL rugzak context — this is the user's personal memory
-      const rugzakFull = buildFullRugzakPayload(context.rugzak);
+      // Build the TWO separate payloads — BOTH sent in full, NEVER compressed
+      const backpackPayload = buildBackpackPayload(context.backpack);
+      const userDatPayload = buildUserDatPayload(context.userDat);
 
       // Build the input payload matching the server's chatInputSchema
       const inputPayload = {
@@ -37,7 +47,8 @@ export class OpenAIProvider implements AIProvider {
           content: m.content,
         })),
         moodSliders: context.moodSliders as unknown as Record<string, number>,
-        rugzakFull,
+        backpack: backpackPayload,
+        userDat: userDatPayload,
         activeModules: context.activeModules,
         crisisLevel: context.crisisLevel,
         detectedEmotion: context.detectedEmotion,
@@ -47,12 +58,9 @@ export class OpenAIProvider implements AIProvider {
         startEmotion: context.startEmotion,
       };
 
-      // tRPC mutation via HTTP: POST to /api/trpc/ai.chat
-      // The server uses superjson transformer, so we must wrap the input
-      // in the superjson format that tRPC expects.
+      // tRPC mutation via HTTP with superjson serialization
       const serialized = superjson.serialize(inputPayload);
 
-      // Get auth token for native platforms
       const token = await Auth.getSessionToken();
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
@@ -61,12 +69,13 @@ export class OpenAIProvider implements AIProvider {
         headers['Authorization'] = `Bearer ${token}`;
       }
 
-      // tRPC single mutation endpoint (not batch)
       const url = `${apiBaseUrl}/api/trpc/ai.chat`;
 
       console.log('[OpenAIProvider] Calling:', url);
-      console.log('[OpenAIProvider] Life story sections:', rugzakFull.lifeStory.length);
-      console.log('[OpenAIProvider] Trigger patterns:', rugzakFull.triggerPatterns.length);
+      console.log('[OpenAIProvider] Backpack sections:', backpackPayload.lifeStory.length);
+      console.log('[OpenAIProvider] UserDat triggers:', userDatPayload.triggerPatterns.length);
+      console.log('[OpenAIProvider] UserDat sessions:', userDatPayload.totalSessions);
+      console.log('[OpenAIProvider] UserDat session analyses:', userDatPayload.sessionAnalyses.length);
 
       const response = await fetch(url, {
         method: 'POST',
@@ -85,7 +94,6 @@ export class OpenAIProvider implements AIProvider {
 
       const data = await response.json();
 
-      // tRPC response format: { result: { data: { json: ..., meta: ... } } }
       let result: any;
       if (data?.result?.data) {
         try {
@@ -118,59 +126,75 @@ export class OpenAIProvider implements AIProvider {
 }
 
 /**
- * Build the FULL rugzak payload for the backend.
- *
- * The rugzak is the user's persistent personal memory.
- * We send EVERYTHING the AI needs to know the user:
- * - Life story sections (full text, not truncated)
- * - All trigger patterns with counts and dates
- * - Recent mood history (last 20 snapshots)
- * - Module usage summary
- * - Intake context
+ * Build the BACKPACK payload — identity anchor.
+ * Sent in FULL. NEVER truncated, summarized, or compressed.
  */
-function buildFullRugzakPayload(rugzak: Rugzak) {
-  // Life story sections — send FULL content, not truncated
-  const lifeStory = (rugzak.sections || [])
+function buildBackpackPayload(backpack: Backpack) {
+  const lifeStory = (backpack.sections || [])
     .filter((s: LifePhaseSection) => s.content && s.content.trim().length > 0)
     .map((s: LifePhaseSection) => ({
       id: s.id,
       label: s.label,
       ageRange: s.ageRange,
-      content: s.content, // FULL content, no truncation
+      content: s.content, // FULL content — NEVER truncated
     }));
 
-  // Trigger patterns — send full details
-  const triggerPatterns = (rugzak.triggerPatterns || []).map((tp: TriggerPattern) => ({
+  return {
+    naam: backpack.naam,
+    userType: backpack.userType,
+    lifeStory,
+    intakeContext: {
+      startEmotion: backpack.intakeContext?.startEmotion || '',
+      urgency: backpack.intakeContext?.urgency || 'midden',
+      initialContext: backpack.intakeContext?.initialContext || '',
+      intakeDate: backpack.intakeContext?.intakeDate || '',
+    },
+    createdAt: backpack.createdAt || '',
+  };
+}
+
+/**
+ * Build the USERDAT payload — dynamic session memory.
+ * Sent in FULL. Contains all accumulated session data.
+ */
+function buildUserDatPayload(userDat: UserDat) {
+  const triggerPatterns = (userDat.triggerPatterns || []).map((tp: TriggerPattern) => ({
     trigger: tp.trigger,
     count: tp.count,
     firstSeen: tp.firstSeen,
     lastSeen: tp.lastSeen,
   }));
 
-  // Mood history — last 20 snapshots for trajectory analysis
-  const moodHistory = (rugzak.moodHistory || []).slice(-20).map((ms: MoodSnapshot) => ({
+  // Full mood history — no truncation
+  const moodHistory = (userDat.moodHistory || []).map((ms: MoodSnapshot) => ({
     sliders: ms.sliders as unknown as Record<string, number>,
     timestamp: ms.timestamp,
   }));
 
-  // Module usage — unique module IDs used across sessions
   const moduleUsageSummary = [...new Set(
-    (rugzak.moduleUsage || []).map((mu: ModuleUsageRecord) => mu.moduleId)
+    (userDat.moduleUsage || []).map((mu: ModuleUsageRecord) => mu.moduleId)
   )];
 
+  // Session analyses — the growing memory of past sessions
+  const sessionAnalyses = (userDat.sessionAnalyses || []).map((sa: SessionAnalysisRecord) => ({
+    sessionNumber: sa.sessionNumber,
+    date: sa.date,
+    messageCount: sa.messageCount,
+    durationMinutes: sa.durationMinutes,
+    dominantEmotion: sa.dominantEmotion,
+    themes: sa.themes,
+    newTriggers: sa.newTriggers,
+    modulesUsed: sa.modulesUsed,
+    moodDelta: sa.moodDelta,
+    endRiskLevel: sa.endRiskLevel,
+  }));
+
   return {
-    totalSessions: rugzak.totalSessions || 0,
-    lifeStory,
+    totalSessions: userDat.totalSessions || 0,
     triggerPatterns,
     moodHistory,
     moduleUsageSummary,
-    intakeContext: {
-      startEmotion: rugzak.intakeContext?.startEmotion || '',
-      urgency: rugzak.intakeContext?.urgency || 'midden',
-      initialContext: rugzak.intakeContext?.initialContext || '',
-      intakeDate: rugzak.intakeContext?.intakeDate || '',
-    },
-    lastSessionDate: rugzak.lastSessionDate || null,
-    createdAt: rugzak.createdAt || '',
+    lastSessionDate: userDat.lastSessionDate || null,
+    sessionAnalyses,
   };
 }
