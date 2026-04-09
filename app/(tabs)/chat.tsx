@@ -10,12 +10,12 @@ import {
   Alert,
   AppState,
   Keyboard,
+  KeyboardAvoidingView,
   type AppStateStatus,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
-import { ScreenContainer } from '@/components/screen-container';
 import { useUser } from '@/lib/user-context';
 import { getAIProvider } from '@/lib/ai';
 import { preprocessInput } from '@/lib/ai/preprocessor';
@@ -57,14 +57,12 @@ export default function ChatScreen() {
 
   // ── Scroll to end when keyboard opens ──
   useEffect(() => {
-    const showListener = Keyboard.addListener(
-      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
-      () => {
-        setTimeout(() => {
-          flatListRef.current?.scrollToEnd({ animated: true });
-        }, 150);
-      }
-    );
+    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const showListener = Keyboard.addListener(showEvent, () => {
+      setTimeout(() => {
+        flatListRef.current?.scrollToEnd({ animated: true });
+      }, 100);
+    });
     return () => {
       showListener.remove();
     };
@@ -264,11 +262,29 @@ export default function ChatScreen() {
     }, 100);
   }, []);
 
-  // Calculate the bottom padding needed for the tab bar
+  // Tab bar height calculation
   const bottomTabPadding = Platform.OS === 'web' ? 12 : Math.max(insets.bottom, 8);
   const tabBarHeight = 56 + bottomTabPadding;
 
-  return (
+  /**
+   * KEYBOARD STRATEGY:
+   *
+   * Android with softwareKeyboardLayoutMode: "resize":
+   *   The system automatically resizes the window when the keyboard opens.
+   *   We do NOT need KeyboardAvoidingView at all — the flex layout naturally
+   *   pushes the input bar up because the window shrinks.
+   *   We just need to make sure the input bar is at the bottom of a flex:1 container.
+   *
+   * iOS:
+   *   The window does NOT resize. We need KeyboardAvoidingView with behavior="padding"
+   *   to push content up. The keyboardVerticalOffset accounts for the tab bar.
+   *
+   * Web:
+   *   No special handling needed.
+   */
+  const isIOS = Platform.OS === 'ios';
+
+  const chatContent = (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       {/* Safe area for top only */}
       <View style={{ paddingTop: insets.top, backgroundColor: colors.background }}>
@@ -324,9 +340,8 @@ export default function ChatScreen() {
         </View>
       </View>
 
-      {/* Main content area: FlatList + Input */}
+      {/* Messages + Input: flex:1 container */}
       <View style={{ flex: 1 }}>
-        {/* Messages */}
         <FlatList
           ref={flatListRef}
           data={messages}
@@ -343,6 +358,7 @@ export default function ChatScreen() {
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="interactive"
           showsVerticalScrollIndicator={false}
+          automaticallyAdjustKeyboardInsets={isIOS}
           ListHeaderComponent={
             showEmergency ? (
               <EmergencyCard
@@ -419,13 +435,13 @@ export default function ChatScreen() {
           }
         />
 
-        {/* Input Bar */}
+        {/* Input Bar — sits at the bottom of the flex container */}
         {sessionPhase === 'active' && (
           <View
             style={{
               paddingHorizontal: 16,
               paddingTop: 10,
-              paddingBottom: Math.max(10, tabBarHeight),
+              paddingBottom: tabBarHeight,
               backgroundColor: colors.background,
               borderTopWidth: 0.5,
               borderTopColor: colors.border,
@@ -483,6 +499,21 @@ export default function ChatScreen() {
       </View>
     </View>
   );
+
+  // iOS needs KeyboardAvoidingView; Android uses softwareKeyboardLayoutMode: "resize"
+  if (isIOS) {
+    return (
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior="padding"
+        keyboardVerticalOffset={0}
+      >
+        {chatContent}
+      </KeyboardAvoidingView>
+    );
+  }
+
+  return chatContent;
 }
 
 function formatTime(timestamp: string): string {

@@ -1,4 +1,4 @@
-import type { AIProvider, AIResult, ChatContext, Rugzak } from './types';
+import type { AIProvider, AIResult, ChatContext, Rugzak, MoodSnapshot, TriggerPattern, LifePhaseSection, ModuleUsageRecord } from './types';
 import { getApiBaseUrl } from '@/constants/oauth';
 import * as Auth from '@/lib/_core/auth';
 import superjson from 'superjson';
@@ -9,29 +9,25 @@ import superjson from 'superjson';
  * ARCHITECTURE:
  *   App → Backend (tRPC ai.chat) → OpenAI GPT-4o → Backend → App
  *
- * Uses the same URL + superjson transformer as the tRPC client to ensure
- * consistent serialization. Calls the tRPC mutation endpoint directly via
- * HTTP to avoid needing React context (this is used outside components).
+ * The FULL rugzak is sent to the backend so GPT-4o has complete access to:
+ *   - Life story sections (childhood, adolescence, adulthood, family, themes)
+ *   - All trigger patterns with frequency and history
+ *   - Mood history across sessions
+ *   - Module usage history
+ *   - Intake context (start emotion, urgency, initial context)
  *
- * The backend is responsible for:
- *   - Building the system prompt with Elias/Kim directives
- *   - Including full state context (rugzak summary, modules, emotional trajectory)
- *   - Calling OpenAI GPT-4o with the assembled messages
- *   - Returning the response to the app
- *
- * The app's Elias/Kim logic layer remains the source of truth for:
- *   - Module selection, crisis detection, state management
- *   - The server only generates language based on instructions
+ * The rugzak IS the user's persistent memory. Without it, the AI cannot
+ * know the user's personal history, relationships, or patterns.
  */
 export class OpenAIProvider implements AIProvider {
   async generateResponse(context: ChatContext): Promise<AIResult> {
     try {
       const apiBaseUrl = getApiBaseUrl();
 
-      // Build a rugzak summary (don't send the entire rugzak to save bandwidth)
-      const rugzakSummary = buildRugzakSummary(context.rugzak);
+      // Build the FULL rugzak context — this is the user's personal memory
+      const rugzakFull = buildFullRugzakPayload(context.rugzak);
 
-      // Build the input payload
+      // Build the input payload matching the server's chatInputSchema
       const inputPayload = {
         userType: context.userType,
         userName: context.userName,
@@ -41,7 +37,7 @@ export class OpenAIProvider implements AIProvider {
           content: m.content,
         })),
         moodSliders: context.moodSliders as unknown as Record<string, number>,
-        rugzakSummary,
+        rugzakFull,
         activeModules: context.activeModules,
         crisisLevel: context.crisisLevel,
         detectedEmotion: context.detectedEmotion,
@@ -51,7 +47,9 @@ export class OpenAIProvider implements AIProvider {
         startEmotion: context.startEmotion,
       };
 
-      // Use superjson to serialize (matching the tRPC client's transformer)
+      // tRPC mutation via HTTP: POST to /api/trpc/ai.chat
+      // The server uses superjson transformer, so we must wrap the input
+      // in the superjson format that tRPC expects.
       const serialized = superjson.serialize(inputPayload);
 
       // Get auth token for native platforms
@@ -63,12 +61,12 @@ export class OpenAIProvider implements AIProvider {
         headers['Authorization'] = `Bearer ${token}`;
       }
 
-      // tRPC batch mutation format: POST to /api/trpc/ai.chat
-      // The body must be wrapped in the tRPC batch format
+      // tRPC single mutation endpoint (not batch)
       const url = `${apiBaseUrl}/api/trpc/ai.chat`;
 
       console.log('[OpenAIProvider] Calling:', url);
-      console.log('[OpenAIProvider] API base URL:', apiBaseUrl || '(empty)');
+      console.log('[OpenAIProvider] Life story sections:', rugzakFull.lifeStory.length);
+      console.log('[OpenAIProvider] Trigger patterns:', rugzakFull.triggerPatterns.length);
 
       const response = await fetch(url, {
         method: 'POST',
@@ -86,16 +84,13 @@ export class OpenAIProvider implements AIProvider {
       }
 
       const data = await response.json();
-      console.log('[OpenAIProvider] Raw response keys:', Object.keys(data));
 
       // tRPC response format: { result: { data: { json: ..., meta: ... } } }
-      // With superjson, the actual data is in result.data.json and needs deserialization
       let result: any;
       if (data?.result?.data) {
         try {
           result = superjson.deserialize(data.result.data);
         } catch {
-          // Fallback: try direct json access
           result = data.result.data.json ?? data.result.data;
         }
       } else {
@@ -123,38 +118,59 @@ export class OpenAIProvider implements AIProvider {
 }
 
 /**
- * Build a compact summary of the Rugzak for the backend.
- * We don't send the entire Rugzak (which includes full chat history)
- * to avoid excessive payload size. The conversation history is sent separately.
+ * Build the FULL rugzak payload for the backend.
+ *
+ * The rugzak is the user's persistent personal memory.
+ * We send EVERYTHING the AI needs to know the user:
+ * - Life story sections (full text, not truncated)
+ * - All trigger patterns with counts and dates
+ * - Recent mood history (last 20 snapshots)
+ * - Module usage summary
+ * - Intake context
  */
-function buildRugzakSummary(rugzak: Rugzak): {
-  totalSessions: number;
-  triggerPatterns: string[];
-  lifePhaseSummary: string;
-  intakeContext: {
-    startEmotion: string;
-    urgency: string;
-    initialContext: string;
-  };
-} {
-  // Extract trigger pattern names
-  const triggerPatterns = (rugzak.triggerPatterns || []).map((tp) => tp.trigger);
+function buildFullRugzakPayload(rugzak: Rugzak) {
+  // Life story sections — send FULL content, not truncated
+  const lifeStory = (rugzak.sections || [])
+    .filter((s: LifePhaseSection) => s.content && s.content.trim().length > 0)
+    .map((s: LifePhaseSection) => ({
+      id: s.id,
+      label: s.label,
+      ageRange: s.ageRange,
+      content: s.content, // FULL content, no truncation
+    }));
 
-  // Build a brief life-phase summary from non-empty sections
-  const lifePhaseParts = (rugzak.sections || [])
-    .filter((s) => s.content && s.content.trim().length > 0)
-    .map((s) => `${s.label}: ${s.content.slice(0, 200)}`)
-    .join(' | ');
-  const lifePhaseSummary = lifePhaseParts || '';
+  // Trigger patterns — send full details
+  const triggerPatterns = (rugzak.triggerPatterns || []).map((tp: TriggerPattern) => ({
+    trigger: tp.trigger,
+    count: tp.count,
+    firstSeen: tp.firstSeen,
+    lastSeen: tp.lastSeen,
+  }));
+
+  // Mood history — last 20 snapshots for trajectory analysis
+  const moodHistory = (rugzak.moodHistory || []).slice(-20).map((ms: MoodSnapshot) => ({
+    sliders: ms.sliders as unknown as Record<string, number>,
+    timestamp: ms.timestamp,
+  }));
+
+  // Module usage — unique module IDs used across sessions
+  const moduleUsageSummary = [...new Set(
+    (rugzak.moduleUsage || []).map((mu: ModuleUsageRecord) => mu.moduleId)
+  )];
 
   return {
     totalSessions: rugzak.totalSessions || 0,
+    lifeStory,
     triggerPatterns,
-    lifePhaseSummary,
+    moodHistory,
+    moduleUsageSummary,
     intakeContext: {
       startEmotion: rugzak.intakeContext?.startEmotion || '',
       urgency: rugzak.intakeContext?.urgency || 'midden',
       initialContext: rugzak.intakeContext?.initialContext || '',
+      intakeDate: rugzak.intakeContext?.intakeDate || '',
     },
+    lastSessionDate: rugzak.lastSessionDate || null,
+    createdAt: rugzak.createdAt || '',
   };
 }

@@ -5,8 +5,7 @@ import { StatusBar } from "expo-status-bar";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import "react-native-reanimated";
-import { Platform, KeyboardAvoidingView } from "react-native";
-import { useKeyboardBehavior } from "@/hooks/use-keyboard-behavior";
+import { Platform } from "react-native";
 import "@/lib/_core/nativewind-pressable";
 import { ThemeProvider } from "@/lib/theme-provider";
 import {
@@ -27,42 +26,6 @@ const DEFAULT_WEB_FRAME: Rect = { x: 0, y: 0, width: 0, height: 0 };
 export const unstable_settings = {
   anchor: "(tabs)",
 };
-
-/**
- * Inner component that wraps the app tree with KeyboardAvoidingView.
- * Must be a separate component so the useKeyboardBehavior hook is called
- * unconditionally (not inside a conditional render path).
- */
-function AppTreeWithKeyboardAvoiding({
-  trpcClient,
-  queryClient,
-}: {
-  trpcClient: ReturnType<typeof createTRPCClient>;
-  queryClient: QueryClient;
-}) {
-  const behaviour = useKeyboardBehavior();
-
-  return (
-    <KeyboardAvoidingView
-      style={{ flex: 1, backgroundColor: "transparent" }}
-      behavior={behaviour}
-      keyboardVerticalOffset={0}
-    >
-      <UserProvider>
-        <trpc.Provider client={trpcClient} queryClient={queryClient}>
-          <QueryClientProvider client={queryClient}>
-            <Stack screenOptions={{ headerShown: false }}>
-              <Stack.Screen name="(tabs)" />
-              <Stack.Screen name="intake" options={{ gestureEnabled: false }} />
-              <Stack.Screen name="oauth/callback" />
-            </Stack>
-            <StatusBar style="auto" />
-          </QueryClientProvider>
-        </trpc.Provider>
-      </UserProvider>
-    </KeyboardAvoidingView>
-  );
-}
 
 export default function RootLayout() {
   const initialInsets = initialWindowMetrics?.insets ?? DEFAULT_WEB_INSETS;
@@ -116,10 +79,18 @@ export default function RootLayout() {
 
   const content = (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <AppTreeWithKeyboardAvoiding
-        trpcClient={trpcClient}
-        queryClient={queryClient}
-      />
+      <UserProvider>
+        <trpc.Provider client={trpcClient} queryClient={queryClient}>
+          <QueryClientProvider client={queryClient}>
+            <Stack screenOptions={{ headerShown: false }}>
+              <Stack.Screen name="(tabs)" />
+              <Stack.Screen name="intake" options={{ gestureEnabled: false }} />
+              <Stack.Screen name="oauth/callback" />
+            </Stack>
+            <StatusBar style="auto" />
+          </QueryClientProvider>
+        </trpc.Provider>
+      </UserProvider>
     </GestureHandlerRootView>
   );
 

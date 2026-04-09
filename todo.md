@@ -100,6 +100,13 @@
 - [x] Strengthen system prompt to enforce slider-driven behavior instructions (MANDATORY BEHAVIORAL INSTRUCTIONS block)
 - [x] Fix chat keyboard behavior: content must scroll up when keyboard opens so input field and messages stay visible
 - [x] Fix chat keyboard overlap on Android: use KeyboardStickyView from react-native-keyboard-controller to stick input above keyboard
-- [ ] Fix Android keyboard overlap (attempt 3): try adjustResize + Keyboard listener approach since KeyboardStickyView didn't work
+- [x] Fix Android keyboard overlap (attempt 3): try adjustResize + Keyboard listener approach since KeyboardStickyView didn't work
 - [x] Fix Android keyboard overlap (attempt 4): root-level KeyboardAvoidingView with dynamic behavior hook (height on Android, padding on iOS)
 - [x] Fix "Something went wrong with the connection" error in chat — switched to superjson serialization matching tRPC client, added auth headers and logging
+- [x] Fix rugzak not being sent to GPT-4o: send FULL rugzak (life story sections, triggers, mood history, intake context)
+- [x] Rewrite system prompt to treat rugzak as persistent personal memory (not a side note)
+- [x] System prompt must instruct AI to USE rugzak data as if it knows the user personally
+- [ ] Check diary integration with rugzak — diary needs AI context access (future)
+- [x] Fix Android keyboard: removed root-level KeyboardAvoidingView, rely on softwareKeyboardLayoutMode:resize for Android, KAV with padding for iOS only
+- [x] Rewrote server-side system prompt as personal memory backbone (life story, triggers, mood trajectory, intake context)
+- [x] Added 2 new rugzak schema validation tests (86 total tests passing)

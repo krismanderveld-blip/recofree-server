@@ -16,15 +16,39 @@ const validInput = {
     { role: 'assistant' as const, content: 'Hey TestUser, how are you feeling?' },
   ],
   moodSliders: { craving: 3, frustration: 4, despondency: 2, focus: 6 },
-  rugzakSummary: {
+  rugzakFull: {
     totalSessions: 2,
-    triggerPatterns: ['stress', 'loneliness'],
-    lifePhaseSummary: 'Childhood: Grew up in a small town.',
+    lifeStory: [
+      {
+        id: 'childhood',
+        label: 'Kindertijd',
+        ageRange: '0-12 jaar',
+        content: 'Grew up in a small town. Parents divorced when I was 8. Felt lonely at school.',
+      },
+      {
+        id: 'adolescence',
+        label: 'Puberteit',
+        ageRange: '12-18 jaar',
+        content: 'Started drinking at 15. Had a close friend named Marco who helped me through tough times.',
+      },
+    ],
+    triggerPatterns: [
+      { trigger: 'stress', count: 5, firstSeen: '2025-01-01', lastSeen: '2025-03-15' },
+      { trigger: 'loneliness', count: 3, firstSeen: '2025-01-10', lastSeen: '2025-03-20' },
+    ],
+    moodHistory: [
+      { sliders: { craving: 5, frustration: 6, despondency: 4, focus: 3 }, timestamp: '2025-03-18' },
+      { sliders: { craving: 3, frustration: 4, despondency: 2, focus: 6 }, timestamp: '2025-03-20' },
+    ],
+    moduleUsageSummary: ['E05', 'E02'],
     intakeContext: {
       startEmotion: 'anxious',
       urgency: 'midden',
       initialContext: 'Struggling with alcohol',
+      intakeDate: '2025-01-01',
     },
+    lastSessionDate: '2025-03-20',
+    createdAt: '2025-01-01',
   },
   activeModules: ['E05'],
   crisisLevel: 0,
@@ -77,6 +101,38 @@ describe('AI Chat Input Schema', () => {
     const result = chatInputSchema.safeParse(input);
     expect(result.success).toBe(true);
   });
+
+  it('should validate rugzakFull with empty life story', () => {
+    const input = {
+      ...validInput,
+      rugzakFull: {
+        ...validInput.rugzakFull,
+        lifeStory: [],
+        triggerPatterns: [],
+        moodHistory: [],
+      },
+    };
+    const result = chatInputSchema.safeParse(input);
+    expect(result.success).toBe(true);
+  });
+
+  it('should validate rugzakFull with full life story', () => {
+    const input = {
+      ...validInput,
+      rugzakFull: {
+        ...validInput.rugzakFull,
+        lifeStory: [
+          { id: 'childhood', label: 'Kindertijd', ageRange: '0-12', content: 'Long story about childhood...' },
+          { id: 'adolescence', label: 'Puberteit', ageRange: '12-18', content: 'Teenage years were hard...' },
+          { id: 'adulthood', label: 'Volwassenheid', ageRange: '18+', content: 'Adult life and recovery...' },
+          { id: 'family', label: 'Familie', ageRange: 'n.v.t.', content: 'Family dynamics and relationships...' },
+          { id: 'themes', label: 'Rode draden', ageRange: 'n.v.t.', content: 'Recurring themes and patterns...' },
+        ],
+      },
+    };
+    const result = chatInputSchema.safeParse(input);
+    expect(result.success).toBe(true);
+  });
 });
 
 // ─── OpenAI Integration Test ──────────────────────────────────────
@@ -94,8 +150,6 @@ describe('AI Chat OpenAI Integration', () => {
     expect(result.response).toBeDefined();
     expect(typeof result.response).toBe('string');
     expect(result.response.length).toBeGreaterThan(10);
-    // Should address the user by name or respond to their anxiety
-    // (we can't predict exact content, but it should be non-empty)
     console.log('[Test] GPT-4o response:', result.response);
   }, 30000);
 

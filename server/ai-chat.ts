@@ -5,16 +5,17 @@
  * The API key is stored securely on the server (OPENAI_API_KEY env var).
  *
  * ARCHITECTURE:
- *   App sends ChatContext → Server builds system prompt → OpenAI GPT-4o → Server returns AIResult
+ *   App sends full context → Server builds system prompt → OpenAI GPT-4o → Server returns AIResult
  *
- * The server is responsible for:
- *   1. Building the full system prompt (Elias/Kim identity, modules, rugzak context)
- *   2. Calling OpenAI GPT-4o with the assembled messages
- *   3. Returning the response + advisory signals to the app
+ * The RUGZAK is the user's persistent personal memory:
+ *   - Life story sections (childhood, adolescence, adulthood, family, themes)
+ *   - Trigger patterns detected over time
+ *   - Mood history across sessions
+ *   - Module usage history
+ *   - Intake context
  *
- * The app's Elias/Kim logic layer remains the source of truth for:
- *   - Module selection, crisis detection, state management
- *   - The server only generates language based on instructions
+ * The rugzak is loaded from local storage on the device and sent with each request.
+ * The AI MUST use this data as if it personally knows the user.
  */
 
 import { z } from "zod";
@@ -30,15 +31,33 @@ interface ChatRequestInput {
     content: string;
   }>;
   moodSliders: Record<string, number>;
-  rugzakSummary: {
+  rugzakFull: {
     totalSessions: number;
-    triggerPatterns: string[];
-    lifePhaseSummary: string;
+    lifeStory: Array<{
+      id: string;
+      label: string;
+      ageRange: string;
+      content: string;
+    }>;
+    triggerPatterns: Array<{
+      trigger: string;
+      count: number;
+      firstSeen: string;
+      lastSeen: string;
+    }>;
+    moodHistory: Array<{
+      sliders: Record<string, number>;
+      timestamp: string;
+    }>;
+    moduleUsageSummary: string[];
     intakeContext: {
       startEmotion: string;
       urgency: string;
       initialContext: string;
+      intakeDate: string;
     };
+    lastSessionDate: string | null;
+    createdAt: string;
   };
   activeModules: string[];
   crisisLevel: number;
@@ -62,15 +81,39 @@ export const chatInputSchema = z.object({
     })
   ),
   moodSliders: z.record(z.string(), z.number()),
-  rugzakSummary: z.object({
+  rugzakFull: z.object({
     totalSessions: z.number(),
-    triggerPatterns: z.array(z.string()),
-    lifePhaseSummary: z.string(),
+    lifeStory: z.array(
+      z.object({
+        id: z.string(),
+        label: z.string(),
+        ageRange: z.string(),
+        content: z.string(),
+      })
+    ),
+    triggerPatterns: z.array(
+      z.object({
+        trigger: z.string(),
+        count: z.number(),
+        firstSeen: z.string(),
+        lastSeen: z.string(),
+      })
+    ),
+    moodHistory: z.array(
+      z.object({
+        sliders: z.record(z.string(), z.number()),
+        timestamp: z.string(),
+      })
+    ),
+    moduleUsageSummary: z.array(z.string()),
     intakeContext: z.object({
       startEmotion: z.string(),
       urgency: z.string(),
       initialContext: z.string(),
+      intakeDate: z.string(),
     }),
+    lastSessionDate: z.nullable(z.string()),
+    createdAt: z.string(),
   }),
   activeModules: z.array(z.string()),
   crisisLevel: z.number(),
@@ -87,28 +130,72 @@ function buildSystemPrompt(input: ChatRequestInput): string {
   const isElias = input.userType === "elias";
   const name = input.userName;
 
-  // Core identity
+  // ── CORE IDENTITY ──
   const identity = isElias
     ? `You are Elias, a warm, empathetic companion for someone in addiction recovery. You speak from a place of understanding, never judgment. You use therapeutic techniques from ACT, CBT, DBT, and mindfulness — but naturally, never clinically. You are NOT a therapist; you are a supportive presence who helps the user explore their feelings and find their own strength.`
     : `You are Kim, a direct yet caring companion for someone who loves a person struggling with addiction. You help them set boundaries, recognize enabling patterns, and prioritize their own well-being. You are honest and sometimes confrontational — but always with love. You are NOT a therapist; you are a supportive presence.`;
 
-  // Mood context
+  // ── PERSONAL MEMORY (RUGZAK) ──
+  // This is the BACKBONE of the user's history. You KNOW this person.
+  const rugzak = input.rugzakFull;
+
+  let personalMemory = `\n=== YOUR PERSONAL MEMORY OF ${name.toUpperCase()} ===\nYou have known ${name} across ${rugzak.totalSessions} previous sessions.`;
+
+  if (rugzak.intakeContext.initialContext) {
+    personalMemory += `\nWhen ${name} first came to you, they shared: "${rugzak.intakeContext.initialContext}"`;
+    personalMemory += `\nTheir initial emotion was: ${rugzak.intakeContext.startEmotion}`;
+    personalMemory += `\nUrgency at intake: ${rugzak.intakeContext.urgency}`;
+    if (rugzak.intakeContext.intakeDate) {
+      personalMemory += `\nFirst session: ${rugzak.intakeContext.intakeDate}`;
+    }
+  }
+
+  // Life story — the user's personal narrative
+  if (rugzak.lifeStory.length > 0) {
+    personalMemory += `\n\n--- ${name}'s LIFE STORY (shared by ${name} personally) ---`;
+    for (const section of rugzak.lifeStory) {
+      personalMemory += `\n\n[${section.label} (${section.ageRange})]:\n${section.content}`;
+    }
+    personalMemory += `\n--- END LIFE STORY ---`;
+    personalMemory += `\n\nYou KNOW this story. Reference it naturally when relevant. If ${name} mentions a person, place, or event from their story, you recognize it immediately. You do NOT ask them to repeat what they already told you.`;
+  } else {
+    personalMemory += `\n${name} has not yet shared their life story with you. You can gently invite them to share when appropriate, but never pressure.`;
+  }
+
+  // Trigger patterns — recurring vulnerabilities
+  if (rugzak.triggerPatterns.length > 0) {
+    personalMemory += `\n\n--- KNOWN TRIGGER PATTERNS ---`;
+    for (const tp of rugzak.triggerPatterns) {
+      personalMemory += `\n- "${tp.trigger}" (detected ${tp.count}x, first: ${tp.firstSeen}, last: ${tp.lastSeen})`;
+    }
+    personalMemory += `\nThese are recurring patterns you've observed. Be alert when these themes come up. You can gently name them: "I notice this connects to something we've seen before..."`;
+  }
+
+  // Mood history — trajectory across sessions
+  if (rugzak.moodHistory.length > 0) {
+    const recent = rugzak.moodHistory.slice(-5);
+    personalMemory += `\n\n--- MOOD TRAJECTORY (last ${recent.length} check-ins) ---`;
+    for (const mh of recent) {
+      const sliderStr = Object.entries(mh.sliders).map(([k, v]) => `${k}: ${v}/10`).join(", ");
+      personalMemory += `\n- ${mh.timestamp}: ${sliderStr}`;
+    }
+  }
+
+  // Module usage — what therapeutic approaches have been used
+  if (rugzak.moduleUsageSummary.length > 0) {
+    personalMemory += `\n\nTherapeutic modules previously used with ${name}: ${rugzak.moduleUsageSummary.join(", ")}`;
+  }
+
+  personalMemory += `\n=== END PERSONAL MEMORY ===`;
+
+  // ── CURRENT STATE ──
   const sliderEntries = Object.entries(input.moodSliders)
     .map(([k, v]) => `${k}: ${v}/10`)
     .join(", ");
 
-  // Trigger patterns
-  const triggers =
-    input.rugzakSummary.triggerPatterns.length > 0
-      ? `Known trigger patterns: ${input.rugzakSummary.triggerPatterns.join(", ")}`
-      : "No recurring trigger patterns detected yet.";
+  const sessionInfo = `Session #${rugzak.totalSessions + 1}. Duration: ${input.sessionDurationMinutes} minutes. Initial emotion: ${input.startEmotion}. Current detected emotion: ${input.detectedEmotion}.`;
 
-  // Life context
-  const lifeContext = input.rugzakSummary.lifePhaseSummary
-    ? `Life context from user's story: ${input.rugzakSummary.lifePhaseSummary}`
-    : "User has not yet shared their life story.";
-
-  // Crisis handling
+  // ── CRISIS HANDLING ──
   let crisisInstructions = "";
   if (input.crisisLevel >= 2) {
     crisisInstructions = `
@@ -126,35 +213,34 @@ ELEVATED CONCERN. Monitor closely:
 - Lower the threshold for suggesting professional support`;
   }
 
-  // Module instructions
+  // ── MODULE INSTRUCTIONS ──
   const moduleInstructions =
     input.activeModules.length > 0
       ? `Active therapeutic modules for this response: ${input.activeModules.join(", ")}. Weave these approaches naturally into your response.`
       : "No specific modules active. Respond naturally based on what the user shares.";
 
-  // Session context
-  const sessionInfo = `Session #${input.rugzakSummary.totalSessions + 1}. Duration: ${input.sessionDurationMinutes} minutes. Initial emotion: ${input.startEmotion}. Current detected emotion: ${input.detectedEmotion}.`;
-
-  // Therapeutic stance (from the rule-based system)
+  // ── THERAPEUTIC STANCE ──
   const stance = input.therapeuticStance
     ? `Therapeutic stance instructions: ${input.therapeuticStance}`
     : "";
 
-  // Session end handling
+  // ── SESSION END ──
   let sessionEndInstructions = "";
   if (input.message === "__SESSION_END__") {
     sessionEndInstructions = `
 The user is ending this session. Generate a warm farewell that:
 1. Briefly acknowledges what was discussed (1-2 sentences)
-2. Affirms the user's courage/effort
-3. Confirms the session is saved
-4. Gently encourages them for next time
+2. References something specific from their personal memory if relevant
+3. Affirms the user's courage/effort
+4. Confirms the session is saved
+5. Gently encourages them for next time
 Keep it concise (3-5 sentences max). Do NOT ask new questions.`;
   }
 
   return `${identity}
 
 The user's name is ${name}. Always address them by name occasionally.
+${personalMemory}
 
 === MANDATORY BEHAVIORAL INSTRUCTIONS ===
 ${stance}
@@ -170,20 +256,20 @@ CURRENT STATE:
 - Mood sliders: ${sliderEntries}
 - Urgency level: ${input.urgency}
 ${sessionInfo}
-${triggers}
-${lifeContext}
 
 ${moduleInstructions}
 ${crisisInstructions}
 ${sessionEndInstructions}
 
 RESPONSE RULES:
+- You KNOW ${name}. Use your personal memory naturally — reference their story, patterns, and history when relevant.
+- If ${name} asks "what do you know about me?" — you share what you know from your memory. You are NOT a blank slate.
 - Respond in the same language the user writes in (Dutch or English)
 - Keep responses concise: follow the PACING instruction above strictly
 - Never diagnose, prescribe, or claim to be a professional
 - Never break character
 - Use "I" statements and reflective listening
-- If the user's message is empty or a greeting, respond with a warm welcome
+- If the user's message is empty or a greeting, respond with a warm welcome that shows you remember them
 - Do NOT use bullet points or numbered lists in your response — speak naturally
 - Do NOT use emojis excessively (max 0-1 per message)
 - Be genuine, not performative`;
@@ -221,6 +307,11 @@ export async function generateAIResponse(
       content: "I would like to end this session now.",
     });
   }
+
+  console.log("[AI Chat] System prompt length:", systemPrompt.length, "chars");
+  console.log("[AI Chat] Total messages:", messages.length);
+  console.log("[AI Chat] Life story sections:", input.rugzakFull.lifeStory.length);
+  console.log("[AI Chat] Trigger patterns:", input.rugzakFull.triggerPatterns.length);
 
   // Call OpenAI GPT-4o
   const openaiResponse = await fetch("https://api.openai.com/v1/chat/completions", {
