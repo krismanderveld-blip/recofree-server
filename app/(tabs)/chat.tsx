@@ -90,8 +90,8 @@ export default function ChatScreen() {
         const pending = await AsyncStorage.getItem(PENDING_CLOSE_KEY);
         if (pending) {
           Alert.alert(
-            'Vorige sessie',
-            `Je vorige sessie met ${companionName} was niet volledig opgeslagen. De data is hersteld en veilig bewaard.`,
+            'Previous Session',
+            `Your last session with ${companionName} wasn't fully saved. The data has been recovered and stored safely.`,
             [{ text: 'OK', onPress: () => AsyncStorage.removeItem(PENDING_CLOSE_KEY) }]
           );
         }
@@ -235,7 +235,7 @@ export default function ChatScreen() {
       const errorMsg: ChatMessage = {
         id: `msg_${Date.now() + 1}`,
         role: 'assistant',
-        content: 'Er ging iets mis. Ik ben er nog \u2014 probeer het opnieuw.',
+        content: "I'm still here with you. Something went wrong \u2014 please try again.",
         timestamp: new Date().toISOString(),
       };
       setMessages((prev) => [...prev, errorMsg]);
@@ -250,7 +250,7 @@ export default function ChatScreen() {
     const analyzingMsg: ChatMessage = {
       id: `msg_end_${Date.now()}`,
       role: 'assistant',
-      content: `Ik ga alles analyseren wat je hebt gedeeld. Blijf even hier \u2014 ik laat je weten wanneer het klaar is.`,
+      content: `I'm going to analyze everything you shared. Stay here for a moment \u2014 I'll let you know when it's safe to leave.`,
       timestamp: new Date().toISOString(),
     };
     setMessages((prev) => [...prev, analyzingMsg]);
@@ -267,7 +267,7 @@ export default function ChatScreen() {
       const confirmationMsg: ChatMessage = {
         id: `msg_confirm_${Date.now()}`,
         role: 'assistant',
-        content: result.farewell + '\n\nIk heb alles opgeslagen. Je sessie is veilig bewaard. Je kunt de app nu sluiten of teruggaan naar het startscherm.',
+        content: result.farewell + '\n\nI\'ve saved everything. Your session is safely stored. You can close the app now, or go back to the home screen.',
         timestamp: new Date().toISOString(),
       };
       setMessages((prev) => [...prev, confirmationMsg]);
@@ -277,7 +277,7 @@ export default function ChatScreen() {
       const fallbackMsg: ChatMessage = {
         id: `msg_fallback_${Date.now()}`,
         role: 'assistant',
-        content: `${userName}, ik heb je sessie opgeslagen. Er ging iets mis tijdens de analyse, maar je gesprek is veilig bewaard. Je kunt de app nu sluiten.`,
+        content: `${userName}, I've saved your session. Something went wrong during analysis, but your conversation is safely stored. You can close the app now.`,
         timestamp: new Date().toISOString(),
       };
       setMessages((prev) => [...prev, fallbackMsg]);
@@ -368,11 +368,11 @@ export default function ChatScreen() {
             </Text>
             <Text style={{ fontSize: 12, color: colors.muted }}>
               {sessionPhase === 'ending'
-                ? `${companionName} verwerkt je sessie...`
+                ? `${companionName} is processing your session...`
                 : sessionPhase === 'completed'
-                ? 'Sessie voltooid'
+                ? 'Session completed'
                 : isTyping
-                ? 'Aan het typen...'
+                ? 'Typing...'
                 : 'Online'}
             </Text>
           </View>
@@ -432,7 +432,7 @@ export default function ChatScreen() {
           ListEmptyComponent={
             !isTyping ? (
               <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-                <Text style={{ color: colors.muted, fontSize: 16 }}>Gesprek starten...</Text>
+                <Text style={{ color: colors.muted, fontSize: 16 }}>Starting conversation...</Text>
               </View>
             ) : null
           }
@@ -462,7 +462,7 @@ export default function ChatScreen() {
                 <View style={{ alignSelf: 'center', marginVertical: 16, alignItems: 'center', gap: 8 }}>
                   <ActivityIndicator size="large" color={colors.primary} />
                   <Text style={{ fontSize: 14, color: colors.muted, textAlign: 'center' }}>
-                    {companionName} verwerkt je sessie...
+                    {companionName} is processing your session...
                   </Text>
                 </View>
               )}
@@ -470,7 +470,7 @@ export default function ChatScreen() {
                 <View style={{ alignSelf: 'center', marginVertical: 16, alignItems: 'center', gap: 12, width: '100%' }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                     <IconSymbol name="checkmark.circle.fill" size={20} color={colors.success} />
-                    <Text style={{ fontSize: 14, fontWeight: '500', color: colors.success }}>Sessie opgeslagen</Text>
+                    <Text style={{ fontSize: 14, fontWeight: '500', color: colors.success }}>Session saved</Text>
                   </View>
                   <Pressable
                     onPress={handleBackToHome}
@@ -489,7 +489,7 @@ export default function ChatScreen() {
                     ]}
                   >
                     <IconSymbol name="house.fill" size={18} color="#FFFFFF" />
-                    <Text style={{ color: '#FFFFFF', fontWeight: '600', fontSize: 16 }}>Terug naar Home</Text>
+                    <Text style={{ color: '#FFFFFF', fontWeight: '600', fontSize: 16 }}>Back to Home</Text>
                   </Pressable>
                 </View>
               )}
@@ -527,7 +527,7 @@ export default function ChatScreen() {
                   color: colors.foreground,
                   maxHeight: 120,
                 }}
-                placeholder="Typ een bericht..."
+                placeholder="Type a message..."
                 placeholderTextColor={colors.muted}
                 value={inputText}
                 onChangeText={setInputText}

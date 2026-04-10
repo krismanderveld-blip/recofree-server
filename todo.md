@@ -142,4 +142,4 @@
 - [x] FIX BUG-A: Nieuwe sessie herhaalt laatste antwoord i.p.v. frisse greeting — chatHistory leegmaken bij nieuwe sessie, conversationHistory leeg meesturen bij greeting
 - [x] FIX BUG-B: Backpack niet herkend bij eerste chat-open na intake — greeting alleen sturen als chat-tab gefocust is (niet bij tab-mount)
 - [x] FIX BUG-C: Keyboard bedekt nog steeds deels chat input op Android — paddingBottom aanpassen bij keyboard open
-- [x] FIX: Vertaal alle Engelse fallback/UI berichten in chat.tsx, pipeline.ts en openai-provider.ts naar Nederlands
+- [x] REVERTED: Nederlandse vertalingen teruggedraaid naar Engels — app is internationaal, Engels is standaardtaal

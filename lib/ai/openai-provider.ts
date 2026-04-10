@@ -133,14 +133,14 @@ export class OpenAIProvider implements AIProvider {
       }
 
       return {
-        response: result?.response ?? 'Er ging iets mis. Ik ben er nog — probeer het opnieuw.',
+        response: result?.response ?? "Something went wrong. I'm still here \u2014 please try again.",
         advisoryEmotion: result?.advisoryEmotion,
         advisoryConfidence: result?.advisoryConfidence,
       };
     } catch (error) {
       console.error('[OpenAIProvider] Error:', error);
       return {
-        response: 'Er ging iets mis met de verbinding. Ik ben er nog — probeer het opnieuw.',
+        response: "Something went wrong with the connection. I'm still here \u2014 please try again.",
         advisoryEmotion: undefined,
         advisoryConfidence: undefined,
       };

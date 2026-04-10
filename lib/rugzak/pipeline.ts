@@ -210,7 +210,7 @@ export async function processMessage(
     response = result.response;
   } catch (error) {
     console.error('AI generation error:', error);
-    response = 'Er ging iets mis aan mijn kant. Ik ben er nog — probeer het opnieuw.';
+    response = "I'm still here with you. Something went wrong on my end \u2014 please try again.";
   }
 
   // ── STEP 7: STATE UPDATE (POST-RESPONSE) — ONLY userDat changes ──
@@ -326,8 +326,8 @@ export async function generateGreeting(
 
   if (!hasMinimalContext) {
     const passiveResponse = backpack.userType === 'elias'
-      ? `Hoi ${backpack.naam}. Ik ben er voor je, maar ik weet nu nog weinig van je. Vul je sliders in, schrijf iets in je dagboek, of deel je verhaal in je rugzak — dan kan ik je echt helpen.`
-      : `Hoi ${backpack.naam}. Ik ben er. Maar om je goed te kunnen helpen, heb ik meer context nodig. Vul je sliders in of deel iets via je dagboek of rugzak.`;
+      ? `Hey ${backpack.naam}. I'm here for you, but I don't know much about you yet. Fill in your sliders, write something in your diary, or share your story in your backpack — then I can really help.`
+      : `Hey ${backpack.naam}. I'm here. But to help you well, I need more context. Fill in your sliders or share something via your diary or backpack.`;
     const passiveAiMsg: ChatMessage = {
       id: `msg_${Date.now()}`,
       role: 'assistant',
@@ -385,8 +385,8 @@ export async function generateGreeting(
     console.error('Greeting generation error:', error);
     const name = backpack.naam;
     response = backpack.userType === 'elias'
-      ? `Hey ${name}, goed dat je er bent. Hoe voel je je vandaag?`
-      : `Hoi ${name}, goed dat je even de tijd neemt voor jezelf.`;
+      ? `Hey ${name}, glad you're here. How are you feeling today?`
+      : `Hello ${name}, good that you're taking some time for yourself.`;
   }
 
   // Add greeting to userDat history
@@ -568,8 +568,8 @@ export async function endSession(
     console.error('Farewell generation error:', error);
     const name = backpack.naam;
     farewell = backpack.userType === 'elias'
-      ? `${name}, ik heb alles opgeslagen van ons gesprek. Je hebt vandaag echte moed getoond. Zorg goed voor jezelf, ik ben er als je me nodig hebt.`
-      : `${name}, ik heb alles opgeslagen van ons gesprek. Wat je doet voor je naaste is belangrijk. Zorg ook goed voor jezelf, ik ben er als je er klaar voor bent.`;
+      ? `${name}, I've saved everything from our conversation. You showed real courage today. Take care of yourself, and I'll be here whenever you need me.`
+      : `${name}, I've saved everything from our conversation. What you're doing for your loved one matters. Take care of yourself too, and I'll be here when you're ready.`;
   }
 
   // ── STEP 3: Update UserDat ONLY (backpack is NEVER modified) ──
