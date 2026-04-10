@@ -142,9 +142,23 @@ export default function ChatScreen() {
   }, [state.intakeCompleted, state.backpack, state.userDat]);
 
   const sendGreetingViaP = useCallback(async () => {
-    const backpack = getBackpack();
-    const userDat = getUserDat();
+    // Read DIRECTLY from AsyncStorage to avoid stale closure issues.
+    // React state may not yet reflect the latest persisted backpack.
+    let backpack: Backpack | null = null;
+    let userDat: UserDat | null = null;
+    try {
+      const bpJson = await AsyncStorage.getItem(BACKPACK_KEY);
+      const udJson = await AsyncStorage.getItem(USERDAT_KEY);
+      if (bpJson) backpack = JSON.parse(bpJson);
+      if (udJson) userDat = JSON.parse(udJson);
+    } catch (e) {
+      console.error('Failed to read stores from AsyncStorage:', e);
+    }
+    // Fallback to React state if AsyncStorage read fails
+    if (!backpack) backpack = getBackpack();
+    if (!userDat) userDat = getUserDat();
     if (!backpack || !userDat) return;
+    console.log('[Chat] sendGreeting — backpack sections:', backpack.sections?.length, 'filled:', backpack.sections?.filter((s: any) => s.content?.trim().length > 0).length);
     setIsTyping(true);
     try {
       // Load diary entries for session-start context
@@ -195,8 +209,14 @@ export default function ChatScreen() {
       // Load latest userDat from storage (may have been updated by greeting)
       const userDatJson = await AsyncStorage.getItem(USERDAT_KEY);
       const currentUserDat: UserDat = userDatJson ? JSON.parse(userDatJson) : state.userDat!;
-      // Backpack is always read from state (NEVER modified by system)
-      const backpack = state.backpack!;
+      // Read backpack from AsyncStorage to ensure latest version (avoids stale closure)
+      let backpack: Backpack = state.backpack!;
+      try {
+        const bpJson = await AsyncStorage.getItem(BACKPACK_KEY);
+        if (bpJson) backpack = JSON.parse(bpJson);
+      } catch (e) {
+        console.warn('Could not read backpack from AsyncStorage, using state:', e);
+      }
       const provider = getAIProvider();
       // FOLLOW-UP MESSAGE: isSessionStart = false, no diary entries
       const result = await processMessage(backpack, processedText, provider, currentUserDat, { isSessionStart: false, diaryEntries: [] });

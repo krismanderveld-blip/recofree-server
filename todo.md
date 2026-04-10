@@ -137,3 +137,5 @@
 - [x] FIX P3: Schema/modi-herkenning + relatiedetectie + patroonherkenning in system prompt
 - [x] FIX P4: Android toetsenbord bedekt chat — dynamische padding wanneer keyboard open is
 - [x] FIX P5: Module 12 vooranalyse/failsafe — geen AI-reactie zonder voldoende input (sliders/rugzak/dagboek)
+- [x] FIX P6: Stale closure — sendGreetingViaP and handleSend now read backpack directly from AsyncStorage instead of React state
+- [x] FIX P7: tabBarHideOnKeyboard: true — tab bar hides when keyboard opens on Android
