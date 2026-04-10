@@ -16,6 +16,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
+import { useIsFocused } from '@react-navigation/native';
 import { useUser } from '@/lib/user-context';
 import { getAIProvider } from '@/lib/ai';
 import { preprocessInput } from '@/lib/ai/preprocessor';
@@ -61,6 +62,7 @@ export default function ChatScreen() {
 
   const userName = getUserName();
   const companionName = state.userType === 'elias' ? 'Elias' : 'Kim';
+  const isFocused = useIsFocused();
 
   // ── Track keyboard visibility + scroll to end ──
   useEffect(() => {
@@ -132,14 +134,16 @@ export default function ChatScreen() {
     setMessages(history);
   }, []);
 
-  // Start session and send greeting on mount
+  // Start session and send greeting when chat tab is FOCUSED (not just mounted).
+  // Expo Router mounts all tabs at once, so without isFocused the greeting fires
+  // before the user has finished filling in the backpack.
   useEffect(() => {
-    if (state.intakeCompleted && state.backpack && state.userDat && !greetingSent.current) {
+    if (isFocused && state.intakeCompleted && state.backpack && state.userDat && !greetingSent.current) {
       greetingSent.current = true;
       startSession();
       sendGreetingViaP();
     }
-  }, [state.intakeCompleted, state.backpack, state.userDat]);
+  }, [isFocused, state.intakeCompleted, state.backpack, state.userDat]);
 
   const sendGreetingViaP = useCallback(async () => {
     // Read DIRECTLY from AsyncStorage to avoid stale closure issues.
@@ -560,20 +564,18 @@ export default function ChatScreen() {
     </View>
   );
 
-  // iOS needs KeyboardAvoidingView; Android uses softwareKeyboardLayoutMode: "resize"
-  if (isIOS) {
-    return (
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior="padding"
-        keyboardVerticalOffset={0}
-      >
-        {chatContent}
-      </KeyboardAvoidingView>
-    );
-  }
-
-  return chatContent;
+  // Both iOS and Android use KeyboardAvoidingView.
+  // iOS: behavior="padding" pushes content up.
+  // Android: behavior="height" works with softwareKeyboardLayoutMode:resize.
+  return (
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={isIOS ? 'padding' : 'height'}
+      keyboardVerticalOffset={0}
+    >
+      {chatContent}
+    </KeyboardAvoidingView>
+  );
 }
 
 function formatTime(timestamp: string): string {
