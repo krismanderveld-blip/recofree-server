@@ -201,14 +201,12 @@ function userReducer(state: UserState, action: UserAction): UserState {
       if (!state.backpack || !state.userDat) return state;
       // startNewSession updates totalSessions and lastSessionDate in the composed rugzak
       // We extract those changes back into userDat
-      // Clear chatHistory for the new session — old session data is already preserved in sessionAnalyses
       const composedRugzak = composeRugzak(state.backpack, state.userDat);
       const updatedRugzak = startNewSession(composedRugzak);
       const updatedUserDat: UserDat = {
         ...state.userDat,
         totalSessions: updatedRugzak.totalSessions,
         lastSessionDate: updatedRugzak.lastSessionDate,
-        chatHistory: [],
       };
       const { rugzak, influence } = composeState(state.backpack, updatedUserDat);
       return {
@@ -443,7 +441,6 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         ...state.userDat,
         totalSessions: updated.totalSessions,
         lastSessionDate: updated.lastSessionDate,
-        chatHistory: [],  // Clear old session chat — data preserved in sessionAnalyses
       };
       await persistUserDat(updatedUserDat);
     }
