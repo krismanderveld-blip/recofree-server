@@ -132,7 +132,23 @@ export default function ChatScreen() {
     setMessages(history);
   }, []);
 
-  // Start session and send greeting on mount
+  // Reset greetingSent when backpack sections gain real content.
+  // After intake, sections are empty. When the user fills them and comes back to chat,
+  // greetingSent is already true from the empty-backpack greeting. This resets it so
+  // a new greeting fires with the filled backpack.
+  const backpackFilledCount = state.backpack?.sections?.filter(
+    (s: any) => s.content && s.content.trim().length > 0
+  ).length ?? 0;
+  const prevFilledCount = useRef(0);
+  useEffect(() => {
+    if (backpackFilledCount > prevFilledCount.current && greetingSent.current) {
+      // Backpack gained new content since last check — allow a fresh greeting
+      greetingSent.current = false;
+    }
+    prevFilledCount.current = backpackFilledCount;
+  }, [backpackFilledCount]);
+
+  // Start session and send greeting on mount (or when greetingSent is reset)
   useEffect(() => {
     if (state.intakeCompleted && state.backpack && state.userDat && !greetingSent.current) {
       greetingSent.current = true;
@@ -501,7 +517,7 @@ export default function ChatScreen() {
               // On Android with softwareKeyboardLayoutMode:resize, the system shrinks the window.
               // When keyboard is open, the tab bar is already hidden by the system resize,
               // so we only need minimal padding. When closed, we need tabBarHeight to clear the tab bar.
-              paddingBottom: Platform.OS === 'android' && keyboardVisible ? 8 : tabBarHeight,
+              paddingBottom: Platform.OS === 'android' && keyboardVisible ? 0 : tabBarHeight,
               backgroundColor: colors.background,
               borderTopWidth: 0.5,
               borderTopColor: colors.border,
@@ -560,20 +576,18 @@ export default function ChatScreen() {
     </View>
   );
 
-  // iOS needs KeyboardAvoidingView; Android uses softwareKeyboardLayoutMode: "resize"
-  if (isIOS) {
-    return (
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior="padding"
-        keyboardVerticalOffset={0}
-      >
-        {chatContent}
-      </KeyboardAvoidingView>
-    );
-  }
-
-  return chatContent;
+  // Both iOS and Android need KeyboardAvoidingView.
+  // iOS: behavior="padding" pushes content up.
+  // Android: behavior="height" works with softwareKeyboardLayoutMode:resize.
+  return (
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={isIOS ? 'padding' : 'height'}
+      keyboardVerticalOffset={0}
+    >
+      {chatContent}
+    </KeyboardAvoidingView>
+  );
 }
 
 function formatTime(timestamp: string): string {
