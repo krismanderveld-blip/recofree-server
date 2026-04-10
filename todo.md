@@ -139,3 +139,7 @@
 - [x] FIX P5: Module 12 vooranalyse/failsafe — geen AI-reactie zonder voldoende input (sliders/rugzak/dagboek)
 - [x] FIX P6: Stale closure — sendGreetingViaP and handleSend now read backpack directly from AsyncStorage instead of React state
 - [x] FIX P7: tabBarHideOnKeyboard: true — tab bar hides when keyboard opens on Android
+- [x] FIX BUG-A: Nieuwe sessie herhaalt laatste antwoord i.p.v. frisse greeting — chatHistory leegmaken bij nieuwe sessie, conversationHistory leeg meesturen bij greeting
+- [x] FIX BUG-B: Backpack niet herkend bij eerste chat-open na intake — greeting alleen sturen als chat-tab gefocust is (niet bij tab-mount)
+- [x] FIX BUG-C: Keyboard bedekt nog steeds deels chat input op Android — paddingBottom aanpassen bij keyboard open
+- [x] FIX: Vertaal alle Engelse fallback/UI berichten in chat.tsx, pipeline.ts en openai-provider.ts naar Nederlands

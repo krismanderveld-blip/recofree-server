@@ -16,6 +16,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
+import { useIsFocused } from '@react-navigation/native';
 import { useUser } from '@/lib/user-context';
 import { getAIProvider } from '@/lib/ai';
 import { preprocessInput } from '@/lib/ai/preprocessor';
@@ -61,6 +62,7 @@ export default function ChatScreen() {
 
   const userName = getUserName();
   const companionName = state.userType === 'elias' ? 'Elias' : 'Kim';
+  const isFocused = useIsFocused();
 
   // ── Track keyboard visibility + scroll to end ──
   useEffect(() => {
@@ -88,8 +90,8 @@ export default function ChatScreen() {
         const pending = await AsyncStorage.getItem(PENDING_CLOSE_KEY);
         if (pending) {
           Alert.alert(
-            'Previous Session',
-            `Your last session with ${companionName} wasn't fully saved. The data has been recovered and stored safely.`,
+            'Vorige sessie',
+            `Je vorige sessie met ${companionName} was niet volledig opgeslagen. De data is hersteld en veilig bewaard.`,
             [{ text: 'OK', onPress: () => AsyncStorage.removeItem(PENDING_CLOSE_KEY) }]
           );
         }
@@ -132,14 +134,17 @@ export default function ChatScreen() {
     setMessages(history);
   }, []);
 
-  // Start session and send greeting on mount
+  // Start session and send greeting ONLY when chat tab is focused.
+  // Expo Router mounts all tab screens at once, so without this check
+  // the greeting fires immediately after intake — before the user has
+  // filled in their backpack, diary, or sliders.
   useEffect(() => {
-    if (state.intakeCompleted && state.backpack && state.userDat && !greetingSent.current) {
+    if (isFocused && state.intakeCompleted && state.backpack && state.userDat && !greetingSent.current) {
       greetingSent.current = true;
       startSession();
       sendGreetingViaP();
     }
-  }, [state.intakeCompleted, state.backpack, state.userDat]);
+  }, [isFocused, state.intakeCompleted, state.backpack, state.userDat]);
 
   const sendGreetingViaP = useCallback(async () => {
     // Read DIRECTLY from AsyncStorage to avoid stale closure issues.
@@ -230,7 +235,7 @@ export default function ChatScreen() {
       const errorMsg: ChatMessage = {
         id: `msg_${Date.now() + 1}`,
         role: 'assistant',
-        content: "I'm still here with you. Something went wrong — please try again.",
+        content: 'Er ging iets mis. Ik ben er nog \u2014 probeer het opnieuw.',
         timestamp: new Date().toISOString(),
       };
       setMessages((prev) => [...prev, errorMsg]);
@@ -245,7 +250,7 @@ export default function ChatScreen() {
     const analyzingMsg: ChatMessage = {
       id: `msg_end_${Date.now()}`,
       role: 'assistant',
-      content: `I'm going to analyze everything you shared. Stay here for a moment — I'll let you know when it's safe to leave.`,
+      content: `Ik ga alles analyseren wat je hebt gedeeld. Blijf even hier \u2014 ik laat je weten wanneer het klaar is.`,
       timestamp: new Date().toISOString(),
     };
     setMessages((prev) => [...prev, analyzingMsg]);
@@ -262,7 +267,7 @@ export default function ChatScreen() {
       const confirmationMsg: ChatMessage = {
         id: `msg_confirm_${Date.now()}`,
         role: 'assistant',
-        content: result.farewell + '\n\nI\'ve saved everything. Your session is safely stored. You can close the app now, or go back to the home screen.',
+        content: result.farewell + '\n\nIk heb alles opgeslagen. Je sessie is veilig bewaard. Je kunt de app nu sluiten of teruggaan naar het startscherm.',
         timestamp: new Date().toISOString(),
       };
       setMessages((prev) => [...prev, confirmationMsg]);
@@ -272,7 +277,7 @@ export default function ChatScreen() {
       const fallbackMsg: ChatMessage = {
         id: `msg_fallback_${Date.now()}`,
         role: 'assistant',
-        content: `${userName}, I've saved your session. Something went wrong during analysis, but your conversation is safely stored. You can close the app now.`,
+        content: `${userName}, ik heb je sessie opgeslagen. Er ging iets mis tijdens de analyse, maar je gesprek is veilig bewaard. Je kunt de app nu sluiten.`,
         timestamp: new Date().toISOString(),
       };
       setMessages((prev) => [...prev, fallbackMsg]);
@@ -363,11 +368,11 @@ export default function ChatScreen() {
             </Text>
             <Text style={{ fontSize: 12, color: colors.muted }}>
               {sessionPhase === 'ending'
-                ? `${companionName} is processing your session...`
+                ? `${companionName} verwerkt je sessie...`
                 : sessionPhase === 'completed'
-                ? 'Session completed'
+                ? 'Sessie voltooid'
                 : isTyping
-                ? 'Typing...'
+                ? 'Aan het typen...'
                 : 'Online'}
             </Text>
           </View>
@@ -427,7 +432,7 @@ export default function ChatScreen() {
           ListEmptyComponent={
             !isTyping ? (
               <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-                <Text style={{ color: colors.muted, fontSize: 16 }}>Starting conversation...</Text>
+                <Text style={{ color: colors.muted, fontSize: 16 }}>Gesprek starten...</Text>
               </View>
             ) : null
           }
@@ -457,7 +462,7 @@ export default function ChatScreen() {
                 <View style={{ alignSelf: 'center', marginVertical: 16, alignItems: 'center', gap: 8 }}>
                   <ActivityIndicator size="large" color={colors.primary} />
                   <Text style={{ fontSize: 14, color: colors.muted, textAlign: 'center' }}>
-                    {companionName} is processing your session...
+                    {companionName} verwerkt je sessie...
                   </Text>
                 </View>
               )}
@@ -465,7 +470,7 @@ export default function ChatScreen() {
                 <View style={{ alignSelf: 'center', marginVertical: 16, alignItems: 'center', gap: 12, width: '100%' }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                     <IconSymbol name="checkmark.circle.fill" size={20} color={colors.success} />
-                    <Text style={{ fontSize: 14, fontWeight: '500', color: colors.success }}>Session saved</Text>
+                    <Text style={{ fontSize: 14, fontWeight: '500', color: colors.success }}>Sessie opgeslagen</Text>
                   </View>
                   <Pressable
                     onPress={handleBackToHome}
@@ -484,7 +489,7 @@ export default function ChatScreen() {
                     ]}
                   >
                     <IconSymbol name="house.fill" size={18} color="#FFFFFF" />
-                    <Text style={{ color: '#FFFFFF', fontWeight: '600', fontSize: 16 }}>Back to Home</Text>
+                    <Text style={{ color: '#FFFFFF', fontWeight: '600', fontSize: 16 }}>Terug naar Home</Text>
                   </Pressable>
                 </View>
               )}
@@ -499,9 +504,10 @@ export default function ChatScreen() {
               paddingHorizontal: 16,
               paddingTop: 10,
               // On Android with softwareKeyboardLayoutMode:resize, the system shrinks the window.
-              // When keyboard is open, the tab bar is already hidden by the system resize,
-              // so we only need minimal padding. When closed, we need tabBarHeight to clear the tab bar.
-              paddingBottom: Platform.OS === 'android' && keyboardVisible ? 8 : tabBarHeight,
+              // The tab bar is hidden (tabBarHideOnKeyboard:true) and the resize pushes the
+              // input bar up automatically. No extra padding needed when keyboard is open.
+              // When keyboard is closed, we need tabBarHeight to clear the visible tab bar.
+              paddingBottom: Platform.OS === 'android' && keyboardVisible ? 0 : tabBarHeight,
               backgroundColor: colors.background,
               borderTopWidth: 0.5,
               borderTopColor: colors.border,
@@ -521,7 +527,7 @@ export default function ChatScreen() {
                   color: colors.foreground,
                   maxHeight: 120,
                 }}
-                placeholder="Type a message..."
+                placeholder="Typ een bericht..."
                 placeholderTextColor={colors.muted}
                 value={inputText}
                 onChangeText={setInputText}

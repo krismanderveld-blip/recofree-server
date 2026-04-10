@@ -210,7 +210,7 @@ export async function processMessage(
     response = result.response;
   } catch (error) {
     console.error('AI generation error:', error);
-    response = "I'm still here with you. Something went wrong on my end — please try again.";
+    response = 'Er ging iets mis aan mijn kant. Ik ben er nog — probeer het opnieuw.';
   }
 
   // ── STEP 7: STATE UPDATE (POST-RESPONSE) — ONLY userDat changes ──
@@ -354,11 +354,14 @@ export async function generateGreeting(
   const sessionStart = currentUserDat.lastSessionDate ? new Date(currentUserDat.lastSessionDate) : new Date();
   const sessionMinutes = Math.floor((Date.now() - sessionStart.getTime()) / 60000);
 
+  // NEW SESSION: send empty conversationHistory so GPT generates a fresh greeting.
+  // Old session data is preserved in userDat.sessionAnalyses (themes, triggers, mood delta)
+  // which GPT receives via the userDat payload at session start.
   const context: ChatContext = {
     userType: backpack.userType,
     userName: backpack.naam,
     currentMessage: '',
-    conversationHistory: currentUserDat.chatHistory || [],
+    conversationHistory: [],
     moodSliders: currentUserDat.currentMood || { stemming: 5, craving: 0, overprikkeling: 0, sociaal: 5 },
     rugzak,
     backpack,
@@ -382,8 +385,8 @@ export async function generateGreeting(
     console.error('Greeting generation error:', error);
     const name = backpack.naam;
     response = backpack.userType === 'elias'
-      ? `Hey ${name}, glad you're here. How are you feeling today?`
-      : `Hello ${name}, good that you're taking some time for yourself.`;
+      ? `Hey ${name}, goed dat je er bent. Hoe voel je je vandaag?`
+      : `Hoi ${name}, goed dat je even de tijd neemt voor jezelf.`;
   }
 
   // Add greeting to userDat history
@@ -565,8 +568,8 @@ export async function endSession(
     console.error('Farewell generation error:', error);
     const name = backpack.naam;
     farewell = backpack.userType === 'elias'
-      ? `${name}, I've saved everything from our conversation. You showed real courage today. Take care of yourself, and I'll be here whenever you need me.`
-      : `${name}, I've saved everything from our conversation. What you're doing for your loved one matters. Take care of yourself too, and I'll be here when you're ready.`;
+      ? `${name}, ik heb alles opgeslagen van ons gesprek. Je hebt vandaag echte moed getoond. Zorg goed voor jezelf, ik ben er als je me nodig hebt.`
+      : `${name}, ik heb alles opgeslagen van ons gesprek. Wat je doet voor je naaste is belangrijk. Zorg ook goed voor jezelf, ik ben er als je er klaar voor bent.`;
   }
 
   // ── STEP 3: Update UserDat ONLY (backpack is NEVER modified) ──
