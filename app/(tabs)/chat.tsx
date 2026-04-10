@@ -15,7 +15,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { useUser } from '@/lib/user-context';
 import { getAIProvider } from '@/lib/ai';
 import { preprocessInput } from '@/lib/ai/preprocessor';
@@ -132,30 +132,18 @@ export default function ChatScreen() {
     setMessages(history);
   }, []);
 
-  // Reset greetingSent when backpack sections gain real content.
-  // After intake, sections are empty. When the user fills them and comes back to chat,
-  // greetingSent is already true from the empty-backpack greeting. This resets it so
-  // a new greeting fires with the filled backpack.
-  const backpackFilledCount = state.backpack?.sections?.filter(
-    (s: any) => s.content && s.content.trim().length > 0
-  ).length ?? 0;
-  const prevFilledCount = useRef(0);
-  useEffect(() => {
-    if (backpackFilledCount > prevFilledCount.current && greetingSent.current) {
-      // Backpack gained new content since last check — allow a fresh greeting
-      greetingSent.current = false;
-    }
-    prevFilledCount.current = backpackFilledCount;
-  }, [backpackFilledCount]);
-
-  // Start session and send greeting on mount (or when greetingSent is reset)
-  useEffect(() => {
-    if (state.intakeCompleted && state.backpack && state.userDat && !greetingSent.current) {
-      greetingSent.current = true;
-      startSession();
-      sendGreetingViaP();
-    }
-  }, [state.intakeCompleted, state.backpack, state.userDat]);
+  // Start session and send greeting ONLY when Chat tab gains focus.
+  // This prevents the greeting from firing during intake/backpack fill
+  // (Expo Router mounts all tabs simultaneously).
+  useFocusEffect(
+    useCallback(() => {
+      if (state.intakeCompleted && state.backpack && state.userDat && !greetingSent.current) {
+        greetingSent.current = true;
+        startSession();
+        sendGreetingViaP();
+      }
+    }, [state.intakeCompleted, state.backpack, state.userDat])
+  );
 
   const sendGreetingViaP = useCallback(async () => {
     // Read DIRECTLY from AsyncStorage to avoid stale closure issues.
@@ -515,9 +503,9 @@ export default function ChatScreen() {
               paddingHorizontal: 16,
               paddingTop: 10,
               // On Android with softwareKeyboardLayoutMode:resize, the system shrinks the window.
-              // When keyboard is open, the tab bar is already hidden by the system resize,
-              // so we only need minimal padding. When closed, we need tabBarHeight to clear the tab bar.
-              paddingBottom: Platform.OS === 'android' && keyboardVisible ? 0 : tabBarHeight,
+              // When keyboard is open, the tab bar is hidden, so we only need small padding.
+              // When closed, we need tabBarHeight to clear the tab bar.
+              paddingBottom: Platform.OS === 'android' && keyboardVisible ? 8 : tabBarHeight,
               backgroundColor: colors.background,
               borderTopWidth: 0.5,
               borderTopColor: colors.border,
@@ -576,18 +564,22 @@ export default function ChatScreen() {
     </View>
   );
 
-  // Both iOS and Android need KeyboardAvoidingView.
-  // iOS: behavior="padding" pushes content up.
-  // Android: behavior="height" works with softwareKeyboardLayoutMode:resize.
-  return (
-    <KeyboardAvoidingView
-      style={{ flex: 1 }}
-      behavior={isIOS ? 'padding' : 'height'}
-      keyboardVerticalOffset={0}
-    >
-      {chatContent}
-    </KeyboardAvoidingView>
-  );
+  // iOS needs KeyboardAvoidingView with behavior="padding".
+  // Android uses softwareKeyboardLayoutMode:resize — no KAV needed.
+  // Using KAV on Android causes trilling/jitter because both KAV and system resize
+  // try to adjust the layout simultaneously.
+  if (isIOS) {
+    return (
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior="padding"
+        keyboardVerticalOffset={0}
+      >
+        {chatContent}
+      </KeyboardAvoidingView>
+    );
+  }
+  return chatContent;
 }
 
 function formatTime(timestamp: string): string {

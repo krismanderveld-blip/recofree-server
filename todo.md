@@ -139,5 +139,6 @@
 - [x] FIX P5: Module 12 vooranalyse/failsafe — geen AI-reactie zonder voldoende input (sliders/rugzak/dagboek)
 - [x] FIX P6: Stale closure — sendGreetingViaP and handleSend now read backpack directly from AsyncStorage instead of React state
 - [x] FIX P7: tabBarHideOnKeyboard: true — tab bar hides when keyboard opens on Android
-- [x] FIX: Backpack recognized at first chat start — greetingSent resets when backpack sections gain content
-- [x] FIX: Keyboard input bar visible on Android — KeyboardAvoidingView with behavior=height wraps chat on Android
+- [x] FIX: Backpack recognized at first chat start — replaced useEffect with useFocusEffect so greeting only fires when Chat tab is visible
+- [x] FIX: Keyboard trilling on Android — removed KAV on Android, let softwareKeyboardLayoutMode:resize handle it alone
+- [x] FIX: Removed broken backpackFilledCount reset that caused double greetings
