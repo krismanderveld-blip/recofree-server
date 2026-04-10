@@ -142,3 +142,4 @@
 - [x] FIX: Backpack recognized at first chat start — replaced useEffect with useFocusEffect so greeting only fires when Chat tab is visible
 - [x] FIX: Keyboard trilling on Android — removed KAV on Android, let softwareKeyboardLayoutMode:resize handle it alone
 - [x] FIX: Removed broken backpackFilledCount reset that caused double greetings
+- [x] FIX: Backpack content guard — greeting only fires when at least one backpack section has actual content (prevents empty-backpack greeting after intake)

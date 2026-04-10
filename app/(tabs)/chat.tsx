@@ -138,6 +138,12 @@ export default function ChatScreen() {
   useFocusEffect(
     useCallback(() => {
       if (state.intakeCompleted && state.backpack && state.userDat && !greetingSent.current) {
+        // Don't fire greeting if backpack sections are all empty
+        // (happens right after intake, before user fills life story sections)
+        const hasContent = state.backpack.sections?.some(
+          (s: any) => s.content && s.content.trim().length > 0
+        );
+        if (!hasContent) return;
         greetingSent.current = true;
         startSession();
         sendGreetingViaP();
