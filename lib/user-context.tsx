@@ -203,14 +203,10 @@ function userReducer(state: UserState, action: UserAction): UserState {
       // We extract those changes back into userDat
       const composedRugzak = composeRugzak(state.backpack, state.userDat);
       const updatedRugzak = startNewSession(composedRugzak);
-      // CLEAR chatHistory on new session start.
-      // Old session data is preserved in sessionAnalyses (themes, triggers, mood delta).
-      // Sending old chatHistory causes GPT to repeat the last answer instead of a fresh greeting.
       const updatedUserDat: UserDat = {
         ...state.userDat,
         totalSessions: updatedRugzak.totalSessions,
         lastSessionDate: updatedRugzak.lastSessionDate,
-        chatHistory: [],
       };
       const { rugzak, influence } = composeState(state.backpack, updatedUserDat);
       return {
@@ -441,12 +437,10 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     if (state.backpack && state.userDat) {
       const rugzak = composeRugzak(state.backpack, state.userDat);
       const updated = startNewSession(rugzak);
-      // CLEAR chatHistory on new session — old session data lives in sessionAnalyses
       const updatedUserDat: UserDat = {
         ...state.userDat,
         totalSessions: updated.totalSessions,
         lastSessionDate: updated.lastSessionDate,
-        chatHistory: [],
       };
       await persistUserDat(updatedUserDat);
     }

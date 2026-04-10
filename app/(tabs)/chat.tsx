@@ -16,7 +16,6 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
-import { useIsFocused } from '@react-navigation/native';
 import { useUser } from '@/lib/user-context';
 import { getAIProvider } from '@/lib/ai';
 import { preprocessInput } from '@/lib/ai/preprocessor';
@@ -62,7 +61,6 @@ export default function ChatScreen() {
 
   const userName = getUserName();
   const companionName = state.userType === 'elias' ? 'Elias' : 'Kim';
-  const isFocused = useIsFocused();
 
   // ── Track keyboard visibility + scroll to end ──
   useEffect(() => {
@@ -134,17 +132,14 @@ export default function ChatScreen() {
     setMessages(history);
   }, []);
 
-  // Start session and send greeting ONLY when chat tab is focused.
-  // Expo Router mounts all tab screens at once, so without this check
-  // the greeting fires immediately after intake — before the user has
-  // filled in their backpack, diary, or sliders.
+  // Start session and send greeting on mount
   useEffect(() => {
-    if (isFocused && state.intakeCompleted && state.backpack && state.userDat && !greetingSent.current) {
+    if (state.intakeCompleted && state.backpack && state.userDat && !greetingSent.current) {
       greetingSent.current = true;
       startSession();
       sendGreetingViaP();
     }
-  }, [isFocused, state.intakeCompleted, state.backpack, state.userDat]);
+  }, [state.intakeCompleted, state.backpack, state.userDat]);
 
   const sendGreetingViaP = useCallback(async () => {
     // Read DIRECTLY from AsyncStorage to avoid stale closure issues.
@@ -235,7 +230,7 @@ export default function ChatScreen() {
       const errorMsg: ChatMessage = {
         id: `msg_${Date.now() + 1}`,
         role: 'assistant',
-        content: "I'm still here with you. Something went wrong \u2014 please try again.",
+        content: "I'm still here with you. Something went wrong — please try again.",
         timestamp: new Date().toISOString(),
       };
       setMessages((prev) => [...prev, errorMsg]);
@@ -250,7 +245,7 @@ export default function ChatScreen() {
     const analyzingMsg: ChatMessage = {
       id: `msg_end_${Date.now()}`,
       role: 'assistant',
-      content: `I'm going to analyze everything you shared. Stay here for a moment \u2014 I'll let you know when it's safe to leave.`,
+      content: `I'm going to analyze everything you shared. Stay here for a moment — I'll let you know when it's safe to leave.`,
       timestamp: new Date().toISOString(),
     };
     setMessages((prev) => [...prev, analyzingMsg]);
@@ -504,10 +499,9 @@ export default function ChatScreen() {
               paddingHorizontal: 16,
               paddingTop: 10,
               // On Android with softwareKeyboardLayoutMode:resize, the system shrinks the window.
-              // The tab bar is hidden (tabBarHideOnKeyboard:true) and the resize pushes the
-              // input bar up automatically. No extra padding needed when keyboard is open.
-              // When keyboard is closed, we need tabBarHeight to clear the visible tab bar.
-              paddingBottom: Platform.OS === 'android' && keyboardVisible ? 0 : tabBarHeight,
+              // When keyboard is open, the tab bar is already hidden by the system resize,
+              // so we only need minimal padding. When closed, we need tabBarHeight to clear the tab bar.
+              paddingBottom: Platform.OS === 'android' && keyboardVisible ? 8 : tabBarHeight,
               backgroundColor: colors.background,
               borderTopWidth: 0.5,
               borderTopColor: colors.border,

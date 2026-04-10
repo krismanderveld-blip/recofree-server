@@ -210,7 +210,7 @@ export async function processMessage(
     response = result.response;
   } catch (error) {
     console.error('AI generation error:', error);
-    response = "I'm still here with you. Something went wrong on my end \u2014 please try again.";
+    response = "I'm still here with you. Something went wrong on my end — please try again.";
   }
 
   // ── STEP 7: STATE UPDATE (POST-RESPONSE) — ONLY userDat changes ──
@@ -326,8 +326,8 @@ export async function generateGreeting(
 
   if (!hasMinimalContext) {
     const passiveResponse = backpack.userType === 'elias'
-      ? `Hey ${backpack.naam}. I'm here for you, but I don't know much about you yet. Fill in your sliders, write something in your diary, or share your story in your backpack — then I can really help.`
-      : `Hey ${backpack.naam}. I'm here. But to help you well, I need more context. Fill in your sliders or share something via your diary or backpack.`;
+      ? `Hoi ${backpack.naam}. Ik ben er voor je, maar ik weet nu nog weinig van je. Vul je sliders in, schrijf iets in je dagboek, of deel je verhaal in je rugzak — dan kan ik je echt helpen.`
+      : `Hoi ${backpack.naam}. Ik ben er. Maar om je goed te kunnen helpen, heb ik meer context nodig. Vul je sliders in of deel iets via je dagboek of rugzak.`;
     const passiveAiMsg: ChatMessage = {
       id: `msg_${Date.now()}`,
       role: 'assistant',
@@ -354,14 +354,11 @@ export async function generateGreeting(
   const sessionStart = currentUserDat.lastSessionDate ? new Date(currentUserDat.lastSessionDate) : new Date();
   const sessionMinutes = Math.floor((Date.now() - sessionStart.getTime()) / 60000);
 
-  // NEW SESSION: send empty conversationHistory so GPT generates a fresh greeting.
-  // Old session data is preserved in userDat.sessionAnalyses (themes, triggers, mood delta)
-  // which GPT receives via the userDat payload at session start.
   const context: ChatContext = {
     userType: backpack.userType,
     userName: backpack.naam,
     currentMessage: '',
-    conversationHistory: [],
+    conversationHistory: currentUserDat.chatHistory || [],
     moodSliders: currentUserDat.currentMood || { stemming: 5, craving: 0, overprikkeling: 0, sociaal: 5 },
     rugzak,
     backpack,
