@@ -499,9 +499,9 @@ export default function ChatScreen() {
               paddingHorizontal: 16,
               paddingTop: 10,
               // On Android with softwareKeyboardLayoutMode:resize, the system shrinks the window.
-              // When keyboard is open, the tab bar is already hidden by the system resize,
-              // so we only need minimal padding. When closed, we need tabBarHeight to clear the tab bar.
-              paddingBottom: Platform.OS === 'android' && keyboardVisible ? 8 : tabBarHeight,
+              // When keyboard is open, the tab bar is hidden (tabBarHideOnKeyboard) and the resize
+              // handles positioning — no extra padding needed. When closed, we need tabBarHeight.
+              paddingBottom: Platform.OS === 'android' && keyboardVisible ? 0 : tabBarHeight,
               backgroundColor: colors.background,
               borderTopWidth: 0.5,
               borderTopColor: colors.border,

@@ -139,3 +139,5 @@
 - [x] FIX P5: Module 12 vooranalyse/failsafe — geen AI-reactie zonder voldoende input (sliders/rugzak/dagboek)
 - [x] FIX P6: Stale closure — sendGreetingViaP and handleSend now read backpack directly from AsyncStorage instead of React state
 - [x] FIX P7: tabBarHideOnKeyboard: true — tab bar hides when keyboard opens on Android
+- [x] FIX BUG-A (v2): Clear chatHistory at startSession so new sessions get fresh greeting instead of repeating last answer — chatHistory: [] in both reducer and callback
+- [x] FIX BUG-C (v2): Keyboard paddingBottom 0 on Android when keyboard open — resize mode handles positioning, no extra padding needed
