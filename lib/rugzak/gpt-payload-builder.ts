@@ -23,8 +23,9 @@
  * Based on: Master Engine Spec V2, Section 18 + Patch 5
  */
 
-import type { Backpack, UserDat, MoodSliders, ChatMessage, DiaryEntry } from '../ai/types';
+import type { Backpack, UserDat, MoodSliders, ChatMessage, DiaryEntry, StageOfChange } from '../ai/types';
 import type { BackpackRelevanceResult } from './backpack-relevance-analyzer';
+import type { RelationalPatternResult } from './relational-pattern-analyzer';
 
 // ─── Output Types ──────────────────────────────────────────────
 
@@ -43,11 +44,17 @@ export interface GPTPayload {
   message: string;
   isSessionStart: boolean;
 
+  // ── Stage of Change (always present) ──
+  stageOfChange: StageOfChange;
+
   // ── From Backpack Relevance Analyzer (always present) ──
   selectedTriggers: Array<{ trigger: string; score: number }>;
   coreWound: string | null;
   contextLine: string | null;
-  relationshipAnchor: { name: string; role: string } | null;
+  relationshipAnchor: { name: string; role: string; roleEN?: string } | null;
+
+  // ── From Relational Pattern Analyzer (always present) ──
+  relationalPattern: { pattern: string; schema: string; confidence: number } | null;
 
   // ── Diary (always present, may be empty) ──
   recentDiary: Array<{ content: string; moodTag: string; date: string }>;
@@ -65,7 +72,7 @@ export interface GPTPayload {
     naam: string;
     userType: 'elias' | 'kim';
     lifeStory: Array<{ id: string; label: string; ageRange: string; content: string }>;
-    intakeContext: { startEmotion: string; urgency: string; initialContext: string; intakeDate: string };
+    intakeContext: { stageOfChange: string; startEmotion: string; urgency: string; initialContext: string; intakeDate: string };
     createdAt: string;
   };
   userDat?: {
@@ -109,6 +116,7 @@ export interface PayloadBuilderInput {
   urgency: string;
   startEmotion: string;
   crisisLevel: number;
+  relationalPattern?: RelationalPatternResult;
 }
 
 /**
@@ -152,8 +160,14 @@ export function buildGPTPayload(input: PayloadBuilderInput): GPTPayload {
     selectedTriggers: relevance.triggers,
     coreWound: relevance.coreWound,
     contextLine: relevance.contextLine,
+    stageOfChange: userDat.stageOfChange || 'contemplation',
+
     relationshipAnchor: relevance.relationshipAnchor
-      ? { name: relevance.relationshipAnchor.name, role: relevance.relationshipAnchor.role }
+      ? { name: relevance.relationshipAnchor.name, role: relevance.relationshipAnchor.role, roleEN: relevance.relationshipAnchor.roleEN }
+      : null,
+
+    relationalPattern: input.relationalPattern?.detectedPattern
+      ? { pattern: input.relationalPattern.detectedPattern, schema: input.relationalPattern.linkedSchema || '', confidence: input.relationalPattern.confidence }
       : null,
 
     recentDiary,
@@ -178,6 +192,7 @@ export function buildGPTPayload(input: PayloadBuilderInput): GPTPayload {
         content: s.content,
       })),
       intakeContext: {
+        stageOfChange: backpack.intakeContext?.stageOfChange || 'contemplation',
         startEmotion: backpack.intakeContext?.startEmotion || '',
         urgency: backpack.intakeContext?.urgency || 'midden',
         initialContext: backpack.intakeContext?.initialContext || '',

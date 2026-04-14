@@ -4,6 +4,8 @@ import * as Auth from '@/lib/_core/auth';
 import superjson from 'superjson';
 import { analyzeBackpackRelevance } from '@/lib/rugzak/backpack-relevance-analyzer';
 import { buildGPTPayload, type GPTPayload } from '@/lib/rugzak/gpt-payload-builder';
+import { detectRelationalAnchor, extractRelationalAnchors } from '@/lib/rugzak/relational-anchor-detector';
+import { analyzeRelationalPatterns } from '@/lib/rugzak/relational-pattern-analyzer';
 
 /**
  * OpenAIProvider — Routes through backend tRPC to OpenAI GPT-4o.
@@ -44,6 +46,30 @@ export class OpenAIProvider implements AIProvider {
         dominantModule,
       );
 
+      // ── STEP 1b: Relational Anchor Detection (LOCAL, every call) ──
+      const allAnchors = extractRelationalAnchors(context.backpack);
+      const anchorResult = detectRelationalAnchor(
+        context.currentMessage,
+        context.backpack,
+      );
+      // Override relevance anchor with the dedicated detector's result (more accurate)
+      if (anchorResult.selectedAnchor) {
+        relevance.relationshipAnchor = {
+          name: anchorResult.selectedAnchor.name,
+          role: anchorResult.selectedAnchor.role,
+          roleEN: anchorResult.selectedAnchor.roleEN,
+          score: anchorResult.selectedScore,
+        };
+      }
+
+      // ── STEP 1c: Relational Pattern Analysis (LOCAL, every call) ──
+      const relationalPattern = analyzeRelationalPatterns(
+        context.currentMessage,
+        context.backpack,
+        context.userDat,
+        allAnchors,
+      );
+
       // ── STEP 2: Build the structured GPT Payload ──
       const gptPayload = buildGPTPayload({
         message: context.currentMessage,
@@ -62,6 +88,7 @@ export class OpenAIProvider implements AIProvider {
         urgency: context.urgency,
         startEmotion: context.startEmotion,
         crisisLevel: context.crisisLevel,
+        relationalPattern,
       });
 
       // ── STEP 3: Build the server input payload ──
@@ -90,6 +117,10 @@ export class OpenAIProvider implements AIProvider {
         recentDiary: gptPayload.recentDiary,
         riskScore: gptPayload.riskScore,
         dominantModule: gptPayload.dominantModule,
+
+        // Step 2: Stage of Change + Relational Pattern
+        stageOfChange: gptPayload.stageOfChange,
+        relationalPattern: gptPayload.relationalPattern,
       };
 
       // Session start: also include full backpack + userDat + diary

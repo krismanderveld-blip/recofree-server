@@ -11,9 +11,10 @@ import {
 import { useRouter } from 'expo-router';
 import { ScreenContainer } from '@/components/screen-container';
 import { useUser } from '@/lib/user-context';
-import type { UserType, UrgencyLevel } from '@/lib/ai/types';
+import type { UserType, UrgencyLevel, StageOfChange } from '@/lib/ai/types';
+import { STAGE_OF_CHANGE_OPTIONS } from '@/lib/ai/types';
 
-type IntakeStep = 1 | 2 | 3 | 4;
+type IntakeStep = 1 | 2 | 3 | 4 | 5;
 
 const EMOTIONS = [
   { label: 'Calm', value: 'calm' },
@@ -39,18 +40,20 @@ export default function IntakeScreen() {
   const [step, setStep] = useState<IntakeStep>(1);
   const [name, setName] = useState('');
   const [selectedType, setSelectedType] = useState<UserType | null>(null);
+  const [stageOfChange, setStageOfChange] = useState<StageOfChange | null>(null);
   const [startEmotion, setStartEmotion] = useState('');
   const [urgency, setUrgency] = useState<UrgencyLevel | null>(null);
   const [initialContext, setInitialContext] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const canProceedStep1 = name.trim().length >= 2 && selectedType !== null;
-  const canProceedStep2 = startEmotion !== '';
-  const canProceedStep3 = urgency !== null;
+  const canProceedStep2 = stageOfChange !== null;
+  const canProceedStep3 = startEmotion !== '';
+  const canProceedStep4 = urgency !== null;
   const canSubmit = initialContext.trim().length >= 3;
 
   const handleNext = () => {
-    if (step < 4) setStep((step + 1) as IntakeStep);
+    if (step < 5) setStep((step + 1) as IntakeStep);
   };
 
   const handleBack = () => {
@@ -58,12 +61,13 @@ export default function IntakeScreen() {
   };
 
   const handleSubmit = async () => {
-    if (!canSubmit || isSubmitting || !selectedType || !urgency) return;
+    if (!canSubmit || isSubmitting || !selectedType || !urgency || !stageOfChange) return;
     setIsSubmitting(true);
     try {
       await completeIntake({
         userName: name.trim(),
         userType: selectedType,
+        stageOfChange,
         startEmotion,
         urgency,
         initialContext: initialContext.trim(),
@@ -89,7 +93,7 @@ export default function IntakeScreen() {
           <View className="flex-1 px-6 pt-12 pb-8">
             {/* Progress Indicator */}
             <View className="flex-row mb-8 gap-2">
-              {[1, 2, 3, 4].map((s) => (
+              {[1, 2, 3, 4, 5].map((s) => (
                 <View
                   key={s}
                   className={`flex-1 h-1 rounded-full ${
@@ -197,8 +201,67 @@ export default function IntakeScreen() {
               </View>
             )}
 
-            {/* Step 2: Start Emotion */}
+            {/* Step 2: Stage of Change */}
             {step === 2 && (
+              <View className="flex-1">
+                <Text className="text-2xl font-bold text-foreground mb-2">
+                  Where are you in your journey?
+                </Text>
+                <Text className="text-base text-muted mb-6 leading-relaxed">
+                  This helps {selectedType === 'elias' ? 'Elias' : 'Kim'} understand how to best support you.
+                </Text>
+
+                <View className="gap-3 mb-8">
+                  {STAGE_OF_CHANGE_OPTIONS.map((option) => (
+                    <Pressable
+                      key={option.value}
+                      onPress={() => setStageOfChange(option.value)}
+                      style={({ pressed }) => [
+                        { opacity: pressed ? 0.85 : 1, transform: [{ scale: pressed ? 0.98 : 1 }] },
+                      ]}
+                    >
+                      <View
+                        className={`rounded-2xl p-5 border-2 ${
+                          stageOfChange === option.value
+                            ? 'border-primary bg-primary/5'
+                            : 'border-border bg-surface'
+                        }`}
+                      >
+                        <Text className="text-lg font-bold text-foreground mb-1">
+                          {option.label}
+                        </Text>
+                        <Text className="text-sm text-muted">{option.description}</Text>
+                      </View>
+                    </Pressable>
+                  ))}
+                </View>
+
+                <View className="mt-auto gap-3">
+                  <Pressable
+                    onPress={handleNext}
+                    disabled={!canProceedStep2}
+                    style={({ pressed }) => [
+                      {
+                        opacity: !canProceedStep2 ? 0.4 : pressed ? 0.85 : 1,
+                        transform: [{ scale: pressed && canProceedStep2 ? 0.97 : 1 }],
+                      },
+                    ]}
+                  >
+                    <View className="bg-primary rounded-2xl py-4 items-center">
+                      <Text className="text-white text-lg font-bold">Next</Text>
+                    </View>
+                  </Pressable>
+                  <Pressable onPress={handleBack}>
+                    <View className="py-3 items-center">
+                      <Text className="text-muted text-base">Back</Text>
+                    </View>
+                  </Pressable>
+                </View>
+              </View>
+            )}
+
+            {/* Step 3: Start Emotion */}
+            {step === 3 && (
               <View className="flex-1">
                 <Text className="text-2xl font-bold text-foreground mb-2">
                   How are you feeling right now?
@@ -238,11 +301,11 @@ export default function IntakeScreen() {
                 <View className="mt-auto gap-3">
                   <Pressable
                     onPress={handleNext}
-                    disabled={!canProceedStep2}
+                    disabled={!canProceedStep3}
                     style={({ pressed }) => [
                       {
-                        opacity: !canProceedStep2 ? 0.4 : pressed ? 0.85 : 1,
-                        transform: [{ scale: pressed && canProceedStep2 ? 0.97 : 1 }],
+                        opacity: !canProceedStep3 ? 0.4 : pressed ? 0.85 : 1,
+                        transform: [{ scale: pressed && canProceedStep3 ? 0.97 : 1 }],
                       },
                     ]}
                   >
@@ -259,8 +322,8 @@ export default function IntakeScreen() {
               </View>
             )}
 
-            {/* Step 3: Urgency */}
-            {step === 3 && (
+            {/* Step 4: Urgency */}
+            {step === 4 && (
               <View className="flex-1">
                 <Text className="text-2xl font-bold text-foreground mb-2">
                   How urgent does it feel?
@@ -297,11 +360,11 @@ export default function IntakeScreen() {
                 <View className="mt-auto gap-3">
                   <Pressable
                     onPress={handleNext}
-                    disabled={!canProceedStep3}
+                    disabled={!canProceedStep4}
                     style={({ pressed }) => [
                       {
-                        opacity: !canProceedStep3 ? 0.4 : pressed ? 0.85 : 1,
-                        transform: [{ scale: pressed && canProceedStep3 ? 0.97 : 1 }],
+                        opacity: !canProceedStep4 ? 0.4 : pressed ? 0.85 : 1,
+                        transform: [{ scale: pressed && canProceedStep4 ? 0.97 : 1 }],
                       },
                     ]}
                   >
@@ -318,8 +381,8 @@ export default function IntakeScreen() {
               </View>
             )}
 
-            {/* Step 4: Initial Context */}
-            {step === 4 && (
+            {/* Step 5: Initial Context */}
+            {step === 5 && (
               <View className="flex-1">
                 <Text className="text-2xl font-bold text-foreground mb-2">
                   What's on your mind?

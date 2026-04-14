@@ -147,7 +147,7 @@ function userReducer(state: UserState, action: UserAction): UserState {
 
     case 'COMPLETE_INTAKE': {
       const backpack = createNewBackpack(action.payload);
-      const userDat = createNewUserDat(action.payload.userType);
+      const userDat = createNewUserDat(action.payload.userType, action.payload.stageOfChange);
       const { rugzak, influence } = composeState(backpack, userDat);
       return {
         ...state,
@@ -282,11 +282,12 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
             sections: (raw.sections && raw.sections.length > 0)
               ? raw.sections
               : DEFAULT_BACKPACK_SECTIONS.map((s: any) => ({ ...s })),
-            intakeContext: raw.intakeContext ?? {
-              startEmotion: '',
-              urgency: 'midden' as const,
-              initialContext: '',
-              intakeDate: new Date().toISOString(),
+    intakeContext: {
+              stageOfChange: raw.intakeContext?.stageOfChange ?? 'contemplation' as const,
+              startEmotion: raw.intakeContext?.startEmotion ?? '',
+              urgency: raw.intakeContext?.urgency ?? 'midden' as const,
+              initialContext: raw.intakeContext?.initialContext ?? '',
+              intakeDate: raw.intakeContext?.intakeDate ?? new Date().toISOString(),
             },
             createdAt: raw.createdAt ?? new Date().toISOString(),
           };
@@ -300,6 +301,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
             totalSessions: raw.totalSessions ?? 0,
             lastSessionDate: raw.lastSessionDate ?? null,
             sessionAnalyses: [],
+            stageOfChange: raw.stageOfChange ?? 'contemplation' as const,
           };
 
           // Persist both new stores
@@ -333,7 +335,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     }
     dispatch({ type: 'COMPLETE_INTAKE', payload: data });
     const backpack = createNewBackpack(data);
-    const userDat = createNewUserDat(data.userType);
+    const userDat = createNewUserDat(data.userType, data.stageOfChange);
     await Promise.all([
       persistBackpack(backpack),
       persistUserDat(userDat),
@@ -459,6 +461,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       totalSessions: updatedRugzak.totalSessions,
       lastSessionDate: updatedRugzak.lastSessionDate,
       sessionAnalyses: state.userDat?.sessionAnalyses ?? [],
+      stageOfChange: state.userDat?.stageOfChange ?? 'contemplation' as const,
     };
     dispatch({ type: 'END_SESSION', payload: updatedUserDat });
     await persistUserDat(updatedUserDat);
@@ -561,11 +564,12 @@ function migrateBackpack(raw: any): Backpack {
     sections: (raw.sections && raw.sections.length > 0)
       ? raw.sections
       : DEFAULT_BACKPACK_SECTIONS.map((s: any) => ({ ...s })),
-    intakeContext: raw.intakeContext ?? {
-      startEmotion: '',
-      urgency: 'midden' as const,
-      initialContext: '',
-      intakeDate: new Date().toISOString(),
+    intakeContext: {
+      stageOfChange: raw.intakeContext?.stageOfChange ?? 'contemplation' as const,
+      startEmotion: raw.intakeContext?.startEmotion ?? '',
+      urgency: raw.intakeContext?.urgency ?? 'midden' as const,
+      initialContext: raw.intakeContext?.initialContext ?? '',
+      intakeDate: raw.intakeContext?.intakeDate ?? new Date().toISOString(),
     },
     createdAt: raw.createdAt ?? new Date().toISOString(),
   };
@@ -581,5 +585,8 @@ function migrateUserDat(raw: any, userType: UserType): UserDat {
     totalSessions: raw.totalSessions ?? 0,
     lastSessionDate: raw.lastSessionDate ?? null,
     sessionAnalyses: raw.sessionAnalyses ?? [],
+    stageOfChange: raw.stageOfChange ?? 'contemplation' as const,
+    relationalAnchors: raw.relationalAnchors ?? [],
+    lastRelationalPattern: raw.lastRelationalPattern ?? null,
   };
 }

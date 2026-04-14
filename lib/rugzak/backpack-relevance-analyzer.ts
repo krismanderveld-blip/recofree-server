@@ -40,6 +40,7 @@ export interface SelectedTrigger {
 export interface SelectedRelationshipAnchor {
   name: string;
   role: string;
+  roleEN?: string;
   score: number;
 }
 

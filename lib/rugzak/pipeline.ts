@@ -89,7 +89,7 @@ export async function processMessage(
       naam: rugzak.naam,
       userType: rugzak.userType,
       sections: rugzak.sections,
-      intakeContext: rugzak.intakeContext,
+      intakeContext: { stageOfChange: 'contemplation' as const, ...rugzak.intakeContext },
       createdAt: rugzak.createdAt,
     };
     currentUserDat = {
@@ -101,6 +101,7 @@ export async function processMessage(
       totalSessions: rugzak.totalSessions,
       lastSessionDate: rugzak.lastSessionDate,
       sessionAnalyses: [],
+      stageOfChange: 'contemplation' as const,
     };
   }
 
@@ -299,7 +300,7 @@ export async function generateGreeting(
       naam: rugzak.naam,
       userType: rugzak.userType,
       sections: rugzak.sections,
-      intakeContext: rugzak.intakeContext,
+      intakeContext: { stageOfChange: 'contemplation' as const, ...rugzak.intakeContext },
       createdAt: rugzak.createdAt,
     };
     currentUserDat = {
@@ -311,6 +312,7 @@ export async function generateGreeting(
       totalSessions: rugzak.totalSessions,
       lastSessionDate: rugzak.lastSessionDate,
       sessionAnalyses: [],
+      stageOfChange: 'contemplation' as const,
     };
   }
 
@@ -470,7 +472,7 @@ export async function endSession(
       naam: rugzak.naam,
       userType: rugzak.userType,
       sections: rugzak.sections,
-      intakeContext: rugzak.intakeContext,
+      intakeContext: { stageOfChange: 'contemplation' as const, ...rugzak.intakeContext },
       createdAt: rugzak.createdAt,
     };
     currentUserDat = {
@@ -482,6 +484,7 @@ export async function endSession(
       totalSessions: rugzak.totalSessions,
       lastSessionDate: rugzak.lastSessionDate,
       sessionAnalyses: [],
+      stageOfChange: 'contemplation' as const,
     };
   }
 

@@ -40,7 +40,7 @@ interface ChatRequestInput {
   selectedTriggers?: Array<{ trigger: string; score: number }>;
   coreWound?: string | null;
   contextLine?: string | null;
-  relationshipAnchor?: { name: string; role: string } | null;
+  relationshipAnchor?: { name: string; role: string; roleEN?: string } | null;
   recentDiary?: Array<{ content: string; moodTag: string; date: string }>;
   riskScore?: number;
   dominantModule?: string;
@@ -105,6 +105,8 @@ interface ChatRequestInput {
   sessionDurationMinutes: number;
   urgency: string;
   startEmotion: string;
+  stageOfChange?: string;
+  relationalPattern?: { pattern: string; schema: string; confidence: number } | null;
 }
 
 // ─── Zod Schema ───────────────────────────────────────────────────
@@ -131,6 +133,7 @@ export const chatInputSchema = z.object({
   relationshipAnchor: z.object({
     name: z.string(),
     role: z.string(),
+    roleEN: z.string().optional(),
   }).nullable().optional(),
   recentDiary: z.array(
     z.object({ content: z.string(), moodTag: z.string(), date: z.string() })
@@ -208,6 +211,12 @@ export const chatInputSchema = z.object({
   sessionDurationMinutes: z.number(),
   urgency: z.string(),
   startEmotion: z.string(),
+  stageOfChange: z.string().optional(),
+  relationalPattern: z.object({
+    pattern: z.string(),
+    schema: z.string(),
+    confidence: z.number(),
+  }).nullable().optional(),
 });
 
 // ─── Relationship Map Extractor ──────────────────────────────────
@@ -272,8 +281,36 @@ function buildRelevanceContext(input: ChatRequestInput): string {
 
   // Relationship anchor
   if (input.relationshipAnchor) {
-    parts.push(`RELATIE-ANKER: ${input.relationshipAnchor.name} (${input.relationshipAnchor.role})`);
+    const roleDisplay = input.relationshipAnchor.roleEN
+      ? `${input.relationshipAnchor.role} / ${input.relationshipAnchor.roleEN}`
+      : input.relationshipAnchor.role;
+    parts.push(`RELATIE-ANKER: ${input.relationshipAnchor.name} (${roleDisplay})`);
     parts.push(`  → Deze persoon is relevant voor het huidige gesprek. Gebruik ALLEEN de relatie zoals beschreven.`);
+  }
+
+  // Relational pattern
+  if (input.relationalPattern && input.relationalPattern.confidence >= 0.35) {
+    parts.push(`RELATIONEEL PATROON GEDETECTEERD: ${input.relationalPattern.pattern}`);
+    if (input.relationalPattern.schema) {
+      parts.push(`  Gelinkt schema: ${input.relationalPattern.schema}`);
+    }
+    parts.push(`  Betrouwbaarheid: ${Math.round(input.relationalPattern.confidence * 100)}%`);
+    parts.push(`  → Dit is een terugkerend relationeel patroon. Benoem het voorzichtig als het relevant is voor het huidige gesprek.`);
+  }
+
+  // Stage of Change
+  if (input.stageOfChange) {
+    const stageDescriptions: Record<string, string> = {
+      precontemplation: 'Nog niet klaar voor verandering — bewustwording stimuleren, niet pushen',
+      contemplation: 'Overweegt verandering — ambivalentie verkennen, motivatie ondersteunen',
+      preparation: 'Bereidt zich voor op verandering — concrete stappen helpen plannen',
+      action: 'Actief bezig met verandering — successen bevestigen, obstakels bespreken',
+      maintenance: 'Houdt verandering vol — terugvalpreventie, groei bevestigen',
+    };
+    const desc = stageDescriptions[input.stageOfChange] || input.stageOfChange;
+    parts.push(`FASE VAN VERANDERING: ${input.stageOfChange}`);
+    parts.push(`  → ${desc}`);
+    parts.push(`  → Pas je benadering aan op deze fase. Ga NIET sneller dan de gebruiker.`);
   }
 
   // Recent diary
@@ -496,7 +533,8 @@ Je hebt 15 Stoa-sessies beschikbaar. Activeer ze wanneer de context past:
     .join(", ");
 
   const totalSessions = input.userDat?.totalSessions ?? 0;
-  const sessionInfo = `Sessie #${totalSessions + 1}. Duur: ${input.sessionDurationMinutes} minuten. Initiële emotie: ${input.startEmotion}. Huidige gedetecteerde emotie: ${input.detectedEmotion}.`;
+  const stageLabel = input.stageOfChange ? ` Fase: ${input.stageOfChange}.` : '';
+  const sessionInfo = `Sessie #${totalSessions + 1}. Duur: ${input.sessionDurationMinutes} minuten. Initiële emotie: ${input.startEmotion}. Huidige gedetecteerde emotie: ${input.detectedEmotion}.${stageLabel}`;
 
   let crisisInstructions = "";
   if (input.crisisLevel >= 2) {

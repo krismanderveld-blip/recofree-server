@@ -151,3 +151,11 @@
 - [x] Update server ai-chat to use structured payload for both session-start and follow-up prompts
 - [x] Enforce single dominant module per message (currently allows 3)
 - [x] Reduce conversation history window from 20 to 6-10 messages
+
+## Step 2: Engine Spec V2 — Relational Anchor Detection, Relational Pattern Analyzer, Stage of Change
+- [x] Build Relational Anchor Detector (extracts all named persons + exact relationships from backpack text)
+- [x] Build Relational Pattern Analyzer (detects recurring relational dynamics: codependency, enabling, conflict avoidance, etc.)
+- [x] Integrate Stage of Change into data model (precontemplation, contemplation, preparation, action, maintenance)
+- [x] Add Stage of Change to intake flow
+- [x] Wire new modules into pipeline, payload builder, and server system prompt
+- [x] Persist relational anchors and patterns in UserDat across sessions

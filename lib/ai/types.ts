@@ -36,6 +36,18 @@ export type UserType = 'elias' | 'kim';
 /** Urgency level determined at intake */
 export type UrgencyLevel = 'laag' | 'midden' | 'hoog';
 
+/** Stage of Change — mandatory, influences response depth, directness, confrontation level, intervention type */
+export type StageOfChange = 'precontemplation' | 'contemplation' | 'preparation' | 'action' | 'maintenance';
+
+/** Stage of Change labels for UI display */
+export const STAGE_OF_CHANGE_OPTIONS: { value: StageOfChange; label: string; description: string }[] = [
+  { value: 'precontemplation', label: 'Not ready yet', description: 'I\'m not sure I need to change anything right now.' },
+  { value: 'contemplation', label: 'Thinking about it', description: 'I\'m starting to think about making a change.' },
+  { value: 'preparation', label: 'Getting ready', description: 'I\'m planning to take action soon.' },
+  { value: 'action', label: 'Taking action', description: 'I\'m actively working on change right now.' },
+  { value: 'maintenance', label: 'Maintaining', description: 'I\'ve made changes and I\'m working to keep them.' },
+];
+
 // ─── Slider Types ──────────────────────────────────────────────
 
 /** Elias slider keys */
@@ -184,6 +196,7 @@ export interface ChatMessage {
 export interface IntakeData {
   userName: string;
   userType: UserType;
+  stageOfChange: StageOfChange;
   startEmotion: string;
   urgency: UrgencyLevel;
   initialContext: string;
@@ -210,6 +223,7 @@ export interface Backpack {
   sections: LifePhaseSection[];
   /** Intake context — captured once at onboarding */
   intakeContext: {
+    stageOfChange: StageOfChange;
     startEmotion: string;
     urgency: UrgencyLevel;
     initialContext: string;
@@ -247,6 +261,12 @@ export interface UserDat {
   lastSessionDate: string | null;
   /** Session analysis summaries — grows after each session end */
   sessionAnalyses: SessionAnalysisRecord[];
+  /** Current stage of change — set at intake, may evolve over sessions */
+  stageOfChange: StageOfChange;
+  /** Detected relational anchors — persisted across sessions */
+  relationalAnchors?: Array<{ name: string; role: string; roleEN: string; emotionalWeight: number }>;
+  /** Last detected relational pattern */
+  lastRelationalPattern?: { pattern: string; schema: string; confidence: number } | null;
 }
 
 /** A record of a completed session's analysis */
@@ -353,6 +373,7 @@ export function createNewBackpack(intake: IntakeData): Backpack {
     userType: intake.userType,
     sections: DEFAULT_BACKPACK_SECTIONS.map((s) => ({ ...s })),
     intakeContext: {
+      stageOfChange: intake.stageOfChange,
       startEmotion: intake.startEmotion,
       urgency: intake.urgency,
       initialContext: intake.initialContext,
@@ -363,7 +384,7 @@ export function createNewBackpack(intake: IntakeData): Backpack {
 }
 
 /** Create a new UserDat from intake data */
-export function createNewUserDat(userType: UserType): UserDat {
+export function createNewUserDat(userType: UserType, stageOfChange: StageOfChange = 'contemplation'): UserDat {
   return {
     currentMood: createDefaultSliders(userType),
     moodHistory: [],
@@ -373,6 +394,9 @@ export function createNewUserDat(userType: UserType): UserDat {
     totalSessions: 0,
     lastSessionDate: null,
     sessionAnalyses: [],
+    stageOfChange,
+    relationalAnchors: [],
+    lastRelationalPattern: null,
   };
 }
 
