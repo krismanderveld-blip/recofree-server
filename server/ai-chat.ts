@@ -1,16 +1,15 @@
 /**
- * Server-side AI Chat Handler — DUAL-STORE ARCHITECTURE
+ * Server-side AI Chat Handler — ENGINE SPEC V2
  *
  * Routes all AI calls through the backend using OpenAI GPT-4o.
  * The API key is stored securely on the server (OPENAI_API_KEY env var).
  *
- * ARCHITECTURE:
- *   App sends BOTH stores at SESSION START → Server builds system prompt → OpenAI GPT-4o → Server → App
- *   Follow-up messages get a lightweight prompt (identity already in conversation context).
+ * NEW ARCHITECTURE:
+ *   EVERY call receives a structured payload with relevant context.
+ *   Session start: full backpack + userDat + diary + relevance analysis
+ *   Follow-up: relevance analysis (triggers, wound, context, anchor) + sliders + 6 messages
  *
- * TWO SEPARATE DATA SOURCES:
- *   backpack (identity anchor): Life story, intake context, user name/type. NEVER auto-modified.
- *   userDat (session memory): Triggers, mood history, session analyses. Updated at session end only.
+ *   GPT always knows who the user is. No more blind follow-ups.
  *
  * CANON SOURCES:
  *   - elias.dat V19
@@ -19,6 +18,7 @@
  *   - Module 033 (Kwaliteitscontrole / anti-fabricatie)
  *   - Module 091 (Schema Integratie)
  *   - Module 012 (Vooranalyse / Failsafe)
+ *   - Master Engine Spec V2
  */
 
 import { z } from "zod";
@@ -35,6 +35,17 @@ interface ChatRequestInput {
   }>;
   moodSliders: Record<string, number>;
   isSessionStart: boolean;
+
+  // NEW: Always present — from Backpack Relevance Analyzer
+  selectedTriggers?: Array<{ trigger: string; score: number }>;
+  coreWound?: string | null;
+  contextLine?: string | null;
+  relationshipAnchor?: { name: string; role: string } | null;
+  recentDiary?: Array<{ content: string; moodTag: string; date: string }>;
+  riskScore?: number;
+  dominantModule?: string;
+
+  // Session start only
   backpack?: {
     naam: string;
     userType: "elias" | "kim";
@@ -110,6 +121,24 @@ export const chatInputSchema = z.object({
   ),
   moodSliders: z.record(z.string(), z.number()),
   isSessionStart: z.boolean().default(false),
+
+  // NEW: Relevance context (always present)
+  selectedTriggers: z.array(
+    z.object({ trigger: z.string(), score: z.number() })
+  ).optional(),
+  coreWound: z.string().nullable().optional(),
+  contextLine: z.string().nullable().optional(),
+  relationshipAnchor: z.object({
+    name: z.string(),
+    role: z.string(),
+  }).nullable().optional(),
+  recentDiary: z.array(
+    z.object({ content: z.string(), moodTag: z.string(), date: z.string() })
+  ).optional(),
+  riskScore: z.number().optional(),
+  dominantModule: z.string().optional(),
+
+  // Session start only
   backpack: z.object({
     naam: z.string(),
     userType: z.enum(["elias", "kim"]),
@@ -182,14 +211,11 @@ export const chatInputSchema = z.object({
 });
 
 // ─── Relationship Map Extractor ──────────────────────────────────
-// Extracts a structured relationship lookup table from life story text.
-// This gives GPT-4o an explicit reference so it never has to guess.
 
 function extractRelationshipMap(
   lifeStory: Array<{ label: string; content: string }>,
   intakeContext: string
 ): string {
-  // Combine all text sources
   const allText = [
     ...lifeStory.map((s) => s.content),
     intakeContext,
@@ -199,7 +225,6 @@ function extractRelationshipMap(
 
   if (!allText || allText.trim().length < 20) return "";
 
-  // Common Dutch relationship keywords to help GPT parse
   return `
 ─── RELATIONSHIP EXTRACTION INSTRUCTION ───
 Below is the user's complete life story. Before responding, you MUST mentally extract every person mentioned and their EXACT relationship as stated by the user. For example:
@@ -216,6 +241,59 @@ man/vriend = husband/boyfriend/partner, moeder/mama = mother, vader/papa = fathe
 zus = sister, broer = brother, oma = grandmother, opa = grandfather,
 vriend(in) = friend, collega = colleague, buurman/buurvrouw = neighbor
 ─── END RELATIONSHIP INSTRUCTION ───`;
+}
+
+// ─── Build Relevance Context Block (NEW — for EVERY call) ────────
+
+function buildRelevanceContext(input: ChatRequestInput): string {
+  const parts: string[] = [];
+
+  // Selected triggers
+  const triggers = input.selectedTriggers || [];
+  if (triggers.length > 0) {
+    parts.push(`ACTIEVE TRIGGERS (geselecteerd door het systeem):`);
+    for (const t of triggers) {
+      parts.push(`  - ${t.trigger} (relevantie: ${t.score})`);
+    }
+  }
+
+  // Core wound
+  if (input.coreWound) {
+    parts.push(`KERNWOND: ${input.coreWound}`);
+    parts.push(`  → Wees je bewust van dit onderliggende patroon. Benoem het voorzichtig als het relevant is.`);
+  }
+
+  // Context line from backpack
+  if (input.contextLine) {
+    parts.push(`RELEVANTE CONTEXT UIT LEVENSVERHAAL:`);
+    parts.push(`  "${input.contextLine}"`);
+    parts.push(`  → Dit is een passage uit het levensverhaal van ${input.userName} die relevant is voor dit bericht. Je mag er voorzichtig naar verwijzen.`);
+  }
+
+  // Relationship anchor
+  if (input.relationshipAnchor) {
+    parts.push(`RELATIE-ANKER: ${input.relationshipAnchor.name} (${input.relationshipAnchor.role})`);
+    parts.push(`  → Deze persoon is relevant voor het huidige gesprek. Gebruik ALLEEN de relatie zoals beschreven.`);
+  }
+
+  // Recent diary
+  const diary = input.recentDiary || [];
+  if (diary.length > 0) {
+    parts.push(`RECENTE DAGBOEKNOTITIES:`);
+    for (const d of diary) {
+      parts.push(`  [${d.date}] (stemming: ${d.moodTag}): ${d.content}`);
+    }
+  }
+
+  if (parts.length === 0) return "";
+
+  return `
+╔══════════════════════════════════════════════════════╗
+║  RELEVANTIE-CONTEXT — Geselecteerd door het systeem  ║
+║  Dit is wat NU relevant is voor dit specifieke bericht║
+╚══════════════════════════════════════════════════════╝
+${parts.join("\n")}
+─── EINDE RELEVANTIE-CONTEXT ───`;
 }
 
 // ─── System Prompt Builder ────────────────────────────────────────
@@ -294,8 +372,7 @@ COMMUNICATIESTIJL:
 
 KERNPRINCIPES:
 - Grenzen stellen en handhaven
-- Zelfzorg en eigenwaarde
-- Realistische verwachtingen
+- Zelfzorg en eigenwaarde opbouwen
 - Eerlijkheid boven comfort
 - Verantwoordelijkheid bij de juiste persoon
 
@@ -442,10 +519,10 @@ Je hebt 15 Stoa-sessies beschikbaar. Activeer ze wanneer de context past:
 - Verlaag de drempel voor het suggereren van professionele ondersteuning.`;
   }
 
-  const moduleInstructions =
-    input.activeModules.length > 0
-      ? `Actieve therapeutische modules: ${input.activeModules.join(", ")}. Weef deze benaderingen natuurlijk in je antwoord.`
-      : "";
+  const dominantModule = input.dominantModule || (input.activeModules.length > 0 ? input.activeModules[0] : '');
+  const moduleInstructions = dominantModule
+    ? `Dominant therapeutisch module: ${dominantModule}. Focus je antwoord op deze benadering.`
+    : "";
 
   const stance = input.therapeuticStance
     ? `Therapeutische houding: ${input.therapeuticStance}`
@@ -463,7 +540,14 @@ Houd het kort (3-5 zinnen max). Stel GEEN nieuwe vragen.`;
   }
 
   // ══════════════════════════════════════════════════════════════
-  // FOLLOW-UP MESSAGES (no backpack/userDat — already in context)
+  // RELEVANCE CONTEXT — ALWAYS PRESENT (new in Engine Spec V2)
+  // This gives GPT the relevant backpack fragments for THIS message.
+  // ══════════════════════════════════════════════════════════════
+
+  const relevanceContext = buildRelevanceContext(input);
+
+  // ══════════════════════════════════════════════════════════════
+  // FOLLOW-UP MESSAGES — NOW WITH CONTEXT
   // ══════════════════════════════════════════════════════════════
 
   if (!input.isSessionStart) {
@@ -472,6 +556,8 @@ Houd het kort (3-5 zinnen max). Stel GEEN nieuwe vragen.`;
 ${antiHallucination}
 
 De naam van de gebruiker is ${name}. Spreek hen af en toe bij naam aan.
+
+${relevanceContext}
 
 === VERPLICHTE GEDRAGSINSTRUCTIES ===
 ${stance}
@@ -483,6 +569,7 @@ De sliders vertellen je exact hoe de gebruiker zich voelt — GEBRUIK ze in je a
 HUIDIGE TOESTAND:
 - Mood sliders: ${sliderEntries}
 - Urgentieniveau: ${input.urgency}
+- Risicoscore: ${input.riskScore ?? 0}/10
 ${sessionInfo}
 
 ${moduleInstructions}
@@ -490,8 +577,11 @@ ${crisisInstructions}
 ${sessionEndInstructions}
 
 RESPONSREGELS:
-- Je KENT ${name}. Gebruik je persoonlijk geheugen natuurlijk — verwijs naar hun verhaal, patronen en geschiedenis wanneer relevant.
-- MAAR: verwijs ALLEEN naar wat je ECHT weet uit de backpack. Verzin NIETS.
+- Je KENT ${name}. Gebruik de relevantie-context hierboven om je antwoord te informeren.
+- Als er een CONTEXT LINE uit het levensverhaal staat, mag je er voorzichtig naar verwijzen.
+- Als er een RELATIE-ANKER staat, gebruik dan ALLEEN die exacte relatie.
+- Als er TRIGGERS staan, wees je bewust van die thema's in je antwoord.
+- MAAR: verwijs ALLEEN naar wat je ECHT weet. Verzin NIETS. Bij twijfel: VRAAG.
 - Als ${name} vraagt over iemand die je niet kent → "Dat weet ik niet van je. Vertel me meer?"
 - Antwoord in dezelfde taal als de gebruiker schrijft (Nederlands of Engels)
 - Houd antwoorden beknopt: volg de PACING instructie strikt
@@ -527,7 +617,6 @@ RESPONSREGELS:
       }
     }
 
-    // Relationship extraction instruction
     const relationMap = extractRelationshipMap(
       backpack.lifeStory,
       backpack.intakeContext.initialContext
@@ -536,7 +625,6 @@ RESPONSREGELS:
       identityMemory += `\n${relationMap}`;
     }
 
-    // Life story — FULL and UNMODIFIED
     if (backpack.lifeStory.some((s) => s.content.trim().length > 0)) {
       identityMemory += `\n\n─── LEVENSVERHAAL VAN ${name.toUpperCase()} (geschreven door ${name}) ───`;
       for (const section of backpack.lifeStory) {
@@ -585,7 +673,6 @@ RESPONSREGELS:
     sessionMemory += `\n║  Bijgewerkt door het systeem na elke sessie.`;
     sessionMemory += `\n╚══════════════════════════════════════════════════════╝`;
 
-    // Trigger patterns
     if (userDat.triggerPatterns.length > 0) {
       sessionMemory += `\n\n─── BEKENDE TRIGGERPATRONEN ───`;
       for (const tp of userDat.triggerPatterns) {
@@ -594,7 +681,6 @@ RESPONSREGELS:
       sessionMemory += `\nDit zijn terugkerende patronen. Wees alert wanneer deze thema's opkomen. Je kunt ze voorzichtig benoemen: "Ik merk dat dit aansluit bij iets dat eerder terugkwam..."`;
     }
 
-    // Mood history
     if (userDat.moodHistory.length > 0) {
       const recent = userDat.moodHistory.slice(-5);
       sessionMemory += `\n\n─── STEMMINGSTRAJECT (laatste ${recent.length} check-ins) ───`;
@@ -606,12 +692,10 @@ RESPONSREGELS:
       }
     }
 
-    // Module usage
     if (userDat.moduleUsageSummary.length > 0) {
       sessionMemory += `\n\nEerder gebruikte therapeutische modules met ${name}: ${userDat.moduleUsageSummary.join(", ")}`;
     }
 
-    // Session analyses
     if (userDat.sessionAnalyses.length > 0) {
       sessionMemory += `\n\n─── EERDERE SESSIE-ANALYSES ───`;
       for (const sa of userDat.sessionAnalyses) {
@@ -646,6 +730,8 @@ ${identityMemory}
 ${diaryMemory}
 ${sessionMemory}
 
+${relevanceContext}
+
 === VERPLICHTE GEDRAGSINSTRUCTIES ===
 ${stance}
 
@@ -659,6 +745,7 @@ De sliders vertellen je exact hoe de gebruiker zich voelt — GEBRUIK ze in je a
 HUIDIGE TOESTAND:
 - Mood sliders: ${sliderEntries}
 - Urgentieniveau: ${input.urgency}
+- Risicoscore: ${input.riskScore ?? 0}/10
 ${sessionInfo}
 
 ${moduleInstructions}
@@ -701,8 +788,8 @@ export async function generateAIResponse(
     { role: "system", content: systemPrompt },
   ];
 
-  const recentHistory = input.conversationHistory.slice(-20);
-  for (const msg of recentHistory) {
+  // Conversation history is already windowed by the client (6-10 messages)
+  for (const msg of input.conversationHistory) {
     messages.push({ role: msg.role, content: msg.content });
   }
 
@@ -718,6 +805,20 @@ export async function generateAIResponse(
   console.log("[AI Chat] System prompt length:", systemPrompt.length, "chars");
   console.log("[AI Chat] Total messages:", messages.length);
   console.log("[AI Chat] Session start:", input.isSessionStart);
+  console.log("[AI Chat] Dominant module:", input.dominantModule || input.activeModules[0] || 'none');
+  console.log("[AI Chat] Risk score:", input.riskScore ?? 0);
+  if (input.selectedTriggers && input.selectedTriggers.length > 0) {
+    console.log("[AI Chat] Selected triggers:", input.selectedTriggers.map(t => t.trigger).join(', '));
+  }
+  if (input.coreWound) {
+    console.log("[AI Chat] Core wound:", input.coreWound);
+  }
+  if (input.contextLine) {
+    console.log("[AI Chat] Context line present: yes");
+  }
+  if (input.relationshipAnchor) {
+    console.log("[AI Chat] Relationship anchor:", input.relationshipAnchor.name, "(" + input.relationshipAnchor.role + ")");
+  }
   if (input.backpack) {
     console.log(
       "[AI Chat] Backpack life story sections:",

@@ -143,3 +143,11 @@
 - [x] FIX: Keyboard trilling on Android — removed KAV on Android, let softwareKeyboardLayoutMode:resize handle it alone
 - [x] FIX: Removed broken backpackFilledCount reset that caused double greetings
 - [x] FIX: Backpack content guard — greeting only fires when at least one backpack section has actual content (prevents empty-backpack greeting after intake)
+
+## Step 1: New Engine Spec Implementation (fixes follow-up context blindness)
+- [x] Create Backpack Relevance Analyzer (local module: selects max 2 triggers, 1 core wound, 1 context line, 1 relationship anchor per message)
+- [x] Create GPT Payload Builder (structured minimal payload for every API call)
+- [x] Update openai-provider to send structured payload on EVERY call (not just session start)
+- [x] Update server ai-chat to use structured payload for both session-start and follow-up prompts
+- [x] Enforce single dominant module per message (currently allows 3)
+- [x] Reduce conversation history window from 20 to 6-10 messages

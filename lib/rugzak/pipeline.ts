@@ -195,7 +195,7 @@ export async function processMessage(
     userDat: currentUserDat,
     isSessionStart: options?.isSessionStart ?? false,
     diaryEntries: options?.diaryEntries ?? [],
-    activeModules: analysis.priorityModules,
+    activeModules: [analysis.priorityModules[0] || (backpack.userType === 'elias' ? 'E02' : 'K01')], // Single dominant module (Engine Spec V2)
     crisisLevel,
     detectedEmotion: analysis.emotionalState,
     therapeuticStance: buildTherapeuticStance(analysis),
@@ -365,7 +365,7 @@ export async function generateGreeting(
     userDat: currentUserDat,
     isSessionStart: true,
     diaryEntries: diaryEntries ?? [],
-    activeModules: analysis.priorityModules,
+    activeModules: [analysis.priorityModules[0] || (backpack.userType === 'elias' ? 'E02' : 'K01')], // Single dominant module (Engine Spec V2)
     crisisLevel: 0,
     detectedEmotion: analysis.emotionalState,
     therapeuticStance: buildTherapeuticStance(analysis),

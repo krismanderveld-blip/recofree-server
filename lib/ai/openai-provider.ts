@@ -2,77 +2,100 @@ import type { AIProvider, AIResult, ChatContext, Backpack, UserDat, MoodSnapshot
 import { getApiBaseUrl } from '@/constants/oauth';
 import * as Auth from '@/lib/_core/auth';
 import superjson from 'superjson';
+import { analyzeBackpackRelevance } from '@/lib/rugzak/backpack-relevance-analyzer';
+import { buildGPTPayload, type GPTPayload } from '@/lib/rugzak/gpt-payload-builder';
 
 /**
  * OpenAIProvider — Routes through backend tRPC to OpenAI GPT-4o.
  *
- * DUAL-STORE ARCHITECTURE:
- *   App sends BOTH stores in full → Backend builds system prompt → OpenAI GPT-4o → Backend → App
+ * NEW ARCHITECTURE (Engine Spec V2):
+ *   EVERY call gets a structured payload with relevant context.
+ *   No more "full at session start, blind at follow-up".
  *
- * TWO SEPARATE DATA SOURCES:
- *   backpack (identity anchor):
- *     - Life story sections (FULL text, NEVER truncated)
- *     - Intake context
- *     - User name, type, creation date
- *     - NEVER auto-modified, NEVER summarized
+ *   Session start: full backpack + userDat + diary + relevance analysis
+ *   Follow-up: relevance analysis + selected triggers/wound/context/anchor + sliders + 6 messages
  *
- *   userDat (session memory):
- *     - Trigger patterns with frequency and history
- *     - Mood history across sessions
- *     - Module usage history
- *     - Session analysis records
- *     - Chat history
- *
- * CRITICAL RULE:
- *   The backpack is the anchor of identity.
- *   If it is reduced or summarized, the system loses consistency and reliability.
- *   This is NOT a token optimization problem. This is a core architectural requirement.
+ *   GPT always knows who the user is and what's relevant right now.
  */
 export class OpenAIProvider implements AIProvider {
   async generateResponse(context: ChatContext): Promise<AIResult> {
     try {
       const apiBaseUrl = getApiBaseUrl();
-
-      // SESSION-START ONLY: send backpack + userDat in full.
-      // Follow-up messages do NOT re-send them — GPT already has them in the system prompt.
       const isSessionStart = context.isSessionStart;
 
-      const backpackPayload = isSessionStart ? buildBackpackPayload(context.backpack) : null;
-      const userDatPayload = isSessionStart ? buildUserDatPayload(context.userDat) : null;
+      // ── STEP 1: Backpack Relevance Analysis (LOCAL, every call) ──
+      // Select the single dominant module (first from priorityModules)
+      const dominantModule = context.activeModules[0] || 'E02';
 
-      // Diary entries — sent at session start so Elias/Kim knows what the user wrote
-      const diaryPayload = isSessionStart && context.diaryEntries.length > 0
-        ? context.diaryEntries.map((e) => ({
-            content: e.content,
-            moodTag: e.moodTag,
-            timestamp: e.timestamp,
-          }))
-        : null;
+      // Compute risk score from crisis level + slider distress
+      const sliders = { ...context.moodSliders } as Record<string, number>;
+      const sliderValues = Object.values(sliders);
+      const avgDistress = sliderValues.length > 0
+        ? sliderValues.reduce((a, b) => a + b, 0) / sliderValues.length
+        : 0;
+      const riskScore = Math.min(10, context.crisisLevel * 3 + Math.round(avgDistress));
 
-      // Build the input payload matching the server's chatInputSchema
-      const inputPayload: Record<string, unknown> = {
-        userType: context.userType,
-        userName: context.userName,
+      // Run the Backpack Relevance Analyzer
+      const relevance = analyzeBackpackRelevance(
+        context.currentMessage,
+        context.backpack,
+        context.userDat,
+        context.moodSliders,
+        dominantModule,
+      );
+
+      // ── STEP 2: Build the structured GPT Payload ──
+      const gptPayload = buildGPTPayload({
         message: context.currentMessage,
-        conversationHistory: context.conversationHistory.slice(-20).map((m) => ({
-          role: m.role as 'user' | 'assistant',
-          content: m.content,
-        })),
-        moodSliders: context.moodSliders as unknown as Record<string, number>,
-        activeModules: context.activeModules,
-        crisisLevel: context.crisisLevel,
+        backpack: context.backpack,
+        userDat: context.userDat,
+        sliders: context.moodSliders,
+        isSessionStart,
+        dominantModule,
+        riskScore,
+        relevance,
+        diaryEntries: context.diaryEntries,
+        chatHistory: context.conversationHistory,
         detectedEmotion: context.detectedEmotion,
         therapeuticStance: context.therapeuticStance,
         sessionDurationMinutes: context.sessionDurationMinutes,
         urgency: context.urgency,
         startEmotion: context.startEmotion,
+        crisisLevel: context.crisisLevel,
+      });
+
+      // ── STEP 3: Build the server input payload ──
+      // The server receives the FULL structured payload.
+      // It uses this to build the system prompt for GPT.
+      const inputPayload: Record<string, unknown> = {
+        userType: gptPayload.route,
+        userName: gptPayload.userName,
+        message: gptPayload.message,
+        conversationHistory: gptPayload.conversationWindow,
+        moodSliders: gptPayload.sliders,
+        activeModules: [gptPayload.dominantModule], // Single dominant module
+        crisisLevel: gptPayload.crisisLevel,
+        detectedEmotion: gptPayload.detectedEmotion,
+        therapeuticStance: gptPayload.therapeuticStance,
+        sessionDurationMinutes: gptPayload.sessionDurationMinutes,
+        urgency: gptPayload.urgency,
+        startEmotion: gptPayload.startEmotion,
         isSessionStart,
+
+        // NEW: Always send relevance context (every call)
+        selectedTriggers: gptPayload.selectedTriggers,
+        coreWound: gptPayload.coreWound,
+        contextLine: gptPayload.contextLine,
+        relationshipAnchor: gptPayload.relationshipAnchor,
+        recentDiary: gptPayload.recentDiary,
+        riskScore: gptPayload.riskScore,
+        dominantModule: gptPayload.dominantModule,
       };
 
-      // Only include backpack + userDat + diary at session start
-      if (backpackPayload) inputPayload.backpack = backpackPayload;
-      if (userDatPayload) inputPayload.userDat = userDatPayload;
-      if (diaryPayload) inputPayload.diaryEntries = diaryPayload;
+      // Session start: also include full backpack + userDat + diary
+      if (gptPayload.backpack) inputPayload.backpack = gptPayload.backpack;
+      if (gptPayload.userDat) inputPayload.userDat = gptPayload.userDat;
+      if (gptPayload.diaryEntries) inputPayload.diaryEntries = gptPayload.diaryEntries;
 
       // tRPC mutation via HTTP with superjson serialization
       const serialized = superjson.serialize(inputPayload);
@@ -87,17 +110,17 @@ export class OpenAIProvider implements AIProvider {
 
       const url = `${apiBaseUrl}/api/trpc/ai.chat`;
 
-      console.log('[OpenAIProvider] Calling:', url, isSessionStart ? '(SESSION START — full payload)' : '(follow-up — lightweight)');
-      if (backpackPayload) {
-        console.log('[OpenAIProvider] Backpack sections:', backpackPayload.lifeStory.length);
-      }
-      if (userDatPayload) {
-        console.log('[OpenAIProvider] UserDat triggers:', userDatPayload.triggerPatterns.length);
-        console.log('[OpenAIProvider] UserDat sessions:', userDatPayload.totalSessions);
-        console.log('[OpenAIProvider] UserDat session analyses:', userDatPayload.sessionAnalyses.length);
-      }
-      if (diaryPayload) {
-        console.log('[OpenAIProvider] Diary entries:', diaryPayload.length);
+      console.log('[OpenAIProvider] Calling:', url, isSessionStart ? '(SESSION START)' : '(FOLLOW-UP)');
+      console.log('[OpenAIProvider] Dominant module:', gptPayload.dominantModule);
+      console.log('[OpenAIProvider] Risk score:', gptPayload.riskScore);
+      console.log('[OpenAIProvider] Selected triggers:', gptPayload.selectedTriggers.map(t => t.trigger).join(', ') || 'none');
+      console.log('[OpenAIProvider] Core wound:', gptPayload.coreWound || 'none');
+      console.log('[OpenAIProvider] Context line:', gptPayload.contextLine ? 'yes' : 'none');
+      console.log('[OpenAIProvider] Relationship anchor:', gptPayload.relationshipAnchor?.name || 'none');
+      console.log('[OpenAIProvider] Conversation window:', gptPayload.conversationWindow.length, 'messages');
+      console.log('[OpenAIProvider] Recent diary:', gptPayload.recentDiary.length, 'entries');
+      if (gptPayload.backpack) {
+        console.log('[OpenAIProvider] Full backpack included (session start)');
       }
 
       const response = await fetch(url, {
@@ -146,78 +169,4 @@ export class OpenAIProvider implements AIProvider {
       };
     }
   }
-}
-
-/**
- * Build the BACKPACK payload — identity anchor.
- * Sent in FULL. NEVER truncated, summarized, or compressed.
- */
-function buildBackpackPayload(backpack: Backpack) {
-  const lifeStory = (backpack.sections || [])
-    .filter((s: LifePhaseSection) => s.content && s.content.trim().length > 0)
-    .map((s: LifePhaseSection) => ({
-      id: s.id,
-      label: s.label,
-      ageRange: s.ageRange,
-      content: s.content, // FULL content — NEVER truncated
-    }));
-
-  return {
-    naam: backpack.naam,
-    userType: backpack.userType,
-    lifeStory,
-    intakeContext: {
-      startEmotion: backpack.intakeContext?.startEmotion || '',
-      urgency: backpack.intakeContext?.urgency || 'midden',
-      initialContext: backpack.intakeContext?.initialContext || '',
-      intakeDate: backpack.intakeContext?.intakeDate || '',
-    },
-    createdAt: backpack.createdAt || '',
-  };
-}
-
-/**
- * Build the USERDAT payload — dynamic session memory.
- * Sent in FULL. Contains all accumulated session data.
- */
-function buildUserDatPayload(userDat: UserDat) {
-  const triggerPatterns = (userDat.triggerPatterns || []).map((tp: TriggerPattern) => ({
-    trigger: tp.trigger,
-    count: tp.count,
-    firstSeen: tp.firstSeen,
-    lastSeen: tp.lastSeen,
-  }));
-
-  // Full mood history — no truncation
-  const moodHistory = (userDat.moodHistory || []).map((ms: MoodSnapshot) => ({
-    sliders: ms.sliders as unknown as Record<string, number>,
-    timestamp: ms.timestamp,
-  }));
-
-  const moduleUsageSummary = [...new Set(
-    (userDat.moduleUsage || []).map((mu: ModuleUsageRecord) => mu.moduleId)
-  )];
-
-  // Session analyses — the growing memory of past sessions
-  const sessionAnalyses = (userDat.sessionAnalyses || []).map((sa: SessionAnalysisRecord) => ({
-    sessionNumber: sa.sessionNumber,
-    date: sa.date,
-    messageCount: sa.messageCount,
-    durationMinutes: sa.durationMinutes,
-    dominantEmotion: sa.dominantEmotion,
-    themes: sa.themes,
-    newTriggers: sa.newTriggers,
-    modulesUsed: sa.modulesUsed,
-    moodDelta: sa.moodDelta,
-    endRiskLevel: sa.endRiskLevel,
-  }));
-
-  return {
-    totalSessions: userDat.totalSessions || 0,
-    triggerPatterns,
-    moodHistory,
-    moduleUsageSummary,
-    lastSessionDate: userDat.lastSessionDate || null,
-    sessionAnalyses,
-  };
 }
