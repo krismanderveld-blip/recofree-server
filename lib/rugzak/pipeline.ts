@@ -1,22 +1,34 @@
 /**
- * Message Processing Pipeline — DUAL-STORE ARCHITECTURE
+ * Message Processing Pipeline — DUAL-PROCESSING FLOW
  *
- * MANDATORY FLOW (every message):
- * 1. LOAD state (Backpack + UserDat → composed Rugzak)
- * 2. ANALYZE state (StateAnalyzer — rule-based, NOT AI)
- * 3. SELECT modules (rule-based, NOT AI)
- * 4. ADJUST behavior (tone, pacing, intensity — rule-based)
- * 5. CRISIS layer (elevate monitoring, lower threshold if needed)
- * 6. AI GENERATION (AI receives instructions + BOTH stores in full, generates language ONLY)
- * 7. STATE UPDATE (mood adjustment, trigger weights, history log → only userDat changes)
+ * INTERNAL DUAL-PROCESSING (per message):
  *
- * AI DOES NOT DECIDE MODULES OR STATE.
- * AI generates language only. System makes decisions.
+ *   PRE-GPT (local, deterministic):
+ *     1. Apply trigger decay to PREVIOUS buffer state (before new message merges)
+ *     2. Update ShortTermMemoryBuffer with new message
+ *     3. Apply RegulationDecayEngine zone decay
+ *     4. Select DominantState (pre-GPT decision variable)
+ *     5. Build stable BufferSnapshot for GPT payload
+ *     6. Feed dominant state + buffer snapshot into ChatContext → ONE GPT call
+ *
+ *   POST-GPT (local, no second GPT call):
+ *     7. Update internal stored state (no reselection of dominantState)
+ *     8. Concrete pattern marking (repeat counter, threshold >=3, cooldown)
+ *     9. Consolidated logging (model, dominant state, triggers, tokens, promotions)
+ *
+ *   SESSION-END:
+ *     10. Ranked promotion evaluation (by score, not FCFS), apply top 5
+ *
+ * RULES:
+ *   - ZERO second GPT calls per message
+ *   - Buffer is primary source; user.dat influences weighting only
+ *   - Full buffer NEVER goes to GPT — only BufferSnapshot
+ *   - Backpack + userDat NEVER sent per follow-up message
+ *   - AI generates language ONLY. System makes decisions.
  *
  * DUAL-STORE RULES:
- * - backpack.json → stable identity, NEVER modified by the pipeline
- * - user.dat → dynamic session memory, updated at step 7
- * - Both are sent in FULL to GPT at step 6 (no compression, no summarization)
+ *   - backpack.json → stable identity, NEVER modified by the pipeline
+ *   - user.dat → dynamic session memory, updated only at session end (promotions)
  */
 
 import type {
@@ -38,6 +50,70 @@ import {
   type InputSignals,
 } from './state-analyzer';
 import { updateTriggerPatterns, recordModuleUsage } from './engine';
+import {
+  updateBuffer,
+  createBuffer,
+  getBufferSnapshot,
+  type BufferState,
+  type BufferSnapshot,
+} from './short-term-memory-buffer';
+import { selectDominantState, type DominantState } from './dominant-state-selector';
+import { applyDecay, applyDecayToBuffer, type DecayResult } from './regulation-decay-engine';
+import { analyzeBackpackRelevance, resetTriggerDecay } from './backpack-relevance-analyzer';
+import { evaluatePromotions, applyPromotions, type PromotionCandidate, type PromotionResult } from './userdat-promotion';
+import { recordCallCost, resetSessionCost, estimateTokens, type TokenUsage } from './cost-control';
+
+// ─── Pattern Marking (post-GPT local state) ─────────────────
+
+/**
+ * Concrete pattern signal tracked per message.
+ * Accumulates across the session; only promoted to user.dat at session end
+ * if threshold is reached.
+ */
+export interface PatternSignal {
+  /** The signal/trigger/pattern identifier */
+  signal: string;
+  /** Number of times this pattern was observed in this session */
+  repeatCount: number;
+  /** Timestamp of first observation */
+  firstSeen: string;
+  /** Timestamp of last observation */
+  lastSeen: string;
+  /** Whether this signal was already promoted in a previous session */
+  previouslyPromoted: boolean;
+  /** Cooldown: earliest time this signal can be promoted again */
+  cooldownUntil: string | null;
+}
+
+/** Promotion threshold: pattern must repeat >= 3 times in session or across sessions */
+const PROMOTION_THRESHOLD = 3;
+/** Cooldown: same pattern cannot be promoted again within 24 hours */
+const PROMOTION_COOLDOWN_MS = 24 * 60 * 60 * 1000;
+
+// ─── Session-level state (module-scoped, resets per session) ──
+
+let sessionBuffer: BufferState | null = null;
+let sessionPatternSignals: PatternSignal[] = [];
+let sessionDominantState: DominantState | null = null;
+let sessionWasCrisis = false;
+let sessionDominantModuleChanged = false;
+let sessionInitialModule: string | null = null;
+let sessionRelationalConfidence = 0;
+
+/**
+ * Reset all session-level state. Call at session start.
+ */
+export function resetSessionState(): void {
+  sessionBuffer = null;
+  sessionPatternSignals = [];
+  sessionDominantState = null;
+  sessionWasCrisis = false;
+  sessionDominantModuleChanged = false;
+  sessionInitialModule = null;
+  sessionRelationalConfidence = 0;
+  resetTriggerDecay();
+  resetSessionCost();
+}
 
 // ─── Pipeline Result ────────────────────────────────────────────
 
@@ -54,17 +130,49 @@ export interface PipelineResult {
   crisisLevel: number;
   /** Whether emergency card should be shown */
   showEmergency: boolean;
+  /** Pre-GPT dominant state used for this response */
+  dominantState?: DominantState;
+  /** Buffer snapshot sent to GPT */
+  bufferSnapshot?: BufferSnapshot;
+  /** Post-GPT log entry */
+  messageLog?: MessageLog;
+}
+
+/** Consolidated log entry for each message exchange */
+export interface MessageLog {
+  timestamp: string;
+  messageIndex: number;
+  preGPT: {
+    triggerDecayApplied: boolean;
+    zoneDecay: { applied: number; types: string[]; reason: string };
+    dominantState: DominantState;
+    selectedTriggers: Array<{ trigger: string; score: number }>;
+    bufferZoneScore: number;
+    bufferZoneColor: string;
+  };
+  gpt: {
+    selectedModel?: string;
+    tokenUsage?: TokenUsage;
+    responseLength: number;
+  };
+  postGPT: {
+    updatedZoneScore: number;
+    updatedZoneColor: string;
+    patternSignalsMarked: string[];
+    promotionCandidates: number;
+    promotionDecisions: string[];
+  };
 }
 
 // ─── Pipeline ───────────────────────────────────────────────────
 
 /**
- * Process a single user message through the complete mandatory pipeline.
+ * Process a single user message through the complete dual-processing pipeline.
  *
- * Accepts both stores separately. The backpack is NEVER modified.
- * Only userDat is updated at step 7.
+ * PRE-GPT: decay → buffer update → zone decay → dominant state → snapshot → GPT
+ * POST-GPT: state update → pattern marking → logging
  *
- * For backward compatibility, also accepts a composed Rugzak.
+ * ZERO second GPT calls. All state updates are local.
  */
 export async function processMessage(
   rugzakOrBackpack: Rugzak | Backpack,
@@ -79,12 +187,10 @@ export async function processMessage(
   let rugzak: Rugzak;
 
   if (userDat) {
-    // New dual-store path
     backpack = rugzakOrBackpack as Backpack;
     currentUserDat = userDat;
     rugzak = composeRugzak(backpack, currentUserDat);
   } else {
-    // Backward compatibility: single Rugzak passed
     rugzak = rugzakOrBackpack as Rugzak;
     backpack = {
       naam: rugzak.naam,
@@ -106,9 +212,9 @@ export async function processMessage(
     };
   }
 
+  const isSessionStart = options?.isSessionStart ?? false;
+
   // ── STEP 0: MODULE 12 PRE-ANALYSIS FAILSAFE ──
-  // AI may NOT respond without sufficient input context.
-  // Check: sliders filled + (backpack has content OR diary entries exist)
   const hasSliders = currentUserDat.currentMood &&
     Object.values(currentUserDat.currentMood).some((v) => v !== 0 && v !== 5);
   const hasBackpackContent = backpack.sections &&
@@ -117,7 +223,6 @@ export async function processMessage(
   const hasTriggerHistory = (currentUserDat.triggerPatterns ?? []).length > 0;
   const hasSessionHistory = (currentUserDat.totalSessions ?? 0) > 0;
 
-  // Module 12: If no meaningful input exists, return a passive response
   const hasMinimalContext = hasSliders || hasBackpackContent || hasDiary || hasTriggerHistory || hasSessionHistory;
   if (!hasMinimalContext) {
     const passiveResponse = backpack.userType === 'elias'
@@ -151,28 +256,111 @@ export async function processMessage(
     };
   }
 
-  // ── STEP 1: LOAD STATE ──
-  // Both stores are loaded. Rugzak is the composed view for engine compatibility.
+  // ══════════════════════════════════════════════════════════════
+  // PRE-GPT FLOW (all local, deterministic)
+  // ══════════════════════════════════════════════════════════════
 
-  // ── STEP 2: ANALYZE STATE (NOT AI) ──
+  // ── PRE-GPT STEP 1: Apply trigger decay to PREVIOUS buffer state ──
+  // Decay runs on the old state BEFORE the new message is merged.
+  // This prevents new matches from resetting/distorting decay too early.
+  const triggerDecayApplied = sessionBuffer !== null && sessionBuffer.messageCount > 0;
+  // Note: trigger decay is module-level state in backpack-relevance-analyzer.
+  // It runs automatically inside scoreTrigger() when analyzeBackpackRelevance is called.
+  // We call it here on the PREVIOUS buffer's trigger guess to advance decay counters
+  // BEFORE the new message updates the buffer.
+  if (triggerDecayApplied && sessionBuffer) {
+    // Pre-advance decay counters for all known triggers by running a "dry" relevance pass
+    // on the previous buffer state. This ensures decay is computed on the old state.
+    analyzeBackpackRelevance(
+      '', // empty message = no new matches, only decay advances
+      backpack,
+      currentUserDat,
+      currentUserDat.currentMood || { stemming: 5, craving: 0, overprikkeling: 0, sociaal: 5 },
+      sessionDominantState?.dominantModule || (backpack.userType === 'elias' ? 'E02' : 'K01'),
+    );
+  }
+
+  // ── PRE-GPT STEP 2: Update ShortTermMemoryBuffer with new message ──
+  // Buffer update happens AFTER decay, so new message data merges into decayed state.
+  const allMessages = [...(currentUserDat.chatHistory || []), {
+    id: `msg_${Date.now()}`,
+    role: 'user' as const,
+    content: userMessage,
+    timestamp: new Date().toISOString(),
+  }];
+  sessionBuffer = updateBuffer(
+    sessionBuffer,
+    userMessage,
+    allMessages,
+    currentUserDat.currentMood || { stemming: 5, craving: 0, overprikkeling: 0, sociaal: 5 },
+    backpack.userType,
+  );
+
+  // ── PRE-GPT STEP 3: Apply RegulationDecayEngine zone decay ──
+  // Zone decay runs AFTER buffer update (uses new zone score context).
+  const zoneDecayResult: DecayResult = applyDecay(sessionBuffer);
+  if (zoneDecayResult.decayApplied !== 0) {
+    sessionBuffer = applyDecayToBuffer(sessionBuffer, zoneDecayResult);
+  }
+
+  // ── PRE-GPT STEP 4: Analyze state + Select DominantState ──
   const analysis = analyzeState(rugzak, userMessage);
 
-  // ── STEP 3: SELECT MODULES (RULE-BASED, NOT AI) ──
-  // Already done inside analyzeState → analysis.priorityModules
+  // Run backpack relevance with the ACTUAL new message (after decay was pre-advanced)
+  const relevance = analyzeBackpackRelevance(
+    userMessage,
+    backpack,
+    currentUserDat,
+    currentUserDat.currentMood || { stemming: 5, craving: 0, overprikkeling: 0, sociaal: 5 },
+    analysis.priorityModules[0] || (backpack.userType === 'elias' ? 'E02' : 'K01'),
+  );
 
-  // ── STEP 4: ADJUST BEHAVIOR (RULE-BASED) ──
-  // Already done inside analyzeState → analysis.tone, analysis.pacing, analysis.suggestionIntensity
+  // Select dominant state (pre-GPT decision variable — NOT reselected after GPT)
+  const preGPTDominantState = selectDominantState(
+    sessionBuffer,
+    analysis,
+    currentUserDat.currentMood || { stemming: 5, craving: 0, overprikkeling: 0, sociaal: 5 },
+    backpack.userType,
+    currentUserDat.triggerPatterns || [],
+    analysis.priorityModules,
+  );
+  sessionDominantState = preGPTDominantState;
 
-  // ── STEP 5: CRISIS LAYER ──
+  // Track module changes for promotion evaluation
+  if (sessionInitialModule === null) {
+    sessionInitialModule = preGPTDominantState.dominantModule;
+  } else if (preGPTDominantState.dominantModule !== sessionInitialModule) {
+    sessionDominantModuleChanged = true;
+  }
+
+  // ── PRE-GPT STEP 5: Build stable BufferSnapshot ──
+  const dominantStateForSnapshot = {
+    dominantModule: preGPTDominantState.dominantModule,
+    dominantTrigger: preGPTDominantState.dominantTrigger,
+    dominantDirection: preGPTDominantState.dominantDirection,
+    dominantTone: preGPTDominantState.dominantTone,
+    riskScore: preGPTDominantState.riskScore,
+    selectionReason: preGPTDominantState.selectionReason,
+    sourceLayer: preGPTDominantState.sourceLayer,
+  };
+  const bufferSnapshot = getBufferSnapshot(
+    sessionBuffer,
+    dominantStateForSnapshot,
+    relevance.triggers,
+  );
+
+  // ── PRE-GPT STEP 6: Build ChatContext + ONE GPT call ──
   let crisisLevel = 0;
   let showEmergency = false;
 
   if (analysis.riskLevel === 'critical') {
     crisisLevel = 2;
     showEmergency = true;
+    sessionWasCrisis = true;
   } else if (analysis.riskLevel === 'high') {
     crisisLevel = 2;
     showEmergency = true;
+    sessionWasCrisis = true;
   } else if (analysis.riskLevel === 'moderate') {
     crisisLevel = 1;
   }
@@ -181,8 +369,6 @@ export async function processMessage(
     crisisLevel = 1;
   }
 
-  // ── STEP 6: AI GENERATION ──
-  // Send BOTH stores in full. No compression, no summarization.
   const sessionStart = currentUserDat.lastSessionDate ? new Date(currentUserDat.lastSessionDate) : new Date();
   const sessionMinutes = Math.floor((Date.now() - sessionStart.getTime()) / 60000);
 
@@ -195,27 +381,38 @@ export async function processMessage(
     rugzak,
     backpack,
     userDat: currentUserDat,
-    isSessionStart: options?.isSessionStart ?? false,
+    isSessionStart,
     diaryEntries: options?.diaryEntries ?? [],
-    activeModules: [analysis.priorityModules[0] || (backpack.userType === 'elias' ? 'E02' : 'K01')], // Single dominant module (Engine Spec V2)
+    activeModules: [preGPTDominantState.dominantModule],
     crisisLevel,
     detectedEmotion: analysis.emotionalState,
     therapeuticStance: buildTherapeuticStance(analysis),
     sessionDurationMinutes: sessionMinutes,
     urgency: backpack.intakeContext?.urgency ?? 'midden',
     startEmotion: backpack.intakeContext?.startEmotion ?? '',
+    bufferSnapshot,
   };
 
   let response: string;
+  let tokenUsage: TokenUsage | undefined;
+  let selectedModel: string | undefined;
   try {
     const result: AIResult = await provider.generateResponse(context);
     response = result.response;
+    tokenUsage = result.tokenUsage;
+    selectedModel = (result as any).selectedModel;
   } catch (error) {
     console.error('AI generation error:', error);
     response = "I'm still here with you. Something went wrong on my end — please try again.";
   }
 
-  // ── STEP 7: STATE UPDATE (POST-RESPONSE) — ONLY userDat changes ──
+  // ══════════════════════════════════════════════════════════════
+  // POST-GPT FLOW (all local, no second GPT call)
+  // ══════════════════════════════════════════════════════════════
+
+  // ── POST-GPT STEP 7: Update internal stored state ──
+  // We do NOT reselect dominantState. The pre-GPT state is the decision variable.
+  // We only update the buffer with the assistant response and adjust internal state.
   let updatedUserDat = { ...currentUserDat };
 
   // 7a. Add user message to history
@@ -236,14 +433,14 @@ export async function processMessage(
     role: 'assistant',
     content: response,
     timestamp: new Date().toISOString(),
-    modulesUsed: analysis.priorityModules,
+    modulesUsed: [preGPTDominantState.dominantModule],
   };
   updatedUserDat = {
     ...updatedUserDat,
     chatHistory: [...(updatedUserDat.chatHistory || []), aiMsg],
   };
 
-  // 7c. Update trigger patterns (if signals detected)
+  // 7c. Update trigger patterns from signals (local reinforcement, not promotion)
   const signals = detectInputSignals(userMessage);
   const newTriggers = extractTriggersFromSignals(signals);
   if (newTriggers.length > 0) {
@@ -253,15 +450,93 @@ export async function processMessage(
     };
   }
 
-  // 7d. Record module usage (via composed rugzak, extract back)
+  // 7d. Record module usage
   let tempRugzak = composeRugzak(backpack, updatedUserDat);
-  for (const moduleId of analysis.priorityModules) {
+  for (const moduleId of [preGPTDominantState.dominantModule]) {
     tempRugzak = recordModuleUsage(tempRugzak, moduleId, userMessage.slice(0, 50));
   }
   updatedUserDat = {
     ...updatedUserDat,
     moduleUsage: tempRugzak.moduleUsage,
   };
+
+  // ── POST-GPT STEP 8: Concrete pattern marking ──
+  // Mark pattern signals in session-level state.
+  // DO NOT immediately write to userDat — buffer holds it.
+  const markedPatterns: string[] = [];
+
+  // Mark from detected triggers
+  for (const trigger of newTriggers) {
+    markPatternSignal(trigger, currentUserDat.triggerPatterns || []);
+    markedPatterns.push(trigger);
+  }
+
+  // Mark from buffer's trigger guess
+  if (sessionBuffer.currentTriggerGuess) {
+    markPatternSignal(sessionBuffer.currentTriggerGuess, currentUserDat.triggerPatterns || []);
+    if (!markedPatterns.includes(sessionBuffer.currentTriggerGuess)) {
+      markedPatterns.push(sessionBuffer.currentTriggerGuess);
+    }
+  }
+
+  // Mark from dominant state trigger
+  if (preGPTDominantState.dominantTrigger && preGPTDominantState.dominantTrigger !== '') {
+    markPatternSignal(preGPTDominantState.dominantTrigger, currentUserDat.triggerPatterns || []);
+    if (!markedPatterns.includes(preGPTDominantState.dominantTrigger)) {
+      markedPatterns.push(preGPTDominantState.dominantTrigger);
+    }
+  }
+
+  // Check promotion candidates (for logging only — actual promotion at session end)
+  const promotionCandidates = sessionPatternSignals.filter(
+    (p) => p.repeatCount >= PROMOTION_THRESHOLD && !isInCooldown(p)
+  );
+
+  // ── POST-GPT STEP 9: Consolidated logging ──
+  const messageLog: MessageLog = {
+    timestamp: new Date().toISOString(),
+    messageIndex: sessionBuffer.messageCount,
+    preGPT: {
+      triggerDecayApplied,
+      zoneDecay: {
+        applied: zoneDecayResult.decayApplied,
+        types: zoneDecayResult.activeDecayTypes,
+        reason: zoneDecayResult.reason,
+      },
+      dominantState: preGPTDominantState,
+      selectedTriggers: relevance.triggers,
+      bufferZoneScore: sessionBuffer.currentZoneScore,
+      bufferZoneColor: sessionBuffer.currentZoneColor,
+    },
+    gpt: {
+      selectedModel,
+      tokenUsage,
+      responseLength: response.length,
+    },
+    postGPT: {
+      updatedZoneScore: sessionBuffer.currentZoneScore,
+      updatedZoneColor: sessionBuffer.currentZoneColor,
+      patternSignalsMarked: markedPatterns,
+      promotionCandidates: promotionCandidates.length,
+      promotionDecisions: promotionCandidates.map(
+        (p) => `${p.signal}(${p.repeatCount}x, ${p.previouslyPromoted ? 'reinforcement' : 'new'})`
+      ),
+    },
+  };
+
+  // Log to console
+  console.log(`[Pipeline] Message #${messageLog.messageIndex} | ${isSessionStart ? 'SESSION_INIT' : 'LIVE_MESSAGE'}`);
+  console.log(`[Pipeline] PRE-GPT: decay=${triggerDecayApplied}, zone=${sessionBuffer.currentZoneColor}(${sessionBuffer.currentZoneScore}), zoneDecay=${zoneDecayResult.decayApplied}`);
+  console.log(`[Pipeline] PRE-GPT: dominant=${preGPTDominantState.dominantModule} via ${preGPTDominantState.sourceLayer} | trigger=${preGPTDominantState.dominantTrigger || 'none'} | risk=${preGPTDominantState.riskScore}`);
+  console.log(`[Pipeline] PRE-GPT: triggers=[${relevance.triggers.map(t => `${t.trigger}(${t.score})`).join(', ')}]`);
+  if (selectedModel) console.log(`[Pipeline] GPT: model=${selectedModel}`);
+  if (tokenUsage) console.log(`[Pipeline] GPT: tokens=${tokenUsage.promptTokens}in+${tokenUsage.completionTokens}out=${tokenUsage.totalTokens}total`);
+  console.log(`[Pipeline] POST-GPT: patterns=[${markedPatterns.join(', ')}], promotionCandidates=${promotionCandidates.length}`);
+
+  // Record cost
+  if (tokenUsage) {
+    recordCallCost(tokenUsage, isSessionStart, preGPTDominantState.dominantModule);
+  }
 
   // Compose the final rugzak view (backpack unchanged)
   const updatedRugzak = composeRugzak(backpack, updatedUserDat);
@@ -273,12 +548,56 @@ export async function processMessage(
     updatedUserDat,
     crisisLevel,
     showEmergency,
+    dominantState: preGPTDominantState,
+    bufferSnapshot,
+    messageLog,
   };
 }
+
+// ─── Pattern Marking Helpers ─────────────────────────────────
+
+/**
+ * Mark a pattern signal in session-level state.
+ * Increments repeat counter. Does NOT write to userDat.
+ */
+function markPatternSignal(signal: string, existingTriggers: import('../ai/types').TriggerPattern[]): void {
+  const normalized = signal.toLowerCase();
+  const existing = sessionPatternSignals.find((p) => p.signal === normalized);
+  const now = new Date().toISOString();
+
+  if (existing) {
+    existing.repeatCount++;
+    existing.lastSeen = now;
+  } else {
+    const wasPromoted = existingTriggers.some(
+      (t) => t.trigger.toLowerCase() === normalized && t.count >= 2
+    );
+    sessionPatternSignals.push({
+      signal: normalized,
+      repeatCount: 1,
+      firstSeen: now,
+      lastSeen: now,
+      previouslyPromoted: wasPromoted,
+      cooldownUntil: null,
+    });
+  }
+}
+
+/**
+ * Check if a pattern signal is in cooldown (anti-spam).
+ * Same pattern cannot be promoted again within 24 hours.
+ */
+function isInCooldown(signal: PatternSignal): boolean {
+  if (!signal.cooldownUntil) return false;
+  return new Date(signal.cooldownUntil).getTime() > Date.now();
+}
+
+// ─── Generate Greeting ──────────────────────────────────────
 
 /**
  * Generate an initial greeting through the pipeline.
  * Uses the same flow but with an empty user message.
+ * Initializes the session buffer.
  */
 export async function generateGreeting(
   rugzakOrBackpack: Rugzak | Backpack,
@@ -286,6 +605,9 @@ export async function generateGreeting(
   userDat?: UserDat,
   diaryEntries?: import('../ai/types').DiaryEntry[]
 ): Promise<PipelineResult> {
+  // Reset session state at greeting (session start)
+  resetSessionState();
+
   // Resolve the two stores
   let backpack: Backpack;
   let currentUserDat: UserDat;
@@ -352,10 +674,13 @@ export async function generateGreeting(
     };
   }
 
+  // Initialize buffer for session
+  sessionBuffer = createBuffer();
+
   const analysis = analyzeState(rugzak, '');
 
-  const sessionStart = currentUserDat.lastSessionDate ? new Date(currentUserDat.lastSessionDate) : new Date();
-  const sessionMinutes = Math.floor((Date.now() - sessionStart.getTime()) / 60000);
+  const sessionStartDate = currentUserDat.lastSessionDate ? new Date(currentUserDat.lastSessionDate) : new Date();
+  const sessionMinutes = Math.floor((Date.now() - sessionStartDate.getTime()) / 60000);
 
   const context: ChatContext = {
     userType: backpack.userType,
@@ -368,7 +693,7 @@ export async function generateGreeting(
     userDat: currentUserDat,
     isSessionStart: true,
     diaryEntries: diaryEntries ?? [],
-    activeModules: [analysis.priorityModules[0] || (backpack.userType === 'elias' ? 'E02' : 'K01')], // Single dominant module (Engine Spec V2)
+    activeModules: [analysis.priorityModules[0] || (backpack.userType === 'elias' ? 'E02' : 'K01')],
     crisisLevel: 0,
     detectedEmotion: analysis.emotionalState,
     therapeuticStance: buildTherapeuticStance(analysis),
@@ -405,6 +730,8 @@ export async function generateGreeting(
 
   const updatedRugzak = composeRugzak(backpack, updatedUserDat);
 
+  console.log('[Pipeline] SESSION_INIT greeting generated, buffer initialized');
+
   return {
     response,
     analysis,
@@ -429,6 +756,8 @@ export interface SessionEndResult {
   updatedRugzak: Rugzak;
   /** Updated UserDat after session-end analysis (for persistence) */
   updatedUserDat: UserDat;
+  /** Promotion result from session-end evaluation */
+  promotionResult?: PromotionResult;
 }
 
 export interface SessionSummary {
@@ -448,10 +777,16 @@ export interface SessionSummary {
 /**
  * End a chat session.
  *
+ * SESSION-END FLOW:
+ * 1. Analyze the full session
+ * 2. Generate farewell through AI (ONE GPT call)
+ * 3. Ranked promotion evaluation (by score, not FCFS), apply top 5
+ * 4. Update UserDat with promotions + session analysis
+ * 5. Archive old chat history
+ *
  * DUAL-STORE RULES:
  * - Backpack is NEVER modified
- * - Only UserDat is updated (triggers, mood snapshot, session count, analysis record)
- * - Both are sent in full to GPT for the farewell message
+ * - Only UserDat is updated
  */
 export async function endSession(
   rugzakOrBackpack: Rugzak | Backpack,
@@ -491,8 +826,8 @@ export async function endSession(
 
   // ── STEP 1: Analyze the full session ──
   const sessionMessages = currentUserDat.chatHistory || [];
-  const sessionStart = currentUserDat.lastSessionDate ? new Date(currentUserDat.lastSessionDate) : new Date();
-  const durationMinutes = Math.floor((Date.now() - sessionStart.getTime()) / 60000);
+  const sessionStartDate = currentUserDat.lastSessionDate ? new Date(currentUserDat.lastSessionDate) : new Date();
+  const durationMinutes = Math.floor((Date.now() - sessionStartDate.getTime()) / 60000);
 
   const userMessages = sessionMessages.filter((m) => m.role === 'user');
   const allUserText = userMessages.map((m) => m.content).join(' ');
@@ -540,7 +875,7 @@ export async function endSession(
     endRiskLevel: endAnalysis.riskLevel,
   };
 
-  // ── STEP 2: Generate farewell through AI (send BOTH stores in full) ──
+  // ── STEP 2: Generate farewell through AI (ONE GPT call) ──
   const context: ChatContext = {
     userType: backpack.userType,
     userName: backpack.naam,
@@ -573,7 +908,29 @@ export async function endSession(
       : `${name}, I've saved everything from our conversation. What you're doing for your loved one matters. Take care of yourself too, and I'll be here when you're ready.`;
   }
 
-  // ── STEP 3: Update UserDat ONLY (backpack is NEVER modified) ──
+  // ── STEP 3: Ranked promotion evaluation ──
+  // Use the session buffer for promotion evaluation.
+  // Promotions are ranked by score (confidence + weightDelta), NOT first-come-first-served.
+  let promotionResult: PromotionResult | undefined;
+  if (sessionBuffer) {
+    promotionResult = evaluatePromotions(
+      sessionBuffer,
+      currentUserDat.triggerPatterns || [],
+      sessionWasCrisis,
+      sessionDominantModuleChanged,
+      sessionRelationalConfidence,
+    );
+
+    console.log(`[Pipeline] SESSION_END: ${promotionResult.promotedItems.length} promotions (${promotionResult.rejectedItems.length} rejected, max=${promotionResult.maxReached})`);
+    for (const promo of promotionResult.promotedItems) {
+      console.log(`[Pipeline]   PROMOTED: ${promo.signal} (${promo.reason}, confidence=${promo.confidence}, weight+=${promo.weightDelta})`);
+    }
+    for (const rejected of promotionResult.rejectedItems) {
+      console.log(`[Pipeline]   REJECTED: ${rejected.signal} (${rejected.reason}, confidence=${rejected.confidence})`);
+    }
+  }
+
+  // ── STEP 4: Update UserDat ONLY (backpack is NEVER modified) ──
   const farewellMsg: ChatMessage = {
     id: `msg_${Date.now()}`,
     role: 'assistant',
@@ -586,7 +943,18 @@ export async function endSession(
     chatHistory: [...(currentUserDat.chatHistory || []), farewellMsg],
   };
 
-  // Update trigger patterns
+  // Apply ranked promotions to user.dat trigger patterns
+  if (promotionResult && promotionResult.promotedItems.length > 0) {
+    updatedUserDat = {
+      ...updatedUserDat,
+      triggerPatterns: applyPromotions(
+        updatedUserDat.triggerPatterns || [],
+        promotionResult.promotedItems,
+      ),
+    };
+  }
+
+  // Update trigger patterns from session-wide signals
   if (newTriggers.length > 0) {
     updatedUserDat = {
       ...updatedUserDat,
@@ -624,7 +992,7 @@ export async function endSession(
     sessionAnalyses: [...(updatedUserDat.sessionAnalyses || []), analysisRecord],
   };
 
-  // ── STEP 4: Archive old chat history to prevent unbounded growth ──
+  // ── STEP 5: Archive old chat history to prevent unbounded growth ──
   const archived = archiveSessionHistory(
     updatedUserDat.chatHistory || [],
     (updatedUserDat as any).archivedSessions || [],
@@ -637,6 +1005,9 @@ export async function endSession(
   (updatedUserDat as any).archivedSessions = archived.archivedSessions;
   console.log(`[ChatHistoryManager] Active: ${archived.activeMessages.length} messages, Archived: ${archived.archivedSessions.length} sessions`);
 
+  // Reset session state
+  resetSessionState();
+
   // Compose the final rugzak view (backpack unchanged)
   const updatedRugzak = composeRugzak(backpack, updatedUserDat);
 
@@ -645,6 +1016,7 @@ export async function endSession(
     sessionSummary,
     updatedRugzak,
     updatedUserDat,
+    promotionResult,
   };
 }
 

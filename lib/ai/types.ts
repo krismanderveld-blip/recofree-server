@@ -463,6 +463,8 @@ export interface ChatContext {
   sessionDurationMinutes: number;
   urgency: UrgencyLevel;
   startEmotion: string;
+  /** Stable buffer snapshot — injected by pipeline, used by provider for GPT payload */
+  bufferSnapshot?: import('../rugzak/short-term-memory-buffer').BufferSnapshot;
 }
 
 /**

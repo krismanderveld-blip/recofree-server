@@ -188,3 +188,17 @@
 - [x] Step 4: Add ModelRoutingLayer (gpt-4o for crisis/high-risk, gpt-4o-mini for normal)
 - [ ] Step 5: Optimize conversationHistory (max 6, summarize oldest, keep last user+assistant+1 emotional)
 - [x] Step 6: Per-message logging (triggers with finalScore, dominantModule, selected model, token estimate)
+
+## Internal Dual-Processing Flow (wire all modules into pipeline.ts)
+- [x] PRE-GPT: Apply trigger decay to PREVIOUS buffer state BEFORE new message merges
+- [x] PRE-GPT: Update ShortTermMemoryBuffer with new message (after decay)
+- [x] PRE-GPT: Apply RegulationDecayEngine zone decay (after buffer update)
+- [x] PRE-GPT: Select DominantState (pre-GPT decision variable for current response)
+- [x] PRE-GPT: Build stable BufferSnapshot for GPT payload
+- [x] PRE-GPT: Feed dominant state + buffer snapshot into ChatContext → ONE GPT call
+- [x] POST-GPT: Update internal stored state (no reselection of dominantState)
+- [x] POST-GPT: Concrete pattern marking (repeat counter, promotion threshold >=3, cooldown/anti-spam)
+- [x] POST-GPT: Consolidated logging (model, dominant state, triggers, tokens, promotion decisions)
+- [x] SESSION-END: Ranked promotion evaluation (by score, not first-come-first-served), apply top 5
+- [x] Wire modules into generateGreeting flow (buffer init at session start)
+- [x] Ensure ZERO second GPT calls per message — all state updates are local

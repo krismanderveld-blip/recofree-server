@@ -643,35 +643,72 @@ export function updateBuffer(
 // ─── Buffer Snapshot for GPT Payload ─────────────────────────
 
 /**
- * Extract a minimal snapshot from the buffer for the GPT payload.
- * This is what gets sent to GPT — the live session context.
+ * STABLE snapshot structure sent to GPT payload.
+ * This is the ONLY buffer data that enters the GPT call.
+ *
+ * Fields are fixed and typed — no dynamic ad-hoc additions.
+ * DominantState is included because it was computed from the buffer.
  */
 export interface BufferSnapshot {
-  currentEmotion: string;
-  currentTriggerGuess: string;
-  currentRelationshipAnchor: string;
-  currentIntent: LiveIntent;
+  /** Last N relevant messages from the buffer window */
+  recentMessages: Array<{ role: 'user' | 'assistant'; content: string }>;
+  /** Pre-GPT dominant state (decision variable for current response) */
+  dominantState: {
+    dominantModule: string;
+    dominantTrigger: string;
+    dominantDirection: string;
+    dominantTone: string;
+    riskScore: number;
+    selectionReason: string;
+    sourceLayer: string;
+  } | null;
+  /** Selected triggers (max 2, from backpack relevance) */
+  selectedTriggers: Array<{ trigger: string; score: number }>;
+  /** Current zone score (0–100) */
   zoneScore: number;
+  /** Current zone color (GREEN/YELLOW/ORANGE/RED/PURPLE) */
   zoneColor: ZoneColor;
-  responseDirection: ResponseDirection;
-  significantRepeats: string[];
+  /** Live intent detected from user message */
+  liveIntent: LiveIntent;
+  /** Intensity trajectory within session */
   intensityTrajectory: 'rising' | 'stable' | 'falling';
+  /** Current detected emotion from text */
+  currentEmotion: string;
+  /** Current relationship anchor if relevant (empty string if none) */
+  currentRelationshipAnchor: string;
+  /** Response direction computed from zone + intent */
+  responseDirection: ResponseDirection;
+  /** Number of user messages processed in this session */
   messageCount: number;
 }
 
-export function getBufferSnapshot(buffer: BufferState): BufferSnapshot {
+/**
+ * Build a stable BufferSnapshot from the buffer state.
+ *
+ * dominantState and selectedTriggers are injected externally
+ * (they come from DominantStateSelector and BackpackRelevanceAnalyzer,
+ * not from the buffer itself).
+ */
+export function getBufferSnapshot(
+  buffer: BufferState,
+  dominantState?: BufferSnapshot['dominantState'],
+  selectedTriggers?: BufferSnapshot['selectedTriggers'],
+): BufferSnapshot {
+  // Get recent messages in a clean format
+  const targetSize = buffer.messageCount <= 10 ? MIN_BUFFER_MESSAGES : MAX_BUFFER_MESSAGES;
+  const recentMsgs = buffer.recentMessages.slice(-targetSize);
+
   return {
-    currentEmotion: buffer.currentEmotion,
-    currentTriggerGuess: buffer.currentTriggerGuess,
-    currentRelationshipAnchor: buffer.currentRelationshipAnchor,
-    currentIntent: buffer.currentIntent,
+    recentMessages: recentMsgs.map((m) => ({ role: m.role, content: m.content })),
+    dominantState: dominantState ?? null,
+    selectedTriggers: selectedTriggers ?? [],
     zoneScore: buffer.currentZoneScore,
     zoneColor: buffer.currentZoneColor,
-    responseDirection: buffer.responseDirection,
-    significantRepeats: buffer.temporaryRepeats
-      .filter((r) => r.count >= 2)
-      .map((r) => `${r.signal}(${r.count}x)`),
+    liveIntent: buffer.currentIntent,
     intensityTrajectory: buffer.intensityTrajectory,
+    currentEmotion: buffer.currentEmotion,
+    currentRelationshipAnchor: buffer.currentRelationshipAnchor,
+    responseDirection: buffer.responseDirection,
     messageCount: buffer.messageCount,
   };
 }
