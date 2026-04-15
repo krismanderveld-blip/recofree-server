@@ -10,7 +10,8 @@ import {
 } from 'react-native';
 import { ScreenContainer } from '@/components/screen-container';
 import { useUser } from '@/lib/user-context';
-import type { LifePhaseId, LifePhaseSection } from '@/lib/ai/types';
+import type { LifePhaseId, LifePhaseSection, StageOfChange } from '@/lib/ai/types';
+import { STAGE_OF_CHANGE_OPTIONS } from '@/lib/ai/types';
 import { useColors } from '@/hooks/use-colors';
 
 const SECTION_COLORS: Record<LifePhaseId, string> = {
@@ -29,8 +30,16 @@ const SECTION_ICONS: Record<LifePhaseId, string> = {
   themes: '\u{1F504}',
 };
 
+const STAGE_COLORS: Record<StageOfChange, string> = {
+  precontemplation: '#9CA3AF',
+  contemplation: '#F59E0B',
+  preparation: '#3B82F6',
+  action: '#22C55E',
+  maintenance: '#8B5CF6',
+};
+
 export default function BackpackScreen() {
-  const { state, updateBackpackSection } = useUser();
+  const { state, updateBackpackSection, updateStageOfChange } = useUser();
   const colors = useColors();
   const [expandedSection, setExpandedSection] = useState<LifePhaseId | null>(null);
   const [editingSection, setEditingSection] = useState<LifePhaseId | null>(null);
@@ -38,6 +47,7 @@ export default function BackpackScreen() {
 
   const sections = state.backpack?.sections ?? [];
   const filledCount = sections.filter((s) => s.content.trim().length > 0).length;
+  const currentStage: StageOfChange = state.backpack?.intakeContext?.stageOfChange ?? 'contemplation';
 
   const handleExpand = useCallback((sectionId: LifePhaseId) => {
     if (expandedSection === sectionId) {
@@ -66,6 +76,13 @@ export default function BackpackScreen() {
     setEditingSection(null);
     setEditText('');
   }, []);
+
+  const handleStageChange = useCallback(async (stage: StageOfChange) => {
+    await updateStageOfChange(stage);
+    if (Platform.OS !== 'web') {
+      Alert.alert('Updated', 'Your stage of change has been updated.');
+    }
+  }, [updateStageOfChange]);
 
   const renderSection = (section: LifePhaseSection) => {
     const isExpanded = expandedSection === section.id;
@@ -229,6 +246,60 @@ export default function BackpackScreen() {
               />
             ))}
           </View>
+        </View>
+
+        {/* Stage of Change */}
+        <View className="bg-surface border border-border rounded-2xl p-4 mb-6">
+          <Text className="text-base font-semibold text-foreground mb-1">Stage of Change</Text>
+          <Text className="text-xs text-muted mb-3 leading-relaxed">
+            Where are you in your journey? This helps your companion adjust their approach.
+          </Text>
+          {STAGE_OF_CHANGE_OPTIONS.map((option) => {
+            const isSelected = currentStage === option.value;
+            const stageColor = STAGE_COLORS[option.value];
+            return (
+              <Pressable
+                key={option.value}
+                onPress={() => handleStageChange(option.value)}
+                style={({ pressed }) => [
+                  { opacity: pressed ? 0.8 : 1, marginBottom: 8 },
+                ]}
+              >
+                <View
+                  className="rounded-xl p-3 border"
+                  style={{
+                    borderColor: isSelected ? stageColor : colors.border,
+                    backgroundColor: isSelected ? `${stageColor}15` : 'transparent',
+                    borderWidth: isSelected ? 2 : 1,
+                  }}
+                >
+                  <View className="flex-row items-center gap-3">
+                    <View
+                      className="w-5 h-5 rounded-full items-center justify-center"
+                      style={{
+                        backgroundColor: isSelected ? stageColor : 'transparent',
+                        borderWidth: isSelected ? 0 : 2,
+                        borderColor: colors.border,
+                      }}
+                    >
+                      {isSelected && (
+                        <Text className="text-white text-xs font-bold">{'\u2713'}</Text>
+                      )}
+                    </View>
+                    <View className="flex-1">
+                      <Text
+                        className="text-sm font-semibold"
+                        style={{ color: isSelected ? stageColor : colors.foreground }}
+                      >
+                        {option.label}
+                      </Text>
+                      <Text className="text-xs text-muted mt-0.5">{option.description}</Text>
+                    </View>
+                  </View>
+                </View>
+              </Pressable>
+            );
+          })}
         </View>
 
         {/* Sections */}

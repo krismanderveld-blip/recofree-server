@@ -814,6 +814,11 @@ export async function generateAIResponse(
   response: string;
   advisoryEmotion?: string;
   advisoryConfidence?: number;
+  tokenUsage?: {
+    promptTokens: number;
+    completionTokens: number;
+    totalTokens: number;
+  };
 }> {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
@@ -913,11 +918,30 @@ export async function generateAIResponse(
   const data = await openaiResponse.json();
   const responseText =
     data.choices?.[0]?.message?.content?.trim() ??
-    "Ik ben er voor je. Er ging iets mis — probeer het opnieuw.";
+    "Ik ben er voor je. Er ging iets mis \u2014 probeer het opnieuw.";
+
+  // Extract token usage from OpenAI response
+  const usage = data.usage;
+  const tokenUsage = usage ? {
+    promptTokens: usage.prompt_tokens ?? 0,
+    completionTokens: usage.completion_tokens ?? 0,
+    totalTokens: usage.total_tokens ?? 0,
+  } : undefined;
+
+  if (tokenUsage) {
+    console.log(`[CostControl] Tokens: ${tokenUsage.promptTokens} in + ${tokenUsage.completionTokens} out = ${tokenUsage.totalTokens} total`);
+    if (tokenUsage.promptTokens > 3500) {
+      console.warn(`[CostControl] WARNING: Prompt tokens (${tokenUsage.promptTokens}) exceed warning threshold (3500)`);
+    }
+    if (tokenUsage.promptTokens > 5000) {
+      console.warn(`[CostControl] CRITICAL: Prompt tokens (${tokenUsage.promptTokens}) exceed critical threshold (5000)`);
+    }
+  }
 
   return {
     response: responseText,
     advisoryEmotion: input.detectedEmotion,
     advisoryConfidence: 0.7,
+    tokenUsage,
   };
 }

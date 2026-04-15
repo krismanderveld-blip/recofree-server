@@ -473,6 +473,11 @@ export interface AIResult {
   response: string;
   advisoryEmotion?: string;
   advisoryConfidence?: number;
+  tokenUsage?: {
+    promptTokens: number;
+    completionTokens: number;
+    totalTokens: number;
+  };
 }
 
 /**

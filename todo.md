@@ -159,3 +159,12 @@
 - [x] Add Stage of Change to intake flow
 - [x] Wire new modules into pipeline, payload builder, and server system prompt
 - [x] Persist relational anchors and patterns in UserDat across sessions
+
+## Step 3: Engine Spec V2 — Cost Control, Post-chat Analysis, ChatHistory Management
+- [x] Build Cost Control Layer — token monitoring per API call with logging and threshold warnings
+- [x] Track cumulative token usage per session and per day in user.dat
+- [x] Refine post-chat analysis — ensure it only runs at session end, not mid-session
+- [x] Post-chat analysis updates user.dat: new triggers, mood delta, themes, session count
+- [x] Build ChatHistory management — limit stored sessions, archive/cleanup old ones
+- [x] Configurable max session history (e.g., last 5 sessions kept, older ones pruned)
+- [x] Add Stage of Change editor to Backpack screen (so existing users can set/change their stage)

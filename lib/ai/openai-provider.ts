@@ -186,17 +186,24 @@ export class OpenAIProvider implements AIProvider {
         console.warn('[OpenAIProvider] Backend returned failure:', result.response);
       }
 
+      // Log token usage from server
+      if (result?.tokenUsage) {
+        console.log(`[CostControl] Call tokens: ${result.tokenUsage.promptTokens} prompt + ${result.tokenUsage.completionTokens} completion = ${result.tokenUsage.totalTokens} total`);
+      }
+
       return {
-        response: result?.response ?? "Something went wrong. I'm still here — please try again.",
+        response: result?.response ?? "Something went wrong. I'm still here \u2014 please try again.",
         advisoryEmotion: result?.advisoryEmotion,
         advisoryConfidence: result?.advisoryConfidence,
+        tokenUsage: result?.tokenUsage,
       };
     } catch (error) {
       console.error('[OpenAIProvider] Error:', error);
       return {
-        response: "Something went wrong with the connection. I'm still here — please try again.",
+        response: "Something went wrong with the connection. I'm still here \u2014 please try again.",
         advisoryEmotion: undefined,
         advisoryConfidence: undefined,
+        tokenUsage: undefined,
       };
     }
   }

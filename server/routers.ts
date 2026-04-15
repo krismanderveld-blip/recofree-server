@@ -30,6 +30,7 @@ export const appRouter = router({
             response: result.response,
             advisoryEmotion: result.advisoryEmotion,
             advisoryConfidence: result.advisoryConfidence,
+            tokenUsage: result.tokenUsage,
           };
         } catch (error) {
           console.error("[AI Chat] Error:", error);
@@ -39,6 +40,7 @@ export const appRouter = router({
               "Something went wrong with the connection. I'm still here — please try again.",
             advisoryEmotion: undefined,
             advisoryConfidence: undefined,
+            tokenUsage: undefined,
           };
         }
       }),

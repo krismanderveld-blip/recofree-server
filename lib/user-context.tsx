@@ -88,6 +88,8 @@ interface UserContextValue {
   /** End session with explicit userDat update */
   endSessionWithUserDat: (updatedUserDat: UserDat) => Promise<void>;
   resetUser: () => Promise<void>;
+  /** Update Stage of Change in backpack (user action) */
+  updateStageOfChange: (stage: import('./ai/types').StageOfChange) => Promise<void>;
   /** Convenience getters */
   getUserName: () => string;
   getMood: () => MoodSliders;
@@ -414,6 +416,27 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     await persistBackpack(updatedBackpack);
   }, [state.backpack]);
 
+  // ── Stage of Change (user-editable in Backpack screen) ──
+
+  const updateStageOfChange = useCallback(async (stage: import('./ai/types').StageOfChange) => {
+    if (!state.backpack) return;
+    const updatedBackpack: Backpack = {
+      ...state.backpack,
+      intakeContext: {
+        ...state.backpack.intakeContext,
+        stageOfChange: stage,
+      },
+    };
+    dispatch({ type: 'UPDATE_BACKPACK', payload: updatedBackpack });
+    await persistBackpack(updatedBackpack);
+    // Also update userDat so the payload builder picks it up
+    if (state.userDat) {
+      const updatedUserDat = { ...state.userDat, stageOfChange: stage };
+      dispatch({ type: 'END_SESSION', payload: updatedUserDat });
+      await persistUserDat(updatedUserDat);
+    }
+  }, [state.backpack, state.userDat]);
+
   // ── Recompute Influence ──
 
   const recomputeInfluence = useCallback(() => {
@@ -526,6 +549,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         updateTriggers,
         updateRugzakSection,
         updateBackpackSection: updateRugzakSection,
+        updateStageOfChange,
         recomputeInfluence,
         setCrisisLevel,
         setDetectedEmotion,

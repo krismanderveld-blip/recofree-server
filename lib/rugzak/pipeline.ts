@@ -28,6 +28,7 @@ import type {
   AIResult,
   AIProvider,
 } from '../ai/types';
+import { archiveSessionHistory, type ArchivedSession } from './chat-history-manager';
 import { composeRugzak } from '../ai/types';
 import {
   analyzeState,
@@ -622,6 +623,19 @@ export async function endSession(
     ...updatedUserDat,
     sessionAnalyses: [...(updatedUserDat.sessionAnalyses || []), analysisRecord],
   };
+
+  // ── STEP 4: Archive old chat history to prevent unbounded growth ──
+  const archived = archiveSessionHistory(
+    updatedUserDat.chatHistory || [],
+    (updatedUserDat as any).archivedSessions || [],
+    currentUserDat.totalSessions,
+  );
+  updatedUserDat = {
+    ...updatedUserDat,
+    chatHistory: archived.activeMessages,
+  };
+  (updatedUserDat as any).archivedSessions = archived.archivedSessions;
+  console.log(`[ChatHistoryManager] Active: ${archived.activeMessages.length} messages, Archived: ${archived.archivedSessions.length} sessions`);
 
   // Compose the final rugzak view (backpack unchanged)
   const updatedRugzak = composeRugzak(backpack, updatedUserDat);
