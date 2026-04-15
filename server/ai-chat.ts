@@ -138,6 +138,8 @@ interface SessionCache {
   stageOfChange: string | null;
   // Extracted at session start for conditional use
   relationshipMap: string;
+  // Compact life story summary for follow-up injection (names, events, relationships)
+  lifeStorySummary: string;
   totalSessions: number;
   triggerPatterns: Array<{ trigger: string; count: number }>;
   messageCount: number; // Track messages for conditional injection
@@ -158,6 +160,9 @@ function cacheSessionInit(input: ChatRequestInput): void {
     stageOfChange: input.stageOfChange ?? null,
     relationshipMap: input.backpack
       ? extractRelationshipMap(input.backpack.lifeStory, input.backpack.intakeContext.initialContext)
+      : "",
+    lifeStorySummary: input.backpack
+      ? buildCompactLifeStorySummary(input.backpack.lifeStory, input.backpack.intakeContext.initialContext, input.userName)
       : "",
     totalSessions: input.userDat?.totalSessions ?? 0,
     triggerPatterns: (input.userDat?.triggerPatterns ?? []).map(tp => ({
@@ -319,6 +324,37 @@ man/vriend = husband/boyfriend/partner, moeder/mama = mother, vader/papa = fathe
 zus = sister, broer = brother, oma = grandmother, opa = grandfather,
 vriend(in) = friend, collega = colleague, buurman/buurvrouw = neighbor
 ─── END RELATIONSHIP INSTRUCTION ───`;
+}
+
+/**
+ * Build a compact life story summary for follow-up injection.
+ * Includes all life story sections and intake context so GPT can
+ * recognise names, places, and events mentioned by the user.
+ */
+function buildCompactLifeStorySummary(
+  lifeStory: Array<{ label: string; content: string }>,
+  intakeContext: string,
+  userName: string,
+): string {
+  const sections = lifeStory
+    .filter(s => s.content.trim().length > 0)
+    .map(s => `[${s.label}]: ${s.content.trim()}`);
+
+  if (sections.length === 0 && (!intakeContext || intakeContext.trim().length < 10)) {
+    return "";
+  }
+
+  let summary = `\n─── PERSOONLIJK GEHEUGEN OVER ${userName.toUpperCase()} (samenvatting) ───`;
+  if (intakeContext && intakeContext.trim().length > 0) {
+    summary += `\nIntake: ${intakeContext.trim()}`;
+  }
+  for (const section of sections) {
+    summary += `\n${section}`;
+  }
+  summary += `\n─── EINDE PERSOONLIJK GEHEUGEN ───`;
+  summary += `\nJe KENT dit verhaal. Als ${userName} een persoon, plek of gebeurtenis noemt die hierboven staat, herken je het ONMIDDELLIJK.`;
+  summary += `\nAls iets NIET hierboven staat, VERZIN je het niet. Dan vraag je ernaar.`;
+  return summary;
 }
 
 // ─── Relevance-based Conditional Injection ───────────────────────
@@ -869,10 +905,14 @@ Houd het kort (3-5 zinnen max). Stel GEEN nieuwe vragen.`;
     if (conditional.relationshipMap) included.push('relationMap');
     console.log(`[AI Chat] Follow-up selective injection: [${included.join(', ') || 'none'}]`);
 
+    // Always include life story summary in follow-ups so GPT knows names/relationships
+    const lifeStoryContext = sessionCache?.lifeStorySummary ?? '';
+
     return `${identity}
 
 ${antiHallucination}
 ${conditional.relationshipMap}
+${lifeStoryContext}
 
 De naam van de gebruiker is ${name}. Spreek hen af en toe bij naam aan.
 

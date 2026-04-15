@@ -226,3 +226,7 @@
 
 ## BufferSnapshot in Server System Prompt
 - [x] Inject bufferSnapshot (zone, intent, emotionalDirection, dominantState) into follow-up system prompt as live session context
+
+## Bug Fixes
+- [x] BUG: Rugzak/backpack data not reaching GPT — Elias doesn't know Melissa (vriendin) or Jules (zoon) even though they're in the backpack (fix: lifeStorySummary always injected in follow-up prompt)
+- [x] BUG: Keyboard bedekt invoerveld in APK build — fix: KAV met behavior=padding op beide platforms, softwareKeyboardLayoutMode changed to pan

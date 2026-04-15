@@ -570,22 +570,23 @@ export default function ChatScreen() {
     </View>
   );
 
-  // iOS needs KeyboardAvoidingView with behavior="padding".
-  // Android uses softwareKeyboardLayoutMode:resize — no KAV needed.
-  // Using KAV on Android causes trilling/jitter because both KAV and system resize
-  // try to adjust the layout simultaneously.
-  if (isIOS) {
-    return (
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior="padding"
-        keyboardVerticalOffset={0}
-      >
-        {chatContent}
-      </KeyboardAvoidingView>
-    );
+  // Both iOS and Android need KeyboardAvoidingView.
+  // Android: softwareKeyboardLayoutMode is set to "pan" (not "resize") to avoid
+  // conflicts with KAV. KAV with behavior="padding" handles the offset.
+  // iOS: behavior="padding" (standard).
+  // Web: no special handling needed.
+  if (Platform.OS === 'web') {
+    return chatContent;
   }
-  return chatContent;
+  return (
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior="padding"
+      keyboardVerticalOffset={isIOS ? 0 : -tabBarHeight}
+    >
+      {chatContent}
+    </KeyboardAvoidingView>
+  );
 }
 
 function formatTime(timestamp: string): string {
