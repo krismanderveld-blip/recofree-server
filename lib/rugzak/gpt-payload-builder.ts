@@ -67,6 +67,27 @@ export interface GPTPayload {
   startEmotion: string;
   crisisLevel: number;
 
+  // ── Buffer snapshot (from pipeline, per message) ──
+  bufferSnapshot?: {
+    zoneScore: number;
+    zoneColor: string;
+    liveIntent: string;
+    intensityTrajectory: string;
+    currentEmotion: string;
+    responseDirection: string;
+    currentRelationshipAnchor: string;
+    messageCount: number;
+    dominantState: {
+      dominantModule: string;
+      dominantTrigger: string;
+      dominantDirection: string;
+      dominantTone: string;
+      riskScore: number;
+      selectionReason: string;
+      sourceLayer: string;
+    } | null;
+  };
+
   // ── Session start only (full context) ──
   backpack?: {
     naam: string;
@@ -117,6 +138,146 @@ export interface PayloadBuilderInput {
   startEmotion: string;
   crisisLevel: number;
   relationalPattern?: RelationalPatternResult;
+  /** Buffer snapshot from pipeline (injected per message) */
+  bufferSnapshot?: import('./short-term-memory-buffer').BufferSnapshot;
+}
+
+// ─── Conversation History Optimisation (Patch N Step 5) ──────
+
+/**
+ * PATCH N STEP 5: ConversationHistory Optimisation
+ *
+ * Rules:
+ * - Max 6 messages sent to GPT (save tokens)
+ * - ALWAYS keep: last user message + last assistant message
+ * - ALWAYS keep: 1 emotionally relevant message (highest intensity)
+ * - Summarize oldest messages beyond the window into a single context line
+ * - Session start gets 10 messages (more context needed)
+ *
+ * Selection priority:
+ * 1. Last user + assistant pair (most recent exchange)
+ * 2. 1 emotionally relevant message (highest intensity keywords)
+ * 3. Fill remaining slots with most recent messages
+ * 4. Oldest dropped messages → summarized into 1 context line
+ */
+
+const EMOTION_KEYWORDS = [
+  // High intensity
+  'suicide', 'kill', 'die', 'dead', 'hurt', 'cutting', 'overdose',
+  'crisis', 'panic', 'terrified', 'hopeless', 'worthless',
+  // Medium intensity
+  'craving', 'relapse', 'drunk', 'high', 'using', 'withdrawal',
+  'angry', 'rage', 'furious', 'desperate', 'breakdown',
+  'crying', 'sobbing', 'screaming', 'shaking',
+  // Emotional depth
+  'abandoned', 'betrayed', 'abused', 'trauma', 'shame', 'guilt',
+  'lonely', 'isolated', 'rejected', 'afraid', 'scared',
+];
+
+function computeEmotionalIntensity(content: string): number {
+  const lower = content.toLowerCase();
+  let score = 0;
+  for (const keyword of EMOTION_KEYWORDS) {
+    if (lower.includes(keyword)) score++;
+  }
+  // Exclamation marks and ALL CAPS boost intensity
+  const exclamations = (content.match(/!/g) || []).length;
+  score += Math.min(exclamations, 3);
+  const capsWords = (content.match(/\b[A-Z]{3,}\b/g) || []).length;
+  score += Math.min(capsWords, 2);
+  return score;
+}
+
+function buildOptimisedConversationWindow(
+  chatHistory: ChatMessage[],
+  isSessionStart: boolean,
+): Array<{ role: 'user' | 'assistant'; content: string; isSummary?: boolean }> {
+  const maxMessages = isSessionStart ? 10 : 6;
+
+  // If history fits within window, no optimisation needed
+  if (chatHistory.length <= maxMessages) {
+    return chatHistory.map((msg) => ({ role: msg.role, content: msg.content }));
+  }
+
+  // Step 1: Identify the last user + assistant pair (always kept)
+  const lastMessages = chatHistory.slice(-2);
+  const remainingPool = chatHistory.slice(0, -2);
+
+  // Step 2: Find the most emotionally relevant message from the pool
+  let bestEmotionalMsg: ChatMessage | null = null;
+  let bestEmotionalScore = 0;
+  let bestEmotionalIdx = -1;
+
+  for (let i = 0; i < remainingPool.length; i++) {
+    if (remainingPool[i].role !== 'user') continue;
+    const score = computeEmotionalIntensity(remainingPool[i].content);
+    if (score > bestEmotionalScore) {
+      bestEmotionalScore = score;
+      bestEmotionalMsg = remainingPool[i];
+      bestEmotionalIdx = i;
+    }
+  }
+
+  // Step 3: Fill remaining slots with most recent messages
+  const reservedSlots = 2 + (bestEmotionalMsg ? 1 : 0); // last pair + emotional
+  const fillSlots = maxMessages - reservedSlots;
+
+  // Get the most recent messages from the pool (excluding the emotional one)
+  const fillPool = remainingPool.filter((_, i) => i !== bestEmotionalIdx);
+  const filledMessages = fillPool.slice(-fillSlots);
+
+  // Step 4: Summarize dropped messages
+  const keptIndices = new Set<number>();
+  // Mark filled messages
+  for (const fm of filledMessages) {
+    const idx = remainingPool.indexOf(fm);
+    if (idx >= 0) keptIndices.add(idx);
+  }
+  if (bestEmotionalIdx >= 0) keptIndices.add(bestEmotionalIdx);
+
+  const droppedMessages = remainingPool.filter((_, i) => !keptIndices.has(i));
+
+  const result: Array<{ role: 'user' | 'assistant'; content: string; isSummary?: boolean }> = [];
+
+  // Add summary of dropped messages (if any)
+  if (droppedMessages.length > 0) {
+    const userDropped = droppedMessages.filter((m) => m.role === 'user');
+    const themes: string[] = [];
+    for (const msg of userDropped) {
+      const lower = msg.content.toLowerCase();
+      if (/crav|relapse|drink|using|substance/.test(lower)) themes.push('craving/substance');
+      if (/sad|depress|hopeless|down|low/.test(lower)) themes.push('low mood');
+      if (/angry|frustrat|rage|annoy/.test(lower)) themes.push('anger/frustration');
+      if (/anxi|panic|worry|stress|nervous/.test(lower)) themes.push('anxiety/stress');
+      if (/family|parent|mother|father|partner/.test(lower)) themes.push('relationships');
+      if (/work|job|boss|career/.test(lower)) themes.push('work');
+      if (/sleep|tired|exhaust|insomnia/.test(lower)) themes.push('sleep');
+      if (/guilt|shame|regret/.test(lower)) themes.push('guilt/shame');
+    }
+    const uniqueThemes = [...new Set(themes)];
+    const summaryText = uniqueThemes.length > 0
+      ? `[Earlier in this conversation (${droppedMessages.length} messages summarized): User discussed ${uniqueThemes.join(', ')}.]`
+      : `[Earlier in this conversation: ${droppedMessages.length} messages exchanged.]`;
+    result.push({ role: 'assistant', content: summaryText, isSummary: true });
+  }
+
+  // Add filled messages (in chronological order)
+  for (const msg of filledMessages) {
+    result.push({ role: msg.role, content: msg.content });
+  }
+
+  // Add emotional message (if not already in filled)
+  if (bestEmotionalMsg && !filledMessages.includes(bestEmotionalMsg)) {
+    // Insert before the last pair but after filled messages
+    result.push({ role: bestEmotionalMsg.role, content: bestEmotionalMsg.content });
+  }
+
+  // Add last pair
+  for (const msg of lastMessages) {
+    result.push({ role: msg.role, content: msg.content });
+  }
+
+  return result;
 }
 
 /**
@@ -124,18 +285,17 @@ export interface PayloadBuilderInput {
  *
  * This is called BEFORE every GPT request.
  * It ensures every call has the right context — no more blind follow-ups.
+ *
+ * PATCH N STEP 5: Uses optimised conversation window (max 6, summary, emotional retention).
  */
 export function buildGPTPayload(input: PayloadBuilderInput): GPTPayload {
   const { backpack, userDat, relevance, isSessionStart } = input;
 
-  // ── Conversation window: 6-10 messages ──
-  // Use 10 for session start (more context), 6 for follow-ups (save tokens)
-  const windowSize = isSessionStart ? 10 : 6;
-  const recentHistory = input.chatHistory.slice(-windowSize);
-  const conversationWindow = recentHistory.map((msg) => ({
-    role: msg.role,
-    content: msg.content,
-  }));
+  // ── Conversation window: optimised (Patch N Step 5) ──
+  const conversationWindow = buildOptimisedConversationWindow(
+    input.chatHistory,
+    isSessionStart,
+  );
 
   // ── Diary: last 3 entries ──
   const recentDiary = (input.diaryEntries || [])
@@ -179,6 +339,22 @@ export function buildGPTPayload(input: PayloadBuilderInput): GPTPayload {
     startEmotion: input.startEmotion,
     crisisLevel: input.crisisLevel,
   };
+
+  // ── Buffer snapshot (from pipeline, per message) ──
+  if (input.bufferSnapshot) {
+    const snap = input.bufferSnapshot;
+    payload.bufferSnapshot = {
+      zoneScore: snap.zoneScore,
+      zoneColor: snap.zoneColor,
+      liveIntent: snap.liveIntent,
+      intensityTrajectory: snap.intensityTrajectory,
+      currentEmotion: snap.currentEmotion,
+      responseDirection: snap.responseDirection,
+      currentRelationshipAnchor: snap.currentRelationshipAnchor,
+      messageCount: snap.messageCount,
+      dominantState: snap.dominantState,
+    };
+  }
 
   // ── Session start: add full backpack + userDat + diary ──
   if (isSessionStart) {

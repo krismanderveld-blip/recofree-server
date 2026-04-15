@@ -186,7 +186,7 @@
 - [x] Step 2: Add trigger decay logic (timeDecay: -1 per 2 msgs without match, -2 per 5min inactivity, min 0)
 - [x] Step 3: Update trigger selection pipeline (decay runs BEFORE threshold + top-N)
 - [x] Step 4: Add ModelRoutingLayer (gpt-4o for crisis/high-risk, gpt-4o-mini for normal)
-- [ ] Step 5: Optimize conversationHistory (max 6, summarize oldest, keep last user+assistant+1 emotional)
+- [x] Step 5: Optimize conversationHistory (max 6, summarize oldest, keep last user+assistant+1 emotional)
 - [x] Step 6: Per-message logging (triggers with finalScore, dominantModule, selected model, token estimate)
 
 ## Internal Dual-Processing Flow (wire all modules into pipeline.ts)
@@ -202,3 +202,9 @@
 - [x] SESSION-END: Ranked promotion evaluation (by score, not first-come-first-served), apply top 5
 - [x] Wire modules into generateGreeting flow (buffer init at session start)
 - [x] Ensure ZERO second GPT calls per message — all state updates are local
+
+## BufferSnapshot Wiring + ConversationHistory Optimisation
+- [x] Wire BufferSnapshot into GPTPayload type (new optional field)
+- [x] Wire BufferSnapshot into gpt-payload-builder (accept from input, include in payload)
+- [x] Wire BufferSnapshot into openai-provider LIVE_MESSAGE payload (send to server)
+- [x] Patch N Step 5: ConversationHistory max 6 messages, summarize oldest, keep last user+assistant+1 emotional

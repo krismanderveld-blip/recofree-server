@@ -105,6 +105,7 @@ export class OpenAIProvider implements AIProvider {
         startEmotion: context.startEmotion,
         crisisLevel: context.crisisLevel,
         relationalPattern,
+        bufferSnapshot: context.bufferSnapshot,
       });
 
       // ── STEP 3: Build server payload based on SESSION_INIT / LIVE_MESSAGE split ──
@@ -142,6 +143,9 @@ export class OpenAIProvider implements AIProvider {
           relationshipAnchor: gptPayload.relationshipAnchor,
           relationalPattern: gptPayload.relationalPattern,
           recentDiary: gptPayload.recentDiary,
+
+          // Buffer snapshot (live session state from pipeline)
+          bufferSnapshot: gptPayload.bufferSnapshot ?? null,
 
           // Full data (SESSION_INIT only)
           backpack: gptPayload.backpack,
@@ -191,6 +195,9 @@ export class OpenAIProvider implements AIProvider {
           // Live-selected triggers (re-analyzed per message from buffer)
           selectedTriggers: gptPayload.selectedTriggers,
 
+          // Buffer snapshot (live session state from pipeline)
+          bufferSnapshot: gptPayload.bufferSnapshot ?? null,
+
           // NO backpack, NO userDat, NO diaryEntries, NO coreWound,
           // NO contextLine, NO relationshipAnchor, NO relationalPattern
           // These were sent at SESSION_INIT and cached server-side.
@@ -217,6 +224,9 @@ export class OpenAIProvider implements AIProvider {
       console.log('[OpenAIProvider] Risk score:', gptPayload.riskScore);
       console.log('[OpenAIProvider] Selected triggers:', gptPayload.selectedTriggers.map(t => t.trigger).join(', ') || 'none');
       console.log('[OpenAIProvider] Conversation window:', gptPayload.conversationWindow.length, 'messages');
+      if (gptPayload.bufferSnapshot) {
+        console.log(`[OpenAIProvider] Buffer snapshot: zone=${gptPayload.bufferSnapshot.zoneColor}(${gptPayload.bufferSnapshot.zoneScore}), intent=${gptPayload.bufferSnapshot.liveIntent}, direction=${gptPayload.bufferSnapshot.responseDirection}`);
+      }
       if (isSessionStart && gptPayload.backpack) {
         console.log('[OpenAIProvider] Full backpack included (SESSION_INIT)');
       }
