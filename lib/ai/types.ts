@@ -479,6 +479,16 @@ export interface ChatContext {
   bufferSnapshot?: import('../rugzak/short-term-memory-buffer').BufferSnapshot;
   /** User-controlled guidance depth — affects response intensity */
   guidanceDepth?: GuidanceDepth;
+  /** Regulation result from the regulation layer — injected by pipeline */
+  regulationResult?: {
+    action: string;
+    intervention: string | null;
+    gptInstruction: string | null;
+    zone: string;
+    effectiveDepth: string;
+    wasSoftened: boolean;
+    wasSkipped: boolean;
+  };
 }
 
 /**

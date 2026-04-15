@@ -62,6 +62,7 @@ import { applyDecay, applyDecayToBuffer, type DecayResult } from './regulation-d
 import { analyzeBackpackRelevance, resetTriggerDecay } from './backpack-relevance-analyzer';
 import { evaluatePromotions, applyPromotions, type PromotionCandidate, type PromotionResult } from './userdat-promotion';
 import { recordCallCost, resetSessionCost, estimateTokens, type TokenUsage } from './cost-control';
+import { applyRegulation, type RegulationResult, type ZoneColor } from './regulation-layer';
 
 // ─── Pattern Marking (post-GPT local state) ─────────────────
 
@@ -99,6 +100,7 @@ let sessionWasCrisis = false;
 let sessionDominantModuleChanged = false;
 let sessionInitialModule: string | null = null;
 let sessionRelationalConfidence = 0;
+let sessionLastRegulationResult: RegulationResult | null = null;
 
 /**
  * Reset all session-level state. Call at session start.
@@ -111,6 +113,7 @@ export function resetSessionState(): void {
   sessionDominantModuleChanged = false;
   sessionInitialModule = null;
   sessionRelationalConfidence = 0;
+  sessionLastRegulationResult = null;
   resetTriggerDecay();
   resetSessionCost();
 }
@@ -149,6 +152,14 @@ export interface MessageLog {
     selectedTriggers: Array<{ trigger: string; score: number }>;
     bufferZoneScore: number;
     bufferZoneColor: string;
+    regulation: {
+      action: string;
+      zone: string;
+      effectiveDepth: string;
+      wasSoftened: boolean;
+      wasSkipped: boolean;
+      hasIntervention: boolean;
+    };
   };
   gpt: {
     selectedModel?: string;
@@ -349,6 +360,31 @@ export async function processMessage(
     relevance.triggers,
   );
 
+  // ── PRE-GPT STEP 5b: Apply Regulation Layer ──
+  // Runs AFTER zone detection + dominant state, BEFORE GPT call.
+  // Uses buffer zone color + guidance depth + previous assistant message for anti-repetition.
+  const currentZone = sessionBuffer.currentZoneColor as ZoneColor;
+  const userGuidanceDepth = currentUserDat.guidanceDepth ?? 'normal';
+
+  // Get previous assistant message for anti-repetition safeguard
+  const chatHistory = currentUserDat.chatHistory || [];
+  const lastAssistantMsg = [...chatHistory].reverse().find(m => m.role === 'assistant');
+  const previousAssistantContent = lastAssistantMsg?.content ?? null;
+
+  const regulationResult = applyRegulation(
+    currentZone,
+    userGuidanceDepth,
+    previousAssistantContent,
+  );
+
+  // Update session tracking for next message's anti-repetition
+  sessionLastRegulationResult = regulationResult;
+
+  // Log regulation decision
+  if (regulationResult.action !== 'reflect') {
+    console.log(`[Pipeline] Regulation: ${regulationResult.action} | zone=${regulationResult.zone} | depth=${regulationResult.effectiveDepth} | softened=${regulationResult.wasSoftened} | skipped=${regulationResult.wasSkipped}`);
+  }
+
   // ── PRE-GPT STEP 6: Build ChatContext + ONE GPT call ──
   let crisisLevel = 0;
   let showEmergency = false;
@@ -392,6 +428,15 @@ export async function processMessage(
     startEmotion: backpack.intakeContext?.startEmotion ?? '',
     bufferSnapshot,
     guidanceDepth: currentUserDat.guidanceDepth ?? 'normal',
+    regulationResult: regulationResult.action !== 'reflect' ? {
+      action: regulationResult.action,
+      intervention: regulationResult.intervention,
+      gptInstruction: regulationResult.gptInstruction,
+      zone: regulationResult.zone,
+      effectiveDepth: regulationResult.effectiveDepth,
+      wasSoftened: regulationResult.wasSoftened,
+      wasSkipped: regulationResult.wasSkipped,
+    } : undefined,
   };
 
   let response: string;
@@ -508,6 +553,14 @@ export async function processMessage(
       selectedTriggers: relevance.triggers,
       bufferZoneScore: sessionBuffer.currentZoneScore,
       bufferZoneColor: sessionBuffer.currentZoneColor,
+      regulation: {
+        action: regulationResult.action,
+        zone: regulationResult.zone,
+        effectiveDepth: regulationResult.effectiveDepth,
+        wasSoftened: regulationResult.wasSoftened,
+        wasSkipped: regulationResult.wasSkipped,
+        hasIntervention: regulationResult.intervention !== null,
+      },
     },
     gpt: {
       selectedModel,
@@ -532,6 +585,9 @@ export async function processMessage(
   console.log(`[Pipeline] PRE-GPT: triggers=[${relevance.triggers.map(t => `${t.trigger}(${t.score})`).join(', ')}]`);
   if (selectedModel) console.log(`[Pipeline] GPT: model=${selectedModel}`);
   if (tokenUsage) console.log(`[Pipeline] GPT: tokens=${tokenUsage.promptTokens}in+${tokenUsage.completionTokens}out=${tokenUsage.totalTokens}total`);
+  if (regulationResult.action !== 'reflect') {
+    console.log(`[Pipeline] REGULATION: action=${regulationResult.action}, zone=${regulationResult.zone}, depth=${regulationResult.effectiveDepth}, softened=${regulationResult.wasSoftened}, skipped=${regulationResult.wasSkipped}`);
+  }
   console.log(`[Pipeline] POST-GPT: patterns=[${markedPatterns.join(', ')}], promotionCandidates=${promotionCandidates.length}`);
 
   // Record cost

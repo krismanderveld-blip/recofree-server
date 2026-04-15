@@ -70,6 +70,17 @@ export interface GPTPayload {
   // ── User-controlled guidance depth ──
   guidanceDepth?: 'light' | 'normal' | 'deep';
 
+  // ── Regulation result (from regulation layer, per message) ──
+  regulationResult?: {
+    action: string;
+    intervention: string | null;
+    gptInstruction: string | null;
+    zone: string;
+    effectiveDepth: string;
+    wasSoftened: boolean;
+    wasSkipped: boolean;
+  };
+
   // ── Buffer snapshot (from pipeline, per message) ──
   bufferSnapshot?: {
     zoneScore: number;
@@ -145,6 +156,16 @@ export interface PayloadBuilderInput {
   bufferSnapshot?: import('./short-term-memory-buffer').BufferSnapshot;
   /** User-controlled guidance depth */
   guidanceDepth?: 'light' | 'normal' | 'deep';
+  /** Regulation result from regulation layer */
+  regulationResult?: {
+    action: string;
+    intervention: string | null;
+    gptInstruction: string | null;
+    zone: string;
+    effectiveDepth: string;
+    wasSoftened: boolean;
+    wasSkipped: boolean;
+  };
 }
 
 // ─── Conversation History Optimisation (Patch N Step 5) ──────
@@ -347,6 +368,11 @@ export function buildGPTPayload(input: PayloadBuilderInput): GPTPayload {
 
   // ── Guidance depth (user-controlled) ──
   payload.guidanceDepth = input.guidanceDepth ?? 'normal';
+
+  // ── Regulation result (from regulation layer) ──
+  if (input.regulationResult) {
+    payload.regulationResult = input.regulationResult;
+  }
 
   // ── Buffer snapshot (from pipeline, per message) ──
   if (input.bufferSnapshot) {

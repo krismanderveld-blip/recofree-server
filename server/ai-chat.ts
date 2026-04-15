@@ -121,6 +121,17 @@ interface ChatRequestInput {
     liveIntent: string;
     dominantState: string;
   };
+
+  // Regulation result from regulation layer (per-message)
+  regulationResult?: {
+    action: string;
+    intervention: string | null;
+    gptInstruction: string | null;
+    zone: string;
+    effectiveDepth: string;
+    wasSoftened: boolean;
+    wasSkipped: boolean;
+  } | null;
 }
 
 // ─── Server-side Session Cache ───────────────────────────────────
@@ -858,6 +869,18 @@ SCHENDING VAN DIT PROTOCOL IS ONACCEPTABEL.`;
 
   console.log(`[AI Chat] Guidance depth: user=${userDepth}, stateAllowed=${stateAllowedDepth}, effective=${effectiveDepth} (crisis=${input.crisisLevel}, risk=${riskScore}, maxDistress=${maxDistress})`);
 
+  // ── Regulation Layer Injection ──
+  // If the regulation layer determined an action (non-reflect), inject its GPT instruction.
+  // This runs BEFORE the system prompt is assembled, so it's available for both follow-up and session-start.
+  let regulationInstruction = '';
+  if (input.regulationResult && input.regulationResult.gptInstruction) {
+    const reg = input.regulationResult;
+    const softenedLabel = reg.wasSoftened ? ' (verzacht — vorige bericht bevatte al regulatie)' : '';
+    const skippedLabel = reg.wasSkipped ? ' (overgeslagen — vorige bericht bevatte al regulatie)' : '';
+    regulationInstruction = `\n═══ EMOTIONELE REGULATIE${softenedLabel}${skippedLabel} ═══\n${reg.gptInstruction}\n═══ EINDE REGULATIE ═══`;
+    console.log(`[AI Chat] Regulation injected: action=${reg.action}, zone=${reg.zone}, depth=${reg.effectiveDepth}, softened=${reg.wasSoftened}, skipped=${reg.wasSkipped}`);
+  }
+
   let sessionEndInstructions = "";
   if (input.message === "__SESSION_END__") {
     sessionEndInstructions = `\nDe gebruiker beëindigt deze sessie. Genereer een warm afscheid dat:
@@ -921,6 +944,7 @@ ${selectiveRelevance}
 === VERPLICHTE GEDRAGSINSTRUCTIES ===
 ${stance}
 ${guidanceInstruction}
+${regulationInstruction}
 
 Deze gedragsinstructies zijn ABSOLUUT. Ze overschrijven je standaard gespreksstijl.
 De sliders vertellen je exact hoe de gebruiker zich voelt — GEBRUIK ze in je antwoord.
@@ -1145,6 +1169,7 @@ ${relevanceContext}
 === VERPLICHTE GEDRAGSINSTRUCTIES ===
 ${stance}
 ${guidanceInstruction}
+${regulationInstruction}
 
 Deze gedragsinstructies zijn ABSOLUUT. Ze overschrijven je standaard gespreksstijl.
 De sliders vertellen je exact hoe de gebruiker zich voelt — GEBRUIK ze in je antwoord.

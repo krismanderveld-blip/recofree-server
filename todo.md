@@ -230,3 +230,24 @@
 ## Bug Fixes
 - [x] BUG: Rugzak/backpack data not reaching GPT — Elias doesn't know Melissa (vriendin) or Jules (zoon) even though they're in the backpack (fix: lifeStorySummary always injected in follow-up prompt)
 - [x] BUG: Keyboard bedekt invoerveld in APK build — fix: KAV met behavior=padding op beide platforms, softwareKeyboardLayoutMode changed to pan
+
+## IAMFREE Regulation Engine Patch (Lightweight v1)
+- [x] Build regulation module: zone→action mapping (green=reflect, yellow=slow_down, orange=regulate, red=stabilize, purple=ground)
+- [x] Add micro-intervention texts per action (Dutch, 1-2 sentences, natural not clinical)
+- [x] Wire into pipeline: AFTER zone detection, BEFORE GPT response generation
+- [x] Integrate guidance depth control (light=short no explanation, normal=regulation+light reflection, deep=regulation+gentle probing after stabilization)
+- [x] Inject regulation prefix into GPT system prompt so response follows regulation naturally
+- [x] Rules: no analysis before regulation if zone>=orange, max 1-2 sentences, never overload in red/purple, no stacking techniques
+
+## IAMFREE Regulation Engine Patch (Lightweight v1)
+
+- [x] Build regulation-layer.ts with zone→action mapping and micro-interventions (Dutch)
+- [x] Add anti-repetition safeguard: detect if previous assistant message contained regulation, soften or skip
+- [x] Add softened intervention variants for consecutive regulation messages
+- [x] Wire regulation into pipeline.ts after zone detection (Step 3), before GPT call (Step 6)
+- [x] Add regulationResult to ChatContext and forward to server
+- [x] Inject regulation GPT instruction into server system prompt (ai-chat.ts)
+- [x] Add regulation logging to pipeline MessageLog
+- [x] Verify 0 TypeScript errors
+- [x] Verify 31 regulation tests passing (124 total)
+- [x] Checkpoint
