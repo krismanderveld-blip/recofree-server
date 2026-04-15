@@ -1,35 +1,52 @@
-import type { AIProvider, AIResult, ChatContext, Backpack, UserDat, MoodSnapshot, TriggerPattern, LifePhaseSection, ModuleUsageRecord, SessionAnalysisRecord } from './types';
+import type { AIProvider, AIResult, ChatContext } from './types';
 import { getApiBaseUrl } from '@/constants/oauth';
 import * as Auth from '@/lib/_core/auth';
 import superjson from 'superjson';
 import { analyzeBackpackRelevance } from '@/lib/rugzak/backpack-relevance-analyzer';
-import { buildGPTPayload, type GPTPayload } from '@/lib/rugzak/gpt-payload-builder';
+import { buildGPTPayload } from '@/lib/rugzak/gpt-payload-builder';
 import { detectRelationalAnchor, extractRelationalAnchors } from '@/lib/rugzak/relational-anchor-detector';
 import { analyzeRelationalPatterns } from '@/lib/rugzak/relational-pattern-analyzer';
 
 /**
- * OpenAIProvider — Routes through backend tRPC to OpenAI GPT-4o.
+ * OpenAIProvider — Routes through backend tRPC to OpenAI.
  *
- * NEW ARCHITECTURE (Engine Spec V2):
- *   EVERY call gets a structured payload with relevant context.
- *   No more "full at session start, blind at follow-up".
+ * PATCH N: SESSION_INIT / LIVE_MESSAGE split.
  *
- *   Session start: full backpack + userDat + diary + relevance analysis
- *   Follow-up: relevance analysis + selected triggers/wound/context/anchor + sliders + 6 messages
+ *   SESSION_INIT (sent ONCE at session start, cached locally):
+ *     coreWound, relationshipAnchor, relationalPattern, contextLine,
+ *     userProfileSummary, recentDiarySummary, backpack, userDat, diaryEntries
  *
- *   GPT always knows who the user is and what's relevant right now.
+ *   LIVE_MESSAGE (sent per message, dynamic only):
+ *     message, conversationHistory, moodSliders, selectedTriggers,
+ *     dominantModule, stageOfChange, urgency, riskScore, crisisLevel
+ *
+ *   Static fields are NEVER resent per message.
  */
+
+// ── Session Init Cache (local, per session) ──
+// Stores the static payload from SESSION_INIT so we don't resend it.
+let cachedSessionInit: Record<string, unknown> | null = null;
+
+/** Clear the session init cache (call on session end or new session) */
+export function clearSessionInitCache(): void {
+  cachedSessionInit = null;
+  console.log('[OpenAIProvider] Session init cache cleared');
+}
+
+/** Check if session init has been sent */
+export function hasSessionInit(): boolean {
+  return cachedSessionInit !== null;
+}
+
 export class OpenAIProvider implements AIProvider {
   async generateResponse(context: ChatContext): Promise<AIResult> {
     try {
       const apiBaseUrl = getApiBaseUrl();
       const isSessionStart = context.isSessionStart;
 
-      // ── STEP 1: Backpack Relevance Analysis (LOCAL, every call) ──
-      // Select the single dominant module (first from priorityModules)
+      // ── STEP 1: Local Analysis (runs EVERY call) ──
       const dominantModule = context.activeModules[0] || 'E02';
 
-      // Compute risk score from crisis level + slider distress
       const sliders = { ...context.moodSliders } as Record<string, number>;
       const sliderValues = Object.values(sliders);
       const avgDistress = sliderValues.length > 0
@@ -37,7 +54,7 @@ export class OpenAIProvider implements AIProvider {
         : 0;
       const riskScore = Math.min(10, context.crisisLevel * 3 + Math.round(avgDistress));
 
-      // Run the Backpack Relevance Analyzer
+      // Backpack Relevance Analyzer (local, every call)
       const relevance = analyzeBackpackRelevance(
         context.currentMessage,
         context.backpack,
@@ -46,13 +63,12 @@ export class OpenAIProvider implements AIProvider {
         dominantModule,
       );
 
-      // ── STEP 1b: Relational Anchor Detection (LOCAL, every call) ──
+      // Relational Anchor Detection (local, every call)
       const allAnchors = extractRelationalAnchors(context.backpack);
       const anchorResult = detectRelationalAnchor(
         context.currentMessage,
         context.backpack,
       );
-      // Override relevance anchor with the dedicated detector's result (more accurate)
       if (anchorResult.selectedAnchor) {
         relevance.relationshipAnchor = {
           name: anchorResult.selectedAnchor.name,
@@ -62,7 +78,7 @@ export class OpenAIProvider implements AIProvider {
         };
       }
 
-      // ── STEP 1c: Relational Pattern Analysis (LOCAL, every call) ──
+      // Relational Pattern Analysis (local, every call)
       const relationalPattern = analyzeRelationalPatterns(
         context.currentMessage,
         context.backpack,
@@ -70,7 +86,7 @@ export class OpenAIProvider implements AIProvider {
         allAnchors,
       );
 
-      // ── STEP 2: Build the structured GPT Payload ──
+      // ── STEP 2: Build GPT Payload (local structure) ──
       const gptPayload = buildGPTPayload({
         message: context.currentMessage,
         backpack: context.backpack,
@@ -91,46 +107,100 @@ export class OpenAIProvider implements AIProvider {
         relationalPattern,
       });
 
-      // ── STEP 3: Build the server input payload ──
-      // The server receives the FULL structured payload.
-      // It uses this to build the system prompt for GPT.
-      const inputPayload: Record<string, unknown> = {
-        userType: gptPayload.route,
-        userName: gptPayload.userName,
-        message: gptPayload.message,
-        conversationHistory: gptPayload.conversationWindow,
-        moodSliders: gptPayload.sliders,
-        activeModules: [gptPayload.dominantModule], // Single dominant module
-        crisisLevel: gptPayload.crisisLevel,
-        detectedEmotion: gptPayload.detectedEmotion,
-        therapeuticStance: gptPayload.therapeuticStance,
-        sessionDurationMinutes: gptPayload.sessionDurationMinutes,
-        urgency: gptPayload.urgency,
-        startEmotion: gptPayload.startEmotion,
-        isSessionStart,
+      // ── STEP 3: Build server payload based on SESSION_INIT / LIVE_MESSAGE split ──
+      let inputPayload: Record<string, unknown>;
 
-        // NEW: Always send relevance context (every call)
-        selectedTriggers: gptPayload.selectedTriggers,
-        coreWound: gptPayload.coreWound,
-        contextLine: gptPayload.contextLine,
-        relationshipAnchor: gptPayload.relationshipAnchor,
-        recentDiary: gptPayload.recentDiary,
-        riskScore: gptPayload.riskScore,
-        dominantModule: gptPayload.dominantModule,
+      if (isSessionStart) {
+        // ═══════════════════════════════════════════════════════
+        // SESSION_INIT: Full payload, sent ONCE. Cached locally.
+        // ═══════════════════════════════════════════════════════
+        inputPayload = {
+          // Identity
+          userType: gptPayload.route,
+          userName: gptPayload.userName,
+          isSessionStart: true,
 
-        // Step 2: Stage of Change + Relational Pattern
-        stageOfChange: gptPayload.stageOfChange,
-        relationalPattern: gptPayload.relationalPattern,
-      };
+          // Live message data (also included at session start)
+          message: gptPayload.message,
+          conversationHistory: gptPayload.conversationWindow,
+          moodSliders: gptPayload.sliders,
+          activeModules: [gptPayload.dominantModule],
+          crisisLevel: gptPayload.crisisLevel,
+          detectedEmotion: gptPayload.detectedEmotion,
+          therapeuticStance: gptPayload.therapeuticStance,
+          sessionDurationMinutes: gptPayload.sessionDurationMinutes,
+          urgency: gptPayload.urgency,
+          startEmotion: gptPayload.startEmotion,
+          dominantModule: gptPayload.dominantModule,
+          riskScore: gptPayload.riskScore,
+          stageOfChange: gptPayload.stageOfChange,
 
-      // Session start: also include full backpack + userDat + diary
-      if (gptPayload.backpack) inputPayload.backpack = gptPayload.backpack;
-      if (gptPayload.userDat) inputPayload.userDat = gptPayload.userDat;
-      if (gptPayload.diaryEntries) inputPayload.diaryEntries = gptPayload.diaryEntries;
+          // Static context (SESSION_INIT only — NOT resent per message)
+          selectedTriggers: gptPayload.selectedTriggers,
+          coreWound: gptPayload.coreWound,
+          contextLine: gptPayload.contextLine,
+          relationshipAnchor: gptPayload.relationshipAnchor,
+          relationalPattern: gptPayload.relationalPattern,
+          recentDiary: gptPayload.recentDiary,
 
-      // tRPC mutation via HTTP with superjson serialization
+          // Full data (SESSION_INIT only)
+          backpack: gptPayload.backpack,
+          userDat: gptPayload.userDat,
+          diaryEntries: gptPayload.diaryEntries,
+        };
+
+        // Cache the static fields locally so we don't resend them
+        cachedSessionInit = {
+          userType: gptPayload.route,
+          userName: gptPayload.userName,
+          coreWound: gptPayload.coreWound,
+          contextLine: gptPayload.contextLine,
+          relationshipAnchor: gptPayload.relationshipAnchor,
+          relationalPattern: gptPayload.relationalPattern,
+          recentDiary: gptPayload.recentDiary,
+          stageOfChange: gptPayload.stageOfChange,
+        };
+
+        console.log('[OpenAIProvider] SESSION_INIT: Full payload sent + cached locally');
+
+      } else {
+        // ═══════════════════════════════════════════════════════
+        // LIVE_MESSAGE: Dynamic data only. No static fields.
+        // ═══════════════════════════════════════════════════════
+        inputPayload = {
+          // Identity (always needed for routing)
+          userType: gptPayload.route,
+          userName: gptPayload.userName,
+          isSessionStart: false,
+
+          // Dynamic live data (changes per message)
+          message: gptPayload.message,
+          conversationHistory: gptPayload.conversationWindow,
+          moodSliders: gptPayload.sliders,
+          activeModules: [gptPayload.dominantModule],
+          crisisLevel: gptPayload.crisisLevel,
+          detectedEmotion: gptPayload.detectedEmotion,
+          therapeuticStance: gptPayload.therapeuticStance,
+          sessionDurationMinutes: gptPayload.sessionDurationMinutes,
+          urgency: gptPayload.urgency,
+          startEmotion: gptPayload.startEmotion,
+          dominantModule: gptPayload.dominantModule,
+          riskScore: gptPayload.riskScore,
+          stageOfChange: gptPayload.stageOfChange,
+
+          // Live-selected triggers (re-analyzed per message from buffer)
+          selectedTriggers: gptPayload.selectedTriggers,
+
+          // NO backpack, NO userDat, NO diaryEntries, NO coreWound,
+          // NO contextLine, NO relationshipAnchor, NO relationalPattern
+          // These were sent at SESSION_INIT and cached server-side.
+        };
+
+        console.log('[OpenAIProvider] LIVE_MESSAGE: Dynamic payload only (no static fields)');
+      }
+
+      // ── STEP 4: Send to server ──
       const serialized = superjson.serialize(inputPayload);
-
       const token = await Auth.getSessionToken();
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
@@ -141,17 +211,14 @@ export class OpenAIProvider implements AIProvider {
 
       const url = `${apiBaseUrl}/api/trpc/ai.chat`;
 
-      console.log('[OpenAIProvider] Calling:', url, isSessionStart ? '(SESSION START)' : '(FOLLOW-UP)');
+      // Logging
+      console.log('[OpenAIProvider] Calling:', url, isSessionStart ? '(SESSION_INIT)' : '(LIVE_MESSAGE)');
       console.log('[OpenAIProvider] Dominant module:', gptPayload.dominantModule);
       console.log('[OpenAIProvider] Risk score:', gptPayload.riskScore);
       console.log('[OpenAIProvider] Selected triggers:', gptPayload.selectedTriggers.map(t => t.trigger).join(', ') || 'none');
-      console.log('[OpenAIProvider] Core wound:', gptPayload.coreWound || 'none');
-      console.log('[OpenAIProvider] Context line:', gptPayload.contextLine ? 'yes' : 'none');
-      console.log('[OpenAIProvider] Relationship anchor:', gptPayload.relationshipAnchor?.name || 'none');
       console.log('[OpenAIProvider] Conversation window:', gptPayload.conversationWindow.length, 'messages');
-      console.log('[OpenAIProvider] Recent diary:', gptPayload.recentDiary.length, 'entries');
-      if (gptPayload.backpack) {
-        console.log('[OpenAIProvider] Full backpack included (session start)');
+      if (isSessionStart && gptPayload.backpack) {
+        console.log('[OpenAIProvider] Full backpack included (SESSION_INIT)');
       }
 
       const response = await fetch(url, {
@@ -186,7 +253,7 @@ export class OpenAIProvider implements AIProvider {
         console.warn('[OpenAIProvider] Backend returned failure:', result.response);
       }
 
-      // Log token usage from server
+      // Log token usage
       if (result?.tokenUsage) {
         console.log(`[CostControl] Call tokens: ${result.tokenUsage.promptTokens} prompt + ${result.tokenUsage.completionTokens} completion = ${result.tokenUsage.totalTokens} total`);
       }

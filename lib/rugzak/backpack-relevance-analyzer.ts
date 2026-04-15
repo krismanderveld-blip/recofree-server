@@ -86,6 +86,70 @@ const CORE_WOUND_PATTERNS: Record<string, string[]> = {
   depletion: ['exhausted', 'nothing left', 'empty', 'burned out', 'uitgeput', 'leeg', 'niets meer over', 'opgebrand'],
 };
 
+// ─── Trigger Decay State ──────────────────────────────────────
+// Tracks per-trigger state for decay calculation.
+// Persists within a session (module-level state).
+
+interface TriggerDecayState {
+  /** Number of messages since this trigger last matched */
+  messagesSinceMatch: number;
+  /** Timestamp of last match */
+  lastMatchTime: number;
+  /** Last computed decay penalty */
+  lastDecay: number;
+}
+
+const triggerDecayMap = new Map<string, TriggerDecayState>();
+
+/**
+ * Reset trigger decay state (call at session start).
+ */
+export function resetTriggerDecay(): void {
+  triggerDecayMap.clear();
+}
+
+/**
+ * Compute trigger-specific decay for a given trigger.
+ *
+ * Rules (Patch N):
+ * - -1 per 2 messages without trigger match
+ * - -2 per 5 minutes inactivity
+ * - Minimum score = 0
+ * - Decay runs BEFORE Top-N selection
+ */
+function computeTriggerDecay(triggerId: string, hasMatch: boolean): number {
+  const now = Date.now();
+  let state = triggerDecayMap.get(triggerId);
+
+  if (!state) {
+    state = { messagesSinceMatch: 0, lastMatchTime: now, lastDecay: 0 };
+    triggerDecayMap.set(triggerId, state);
+  }
+
+  if (hasMatch) {
+    // Reset decay on match
+    state.messagesSinceMatch = 0;
+    state.lastMatchTime = now;
+    state.lastDecay = 0;
+    return 0;
+  }
+
+  // Increment messages since match
+  state.messagesSinceMatch++;
+
+  let decay = 0;
+
+  // -1 per 2 messages without match
+  decay -= Math.floor(state.messagesSinceMatch / 2);
+
+  // -2 per 5 minutes inactivity
+  const minutesSinceMatch = (now - state.lastMatchTime) / (1000 * 60);
+  decay -= Math.floor(minutesSinceMatch / 5) * 2;
+
+  state.lastDecay = decay;
+  return decay;
+}
+
 // ─── Scoring Functions ─────────────────────────────────────────
 
 /**
@@ -113,6 +177,11 @@ function scoreTrigger(
   // Direct keyword match in message
   const hasDirectMatch = keywords.some((kw) => messageLower.includes(kw));
   if (hasDirectMatch) score += 3;
+
+  // PATCH N: Apply trigger-specific decay BEFORE other scoring
+  // Decay runs before Top-N selection
+  const decay = computeTriggerDecay(triggerId, hasDirectMatch);
+  // Decay is applied at the end (after all positive scoring)
 
   // Slider match
   if (userType === 'elias') {
@@ -158,7 +227,12 @@ function scoreTrigger(
   const aligned = moduleAlignments[dominantModule] || [];
   if (aligned.includes(triggerId)) score += 2;
 
-  return score;
+  // PATCH N: Apply decay (computed earlier)
+  // finalScore = baseScore + historicalWeight + moduleAlignment - timeDecay
+  score += decay; // decay is negative
+
+  // Minimum score = 0
+  return Math.max(0, score);
 }
 
 /**

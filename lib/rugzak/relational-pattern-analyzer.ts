@@ -55,6 +55,10 @@ export interface RelationalPatternResult {
   confidence: number;
   /** Evidence snippets that contributed to detection */
   evidence: string[];
+  /** Patch J: Repeat count within current session */
+  repeatCountSession: number;
+  /** Patch J: Repeat count across historical sessions */
+  repeatCountHistorical: number;
 }
 
 // ─── Pattern Definitions ──────────────────────────────────────────
@@ -172,6 +176,24 @@ const REPETITION_INDICATORS = [
   /\b(patroon|pattern|herhaalt|repeats|hetzelfde|the same)\b/i,
   /\b(al jaren|for years|al lang|for a long time|al mijn hele leven|my whole life)\b/i,
   /\b(nooit verandert|never changes|blijft maar|keeps on)\b/i,
+];
+
+/**
+ * Patch J: Repeated event signals for Kim.
+ * Detect recurrence language that indicates the user is experiencing
+ * the same relational pain again.
+ */
+const REPEATED_EVENT_SIGNALS = [
+  /\b(weer|again)\b/i,
+  /\b(altijd|always)\b/i,
+  /\b(elke keer|every time)\b/i,
+  /\b(hetzelfde|same thing)\b/i,
+  /\b(blijft (maar )?doen|keeps doing)\b/i,
+  /\b(verandert nooit|never changes)\b/i,
+  /\b(steeds opnieuw|over and over)\b/i,
+  /\b(net als (de )?vorige keer|just like last time)\b/i,
+  /\b(al zo lang|for so long)\b/i,
+  /\b(het stopt niet|it doesn't stop|it won't stop)\b/i,
 ];
 
 // ─── Analysis ─────────────────────────────────────────────────────
@@ -314,17 +336,77 @@ export function analyzeRelationalPatterns(
 
   // Only report if confidence >= 0.35
   if (!bestPattern || bestConf < 0.35) {
-    return { detectedPattern: null, linkedSchema: null, confidence: 0, evidence: [] };
+    return { detectedPattern: null, linkedSchema: null, confidence: 0, evidence: [], repeatCountSession: 0, repeatCountHistorical: 0 };
   }
 
   // Find linked schema
   const patternDef = PATTERN_DEFINITIONS.find(pd => pd.id === bestPattern);
   const linkedSchema = patternDef?.schemas[0] ?? null;
 
+  // Patch J: Count repeated event signals in current message + recent history
+  const repeatCountSession = countRepeatedEventSignals(message, recentUserMsgs);
+
+  // Patch J: Count historical recurrence from user.dat session analyses
+  const repeatCountHistorical = countHistoricalRecurrence(bestPattern, userDat);
+
+  // Patch J: Boost confidence if repeated events are detected
+  if (repeatCountSession >= 2) bestConf = Math.min(0.95, bestConf + 0.1);
+  if (repeatCountHistorical >= 2) bestConf = Math.min(0.95, bestConf + 0.1);
+
   return {
     detectedPattern: bestPattern,
     linkedSchema,
     confidence: Math.round(bestConf * 100) / 100,
     evidence: [...new Set(bestEvidence)].slice(0, 5), // Deduplicate, max 5
+    repeatCountSession,
+    repeatCountHistorical,
   };
+}
+
+// ─── Patch J: Repeated Event Detection ──────────────────────────
+
+/**
+ * Count repeated event signals across current message and recent session messages.
+ * Kim prioritizes: repeated pattern > relational wound > boundary strain
+ * over generic empathy or surface-level suggestions.
+ */
+function countRepeatedEventSignals(currentMessage: string, recentMessages: ChatMessage[]): number {
+  let count = 0;
+  const allTexts = [currentMessage, ...recentMessages.map(m => m.content)];
+
+  for (const text of allTexts) {
+    for (const signal of REPEATED_EVENT_SIGNALS) {
+      signal.lastIndex = 0;
+      if (signal.test(text)) {
+        count++;
+        break; // Count once per message per signal group
+      }
+    }
+  }
+
+  return count;
+}
+
+/**
+ * Count how many historical sessions had the same relational pattern.
+ * Uses session analyses from user.dat.
+ */
+function countHistoricalRecurrence(pattern: RelationalPatternId, userDat: UserDat): number {
+  const analyses = userDat.sessionAnalyses || [];
+  let count = 0;
+
+  for (const analysis of analyses) {
+    // Check if this session's themes or modules relate to the pattern
+    const themes = analysis.themes || [];
+    const patternWords = pattern.split('_');
+    const hasMatch = themes.some((theme: string) =>
+      patternWords.some(word => theme.toLowerCase().includes(word))
+    );
+    if (hasMatch) count++;
+  }
+
+  // Also check user.dat's lastRelationalPattern
+  if (userDat.lastRelationalPattern?.pattern === pattern) count++;
+
+  return count;
 }

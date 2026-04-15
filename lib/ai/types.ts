@@ -179,6 +179,8 @@ export interface ModuleUsageRecord {
 export interface TriggerPattern {
   trigger: string;
   count: number;
+  /** Trigger weight on 0–50 internal scale (Patch G). Legacy 0–5 values auto-migrate via *10. */
+  weight?: number;
   firstSeen: string;
   lastSeen: string;
 }

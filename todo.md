@@ -168,3 +168,23 @@
 - [x] Build ChatHistory management — limit stored sessions, archive/cleanup old ones
 - [x] Configurable max session history (e.g., last 5 sessions kept, older ones pruned)
 - [x] Add Stage of Change editor to Backpack screen (so existing users can set/change their stage)
+
+## Patch V2: Post-Stage-3 Memory + Scoring + Regulation Corrections
+- [ ] Patch A+B+I: Create ShortTermMemoryBuffer (session-only live context, priority over user.dat, intent detection with structure/tone/repetition)
+- [ ] Patch C: Create DominantStateSelector (single dominant driver per response, deterministic priority)
+- [ ] Patch D+E: Add 0-100 internal scaling + zone system (GREEN/YELLOW/ORANGE/RED/PURPLE)
+- [ ] Patch F: Add RegulationDecayEngine (time decay, response decay, overshoot correction)
+- [ ] Patch G+K: Upgrade trigger scoring (0-100 block weights) + relational anchor weighting (scored thresholds)
+- [ ] Patch H: Upgrade user.dat promotion rules (only confirmed patterns, max 5 updates/session)
+- [ ] Patch J: Upgrade RelationalPatternAnalyzer for Kim (repeated event detection, recurrence signals)
+- [ ] Patch L: Rebuild GPT payload from buffer + selector (no full backpack, no full user.dat)
+- [ ] Patch M: Lock final 17-step execution order in pipeline
+- [ ] Patch N: Verify all "must not happen" constraints
+
+## Patch N: Payload Optimization + Decay + Model Routing
+- [x] Step 1: SESSION_INIT / LIVE_MESSAGE payload split (static fields sent once, not per message)
+- [x] Step 2: Add trigger decay logic (timeDecay: -1 per 2 msgs without match, -2 per 5min inactivity, min 0)
+- [x] Step 3: Update trigger selection pipeline (decay runs BEFORE threshold + top-N)
+- [x] Step 4: Add ModelRoutingLayer (gpt-4o for crisis/high-risk, gpt-4o-mini for normal)
+- [ ] Step 5: Optimize conversationHistory (max 6, summarize oldest, keep last user+assistant+1 emotional)
+- [x] Step 6: Per-message logging (triggers with finalScore, dominantModule, selected model, token estimate)
