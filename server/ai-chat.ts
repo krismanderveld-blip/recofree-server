@@ -113,6 +113,14 @@ interface ChatRequestInput {
 
   // User-controlled guidance depth
   guidanceDepth?: 'light' | 'normal' | 'deep';
+
+  // Live buffer snapshot from ShortTermMemoryBuffer (per-message)
+  bufferSnapshot?: {
+    zone: string;
+    emotionalDirection: string;
+    liveIntent: string;
+    dominantState: string;
+  };
 }
 
 // ─── Server-side Session Cache ───────────────────────────────────
@@ -883,6 +891,13 @@ HUIDIGE TOESTAND:
 - Urgentieniveau: ${input.urgency}
 - Risicoscore: ${input.riskScore ?? 0}/10
 ${sessionInfo}
+${input.bufferSnapshot ? `
+LIVE SESSIE CONTEXT (real-time analyse):
+- Zone: ${input.bufferSnapshot.zone ?? 'unknown'}
+- Emotionele richting: ${input.bufferSnapshot.emotionalDirection ?? 'unknown'}
+- Live intent: ${input.bufferSnapshot.liveIntent ?? 'none'}
+- Dominant state: ${input.bufferSnapshot.dominantState ?? 'none'}
+Gebruik deze live context om je toon en diepte af te stemmen op het HUIDIGE moment.` : ''}
 
 ${moduleInstructions}
 ${crisisInstructions}

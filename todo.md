@@ -223,3 +223,6 @@
 - [x] Red/Purple zone → force 'light' regardless of user setting
 - [x] Orange zone → cap at 'normal' regardless of user setting
 - [x] Yellow/Green zone → user setting applies (up to 'deep')
+
+## BufferSnapshot in Server System Prompt
+- [x] Inject bufferSnapshot (zone, intent, emotionalDirection, dominantState) into follow-up system prompt as live session context
