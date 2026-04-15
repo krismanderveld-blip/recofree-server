@@ -2,7 +2,7 @@ import React, { createContext, useContext, useEffect, useReducer, useCallback } 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type {
   UserType, UrgencyLevel, MoodSliders, Rugzak, Backpack, UserDat,
-  LifePhaseId, ChatMessage, IntakeData, RugzakInfluence,
+  LifePhaseId, ChatMessage, IntakeData, RugzakInfluence, GuidanceDepth,
 } from './ai/types';
 import {
   createNewBackpack, createNewUserDat, composeRugzak,
@@ -90,6 +90,10 @@ interface UserContextValue {
   resetUser: () => Promise<void>;
   /** Update Stage of Change in backpack (user action) */
   updateStageOfChange: (stage: import('./ai/types').StageOfChange) => Promise<void>;
+  /** Update guidance depth preference (user action) */
+  updateGuidanceDepth: (depth: GuidanceDepth) => Promise<void>;
+  /** Get current guidance depth */
+  getGuidanceDepth: () => GuidanceDepth;
   /** Convenience getters */
   getUserName: () => string;
   getMood: () => MoodSliders;
@@ -437,6 +441,19 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     }
   }, [state.backpack, state.userDat]);
 
+  // ── Guidance Depth ──
+
+  const updateGuidanceDepth = useCallback(async (depth: GuidanceDepth) => {
+    if (!state.userDat) return;
+    const updatedUserDat: UserDat = { ...state.userDat, guidanceDepth: depth };
+    dispatch({ type: 'UPDATE_USERDAT', payload: updatedUserDat });
+    await persistUserDat(updatedUserDat);
+  }, [state.userDat]);
+
+  const getGuidanceDepth = useCallback((): GuidanceDepth => {
+    return state.userDat?.guidanceDepth ?? 'normal';
+  }, [state.userDat]);
+
   // ── Recompute Influence ──
 
   const recomputeInfluence = useCallback(() => {
@@ -550,6 +567,8 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         updateRugzakSection,
         updateBackpackSection: updateRugzakSection,
         updateStageOfChange,
+        updateGuidanceDepth,
+        getGuidanceDepth,
         recomputeInfluence,
         setCrisisLevel,
         setDetectedEmotion,

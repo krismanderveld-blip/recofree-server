@@ -106,6 +106,7 @@ export class OpenAIProvider implements AIProvider {
         crisisLevel: context.crisisLevel,
         relationalPattern,
         bufferSnapshot: context.bufferSnapshot,
+        guidanceDepth: context.guidanceDepth ?? 'normal',
       });
 
       // ── STEP 3: Build server payload based on SESSION_INIT / LIVE_MESSAGE split ──
@@ -146,6 +147,9 @@ export class OpenAIProvider implements AIProvider {
 
           // Buffer snapshot (live session state from pipeline)
           bufferSnapshot: gptPayload.bufferSnapshot ?? null,
+
+          // User-controlled guidance depth
+          guidanceDepth: gptPayload.guidanceDepth ?? 'normal',
 
           // Full data (SESSION_INIT only)
           backpack: gptPayload.backpack,
@@ -197,6 +201,9 @@ export class OpenAIProvider implements AIProvider {
 
           // Buffer snapshot (live session state from pipeline)
           bufferSnapshot: gptPayload.bufferSnapshot ?? null,
+
+          // User-controlled guidance depth
+          guidanceDepth: gptPayload.guidanceDepth ?? 'normal',
 
           // NO backpack, NO userDat, NO diaryEntries, NO coreWound,
           // NO contextLine, NO relationshipAnchor, NO relationalPattern

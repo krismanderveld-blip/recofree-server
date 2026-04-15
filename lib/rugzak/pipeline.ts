@@ -391,6 +391,7 @@ export async function processMessage(
     urgency: backpack.intakeContext?.urgency ?? 'midden',
     startEmotion: backpack.intakeContext?.startEmotion ?? '',
     bufferSnapshot,
+    guidanceDepth: currentUserDat.guidanceDepth ?? 'normal',
   };
 
   let response: string;
@@ -700,6 +701,7 @@ export async function generateGreeting(
     sessionDurationMinutes: sessionMinutes,
     urgency: backpack.intakeContext?.urgency ?? 'midden',
     startEmotion: backpack.intakeContext?.startEmotion ?? '',
+    guidanceDepth: currentUserDat.guidanceDepth ?? 'normal',
   };
 
   let response: string;
@@ -894,6 +896,7 @@ export async function endSession(
     sessionDurationMinutes: durationMinutes,
     urgency: backpack.intakeContext?.urgency ?? 'midden',
     startEmotion: backpack.intakeContext?.startEmotion ?? '',
+    guidanceDepth: currentUserDat.guidanceDepth ?? 'normal',
   };
 
   let farewell: string;

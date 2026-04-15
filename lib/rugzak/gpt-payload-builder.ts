@@ -67,6 +67,9 @@ export interface GPTPayload {
   startEmotion: string;
   crisisLevel: number;
 
+  // ── User-controlled guidance depth ──
+  guidanceDepth?: 'light' | 'normal' | 'deep';
+
   // ── Buffer snapshot (from pipeline, per message) ──
   bufferSnapshot?: {
     zoneScore: number;
@@ -140,6 +143,8 @@ export interface PayloadBuilderInput {
   relationalPattern?: RelationalPatternResult;
   /** Buffer snapshot from pipeline (injected per message) */
   bufferSnapshot?: import('./short-term-memory-buffer').BufferSnapshot;
+  /** User-controlled guidance depth */
+  guidanceDepth?: 'light' | 'normal' | 'deep';
 }
 
 // ─── Conversation History Optimisation (Patch N Step 5) ──────
@@ -339,6 +344,9 @@ export function buildGPTPayload(input: PayloadBuilderInput): GPTPayload {
     startEmotion: input.startEmotion,
     crisisLevel: input.crisisLevel,
   };
+
+  // ── Guidance depth (user-controlled) ──
+  payload.guidanceDepth = input.guidanceDepth ?? 'normal';
 
   // ── Buffer snapshot (from pipeline, per message) ──
   if (input.bufferSnapshot) {

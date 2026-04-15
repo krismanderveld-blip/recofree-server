@@ -39,6 +39,16 @@ export type UrgencyLevel = 'laag' | 'midden' | 'hoog';
 /** Stage of Change — mandatory, influences response depth, directness, confrontation level, intervention type */
 export type StageOfChange = 'precontemplation' | 'contemplation' | 'preparation' | 'action' | 'maintenance';
 
+/** Guidance depth — user-controlled intensity of AI companion responses */
+export type GuidanceDepth = 'light' | 'normal' | 'deep';
+
+/** Guidance depth options for UI display */
+export const GUIDANCE_DEPTH_OPTIONS: { value: GuidanceDepth; label: string; description: string }[] = [
+  { value: 'light', label: 'Light', description: 'More listening, gentle presence' },
+  { value: 'normal', label: 'Normal', description: 'Balanced reflection and guidance' },
+  { value: 'deep', label: 'Deep', description: 'Active probing and deeper exploration' },
+];
+
 /** Stage of Change labels for UI display */
 export const STAGE_OF_CHANGE_OPTIONS: { value: StageOfChange; label: string; description: string }[] = [
   { value: 'precontemplation', label: 'Not ready yet', description: 'I\'m not sure I need to change anything right now.' },
@@ -265,6 +275,8 @@ export interface UserDat {
   sessionAnalyses: SessionAnalysisRecord[];
   /** Current stage of change — set at intake, may evolve over sessions */
   stageOfChange: StageOfChange;
+  /** User-controlled guidance depth — affects AI response intensity */
+  guidanceDepth?: GuidanceDepth;
   /** Detected relational anchors — persisted across sessions */
   relationalAnchors?: Array<{ name: string; role: string; roleEN: string; emotionalWeight: number }>;
   /** Last detected relational pattern */
@@ -465,6 +477,8 @@ export interface ChatContext {
   startEmotion: string;
   /** Stable buffer snapshot — injected by pipeline, used by provider for GPT payload */
   bufferSnapshot?: import('../rugzak/short-term-memory-buffer').BufferSnapshot;
+  /** User-controlled guidance depth — affects response intensity */
+  guidanceDepth?: GuidanceDepth;
 }
 
 /**

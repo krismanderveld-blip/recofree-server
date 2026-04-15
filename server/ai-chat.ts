@@ -110,6 +110,9 @@ interface ChatRequestInput {
   sessionDurationMinutes: number;
   urgency: string;
   startEmotion: string;
+
+  // User-controlled guidance depth
+  guidanceDepth?: 'light' | 'normal' | 'deep';
 }
 
 // ─── Server-side Session Cache ───────────────────────────────────
@@ -130,6 +133,7 @@ interface SessionCache {
   totalSessions: number;
   triggerPatterns: Array<{ trigger: string; count: number }>;
   messageCount: number; // Track messages for conditional injection
+  guidanceDepth: 'light' | 'normal' | 'deep';
 }
 
 let sessionCache: SessionCache | null = null;
@@ -153,6 +157,7 @@ function cacheSessionInit(input: ChatRequestInput): void {
       count: tp.count,
     })),
     messageCount: 0,
+    guidanceDepth: input.guidanceDepth ?? 'normal',
   };
   console.log("[AI Chat] Session cache created for:", input.userName);
 }
@@ -273,6 +278,8 @@ export const chatInputSchema = z.object({
   sessionDurationMinutes: z.number(),
   urgency: z.string(),
   startEmotion: z.string(),
+  guidanceDepth: z.enum(['light', 'normal', 'deep']).optional(),
+  bufferSnapshot: z.any().optional(),
 });
 
 // ─── Relationship Map Extractor ──────────────────────────────────
@@ -766,6 +773,17 @@ SCHENDING VAN DIT PROTOCOL IS ONACCEPTABEL.`;
     ? `Therapeutische houding: ${input.therapeuticStance}`
     : "";
 
+  // ── Guidance Depth (user-controlled) ──
+  const depth = input.guidanceDepth ?? sessionCache?.guidanceDepth ?? 'normal';
+  let guidanceInstruction = '';
+  if (depth === 'light') {
+    guidanceInstruction = `\nBEGELEIDINGSDIEPTE: LICHT\n- Luister meer dan je vraagt.\n- Stel maximaal 1 open vraag per bericht.\n- Geef ruimte en stilte. Valideer kort.\n- Geen doorvragen tenzij de gebruiker zelf dieper gaat.\n- Toon: warm, rustig, terughoudend.`;
+  } else if (depth === 'deep') {
+    guidanceInstruction = `\nBEGELEIDINGSDIEPTE: DIEP\n- Vraag actief door op patronen, emoties en onderliggende overtuigingen.\n- Benoem wat je opmerkt, ook als het oncomfortabel kan zijn.\n- Gebruik reflectie en confrontatie (respectvol maar direct).\n- Verbind huidige situatie met eerdere patronen uit het levensverhaal.\n- Toon: betrokken, scherp, uitdagend maar veilig.`;
+  } else {
+    guidanceInstruction = `\nBEGELEIDINGSDIEPTE: NORMAAL\n- Balans tussen luisteren en reflecteren.\n- Stel 1-2 open vragen per bericht.\n- Benoem patronen wanneer relevant, maar dring niet aan.\n- Toon: warm, betrokken, reflectief.`;
+  }
+
   let sessionEndInstructions = "";
   if (input.message === "__SESSION_END__") {
     sessionEndInstructions = `\nDe gebruiker beëindigt deze sessie. Genereer een warm afscheid dat:
@@ -824,6 +842,7 @@ ${selectiveRelevance}
 
 === VERPLICHTE GEDRAGSINSTRUCTIES ===
 ${stance}
+${guidanceInstruction}
 
 Deze gedragsinstructies zijn ABSOLUUT. Ze overschrijven je standaard gespreksstijl.
 De sliders vertellen je exact hoe de gebruiker zich voelt — GEBRUIK ze in je antwoord.
@@ -1040,6 +1059,7 @@ ${relevanceContext}
 
 === VERPLICHTE GEDRAGSINSTRUCTIES ===
 ${stance}
+${guidanceInstruction}
 
 Deze gedragsinstructies zijn ABSOLUUT. Ze overschrijven je standaard gespreksstijl.
 De sliders vertellen je exact hoe de gebruiker zich voelt — GEBRUIK ze in je antwoord.

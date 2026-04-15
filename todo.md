@@ -18,14 +18,14 @@
 - [x] Build chat context management (history, mood, rugzak)
 - [x] Build mood tracking screen with 4 sliders
 - [x] Build slider persistence (AsyncStorage)
-- [ ] Build mood history tracking
+- [x] Build mood history tracking
 - [x] Build diary screen with entry list
 - [x] Build diary entry editor
 - [x] Build diary persistence (AsyncStorage)
 - [x] Build crisis detection (regex patterns)
 - [x] Build failsafe response system
 - [x] Build emergency resources card
-- [ ] Build profile/settings screen
+- [x] Build profile/settings screen
 - [x] Generate app icon (green heart with arrow)
 - [x] Configure splash screen
 - [x] Test intake flow end-to-end
@@ -170,16 +170,16 @@
 - [x] Add Stage of Change editor to Backpack screen (so existing users can set/change their stage)
 
 ## Patch V2: Post-Stage-3 Memory + Scoring + Regulation Corrections
-- [ ] Patch A+B+I: Create ShortTermMemoryBuffer (session-only live context, priority over user.dat, intent detection with structure/tone/repetition)
-- [ ] Patch C: Create DominantStateSelector (single dominant driver per response, deterministic priority)
-- [ ] Patch D+E: Add 0-100 internal scaling + zone system (GREEN/YELLOW/ORANGE/RED/PURPLE)
-- [ ] Patch F: Add RegulationDecayEngine (time decay, response decay, overshoot correction)
-- [ ] Patch G+K: Upgrade trigger scoring (0-100 block weights) + relational anchor weighting (scored thresholds)
-- [ ] Patch H: Upgrade user.dat promotion rules (only confirmed patterns, max 5 updates/session)
-- [ ] Patch J: Upgrade RelationalPatternAnalyzer for Kim (repeated event detection, recurrence signals)
-- [ ] Patch L: Rebuild GPT payload from buffer + selector (no full backpack, no full user.dat)
-- [ ] Patch M: Lock final 17-step execution order in pipeline
-- [ ] Patch N: Verify all "must not happen" constraints
+- [x] Patch A+B+I: Create ShortTermMemoryBuffer (session-only live context, priority over user.dat, intent detection with structure/tone/repetition)
+- [x] Patch C: Create DominantStateSelector (single dominant driver per response, deterministic priority)
+- [x] Patch D+E: Add 0-100 internal scaling + zone system (GREEN/YELLOW/ORANGE/RED/PURPLE)
+- [x] Patch F: Add RegulationDecayEngine (time decay, response decay, overshoot correction)
+- [x] Patch G+K: Upgrade trigger scoring (0-100 block weights) + relational anchor weighting (scored thresholds)
+- [x] Patch H: Upgrade user.dat promotion rules (only confirmed patterns, max 5 updates/session)
+- [x] Patch J: Upgrade RelationalPatternAnalyzer for Kim (repeated event detection, recurrence signals)
+- [x] Patch L: Rebuild GPT payload from buffer + selector (no full backpack, no full user.dat)
+- [x] Patch M: Lock final 17-step execution order in pipeline
+- [x] Patch N: Verify all "must not happen" constraints
 
 ## Patch N: Payload Optimization + Decay + Model Routing
 - [x] Step 1: SESSION_INIT / LIVE_MESSAGE payload split (static fields sent once, not per message)
@@ -208,3 +208,12 @@
 - [x] Wire BufferSnapshot into gpt-payload-builder (accept from input, include in payload)
 - [x] Wire BufferSnapshot into openai-provider LIVE_MESSAGE payload (send to server)
 - [x] Patch N Step 5: ConversationHistory max 6 messages, summarize oldest, keep last user+assistant+1 emotional
+
+## Mood History Redesign + Guidance Depth Setting
+- [x] Mood history: dominant zone summary (last 7 days) as primary element
+- [x] Mood history: trend indicator (improving/declining/stable) per slider
+- [x] Mood history: top 2-3 recurring triggers shown for recognition
+- [x] Mood history: timeline is secondary, collapsible visual support only
+- [x] Profile: add guidance depth setting (light/normal/deep)
+- [x] Wire guidance depth into user context + AsyncStorage persistence
+- [x] Wire guidance depth into AI pipeline (system prompt instruction)
