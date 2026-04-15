@@ -773,16 +773,46 @@ SCHENDING VAN DIT PROTOCOL IS ONACCEPTABEL.`;
     ? `Therapeutische houding: ${input.therapeuticStance}`
     : "";
 
-  // ── Guidance Depth (user-controlled) ──
-  const depth = input.guidanceDepth ?? sessionCache?.guidanceDepth ?? 'normal';
-  let guidanceInstruction = '';
-  if (depth === 'light') {
-    guidanceInstruction = `\nBEGELEIDINGSDIEPTE: LICHT\n- Luister meer dan je vraagt.\n- Stel maximaal 1 open vraag per bericht.\n- Geef ruimte en stilte. Valideer kort.\n- Geen doorvragen tenzij de gebruiker zelf dieper gaat.\n- Toon: warm, rustig, terughoudend.`;
-  } else if (depth === 'deep') {
-    guidanceInstruction = `\nBEGELEIDINGSDIEPTE: DIEP\n- Vraag actief door op patronen, emoties en onderliggende overtuigingen.\n- Benoem wat je opmerkt, ook als het oncomfortabel kan zijn.\n- Gebruik reflectie en confrontatie (respectvol maar direct).\n- Verbind huidige situatie met eerdere patronen uit het levensverhaal.\n- Toon: betrokken, scherp, uitdagend maar veilig.`;
-  } else {
-    guidanceInstruction = `\nBEGELEIDINGSDIEPTE: NORMAAL\n- Balans tussen luisteren en reflecteren.\n- Stel 1-2 open vragen per bericht.\n- Benoem patronen wanneer relevant, maar dring niet aan.\n- Toon: warm, betrokken, reflectief.`;
+  // ── Guidance Depth (ceiling logic) ──
+  // User setting is a MAXIMUM, not absolute. Effective depth = min(userSetting, stateAllowedDepth)
+  // Zone mapping: RED/PURPLE → force 'light', ORANGE → cap 'normal', YELLOW/GREEN → user setting applies
+  const DEPTH_ORDER: Array<'light' | 'normal' | 'deep'> = ['light', 'normal', 'deep'];
+  const userDepth = input.guidanceDepth ?? sessionCache?.guidanceDepth ?? 'normal';
+
+  // Determine state-allowed depth from crisis level + risk score + mood sliders
+  let stateAllowedDepth: 'light' | 'normal' | 'deep' = 'deep';
+  const riskScore = input.riskScore ?? 0;
+  const sliderValues = Object.values(input.moodSliders);
+  const maxDistress = Math.max(...sliderValues.filter((_, i) => {
+    const keys = Object.keys(input.moodSliders);
+    // Distress sliders: craving, frustration, despondency, stress, boundaryFatigue, emotionalBurden
+    return !['focus', 'selfCare'].includes(keys[i]);
+  }), 0);
+
+  if (input.crisisLevel >= 2 || riskScore >= 8 || maxDistress >= 9) {
+    // RED/PURPLE zone → force light: stabilize first, no deep exploration
+    stateAllowedDepth = 'light';
+  } else if (input.crisisLevel === 1 || riskScore >= 5 || maxDistress >= 7) {
+    // ORANGE zone → cap at normal: some reflection ok, no deep confrontation
+    stateAllowedDepth = 'normal';
   }
+  // YELLOW/GREEN → stateAllowedDepth stays 'deep' (user setting applies)
+
+  // Effective depth = min(userSetting, stateAllowedDepth)
+  const userIdx = DEPTH_ORDER.indexOf(userDepth);
+  const stateIdx = DEPTH_ORDER.indexOf(stateAllowedDepth);
+  const effectiveDepth = DEPTH_ORDER[Math.min(userIdx, stateIdx)];
+
+  let guidanceInstruction = '';
+  if (effectiveDepth === 'light') {
+    guidanceInstruction = `\nBEGELEIDINGSDIEPTE: LICHT (${stateAllowedDepth !== userDepth ? 'verlaagd vanwege huidige toestand' : 'gebruikersvoorkeur'})\n- Luister meer dan je vraagt.\n- Stel maximaal 1 open vraag per bericht.\n- Geef ruimte en stilte. Valideer kort.\n- Geen doorvragen tenzij de gebruiker zelf dieper gaat.\n- Toon: warm, rustig, terughoudend.`;
+  } else if (effectiveDepth === 'deep') {
+    guidanceInstruction = `\nBEGELEIDINGSDIEPTE: DIEP (gebruikersvoorkeur, toestand staat dit toe)\n- Vraag actief door op patronen, emoties en onderliggende overtuigingen.\n- Benoem wat je opmerkt, ook als het oncomfortabel kan zijn.\n- Gebruik reflectie en confrontatie (respectvol maar direct).\n- Verbind huidige situatie met eerdere patronen uit het levensverhaal.\n- Toon: betrokken, scherp, uitdagend maar veilig.`;
+  } else {
+    guidanceInstruction = `\nBEGELEIDINGSDIEPTE: NORMAAL (${stateAllowedDepth !== userDepth ? 'verlaagd vanwege huidige toestand' : 'gebruikersvoorkeur'})\n- Balans tussen luisteren en reflecteren.\n- Stel 1-2 open vragen per bericht.\n- Benoem patronen wanneer relevant, maar dring niet aan.\n- Toon: warm, betrokken, reflectief.`;
+  }
+
+  console.log(`[AI Chat] Guidance depth: user=${userDepth}, stateAllowed=${stateAllowedDepth}, effective=${effectiveDepth} (crisis=${input.crisisLevel}, risk=${riskScore}, maxDistress=${maxDistress})`);
 
   let sessionEndInstructions = "";
   if (input.message === "__SESSION_END__") {

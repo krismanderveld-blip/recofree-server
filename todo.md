@@ -217,3 +217,9 @@
 - [x] Profile: add guidance depth setting (light/normal/deep)
 - [x] Wire guidance depth into user context + AsyncStorage persistence
 - [x] Wire guidance depth into AI pipeline (system prompt instruction)
+
+## GuidanceDepth as Maximum Ceiling
+- [x] GuidanceDepth = max ceiling, not absolute. Effective depth = min(userSetting, stateAllowedDepth)
+- [x] Red/Purple zone → force 'light' regardless of user setting
+- [x] Orange zone → cap at 'normal' regardless of user setting
+- [x] Yellow/Green zone → user setting applies (up to 'deep')
