@@ -304,6 +304,17 @@ export const chatInputSchema = z.object({
   startEmotion: z.string(),
   guidanceDepth: z.enum(['light', 'normal', 'deep']).optional(),
   bufferSnapshot: z.any().optional(),
+
+  // Regulation layer result (from client-side regulation engine)
+  regulationResult: z.object({
+    action: z.enum(['reflect', 'slow_down', 'regulate', 'stabilize', 'ground']),
+    intervention: z.string().nullable(),
+    gptInstruction: z.string().nullable(),
+    zone: z.enum(['GREEN', 'YELLOW', 'ORANGE', 'RED', 'PURPLE']),
+    effectiveDepth: z.enum(['light', 'normal', 'deep']),
+    wasSoftened: z.boolean(),
+    wasSkipped: z.boolean(),
+  }).nullable().optional(),
 });
 
 // ─── Relationship Map Extractor ──────────────────────────────────

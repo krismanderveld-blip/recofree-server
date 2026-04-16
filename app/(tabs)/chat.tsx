@@ -240,7 +240,7 @@ export default function ChatScreen() {
       const errorMsg: ChatMessage = {
         id: `msg_${Date.now() + 1}`,
         role: 'assistant',
-        content: "I'm still here with you. Something went wrong — please try again.",
+        content: "Ik ben er nog. Er ging iets mis met de verbinding — probeer het opnieuw.",
         timestamp: new Date().toISOString(),
       };
       setMessages((prev) => [...prev, errorMsg]);
@@ -272,7 +272,7 @@ export default function ChatScreen() {
       const confirmationMsg: ChatMessage = {
         id: `msg_confirm_${Date.now()}`,
         role: 'assistant',
-        content: result.farewell + '\n\nI\'ve saved everything. Your session is safely stored. You can close the app now, or go back to the home screen.',
+        content: result.farewell + '\n\nIk heb alles opgeslagen. Je sessie is veilig bewaard. Je kunt de app nu sluiten of teruggaan naar het startscherm.',
         timestamp: new Date().toISOString(),
       };
       setMessages((prev) => [...prev, confirmationMsg]);
@@ -282,7 +282,7 @@ export default function ChatScreen() {
       const fallbackMsg: ChatMessage = {
         id: `msg_fallback_${Date.now()}`,
         role: 'assistant',
-        content: `${userName}, I've saved your session. Something went wrong during analysis, but your conversation is safely stored. You can close the app now.`,
+        content: `${userName}, ik heb je sessie opgeslagen. Er ging iets mis tijdens de analyse, maar je gesprek is veilig bewaard. Je kunt de app nu sluiten.`,
         timestamp: new Date().toISOString(),
       };
       setMessages((prev) => [...prev, fallbackMsg]);

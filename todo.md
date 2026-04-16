@@ -251,3 +251,26 @@
 - [x] Verify 0 TypeScript errors
 - [x] Verify 31 regulation tests passing (124 total)
 - [x] Checkpoint
+
+## Bug Fixes (Post-Regulation Patch)
+- [x] BUG: "Something went wrong with the connection" on every chat message in deployed APK — investigate server-side error after regulation wiring
+- [x] FIX: Add regulationResult to server Zod schema (chatInputSchema) for correctness
+- [x] FIX: Native API URL fallback — added retry logic with exponential backoff (2s/4s/8s) + server health ping for cold starts
+- [x] BUG: "Something went wrong with the connection" after reopening app after 2h idle — fixed with retry logic + health ping
+- [x] FIX: Add retry logic with exponential backoff in openai-provider for transient server failures
+- [x] FIX: Add server health check / wake-up ping before first API call after app resume
+
+## KIM Patch: Eigen Regie Meter (replaces Stage of Change for KIM users)
+- [ ] Add kimRecoveryState { eigenRegie: number } to data model (types.ts, Backpack, UserDat)
+- [ ] Add legacyStageOfChange migration field for backward compatibility
+- [ ] Update pipeline: route eigenRegie for KIM, keep stageOfChange for Elias
+- [ ] Add Eigen Regie zone mapping (0-30=RED, 31-50=ORANGE, 51-70=YELLOW, 71-100=GREEN)
+- [ ] Add intervention mapping per zone (low/medium/high eigen regie)
+- [ ] Update GPT payload builder: include eigenRegie for KIM users instead of stageOfChange
+- [ ] Update server Zod schema: add eigenRegie field
+- [ ] Update server system prompt: inject Eigen Regie context + intervention guidance for KIM
+- [ ] Update UI: replace Stage of Change card with Eigen Regie Meter for KIM users
+- [ ] Add Eigen Regie slider/input in mood check or profile screen
+- [ ] Ensure stageOfChange still works for Elias users (no regression)
+- [ ] TypeScript check + tests
+- [ ] Checkpoint

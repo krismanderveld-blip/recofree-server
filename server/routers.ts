@@ -37,7 +37,7 @@ export const appRouter = router({
           return {
             success: false as const,
             response:
-              "Something went wrong with the connection. I'm still here — please try again.",
+              "Er ging iets mis met de verbinding. Ik ben er nog — probeer het opnieuw.",
             advisoryEmotion: undefined,
             advisoryConfidence: undefined,
             tokenUsage: undefined,

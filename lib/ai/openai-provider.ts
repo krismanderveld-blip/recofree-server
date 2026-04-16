@@ -21,6 +21,11 @@ import { analyzeRelationalPatterns } from '@/lib/rugzak/relational-pattern-analy
  *     dominantModule, stageOfChange, urgency, riskScore, crisisLevel
  *
  *   Static fields are NEVER resent per message.
+ *
+ * RETRY LOGIC:
+ *   After server hibernation (deployed server cold start), the first request
+ *   may fail with a network error or 502/503. The provider retries up to 3 times
+ *   with exponential backoff (2s, 4s, 8s) to allow the server to wake up.
  */
 
 // ── Session Init Cache (local, per session) ──
@@ -38,11 +43,87 @@ export function hasSessionInit(): boolean {
   return cachedSessionInit !== null;
 }
 
+// ── Retry Helper ──
+// Retries a fetch call with exponential backoff for transient failures
+// (network errors, 502, 503, 504 — typical of server cold starts).
+
+const MAX_RETRIES = 3;
+const BASE_DELAY_MS = 2000; // 2s, 4s, 8s
+
+async function fetchWithRetry(
+  url: string,
+  options: RequestInit,
+  retries = MAX_RETRIES,
+): Promise<Response> {
+  let lastError: Error | null = null;
+
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const response = await fetch(url, options);
+
+      // Retry on server-side transient errors (cold start / gateway timeout)
+      if (response.status === 502 || response.status === 503 || response.status === 504) {
+        if (attempt < retries) {
+          const delay = BASE_DELAY_MS * Math.pow(2, attempt);
+          console.warn(`[OpenAIProvider] Server returned ${response.status}, retrying in ${delay}ms (attempt ${attempt + 1}/${retries})`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+          continue;
+        }
+      }
+
+      return response;
+    } catch (error) {
+      lastError = error as Error;
+      if (attempt < retries) {
+        const delay = BASE_DELAY_MS * Math.pow(2, attempt);
+        console.warn(`[OpenAIProvider] Network error, retrying in ${delay}ms (attempt ${attempt + 1}/${retries}):`, (error as Error).message);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+  }
+
+  throw lastError ?? new Error('All retry attempts failed');
+}
+
+// ── Server Health Ping ──
+// Lightweight ping to wake up the server before the main API call.
+// Uses the tRPC health endpoint or a simple GET to trigger cold start.
+
+let lastHealthCheck = 0;
+const HEALTH_CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
+
+async function ensureServerAwake(apiBaseUrl: string): Promise<void> {
+  const now = Date.now();
+  if (now - lastHealthCheck < HEALTH_CHECK_INTERVAL_MS) {
+    return; // Recently checked, skip
+  }
+
+  try {
+    console.log('[OpenAIProvider] Pinging server to ensure it is awake...');
+    const response = await fetch(`${apiBaseUrl}/api/trpc/system.health`, {
+      method: 'GET',
+      signal: AbortSignal.timeout(10000), // 10s timeout for wake-up
+    });
+    lastHealthCheck = now;
+    console.log(`[OpenAIProvider] Server health: ${response.status}`);
+  } catch (error) {
+    // Server might be waking up — that's OK, the retry logic will handle it
+    console.warn('[OpenAIProvider] Server health ping failed (may be waking up):', (error as Error).message);
+    // Still update timestamp to avoid spamming pings
+    lastHealthCheck = now;
+  }
+}
+
 export class OpenAIProvider implements AIProvider {
   async generateResponse(context: ChatContext): Promise<AIResult> {
     try {
       const apiBaseUrl = getApiBaseUrl();
       const isSessionStart = context.isSessionStart;
+
+      // ── STEP 0: Ensure server is awake (lightweight ping) ──
+      if (apiBaseUrl) {
+        await ensureServerAwake(apiBaseUrl);
+      }
 
       // ── STEP 1: Local Analysis (runs EVERY call) ──
       const dominantModule = context.activeModules[0] || 'E02';
@@ -220,7 +301,7 @@ export class OpenAIProvider implements AIProvider {
         console.log('[OpenAIProvider] LIVE_MESSAGE: Dynamic payload only (no static fields)');
       }
 
-      // ── STEP 4: Send to server ──
+      // ── STEP 4: Send to server (with retry for cold starts) ──
       const serialized = superjson.serialize(inputPayload);
       const token = await Auth.getSessionToken();
       const headers: Record<string, string> = {
@@ -245,7 +326,8 @@ export class OpenAIProvider implements AIProvider {
         console.log('[OpenAIProvider] Full backpack included (SESSION_INIT)');
       }
 
-      const response = await fetch(url, {
+      // Use fetchWithRetry instead of plain fetch for resilience against cold starts
+      const response = await fetchWithRetry(url, {
         method: 'POST',
         headers,
         credentials: 'include',
@@ -283,15 +365,34 @@ export class OpenAIProvider implements AIProvider {
       }
 
       return {
-        response: result?.response ?? "Something went wrong. I'm still here \u2014 please try again.",
+        response: result?.response ?? "Er ging iets mis. Ik ben er nog \u2014 probeer het opnieuw.",
         advisoryEmotion: result?.advisoryEmotion,
         advisoryConfidence: result?.advisoryConfidence,
         tokenUsage: result?.tokenUsage,
       };
     } catch (error) {
-      console.error('[OpenAIProvider] Error:', error);
+      console.error('[OpenAIProvider] Error after retries:', error);
+
+      // Provide a more helpful error message in Dutch
+      const errorMessage = (error as Error)?.message ?? '';
+      const isNetworkError = errorMessage.includes('Network') ||
+        errorMessage.includes('fetch') ||
+        errorMessage.includes('timeout') ||
+        errorMessage.includes('Failed') ||
+        errorMessage.includes('502') ||
+        errorMessage.includes('503');
+
+      if (isNetworkError) {
+        return {
+          response: "De verbinding met de server is even onderbroken. Dit kan gebeuren als de app lang niet is gebruikt. Probeer het over een paar seconden opnieuw \u2014 ik ben er nog.",
+          advisoryEmotion: undefined,
+          advisoryConfidence: undefined,
+          tokenUsage: undefined,
+        };
+      }
+
       return {
-        response: "Something went wrong with the connection. I'm still here \u2014 please try again.",
+        response: "Er ging iets mis met de verbinding. Ik ben er nog \u2014 probeer het opnieuw.",
         advisoryEmotion: undefined,
         advisoryConfidence: undefined,
         tokenUsage: undefined,
