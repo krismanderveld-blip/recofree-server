@@ -2,7 +2,7 @@
  * Debug Layer: Engine Snapshot
  * Full transparent snapshot of engine state for debugging
  *
- * - Accepts UserDat, SessionImpact, FailsafeState
+ * - Accepts UserDat, SessionImpact, FailsafeState, and optionally EliasDecision
  * - Passes all by reference, no copying, no transformation
  * - Validates sessionId consistency across all inputs
  * - No logging, no formatting, no printing, no UI logic
@@ -13,6 +13,7 @@
 import { UserDat } from "../shared/userdat-filter";
 import { SessionImpact } from "../shared/session-impact";
 import { FailsafeState } from "../shared/failsafe";
+import type { EliasDecision } from "../elias/decision-layer";
 
 /** Debug snapshot metadata. */
 export interface DebugSnapshotMeta {
@@ -25,19 +26,22 @@ export interface DebugSnapshot {
   readonly userdat: UserDat;
   readonly impact: SessionImpact;
   readonly failsafe: FailsafeState;
+  readonly eliasDecision: EliasDecision | null;
   readonly meta: DebugSnapshotMeta;
 }
 
 /**
- * Creates a DebugSnapshot from UserDat, SessionImpact, and FailsafeState.
- * Throws if any input is missing.
+ * Creates a DebugSnapshot from UserDat, SessionImpact, FailsafeState,
+ * and optionally EliasDecision.
+ * Throws if any required input is missing.
  * Throws if sessionId is inconsistent across inputs.
  * Does not modify inputs.
  */
 export function createDebugSnapshot(
   userdat: UserDat,
   impact: SessionImpact,
-  failsafe: FailsafeState
+  failsafe: FailsafeState,
+  eliasDecision?: EliasDecision | null
 ): DebugSnapshot {
   if (!userdat) {
     throw new Error("UserDat is mandatory.");
@@ -65,6 +69,7 @@ export function createDebugSnapshot(
     userdat,
     impact,
     failsafe,
+    eliasDecision: eliasDecision ?? null,
     meta: Object.freeze({
       createdAt: Date.now(),
     }),
