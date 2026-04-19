@@ -278,3 +278,4 @@
 ## Shared Engine — Controlled Architecture
 - [x] Block 1: Zone Core — enum (1-5), session zone state, explicit init, read-only access (lib/engine/shared/zone-core.ts)
 - [x] Block 2: Session Shell — session structure, Zone Core reference, creation with zone, read-only access (lib/engine/shared/session-shell.ts)
+- [x] Block 3: Trigger Object — kinds (event/state), modes (binary/weighted), discriminated union, validation, creation (lib/engine/shared/trigger-object.ts)
