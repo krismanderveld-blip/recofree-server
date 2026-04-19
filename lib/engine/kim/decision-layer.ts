@@ -12,6 +12,7 @@
  * - CrisisAssessment (crisis/detector.ts)
  * - mood sliders (current)
  * - Eigen Regie (user input → engine score → zone → impact)
+ * - Kim Zone (from Eigen Regie → ZoneResult)
  *
  * Does NOT modify any input.
  * Does NOT create new behavior.
@@ -23,12 +24,14 @@ import type { DominantState } from '../../rugzak/dominant-state-selector';
 import type { CrisisAssessment } from '../../crisis/detector';
 import type { MoodSliders } from '../../ai/types';
 import type { ZoneColor } from '../../rugzak/short-term-memory-buffer';
+import type { ZoneResult } from '../zone-types';
 import {
   processEigenRegie,
   type EigenRegieResult,
   type EigenRegieZone,
   type EigenRegieImpact,
 } from './eigen-regie';
+import { computeKimZone } from './zone';
 
 // ─── Input ──────────────────────────────────────────────────
 
@@ -55,7 +58,10 @@ export interface KimDecision {
   readonly dominantModule: string;
   readonly crisisLevel: number;
   readonly zone: {
+    /** Legacy buffer zone color (passthrough from buffer). */
     readonly calculated: ZoneColor;
+    /** Engine-computed zone from Eigen Regie. Null if Eigen Regie not submitted. */
+    readonly engine: ZoneResult | null;
   };
   readonly tone: ToneDirective;
   readonly pacing: PacingDirective;
@@ -89,6 +95,9 @@ export function createKimDecision(input: KimDecisionInput): KimDecision {
     ? processEigenRegie(input.eigenRegieInput)
     : null;
 
+  // Compute Kim engine zone from Eigen Regie result
+  const engineZone = computeKimZone(eigenRegie);
+
   return Object.freeze({
     // From DominantState
     dominantModule: input.dominantState.dominantModule,
@@ -96,9 +105,10 @@ export function createKimDecision(input: KimDecisionInput): KimDecision {
     // From CrisisAssessment
     crisisLevel: input.crisis.level,
 
-    // From buffer zone (passed through input)
+    // Zone: legacy buffer passthrough + engine-computed zone
     zone: Object.freeze({
       calculated: input.currentZoneColor,
+      engine: engineZone,
     }),
 
     // From StateAnalysis

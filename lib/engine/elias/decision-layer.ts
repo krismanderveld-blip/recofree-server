@@ -10,6 +10,7 @@
  * - CrisisAssessment (crisis/detector.ts)
  * - stageOfChange (from intake)
  * - mood sliders (current)
+ * - Elias Zone (from crisis, distress, resilience, stageOfChange → ZoneResult)
  *
  * Does NOT modify any input.
  * Does NOT create new behavior.
@@ -20,6 +21,9 @@ import type { DominantState } from '../../rugzak/dominant-state-selector';
 import type { CrisisAssessment } from '../../crisis/detector';
 import type { MoodSliders, StageOfChange } from '../../ai/types';
 import type { ZoneColor } from '../../rugzak/short-term-memory-buffer';
+import type { ZoneResult } from '../zone-types';
+import { computeEliasZone } from './zone';
+import { eliasDistressScore, eliasResilienceScore } from './slider-interpretation';
 
 // ─── Input ──────────────────────────────────────────────────
 
@@ -39,7 +43,10 @@ export interface EliasDecision {
   readonly dominantModule: string;
   readonly crisisLevel: number;
   readonly zone: {
+    /** Legacy buffer zone color (passthrough from buffer). */
     readonly calculated: ZoneColor;
+    /** Engine-computed zone from Elias engine outputs. */
+    readonly engine: ZoneResult;
   };
   readonly tone: ToneDirective;
   readonly pacing: PacingDirective;
@@ -63,6 +70,14 @@ export function createEliasDecision(input: EliasDecisionInput): EliasDecision {
     throw new Error('EliasDecisionInput.crisis is required');
   }
 
+  // Compute Elias engine zone from existing outputs
+  const engineZone = computeEliasZone({
+    crisisLevel: input.crisis.level,
+    distressScore: eliasDistressScore(input.moodSliders),
+    resilienceScore: eliasResilienceScore(input.moodSliders),
+    stageOfChange: input.stageOfChange,
+  });
+
   return Object.freeze({
     // From DominantState
     dominantModule: input.dominantState.dominantModule,
@@ -70,9 +85,10 @@ export function createEliasDecision(input: EliasDecisionInput): EliasDecision {
     // From CrisisAssessment
     crisisLevel: input.crisis.level,
 
-    // From buffer zone (passed through input)
+    // Zone: legacy buffer passthrough + engine-computed zone
     zone: Object.freeze({
       calculated: input.currentZoneColor,
+      engine: engineZone,
     }),
 
     // From StateAnalysis

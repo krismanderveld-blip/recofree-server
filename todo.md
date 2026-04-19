@@ -349,3 +349,11 @@
 - [x] Create UI component for daily reflection input (percentage 0-100, Kim-only on mood screen)
 - [x] Store eigenRegie data in user state (EigenRegieEntry type, eigenRegieHistory in UserDat, updateEigenRegie + getEigenRegieHistory in context, migration)
 - [x] Verify: 0 TS errors, 124 tests passing, no Eigen Regie logic outside engine
+
+## Zone System — Engine Architecture Layer
+- [x] Define shared zone types (ZoneLevel, ZoneResult, ZoneImpact) — lib/engine/zone-types.ts
+- [x] Create lib/engine/kim/zone.ts (Kim zones based on Eigen Regie levels)
+- [x] Create lib/engine/elias/zone.ts (Elias zones based on existing engine outputs)
+- [x] Wire Kim zone into Kim decision-layer.ts output
+- [x] Wire Elias zone into Elias decision-layer.ts output
+- [x] Verify: 0 TS errors, 124 tests passing, no zone logic outside engines
