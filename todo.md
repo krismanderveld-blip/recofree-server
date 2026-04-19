@@ -284,3 +284,4 @@
 - [x] Block 6: User.dat Filter Layer — UserDat from SessionTriggerList + BackpackContainer, pure aggregation, read-only (lib/engine/shared/userdat-filter.ts)
 - [x] Block 7: Session Impact Skeleton — SessionImpact from UserDat, presence/count signals only, no calculations (lib/engine/shared/session-impact.ts)
 - [x] Block 8: Failsafe Skeleton — FailsafeState with limits (100/100), current counts, flags, from SessionImpact (lib/engine/shared/failsafe.ts)
+- [x] Debug Layer: Engine Snapshot — DebugSnapshot from UserDat + SessionImpact + FailsafeState, sessionId consistency check, pass-by-reference (lib/engine/debug/debug-snapshot.ts)
