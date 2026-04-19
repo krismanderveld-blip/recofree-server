@@ -357,3 +357,13 @@
 - [x] Wire Kim zone into Kim decision-layer.ts output
 - [x] Wire Elias zone into Elias decision-layer.ts output
 - [x] Verify: 0 TS errors, 124 tests passing, no zone logic outside engines
+
+## Zone System — Deterministic Impact Mappings
+- [x] Define EliasImpact type (interventionLevel, reflectionDepth, directiveStyle)
+- [x] Define eliasZoneImpactMap: Record<ZoneLevel, EliasImpact> with fixed values per zone
+- [x] Wire EliasImpact into Elias zone output (replace string-based impact)
+- [x] Define KimImpact type (stabilizationLevel, challengeLevel, autonomyLevel)
+- [x] Define kimZoneImpactMap: Record<ZoneLevel, KimImpact> with fixed values per zone
+- [x] Wire KimImpact into Kim zone output (replace string-based impact)
+- [x] Update zone-types.ts: remove ZoneImpact, make ZoneResult<T> generic over impact type
+- [x] Verify: 0 TS errors, 124 tests passing, no legacy string-based impact references remain

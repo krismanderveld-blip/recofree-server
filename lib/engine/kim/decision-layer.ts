@@ -25,6 +25,7 @@ import type { CrisisAssessment } from '../../crisis/detector';
 import type { MoodSliders } from '../../ai/types';
 import type { ZoneColor } from '../../rugzak/short-term-memory-buffer';
 import type { ZoneResult } from '../zone-types';
+import type { KimImpact } from './zone';
 import {
   processEigenRegie,
   type EigenRegieResult,
@@ -61,7 +62,7 @@ export interface KimDecision {
     /** Legacy buffer zone color (passthrough from buffer). */
     readonly calculated: ZoneColor;
     /** Engine-computed zone from Eigen Regie. Null if Eigen Regie not submitted. */
-    readonly engine: ZoneResult | null;
+    readonly engine: ZoneResult<KimImpact> | null;
   };
   readonly tone: ToneDirective;
   readonly pacing: PacingDirective;

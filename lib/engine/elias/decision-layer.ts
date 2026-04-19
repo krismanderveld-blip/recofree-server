@@ -22,6 +22,7 @@ import type { CrisisAssessment } from '../../crisis/detector';
 import type { MoodSliders, StageOfChange } from '../../ai/types';
 import type { ZoneColor } from '../../rugzak/short-term-memory-buffer';
 import type { ZoneResult } from '../zone-types';
+import type { EliasImpact } from './zone';
 import { computeEliasZone } from './zone';
 import { eliasDistressScore, eliasResilienceScore } from './slider-interpretation';
 
@@ -46,7 +47,7 @@ export interface EliasDecision {
     /** Legacy buffer zone color (passthrough from buffer). */
     readonly calculated: ZoneColor;
     /** Engine-computed zone from Elias engine outputs. */
-    readonly engine: ZoneResult;
+    readonly engine: ZoneResult<EliasImpact>;
   };
   readonly tone: ToneDirective;
   readonly pacing: PacingDirective;
