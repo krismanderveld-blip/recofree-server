@@ -65,6 +65,8 @@ import { recordCallCost, resetSessionCost, estimateTokens, type TokenUsage } fro
 import { applyRegulation, type RegulationResult, type ZoneColor } from './regulation-layer';
 import { createEliasDecision, type EliasDecision } from '../engine/elias/decision-layer';
 import type { CrisisAssessment } from '../crisis/detector';
+import { kimDistressScore, kimResilienceScore } from '../engine/kim/slider-interpretation';
+import { KIM_DEFAULT_MODULE } from '../engine/kim/module-catalog';
 
 // ─── Pattern Marking (post-GPT local state) ─────────────────
 
@@ -291,7 +293,7 @@ export async function processMessage(
       backpack,
       currentUserDat,
       currentUserDat.currentMood || { stemming: 5, craving: 0, overprikkeling: 0, sociaal: 5 },
-      sessionDominantState?.dominantModule || (backpack.userType === 'elias' ? 'E02' : 'K01'),
+      sessionDominantState?.dominantModule || (backpack.userType === 'elias' ? 'E02' : KIM_DEFAULT_MODULE),
     );
   }
 
@@ -327,7 +329,7 @@ export async function processMessage(
     backpack,
     currentUserDat,
     currentUserDat.currentMood || { stemming: 5, craving: 0, overprikkeling: 0, sociaal: 5 },
-    analysis.priorityModules[0] || (backpack.userType === 'elias' ? 'E02' : 'K01'),
+    analysis.priorityModules[0] || (backpack.userType === 'elias' ? 'E02' : KIM_DEFAULT_MODULE),
   );
 
   // Select dominant state (pre-GPT decision variable — NOT reselected after GPT)
@@ -782,7 +784,7 @@ export async function generateGreeting(
     userDat: currentUserDat,
     isSessionStart: true,
     diaryEntries: diaryEntries ?? [],
-    activeModules: [analysis.priorityModules[0] || (backpack.userType === 'elias' ? 'E02' : 'K01')],
+    activeModules: [analysis.priorityModules[0] || (backpack.userType === 'elias' ? 'E02' : KIM_DEFAULT_MODULE)],
     crisisLevel: 0,
     detectedEmotion: analysis.emotionalState,
     therapeuticStance: buildTherapeuticStance(analysis),
@@ -944,13 +946,13 @@ export async function endSession(
     const userType = backpack.userType;
     const firstDistress = userType === 'elias'
       ? (((firstSliders as any).craving ?? 0) + ((firstSliders as any).frustration ?? 0) + ((firstSliders as any).despondency ?? 0)) / 3
-      : (((firstSliders as any).stress ?? 0) + ((firstSliders as any).boundaryFatigue ?? 0) + ((firstSliders as any).emotionalBurden ?? 0)) / 3;
+      : kimDistressScore(firstSliders as any);
     const lastDistress = userType === 'elias'
       ? (((lastSliders as any).craving ?? 0) + ((lastSliders as any).frustration ?? 0) + ((lastSliders as any).despondency ?? 0)) / 3
-      : (((lastSliders as any).stress ?? 0) + ((lastSliders as any).boundaryFatigue ?? 0) + ((lastSliders as any).emotionalBurden ?? 0)) / 3;
+      : kimDistressScore(lastSliders as any);
     distressChange = lastDistress - firstDistress;
-    const firstResilience = userType === 'elias' ? ((firstSliders as any).focus ?? 5) : ((firstSliders as any).selfCare ?? 5);
-    const lastResilience = userType === 'elias' ? ((lastSliders as any).focus ?? 5) : ((lastSliders as any).selfCare ?? 5);
+    const firstResilience = userType === 'elias' ? ((firstSliders as any).focus ?? 5) : kimResilienceScore(firstSliders as any);
+    const lastResilience = userType === 'elias' ? ((lastSliders as any).focus ?? 5) : kimResilienceScore(lastSliders as any);
     resilienceChange = lastResilience - firstResilience;
   }
 

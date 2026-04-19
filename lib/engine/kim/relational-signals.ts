@@ -48,3 +48,25 @@ export const KIM_PRIORITY_TRIGGERS: readonly string[] = Object.freeze([
 export function isKimPriorityTrigger(trigger: string): boolean {
   return KIM_PRIORITY_TRIGGERS.includes(trigger);
 }
+
+// ─── Kim Mock Detection (from mock-provider.ts) ───────────────
+
+/**
+ * Detect Kim boundary topic from message.
+ * Extracted from MockAIProvider.detectBoundaryTopic (mock-provider.ts line 139-142).
+ * Exact same keywords, exact same logic.
+ */
+export function detectKimBoundaryTopic(message: string): boolean {
+  const keywords = ['boundary', 'boundaries', 'too much', 'can\'t anymore', 'stop', 'enough', 'my space', 'limit'];
+  return keywords.some((kw) => message.toLowerCase().includes(kw));
+}
+
+/**
+ * Detect Kim enabling pattern from message.
+ * Extracted from MockAIProvider.detectEnablingPattern (mock-provider.ts line 144-147).
+ * Exact same keywords, exact same logic.
+ */
+export function detectKimEnablingPattern(message: string): boolean {
+  const keywords = ['i do everything', 'i help', 'i save', 'i fix', 'for him', 'for her', 'take over', 'cover for'];
+  return keywords.some((kw) => message.toLowerCase().includes(kw));
+}

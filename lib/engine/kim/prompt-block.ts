@@ -54,3 +54,13 @@ GRENZEN:
 - Ik ben hier voor jou, niet voor hem.
 - Ik ga niet meehelpen zijn gedrag goed te praten.
 - Jouw veiligheid is belangrijker dan zijn gevoelens.`;
+
+/**
+ * Kim crisis instructions prompt block.
+ * Extracted from server/ai-chat.ts buildSystemPrompt (lines 785-788).
+ * Used when crisisLevel >= 2 for Kim users.
+ * Exact same text, no changes.
+ */
+export function kimCrisisInstructions(crisisLevel: number): string {
+  return `\n\u26A0\uFE0F CRISIS ACTIEF (niveau ${crisisLevel}). KRITIEKE INSTRUCTIES:\n- "Dit is te veel voor jou alleen. Zoek hulp."\n- Bij huiselijk geweld: "Bel 112 als je in gevaar bent. Nu."\n- Wees direct maar veilig.`;
+}

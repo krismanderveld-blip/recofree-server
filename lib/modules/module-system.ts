@@ -12,6 +12,7 @@
  */
 
 import type { MoodSliders, UserType } from '../ai/types';
+import { KIM_THERAPEUTIC_MODULES } from '../engine/kim/module-catalog';
 
 export interface TherapeuticModule {
   id: string;
@@ -114,57 +115,9 @@ const ELIAS_MODULES: TherapeuticModule[] = [
 ];
 
 // ─── Kim Modules (Loved-one focused) ────────────────────────────
-
-const KIM_MODULES: TherapeuticModule[] = [
-  {
-    id: 'K01', name: 'Boundary Setting', category: 'Core',
-    description: 'Learning to set and maintain healthy boundaries',
-    triggers: [
-      { type: 'keyword', condition: 'boundary|boundaries|too much|can\'t anymore|limit' },
-      { type: 'slider', condition: 'boundaryFatigue', direction: 'above', threshold: 4 },
-    ],
-    userType: 'kim',
-  },
-  {
-    id: 'K02', name: 'Enabling Awareness', category: 'Core',
-    description: 'Recognizing and stopping enabling behaviors',
-    triggers: [{ type: 'keyword', condition: 'help|save|fix|cover|enable|protect|rescue' }],
-    userType: 'kim',
-  },
-  {
-    id: 'K03', name: 'Self-Care', category: 'Core',
-    description: 'Prioritizing your own well-being',
-    triggers: [
-      { type: 'slider', condition: 'selfCare', direction: 'below', threshold: 2 },
-      { type: 'keyword', condition: 'exhausted|tired|burned out|can\'t cope|drained' },
-    ],
-    userType: 'kim',
-  },
-  {
-    id: 'K04', name: 'Stress Management', category: 'Core',
-    description: 'Managing stress and emotional overload',
-    triggers: [
-      { type: 'slider', condition: 'stress', direction: 'above', threshold: 4 },
-      { type: 'keyword', condition: 'stressed|overwhelmed|too much|breaking down' },
-    ],
-    userType: 'kim',
-  },
-  {
-    id: 'K05', name: 'Communication Skills', category: 'Practical',
-    description: 'Effective communication with someone in addiction',
-    triggers: [{ type: 'keyword', condition: 'talk to|say to|communicate|conversation|argue|fight' }],
-    userType: 'kim',
-  },
-  {
-    id: 'K06', name: 'Detachment with Love', category: 'Growth',
-    description: 'Learning to love without losing yourself',
-    triggers: [
-      { type: 'keyword', condition: 'let go|detach|step back|distance|space' },
-      { type: 'slider', condition: 'emotionalBurden', direction: 'above', threshold: 5 },
-    ],
-    userType: 'kim',
-  },
-];
+// Kim module definitions are now imported from lib/engine/kim/module-catalog.ts
+// Cast to mutable TherapeuticModule[] for compatibility with existing code.
+const KIM_MODULES: TherapeuticModule[] = KIM_THERAPEUTIC_MODULES as unknown as TherapeuticModule[];
 
 // ─── Module Recommendation Engine ───────────────────────────────
 

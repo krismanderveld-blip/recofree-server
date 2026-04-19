@@ -1,4 +1,7 @@
 import type { AIProvider, AIResult, ChatContext } from './types';
+import { detectKimBoundaryTopic, detectKimEnablingPattern } from '../engine/kim/relational-signals';
+import { KIM_MOCK_RESPONSES } from '../engine/kim/mock-responses';
+import { isKimLowMood } from '../engine/kim/slider-interpretation';
 
 /**
  * MockAIProvider - Hardcoded realistic responses for UI/flow testing.
@@ -24,7 +27,7 @@ export class MockAIProvider implements AIProvider {
       "I hear you. It doesn't have to get better right away. Let's look at what's here right now.",
     ],
     highCraving: [
-      "I see the craving is strong. That's not failure — it's a signal. Can you name where it's coming from?",
+      "I see the craving is strong. That's not failure \u2014 it's a signal. Can you name where it's coming from?",
       "The urge is there. That's okay to feel. Let's look at what's underneath it.",
       "Craving feels like a wave. It rises, it peaks, but it also passes. What do you need right now?",
     ],
@@ -45,37 +48,7 @@ export class MockAIProvider implements AIProvider {
     ],
   };
 
-  private kimResponses: Record<string, string[]> = {
-    greeting: [
-      "Hello, glad you're here. How are you doing — not the other person, but you?",
-      "Welcome. I'd like to know how you're really doing.",
-      "Good that you're taking some time for yourself. What's on your mind?",
-    ],
-    lowMood: [
-      "It sounds like you're carrying a lot. That's understandable, but it's important to look after yourself too.",
-      "I notice it's heavy. As someone close to the situation, you sometimes forget that you matter too. How are you taking care of yourself?",
-      "You don't have to be strong for everyone. What do you need right now?",
-    ],
-    boundary: [
-      "Setting boundaries might feel like rejection, but it's actually self-protection. What could be a first step?",
-      "You can't save someone who doesn't want to save themselves. That's not giving up — it's accepting reality.",
-      "It's okay to say: 'I can't carry this anymore.' That's not weakness, that's honesty.",
-    ],
-    enabling: [
-      "I notice you're taking over a lot. Do you know the difference between helping and enabling?",
-      "Sometimes the best help you can give is to step back. How does that idea feel to you?",
-    ],
-    crisis: [
-      "I hear that things are really difficult. You matter in this story too. Let's look at what you need right now.",
-      "It's okay to ask for help for yourself. You don't have to do this alone.",
-    ],
-    general: [
-      "Thank you for sharing that. How does this affect your daily life?",
-      "That sounds challenging. What are you doing right now to take care of yourself?",
-      "I hear you. Let's look at what you can influence in this situation.",
-      "That's an honest answer. Would you like to talk more about it?",
-    ],
-  };
+  private kimResponses: Record<string, string[]> = { ...KIM_MOCK_RESPONSES } as Record<string, string[]>;
 
   async generateResponse(context: ChatContext): Promise<AIResult> {
     // Simulate network delay (200-600ms)
@@ -95,8 +68,8 @@ export class MockAIProvider implements AIProvider {
       category = 'greeting';
       advisoryEmotion = 'neutral';
     }
-    // Low mood slider
-    else if ((context.moodSliders as any).despondency >= 4 || (context.moodSliders as any).emotionalBurden >= 4) {
+    // Low mood slider — Elias: despondency >= 4, Kim: delegated to isKimLowMood (emotionalBurden >= 4)
+    else if ((context.moodSliders as any).despondency >= 4 || (context.userType === 'kim' && isKimLowMood(context.moodSliders))) {
       category = 'lowMood';
       advisoryEmotion = 'sadness';
     }
@@ -105,13 +78,13 @@ export class MockAIProvider implements AIProvider {
       category = 'highCraving';
       advisoryEmotion = 'craving';
     }
-    // Boundary topics (Kim only)
-    else if (context.userType === 'kim' && this.detectBoundaryTopic(context.currentMessage)) {
+    // Boundary topics (Kim only) — delegated to Kim engine
+    else if (context.userType === 'kim' && detectKimBoundaryTopic(context.currentMessage)) {
       category = 'boundary';
       advisoryEmotion = 'frustration';
     }
-    // Enabling patterns (Kim only)
-    else if (context.userType === 'kim' && this.detectEnablingPattern(context.currentMessage)) {
+    // Enabling patterns (Kim only) — delegated to Kim engine
+    else if (context.userType === 'kim' && detectKimEnablingPattern(context.currentMessage)) {
       category = 'enabling';
       advisoryEmotion = 'concern';
     }
@@ -134,16 +107,6 @@ export class MockAIProvider implements AIProvider {
       advisoryEmotion,
       advisoryConfidence: 0.6 + Math.random() * 0.3,
     };
-  }
-
-  private detectBoundaryTopic(message: string): boolean {
-    const keywords = ['boundary', 'boundaries', 'too much', 'can\'t anymore', 'stop', 'enough', 'my space', 'limit'];
-    return keywords.some((kw) => message.toLowerCase().includes(kw));
-  }
-
-  private detectEnablingPattern(message: string): boolean {
-    const keywords = ['i do everything', 'i help', 'i save', 'i fix', 'for him', 'for her', 'take over', 'cover for'];
-    return keywords.some((kw) => message.toLowerCase().includes(kw));
   }
 
   private detectReflectionTrigger(message: string): boolean {

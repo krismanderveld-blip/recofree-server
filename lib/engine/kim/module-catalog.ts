@@ -35,6 +35,82 @@ export const KIM_MODULE_CATALOG: readonly KimModuleDefinition[] = Object.freeze(
   { id: 'K06', name: 'Detachment with Love', category: 'Growth', description: 'Learning to love without losing yourself' },
 ]);
 
+// ─── Kim TherapeuticModule definitions (from module-system.ts KIM_MODULES) ───
+
+/**
+ * Full Kim module definitions with triggers.
+ * Extracted from module-system.ts KIM_MODULES (lines 118-167).
+ * Exact same ids, names, categories, descriptions, triggers, thresholds.
+ *
+ * Uses the same TherapeuticModule and ModuleTrigger types from module-system.ts.
+ */
+export interface KimModuleTrigger {
+  readonly type: 'slider' | 'keyword' | 'behavioral' | 'crisis';
+  readonly condition: string;
+  readonly direction?: 'above' | 'below';
+  readonly threshold?: number;
+}
+
+export interface KimTherapeuticModule {
+  readonly id: string;
+  readonly name: string;
+  readonly category: string;
+  readonly description: string;
+  readonly triggers: readonly KimModuleTrigger[];
+  readonly userType: 'kim';
+}
+
+export const KIM_THERAPEUTIC_MODULES: readonly KimTherapeuticModule[] = Object.freeze([
+  {
+    id: 'K01', name: 'Boundary Setting', category: 'Core',
+    description: 'Learning to set and maintain healthy boundaries',
+    triggers: [
+      { type: 'keyword', condition: 'boundary|boundaries|too much|can\'t anymore|limit' },
+      { type: 'slider', condition: 'boundaryFatigue', direction: 'above', threshold: 4 },
+    ],
+    userType: 'kim',
+  },
+  {
+    id: 'K02', name: 'Enabling Awareness', category: 'Core',
+    description: 'Recognizing and stopping enabling behaviors',
+    triggers: [{ type: 'keyword', condition: 'help|save|fix|cover|enable|protect|rescue' }],
+    userType: 'kim',
+  },
+  {
+    id: 'K03', name: 'Self-Care', category: 'Core',
+    description: 'Prioritizing your own well-being',
+    triggers: [
+      { type: 'slider', condition: 'selfCare', direction: 'below', threshold: 2 },
+      { type: 'keyword', condition: 'exhausted|tired|burned out|can\'t cope|drained' },
+    ],
+    userType: 'kim',
+  },
+  {
+    id: 'K04', name: 'Stress Management', category: 'Core',
+    description: 'Managing stress and emotional overload',
+    triggers: [
+      { type: 'slider', condition: 'stress', direction: 'above', threshold: 4 },
+      { type: 'keyword', condition: 'stressed|overwhelmed|too much|breaking down' },
+    ],
+    userType: 'kim',
+  },
+  {
+    id: 'K05', name: 'Communication Skills', category: 'Practical',
+    description: 'Effective communication with someone in addiction',
+    triggers: [{ type: 'keyword', condition: 'talk to|say to|communicate|conversation|argue|fight' }],
+    userType: 'kim',
+  },
+  {
+    id: 'K06', name: 'Detachment with Love', category: 'Growth',
+    description: 'Learning to love without losing yourself',
+    triggers: [
+      { type: 'keyword', condition: 'let go|detach|step back|distance|space' },
+      { type: 'slider', condition: 'emotionalBurden', direction: 'above', threshold: 5 },
+    ],
+    userType: 'kim',
+  },
+]);
+
 // ─── Kim Module Selection (from state-analyzer.ts) ──────────────
 
 /**
@@ -95,3 +171,99 @@ export function computeKimEngineModules(
 
   return [...new Set(priorities)];
 }
+
+// ─── Kim Trigger→Module Mapping (from dominant-state-selector.ts) ───
+
+/**
+ * Map a Kim trigger to its corresponding module.
+ * Extracted from dominant-state-selector.ts getTriggerModule (else branch, lines 87-96).
+ * Exact same switch, exact same defaults.
+ */
+export function kimTriggerToModule(trigger: string): string {
+  switch (trigger) {
+    case 'boundary_violation': return 'K01';
+    case 'repeated_pattern': return 'K02';
+    case 'guilt': return 'K03';
+    case 'caregiver_fatigue': return 'K03';
+    case 'isolation': return 'K05';
+    case 'loved_one_relapse': return 'K04';
+    case 'anger_at_situation': return 'K04';
+    default: return 'K01';
+  }
+}
+
+// ─── Kim Slider→Module Mapping (from dominant-state-selector.ts) ───
+
+/**
+ * Map Kim slider values to the dominant module.
+ * Extracted from dominant-state-selector.ts getSliderModule (else branch, lines 108-115).
+ * Uses 0–100 internal scale (slider * 10).
+ * Exact same comparisons, exact same returns.
+ */
+export function kimSliderToModule(mood: MoodSliders): string {
+  const stress = getSlider(mood, 'stress') * 10;
+  const boundary = getSlider(mood, 'boundaryFatigue') * 10;
+  const burden = getSlider(mood, 'emotionalBurden') * 10;
+  if (boundary >= stress && boundary >= burden) return 'K01';
+  if (stress >= burden) return 'K04';
+  return 'K03';
+}
+
+/**
+ * Kim default module.
+ * Extracted from dominant-state-selector.ts getDefaultModule (Kim branch).
+ */
+export const KIM_DEFAULT_MODULE = 'K01';
+
+/**
+ * Kim crisis module.
+ * Extracted from dominant-state-selector.ts getCrisisModule (Kim branch).
+ */
+export const KIM_CRISIS_MODULE = 'K_CRISIS';
+
+// ─── Kim Distress/Resilience/Concern (0–100 scale, from dominant-state-selector.ts) ───
+
+/**
+ * Kim distress on 0–100 scale.
+ * Extracted from dominant-state-selector.ts getDistress100 (Kim branch).
+ * (stress + boundaryFatigue + emotionalBurden) / 3, each * 10.
+ */
+export function kimDistress100(mood: MoodSliders): number {
+  return (getSlider(mood, 'stress') * 10 + getSlider(mood, 'boundaryFatigue') * 10 + getSlider(mood, 'emotionalBurden') * 10) / 3;
+}
+
+/**
+ * Kim resilience on 0–100 scale.
+ * Extracted from dominant-state-selector.ts getResilience100 (Kim branch).
+ * selfCare * 10.
+ */
+export function kimResilience100(mood: MoodSliders): number {
+  return getSlider(mood, 'selfCare') * 10;
+}
+
+/**
+ * Kim primary concern on 0–100 scale.
+ * Extracted from dominant-state-selector.ts getPrimaryConcern100 (Kim branch).
+ * stress * 10.
+ */
+export function kimPrimaryConcern100(mood: MoodSliders): number {
+  return getSlider(mood, 'stress') * 10;
+}
+
+// ─── Kim Module Alignment Mapping (from backpack-relevance-analyzer.ts) ───
+
+/**
+ * Maps Kim module IDs (and named aliases) to their aligned trigger IDs.
+ * Extracted from backpack-relevance-analyzer.ts moduleAlignments (lines 217-222).
+ * Exact same keys, exact same trigger arrays.
+ *
+ * Used by backpack relevance scoring to boost triggers that align with the active module.
+ */
+export const KIM_MODULE_ALIGNMENTS: Readonly<Record<string, readonly string[]>> = Object.freeze({
+  K_BOUNDARY_PRESSURE: ['boundary_violation', 'control', 'overgiving'],
+  K01: ['boundary_violation', 'control', 'overgiving'],
+  K_CAREGIVER_DEPLETION: ['overgiving', 'depletion', 'hopelessness'],
+  K03: ['overgiving', 'depletion', 'hopelessness'],
+  K_RELATIONAL_REFLECTION: ['guilt', 'disappointment', 'abandonment'],
+  K02: ['guilt', 'disappointment', 'abandonment'],
+});

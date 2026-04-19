@@ -22,7 +22,8 @@
  */
 
 import { z } from "zod";
-import { KIM_IDENTITY_PROMPT } from "../lib/engine/kim/prompt-block";
+import { KIM_IDENTITY_PROMPT, kimCrisisInstructions } from "../lib/engine/kim/prompt-block";
+import { KIM_POSITIVE_SLIDERS } from "../lib/engine/kim/slider-interpretation";
 
 // ─── Types ────────────────────────────────────────────────────────
 
@@ -778,14 +779,11 @@ SCHENDING VAN DIT PROTOCOL IS ONACCEPTABEL.`;
   let crisisInstructions = "";
   if (input.crisisLevel >= 2) {
     crisisInstructions = isElias
-      ? `\n⚠️ CRISIS ACTIEF (niveau ${input.crisisLevel}). KRITIEKE INSTRUCTIES:
+      ? `\n\u26A0\uFE0F CRISIS ACTIEF (niveau ${input.crisisLevel}). KRITIEKE INSTRUCTIES:
 - Erken de pijn onmiddellijk. Minimaliseer NIET.
 - Verwijs naar professionele hulp: 113 Zelfmoordpreventie (0800-0113) of 112 bij direct gevaar.
 - Blijf aanwezig en kalm. Los NIETS op — wees er gewoon.`
-      : `\n⚠️ CRISIS ACTIEF (niveau ${input.crisisLevel}). KRITIEKE INSTRUCTIES:
-- "Dit is te veel voor jou alleen. Zoek hulp."
-- Bij huiselijk geweld: "Bel 112 als je in gevaar bent. Nu."
-- Wees direct maar veilig.`;
+      : kimCrisisInstructions(input.crisisLevel);
   } else if (input.crisisLevel === 1) {
     crisisInstructions = `\nVERHOOGDE WAAKZAAMHEID. Wees extra attent op signalen van distress.`;
   }
@@ -811,8 +809,9 @@ SCHENDING VAN DIT PROTOCOL IS ONACCEPTABEL.`;
   const sliderValues = Object.values(input.moodSliders);
   const maxDistress = Math.max(...sliderValues.filter((_, i) => {
     const keys = Object.keys(input.moodSliders);
-    // Distress sliders: craving, frustration, despondency, stress, boundaryFatigue, emotionalBurden
-    return !['focus', 'selfCare'].includes(keys[i]);
+    // Distress sliders: exclude positive sliders (Elias: focus, Kim: selfCare)
+    const POSITIVE_SLIDERS = ['focus', ...KIM_POSITIVE_SLIDERS];
+    return !POSITIVE_SLIDERS.includes(keys[i]);
   }), 0);
 
   if (input.crisisLevel >= 2 || riskScore >= 8 || maxDistress >= 9) {
@@ -1303,7 +1302,7 @@ export async function generateAIResponse(
   const data = await openaiResponse.json();
   const responseText =
     data.choices?.[0]?.message?.content?.trim() ??
-    "Ik ben er voor je. Er ging iets mis \u2014 probeer het opnieuw.";
+    "Ik ben er voor je. Er ging iets mis — probeer het opnieuw.";
 
   const usage = data.usage;
   const tokenUsage = usage ? {

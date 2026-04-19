@@ -22,6 +22,15 @@
 import type { MoodSliders, UserType, TriggerPattern } from '../ai/types';
 import type { BufferState, ZoneColor, LiveIntent, ResponseDirection } from './short-term-memory-buffer';
 import type { StateAnalysis } from './state-analyzer';
+import {
+  kimTriggerToModule,
+  kimSliderToModule,
+  KIM_DEFAULT_MODULE,
+  KIM_CRISIS_MODULE,
+  kimDistress100,
+  kimResilience100,
+  kimPrimaryConcern100,
+} from '../engine/kim/module-catalog';
 
 // ─── Output Types ────────────────────────────────────────────
 
@@ -52,23 +61,23 @@ function getDistress100(mood: MoodSliders, userType: UserType): number {
   if (userType === 'elias') {
     return (getInternal(mood, 'craving') + getInternal(mood, 'frustration') + getInternal(mood, 'despondency')) / 3;
   }
-  return (getInternal(mood, 'stress') + getInternal(mood, 'boundaryFatigue') + getInternal(mood, 'emotionalBurden')) / 3;
+  return kimDistress100(mood);
 }
 
 function getResilience100(mood: MoodSliders, userType: UserType): number {
   if (userType === 'elias') return getInternal(mood, 'focus');
-  return getInternal(mood, 'selfCare');
+  return kimResilience100(mood);
 }
 
 function getPrimaryConcern100(mood: MoodSliders, userType: UserType): number {
   if (userType === 'elias') return getInternal(mood, 'craving');
-  return getInternal(mood, 'stress');
+  return kimPrimaryConcern100(mood);
 }
 
 // ─── Module Mapping ──────────────────────────────────────────
 
 function getCrisisModule(userType: UserType): string {
-  return userType === 'elias' ? 'E_CRISIS' : 'K_CRISIS';
+  return userType === 'elias' ? 'E_CRISIS' : KIM_CRISIS_MODULE;
 }
 
 function getTriggerModule(trigger: string, userType: UserType): string {
@@ -84,16 +93,7 @@ function getTriggerModule(trigger: string, userType: UserType): string {
       default: return 'E02';
     }
   } else {
-    switch (trigger) {
-      case 'boundary_violation': return 'K01';
-      case 'repeated_pattern': return 'K02';
-      case 'guilt': return 'K03';
-      case 'caregiver_fatigue': return 'K03';
-      case 'isolation': return 'K05';
-      case 'loved_one_relapse': return 'K04';
-      case 'anger_at_situation': return 'K04';
-      default: return 'K01';
-    }
+    return kimTriggerToModule(trigger);
   }
 }
 
@@ -106,17 +106,12 @@ function getSliderModule(mood: MoodSliders, userType: UserType): string {
     if (despondency >= frustration) return 'E02';
     return 'E04';
   } else {
-    const stress = getInternal(mood, 'stress');
-    const boundary = getInternal(mood, 'boundaryFatigue');
-    const burden = getInternal(mood, 'emotionalBurden');
-    if (boundary >= stress && boundary >= burden) return 'K01';
-    if (stress >= burden) return 'K04';
-    return 'K03';
+    return kimSliderToModule(mood);
   }
 }
 
 function getDefaultModule(userType: UserType): string {
-  return userType === 'elias' ? 'E02' : 'K01';
+  return userType === 'elias' ? 'E02' : KIM_DEFAULT_MODULE;
 }
 
 // ─── Tone from Zone + Intent ─────────────────────────────────

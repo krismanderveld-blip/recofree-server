@@ -114,20 +114,17 @@ export function assessCrisis(
     maxLevel = Math.max(maxLevel, 1);
   }
 
-  // Elias-specific: extreme craving
-  if (userType === 'elias' && getSlider(moodSliders, 'craving') >= 6) {
-    triggers.push('extreme_craving');
-    maxLevel = Math.max(maxLevel, 1);
-  }
-
-  // Elias-specific: high despondency
-  if (userType === 'elias' && getSlider(moodSliders, 'despondency') >= 6) {
-    triggers.push('extreme_despondency');
-    maxLevel = Math.max(maxLevel, 1);
-  }
-
-  // Kim-specific: extreme emotional burden
-  if (userType === 'kim') {
+  // User-type-specific slider crisis checks
+  if (userType === 'elias') {
+    if (getSlider(moodSliders, 'craving') >= 6) {
+      triggers.push('extreme_craving');
+      maxLevel = Math.max(maxLevel, 1);
+    }
+    if (getSlider(moodSliders, 'despondency') >= 6) {
+      triggers.push('extreme_despondency');
+      maxLevel = Math.max(maxLevel, 1);
+    }
+  } else {
     const kimCrisis = checkKimCrisisTrigger(moodSliders);
     if (kimCrisis.fired) {
       triggers.push(kimCrisis.triggerName);

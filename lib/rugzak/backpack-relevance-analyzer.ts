@@ -18,6 +18,8 @@
 
 import type { Backpack, UserDat, MoodSliders, TriggerPattern, LifePhaseSection } from '../ai/types';
 import type { StateAnalysis } from './state-analyzer';
+import { kimBackpackSliderScore } from '../engine/kim/slider-interpretation';
+import { KIM_MODULE_ALIGNMENTS } from '../engine/kim/module-catalog';
 
 // ─── Output Types ──────────────────────────────────────────────
 
@@ -191,10 +193,7 @@ function scoreTrigger(
     if ((triggerId === 'shame' || triggerId === 'self_worth' || triggerId === 'hopelessness') && s.despondency >= 6) score += 2;
     if ((triggerId === 'anger' || triggerId === 'control') && s.frustration >= 6) score += 2;
   } else {
-    const s = sliders as any;
-    if ((triggerId === 'boundary_violation' || triggerId === 'control') && s.boundaryFatigue >= 6) score += 2;
-    if ((triggerId === 'overgiving' || triggerId === 'depletion') && s.emotionalBurden >= 6) score += 2;
-    if (triggerId === 'isolation' && s.selfCare <= 3) score += 2;
+    score += kimBackpackSliderScore(triggerId, sliders);
   }
 
   // user.dat weight: check if this trigger has been seen before
@@ -216,12 +215,7 @@ function scoreTrigger(
     E04_CONNECTION_RISK: ['isolation', 'rejection', 'abandonment', 'fear_of_loss'],
     E04: ['isolation', 'rejection', 'abandonment', 'fear_of_loss'],
     E05: ['isolation'],
-    K_BOUNDARY_PRESSURE: ['boundary_violation', 'control', 'overgiving'],
-    K01: ['boundary_violation', 'control', 'overgiving'],
-    K_CAREGIVER_DEPLETION: ['overgiving', 'depletion', 'hopelessness'],
-    K03: ['overgiving', 'depletion', 'hopelessness'],
-    K_RELATIONAL_REFLECTION: ['guilt', 'disappointment', 'abandonment'],
-    K02: ['guilt', 'disappointment', 'abandonment'],
+    ...KIM_MODULE_ALIGNMENTS,
   };
 
   const aligned = moduleAlignments[dominantModule] || [];

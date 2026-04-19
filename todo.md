@@ -306,3 +306,19 @@
 - [x] Micro-patch 3: engine.ts — replace Kim branches with kimEngine calls
 - [x] Micro-patch 4: buffer.ts — replace Kim branches with kimEngine calls (detectKimTrigger + kimDistressScore×10)
 - [x] Micro-patch 5: ai-chat.ts — replace Kim prompt block with KIM_IDENTITY_PROMPT import
+
+## Kim Engine — Wiring Round 2 (micro-patches 6-11)
+- [x] Micro-patch 6: mock-provider.ts — extract Kim boundary/enabling detection to Kim engine (detectKimBoundaryTopic + detectKimEnablingPattern)
+- [x] Micro-patch 7: dominant-state-selector.ts — extract Kim trigger/slider/distress/resilience/concern + module mapping to Kim engine
+- [x] Micro-patch 8: backpack-relevance-analyzer.ts — extract Kim slider scoring to Kim engine (kimBackpackSliderScore)
+- [x] Micro-patch 9: server/ai-chat.ts — extract Kim crisis prompt text to Kim engine (kimCrisisInstructions)
+- [x] Micro-patch 10: module-system.ts — replace duplicate Kim module definitions with Kim engine import (KIM_THERAPEUTIC_MODULES)
+- [x] Micro-patch 11: detector.ts — refactored Kim routing into symmetric else branch, all Kim logic via checkKimCrisisTrigger
+- [x] Final audit: confirmed — all Kim computation extracted, only neutral routing remains
+
+## Kim Engine — Wiring Round 3 (MP12–15): Single Source of Truth
+- [x] Micro-patch 12: pipeline.ts — replaced 4 inline Kim formulas with kimDistressScore/kimResilienceScore + 3 'K01' literals with KIM_DEFAULT_MODULE
+- [x] Micro-patch 13: backpack-relevance-analyzer.ts — moved Kim module alignment mapping to KIM_MODULE_ALIGNMENTS in engine
+- [x] Micro-patch 14: mock-provider.ts — extracted Kim response pool (KIM_MOCK_RESPONSES) + threshold (isKimLowMood) to engine
+- [x] Micro-patch 15: ai-chat.ts — extracted selfCare to KIM_POSITIVE_SLIDERS constant in engine
+- [x] Final verification: isKimLowMood moved from mock-responses.ts to slider-interpretation.ts (logic/data separation confirmed)
