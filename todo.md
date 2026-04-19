@@ -382,3 +382,8 @@
 - [x] Verify provider passthrough reads only from context.engineDirective unchanged
 - [x] Add routing tests: elias→EliasDirective, kim→KimDirective, no cross-routing (19 tests)
 - [x] Verify: 0 TS errors, 143 tests passing, Kim path active
+
+## Zone System — Wire Kim Eigen Regie Input
+- [x] Trace where Eigen Regie input is stored (UserDat.eigenRegieHistory)
+- [x] Pass existing Eigen Regie value into createKimDecision in pipeline.ts (getLatestEigenRegieInput helper)
+- [x] Verify: 0 TS errors, 143 tests passing

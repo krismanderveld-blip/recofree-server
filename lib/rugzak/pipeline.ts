@@ -451,7 +451,7 @@ export async function processMessage(
       moodSliders: currentUserDat.currentMood || (ELIAS_DEFAULT_MOOD as any),
       currentZoneColor: sessionBuffer.currentZoneColor as ZoneColor,
       currentZoneScore: sessionBuffer.currentZoneScore,
-      eigenRegieInput: null, // Eigen Regie input wired separately when available
+      eigenRegieInput: getLatestEigenRegieInput(currentUserDat),
     });
   }
 
@@ -684,6 +684,21 @@ export async function processMessage(
     bufferSnapshot,
     messageLog,
   };
+}
+
+// ─── Eigen Regie Input Helper ────────────────────────────────
+
+/**
+ * Get the latest Eigen Regie input from userDat.eigenRegieHistory.
+ * Returns the most recent userInput value, or null if no history exists.
+ * No fallback, no inference, no calculation — reads stored value only.
+ */
+function getLatestEigenRegieInput(userDat: UserDat): number | null {
+  const history = userDat.eigenRegieHistory;
+  if (!history || history.length === 0) {
+    return null;
+  }
+  return history[history.length - 1].userInput;
 }
 
 // ─── Pattern Marking Helpers ─────────────────────────────────
