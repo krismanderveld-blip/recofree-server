@@ -280,3 +280,4 @@
 - [x] Block 2: Session Shell — session structure, Zone Core reference, creation with zone, read-only access (lib/engine/shared/session-shell.ts)
 - [x] Block 3: Trigger Object — kinds (event/state), modes (binary/weighted), discriminated union, validation, creation (lib/engine/shared/trigger-object.ts)
 - [x] Block 4: Session Trigger List — structured storage, append-only, immutable updates, read access (lib/engine/shared/session-trigger-list.ts)
+- [x] Block 5: Backpack Container — BackpackFixed + BackpackEntry + BackpackContainer, immutable creation, append-only, read access (lib/engine/shared/backpack-container.ts)
