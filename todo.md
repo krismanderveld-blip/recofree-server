@@ -281,3 +281,4 @@
 - [x] Block 3: Trigger Object — kinds (event/state), modes (binary/weighted), discriminated union, validation, creation (lib/engine/shared/trigger-object.ts)
 - [x] Block 4: Session Trigger List — structured storage, append-only, immutable updates, read access (lib/engine/shared/session-trigger-list.ts)
 - [x] Block 5: Backpack Container — BackpackFixed + BackpackEntry + BackpackContainer, immutable creation, append-only, read access (lib/engine/shared/backpack-container.ts)
+- [x] Block 6: User.dat Filter Layer — UserDat from SessionTriggerList + BackpackContainer, pure aggregation, read-only (lib/engine/shared/userdat-filter.ts)
