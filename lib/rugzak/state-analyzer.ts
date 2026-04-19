@@ -10,6 +10,8 @@
 
 import type { Rugzak, MoodSliders, MoodSnapshot, TriggerPattern, UserType } from '../ai/types';
 import { createDefaultSliders, getSliderConfig } from '../ai/types';
+import { kimDistressScore, kimResilienceScore, kimPrimaryConcern } from '../engine/kim/slider-interpretation';
+import { selectKimPriorityModules } from '../engine/kim/module-catalog';
 
 // ─── Output Types ───────────────────────────────────────────────
 
@@ -51,7 +53,7 @@ function getDistressScore(mood: MoodSliders, userType: UserType): number {
   if (userType === 'elias') {
     return (getSlider(mood, 'craving') + getSlider(mood, 'frustration') + getSlider(mood, 'despondency')) / 3;
   }
-  return (getSlider(mood, 'stress') + getSlider(mood, 'boundaryFatigue') + getSlider(mood, 'emotionalBurden')) / 3;
+  return kimDistressScore(mood);
 }
 
 /**
@@ -63,7 +65,7 @@ function getResilienceScore(mood: MoodSliders, userType: UserType): number {
   if (userType === 'elias') {
     return getSlider(mood, 'focus');
   }
-  return getSlider(mood, 'selfCare');
+  return kimResilienceScore(mood);
 }
 
 /**
@@ -75,7 +77,7 @@ function getPrimaryConcern(mood: MoodSliders, userType: UserType): number {
   if (userType === 'elias') {
     return getSlider(mood, 'craving');
   }
-  return getSlider(mood, 'stress');
+  return kimPrimaryConcern(mood);
 }
 
 // ─── Input Analysis ────────────────────────────────────────────
@@ -322,25 +324,7 @@ function selectPriorityModules(
 
     if (modules.length === 0) modules.push('E02');
   } else {
-    const stress = getSlider(mood, 'stress');
-    const boundaryFatigue = getSlider(mood, 'boundaryFatigue');
-    const emotionalBurden = getSlider(mood, 'emotionalBurden');
-    const selfCare = getSlider(mood, 'selfCare');
-
-    // High stress → K04 (Stress Management)
-    if (stress >= 6) modules.push('K04');
-    // Boundary fatigue → K01 (Boundary Setting)
-    if (boundaryFatigue >= 6) modules.push('K01');
-    // Emotional burden / hopelessness → K03 (Self-Care)
-    if (emotionalBurden >= 6 || signals.hopelessness) modules.push('K03');
-    // Low self-care → K03
-    if (selfCare <= 3) modules.push('K03');
-    // Enabling patterns detected → K02
-    if (activeTriggers.includes('enabling')) modules.push('K02');
-    // Isolation → K05 (Support Network)
-    if (signals.isolationSignal) modules.push('K05');
-
-    if (modules.length === 0) modules.push('K01');
+    return selectKimPriorityModules(mood, signals, activeTriggers);
   }
 
   return [...new Set(modules)].slice(0, 3);

@@ -290,3 +290,19 @@
 - [x] Elias decision-layer.ts — aggregate existing outputs into single decision object (lib/engine/elias/decision-layer.ts)
 - [x] Wire EliasDecision into pipeline.ts — replace individual output reads with decision object reads (no logic changes)
 - [x] Debug Layer: Add EliasDecision to DebugSnapshot for inspection (lib/engine/debug/debug-snapshot.ts)
+
+## Kim Engine — Extraction
+- [x] Create lib/engine/kim/slider-interpretation.ts — extract Kim slider scores (distress, resilience, primaryConcern)
+- [x] Create lib/engine/kim/crisis-trigger.ts — extract Kim-specific crisis trigger (emotionalBurden >= 6)
+- [x] Create lib/engine/kim/module-catalog.ts — extract K01–K06 module definitions
+- [x] Create lib/engine/kim/relational-signals.ts — extract Kim trigger categories from buffer
+- [x] Create lib/engine/kim/prompt-block.ts — extract Kim identity prompt from server
+- [x] Replace original if/else branches with kimEngine.* calls in shared files
+- [x] Verify behavior unchanged — 0 TS errors, 124 tests passing
+
+## Kim Engine — Wiring (micro-patches)
+- [x] Micro-patch 1: state-analyzer.ts — replace Kim branches with kimEngine calls
+- [x] Micro-patch 2: detector.ts — replace Kim branch with kimEngine call
+- [x] Micro-patch 3: engine.ts — replace Kim branches with kimEngine calls
+- [x] Micro-patch 4: buffer.ts — replace Kim branches with kimEngine calls (detectKimTrigger + kimDistressScore×10)
+- [x] Micro-patch 5: ai-chat.ts — replace Kim prompt block with KIM_IDENTITY_PROMPT import

@@ -21,6 +21,8 @@ import type {
   UserType,
 } from '../ai/types';
 import { createDefaultSliders } from '../ai/types';
+import { kimDistressScore, kimResilienceScore, kimPrimaryConcern } from '../engine/kim/slider-interpretation';
+import { computeKimEngineModules } from '../engine/kim/module-catalog';
 
 // ─── Generic Slider Access ─────────────────────────────────────
 
@@ -33,17 +35,17 @@ function getDistressScore(mood: MoodSliders, userType: UserType): number {
   if (userType === 'elias') {
     return (getSlider(mood, 'craving') + getSlider(mood, 'frustration') + getSlider(mood, 'despondency')) / 3;
   }
-  return (getSlider(mood, 'stress') + getSlider(mood, 'boundaryFatigue') + getSlider(mood, 'emotionalBurden')) / 3;
+  return kimDistressScore(mood);
 }
 
 /** Resilience score: positive slider (higher = better) */
 function getResilienceScore(mood: MoodSliders, userType: UserType): number {
-  return userType === 'elias' ? getSlider(mood, 'focus') : getSlider(mood, 'selfCare');
+  return userType === 'elias' ? getSlider(mood, 'focus') : kimResilienceScore(mood);
 }
 
 /** Primary concern: the most critical slider */
 function getPrimaryConcern(mood: MoodSliders, userType: UserType): number {
-  return userType === 'elias' ? getSlider(mood, 'craving') : getSlider(mood, 'stress');
+  return userType === 'elias' ? getSlider(mood, 'craving') : kimPrimaryConcern(mood);
 }
 
 // ─── Mood Trajectory Analysis ───────────────────────────────────
@@ -181,14 +183,7 @@ function computePriorityModules(
       priorities.push('E05');
     }
   } else {
-    if (getSlider(mood, 'stress') >= 6) priorities.push('K04');
-    if (getSlider(mood, 'boundaryFatigue') >= 6) priorities.push('K01');
-    if (getSlider(mood, 'emotionalBurden') >= 6) priorities.push('K03');
-    if (getSlider(mood, 'selfCare') <= 3) priorities.push('K03');
-    if (patterns.some((t) => t.trigger === 'enabling' && t.count >= 2)) {
-      priorities.push('K02');
-    }
-    if (priorities.length === 0) priorities.push('K01');
+    return computeKimEngineModules(mood, patterns);
   }
 
   return [...new Set(priorities)];

@@ -16,6 +16,8 @@
  */
 
 import type { MoodSliders, UserType } from '../ai/types';
+import { kimDistressScore, kimResilienceScore } from '../engine/kim/slider-interpretation';
+import { checkKimCrisisTrigger } from '../engine/kim/crisis-trigger';
 
 export interface CrisisAssessment {
   level: number;
@@ -33,12 +35,12 @@ function getDistress(mood: MoodSliders, userType: UserType): number {
   if (userType === 'elias') {
     return (getSlider(mood, 'craving') + getSlider(mood, 'frustration') + getSlider(mood, 'despondency')) / 3;
   }
-  return (getSlider(mood, 'stress') + getSlider(mood, 'boundaryFatigue') + getSlider(mood, 'emotionalBurden')) / 3;
+  return kimDistressScore(mood);
 }
 
 /** Get resilience score based on user type */
 function getResilience(mood: MoodSliders, userType: UserType): number {
-  return userType === 'elias' ? getSlider(mood, 'focus') : getSlider(mood, 'selfCare');
+  return userType === 'elias' ? getSlider(mood, 'focus') : kimResilienceScore(mood);
 }
 
 // Crisis keyword patterns (language-agnostic internal logic, English output)
@@ -125,9 +127,12 @@ export function assessCrisis(
   }
 
   // Kim-specific: extreme emotional burden
-  if (userType === 'kim' && getSlider(moodSliders, 'emotionalBurden') >= 6) {
-    triggers.push('extreme_emotional_burden');
-    maxLevel = Math.max(maxLevel, 1);
+  if (userType === 'kim') {
+    const kimCrisis = checkKimCrisisTrigger(moodSliders);
+    if (kimCrisis.fired) {
+      triggers.push(kimCrisis.triggerName);
+      maxLevel = Math.max(maxLevel, 1);
+    }
   }
 
   // Combined risk: high distress + low resilience = elevated

@@ -25,6 +25,8 @@
  */
 
 import type { ChatMessage, MoodSliders, UserType } from '../ai/types';
+import { detectKimTrigger } from '../engine/kim/relational-signals';
+import { kimDistressScore } from '../engine/kim/slider-interpretation';
 
 // ─── Types ────────────────────────────────────────────────────
 
@@ -351,14 +353,8 @@ function detectTriggerGuess(text: string, userType: UserType): string {
     if (/\b(slapen|sleep|insomnia|nachtmerrie|nightmare)\b/.test(lower)) return 'sleep_disruption';
     if (/\b(herinnering|memory|flashback|vroeger|past)\b/.test(lower)) return 'trauma_memory';
   } else {
-    // Kim
-    if (/\b(grens|boundary|grenzen|limits|te veel)\b/.test(lower)) return 'boundary_violation';
-    if (/\b(weer|again|altijd|always|elke keer|every time)\b/.test(lower)) return 'repeated_pattern';
-    if (/\b(schuld|guilt|mijn fout|my fault|verantwoordelijk)\b/.test(lower)) return 'guilt';
-    if (/\b(moe|tired|uitgeput|exhausted|op|burned out)\b/.test(lower)) return 'caregiver_fatigue';
-    if (/\b(alleen|lonely|niemand begrijpt|no one understands)\b/.test(lower)) return 'isolation';
-    if (/\b(terugval|relapse|weer begonnen|started again)\b/.test(lower)) return 'loved_one_relapse';
-    if (/\b(boos|angry|kwaad|furious|woedend)\b/.test(lower)) return 'anger_at_situation';
+    // Kim — delegated to kimEngine relational-signals
+    return detectKimTrigger(lower);
   }
 
   return '';
@@ -553,7 +549,8 @@ function computeSliderDistress(mood: MoodSliders, userType: UserType): number {
   if (userType === 'elias') {
     return (get('craving') + get('frustration') + get('despondency')) / 3;
   }
-  return (get('stress') + get('boundaryFatigue') + get('emotionalBurden')) / 3;
+  // Kim — delegated to kimEngine slider-interpretation (×10 for 0–100 internal scale)
+  return kimDistressScore(mood) * 10;
 }
 
 // ─── Main Buffer Update Function ─────────────────────────────
