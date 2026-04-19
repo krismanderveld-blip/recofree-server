@@ -217,10 +217,25 @@ export interface ChatMessage {
 }
 
 /** Intake data collected during onboarding */
+/** Eigen Regie intake level for Kim users (1-5) */
+export type EigenRegieLevel = 1 | 2 | 3 | 4 | 5;
+
+/** Eigen Regie intake options shown to Kim users */
+export const EIGEN_REGIE_INTAKE_OPTIONS: { value: EigenRegieLevel; zone: string; label: string }[] = [
+  { value: 1, zone: 'ROOD', label: 'Mijn leven draait volledig rond de ander' },
+  { value: 2, zone: 'ORANJE', label: 'Ik ben vooral met de ander bezig' },
+  { value: 3, zone: 'GEEL', label: 'Er is een mix tussen mezelf en de ander' },
+  { value: 4, zone: 'LICHT GROEN', label: 'Ik hou grotendeels mijn eigen richting' },
+  { value: 5, zone: 'DONKER GROEN', label: 'Ik leef volledig mijn eigen leven' },
+];
+
 export interface IntakeData {
   userName: string;
   userType: UserType;
-  stageOfChange: StageOfChange;
+  /** Stage of Change — Elias only. Null for Kim users. */
+  stageOfChange: StageOfChange | null;
+  /** Eigen Regie level — Kim only. Null for Elias users. */
+  eigenRegieLevel: EigenRegieLevel | null;
   startEmotion: string;
   urgency: UrgencyLevel;
   initialContext: string;
@@ -247,7 +262,10 @@ export interface Backpack {
   sections: LifePhaseSection[];
   /** Intake context — captured once at onboarding */
   intakeContext: {
-    stageOfChange: StageOfChange;
+    /** Stage of Change — Elias only */
+    stageOfChange?: StageOfChange;
+    /** Eigen Regie level — Kim only (1-5) */
+    eigenRegieLevel?: EigenRegieLevel;
     startEmotion: string;
     urgency: UrgencyLevel;
     initialContext: string;
@@ -401,7 +419,8 @@ export function createNewBackpack(intake: IntakeData): Backpack {
     userType: intake.userType,
     sections: DEFAULT_BACKPACK_SECTIONS.map((s) => ({ ...s })),
     intakeContext: {
-      stageOfChange: intake.stageOfChange,
+      ...(intake.stageOfChange != null ? { stageOfChange: intake.stageOfChange } : {}),
+      ...(intake.eigenRegieLevel != null ? { eigenRegieLevel: intake.eigenRegieLevel } : {}),
       startEmotion: intake.startEmotion,
       urgency: intake.urgency,
       initialContext: intake.initialContext,
@@ -412,9 +431,19 @@ export function createNewBackpack(intake: IntakeData): Backpack {
 }
 
 /** Create a new UserDat from intake data */
-export function createNewUserDat(userType: UserType, stageOfChange: StageOfChange = ELIAS_DEFAULT_STAGE): UserDat {
+export function createNewUserDat(
+  userType: UserType,
+  stageOfChange: StageOfChange = ELIAS_DEFAULT_STAGE,
+  eigenRegieLevel?: EigenRegieLevel | null,
+): UserDat {
+  const mood = createDefaultSliders(userType);
+  // For Kim users: convert intake eigenRegieLevel (1-5) to eigenRegie (0-100) in currentMood
+  if (userType === 'kim' && eigenRegieLevel != null && 'eigenRegie' in mood) {
+    // Level 1 = 0, Level 2 = 25, Level 3 = 50, Level 4 = 75, Level 5 = 100
+    (mood as KimMoodSliders).eigenRegie = (eigenRegieLevel - 1) * 25;
+  }
   return {
-    currentMood: createDefaultSliders(userType),
+    currentMood: mood,
     moodHistory: [],
     chatHistory: [],
     moduleUsage: [],

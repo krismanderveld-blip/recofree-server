@@ -11,8 +11,8 @@ import {
 import { useRouter } from 'expo-router';
 import { ScreenContainer } from '@/components/screen-container';
 import { useUser } from '@/lib/user-context';
-import type { UserType, UrgencyLevel, StageOfChange } from '@/lib/ai/types';
-import { STAGE_OF_CHANGE_OPTIONS } from '@/lib/ai/types';
+import type { UserType, UrgencyLevel, StageOfChange, EigenRegieLevel } from '@/lib/ai/types';
+import { STAGE_OF_CHANGE_OPTIONS, EIGEN_REGIE_INTAKE_OPTIONS } from '@/lib/ai/types';
 
 type IntakeStep = 1 | 2 | 3 | 4 | 5;
 
@@ -33,6 +33,15 @@ const URGENCY_LEVELS: { label: string; value: UrgencyLevel; description: string 
   { label: 'High', value: 'hoog', description: 'I need help right now' },
 ];
 
+/** Zone colors for Eigen Regie intake options */
+const EIGEN_REGIE_ZONE_COLORS: Record<string, string> = {
+  ROOD: '#EF4444',
+  ORANJE: '#F97316',
+  GEEL: '#F59E0B',
+  'LICHT GROEN': '#84CC16',
+  'DONKER GROEN': '#22C55E',
+};
+
 export default function IntakeScreen() {
   const router = useRouter();
   const { completeIntake } = useUser();
@@ -40,14 +49,18 @@ export default function IntakeScreen() {
   const [step, setStep] = useState<IntakeStep>(1);
   const [name, setName] = useState('');
   const [selectedType, setSelectedType] = useState<UserType | null>(null);
+  // Elias only
   const [stageOfChange, setStageOfChange] = useState<StageOfChange | null>(null);
+  // Kim only
+  const [eigenRegieLevel, setEigenRegieLevel] = useState<EigenRegieLevel | null>(null);
   const [startEmotion, setStartEmotion] = useState('');
   const [urgency, setUrgency] = useState<UrgencyLevel | null>(null);
   const [initialContext, setInitialContext] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const isKim = selectedType === 'kim';
   const canProceedStep1 = name.trim().length >= 2 && selectedType !== null;
-  const canProceedStep2 = stageOfChange !== null;
+  const canProceedStep2 = isKim ? eigenRegieLevel !== null : stageOfChange !== null;
   const canProceedStep3 = startEmotion !== '';
   const canProceedStep4 = urgency !== null;
   const canSubmit = initialContext.trim().length >= 3;
@@ -61,13 +74,16 @@ export default function IntakeScreen() {
   };
 
   const handleSubmit = async () => {
-    if (!canSubmit || isSubmitting || !selectedType || !urgency || !stageOfChange) return;
+    if (!canSubmit || isSubmitting || !selectedType || !urgency) return;
+    if (!isKim && !stageOfChange) return;
+    if (isKim && !eigenRegieLevel) return;
     setIsSubmitting(true);
     try {
       await completeIntake({
         userName: name.trim(),
         userType: selectedType,
-        stageOfChange,
+        stageOfChange: isKim ? null : stageOfChange,
+        eigenRegieLevel: isKim ? eigenRegieLevel : null,
         startEmotion,
         urgency,
         initialContext: initialContext.trim(),
@@ -201,40 +217,96 @@ export default function IntakeScreen() {
               </View>
             )}
 
-            {/* Step 2: Stage of Change */}
+            {/* Step 2: Stage of Change (Elias) OR Eigen Regie (Kim) */}
             {step === 2 && (
               <View className="flex-1">
-                <Text className="text-2xl font-bold text-foreground mb-2">
-                  Where are you in your journey?
-                </Text>
-                <Text className="text-base text-muted mb-6 leading-relaxed">
-                  This helps {selectedType === 'elias' ? 'Elias' : 'Kim'} understand how to best support you.
-                </Text>
+                {isKim ? (
+                  <>
+                    {/* Kim: Eigen Regie */}
+                    <Text className="text-2xl font-bold text-foreground mb-2">
+                      In hoeverre wordt jouw leven momenteel bepaald door de ander?
+                    </Text>
+                    <Text className="text-base text-muted mb-6 leading-relaxed">
+                      Dit helpt Kim begrijpen hoe je er nu voor staat.
+                    </Text>
 
-                <View className="gap-3 mb-8">
-                  {STAGE_OF_CHANGE_OPTIONS.map((option) => (
-                    <Pressable
-                      key={option.value}
-                      onPress={() => setStageOfChange(option.value)}
-                      style={({ pressed }) => [
-                        { opacity: pressed ? 0.85 : 1, transform: [{ scale: pressed ? 0.98 : 1 }] },
-                      ]}
-                    >
-                      <View
-                        className={`rounded-2xl p-5 border-2 ${
-                          stageOfChange === option.value
-                            ? 'border-primary bg-primary/5'
-                            : 'border-border bg-surface'
-                        }`}
-                      >
-                        <Text className="text-lg font-bold text-foreground mb-1">
-                          {option.label}
-                        </Text>
-                        <Text className="text-sm text-muted">{option.description}</Text>
-                      </View>
-                    </Pressable>
-                  ))}
-                </View>
+                    <View className="gap-3 mb-8">
+                      {EIGEN_REGIE_INTAKE_OPTIONS.map((option) => {
+                        const zoneColor = EIGEN_REGIE_ZONE_COLORS[option.zone] ?? '#9BA1A6';
+                        const isSelected = eigenRegieLevel === option.value;
+                        return (
+                          <Pressable
+                            key={option.value}
+                            onPress={() => setEigenRegieLevel(option.value)}
+                            style={({ pressed }) => [
+                              { opacity: pressed ? 0.85 : 1, transform: [{ scale: pressed ? 0.98 : 1 }] },
+                            ]}
+                          >
+                            <View
+                              className="rounded-2xl p-5"
+                              style={{
+                                borderWidth: 2,
+                                borderColor: isSelected ? zoneColor : '#E5E7EB',
+                                backgroundColor: isSelected ? zoneColor + '10' : undefined,
+                              }}
+                            >
+                              <View className="flex-row items-center gap-3 mb-1">
+                                <View
+                                  className="w-3 h-3 rounded-full"
+                                  style={{ backgroundColor: zoneColor }}
+                                />
+                                <Text
+                                  className="text-xs font-bold uppercase tracking-wide"
+                                  style={{ color: zoneColor }}
+                                >
+                                  {option.zone}
+                                </Text>
+                              </View>
+                              <Text className="text-base text-foreground leading-relaxed">
+                                {option.label}
+                              </Text>
+                            </View>
+                          </Pressable>
+                        );
+                      })}
+                    </View>
+                  </>
+                ) : (
+                  <>
+                    {/* Elias: Stage of Change */}
+                    <Text className="text-2xl font-bold text-foreground mb-2">
+                      Where are you in your journey?
+                    </Text>
+                    <Text className="text-base text-muted mb-6 leading-relaxed">
+                      This helps Elias understand how to best support you.
+                    </Text>
+
+                    <View className="gap-3 mb-8">
+                      {STAGE_OF_CHANGE_OPTIONS.map((option) => (
+                        <Pressable
+                          key={option.value}
+                          onPress={() => setStageOfChange(option.value)}
+                          style={({ pressed }) => [
+                            { opacity: pressed ? 0.85 : 1, transform: [{ scale: pressed ? 0.98 : 1 }] },
+                          ]}
+                        >
+                          <View
+                            className={`rounded-2xl p-5 border-2 ${
+                              stageOfChange === option.value
+                                ? 'border-primary bg-primary/5'
+                                : 'border-border bg-surface'
+                            }`}
+                          >
+                            <Text className="text-lg font-bold text-foreground mb-1">
+                              {option.label}
+                            </Text>
+                            <Text className="text-sm text-muted">{option.description}</Text>
+                          </View>
+                        </Pressable>
+                      ))}
+                    </View>
+                  </>
+                )}
 
                 <View className="mt-auto gap-3">
                   <Pressable
@@ -389,7 +461,7 @@ export default function IntakeScreen() {
                 </Text>
                 <Text className="text-base text-muted mb-6 leading-relaxed">
                   Share in your own words what's going on. This helps{' '}
-                  {selectedType === 'elias' ? 'Elias' : 'Kim'} understand you better.
+                  {isKim ? 'Kim' : 'Elias'} understand you better.
                 </Text>
 
                 <TextInput

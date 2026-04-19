@@ -157,7 +157,7 @@ function userReducer(state: UserState, action: UserAction): UserState {
 
     case 'COMPLETE_INTAKE': {
       const backpack = createNewBackpack(action.payload);
-      const userDat = createNewUserDat(action.payload.userType, action.payload.stageOfChange);
+      const userDat = createNewUserDat(action.payload.userType, action.payload.stageOfChange ?? undefined, action.payload.eigenRegieLevel);
       const { rugzak, influence } = composeState(backpack, userDat);
       return {
         ...state,
@@ -345,7 +345,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     }
     dispatch({ type: 'COMPLETE_INTAKE', payload: data });
     const backpack = createNewBackpack(data);
-    const userDat = createNewUserDat(data.userType, data.stageOfChange);
+    const userDat = createNewUserDat(data.userType, data.stageOfChange ?? undefined, data.eigenRegieLevel);
     await Promise.all([
       persistBackpack(backpack),
       persistUserDat(userDat),

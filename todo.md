@@ -416,3 +416,13 @@
 ## Mood Screen — Eigen Regie Slider Zone Color
 - [x] Add zone-based color to Eigen Regie slider track (ROOD→GROEN)
 - [x] Verify: 0 TS errors, 207 tests passing
+
+## Intake Fix — Kim Eigen Regie
+- [x] Remove Stage of Change from Kim intake
+- [x] Add Eigen Regie meter (5 zones) to Kim intake screen
+- [x] Show question: "In hoeverre wordt jouw leven momenteel bepaald door de ander?"
+- [x] Implement exact 5 zone labels (ROOD→DONKER GROEN)
+- [x] Store eigenRegieLevel (1-5) in backpack.intakeContext + currentMood.eigenRegie
+- [x] Wire eigenRegieLevel into Kim engine baseline (createNewUserDat converts level to 0-100)
+- [x] Verify: no Stage of Change shown for Kim, no mixing of systems
+- [x] Verify: 0 TS errors, 207 tests passing
