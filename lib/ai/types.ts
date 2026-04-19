@@ -187,6 +187,14 @@ export interface ModuleUsageRecord {
   context: string;
 }
 
+/** A single Eigen Regie daily reflection entry (Kim users only) */
+export interface EigenRegieEntry {
+  /** Raw user input (0–100). UI displays this value. */
+  userInput: number;
+  /** Timestamp of the reflection */
+  timestamp: string;
+}
+
 /** A detected trigger pattern */
 export interface TriggerPattern {
   trigger: string;
@@ -279,6 +287,8 @@ export interface UserDat {
   stageOfChange: StageOfChange;
   /** User-controlled guidance depth — affects AI response intensity */
   guidanceDepth?: GuidanceDepth;
+  /** Eigen Regie daily reflections (Kim users only) */
+  eigenRegieHistory?: EigenRegieEntry[];
   /** Detected relational anchors — persisted across sessions */
   relationalAnchors?: Array<{ name: string; role: string; roleEN: string; emotionalWeight: number }>;
   /** Last detected relational pattern */

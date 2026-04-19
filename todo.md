@@ -342,3 +342,10 @@
 - [x] Wire ai-chat.ts to import all Elias prompt content from engine (identity, crisis, schema, stoa, stageDescriptions x2)
 - [x] Wire pipeline.ts (7x contemplation→ELIAS_DEFAULT_STAGE), gpt-payload-builder.ts (2x), types.ts (1x createNewUserDat default)
 - [x] Final verification: 0 TS errors, 124 tests passing, zero inline Elias prompts/stageOfChange outside engine
+
+## Kim Eigen Regie — 5-Step Model
+- [x] Create lib/engine/kim/eigen-regie.ts (score inversion, zone mapping, zone meaning, engine impact)
+- [x] Wire Eigen Regie into Kim decision-layer.ts (computeKimDecision includes eigenRegie)
+- [x] Create UI component for daily reflection input (percentage 0-100, Kim-only on mood screen)
+- [x] Store eigenRegie data in user state (EigenRegieEntry type, eigenRegieHistory in UserDat, updateEigenRegie + getEigenRegieHistory in context, migration)
+- [x] Verify: 0 TS errors, 124 tests passing, no Eigen Regie logic outside engine

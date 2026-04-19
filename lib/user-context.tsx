@@ -94,6 +94,10 @@ interface UserContextValue {
   updateGuidanceDepth: (depth: GuidanceDepth) => Promise<void>;
   /** Get current guidance depth */
   getGuidanceDepth: () => GuidanceDepth;
+  /** Record Eigen Regie daily reflection (Kim users only) */
+  updateEigenRegie: (userInput: number) => Promise<void>;
+  /** Get Eigen Regie history */
+  getEigenRegieHistory: () => import('./ai/types').EigenRegieEntry[];
   /** Convenience getters */
   getUserName: () => string;
   getMood: () => MoodSliders;
@@ -441,6 +445,24 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     }
   }, [state.backpack, state.userDat]);
 
+  // ── Eigen Regie (Kim only) ──
+
+  const updateEigenRegie = useCallback(async (userInput: number) => {
+    if (!state.userDat) return;
+    const entry: import('./ai/types').EigenRegieEntry = {
+      userInput,
+      timestamp: new Date().toISOString(),
+    };
+    const history = [...(state.userDat.eigenRegieHistory ?? []), entry];
+    const updatedUserDat: UserDat = { ...state.userDat, eigenRegieHistory: history };
+    dispatch({ type: 'UPDATE_USERDAT', payload: updatedUserDat });
+    await persistUserDat(updatedUserDat);
+  }, [state.userDat]);
+
+  const getEigenRegieHistory = useCallback(() => {
+    return state.userDat?.eigenRegieHistory ?? [];
+  }, [state.userDat]);
+
   // ── Guidance Depth ──
 
   const updateGuidanceDepth = useCallback(async (depth: GuidanceDepth) => {
@@ -583,6 +605,8 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         getStartEmotion,
         getBackpack,
         getUserDat,
+        updateEigenRegie,
+        getEigenRegieHistory,
       }}
     >
       {children}
@@ -629,6 +653,7 @@ function migrateUserDat(raw: any, userType: UserType): UserDat {
     lastSessionDate: raw.lastSessionDate ?? null,
     sessionAnalyses: raw.sessionAnalyses ?? [],
     stageOfChange: raw.stageOfChange ?? 'contemplation' as const,
+    eigenRegieHistory: raw.eigenRegieHistory ?? [],
     relationalAnchors: raw.relationalAnchors ?? [],
     lastRelationalPattern: raw.lastRelationalPattern ?? null,
   };

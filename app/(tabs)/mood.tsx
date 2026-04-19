@@ -7,6 +7,11 @@ import { useColors } from '@/hooks/use-colors';
 import { getSliderConfig, checkInterventions } from '@/lib/ai/types';
 import type { MoodSliders, MoodSnapshot, SliderConfig } from '@/lib/ai/types';
 import * as Haptics from 'expo-haptics';
+import {
+  processEigenRegie,
+  EIGEN_REGIE_QUESTION,
+  EIGEN_REGIE_SLIDER_LABELS,
+} from '@/lib/engine/kim/eigen-regie';
 
 // ─── Constants ──────────────────────────────────────────────────
 
@@ -101,7 +106,7 @@ function formatTimestamp(ts: string): string {
 // ─── Main Screen ────────────────────────────────────────────────
 
 export default function MoodScreen() {
-  const { state, updateMood, getMood, getUserDat } = useUser();
+  const { state, updateMood, getMood, getUserDat, updateEigenRegie } = useUser();
   const colors = useColors();
   const userType = state.userType ?? 'elias';
   const sliderConfig = useMemo(() => getSliderConfig(userType), [userType]);
@@ -119,6 +124,24 @@ export default function MoodScreen() {
   });
   const [saved, setSaved] = useState(false);
   const [showTimeline, setShowTimeline] = useState(false);
+
+  // ── Eigen Regie (Kim only) ──
+  const isKim = userType === 'kim';
+  const [eigenRegieInput, setEigenRegieInput] = useState(50);
+  const [eigenRegieSaved, setEigenRegieSaved] = useState(false);
+  const eigenRegieResult = useMemo(
+    () => isKim ? processEigenRegie(eigenRegieInput) : null,
+    [eigenRegieInput, isKim],
+  );
+
+  const handleEigenRegieSave = useCallback(async () => {
+    await updateEigenRegie(eigenRegieInput);
+    if (Platform.OS !== 'web') {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    }
+    setEigenRegieSaved(true);
+    setTimeout(() => setEigenRegieSaved(false), 2000);
+  }, [eigenRegieInput, updateEigenRegie]);
 
   const handleSliderChange = useCallback((key: string, value: number) => {
     setLocalSliders((prev) => ({ ...prev, [key]: Math.round(value) }));
@@ -271,6 +294,61 @@ export default function MoodScreen() {
             </View>
           </Pressable>
         </View>
+
+        {/* ─── EIGEN REGIE (Kim only) ─── */}
+        {isKim && eigenRegieResult && (
+          <View className="mt-10">
+            <Text className="text-lg font-bold text-foreground mb-2">Eigen Regie</Text>
+            <Text className="text-sm text-muted mb-4">{EIGEN_REGIE_QUESTION}</Text>
+
+            {/* Slider */}
+            <View className="bg-surface rounded-2xl p-5 border border-border">
+              <View className="flex-row justify-between mb-1">
+                <Text className="text-xs text-muted">{EIGEN_REGIE_SLIDER_LABELS.min}</Text>
+                <Text className="text-xs text-muted">{EIGEN_REGIE_SLIDER_LABELS.max}</Text>
+              </View>
+              <Slider
+                minimumValue={0}
+                maximumValue={100}
+                step={1}
+                value={eigenRegieInput}
+                onValueChange={v => { setEigenRegieInput(Math.round(v)); setEigenRegieSaved(false); }}
+                minimumTrackTintColor={colors.primary}
+                maximumTrackTintColor={colors.border}
+                thumbTintColor={colors.primary}
+              />
+              <Text className="text-center text-2xl font-bold text-foreground mt-2">
+                {eigenRegieInput}%
+              </Text>
+            </View>
+
+            {/* Zone + Meaning */}
+            <View className="bg-surface rounded-2xl p-5 border border-border mt-3">
+              <Text className="text-sm font-semibold text-foreground mb-1">
+                {eigenRegieResult.zone}
+              </Text>
+              <Text className="text-sm text-muted leading-relaxed">
+                {eigenRegieResult.meaning}
+              </Text>
+            </View>
+
+            {/* Save */}
+            <View className="mt-3">
+              <Pressable
+                onPress={handleEigenRegieSave}
+                style={({ pressed }) => [
+                  { opacity: pressed ? 0.85 : 1, transform: [{ scale: pressed ? 0.97 : 1 }] },
+                ]}
+              >
+                <View className={`rounded-2xl py-3 items-center ${eigenRegieSaved ? 'bg-success' : 'bg-primary'}`}>
+                  <Text className="text-white text-base font-bold">
+                    {eigenRegieSaved ? 'Opgeslagen!' : 'Sla reflectie op'}
+                  </Text>
+                </View>
+              </Pressable>
+            </View>
+          </View>
+        )}
 
         {/* ─── RECOGNITION SECTION ─── */}
         <View className="mt-10">
