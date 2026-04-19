@@ -412,3 +412,7 @@
 - [x] Initialise eigenRegieInput from currentMood.eigenRegie (saved value) or 50 (default when null)
 - [x] Add test for initialisation behavior (7 tests)
 - [x] Verify: 0 TS errors, 207 tests passing
+
+## Mood Screen — Eigen Regie Slider Zone Color
+- [x] Add zone-based color to Eigen Regie slider track (ROOD→GROEN)
+- [x] Verify: 0 TS errors, 207 tests passing

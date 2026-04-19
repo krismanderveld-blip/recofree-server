@@ -11,6 +11,7 @@ import {
   processEigenRegie,
   EIGEN_REGIE_QUESTION,
   EIGEN_REGIE_SLIDER_LABELS,
+  type EigenRegieZone,
 } from '@/lib/engine/kim/eigen-regie';
 
 // ─── Constants ──────────────────────────────────────────────────
@@ -27,6 +28,15 @@ const SLIDER_META: Record<string, { description: string; lowLabel: string; highL
 };
 
 const POSITIVE_KEYS = new Set(['focus', 'selfCare']);
+
+/** Fixed color per Eigen Regie zone (ROOD→GROEN) */
+const EIGEN_REGIE_ZONE_COLORS: Record<EigenRegieZone, string> = {
+  ROOD: '#EF4444',
+  ORANJE: '#F97316',
+  GEEL: '#F59E0B',
+  LICHTGROEN: '#84CC16',
+  GROEN: '#22C55E',
+};
 
 const ZONE_CONFIG = {
   GREEN:  { label: 'Stable', color: '#22C55E', description: 'You\'ve been in a calm, manageable space.' },
@@ -318,18 +328,31 @@ export default function MoodScreen() {
                 step={1}
                 value={eigenRegieInput}
                 onValueChange={v => { setEigenRegieInput(Math.round(v)); setEigenRegieSaved(false); }}
-                minimumTrackTintColor={colors.primary}
+                minimumTrackTintColor={EIGEN_REGIE_ZONE_COLORS[eigenRegieResult.zone]}
                 maximumTrackTintColor={colors.border}
-                thumbTintColor={colors.primary}
+                thumbTintColor={EIGEN_REGIE_ZONE_COLORS[eigenRegieResult.zone]}
               />
-              <Text className="text-center text-2xl font-bold text-foreground mt-2">
+              <Text
+                className="text-center text-2xl font-bold mt-2"
+                style={{ color: EIGEN_REGIE_ZONE_COLORS[eigenRegieResult.zone] }}
+              >
                 {eigenRegieInput}%
               </Text>
             </View>
 
             {/* Zone + Meaning */}
-            <View className="bg-surface rounded-2xl p-5 border border-border mt-3">
-              <Text className="text-sm font-semibold text-foreground mb-1">
+            <View
+              className="rounded-2xl p-5 mt-3"
+              style={{
+                backgroundColor: EIGEN_REGIE_ZONE_COLORS[eigenRegieResult.zone] + '12',
+                borderWidth: 1,
+                borderColor: EIGEN_REGIE_ZONE_COLORS[eigenRegieResult.zone] + '40',
+              }}
+            >
+              <Text
+                className="text-sm font-semibold mb-1"
+                style={{ color: EIGEN_REGIE_ZONE_COLORS[eigenRegieResult.zone] }}
+              >
                 {eigenRegieResult.zone}
               </Text>
               <Text className="text-sm text-muted leading-relaxed">
