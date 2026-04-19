@@ -399,3 +399,11 @@
 - [x] Update updateEigenRegie() to also write currentMood.eigenRegie
 - [x] Fix pipeline: read currentMood.eigenRegie, remove getLatestEigenRegieInput helper
 - [x] Verify: 0 TS errors, 143 tests passing
+
+## Zone Impact Tests & Mood Screen Validation
+- [x] Write Elias zone impact tests: verify exact mapping values per zone level (ROOD→GROEN)
+- [x] Write Kim zone impact tests: verify exact mapping values per zone level (ROOD→GROEN)
+- [x] Write computeEliasZone boundary tests (zone level transitions)
+- [x] Write computeKimZone boundary tests (zone level transitions)
+- [x] Validate mood screen eigenRegie sync with currentMood.eigenRegie (12 tests)
+- [x] Verify: 0 TS errors, 200 tests passing
