@@ -501,6 +501,8 @@ export interface ChatContext {
     wasSoftened: boolean;
     wasSkipped: boolean;
   };
+  /** Routed engine directive — Elias OR Kim, never both. Injected by pipeline via orchestration routing. */
+  engineDirective?: import('../engine/orchestration').EngineDirective;
 }
 
 /**

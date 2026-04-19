@@ -367,3 +367,11 @@
 - [x] Wire KimImpact into Kim zone output (replace string-based impact)
 - [x] Update zone-types.ts: remove ZoneImpact, make ZoneResult<T> generic over impact type
 - [x] Verify: 0 TS errors, 124 tests passing, no legacy string-based impact references remain
+
+## Zone System — Orchestration (Routing Layer)
+- [x] Create orchestration routing module: select Elias OR Kim engine output based on userType
+- [x] Define EngineDirective discriminated union type (elias: EliasImpact, kim: KimImpact)
+- [x] Thread EngineDirective through ChatContext → GPTPayload → OpenAIProvider
+- [x] Accept EngineDirective in server ChatRequestInput/schema
+- [x] Inject routed directive values directly into system prompt (no transformation)
+- [x] Verify: 0 TS errors, 124 tests passing, no merging of Elias and Kim

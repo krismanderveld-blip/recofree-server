@@ -190,6 +190,7 @@ export class OpenAIProvider implements AIProvider {
         bufferSnapshot: context.bufferSnapshot,
         guidanceDepth: context.guidanceDepth ?? 'normal',
         regulationResult: context.regulationResult,
+        engineDirective: context.engineDirective,
       });
 
       // ── STEP 3: Build server payload based on SESSION_INIT / LIVE_MESSAGE split ──
@@ -236,6 +237,9 @@ export class OpenAIProvider implements AIProvider {
 
           // Regulation result (from regulation layer)
           regulationResult: gptPayload.regulationResult ?? null,
+
+          // Engine directive (from orchestration routing)
+          engineDirective: gptPayload.engineDirective ?? null,
 
           // Full data (SESSION_INIT only)
           backpack: gptPayload.backpack,
@@ -293,6 +297,9 @@ export class OpenAIProvider implements AIProvider {
 
           // Regulation result (from regulation layer)
           regulationResult: gptPayload.regulationResult ?? null,
+
+          // Engine directive (from orchestration routing)
+          engineDirective: gptPayload.engineDirective ?? null,
 
           // NO backpack, NO userDat, NO diaryEntries, NO coreWound,
           // NO contextLine, NO relationshipAnchor, NO relationalPattern

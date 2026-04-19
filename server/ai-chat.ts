@@ -139,6 +139,14 @@ interface ChatRequestInput {
     wasSoftened: boolean;
     wasSkipped: boolean;
   } | null;
+
+  // Routed engine directive (Elias OR Kim, from orchestration routing)
+  engineDirective?: {
+    engine: 'elias' | 'kim';
+    zoneLevel: string;
+    zoneLabel: string;
+    impact: Record<string, string>;
+  } | null;
 }
 
 // ─── Server-side Session Cache ───────────────────────────────────
@@ -787,6 +795,18 @@ SCHENDING VAN DIT PROTOCOL IS ONACCEPTABEL.`;
     console.log(`[AI Chat] Regulation injected: action=${reg.action}, zone=${reg.zone}, depth=${reg.effectiveDepth}, softened=${reg.wasSoftened}, skipped=${reg.wasSkipped}`);
   }
 
+  // ── Engine Directive Injection ──
+  // Passes routed zone impact values directly into the prompt. No transformation.
+  let engineDirectiveBlock = '';
+  if (input.engineDirective) {
+    const ed = input.engineDirective;
+    const impactLines = Object.entries(ed.impact)
+      .map(([k, v]) => `- ${k}: ${v}`)
+      .join('\n');
+    engineDirectiveBlock = `\n═══ ENGINE DIRECTIVE (${ed.engine.toUpperCase()}) ═══\nZone: ${ed.zoneLevel} — ${ed.zoneLabel}\n${impactLines}\n═══ EINDE ENGINE DIRECTIVE ═══`;
+    console.log(`[AI Chat] Engine directive injected: engine=${ed.engine}, zone=${ed.zoneLevel}, impact=${JSON.stringify(ed.impact)}`);
+  }
+
   let sessionEndInstructions = "";
   if (input.message === "__SESSION_END__") {
     sessionEndInstructions = `\nDe gebruiker beëindigt deze sessie. Genereer een warm afscheid dat:
@@ -851,6 +871,7 @@ ${selectiveRelevance}
 ${stance}
 ${guidanceInstruction}
 ${regulationInstruction}
+${engineDirectiveBlock}
 
 Deze gedragsinstructies zijn ABSOLUUT. Ze overschrijven je standaard gespreksstijl.
 De sliders vertellen je exact hoe de gebruiker zich voelt — GEBRUIK ze in je antwoord.
@@ -1036,6 +1057,7 @@ ${relevanceContext}
 ${stance}
 ${guidanceInstruction}
 ${regulationInstruction}
+${engineDirectiveBlock}
 
 Deze gedragsinstructies zijn ABSOLUUT. Ze overschrijven je standaard gespreksstijl.
 De sliders vertellen je exact hoe de gebruiker zich voelt — GEBRUIK ze in je antwoord.

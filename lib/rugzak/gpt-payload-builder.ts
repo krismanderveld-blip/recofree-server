@@ -82,6 +82,14 @@ export interface GPTPayload {
     wasSkipped: boolean;
   };
 
+  // ── Routed engine directive (Elias OR Kim, from orchestration routing) ──
+  engineDirective?: {
+    engine: 'elias' | 'kim';
+    zoneLevel: string;
+    zoneLabel: string;
+    impact: Record<string, string>;
+  };
+
   // ── Buffer snapshot (from pipeline, per message) ──
   bufferSnapshot?: {
     zoneScore: number;
@@ -167,6 +175,8 @@ export interface PayloadBuilderInput {
     wasSoftened: boolean;
     wasSkipped: boolean;
   };
+  /** Routed engine directive from orchestration (Elias OR Kim) */
+  engineDirective?: import('../engine/orchestration').EngineDirective;
 }
 
 // ─── Conversation History Optimisation (Patch N Step 5) ──────
@@ -373,6 +383,16 @@ export function buildGPTPayload(input: PayloadBuilderInput): GPTPayload {
   // ── Regulation result (from regulation layer) ──
   if (input.regulationResult) {
     payload.regulationResult = input.regulationResult;
+  }
+
+  // ── Engine directive (from orchestration routing) ──
+  if (input.engineDirective) {
+    payload.engineDirective = {
+      engine: input.engineDirective.engine,
+      zoneLevel: input.engineDirective.zoneLevel,
+      zoneLabel: input.engineDirective.zoneLabel,
+      impact: { ...input.engineDirective.impact } as Record<string, string>,
+    };
   }
 
   // ── Buffer snapshot (from pipeline, per message) ──
