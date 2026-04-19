@@ -63,6 +63,8 @@ import { analyzeBackpackRelevance, resetTriggerDecay } from './backpack-relevanc
 import { evaluatePromotions, applyPromotions, type PromotionCandidate, type PromotionResult } from './userdat-promotion';
 import { recordCallCost, resetSessionCost, estimateTokens, type TokenUsage } from './cost-control';
 import { applyRegulation, type RegulationResult, type ZoneColor } from './regulation-layer';
+import { createEliasDecision, type EliasDecision } from '../engine/elias/decision-layer';
+import type { CrisisAssessment } from '../crisis/detector';
 
 // ─── Pattern Marking (post-GPT local state) ─────────────────
 
@@ -101,6 +103,7 @@ let sessionDominantModuleChanged = false;
 let sessionInitialModule: string | null = null;
 let sessionRelationalConfidence = 0;
 let sessionLastRegulationResult: RegulationResult | null = null;
+let sessionEliasDecision: EliasDecision | null = null;
 
 /**
  * Reset all session-level state. Call at session start.
@@ -114,6 +117,7 @@ export function resetSessionState(): void {
   sessionInitialModule = null;
   sessionRelationalConfidence = 0;
   sessionLastRegulationResult = null;
+  sessionEliasDecision = null;
   resetTriggerDecay();
   resetSessionCost();
 }
@@ -405,6 +409,31 @@ export async function processMessage(
     crisisLevel = 1;
   }
 
+  // ── PRE-GPT STEP 6a: Build EliasDecision (aggregation only) ──
+  // Compatibility wrapper: construct CrisisAssessment from existing pipeline values
+  const crisisAssessment: CrisisAssessment = {
+    level: crisisLevel,
+    triggers: [],
+    recommendedAction:
+      crisisLevel === 2 ? 'emergency' :
+      crisisLevel === 1 ? 'intervene' :
+      'none',
+  };
+
+  const elisDecision = backpack.userType === 'elias'
+    ? createEliasDecision({
+        analysis,
+        dominantState: preGPTDominantState,
+        crisis: crisisAssessment,
+        stageOfChange: backpack.intakeContext?.stageOfChange ?? 'contemplation',
+        moodSliders: currentUserDat.currentMood || { stemming: 5, craving: 0, overprikkeling: 0, sociaal: 5 },
+        currentZoneColor: sessionBuffer.currentZoneColor as ZoneColor,
+        currentZoneScore: sessionBuffer.currentZoneScore,
+      })
+    : null;
+
+  sessionEliasDecision = elisDecision;
+
   const sessionStart = currentUserDat.lastSessionDate ? new Date(currentUserDat.lastSessionDate) : new Date();
   const sessionMinutes = Math.floor((Date.now() - sessionStart.getTime()) / 60000);
 
@@ -419,8 +448,8 @@ export async function processMessage(
     userDat: currentUserDat,
     isSessionStart,
     diaryEntries: options?.diaryEntries ?? [],
-    activeModules: [preGPTDominantState.dominantModule],
-    crisisLevel,
+    activeModules: [elisDecision ? elisDecision.dominantModule : preGPTDominantState.dominantModule],
+    crisisLevel: elisDecision ? elisDecision.crisisLevel : crisisLevel,
     detectedEmotion: analysis.emotionalState,
     therapeuticStance: buildTherapeuticStance(analysis),
     sessionDurationMinutes: sessionMinutes,
@@ -479,7 +508,7 @@ export async function processMessage(
     role: 'assistant',
     content: response,
     timestamp: new Date().toISOString(),
-    modulesUsed: [preGPTDominantState.dominantModule],
+    modulesUsed: [elisDecision ? elisDecision.dominantModule : preGPTDominantState.dominantModule],
   };
   updatedUserDat = {
     ...updatedUserDat,
@@ -581,7 +610,10 @@ export async function processMessage(
   // Log to console
   console.log(`[Pipeline] Message #${messageLog.messageIndex} | ${isSessionStart ? 'SESSION_INIT' : 'LIVE_MESSAGE'}`);
   console.log(`[Pipeline] PRE-GPT: decay=${triggerDecayApplied}, zone=${sessionBuffer.currentZoneColor}(${sessionBuffer.currentZoneScore}), zoneDecay=${zoneDecayResult.decayApplied}`);
-  console.log(`[Pipeline] PRE-GPT: dominant=${preGPTDominantState.dominantModule} via ${preGPTDominantState.sourceLayer} | trigger=${preGPTDominantState.dominantTrigger || 'none'} | risk=${preGPTDominantState.riskScore}`);
+  console.log(`[Pipeline] PRE-GPT: dominant=${elisDecision ? elisDecision.dominantModule : preGPTDominantState.dominantModule} via ${preGPTDominantState.sourceLayer} | trigger=${preGPTDominantState.dominantTrigger || 'none'} | risk=${preGPTDominantState.riskScore}`);
+  if (elisDecision) {
+    console.log(`[Pipeline] ELIAS_DECISION: tone=${elisDecision.tone} | pacing=${elisDecision.pacing} | interventionDepth=${elisDecision.interventionDepth} | challengeLevel=${elisDecision.challengeLevel} | zone=${elisDecision.zone.calculated}`);
+  }
   console.log(`[Pipeline] PRE-GPT: triggers=[${relevance.triggers.map(t => `${t.trigger}(${t.score})`).join(', ')}]`);
   if (selectedModel) console.log(`[Pipeline] GPT: model=${selectedModel}`);
   if (tokenUsage) console.log(`[Pipeline] GPT: tokens=${tokenUsage.promptTokens}in+${tokenUsage.completionTokens}out=${tokenUsage.totalTokens}total`);

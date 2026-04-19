@@ -288,3 +288,4 @@
 
 ## Elias Engine
 - [x] Elias decision-layer.ts — aggregate existing outputs into single decision object (lib/engine/elias/decision-layer.ts)
+- [x] Wire EliasDecision into pipeline.ts — replace individual output reads with decision object reads (no logic changes)
