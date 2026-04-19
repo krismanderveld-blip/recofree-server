@@ -375,3 +375,10 @@
 - [x] Accept EngineDirective in server ChatRequestInput/schema
 - [x] Inject routed directive values directly into system prompt (no transformation)
 - [x] Verify: 0 TS errors, 124 tests passing, no merging of Elias and Kim
+
+## Zone System — Final Wiring
+- [x] Wire routeEngineDirective() into pipeline.ts (call once, store on context.engineDirective)
+- [x] Add Kim decision path in pipeline (createKimDecision for kim users, createEliasDecision for elias users)
+- [x] Verify provider passthrough reads only from context.engineDirective unchanged
+- [x] Add routing tests: elias→EliasDirective, kim→KimDirective, no cross-routing (19 tests)
+- [x] Verify: 0 TS errors, 143 tests passing, Kim path active

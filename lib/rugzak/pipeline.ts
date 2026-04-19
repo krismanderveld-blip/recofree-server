@@ -64,6 +64,8 @@ import { evaluatePromotions, applyPromotions, type PromotionCandidate, type Prom
 import { recordCallCost, resetSessionCost, estimateTokens, type TokenUsage } from './cost-control';
 import { applyRegulation, type RegulationResult, type ZoneColor } from './regulation-layer';
 import { createEliasDecision, type EliasDecision } from '../engine/elias/decision-layer';
+import { createKimDecision, type KimDecision } from '../engine/kim/decision-layer';
+import { routeEngineDirective, type EngineDirective } from '../engine/orchestration';
 import type { CrisisAssessment } from '../crisis/detector';
 import { kimDistressScore, kimResilienceScore } from '../engine/kim/slider-interpretation';
 import { KIM_DEFAULT_MODULE } from '../engine/kim/module-catalog';
@@ -109,6 +111,7 @@ let sessionInitialModule: string | null = null;
 let sessionRelationalConfidence = 0;
 let sessionLastRegulationResult: RegulationResult | null = null;
 let sessionEliasDecision: EliasDecision | null = null;
+let sessionKimDecision: KimDecision | null = null;
 
 /**
  * Reset all session-level state. Call at session start.
@@ -123,6 +126,7 @@ export function resetSessionState(): void {
   sessionRelationalConfidence = 0;
   sessionLastRegulationResult = null;
   sessionEliasDecision = null;
+  sessionKimDecision = null;
   resetTriggerDecay();
   resetSessionCost();
 }
@@ -425,19 +429,46 @@ export async function processMessage(
       'none',
   };
 
-  const elisDecision = backpack.userType === 'elias'
-    ? createEliasDecision({
-        analysis,
-        dominantState: preGPTDominantState,
-        crisis: crisisAssessment,
-        stageOfChange: backpack.intakeContext?.stageOfChange ?? ELIAS_DEFAULT_STAGE,
-        moodSliders: currentUserDat.currentMood || (ELIAS_DEFAULT_MOOD as any),
-        currentZoneColor: sessionBuffer.currentZoneColor as ZoneColor,
-        currentZoneScore: sessionBuffer.currentZoneScore,
-      })
-    : null;
+  // ── Decision routing: Elias OR Kim, never both ──
+  let elisDecision: EliasDecision | null = null;
+  let kimDecision: KimDecision | null = null;
+
+  if (backpack.userType === 'elias') {
+    elisDecision = createEliasDecision({
+      analysis,
+      dominantState: preGPTDominantState,
+      crisis: crisisAssessment,
+      stageOfChange: backpack.intakeContext?.stageOfChange ?? ELIAS_DEFAULT_STAGE,
+      moodSliders: currentUserDat.currentMood || (ELIAS_DEFAULT_MOOD as any),
+      currentZoneColor: sessionBuffer.currentZoneColor as ZoneColor,
+      currentZoneScore: sessionBuffer.currentZoneScore,
+    });
+  } else {
+    kimDecision = createKimDecision({
+      analysis,
+      dominantState: preGPTDominantState,
+      crisis: crisisAssessment,
+      moodSliders: currentUserDat.currentMood || (ELIAS_DEFAULT_MOOD as any),
+      currentZoneColor: sessionBuffer.currentZoneColor as ZoneColor,
+      currentZoneScore: sessionBuffer.currentZoneScore,
+      eigenRegieInput: null, // Eigen Regie input wired separately when available
+    });
+  }
 
   sessionEliasDecision = elisDecision;
+  sessionKimDecision = kimDecision;
+
+  // ── Route engine directive: select correct engine output based on userType ──
+  const activeDecision = elisDecision ?? kimDecision;
+  const engineDirective: EngineDirective | null = routeEngineDirective({
+    userType: backpack.userType,
+    eliasZone: elisDecision?.zone.engine
+      ? { level: elisDecision.zone.engine.level, label: elisDecision.zone.engine.label, impact: elisDecision.zone.engine.impact }
+      : null,
+    kimZone: kimDecision?.zone.engine
+      ? { level: kimDecision.zone.engine.level, label: kimDecision.zone.engine.label, impact: kimDecision.zone.engine.impact }
+      : null,
+  });
 
   const sessionStart = currentUserDat.lastSessionDate ? new Date(currentUserDat.lastSessionDate) : new Date();
   const sessionMinutes = Math.floor((Date.now() - sessionStart.getTime()) / 60000);
@@ -453,8 +484,9 @@ export async function processMessage(
     userDat: currentUserDat,
     isSessionStart,
     diaryEntries: options?.diaryEntries ?? [],
-    activeModules: [elisDecision ? elisDecision.dominantModule : preGPTDominantState.dominantModule],
-    crisisLevel: elisDecision ? elisDecision.crisisLevel : crisisLevel,
+    activeModules: [activeDecision ? activeDecision.dominantModule : preGPTDominantState.dominantModule],
+    crisisLevel: activeDecision ? activeDecision.crisisLevel : crisisLevel,
+    engineDirective: engineDirective ?? undefined,
     detectedEmotion: analysis.emotionalState,
     therapeuticStance: buildTherapeuticStance(analysis),
     sessionDurationMinutes: sessionMinutes,
@@ -513,7 +545,7 @@ export async function processMessage(
     role: 'assistant',
     content: response,
     timestamp: new Date().toISOString(),
-    modulesUsed: [elisDecision ? elisDecision.dominantModule : preGPTDominantState.dominantModule],
+    modulesUsed: [activeDecision ? activeDecision.dominantModule : preGPTDominantState.dominantModule],
   };
   updatedUserDat = {
     ...updatedUserDat,
@@ -615,9 +647,15 @@ export async function processMessage(
   // Log to console
   console.log(`[Pipeline] Message #${messageLog.messageIndex} | ${isSessionStart ? 'SESSION_INIT' : 'LIVE_MESSAGE'}`);
   console.log(`[Pipeline] PRE-GPT: decay=${triggerDecayApplied}, zone=${sessionBuffer.currentZoneColor}(${sessionBuffer.currentZoneScore}), zoneDecay=${zoneDecayResult.decayApplied}`);
-  console.log(`[Pipeline] PRE-GPT: dominant=${elisDecision ? elisDecision.dominantModule : preGPTDominantState.dominantModule} via ${preGPTDominantState.sourceLayer} | trigger=${preGPTDominantState.dominantTrigger || 'none'} | risk=${preGPTDominantState.riskScore}`);
+  console.log(`[Pipeline] PRE-GPT: dominant=${activeDecision ? activeDecision.dominantModule : preGPTDominantState.dominantModule} via ${preGPTDominantState.sourceLayer} | trigger=${preGPTDominantState.dominantTrigger || 'none'} | risk=${preGPTDominantState.riskScore}`);
   if (elisDecision) {
     console.log(`[Pipeline] ELIAS_DECISION: tone=${elisDecision.tone} | pacing=${elisDecision.pacing} | interventionDepth=${elisDecision.interventionDepth} | challengeLevel=${elisDecision.challengeLevel} | zone=${elisDecision.zone.calculated}`);
+  }
+  if (kimDecision) {
+    console.log(`[Pipeline] KIM_DECISION: tone=${kimDecision.tone} | pacing=${kimDecision.pacing} | interventionDepth=${kimDecision.interventionDepth} | challengeLevel=${kimDecision.challengeLevel} | zone=${kimDecision.zone.calculated}`);
+  }
+  if (engineDirective) {
+    console.log(`[Pipeline] ENGINE_DIRECTIVE: engine=${engineDirective.engine} | zone=${engineDirective.zoneLevel} | label=${engineDirective.zoneLabel}`);
   }
   console.log(`[Pipeline] PRE-GPT: triggers=[${relevance.triggers.map(t => `${t.trigger}(${t.score})`).join(', ')}]`);
   if (selectedModel) console.log(`[Pipeline] GPT: model=${selectedModel}`);
