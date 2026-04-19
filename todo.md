@@ -274,3 +274,6 @@
 - [ ] Ensure stageOfChange still works for Elias users (no regression)
 - [ ] TypeScript check + tests
 - [ ] Checkpoint
+
+## Shared Engine — Controlled Architecture
+- [x] Block 1: Zone Core — enum (1-5), session zone state, explicit init, read-only access (lib/engine/shared/zone-core.ts)
