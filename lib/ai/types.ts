@@ -30,6 +30,8 @@
  *   This is NOT a token optimization problem. This is a core architectural requirement.
  */
 
+import { ELIAS_DEFAULT_STAGE } from '../engine/elias/stage-of-change';
+
 /** User type determined at intake - IMMUTABLE after assignment */
 export type UserType = 'elias' | 'kim';
 
@@ -398,7 +400,7 @@ export function createNewBackpack(intake: IntakeData): Backpack {
 }
 
 /** Create a new UserDat from intake data */
-export function createNewUserDat(userType: UserType, stageOfChange: StageOfChange = 'contemplation'): UserDat {
+export function createNewUserDat(userType: UserType, stageOfChange: StageOfChange = ELIAS_DEFAULT_STAGE): UserDat {
   return {
     currentMood: createDefaultSliders(userType),
     moodHistory: [],

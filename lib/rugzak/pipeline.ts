@@ -69,6 +69,7 @@ import { kimDistressScore, kimResilienceScore } from '../engine/kim/slider-inter
 import { KIM_DEFAULT_MODULE } from '../engine/kim/module-catalog';
 import { eliasDistressScore, eliasResilienceScore, ELIAS_DEFAULT_MOOD } from '../engine/elias/slider-interpretation';
 import { ELIAS_DEFAULT_MODULE } from '../engine/elias/module-catalog';
+import { ELIAS_DEFAULT_STAGE } from '../engine/elias/stage-of-change';
 
 // ─── Pattern Marking (post-GPT local state) ─────────────────
 
@@ -215,7 +216,7 @@ export async function processMessage(
       naam: rugzak.naam,
       userType: rugzak.userType,
       sections: rugzak.sections,
-      intakeContext: { stageOfChange: 'contemplation' as const, ...rugzak.intakeContext },
+      intakeContext: { stageOfChange: ELIAS_DEFAULT_STAGE, ...rugzak.intakeContext },
       createdAt: rugzak.createdAt,
     };
     currentUserDat = {
@@ -227,7 +228,7 @@ export async function processMessage(
       totalSessions: rugzak.totalSessions,
       lastSessionDate: rugzak.lastSessionDate,
       sessionAnalyses: [],
-      stageOfChange: 'contemplation' as const,
+      stageOfChange: ELIAS_DEFAULT_STAGE,
     };
   }
 
@@ -429,7 +430,7 @@ export async function processMessage(
         analysis,
         dominantState: preGPTDominantState,
         crisis: crisisAssessment,
-        stageOfChange: backpack.intakeContext?.stageOfChange ?? 'contemplation',
+        stageOfChange: backpack.intakeContext?.stageOfChange ?? ELIAS_DEFAULT_STAGE,
         moodSliders: currentUserDat.currentMood || (ELIAS_DEFAULT_MOOD as any),
         currentZoneColor: sessionBuffer.currentZoneColor as ZoneColor,
         currentZoneScore: sessionBuffer.currentZoneScore,
@@ -716,7 +717,7 @@ export async function generateGreeting(
       naam: rugzak.naam,
       userType: rugzak.userType,
       sections: rugzak.sections,
-      intakeContext: { stageOfChange: 'contemplation' as const, ...rugzak.intakeContext },
+      intakeContext: { stageOfChange: ELIAS_DEFAULT_STAGE, ...rugzak.intakeContext },
       createdAt: rugzak.createdAt,
     };
     currentUserDat = {
@@ -728,7 +729,7 @@ export async function generateGreeting(
       totalSessions: rugzak.totalSessions,
       lastSessionDate: rugzak.lastSessionDate,
       sessionAnalyses: [],
-      stageOfChange: 'contemplation' as const,
+      stageOfChange: ELIAS_DEFAULT_STAGE,
     };
   }
 
@@ -902,7 +903,7 @@ export async function endSession(
       naam: rugzak.naam,
       userType: rugzak.userType,
       sections: rugzak.sections,
-      intakeContext: { stageOfChange: 'contemplation' as const, ...rugzak.intakeContext },
+      intakeContext: { stageOfChange: ELIAS_DEFAULT_STAGE, ...rugzak.intakeContext },
       createdAt: rugzak.createdAt,
     };
     currentUserDat = {
@@ -914,7 +915,7 @@ export async function endSession(
       totalSessions: rugzak.totalSessions,
       lastSessionDate: rugzak.lastSessionDate,
       sessionAnalyses: [],
-      stageOfChange: 'contemplation' as const,
+      stageOfChange: ELIAS_DEFAULT_STAGE,
     };
   }
 

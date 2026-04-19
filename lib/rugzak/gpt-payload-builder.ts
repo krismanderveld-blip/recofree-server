@@ -26,6 +26,7 @@
 import type { Backpack, UserDat, MoodSliders, ChatMessage, DiaryEntry, StageOfChange } from '../ai/types';
 import type { BackpackRelevanceResult } from './backpack-relevance-analyzer';
 import type { RelationalPatternResult } from './relational-pattern-analyzer';
+import { ELIAS_DEFAULT_STAGE } from '../engine/elias/stage-of-change';
 
 // ─── Output Types ──────────────────────────────────────────────
 
@@ -346,7 +347,7 @@ export function buildGPTPayload(input: PayloadBuilderInput): GPTPayload {
     selectedTriggers: relevance.triggers,
     coreWound: relevance.coreWound,
     contextLine: relevance.contextLine,
-    stageOfChange: userDat.stageOfChange || 'contemplation',
+    stageOfChange: userDat.stageOfChange || ELIAS_DEFAULT_STAGE,
 
     relationshipAnchor: relevance.relationshipAnchor
       ? { name: relevance.relationshipAnchor.name, role: relevance.relationshipAnchor.role, roleEN: relevance.relationshipAnchor.roleEN }
@@ -402,7 +403,7 @@ export function buildGPTPayload(input: PayloadBuilderInput): GPTPayload {
         content: s.content,
       })),
       intakeContext: {
-        stageOfChange: backpack.intakeContext?.stageOfChange || 'contemplation',
+        stageOfChange: backpack.intakeContext?.stageOfChange || ELIAS_DEFAULT_STAGE,
         startEmotion: backpack.intakeContext?.startEmotion || '',
         urgency: backpack.intakeContext?.urgency || 'midden',
         initialContext: backpack.intakeContext?.initialContext || '',

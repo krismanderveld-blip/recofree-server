@@ -335,3 +335,10 @@
 - [x] Wire ai-chat.ts to Elias engine (positive sliders + high complexity modules)
 - [x] Wire all remaining files (openai-provider: ELIAS_DEFAULT_MODULE, module-system: ELIAS_THERAPEUTIC_MODULES, mock-provider: all detection + responses, backpack-relevance-analyzer: slider scoring + module alignments, buffer.ts: eliasDistressScore)
 - [x] Final verification: 0 TS errors, 124 tests passing, zero inline Elias formulas/thresholds/module IDs outside engine
+
+## Elias Engine — Phase 2: Prompt Extraction + StageOfChange
+- [x] Create lib/engine/elias/prompt-block.ts (ELIAS_IDENTITY_PROMPT, eliasCrisisInstructions, ELIAS_SCHEMA_BLOCK, ELIAS_STOA_BLOCK, ELIAS_STAGE_DESCRIPTIONS, ELIAS_STAGE_DESCRIPTIONS_DETAILED)
+- [x] Create lib/engine/elias/stage-of-change.ts (ELIAS_DEFAULT_STAGE)
+- [x] Wire ai-chat.ts to import all Elias prompt content from engine (identity, crisis, schema, stoa, stageDescriptions x2)
+- [x] Wire pipeline.ts (7x contemplation→ELIAS_DEFAULT_STAGE), gpt-payload-builder.ts (2x), types.ts (1x createNewUserDat default)
+- [x] Final verification: 0 TS errors, 124 tests passing, zero inline Elias prompts/stageOfChange outside engine
