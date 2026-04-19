@@ -116,19 +116,19 @@ describe('Compound Slider Rules - Elias', () => {
 
 describe('Compound Slider Rules - Kim', () => {
   it('stress=8, boundaryFatigue=7, emotionalBurden=8, selfCare=2 → grounding tone', () => {
-    const rugzak = makeKim({ stress: 8, boundaryFatigue: 7, emotionalBurden: 8, selfCare: 2 });
+    const rugzak = makeKim({ stress: 8, boundaryFatigue: 7, emotionalBurden: 8, selfCare: 2, eigenRegie: null });
     const analysis = analyzeState(rugzak, '');
     expect(analysis.tone).toBe('grounding');
   });
 
   it('stress=8, boundaryFatigue=7, emotionalBurden=8, selfCare=2 → very_slow pacing', () => {
-    const rugzak = makeKim({ stress: 8, boundaryFatigue: 7, emotionalBurden: 8, selfCare: 2 });
+    const rugzak = makeKim({ stress: 8, boundaryFatigue: 7, emotionalBurden: 8, selfCare: 2, eigenRegie: null });
     const analysis = analyzeState(rugzak, '');
     expect(analysis.pacing).toBe('very_slow');
   });
 
   it('stress=2, boundaryFatigue=2, emotionalBurden=2, selfCare=8 → warm tone', () => {
-    const rugzak = makeKim({ stress: 2, boundaryFatigue: 2, emotionalBurden: 2, selfCare: 8 });
+    const rugzak = makeKim({ stress: 2, boundaryFatigue: 2, emotionalBurden: 2, selfCare: 8, eigenRegie: null });
     const analysis = analyzeState(rugzak, '');
     expect(analysis.tone).toBe('warm');
     expect(analysis.emotionalState).toBe('stable');

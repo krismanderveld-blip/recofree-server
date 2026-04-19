@@ -36,8 +36,8 @@ const highCravingElias: EliasMoodSliders = { craving: 8, frustration: 4, despond
 const highDistressElias: EliasMoodSliders = { craving: 9, frustration: 8, despondency: 9, focus: 1 };
 const lowDistressElias: EliasMoodSliders = { craving: 1, frustration: 1, despondency: 1, focus: 8 };
 
-const normalKim: KimMoodSliders = { stress: 2, boundaryFatigue: 2, emotionalBurden: 2, selfCare: 7 };
-const highStressKim: KimMoodSliders = { stress: 8, boundaryFatigue: 7, emotionalBurden: 8, selfCare: 1 };
+const normalKim: KimMoodSliders = { stress: 2, boundaryFatigue: 2, emotionalBurden: 2, selfCare: 7, eigenRegie: null };
+const highStressKim: KimMoodSliders = { stress: 8, boundaryFatigue: 7, emotionalBurden: 8, selfCare: 1, eigenRegie: null };
 
 // ─── Crisis Detection Tests ─────────────────────────────────────
 
@@ -546,14 +546,14 @@ describe('Intervention Thresholds', () => {
   });
 
   it('should NOT alert when selfCare is high (good) for Kim', () => {
-    const sliders: KimMoodSliders = { stress: 2, boundaryFatigue: 2, emotionalBurden: 2, selfCare: 8 };
+    const sliders: KimMoodSliders = { stress: 2, boundaryFatigue: 2, emotionalBurden: 2, selfCare: 8, eigenRegie: null };
     const alerts = checkInterventions(sliders, 'kim');
     const selfCareAlert = alerts.find((a) => a.key === 'selfCare');
     expect(selfCareAlert).toBeUndefined();
   });
 
   it('should alert severe when selfCare is very low (bad) for Kim', () => {
-    const sliders: KimMoodSliders = { stress: 2, boundaryFatigue: 2, emotionalBurden: 2, selfCare: 1 };
+    const sliders: KimMoodSliders = { stress: 2, boundaryFatigue: 2, emotionalBurden: 2, selfCare: 1, eigenRegie: null };
     const alerts = checkInterventions(sliders, 'kim');
     const selfCareAlert = alerts.find((a) => a.key === 'selfCare');
     expect(selfCareAlert).toBeDefined();

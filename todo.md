@@ -387,3 +387,15 @@
 - [x] Trace where Eigen Regie input is stored (UserDat.eigenRegieHistory)
 - [x] Pass existing Eigen Regie value into createKimDecision in pipeline.ts (getLatestEigenRegieInput helper)
 - [x] Verify: 0 TS errors, 143 tests passing
+
+## Zone System — Fix Eigen Regie Source
+- [x] Change eigenRegieInput source from eigenRegieHistory to currentMood.eigenRegie
+- [x] Remove getLatestEigenRegieInput helper function
+- [x] Verify: 0 TS errors, 143 tests passing
+
+## Zone System — Eigen Regie as Current-State Input
+- [x] Add eigenRegie: number | null to KimMoodSliders
+- [x] Update createDefaultSliders for kim to include eigenRegie: null
+- [x] Update updateEigenRegie() to also write currentMood.eigenRegie
+- [x] Fix pipeline: read currentMood.eigenRegie, remove getLatestEigenRegieInput helper
+- [x] Verify: 0 TS errors, 143 tests passing

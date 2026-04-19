@@ -76,6 +76,8 @@ export interface KimMoodSliders {
   boundaryFatigue: number;
   emotionalBurden: number;
   selfCare: number;
+  /** Eigen Regie (VSP) — current positional state. null if not yet submitted. */
+  eigenRegie: number | null;
 }
 
 /** Union type — runtime value depends on userType */
@@ -124,7 +126,7 @@ export function createDefaultSliders(userType: UserType): MoodSliders {
   if (userType === 'elias') {
     return { craving: 0, frustration: 0, despondency: 0, focus: 5 };
   }
-  return { stress: 0, boundaryFatigue: 0, emotionalBurden: 0, selfCare: 5 };
+  return { stress: 0, boundaryFatigue: 0, emotionalBurden: 0, selfCare: 5, eigenRegie: null };
 }
 
 /** Check which sliders exceed intervention thresholds */

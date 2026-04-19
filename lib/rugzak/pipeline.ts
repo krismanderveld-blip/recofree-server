@@ -451,7 +451,7 @@ export async function processMessage(
       moodSliders: currentUserDat.currentMood || (ELIAS_DEFAULT_MOOD as any),
       currentZoneColor: sessionBuffer.currentZoneColor as ZoneColor,
       currentZoneScore: sessionBuffer.currentZoneScore,
-      eigenRegieInput: getLatestEigenRegieInput(currentUserDat),
+      eigenRegieInput: ('eigenRegie' in currentUserDat.currentMood) ? (currentUserDat.currentMood as import('../ai/types').KimMoodSliders).eigenRegie : null,
     });
   }
 
@@ -686,20 +686,6 @@ export async function processMessage(
   };
 }
 
-// ─── Eigen Regie Input Helper ────────────────────────────────
-
-/**
- * Get the latest Eigen Regie input from userDat.eigenRegieHistory.
- * Returns the most recent userInput value, or null if no history exists.
- * No fallback, no inference, no calculation — reads stored value only.
- */
-function getLatestEigenRegieInput(userDat: UserDat): number | null {
-  const history = userDat.eigenRegieHistory;
-  if (!history || history.length === 0) {
-    return null;
-  }
-  return history[history.length - 1].userInput;
-}
 
 // ─── Pattern Marking Helpers ─────────────────────────────────
 

@@ -454,7 +454,9 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       timestamp: new Date().toISOString(),
     };
     const history = [...(state.userDat.eigenRegieHistory ?? []), entry];
-    const updatedUserDat: UserDat = { ...state.userDat, eigenRegieHistory: history };
+    // Dual write: eigenRegieHistory (storage) + currentMood.eigenRegie (current state)
+    const updatedMood = { ...state.userDat.currentMood, eigenRegie: userInput };
+    const updatedUserDat: UserDat = { ...state.userDat, eigenRegieHistory: history, currentMood: updatedMood };
     dispatch({ type: 'UPDATE_USERDAT', payload: updatedUserDat });
     await persistUserDat(updatedUserDat);
   }, [state.userDat]);
