@@ -127,7 +127,12 @@ export default function MoodScreen() {
 
   // ── Eigen Regie (Kim only) ──
   const isKim = userType === 'kim';
-  const [eigenRegieInput, setEigenRegieInput] = useState(50);
+  const [eigenRegieInput, setEigenRegieInput] = useState(() => {
+    if (isKim && currentMood && 'eigenRegie' in currentMood && currentMood.eigenRegie != null) {
+      return currentMood.eigenRegie as number;
+    }
+    return 50;
+  });
   const [eigenRegieSaved, setEigenRegieSaved] = useState(false);
   const eigenRegieResult = useMemo(
     () => isKim ? processEigenRegie(eigenRegieInput) : null,

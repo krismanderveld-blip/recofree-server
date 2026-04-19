@@ -407,3 +407,8 @@
 - [x] Write computeKimZone boundary tests (zone level transitions)
 - [x] Validate mood screen eigenRegie sync with currentMood.eigenRegie (12 tests)
 - [x] Verify: 0 TS errors, 200 tests passing
+
+## Mood Screen — Eigen Regie Slider Initialisation
+- [x] Initialise eigenRegieInput from currentMood.eigenRegie (saved value) or 50 (default when null)
+- [x] Add test for initialisation behavior (7 tests)
+- [x] Verify: 0 TS errors, 207 tests passing

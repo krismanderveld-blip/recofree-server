@@ -131,6 +131,46 @@ describe('eigenRegie dual write behavior', () => {
   });
 });
 
+// ─── Slider Initialisation Logic ─────────────────────────────────
+
+describe('Eigen Regie slider initialisation', () => {
+  /** Simulates the initialisation logic from mood.tsx */
+  function initEigenRegieSlider(isKim: boolean, currentMood: Record<string, any> | null): number {
+    if (isKim && currentMood && 'eigenRegie' in currentMood && currentMood.eigenRegie != null) {
+      return currentMood.eigenRegie as number;
+    }
+    return 50;
+  }
+
+  it('returns saved value when currentMood.eigenRegie exists', () => {
+    expect(initEigenRegieSlider(true, { stress: 5, eigenRegie: 73 })).toBe(73);
+  });
+
+  it('returns 50 when currentMood.eigenRegie is null', () => {
+    expect(initEigenRegieSlider(true, { stress: 5, eigenRegie: null })).toBe(50);
+  });
+
+  it('returns 50 when currentMood has no eigenRegie field', () => {
+    expect(initEigenRegieSlider(true, { stress: 5 })).toBe(50);
+  });
+
+  it('returns 50 when currentMood is null', () => {
+    expect(initEigenRegieSlider(true, null)).toBe(50);
+  });
+
+  it('returns 50 for Elias user even if eigenRegie exists', () => {
+    expect(initEigenRegieSlider(false, { craving: 5, eigenRegie: 73 })).toBe(50);
+  });
+
+  it('returns saved value 0 correctly (not treated as falsy)', () => {
+    expect(initEigenRegieSlider(true, { stress: 5, eigenRegie: 0 })).toBe(0);
+  });
+
+  it('returns saved value 100 correctly', () => {
+    expect(initEigenRegieSlider(true, { stress: 5, eigenRegie: 100 })).toBe(100);
+  });
+});
+
 // ─── Pipeline Read Simulation ────────────────────────────────────
 
 describe('Pipeline reads currentMood.eigenRegie', () => {
