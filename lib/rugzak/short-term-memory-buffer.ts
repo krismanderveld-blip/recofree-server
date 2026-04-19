@@ -27,6 +27,7 @@
 import type { ChatMessage, MoodSliders, UserType } from '../ai/types';
 import { detectKimTrigger } from '../engine/kim/relational-signals';
 import { kimDistressScore } from '../engine/kim/slider-interpretation';
+import { eliasDistressScore } from '../engine/elias/slider-interpretation';
 
 // ─── Types ────────────────────────────────────────────────────
 
@@ -547,7 +548,7 @@ function computeSliderDistress(mood: MoodSliders, userType: UserType): number {
   const get = (key: string): number => ((mood as any)[key] ?? 0) * 10; // Patch D: slider * 10
 
   if (userType === 'elias') {
-    return (get('craving') + get('frustration') + get('despondency')) / 3;
+    return eliasDistressScore(mood) * 10;
   }
   // Kim — delegated to kimEngine slider-interpretation (×10 for 0–100 internal scale)
   return kimDistressScore(mood) * 10;

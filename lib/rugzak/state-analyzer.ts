@@ -12,6 +12,8 @@ import type { Rugzak, MoodSliders, MoodSnapshot, TriggerPattern, UserType } from
 import { createDefaultSliders, getSliderConfig } from '../ai/types';
 import { kimDistressScore, kimResilienceScore, kimPrimaryConcern } from '../engine/kim/slider-interpretation';
 import { selectKimPriorityModules } from '../engine/kim/module-catalog';
+import { eliasDistressScore, eliasResilienceScore, eliasPrimaryConcern } from '../engine/elias/slider-interpretation';
+import { computeEliasPriorityModules, ELIAS_DEFAULT_MODULE, eliasSignalToModules } from '../engine/elias/module-catalog';
 
 // ─── Output Types ───────────────────────────────────────────────
 
@@ -50,9 +52,7 @@ function getSlider(mood: MoodSliders, key: string): number {
  * Kim: average of stress, boundaryFatigue, emotionalBurden (higher = worse)
  */
 function getDistressScore(mood: MoodSliders, userType: UserType): number {
-  if (userType === 'elias') {
-    return (getSlider(mood, 'craving') + getSlider(mood, 'frustration') + getSlider(mood, 'despondency')) / 3;
-  }
+  if (userType === 'elias') return eliasDistressScore(mood);
   return kimDistressScore(mood);
 }
 
@@ -62,9 +62,7 @@ function getDistressScore(mood: MoodSliders, userType: UserType): number {
  * Kim: selfCare (higher = better)
  */
 function getResilienceScore(mood: MoodSliders, userType: UserType): number {
-  if (userType === 'elias') {
-    return getSlider(mood, 'focus');
-  }
+  if (userType === 'elias') return eliasResilienceScore(mood);
   return kimResilienceScore(mood);
 }
 
@@ -74,9 +72,7 @@ function getResilienceScore(mood: MoodSliders, userType: UserType): number {
  * Kim: stress
  */
 function getPrimaryConcern(mood: MoodSliders, userType: UserType): number {
-  if (userType === 'elias') {
-    return getSlider(mood, 'craving');
-  }
+  if (userType === 'elias') return eliasPrimaryConcern(mood);
   return kimPrimaryConcern(mood);
 }
 
@@ -302,27 +298,16 @@ function selectPriorityModules(
   const modules: string[] = [];
 
   if (userType === 'elias') {
-    const craving = getSlider(mood, 'craving');
-    const frustration = getSlider(mood, 'frustration');
-    const despondency = getSlider(mood, 'despondency');
-    const focus = getSlider(mood, 'focus');
+    // Delegate to Elias engine for slider-based priority modules
+    const eliasModules = computeEliasPriorityModules(mood, [], moodTrend);
+    // Add signal-based modules (delegated to Elias engine)
+    const signalModules = eliasSignalToModules(signals);
+    for (const m of signalModules) {
+      if (!eliasModules.includes(m)) modules.push(m);
+    }
+    modules.push(...eliasModules);
 
-    // Craving active → E01
-    if (signals.cravingMention || craving >= 6) modules.push('E01');
-    // Despondency / hopelessness → E02 (Emotional Regulation)
-    if (despondency >= 6 || signals.hopelessness) modules.push('E02');
-    // Declining trend → E03 (Relapse Prevention)
-    if (moodTrend === 'declining') modules.push('E03');
-    // Frustration high / dissociation → E04 (Grounding)
-    if (frustration >= 7 || signals.dissociation) modules.push('E04');
-    // Isolation → E05 (Social)
-    if (signals.isolationSignal) modules.push('E05');
-    // Low focus → E07 (Focus/Mindfulness)
-    if (focus <= 3) modules.push('E07');
-    // Positive signal → E06 (Reinforcement)
-    if (signals.positiveSignal) modules.push('E06');
-
-    if (modules.length === 0) modules.push('E02');
+    if (modules.length === 0) modules.push(ELIAS_DEFAULT_MODULE);
   } else {
     return selectKimPriorityModules(mood, signals, activeTriggers);
   }

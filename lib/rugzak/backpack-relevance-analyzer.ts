@@ -20,6 +20,7 @@ import type { Backpack, UserDat, MoodSliders, TriggerPattern, LifePhaseSection }
 import type { StateAnalysis } from './state-analyzer';
 import { kimBackpackSliderScore } from '../engine/kim/slider-interpretation';
 import { KIM_MODULE_ALIGNMENTS } from '../engine/kim/module-catalog';
+import { eliasBackpackSliderScore, ELIAS_MODULE_ALIGNMENTS } from '../engine/elias/module-catalog';
 
 // ─── Output Types ──────────────────────────────────────────────
 
@@ -187,11 +188,7 @@ function scoreTrigger(
 
   // Slider match
   if (userType === 'elias') {
-    const s = sliders as any;
-    if (triggerId === 'craving' && s.craving >= 6) score += 2;
-    if (triggerId === 'isolation' && s.focus <= 3) score += 2;
-    if ((triggerId === 'shame' || triggerId === 'self_worth' || triggerId === 'hopelessness') && s.despondency >= 6) score += 2;
-    if ((triggerId === 'anger' || triggerId === 'control') && s.frustration >= 6) score += 2;
+    score += eliasBackpackSliderScore(triggerId, sliders as any);
   } else {
     score += kimBackpackSliderScore(triggerId, sliders);
   }
@@ -205,16 +202,8 @@ function scoreTrigger(
   }
 
   // Module alignment
-  const moduleAlignments: Record<string, string[]> = {
-    E01_CRAVING: ['craving'],
-    E01: ['craving'],
-    E02_EMOTIONAL_REGULATION: ['shame', 'self_worth', 'hopelessness', 'anger'],
-    E02: ['shame', 'self_worth', 'hopelessness', 'anger'],
-    E03_PATTERN_REFLECTION: ['shame', 'self_worth', 'guilt', 'abandonment'],
-    E03: ['shame', 'self_worth', 'guilt', 'abandonment'],
-    E04_CONNECTION_RISK: ['isolation', 'rejection', 'abandonment', 'fear_of_loss'],
-    E04: ['isolation', 'rejection', 'abandonment', 'fear_of_loss'],
-    E05: ['isolation'],
+  const moduleAlignments: Record<string, readonly string[]> = {
+    ...ELIAS_MODULE_ALIGNMENTS,
     ...KIM_MODULE_ALIGNMENTS,
   };
 

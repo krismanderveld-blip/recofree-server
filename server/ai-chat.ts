@@ -24,6 +24,9 @@
 import { z } from "zod";
 import { KIM_IDENTITY_PROMPT, kimCrisisInstructions } from "../lib/engine/kim/prompt-block";
 import { KIM_POSITIVE_SLIDERS } from "../lib/engine/kim/slider-interpretation";
+import { ELIAS_POSITIVE_SLIDERS } from "../lib/engine/elias/slider-interpretation";
+import { ELIAS_HIGH_COMPLEXITY_MODULES } from "../lib/engine/elias/module-catalog";
+import { KIM_HIGH_COMPLEXITY_MODULES } from "../lib/engine/kim/module-catalog";
 
 // ─── Types ────────────────────────────────────────────────────────
 
@@ -810,7 +813,7 @@ SCHENDING VAN DIT PROTOCOL IS ONACCEPTABEL.`;
   const maxDistress = Math.max(...sliderValues.filter((_, i) => {
     const keys = Object.keys(input.moodSliders);
     // Distress sliders: exclude positive sliders (Elias: focus, Kim: selfCare)
-    const POSITIVE_SLIDERS = ['focus', ...KIM_POSITIVE_SLIDERS];
+    const POSITIVE_SLIDERS = [...ELIAS_POSITIVE_SLIDERS, ...KIM_POSITIVE_SLIDERS];
     return !POSITIVE_SLIDERS.includes(keys[i]);
   }), 0);
 
@@ -1226,10 +1229,8 @@ export async function generateAIResponse(
   const urgencyForRouting = (input.urgency || '').toLowerCase();
 
   const HIGH_COMPLEXITY_MODULES = [
-    'e03_pattern_reflection', 'e03', 'pattern_reflection',
-    'e04_connection_risk', 'e04', 'connection_risk',
-    'k_relational_reflection', 'k02', 'relational_reflection',
-    'k_boundary_pressure', 'k01', 'boundary_pressure',
+    ...ELIAS_HIGH_COMPLEXITY_MODULES,
+    ...KIM_HIGH_COMPLEXITY_MODULES,
   ];
 
   let selectedModel: 'gpt-4o' | 'gpt-4o-mini' = 'gpt-4o-mini';

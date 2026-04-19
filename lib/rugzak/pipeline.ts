@@ -67,6 +67,8 @@ import { createEliasDecision, type EliasDecision } from '../engine/elias/decisio
 import type { CrisisAssessment } from '../crisis/detector';
 import { kimDistressScore, kimResilienceScore } from '../engine/kim/slider-interpretation';
 import { KIM_DEFAULT_MODULE } from '../engine/kim/module-catalog';
+import { eliasDistressScore, eliasResilienceScore, ELIAS_DEFAULT_MOOD } from '../engine/elias/slider-interpretation';
+import { ELIAS_DEFAULT_MODULE } from '../engine/elias/module-catalog';
 
 // ─── Pattern Marking (post-GPT local state) ─────────────────
 
@@ -292,8 +294,8 @@ export async function processMessage(
       '', // empty message = no new matches, only decay advances
       backpack,
       currentUserDat,
-      currentUserDat.currentMood || { stemming: 5, craving: 0, overprikkeling: 0, sociaal: 5 },
-      sessionDominantState?.dominantModule || (backpack.userType === 'elias' ? 'E02' : KIM_DEFAULT_MODULE),
+      currentUserDat.currentMood || (ELIAS_DEFAULT_MOOD as any),
+      sessionDominantState?.dominantModule || (backpack.userType === 'elias' ? ELIAS_DEFAULT_MODULE : KIM_DEFAULT_MODULE),
     );
   }
 
@@ -309,7 +311,7 @@ export async function processMessage(
     sessionBuffer,
     userMessage,
     allMessages,
-    currentUserDat.currentMood || { stemming: 5, craving: 0, overprikkeling: 0, sociaal: 5 },
+    currentUserDat.currentMood || (ELIAS_DEFAULT_MOOD as any),
     backpack.userType,
   );
 
@@ -328,15 +330,15 @@ export async function processMessage(
     userMessage,
     backpack,
     currentUserDat,
-    currentUserDat.currentMood || { stemming: 5, craving: 0, overprikkeling: 0, sociaal: 5 },
-    analysis.priorityModules[0] || (backpack.userType === 'elias' ? 'E02' : KIM_DEFAULT_MODULE),
+    currentUserDat.currentMood || (ELIAS_DEFAULT_MOOD as any),
+    analysis.priorityModules[0] || (backpack.userType === 'elias' ? ELIAS_DEFAULT_MODULE : KIM_DEFAULT_MODULE),
   );
 
   // Select dominant state (pre-GPT decision variable — NOT reselected after GPT)
   const preGPTDominantState = selectDominantState(
     sessionBuffer,
     analysis,
-    currentUserDat.currentMood || { stemming: 5, craving: 0, overprikkeling: 0, sociaal: 5 },
+    currentUserDat.currentMood || (ELIAS_DEFAULT_MOOD as any),
     backpack.userType,
     currentUserDat.triggerPatterns || [],
     analysis.priorityModules,
@@ -428,7 +430,7 @@ export async function processMessage(
         dominantState: preGPTDominantState,
         crisis: crisisAssessment,
         stageOfChange: backpack.intakeContext?.stageOfChange ?? 'contemplation',
-        moodSliders: currentUserDat.currentMood || { stemming: 5, craving: 0, overprikkeling: 0, sociaal: 5 },
+        moodSliders: currentUserDat.currentMood || (ELIAS_DEFAULT_MOOD as any),
         currentZoneColor: sessionBuffer.currentZoneColor as ZoneColor,
         currentZoneScore: sessionBuffer.currentZoneScore,
       })
@@ -444,7 +446,7 @@ export async function processMessage(
     userName: backpack.naam,
     currentMessage: userMessage,
     conversationHistory: currentUserDat.chatHistory || [],
-    moodSliders: currentUserDat.currentMood || { stemming: 5, craving: 0, overprikkeling: 0, sociaal: 5 },
+    moodSliders: currentUserDat.currentMood || (ELIAS_DEFAULT_MOOD as any),
     rugzak,
     backpack,
     userDat: currentUserDat,
@@ -778,13 +780,13 @@ export async function generateGreeting(
     userName: backpack.naam,
     currentMessage: '',
     conversationHistory: currentUserDat.chatHistory || [],
-    moodSliders: currentUserDat.currentMood || { stemming: 5, craving: 0, overprikkeling: 0, sociaal: 5 },
+    moodSliders: currentUserDat.currentMood || (ELIAS_DEFAULT_MOOD as any),
     rugzak,
     backpack,
     userDat: currentUserDat,
     isSessionStart: true,
     diaryEntries: diaryEntries ?? [],
-    activeModules: [analysis.priorityModules[0] || (backpack.userType === 'elias' ? 'E02' : KIM_DEFAULT_MODULE)],
+    activeModules: [analysis.priorityModules[0] || (backpack.userType === 'elias' ? ELIAS_DEFAULT_MODULE : KIM_DEFAULT_MODULE)],
     crisisLevel: 0,
     detectedEmotion: analysis.emotionalState,
     therapeuticStance: buildTherapeuticStance(analysis),
@@ -945,14 +947,14 @@ export async function endSession(
     const lastSliders = moodHistory[moodHistory.length - 1].sliders;
     const userType = backpack.userType;
     const firstDistress = userType === 'elias'
-      ? (((firstSliders as any).craving ?? 0) + ((firstSliders as any).frustration ?? 0) + ((firstSliders as any).despondency ?? 0)) / 3
+      ? eliasDistressScore(firstSliders as any)
       : kimDistressScore(firstSliders as any);
     const lastDistress = userType === 'elias'
-      ? (((lastSliders as any).craving ?? 0) + ((lastSliders as any).frustration ?? 0) + ((lastSliders as any).despondency ?? 0)) / 3
+      ? eliasDistressScore(lastSliders as any)
       : kimDistressScore(lastSliders as any);
     distressChange = lastDistress - firstDistress;
-    const firstResilience = userType === 'elias' ? ((firstSliders as any).focus ?? 5) : kimResilienceScore(firstSliders as any);
-    const lastResilience = userType === 'elias' ? ((lastSliders as any).focus ?? 5) : kimResilienceScore(lastSliders as any);
+    const firstResilience = userType === 'elias' ? eliasResilienceScore(firstSliders as any) : kimResilienceScore(firstSliders as any);
+    const lastResilience = userType === 'elias' ? eliasResilienceScore(lastSliders as any) : kimResilienceScore(lastSliders as any);
     resilienceChange = lastResilience - firstResilience;
   }
 
@@ -973,7 +975,7 @@ export async function endSession(
     userName: backpack.naam,
     currentMessage: '__SESSION_END__',
     conversationHistory: currentUserDat.chatHistory || [],
-    moodSliders: currentUserDat.currentMood || { craving: 0, frustration: 0, despondency: 0, focus: 5 } as any,
+    moodSliders: currentUserDat.currentMood || (ELIAS_DEFAULT_MOOD as any),
     rugzak,
     backpack,
     userDat: currentUserDat,

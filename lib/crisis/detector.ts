@@ -18,6 +18,8 @@
 import type { MoodSliders, UserType } from '../ai/types';
 import { kimDistressScore, kimResilienceScore } from '../engine/kim/slider-interpretation';
 import { checkKimCrisisTrigger } from '../engine/kim/crisis-trigger';
+import { eliasDistressScore, eliasResilienceScore } from '../engine/elias/slider-interpretation';
+import { checkEliasCrisisTriggers } from '../engine/elias/state-logic';
 
 export interface CrisisAssessment {
   level: number;
@@ -32,15 +34,13 @@ function getSlider(mood: MoodSliders, key: string): number {
 
 /** Get distress score based on user type */
 function getDistress(mood: MoodSliders, userType: UserType): number {
-  if (userType === 'elias') {
-    return (getSlider(mood, 'craving') + getSlider(mood, 'frustration') + getSlider(mood, 'despondency')) / 3;
-  }
+  if (userType === 'elias') return eliasDistressScore(mood);
   return kimDistressScore(mood);
 }
 
 /** Get resilience score based on user type */
 function getResilience(mood: MoodSliders, userType: UserType): number {
-  return userType === 'elias' ? getSlider(mood, 'focus') : kimResilienceScore(mood);
+  return userType === 'elias' ? eliasResilienceScore(mood) : kimResilienceScore(mood);
 }
 
 // Crisis keyword patterns (language-agnostic internal logic, English output)
@@ -116,14 +116,9 @@ export function assessCrisis(
 
   // User-type-specific slider crisis checks
   if (userType === 'elias') {
-    if (getSlider(moodSliders, 'craving') >= 6) {
-      triggers.push('extreme_craving');
-      maxLevel = Math.max(maxLevel, 1);
-    }
-    if (getSlider(moodSliders, 'despondency') >= 6) {
-      triggers.push('extreme_despondency');
-      maxLevel = Math.max(maxLevel, 1);
-    }
+    const eliasCrisis = checkEliasCrisisTriggers(moodSliders);
+    triggers.push(...eliasCrisis.triggers);
+    maxLevel = Math.max(maxLevel, eliasCrisis.maxLevel);
   } else {
     const kimCrisis = checkKimCrisisTrigger(moodSliders);
     if (kimCrisis.fired) {

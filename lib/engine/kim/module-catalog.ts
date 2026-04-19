@@ -267,3 +267,15 @@ export const KIM_MODULE_ALIGNMENTS: Readonly<Record<string, readonly string[]>> 
   K_RELATIONAL_REFLECTION: ['guilt', 'disappointment', 'abandonment'],
   K02: ['guilt', 'disappointment', 'abandonment'],
 });
+
+// ─── Kim High-Complexity Modules (for model routing in ai-chat.ts) ───
+
+/**
+ * Kim modules that require the more capable model (gpt-4o) for routing.
+ * Extracted from server/ai-chat.ts HIGH_COMPLEXITY_MODULES (Kim entries).
+ * Exact same strings, lowercase.
+ */
+export const KIM_HIGH_COMPLEXITY_MODULES: readonly string[] = [
+  'k_relational_reflection', 'k02', 'relational_reflection',
+  'k_boundary_pressure', 'k01', 'boundary_pressure',
+];

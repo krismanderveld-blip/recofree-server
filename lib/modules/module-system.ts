@@ -13,6 +13,7 @@
 
 import type { MoodSliders, UserType } from '../ai/types';
 import { KIM_THERAPEUTIC_MODULES } from '../engine/kim/module-catalog';
+import { ELIAS_THERAPEUTIC_MODULES } from '../engine/elias/module-catalog';
 
 export interface TherapeuticModule {
   id: string;
@@ -44,75 +45,9 @@ function getSlider(mood: MoodSliders, key: string): number {
 }
 
 // ─── Elias Modules (Recovery-focused) ───────────────────────────
-
-const ELIAS_MODULES: TherapeuticModule[] = [
-  {
-    id: 'E01', name: 'Craving Management', category: 'Acute',
-    description: 'Techniques for managing acute craving episodes',
-    triggers: [
-      { type: 'slider', condition: 'craving', direction: 'above', threshold: 4 },
-      { type: 'keyword', condition: 'craving|urge|want to use|tempted' },
-    ],
-    userType: 'elias',
-  },
-  {
-    id: 'E02', name: 'Emotional Regulation', category: 'Core',
-    description: 'Understanding and managing difficult emotions',
-    triggers: [
-      { type: 'slider', condition: 'despondency', direction: 'above', threshold: 4 },
-      { type: 'keyword', condition: 'overwhelmed|can\'t handle|too much|falling apart' },
-    ],
-    userType: 'elias',
-  },
-  {
-    id: 'E03', name: 'Relapse Prevention', category: 'Core',
-    description: 'Identifying and managing relapse triggers',
-    triggers: [
-      { type: 'keyword', condition: 'relapse|used again|slipped|fell off' },
-      { type: 'behavioral', condition: 'craving_trend_up' },
-    ],
-    userType: 'elias',
-  },
-  {
-    id: 'E04', name: 'Self-Compassion', category: 'Growth',
-    description: 'Building self-compassion and reducing self-criticism',
-    triggers: [
-      { type: 'keyword', condition: 'hate myself|worthless|failure|disgusted|ashamed' },
-      { type: 'slider', condition: 'despondency', direction: 'above', threshold: 5 },
-    ],
-    userType: 'elias',
-  },
-  {
-    id: 'E05', name: 'Mindfulness & Grounding', category: 'Core',
-    description: 'Present-moment awareness and grounding techniques',
-    triggers: [
-      { type: 'keyword', condition: 'anxious|panic|racing|can\'t stop thinking' },
-      { type: 'slider', condition: 'frustration', direction: 'above', threshold: 5 },
-    ],
-    userType: 'elias',
-  },
-  {
-    id: 'E06', name: 'Values & Meaning', category: 'Growth',
-    description: 'Exploring personal values and finding meaning in recovery',
-    triggers: [{ type: 'keyword', condition: 'why|purpose|meaning|what\'s the point|motivation' }],
-    userType: 'elias',
-  },
-  {
-    id: 'E07', name: 'Focus & Clarity', category: 'Support',
-    description: 'Rebuilding focus and mental clarity during recovery',
-    triggers: [
-      { type: 'slider', condition: 'focus', direction: 'below', threshold: 2 },
-      { type: 'keyword', condition: 'can\'t focus|distracted|foggy|confused|scattered' },
-    ],
-    userType: 'elias',
-  },
-  {
-    id: 'E08', name: 'ACT - Acceptance', category: 'Therapeutic',
-    description: 'Acceptance and Commitment Therapy techniques',
-    triggers: [{ type: 'keyword', condition: 'accept|struggle|fight|resist|control' }],
-    userType: 'elias',
-  },
-];
+// Elias module definitions are now imported from lib/engine/elias/module-catalog.ts
+// Cast to mutable TherapeuticModule[] for compatibility with existing code.
+const ELIAS_MODULES: TherapeuticModule[] = ELIAS_THERAPEUTIC_MODULES as unknown as TherapeuticModule[];
 
 // ─── Kim Modules (Loved-one focused) ────────────────────────────
 // Kim module definitions are now imported from lib/engine/kim/module-catalog.ts

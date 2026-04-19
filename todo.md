@@ -322,3 +322,16 @@
 - [x] Micro-patch 14: mock-provider.ts — extracted Kim response pool (KIM_MOCK_RESPONSES) + threshold (isKimLowMood) to engine
 - [x] Micro-patch 15: ai-chat.ts — extracted selfCare to KIM_POSITIVE_SLIDERS constant in engine
 - [x] Final verification: isKimLowMood moved from mock-responses.ts to slider-interpretation.ts (logic/data separation confirmed)
+
+## Elias Engine — Phase 1: Critical Core Extraction
+- [x] Create lib/engine/elias/slider-interpretation.ts (distress, resilience, primaryConcern, isEliasLowMood, isEliasHighCraving, ELIAS_POSITIVE_SLIDERS, ELIAS_DEFAULT_MOOD)
+- [x] Create lib/engine/elias/state-logic.ts (crisis triggers, guidance depth, model routing, detectEliasReflectionTrigger)
+- [x] Create lib/engine/elias/module-catalog.ts (ELIAS_THERAPEUTIC_MODULES, trigger→module, slider→module, priority modules, default/crisis, alignments, signal→module, backpack slider scoring, mock responses, high complexity)
+- [x] Wire state-analyzer.ts to Elias engine (distress + resilience + concern + signal→module)
+- [x] Wire dominant-state-selector.ts to Elias engine (all 100-scale helpers + trigger/slider/default/crisis)
+- [x] Wire engine.ts (rugzak) to Elias engine (distress + resilience + concern + priority modules)
+- [x] Wire detector.ts to Elias engine (distress + resilience + crisis triggers)
+- [x] Wire pipeline.ts to Elias engine (distress + resilience + default mood + E02 fallbacks)
+- [x] Wire ai-chat.ts to Elias engine (positive sliders + high complexity modules)
+- [x] Wire all remaining files (openai-provider: ELIAS_DEFAULT_MODULE, module-system: ELIAS_THERAPEUTIC_MODULES, mock-provider: all detection + responses, backpack-relevance-analyzer: slider scoring + module alignments, buffer.ts: eliasDistressScore)
+- [x] Final verification: 0 TS errors, 124 tests passing, zero inline Elias formulas/thresholds/module IDs outside engine

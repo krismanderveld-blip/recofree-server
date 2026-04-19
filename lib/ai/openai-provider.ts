@@ -6,6 +6,7 @@ import { analyzeBackpackRelevance } from '@/lib/rugzak/backpack-relevance-analyz
 import { buildGPTPayload } from '@/lib/rugzak/gpt-payload-builder';
 import { detectRelationalAnchor, extractRelationalAnchors } from '@/lib/rugzak/relational-anchor-detector';
 import { analyzeRelationalPatterns } from '@/lib/rugzak/relational-pattern-analyzer';
+import { ELIAS_DEFAULT_MODULE } from '@/lib/engine/elias/module-catalog';
 
 /**
  * OpenAIProvider — Routes through backend tRPC to OpenAI.
@@ -126,7 +127,7 @@ export class OpenAIProvider implements AIProvider {
       }
 
       // ── STEP 1: Local Analysis (runs EVERY call) ──
-      const dominantModule = context.activeModules[0] || 'E02';
+      const dominantModule = context.activeModules[0] || ELIAS_DEFAULT_MODULE;
 
       const sliders = { ...context.moodSliders } as Record<string, number>;
       const sliderValues = Object.values(sliders);

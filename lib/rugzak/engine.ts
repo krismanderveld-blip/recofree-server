@@ -23,6 +23,8 @@ import type {
 import { createDefaultSliders } from '../ai/types';
 import { kimDistressScore, kimResilienceScore, kimPrimaryConcern } from '../engine/kim/slider-interpretation';
 import { computeKimEngineModules } from '../engine/kim/module-catalog';
+import { eliasDistressScore, eliasResilienceScore, eliasPrimaryConcern } from '../engine/elias/slider-interpretation';
+import { computeEliasPriorityModules } from '../engine/elias/module-catalog';
 
 // ─── Generic Slider Access ─────────────────────────────────────
 
@@ -32,20 +34,18 @@ function getSlider(mood: MoodSliders, key: string): number {
 
 /** Distress score: average of negative sliders (higher = worse) */
 function getDistressScore(mood: MoodSliders, userType: UserType): number {
-  if (userType === 'elias') {
-    return (getSlider(mood, 'craving') + getSlider(mood, 'frustration') + getSlider(mood, 'despondency')) / 3;
-  }
+  if (userType === 'elias') return eliasDistressScore(mood);
   return kimDistressScore(mood);
 }
 
 /** Resilience score: positive slider (higher = better) */
 function getResilienceScore(mood: MoodSliders, userType: UserType): number {
-  return userType === 'elias' ? getSlider(mood, 'focus') : kimResilienceScore(mood);
+  return userType === 'elias' ? eliasResilienceScore(mood) : kimResilienceScore(mood);
 }
 
 /** Primary concern: the most critical slider */
 function getPrimaryConcern(mood: MoodSliders, userType: UserType): number {
-  return userType === 'elias' ? getSlider(mood, 'craving') : kimPrimaryConcern(mood);
+  return userType === 'elias' ? eliasPrimaryConcern(mood) : kimPrimaryConcern(mood);
 }
 
 // ─── Mood Trajectory Analysis ───────────────────────────────────
@@ -174,19 +174,10 @@ function computePriorityModules(
   const priorities: string[] = [];
 
   if (userType === 'elias') {
-    if (getSlider(mood, 'craving') >= 6) priorities.push('E01');
-    if (getSlider(mood, 'despondency') >= 6) priorities.push('E02');
-    if (getSlider(mood, 'frustration') >= 7) priorities.push('E04');
-    if (getSlider(mood, 'focus') <= 3) priorities.push('E07');
-    if (trajectory === 'declining') priorities.push('E03');
-    if (patterns.some((t) => t.trigger === 'isolation' && t.count >= 2)) {
-      priorities.push('E05');
-    }
+    return computeEliasPriorityModules(mood, patterns, trajectory);
   } else {
     return computeKimEngineModules(mood, patterns);
   }
-
-  return [...new Set(priorities)];
 }
 
 // ─── Active Patterns ────────────────────────────────────────────

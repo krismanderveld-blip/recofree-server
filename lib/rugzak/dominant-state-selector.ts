@@ -31,6 +31,17 @@ import {
   kimResilience100,
   kimPrimaryConcern100,
 } from '../engine/kim/module-catalog';
+import {
+  eliasDistress100,
+  eliasResilience100,
+  eliasPrimaryConcern100,
+} from '../engine/elias/slider-interpretation';
+import {
+  eliasTriggerToModule,
+  eliasSliderToModule,
+  ELIAS_DEFAULT_MODULE,
+  ELIAS_CRISIS_MODULE,
+} from '../engine/elias/module-catalog';
 
 // ─── Output Types ────────────────────────────────────────────
 
@@ -58,60 +69,38 @@ function getInternal(mood: MoodSliders, key: string): number {
 }
 
 function getDistress100(mood: MoodSliders, userType: UserType): number {
-  if (userType === 'elias') {
-    return (getInternal(mood, 'craving') + getInternal(mood, 'frustration') + getInternal(mood, 'despondency')) / 3;
-  }
+  if (userType === 'elias') return eliasDistress100(mood);
   return kimDistress100(mood);
 }
 
 function getResilience100(mood: MoodSliders, userType: UserType): number {
-  if (userType === 'elias') return getInternal(mood, 'focus');
+  if (userType === 'elias') return eliasResilience100(mood);
   return kimResilience100(mood);
 }
 
 function getPrimaryConcern100(mood: MoodSliders, userType: UserType): number {
-  if (userType === 'elias') return getInternal(mood, 'craving');
+  if (userType === 'elias') return eliasPrimaryConcern100(mood);
   return kimPrimaryConcern100(mood);
 }
 
 // ─── Module Mapping ──────────────────────────────────────────
 
 function getCrisisModule(userType: UserType): string {
-  return userType === 'elias' ? 'E_CRISIS' : KIM_CRISIS_MODULE;
+  return userType === 'elias' ? ELIAS_CRISIS_MODULE : KIM_CRISIS_MODULE;
 }
 
 function getTriggerModule(trigger: string, userType: UserType): string {
-  if (userType === 'elias') {
-    switch (trigger) {
-      case 'craving': return 'E01';
-      case 'isolation': return 'E05';
-      case 'conflict': return 'E04';
-      case 'boredom': return 'E07';
-      case 'stress': return 'E02';
-      case 'sleep_disruption': return 'E02';
-      case 'trauma_memory': return 'E02';
-      default: return 'E02';
-    }
-  } else {
-    return kimTriggerToModule(trigger);
-  }
+  if (userType === 'elias') return eliasTriggerToModule(trigger);
+  return kimTriggerToModule(trigger);
 }
 
 function getSliderModule(mood: MoodSliders, userType: UserType): string {
-  if (userType === 'elias') {
-    const craving = getInternal(mood, 'craving');
-    const despondency = getInternal(mood, 'despondency');
-    const frustration = getInternal(mood, 'frustration');
-    if (craving >= despondency && craving >= frustration) return 'E01';
-    if (despondency >= frustration) return 'E02';
-    return 'E04';
-  } else {
-    return kimSliderToModule(mood);
-  }
+  if (userType === 'elias') return eliasSliderToModule(mood);
+  return kimSliderToModule(mood);
 }
 
 function getDefaultModule(userType: UserType): string {
-  return userType === 'elias' ? 'E02' : KIM_DEFAULT_MODULE;
+  return userType === 'elias' ? ELIAS_DEFAULT_MODULE : KIM_DEFAULT_MODULE;
 }
 
 // ─── Tone from Zone + Intent ─────────────────────────────────
