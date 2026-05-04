@@ -79,6 +79,21 @@ import {
   buildInterventionContext,
   type InterventionState,
 } from '../engine/elias/intervention-continuity';
+import {
+  resetProjectionState,
+  resetSessionTracking as resetProjectionSessionTracking,
+  applyProjectionDecay,
+} from '../engine/elias/projection';
+import {
+  resetKimProjectionState,
+  applyKimProjectionDecay,
+} from '../engine/kim/projection';
+import {
+  runProjectionLayer,
+  resetDeepeningState,
+  checkDeflectionInResponse,
+  type ProjectionResult,
+} from './projection-layer';
 
 // ─── Pattern Marking (post-GPT local state) ─────────────────
 
@@ -137,6 +152,10 @@ export function resetSessionState(): void {
   resetTriggerDecay();
   resetSessionCost();
   resetInterventionState();
+  resetProjectionState();
+  resetKimProjectionState();
+  resetProjectionSessionTracking();
+  resetDeepeningState();
 }
 
 // ─── Pipeline Result ────────────────────────────────────────────
@@ -418,6 +437,59 @@ export async function processMessage(
     console.log(`[Pipeline] Regulation: ${regulationResult.action} | zone=${regulationResult.zone} | depth=${regulationResult.effectiveDepth} | softened=${regulationResult.wasSoftened} | skipped=${regulationResult.wasSkipped}`);
   }
 
+  // ── PRE-GPT STEP 5d: Projection Layer (signal detection + injection) ──
+  // Runs after backpack-relevance-analyzer (5c), before GPT call.
+  // Detects future-facing signals (fears, hopes, goals) from message + sliders.
+  const currentMood = currentUserDat.currentMood || (ELIAS_DEFAULT_MOOD as any);
+  const vspLevel: string | null = backpack.userType === 'elias' && 'vsp' in currentMood
+    ? (currentMood as import('../ai/types').EliasMoodSliders).vsp
+    : null;
+  const eigenRegieScore: number | null = backpack.userType === 'kim' && 'eigenRegie' in currentMood
+    ? (currentMood as import('../ai/types').KimMoodSliders).eigenRegie
+    : null;
+  const distressScore = backpack.userType === 'elias'
+    ? eliasDistressScore(currentMood as any)
+    : kimDistressScore(currentMood as any);
+  const resilienceScore = backpack.userType === 'elias'
+    ? eliasResilienceScore(currentMood as any)
+    : kimResilienceScore(currentMood as any);
+  // Zone improvement: compare current zone score with previous (lower = improved)
+  const zoneImproved = sessionBuffer.previousZoneScore > sessionBuffer.currentZoneScore;
+  // Consecutive green sessions: count from session analyses
+  const recentAnalyses = currentUserDat.sessionAnalyses || [];
+  let consecutiveGreenSessions = 0;
+  for (let i = recentAnalyses.length - 1; i >= 0; i--) {
+    if ((recentAnalyses[i] as any).endZoneColor === 'GREEN' || (recentAnalyses[i] as any).endZoneColor === 'GROEN') {
+      consecutiveGreenSessions++;
+    } else break;
+  }
+  // Consecutive high Eigen Regie sessions (Kim only)
+  let consecutiveHighRegieSessions = 0;
+  if (backpack.userType === 'kim') {
+    for (let i = recentAnalyses.length - 1; i >= 0; i--) {
+      if ((recentAnalyses[i] as any).endEigenRegieScore > 70) {
+        consecutiveHighRegieSessions++;
+      } else break;
+    }
+  }
+
+  const projectionResult: ProjectionResult = runProjectionLayer({
+    userType: backpack.userType,
+    message: userMessage,
+    dominantModule: preGPTDominantState.dominantModule,
+    vspLevel,
+    distressScore,
+    resilienceScore,
+    consecutiveGreenSessions,
+    zoneImproved,
+    eigenRegieScore,
+    consecutiveHighRegieSessions,
+  });
+
+  if (projectionResult.hasActiveEntries || projectionResult.newEntriesCount > 0) {
+    console.log(`[Pipeline] Projection: active=${projectionResult.hasActiveEntries}, new=${projectionResult.newEntriesCount}, deepening=${!!projectionResult.deepeningDirective}`);
+  }
+
   // ── PRE-GPT STEP 6: Build ChatContext + ONE GPT call ──
   let crisisLevel = 0;
   let showEmergency = false;
@@ -552,6 +624,8 @@ export async function processMessage(
     interventionContinuity: interventionContinuity
       ? buildInterventionContext(interventionContinuity)
       : undefined,
+    projectionContext: projectionResult.injectionBlock ?? undefined,
+    projectionDeepening: projectionResult.deepeningDirective ?? undefined,
   };
 
   let response: string;
@@ -609,6 +683,10 @@ export async function processMessage(
       regulationResult.action,
     );
   }
+
+  // 7b-iii. POST-GPT: Check deflection for projection deepening deactivation
+  // If user deflected ("weet niet", "laat maar", etc.), deepening is blocked for session remainder.
+  checkDeflectionInResponse(userMessage);
 
   // 7c. Update trigger patterns from signals (local reinforcement, not promotion)
   const signals = detectInputSignals(userMessage);
@@ -1147,6 +1225,22 @@ export async function endSession(
         promotionResult.promotedItems,
       ),
     };
+  }
+
+  // ── Projection Decay (session-end) ──
+  // Apply decay to projection entries that were not reinforced this session.
+  // Runs directly after UserDat promotion, within the same session-end block.
+  const sessionEndTimestamp = new Date().toISOString();
+  if (backpack.userType === 'elias') {
+    const decayResult = applyProjectionDecay(sessionEndTimestamp);
+    if (decayResult.decayedEntries > 0 || decayResult.removedEntries > 0) {
+      console.log(`[Pipeline] Projection decay (Elias): decayed=${decayResult.decayedEntries}, removed=${decayResult.removedEntries}`);
+    }
+  } else {
+    const decayResult = applyKimProjectionDecay(sessionEndTimestamp);
+    if (decayResult.decayedEntries > 0 || decayResult.removedEntries > 0) {
+      console.log(`[Pipeline] Projection decay (Kim): decayed=${decayResult.decayedEntries}, removed=${decayResult.removedEntries}`);
+    }
   }
 
   // Update trigger patterns from session-wide signals

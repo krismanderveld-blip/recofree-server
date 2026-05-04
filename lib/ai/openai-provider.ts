@@ -192,6 +192,8 @@ export class OpenAIProvider implements AIProvider {
         regulationResult: context.regulationResult,
         engineDirective: context.engineDirective,
         interventionContinuity: context.interventionContinuity,
+        projectionContext: context.projectionContext,
+        projectionDeepening: context.projectionDeepening,
       });
 
       // ── STEP 3: Build server payload based on SESSION_INIT / LIVE_MESSAGE split ──
@@ -244,6 +246,10 @@ export class OpenAIProvider implements AIProvider {
 
           // Intervention continuity (Elias only, zone-linked therapeutic memory)
           interventionContinuity: gptPayload.interventionContinuity ?? null,
+
+          // Projection layer (future-facing fears/hopes/goals)
+          projectionContext: gptPayload.projectionContext ?? null,
+          projectionDeepening: gptPayload.projectionDeepening ?? null,
 
           // Full data (SESSION_INIT only)
           backpack: gptPayload.backpack,
@@ -307,11 +313,13 @@ export class OpenAIProvider implements AIProvider {
 
           // Intervention continuity (Elias only, zone-linked therapeutic memory)
           interventionContinuity: gptPayload.interventionContinuity ?? null,
-
+          // Projection layer (future-facing fears/hopes/goals)
+          projectionContext: gptPayload.projectionContext ?? null,
+          projectionDeepening: gptPayload.projectionDeepening ?? null,
           // NO backpack, NO userDat, NO diaryEntries, NO coreWound,
           // NO contextLine, NO relationshipAnchor, NO relationalPattern
           // These were sent at SESSION_INIT and cached server-side.
-        };
+        };;
 
         console.log('[OpenAIProvider] LIVE_MESSAGE: Dynamic payload only (no static fields)');
       }

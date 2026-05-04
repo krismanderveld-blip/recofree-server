@@ -539,6 +539,10 @@ export interface ChatContext {
   engineDirective?: import('../engine/orchestration').EngineDirective;
   /** Intervention continuity context — injected by pipeline for Elias, enables consistent therapeutic line */
   interventionContinuity?: string;
+  /** Projection layer context — future-facing fears/hopes/goals detected from user signals */
+  projectionContext?: string;
+  /** Projection deepening directive — instruction for GPT to explore future projections when safe */
+  projectionDeepening?: string;
 }
 
 /**

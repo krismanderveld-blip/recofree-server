@@ -150,6 +150,10 @@ interface ChatRequestInput {
 
   // Intervention continuity (Elias only, zone-linked therapeutic memory)
   interventionContinuity?: string | null;
+
+  // Projection layer (future-facing fears/hopes/goals)
+  projectionContext?: string | null;
+  projectionDeepening?: string | null;
 }
 
 // ─── Server-side Session Cache ───────────────────────────────────
@@ -344,6 +348,9 @@ export const chatInputSchema = z.object({
 
   // Intervention continuity (Elias only, zone-linked therapeutic memory)
   interventionContinuity: z.string().nullable().optional(),
+  // Projection layer (future-facing fears/hopes/goals)
+  projectionContext: z.string().nullable().optional(),
+  projectionDeepening: z.string().nullable().optional(),
 });
 
 // ─── Relationship Map Extractor ──────────────────────────────────
@@ -829,6 +836,15 @@ SCHENDING VAN DIT PROTOCOL IS ONACCEPTABEL.`;
     console.log(`[AI Chat] Intervention continuity injected`);
   }
 
+  let projectionBlock = '';
+  if (input.projectionContext) {
+    projectionBlock = `\n${input.projectionContext}`;
+    if (input.projectionDeepening) {
+      projectionBlock += `\nDEEPENING INSTRUCTIE: ${input.projectionDeepening}`;
+    }
+    console.log(`[AI Chat] Projection context injected${input.projectionDeepening ? ' (with deepening)' : ''}`);
+  }
+
   let sessionEndInstructions = "";
   if (input.message === "__SESSION_END__") {
     sessionEndInstructions = `\nDe gebruiker beëindigt deze sessie. Genereer een warm afscheid dat:
@@ -895,6 +911,7 @@ ${guidanceInstruction}
 ${regulationInstruction}
 ${engineDirectiveBlock}
 ${interventionContinuityBlock}
+${projectionBlock}
 
 Deze gedragsinstructies zijn ABSOLUUT. Ze overschrijven je standaard gespreksstijl.
 De sliders vertellen je exact hoe de gebruiker zich voelt — GEBRUIK ze in je antwoord.
@@ -1082,6 +1099,7 @@ ${guidanceInstruction}
 ${regulationInstruction}
 ${engineDirectiveBlock}
 ${interventionContinuityBlock}
+${projectionBlock}
 
 Deze gedragsinstructies zijn ABSOLUUT. Ze overschrijven je standaard gespreksstijl.
 De sliders vertellen je exact hoe de gebruiker zich voelt — GEBRUIK ze in je antwoord.

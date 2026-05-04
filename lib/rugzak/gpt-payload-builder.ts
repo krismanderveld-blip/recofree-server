@@ -93,6 +93,10 @@ export interface GPTPayload {
   // ── Intervention continuity (Elias only, zone-linked therapeutic memory) ──
   interventionContinuity?: string;
 
+  // ── Projection layer (future-facing fears/hopes/goals) ──
+  projectionContext?: string;
+  projectionDeepening?: string;
+
   // ── Buffer snapshot (from pipeline, per message) ──
   bufferSnapshot?: {
     zoneScore: number;
@@ -182,6 +186,10 @@ export interface PayloadBuilderInput {
   engineDirective?: import('../engine/orchestration').EngineDirective;
   /** Intervention continuity context string (Elias only, from intervention-continuity layer) */
   interventionContinuity?: string;
+  /** Projection layer context (future-facing fears/hopes/goals) */
+  projectionContext?: string;
+  /** Projection deepening directive (instruction for GPT to explore projections) */
+  projectionDeepening?: string;
 }
 
 // ─── Conversation History Optimisation (Patch N Step 5) ──────
@@ -403,6 +411,14 @@ export function buildGPTPayload(input: PayloadBuilderInput): GPTPayload {
   // ── Intervention continuity (Elias only, zone-linked therapeutic memory) ──
   if (input.interventionContinuity) {
     payload.interventionContinuity = input.interventionContinuity;
+  }
+
+  // ── Projection layer (future-facing fears/hopes/goals) ──
+  if (input.projectionContext) {
+    payload.projectionContext = input.projectionContext;
+  }
+  if (input.projectionDeepening) {
+    payload.projectionDeepening = input.projectionDeepening;
   }
 
   // ── Buffer snapshot (from pipeline, per message) ──

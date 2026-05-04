@@ -480,3 +480,14 @@
 ## Follow-up Tasks
 - [x] Integration test: crisis-fallback-on-network-failure (mock fetch, verify 113/112 in response)
 - [x] Update recofree_audit_snapshot.txt with Round 2 fixes (CRISIS_KEYWORDS, precontemplation, VSP/ER check, crisis-fallback)
+
+## Projection Layer (RECOFREE_PROJECTION_SPEC_V1)
+- [x] Create lib/engine/elias/projection.ts (types + signal detection + decay + injection + summary)
+- [x] Create lib/engine/kim/projection.ts (Kim-specific signals, Eigen Regie based)
+- [x] Create lib/rugzak/projection-layer.ts (orchestrator, called in Step 5d)
+- [x] Integrate into pipeline.ts: Step 5d (signal detection) + session-end decay (after UserDat promotion)
+- [x] Integrate into server/ai-chat.ts: GPT injection (after SESSION MEMORY, before RELEVANCE CONTEXT)
+- [x] Write projection-layer.test.ts (signal detection, decay, injection, deepening, orchestrator — 30 tests)
+- [x] Deepening module: activates on E03/E06 (Elias) or high Eigen Regie (Kim)
+- [x] Deflection detection: blocks deepening when user deflects
+- [x] All tests passing: 347 tests, 0 TS errors
