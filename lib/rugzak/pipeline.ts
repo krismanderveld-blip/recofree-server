@@ -265,7 +265,9 @@ export async function processMessage(
   const hasTriggerHistory = (currentUserDat.triggerPatterns ?? []).length > 0;
   const hasSessionHistory = (currentUserDat.totalSessions ?? 0) > 0;
 
-  const hasMinimalContext = hasSliders || hasBackpackContent || hasDiary || hasTriggerHistory || hasSessionHistory;
+  const hasVsp = backpack.userType === 'elias' && currentUserDat.currentMood && 'vsp' in currentUserDat.currentMood && (currentUserDat.currentMood as import('../ai/types').EliasMoodSliders).vsp != null;
+  const hasEigenRegie = backpack.userType === 'kim' && currentUserDat.currentMood && 'eigenRegie' in currentUserDat.currentMood && (currentUserDat.currentMood as import('../ai/types').KimMoodSliders).eigenRegie != null;
+  const hasMinimalContext = hasSliders || hasBackpackContent || hasDiary || hasTriggerHistory || hasSessionHistory || hasVsp || hasEigenRegie;
   if (!hasMinimalContext) {
     const passiveResponse = backpack.userType === 'elias'
       ? `Ik weet nu nog weinig van je, ${backpack.naam}. Ik wacht tot jij iets deelt. Dan pas kan ik iets dragen. Vul je sliders in, schrijf iets in je dagboek, of deel je verhaal in je rugzak — dan kan ik je beter helpen.`
@@ -836,7 +838,9 @@ export async function generateGreeting(
   const hasDiary = (diaryEntries ?? []).length > 0;
   const hasTriggerHistory = (currentUserDat.triggerPatterns ?? []).length > 0;
   const hasSessionHistory = (currentUserDat.totalSessions ?? 0) > 0;
-  const hasMinimalContext = hasSliders || hasBackpackContent || hasDiary || hasTriggerHistory || hasSessionHistory;
+  const hasVsp = backpack.userType === 'elias' && currentUserDat.currentMood && 'vsp' in currentUserDat.currentMood && (currentUserDat.currentMood as import('../ai/types').EliasMoodSliders).vsp != null;
+  const hasEigenRegie = backpack.userType === 'kim' && currentUserDat.currentMood && 'eigenRegie' in currentUserDat.currentMood && (currentUserDat.currentMood as import('../ai/types').KimMoodSliders).eigenRegie != null;
+  const hasMinimalContext = hasSliders || hasBackpackContent || hasDiary || hasTriggerHistory || hasSessionHistory || hasVsp || hasEigenRegie;
 
   if (!hasMinimalContext) {
     const passiveResponse = backpack.userType === 'elias'

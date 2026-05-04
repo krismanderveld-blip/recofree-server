@@ -1,3 +1,4 @@
+=== lib/engine/elias/intervention-continuity.ts ===
 /**
  * Intervention Continuity Layer — Zone-Linked Therapeutic Memory
  *
@@ -262,11 +263,6 @@ export function detectZoneShift(
  *   This is the fallback — NOT 'engaged'. System does not assume engagement.
  */
 
-/** Crisis keywords — short messages containing these are escalation signals, not 'ignored' */
-const CRISIS_KEYWORDS: ReadonlyArray<string> = Object.freeze([
-  'help', 'red', 'nood', 'sos', 'please', 'alsjeblieft', 'stop',
-]);
-
 /** Exact acknowledgment tokens (case-insensitive, must match full message after trim) */
 const ACKNOWLEDGMENT_TOKENS: ReadonlyArray<string> = Object.freeze([
   'ok', 'ja', 'oke', 'oké', 'hmm', 'yes', 'yeah', 'nee', 'no',
@@ -313,7 +309,6 @@ export function detectUserResponse(
   // Rule 2: IGNORED — very short message that is not an acknowledgment
   if (msg.length <= IGNORED_MAX_LENGTH) {
     if (ACKNOWLEDGMENT_TOKENS.includes(msg)) return 'engaged';
-    if (CRISIS_KEYWORDS.some(k => msg.includes(k))) return 'escalated';
     return 'ignored';
   }
 
@@ -629,4 +624,438 @@ export function buildInterventionContext(state: InterventionState): string {
   }
 
   return lines.join('\n');
+}
+
+
+=== lib/rugzak/pipeline.ts (Step 0 + Step 6c) ===
+
+// ── STEP 0: MODULE 12 PRE-ANALYSIS FAILSAFE ──
+  const hasSliders = currentUserDat.currentMood &&
+    Object.values(currentUserDat.currentMood).some((v) => v !== 0 && v !== 5);
+  const hasBackpackContent = backpack.sections &&
+    backpack.sections.some((s) => s.content && s.content.trim().length > 10);
+  const hasDiary = (options?.diaryEntries ?? []).length > 0;
+  const hasTriggerHistory = (currentUserDat.triggerPatterns ?? []).length > 0;
+  const hasSessionHistory = (currentUserDat.totalSessions ?? 0) > 0;
+
+  const hasMinimalContext = hasSliders || hasBackpackContent || hasDiary || hasTriggerHistory || hasSessionHistory;
+  if (!hasMinimalContext) {
+    const passiveResponse = backpack.userType === 'elias'
+      ? `Ik weet nu nog weinig van je, ${backpack.naam}. Ik wacht tot jij iets deelt. Dan pas kan ik iets dragen. Vul je sliders in, schrijf iets in je dagboek, of deel je verhaal in je rugzak — dan kan ik je beter helpen.`
+      : `Hoi ${backpack.naam}. Ik heb nog niet genoeg context om je goed te kunnen helpen. Vul je sliders in of deel iets via je dagboek of rugzak, dan kan ik je gerichter ondersteunen.`;
+
+    const passiveMsg: ChatMessage = {
+      id: `msg_${Date.now()}`,
+      role: 'user',
+      content: userMessage,
+      timestamp: new Date().toISOString(),
+    };
+    const passiveAiMsg: ChatMessage = {
+      id: `msg_${Date.now() + 1}`,
+      role: 'assistant',
+      content: passiveResponse,
+      timestamp: new Date().toISOString(),
+    };
+    const updatedUserDat: UserDat = {
+      ...currentUserDat,
+      chatHistory: [...(currentUserDat.chatHistory || []), passiveMsg, passiveAiMsg],
+    };
+    const updatedRugzak = composeRugzak(backpack, updatedUserDat);
+    return {
+      response: passiveResponse,
+      analysis: analyzeState(rugzak, userMessage),
+      updatedRugzak,
+      updatedUserDat,
+      crisisLevel: 0,
+      showEmergency: false,
+    };
+  }
+
+// ── PRE-GPT STEP 6c: Evaluate Intervention Continuity (Elias only) ──
+  // Compare current resolvedZone with linkedZone from previous turn.
+  // Zone shifted → re-evaluate intervention. Zone stable → continue same line.
+  let interventionContinuity: InterventionState | null = null;
+  if (elisDecision && !elisDecision.isBlocked && elisDecision.zone.resolved) {
+    interventionContinuity = evaluateInterventionContinuity(
+      elisDecision.zone.resolved,
+      userMessage,
+    );
+  }
+
+  const sessionStart = currentUserDat.lastSessionDate ? new Date(currentUserDat.lastSessionDate) : new Date();
+  const sessionMinutes = Math.floor((Date.now() - sessionStart.getTime()) / 60000);
+
+  const context: ChatContext = {
+    userType: backpack.userType,
+    userName: backpack.naam,
+    currentMessage: userMessage,
+    conversationHistory: currentUserDat.chatHistory || [],
+    moodSliders: currentUserDat.currentMood || (ELIAS_DEFAULT_MOOD as any),
+    rugzak,
+    backpack,
+    userDat: currentUserDat,
+    isSessionStart,
+    diaryEntries: options?.diaryEntries ?? [],
+    activeModules: [activeDecision ? activeDecision.dominantModule : preGPTDominantState.dominantModule],
+    crisisLevel: activeDecision ? activeDecision.crisisLevel : crisisLevel,
+    engineDirective: engineDirective ?? undefined,
+    detectedEmotion: analysis.emotionalState,
+    therapeuticStance: buildTherapeuticStance(analysis),
+    sessionDurationMinutes: sessionMinutes,
+    urgency: backpack.intakeContext?.urgency ?? 'midden',
+    startEmotion: backpack.intakeContext?.startEmotion ?? '',
+    bufferSnapshot,
+    guidanceDepth: currentUserDat.guidanceDepth ?? 'normal',
+    regulationResult: regulationResult.action !== 'reflect' ? {
+      action: regulationResult.action,
+      intervention: regulationResult.intervention,
+      gptInstruction: regulationResult.gptInstruction,
+      zone: regulationResult.zone,
+      effectiveDepth: regulationResult.effectiveDepth,
+      wasSoftened: regulationResult.wasSoftened,
+      wasSkipped: regulationResult.wasSkipped,
+    } : undefined,
+    interventionContinuity: interventionContinuity
+      ? buildInterventionContext(interventionContinuity)
+      : undefined,
+  };
+
+
+=== lib/rugzak/gpt-payload-builder.ts (conversation window logica) ===
+
+/**
+ * Build an optimised conversation window for GPT.
+ *
+ * Rules:
+ * - Max 6 messages sent to GPT (save tokens)
+ * - ALWAYS keep: last user message + last assistant message
+ * - ALWAYS keep: 1 emotionally relevant message (highest intensity)
+ * - Summarize oldest messages beyond the window into a single context line
+ * - Session start gets 10 messages (more context needed)
+ *
+ * Selection priority:
+ * 1. Last user + assistant pair (most recent exchange)
+ * 2. 1 emotionally relevant message (highest intensity keywords)
+ * 3. Fill remaining slots with most recent messages
+ * 4. Oldest dropped messages → summarized into 1 context line
+ */
+
+const EMOTION_KEYWORDS = [
+  // High intensity
+  'suicide', 'kill', 'die', 'dead', 'hurt', 'cutting', 'overdose',
+  'crisis', 'panic', 'terrified', 'hopeless', 'worthless',
+  // Medium intensity
+  'craving', 'relapse', 'drunk', 'high', 'using', 'withdrawal',
+  'angry', 'rage', 'furious', 'desperate', 'breakdown',
+  'crying', 'sobbing', 'screaming', 'shaking',
+  // Emotional depth
+  'abandoned', 'betrayed', 'abused', 'trauma', 'shame', 'guilt',
+  'lonely', 'isolated', 'rejected', 'afraid', 'scared',
+];
+
+function computeEmotionalIntensity(content: string): number {
+  const lower = content.toLowerCase();
+  let score = 0;
+  for (const keyword of EMOTION_KEYWORDS) {
+    if (lower.includes(keyword)) score++;
+  }
+  // Exclamation marks and ALL CAPS boost intensity
+  const exclamations = (content.match(/!/g) || []).length;
+  score += Math.min(exclamations, 3);
+  const capsWords = (content.match(/\b[A-Z]{3,}\b/g) || []).length;
+  score += Math.min(capsWords, 2);
+  return score;
+}
+
+function buildOptimisedConversationWindow(
+  chatHistory: ChatMessage[],
+  isSessionStart: boolean,
+): Array<{ role: 'user' | 'assistant'; content: string; isSummary?: boolean }> {
+  const maxMessages = isSessionStart ? 10 : 6;
+
+  // If history fits within window, no optimisation needed
+  if (chatHistory.length <= maxMessages) {
+    return chatHistory.map((msg) => ({ role: msg.role, content: msg.content }));
+  }
+
+  // Step 1: Identify the last user + assistant pair (always kept)
+  const lastMessages = chatHistory.slice(-2);
+  const remainingPool = chatHistory.slice(0, -2);
+
+  // Step 2: Find the most emotionally relevant message from the pool
+  let bestEmotionalMsg: ChatMessage | null = null;
+  let bestEmotionalScore = 0;
+  let bestEmotionalIdx = -1;
+
+  for (let i = 0; i < remainingPool.length; i++) {
+    if (remainingPool[i].role !== 'user') continue;
+    const score = computeEmotionalIntensity(remainingPool[i].content);
+    if (score > bestEmotionalScore) {
+      bestEmotionalScore = score;
+      bestEmotionalMsg = remainingPool[i];
+      bestEmotionalIdx = i;
+    }
+  }
+
+  // Step 3: Fill remaining slots with most recent messages
+  const reservedSlots = 2 + (bestEmotionalMsg ? 1 : 0); // last pair + emotional
+  const fillSlots = maxMessages - reservedSlots;
+
+  // Get the most recent messages from the pool (excluding the emotional one)
+  const fillPool = remainingPool.filter((_, i) => i !== bestEmotionalIdx);
+  const filledMessages = fillPool.slice(-fillSlots);
+
+  // Step 4: Summarize dropped messages
+  const keptIndices = new Set<number>();
+  // Mark filled messages
+  for (const fm of filledMessages) {
+    const idx = remainingPool.indexOf(fm);
+    if (idx >= 0) keptIndices.add(idx);
+  }
+  if (bestEmotionalIdx >= 0) keptIndices.add(bestEmotionalIdx);
+
+  const droppedMessages = remainingPool.filter((_, i) => !keptIndices.has(i));
+
+  const result: Array<{ role: 'user' | 'assistant'; content: string; isSummary?: boolean }> = [];
+
+  // Add summary of dropped messages (if any)
+  if (droppedMessages.length > 0) {
+    const userDropped = droppedMessages.filter((m) => m.role === 'user');
+    const themes: string[] = [];
+    for (const msg of userDropped) {
+      const lower = msg.content.toLowerCase();
+      if (/crav|relapse|drink|using|substance/.test(lower)) themes.push('craving/substance');
+      if (/sad|depress|hopeless|down|low/.test(lower)) themes.push('low mood');
+      if (/angry|frustrat|rage|annoy/.test(lower)) themes.push('anger/frustration');
+      if (/anxi|panic|worry|stress|nervous/.test(lower)) themes.push('anxiety/stress');
+      if (/family|parent|mother|father|partner/.test(lower)) themes.push('relationships');
+      if (/work|job|boss|career/.test(lower)) themes.push('work');
+      if (/sleep|tired|exhaust|insomnia/.test(lower)) themes.push('sleep');
+      if (/guilt|shame|regret/.test(lower)) themes.push('guilt/shame');
+    }
+    const uniqueThemes = [...new Set(themes)];
+    const summaryText = uniqueThemes.length > 0
+      ? `[Earlier in this conversation (${droppedMessages.length} messages summarized): User discussed ${uniqueThemes.join(', ')}.]`
+      : `[Earlier in this conversation: ${droppedMessages.length} messages exchanged.]`;
+    result.push({ role: 'assistant', content: summaryText, isSummary: true });
+  }
+
+  // Add filled messages (in chronological order)
+  for (const msg of filledMessages) {
+    result.push({ role: msg.role, content: msg.content });
+  }
+
+  // Add emotional message (if not already in filled)
+  if (bestEmotionalMsg && !filledMessages.includes(bestEmotionalMsg)) {
+    // Insert before the last pair but after filled messages
+    result.push({ role: bestEmotionalMsg.role, content: bestEmotionalMsg.content });
+  }
+
+  // Add last pair
+  for (const msg of lastMessages) {
+    result.push({ role: msg.role, content: msg.content });
+  }
+
+  return result;
+}
+
+/**
+ * Build the structured GPT payload.
+ *
+ * This is called BEFORE every GPT request.
+ * It ensures every call has the right context — no more blind follow-ups.
+ *
+ * PATCH N STEP 5: Uses optimised conversation window (max 6, summary, emotional retention).
+ */
+export function buildGPTPayload(input: PayloadBuilderInput): GPTPayload {
+  const { backpack, userDat, relevance, isSessionStart } = input;
+
+  // ── Conversation window: optimised (Patch N Step 5) ──
+  const conversationWindow = buildOptimisedConversationWindow(
+    input.chatHistory,
+    isSessionStart,
+  );
+
+  // ... (remainder builds payload from conversationWindow + other fields)
+}
+
+
+=== lib/engine/elias/zone.ts ===
+/**
+ * Elias Zone — Engine-level zone computation
+ *
+ * Maps existing Elias engine outputs to a typed ZoneResult<EliasImpact>.
+ *
+ * Elias zones are based on:
+ * - crisisLevel (0 = normal, 1 = concern, 2 = crisis)
+ * - distressScore (0–10 scale, from slider-interpretation.ts)
+ * - resilienceScore (0–10 scale, from slider-interpretation.ts)
+ * - stageOfChange (from intake/user.dat)
+ *
+ * Zone determination priority:
+ * 1. crisisLevel >= 2 → ROOD (always, overrides everything)
+ * 2. distress >= 7.5 && resilience <= 3 → ROOD (extreme distress without coping)
+ * 3. crisisLevel === 1 → ORANJE (elevated monitoring)
+ * 4. distress >= 5.5 → ORANJE (elevated distress)
+ * 5. distress >= 3.5 → GEEL (moderate distress)
+ * 6. stageOfChange === 'precontemplation' → GEEL (not ready, keep cautious)
+ * 7. distress < 3.5 && resilience >= 5 → GROEN (stable + coping)
+ * 8. default → LICHTGROEN (mild concern, growing stability)
+ *
+ * EliasImpact: deterministic behavioral directives per zone.
+ * - interventionLevel: NONE | LOW | MEDIUM | HIGH | CRISIS
+ * - reflectionDepth: NONE | SURFACE | MODERATE | DEEP
+ * - directiveStyle: NONE | SUGGEST | GUIDE | DIRECT
+ *
+ * Each zone maps to exactly one fixed EliasImpact. No conditions inside mapping.
+ *
+ * RULES:
+ * - Engine-level ONLY — no pipeline logic, no UI logic
+ * - No combination with Kim data or Eigen Regie
+ * - No inference. No fallback.
+ * - Always computable (unlike Kim, which requires Eigen Regie input)
+ */
+
+import type { ZoneLevel, ZoneResult } from '../zone-types';
+import type { StageOfChange } from '../../ai/types';
+
+// ─── Elias Impact Enums ───────────────────────────────────────
+
+export type EliasInterventionLevel = 'NONE' | 'LOW' | 'MEDIUM' | 'HIGH' | 'CRISIS';
+export type EliasReflectionDepth = 'NONE' | 'SURFACE' | 'MODERATE' | 'DEEP';
+export type EliasDirectiveStyle = 'NONE' | 'SUGGEST' | 'GUIDE' | 'DIRECT';
+
+// ─── Elias Impact Type ────────────────────────────────────────
+
+export interface EliasImpact {
+  readonly interventionLevel: EliasInterventionLevel;
+  readonly reflectionDepth: EliasReflectionDepth;
+  readonly directiveStyle: EliasDirectiveStyle;
+}
+
+// ─── Elias Zone Impact Map ────────────────────────────────────
+
+/**
+ * Fixed mapping: ZoneLevel → EliasImpact.
+ * Each zone has exactly one deterministic impact object.
+ * No conditions. No inference. No deviation.
+ */
+export const eliasZoneImpactMap: Readonly<Record<ZoneLevel, EliasImpact>> = Object.freeze({
+  ROOD: Object.freeze({
+    interventionLevel: 'CRISIS' as const,
+    reflectionDepth: 'NONE' as const,
+    directiveStyle: 'DIRECT' as const,
+  }),
+  ORANJE: Object.freeze({
+    interventionLevel: 'HIGH' as const,
+    reflectionDepth: 'SURFACE' as const,
+    directiveStyle: 'DIRECT' as const,
+  }),
+  GEEL: Object.freeze({
+    interventionLevel: 'MEDIUM' as const,
+    reflectionDepth: 'MODERATE' as const,
+    directiveStyle: 'GUIDE' as const,
+  }),
+  LICHTGROEN: Object.freeze({
+    interventionLevel: 'LOW' as const,
+    reflectionDepth: 'MODERATE' as const,
+    directiveStyle: 'SUGGEST' as const,
+  }),
+  GROEN: Object.freeze({
+    interventionLevel: 'NONE' as const,
+    reflectionDepth: 'DEEP' as const,
+    directiveStyle: 'NONE' as const,
+  }),
+});
+
+// ─── Input ─────────────────────────────────────────────────────
+
+export interface EliasZoneInput {
+  /** Crisis level from CrisisAssessment (0 = normal, 1 = concern, 2 = crisis) */
+  readonly crisisLevel: number;
+  /** Distress score on 0–10 scale (from eliasDistressScore) */
+  readonly distressScore: number;
+  /** Resilience score on 0–10 scale (from eliasResilienceScore) */
+  readonly resilienceScore: number;
+  /** Current stage of change */
+  readonly stageOfChange: StageOfChange;
+}
+
+// ─── Zone Labels (Dutch) ───────────────────────────────────────
+
+const ELIAS_ZONE_LABELS: Readonly<Record<ZoneLevel, string>> = Object.freeze({
+  ROOD: 'Crisis of hoge nood',
+  ORANJE: 'Verhoogde spanning',
+  GEEL: 'Matige spanning',
+  LICHTGROEN: 'Groeiende stabiliteit',
+  GROEN: 'Stabiel en veerkrachtig',
+});
+
+// ─── Zone Level Determination ──────────────────────────────────
+
+/**
+ * Determine the Elias zone level from engine outputs.
+ *
+ * Priority order (first match wins):
+ * 1. crisisLevel >= 2 → ROOD
+ * 2. distress >= 7.5 && resilience <= 3 → ROOD
+ * 3. crisisLevel === 1 → ORANJE
+ * 4. distress >= 5.5 → ORANJE
+ * 5. distress >= 3.5 → GEEL
+ * 6. stageOfChange === 'precontemplation' → GEEL
+ * 7. distress < 3.5 && resilience >= 5 → GROEN
+ * 8. default → LICHTGROEN
+ */
+function determineEliasZoneLevel(input: EliasZoneInput): ZoneLevel {
+  if (input.crisisLevel >= 2) {
+    return 'ROOD';
+  }
+
+  if (input.distressScore >= 7.5 && input.resilienceScore <= 3) {
+    return 'ROOD';
+  }
+
+  if (input.crisisLevel === 1) {
+    return 'ORANJE';
+  }
+
+  if (input.distressScore >= 5.5) {
+    return 'ORANJE';
+  }
+
+  if (input.distressScore >= 3.5) {
+    return 'GEEL';
+  }
+
+  if (input.stageOfChange === 'precontemplation') {
+    return 'GEEL';
+  }
+
+  if (input.distressScore < 3.5 && input.resilienceScore >= 5) {
+    return 'GROEN';
+  }
+
+  return 'LICHTGROEN';
+}
+
+// ─── Compute Elias Zone ────────────────────────────────────────
+
+/**
+ * Compute Elias zone from existing engine outputs.
+ *
+ * Input:  EliasZoneInput (crisisLevel, distressScore, resilienceScore, stageOfChange)
+ * Output: ZoneResult<EliasImpact> with level, label, and typed impact
+ *
+ * Unlike Kim zone, Elias zone is always computable (no null case).
+ */
+export function computeEliasZone(input: EliasZoneInput): ZoneResult<EliasImpact> {
+  const level = determineEliasZoneLevel(input);
+  const label = ELIAS_ZONE_LABELS[level];
+  const impact = eliasZoneImpactMap[level];
+
+  return Object.freeze({
+    level,
+    label,
+    impact,
+  });
 }

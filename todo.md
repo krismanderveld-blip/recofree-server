@@ -470,3 +470,9 @@
 - [x] Fix 3: Remove cross-session learning claims, replace with "local within-device memory", getSessionSummary as pure function only
 - [x] Fix 4: Enforce max 5 entries in zone evolution trail before GPT injection (older entries not sent)
 - [x] Fix 5: Block Kim continuity layer until Eigen Regie is mandatory at chat start (document as blocked)
+
+## Targeted Fixes — Round 2
+- [x] Fix 1: pipeline.ts Step 0 — add VSP/Eigen Regie as valid minimal context
+- [x] Fix 2: zone.ts — precontemplation only forces GEEL when distress < 3.5 (tiebreaker, not override)
+- [x] Fix 3: intervention-continuity.ts — crisis keywords (help, red, nood, sos) not classified as 'ignored'
+- [x] Fix 4: server/ai-chat.ts — static crisis-fallback response when GPT call fails and crisisLevel >= 1

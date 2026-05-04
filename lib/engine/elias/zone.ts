@@ -144,7 +144,7 @@ function determineEliasZoneLevel(input: EliasZoneInput): ZoneLevel {
     return 'GEEL';
   }
 
-  if (input.stageOfChange === 'precontemplation') {
+  if (input.stageOfChange === 'precontemplation' && input.distressScore < 3.5) {
     return 'GEEL';
   }
 

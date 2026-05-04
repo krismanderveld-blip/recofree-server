@@ -1214,28 +1214,52 @@ export async function generateAIResponse(
     }
   }
 
-  const openaiResponse = await fetch(
-    "https://api.openai.com/v1/chat/completions",
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model: selectedModel,
-        messages,
-        max_tokens: 500,
-        temperature: 0.7,
-        presence_penalty: 0.3,
-        frequency_penalty: 0.2,
-      }),
+  let openaiResponse: Response;
+  try {
+    openaiResponse = await fetch(
+      "https://api.openai.com/v1/chat/completions",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model: selectedModel,
+          messages,
+          max_tokens: 500,
+          temperature: 0.7,
+          presence_penalty: 0.3,
+          frequency_penalty: 0.2,
+        }),
+      }
+    );
+  } catch (error) {
+    console.error("[AI Chat] OpenAI API network error:", error);
+    if (crisisLevel >= 1) {
+      return {
+        response: 'Ik kan je op dit moment niet bereiken via de verbinding. Als je je nu niet veilig voelt, bel dan 113 (zelfmoordpreventie) of 112 (nood). Je hoeft dit niet alleen te dragen.',
+        advisoryEmotion: input.detectedEmotion,
+        advisoryConfidence: 0,
+        tokenUsage: undefined,
+        selectedModel,
+      };
     }
-  );
+    throw error;
+  }
 
   if (!openaiResponse.ok) {
     const errorText = await openaiResponse.text();
     console.error("[AI Chat] OpenAI API error:", openaiResponse.status, errorText);
+    if (crisisLevel >= 1) {
+      return {
+        response: 'Ik kan je op dit moment niet bereiken via de verbinding. Als je je nu niet veilig voelt, bel dan 113 (zelfmoordpreventie) of 112 (nood). Je hoeft dit niet alleen te dragen.',
+        advisoryEmotion: input.detectedEmotion,
+        advisoryConfidence: 0,
+        tokenUsage: undefined,
+        selectedModel,
+      };
+    }
     throw new Error(`OpenAI API error: ${openaiResponse.status}`);
   }
 
