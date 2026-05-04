@@ -90,6 +90,9 @@ export interface GPTPayload {
     impact: Record<string, string>;
   };
 
+  // ── Intervention continuity (Elias only, zone-linked therapeutic memory) ──
+  interventionContinuity?: string;
+
   // ── Buffer snapshot (from pipeline, per message) ──
   bufferSnapshot?: {
     zoneScore: number;
@@ -177,6 +180,8 @@ export interface PayloadBuilderInput {
   };
   /** Routed engine directive from orchestration (Elias OR Kim) */
   engineDirective?: import('../engine/orchestration').EngineDirective;
+  /** Intervention continuity context string (Elias only, from intervention-continuity layer) */
+  interventionContinuity?: string;
 }
 
 // ─── Conversation History Optimisation (Patch N Step 5) ──────
@@ -393,6 +398,11 @@ export function buildGPTPayload(input: PayloadBuilderInput): GPTPayload {
       zoneLabel: input.engineDirective.zoneLabel,
       impact: { ...input.engineDirective.impact } as Record<string, string>,
     };
+  }
+
+  // ── Intervention continuity (Elias only, zone-linked therapeutic memory) ──
+  if (input.interventionContinuity) {
+    payload.interventionContinuity = input.interventionContinuity;
   }
 
   // ── Buffer snapshot (from pipeline, per message) ──

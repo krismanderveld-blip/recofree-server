@@ -147,6 +147,9 @@ interface ChatRequestInput {
     zoneLabel: string;
     impact: Record<string, string>;
   } | null;
+
+  // Intervention continuity (Elias only, zone-linked therapeutic memory)
+  interventionContinuity?: string | null;
 }
 
 // ─── Server-side Session Cache ───────────────────────────────────
@@ -330,6 +333,17 @@ export const chatInputSchema = z.object({
     wasSoftened: z.boolean(),
     wasSkipped: z.boolean(),
   }).nullable().optional(),
+
+  // Routed engine directive (Elias OR Kim, from orchestration routing)
+  engineDirective: z.object({
+    engine: z.enum(['elias', 'kim']),
+    zoneLevel: z.string(),
+    zoneLabel: z.string(),
+    impact: z.record(z.string(), z.string()),
+  }).nullable().optional(),
+
+  // Intervention continuity (Elias only, zone-linked therapeutic memory)
+  interventionContinuity: z.string().nullable().optional(),
 });
 
 // ─── Relationship Map Extractor ──────────────────────────────────
@@ -807,6 +821,14 @@ SCHENDING VAN DIT PROTOCOL IS ONACCEPTABEL.`;
     console.log(`[AI Chat] Engine directive injected: engine=${ed.engine}, zone=${ed.zoneLevel}, impact=${JSON.stringify(ed.impact)}`);
   }
 
+  // ── Intervention Continuity Injection (Elias only) ──
+  // Passes zone-linked therapeutic memory into the prompt for consistent therapeutic line.
+  let interventionContinuityBlock = '';
+  if (input.interventionContinuity) {
+    interventionContinuityBlock = `\n═══ ${input.interventionContinuity}\n═══ EINDE INTERVENTIE-CONTINUÏTEIT ═══`;
+    console.log(`[AI Chat] Intervention continuity injected`);
+  }
+
   let sessionEndInstructions = "";
   if (input.message === "__SESSION_END__") {
     sessionEndInstructions = `\nDe gebruiker beëindigt deze sessie. Genereer een warm afscheid dat:
@@ -872,6 +894,7 @@ ${stance}
 ${guidanceInstruction}
 ${regulationInstruction}
 ${engineDirectiveBlock}
+${interventionContinuityBlock}
 
 Deze gedragsinstructies zijn ABSOLUUT. Ze overschrijven je standaard gespreksstijl.
 De sliders vertellen je exact hoe de gebruiker zich voelt — GEBRUIK ze in je antwoord.
@@ -1058,6 +1081,7 @@ ${stance}
 ${guidanceInstruction}
 ${regulationInstruction}
 ${engineDirectiveBlock}
+${interventionContinuityBlock}
 
 Deze gedragsinstructies zijn ABSOLUUT. Ze overschrijven je standaard gespreksstijl.
 De sliders vertellen je exact hoe de gebruiker zich voelt — GEBRUIK ze in je antwoord.

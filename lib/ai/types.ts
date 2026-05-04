@@ -537,6 +537,8 @@ export interface ChatContext {
   };
   /** Routed engine directive — Elias OR Kim, never both. Injected by pipeline via orchestration routing. */
   engineDirective?: import('../engine/orchestration').EngineDirective;
+  /** Intervention continuity context — injected by pipeline for Elias, enables consistent therapeutic line */
+  interventionContinuity?: string;
 }
 
 /**

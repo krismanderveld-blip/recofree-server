@@ -72,6 +72,13 @@ import { KIM_DEFAULT_MODULE } from '../engine/kim/module-catalog';
 import { eliasDistressScore, eliasResilienceScore, ELIAS_DEFAULT_MOOD } from '../engine/elias/slider-interpretation';
 import { ELIAS_DEFAULT_MODULE } from '../engine/elias/module-catalog';
 import { ELIAS_DEFAULT_STAGE } from '../engine/elias/stage-of-change';
+import {
+  evaluateInterventionContinuity,
+  updateInterventionAfterResponse,
+  resetInterventionState,
+  buildInterventionContext,
+  type InterventionState,
+} from '../engine/elias/intervention-continuity';
 
 // ─── Pattern Marking (post-GPT local state) ─────────────────
 
@@ -129,6 +136,7 @@ export function resetSessionState(): void {
   sessionKimDecision = null;
   resetTriggerDecay();
   resetSessionCost();
+  resetInterventionState();
 }
 
 // ─── Pipeline Result ────────────────────────────────────────────
@@ -495,6 +503,17 @@ export async function processMessage(
       : null,
   });
 
+  // ── PRE-GPT STEP 6c: Evaluate Intervention Continuity (Elias only) ──
+  // Compare current resolvedZone with linkedZone from previous turn.
+  // Zone shifted → re-evaluate intervention. Zone stable → continue same line.
+  let interventionContinuity: InterventionState | null = null;
+  if (elisDecision && !elisDecision.isBlocked && elisDecision.zone.resolved) {
+    interventionContinuity = evaluateInterventionContinuity(
+      elisDecision.zone.resolved,
+      userMessage,
+    );
+  }
+
   const sessionStart = currentUserDat.lastSessionDate ? new Date(currentUserDat.lastSessionDate) : new Date();
   const sessionMinutes = Math.floor((Date.now() - sessionStart.getTime()) / 60000);
 
@@ -528,6 +547,9 @@ export async function processMessage(
       wasSoftened: regulationResult.wasSoftened,
       wasSkipped: regulationResult.wasSkipped,
     } : undefined,
+    interventionContinuity: interventionContinuity
+      ? buildInterventionContext(interventionContinuity)
+      : undefined,
   };
 
   let response: string;
@@ -576,6 +598,15 @@ export async function processMessage(
     ...updatedUserDat,
     chatHistory: [...(updatedUserDat.chatHistory || []), aiMsg],
   };
+
+  // 7b-ii. POST-GPT: Update Intervention Continuity State (Elias only)
+  // Records what Elias actually did this turn so next turn can compare.
+  if (elisDecision && !elisDecision.isBlocked && elisDecision.zone.resolved) {
+    updateInterventionAfterResponse(
+      elisDecision.zone.resolved,
+      regulationResult.action,
+    );
+  }
 
   // 7c. Update trigger patterns from signals (local reinforcement, not promotion)
   const signals = detectInputSignals(userMessage);

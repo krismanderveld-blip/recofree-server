@@ -191,6 +191,7 @@ export class OpenAIProvider implements AIProvider {
         guidanceDepth: context.guidanceDepth ?? 'normal',
         regulationResult: context.regulationResult,
         engineDirective: context.engineDirective,
+        interventionContinuity: context.interventionContinuity,
       });
 
       // ── STEP 3: Build server payload based on SESSION_INIT / LIVE_MESSAGE split ──
@@ -240,6 +241,9 @@ export class OpenAIProvider implements AIProvider {
 
           // Engine directive (from orchestration routing)
           engineDirective: gptPayload.engineDirective ?? null,
+
+          // Intervention continuity (Elias only, zone-linked therapeutic memory)
+          interventionContinuity: gptPayload.interventionContinuity ?? null,
 
           // Full data (SESSION_INIT only)
           backpack: gptPayload.backpack,
@@ -300,6 +304,9 @@ export class OpenAIProvider implements AIProvider {
 
           // Engine directive (from orchestration routing)
           engineDirective: gptPayload.engineDirective ?? null,
+
+          // Intervention continuity (Elias only, zone-linked therapeutic memory)
+          interventionContinuity: gptPayload.interventionContinuity ?? null,
 
           // NO backpack, NO userDat, NO diaryEntries, NO coreWound,
           // NO contextLine, NO relationshipAnchor, NO relationalPattern

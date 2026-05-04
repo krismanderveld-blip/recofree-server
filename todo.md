@@ -451,3 +451,15 @@
 - [x] Remove legacy vsp-zone-combiner.ts (replaced by resolution layer)
 - [x] 45 VSP resolution tests (9 categories per specification)
 - [x] Verify: 0 TS errors, 252 tests passing (10 test files)
+
+## Intervention Continuity Layer — Zone-Linked Therapeutic Memory
+- [x] Create InterventionContinuityLayer module with interventionState (lastInterventionType, interventionGoal, linkedZone, expectedShift, effectivenessScore)
+- [x] Per-turn zone comparison: compare current resolvedZone with linkedZone
+- [x] Zone shifted → re-evaluate intervention (new goal, new linkedZone)
+- [x] Zone unchanged → continue building on same therapeutic line
+- [x] Detect user response pattern (engaged/deflected/escalated/ignored)
+- [x] Compute effectiveness score linked to zone transitions
+- [x] Inject interventionState into GPT system prompt (PRE-GPT)
+- [x] Wire into pipeline: evaluate zone shift PRE-GPT, update interventionState POST-GPT
+- [x] Write tests for zone-linked intervention tracking (38 tests)
+- [x] Verify: 0 TS errors, 290 tests passing (11 test files)
