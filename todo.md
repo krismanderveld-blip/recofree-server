@@ -426,3 +426,28 @@
 - [x] Wire eigenRegieLevel into Kim engine baseline (createNewUserDat converts level to 0-100)
 - [x] Verify: no Stage of Change shown for Kim, no mixing of systems
 - [x] Verify: 0 TS errors, 207 tests passing
+
+## Hedenlaag — VSP Thermometer (Elias) + Pre-chat Blokkering
+- [x] Define VSP types: VspLevel (GROEN/GEEL/ORANJE/ROOD/PAARS), add vsp field to EliasMoodSliders
+- [x] Create Elias VSP engine module (lib/engine/elias/vsp.ts) with 5-zone mapping
+- [x] Wire VSP into Elias decision path (like eigenRegie for Kim)
+- [x] Build pre-chat screen for Elias (VSP thermometer)
+- [x] Implement routing guard: chat blocked until pre-chat input submitted (both user types)
+- [x] Verify: 0 TS errors, all tests passing
+
+## VSP Resolution Layer — Separate Decision Architecture
+- [x] Create resolveEliasZone() resolution layer (lib/engine/elias/vsp-resolution.ts)
+- [x] Explicit severity mapping: VSP (GROEN=1..PAARS=5), Computed (GROEN=1, LICHTGROEN=1, GEEL=2, ORANJE=3, ROOD=4)
+- [x] Resolution rules: PAARS→CRISIS override, higher severity wins, tie→VSP source
+- [x] ResolvedEliasZone output: finalSeverity, finalZoneLabel, source, reason, vspLevel, computedZone, isBlocked, isCrisis
+- [x] Create computeEliasImpact() accepting full ResolvedEliasZone (lib/engine/elias/vsp-impact.ts)
+- [x] Rewire decision-layer.ts: computeEliasZone (detection) → resolveEliasZone (decision) → computeEliasImpact (impact)
+- [x] Pipeline hard-stop: isBlocked as safety guardrail (no impact, no GPT when blocked)
+- [x] Pipeline status: BLOCKED_PRECHAT_REQUIRED / CRISIS_MODE / OK
+- [x] Pre-chat enforces VSP before pipeline start (pipeline never receives vsp=null in normal flow)
+- [x] updateVsp in user-context (only explicit user choice, no default GROEN)
+- [x] Pre-chat VSP screen for Elias (no default selection, confirm required)
+- [x] Pre-chat Eigen Regie screen for Kim (slider interaction required before confirm)
+- [x] Remove legacy vsp-zone-combiner.ts (replaced by resolution layer)
+- [x] 45 VSP resolution tests (9 categories per specification)
+- [x] Verify: 0 TS errors, 252 tests passing (10 test files)

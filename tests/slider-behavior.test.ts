@@ -38,55 +38,55 @@ function makeKim(sliders: KimMoodSliders, overrides?: Partial<Rugzak>): Rugzak {
 
 describe('Compound Slider Rules - Elias', () => {
   it('craving=7, frustration=8, despondency=8, focus=3 → grounding tone', () => {
-    const rugzak = makeElias({ craving: 7, frustration: 8, despondency: 8, focus: 3 });
+    const rugzak = makeElias({ craving: 7, frustration: 8, despondency: 8, focus: 3, vsp: null });
     const analysis = analyzeState(rugzak, '');
     expect(analysis.tone).toBe('grounding');
   });
 
   it('craving=7, frustration=8, despondency=8, focus=3 → very_slow pacing', () => {
-    const rugzak = makeElias({ craving: 7, frustration: 8, despondency: 8, focus: 3 });
+    const rugzak = makeElias({ craving: 7, frustration: 8, despondency: 8, focus: 3, vsp: null });
     const analysis = analyzeState(rugzak, '');
     expect(analysis.pacing).toBe('very_slow');
   });
 
   it('craving=7, frustration=8, despondency=8, focus=3 → high suggestion intensity (>=7)', () => {
-    const rugzak = makeElias({ craving: 7, frustration: 8, despondency: 8, focus: 3 });
+    const rugzak = makeElias({ craving: 7, frustration: 8, despondency: 8, focus: 3, vsp: null });
     const analysis = analyzeState(rugzak, '');
     expect(analysis.suggestionIntensity).toBeGreaterThanOrEqual(7);
   });
 
   it('craving=7, frustration=8, despondency=8, focus=3 → depleted emotional state', () => {
-    const rugzak = makeElias({ craving: 7, frustration: 8, despondency: 8, focus: 3 });
+    const rugzak = makeElias({ craving: 7, frustration: 8, despondency: 8, focus: 3, vsp: null });
     const analysis = analyzeState(rugzak, '');
     expect(analysis.emotionalState).toBe('depleted');
   });
 
   it('craving=7, frustration=8, despondency=8, focus=3 → high risk level', () => {
-    const rugzak = makeElias({ craving: 7, frustration: 8, despondency: 8, focus: 3 });
+    const rugzak = makeElias({ craving: 7, frustration: 8, despondency: 8, focus: 3, vsp: null });
     const analysis = analyzeState(rugzak, '');
     expect(analysis.riskLevel).toBe('high');
   });
 
   it('craving=7, frustration=8, despondency=8, focus=3 → crisis monitoring active', () => {
-    const rugzak = makeElias({ craving: 7, frustration: 8, despondency: 8, focus: 3 });
+    const rugzak = makeElias({ craving: 7, frustration: 8, despondency: 8, focus: 3, vsp: null });
     const analysis = analyzeState(rugzak, '');
     expect(analysis.crisisMonitoring).toBe(true);
   });
 
   it('craving=2, frustration=2, despondency=2, focus=8 → warm tone (low distress)', () => {
-    const rugzak = makeElias({ craving: 2, frustration: 2, despondency: 2, focus: 8 });
+    const rugzak = makeElias({ craving: 2, frustration: 2, despondency: 2, focus: 8, vsp: null });
     const analysis = analyzeState(rugzak, '');
     expect(analysis.tone).toBe('warm');
   });
 
   it('craving=2, frustration=2, despondency=2, focus=8 → normal pacing', () => {
-    const rugzak = makeElias({ craving: 2, frustration: 2, despondency: 2, focus: 8 });
+    const rugzak = makeElias({ craving: 2, frustration: 2, despondency: 2, focus: 8, vsp: null });
     const analysis = analyzeState(rugzak, '');
     expect(analysis.pacing).toBe('normal');
   });
 
   it('craving=2, frustration=2, despondency=2, focus=8 → stable emotional state', () => {
-    const rugzak = makeElias({ craving: 2, frustration: 2, despondency: 2, focus: 8 });
+    const rugzak = makeElias({ craving: 2, frustration: 2, despondency: 2, focus: 8, vsp: null });
     const analysis = analyzeState(rugzak, '');
     expect(analysis.emotionalState).toBe('stable');
   });
@@ -94,7 +94,7 @@ describe('Compound Slider Rules - Elias', () => {
   it('craving=8, frustration=3, despondency=3, focus=7 → grounding (high primary concern + moderate distress)', () => {
     // craving > 6 AND distress = (8+3+3)/3 = 4.67 → NOT >= 6, so not grounding from compound rule
     // But primaryConcern=8 > 6 AND distress < 6 → should be warm or vulnerable
-    const rugzak = makeElias({ craving: 8, frustration: 3, despondency: 3, focus: 7 });
+    const rugzak = makeElias({ craving: 8, frustration: 3, despondency: 3, focus: 7, vsp: null });
     const analysis = analyzeState(rugzak, '');
     // distress = 4.67, primaryConcern = 8, but distress < 6 so not grounding from compound
     // emotionalState: distress < 6.5, primaryConcern >= 5.5 → vulnerable
@@ -106,7 +106,7 @@ describe('Compound Slider Rules - Elias', () => {
     // distress = (9+7+6)/3 = 7.33, resilience = 2
     // riskLevel: distress < 7.5 but resilience <= 3 → check: 7.33 < 7.5 → not 'high' from that rule
     // But primaryConcern=9 > 6 AND distress=7.33 >= 6 → grounding tone
-    const rugzak = makeElias({ craving: 9, frustration: 7, despondency: 6, focus: 2 });
+    const rugzak = makeElias({ craving: 9, frustration: 7, despondency: 6, focus: 2, vsp: null });
     const analysis = analyzeState(rugzak, '');
     expect(analysis.tone).toBe('grounding');
     // emotionalState: depleted (distress >= 6.5) → pacing: slower
@@ -137,7 +137,7 @@ describe('Compound Slider Rules - Kim', () => {
 
 describe('Therapeutic Stance Output', () => {
   it('high distress Elias → stance includes GROUNDING + DIRECTIVE', () => {
-    const rugzak = makeElias({ craving: 7, frustration: 8, despondency: 8, focus: 3 });
+    const rugzak = makeElias({ craving: 7, frustration: 8, despondency: 8, focus: 3, vsp: null });
     const analysis = analyzeState(rugzak, '');
     // The stateSummary should contain the slider values
     expect(analysis.stateSummary).toContain('Craving: 7');
@@ -145,7 +145,7 @@ describe('Therapeutic Stance Output', () => {
   });
 
   it('low distress Elias → stable state summary', () => {
-    const rugzak = makeElias({ craving: 1, frustration: 1, despondency: 1, focus: 9 });
+    const rugzak = makeElias({ craving: 1, frustration: 1, despondency: 1, focus: 9, vsp: null });
     const analysis = analyzeState(rugzak, '');
     expect(analysis.stateSummary).toContain('Risk: low');
     expect(analysis.stateSummary).toContain('State: stable');

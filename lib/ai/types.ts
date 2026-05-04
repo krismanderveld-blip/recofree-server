@@ -31,6 +31,7 @@
  */
 
 import { ELIAS_DEFAULT_STAGE } from '../engine/elias/stage-of-change';
+import type { VspLevel } from '../engine/elias/vsp';
 
 /** User type determined at intake - IMMUTABLE after assignment */
 export type UserType = 'elias' | 'kim';
@@ -68,6 +69,8 @@ export interface EliasMoodSliders {
   frustration: number;
   despondency: number;
   focus: number;
+  /** VSP (Vroeg Signalerings Plan) — current relapse risk state. null if not yet submitted. */
+  vsp: VspLevel | null;
 }
 
 /** Kim slider keys */
@@ -124,7 +127,7 @@ export function getSliderConfig(userType: UserType): SliderConfig[] {
 /** Create default slider values for a given user type */
 export function createDefaultSliders(userType: UserType): MoodSliders {
   if (userType === 'elias') {
-    return { craving: 0, frustration: 0, despondency: 0, focus: 5 };
+    return { craving: 0, frustration: 0, despondency: 0, focus: 5, vsp: null };
   }
   return { stress: 0, boundaryFatigue: 0, emotionalBurden: 0, selfCare: 5, eigenRegie: null };
 }

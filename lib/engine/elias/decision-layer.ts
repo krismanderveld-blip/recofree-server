@@ -11,9 +11,17 @@
  * - stageOfChange (from intake)
  * - mood sliders (current)
  * - Elias Zone (from crisis, distress, resilience, stageOfChange → ZoneResult)
+ * - VSP Resolution (resolveEliasZone → ResolvedEliasZone → computeEliasImpact)
+ *
+ * FLOW:
+ *   1. computeEliasZone(...)         → computed zone (detection, pure)
+ *   2. resolveEliasZone(vsp, zone)   → ResolvedEliasZone (decision, separate layer)
+ *   3. IF isBlocked → HARD STOP. No impact. No GPT. Pipeline must redirect.
+ *   4. computeEliasImpact(resolved)  → EliasImpact (behavioral directives)
  *
  * Does NOT modify any input.
  * Does NOT create new behavior.
+ * Does NOT mix VSP into computeEliasZone.
  */
 
 import type { StateAnalysis, ToneDirective, PacingDirective } from '../../rugzak/state-analyzer';
@@ -25,6 +33,9 @@ import type { ZoneResult } from '../zone-types';
 import type { EliasImpact } from './zone';
 import { computeEliasZone } from './zone';
 import { eliasDistressScore, eliasResilienceScore } from './slider-interpretation';
+import type { VspLevel } from './vsp';
+import { resolveEliasZone, type ResolvedEliasZone } from './vsp-resolution';
+import { computeEliasImpact } from './vsp-impact';
 
 // ─── Input ──────────────────────────────────────────────────
 
@@ -36,6 +47,12 @@ export interface EliasDecisionInput {
   readonly moodSliders: MoodSliders;
   readonly currentZoneColor: ZoneColor;
   readonly currentZoneScore: number;
+  /**
+   * VSP (Vroeg Signalerings Plan) — user-reported relapse risk level.
+   * null if user has not submitted VSP yet this session.
+   * When null: resolvedZone.isBlocked = true → pipeline HARD STOP.
+   */
+  readonly vspInput: VspLevel | null;
 }
 
 // ─── Output ─────────────────────────────────────────────────
@@ -46,13 +63,19 @@ export interface EliasDecision {
   readonly zone: {
     /** Legacy buffer zone color (passthrough from buffer). */
     readonly calculated: ZoneColor;
-    /** Engine-computed zone from Elias engine outputs. */
-    readonly engine: ZoneResult<EliasImpact>;
+    /** Engine-computed zone from Elias engine outputs (detection, pure). */
+    readonly computed: ZoneResult<EliasImpact>;
+    /** Resolved zone from VSP resolution layer (decision). */
+    readonly resolved: ResolvedEliasZone;
+    /** Final EliasImpact based on resolved zone. null when blocked. */
+    readonly impact: EliasImpact | null;
   };
   readonly tone: ToneDirective;
   readonly pacing: PacingDirective;
   readonly interventionDepth: number;
   readonly challengeLevel: number;
+  /** Whether chat is blocked (VSP not submitted). Pipeline HARD STOP. */
+  readonly isBlocked: boolean;
 }
 
 // ─── Aggregation ────────────────────────────────────────────
@@ -71,13 +94,25 @@ export function createEliasDecision(input: EliasDecisionInput): EliasDecision {
     throw new Error('EliasDecisionInput.crisis is required');
   }
 
-  // Compute Elias engine zone from existing outputs
-  const engineZone = computeEliasZone({
+  // Step 1: Compute Elias zone (detection — pure, no VSP)
+  const computedZone = computeEliasZone({
     crisisLevel: input.crisis.level,
     distressScore: eliasDistressScore(input.moodSliders),
     resilienceScore: eliasResilienceScore(input.moodSliders),
     stageOfChange: input.stageOfChange,
   });
+
+  // Step 2: Resolve final zone (decision — separate layer)
+  const resolvedZone = resolveEliasZone({
+    vsp: input.vspInput,
+    computedZone: computedZone.level,
+  });
+
+  // Step 3: HARD STOP check — if blocked, NO impact computation
+  // Pipeline must not proceed to GPT when isBlocked == true
+  const impact: EliasImpact | null = resolvedZone.isBlocked
+    ? null
+    : computeEliasImpact(resolvedZone);
 
   return Object.freeze({
     // From DominantState
@@ -86,10 +121,12 @@ export function createEliasDecision(input: EliasDecisionInput): EliasDecision {
     // From CrisisAssessment
     crisisLevel: input.crisis.level,
 
-    // Zone: legacy buffer passthrough + engine-computed zone
+    // Zone: legacy buffer passthrough + computed + resolved + impact
     zone: Object.freeze({
       calculated: input.currentZoneColor,
-      engine: engineZone,
+      computed: computedZone,
+      resolved: resolvedZone,
+      impact,
     }),
 
     // From StateAnalysis
@@ -101,5 +138,8 @@ export function createEliasDecision(input: EliasDecisionInput): EliasDecision {
 
     // Direct mapping: challengeLevel = riskScore / 10, rounded
     challengeLevel: Math.round(input.dominantState.riskScore / 10),
+
+    // Blocked state propagated from resolution layer
+    isBlocked: resolvedZone.isBlocked,
   });
 }

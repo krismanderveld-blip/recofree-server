@@ -98,6 +98,10 @@ interface UserContextValue {
   updateEigenRegie: (userInput: number) => Promise<void>;
   /** Get Eigen Regie history */
   getEigenRegieHistory: () => import('./ai/types').EigenRegieEntry[];
+  /** Update VSP level (Elias users only). Must be called before pipeline start. */
+  updateVsp: (level: import('./engine/elias/vsp').VspLevel) => Promise<void>;
+  /** Get current VSP level (null if not yet submitted this session) */
+  getVsp: () => import('./engine/elias/vsp').VspLevel | null;
   /** Convenience getters */
   getUserName: () => string;
   getMood: () => MoodSliders;
@@ -465,6 +469,26 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     return state.userDat?.eigenRegieHistory ?? [];
   }, [state.userDat]);
 
+  // ── VSP (Elias only) ──
+
+  const updateVsp = useCallback(async (level: import('./engine/elias/vsp').VspLevel) => {
+    if (!state.userDat) return;
+    // Write VSP to currentMood.vsp (Elias sliders)
+    const updatedMood = { ...state.userDat.currentMood, vsp: level };
+    const updatedUserDat: UserDat = { ...state.userDat, currentMood: updatedMood };
+    dispatch({ type: 'UPDATE_USERDAT', payload: updatedUserDat });
+    await persistUserDat(updatedUserDat);
+  }, [state.userDat]);
+
+  const getVsp = useCallback((): import('./engine/elias/vsp').VspLevel | null => {
+    if (!state.userDat) return null;
+    const mood = state.userDat.currentMood;
+    if ('vsp' in mood) {
+      return (mood as import('./ai/types').EliasMoodSliders).vsp;
+    }
+    return null;
+  }, [state.userDat]);
+
   // ── Guidance Depth ──
 
   const updateGuidanceDepth = useCallback(async (depth: GuidanceDepth) => {
@@ -609,6 +633,8 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         getUserDat,
         updateEigenRegie,
         getEigenRegieHistory,
+        updateVsp,
+        getVsp,
       }}
     >
       {children}

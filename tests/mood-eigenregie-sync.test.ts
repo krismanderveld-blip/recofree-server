@@ -68,13 +68,15 @@ describe('EliasMoodSliders — no eigenRegie', () => {
     expect(sliders).not.toHaveProperty('eigenRegie');
   });
 
-  it('Elias sliders have exactly 4 fields', () => {
+  it('Elias sliders have exactly 5 fields', () => {
     const sliders = createDefaultSliders('elias') as EliasMoodSliders;
-    expect(Object.keys(sliders)).toHaveLength(4);
+    expect(Object.keys(sliders)).toHaveLength(5);
     expect(sliders).toHaveProperty('craving');
     expect(sliders).toHaveProperty('frustration');
     expect(sliders).toHaveProperty('despondency');
     expect(sliders).toHaveProperty('focus');
+    expect(sliders).toHaveProperty('vsp');
+    expect(sliders.vsp).toBeNull();
   });
 });
 
@@ -205,6 +207,7 @@ describe('Pipeline reads currentMood.eigenRegie', () => {
       frustration: 3,
       despondency: 7,
       focus: 4,
+      vsp: null,
     };
     const eigenRegieInput = ('eigenRegie' in currentMood) ? (currentMood as any).eigenRegie : null;
     expect(eigenRegieInput).toBeNull();

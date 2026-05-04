@@ -25,6 +25,9 @@ import type { ChatMessage, Rugzak, Backpack, UserDat, DiaryEntry } from '@/lib/a
 import { composeRugzak } from '@/lib/ai/types';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useColors } from '@/hooks/use-colors';
+import { PreChatVsp } from '@/components/prechat-vsp';
+import { PreChatEigenRegie } from '@/components/prechat-eigen-regie';
+import type { VspLevel } from '@/lib/engine/elias/vsp';
 
 const BACKPACK_KEY = '@recofree_backpack';
 const USERDAT_KEY = '@recofree_userdat';
@@ -44,6 +47,9 @@ export default function ChatScreen() {
     getUserDat,
     endSessionWithRugzak,
     endSessionWithUserDat,
+    updateVsp,
+    getVsp,
+    updateEigenRegie,
   } = useUser();
   const colors = useColors();
   const router = useRouter();
@@ -61,6 +67,33 @@ export default function ChatScreen() {
 
   const userName = getUserName();
   const companionName = state.userType === 'elias' ? 'Elias' : 'Kim';
+
+  // ── Pre-chat gate: VSP required for Elias, Eigen Regie required for Kim ──
+  const [preChatDone, setPreChatDone] = useState<boolean>(() => {
+    if (state.userType === 'elias') {
+      const currentVsp = getVsp();
+      return currentVsp !== null;
+    }
+    if (state.userType === 'kim') {
+      // Kim: eigenRegie must be submitted this session
+      const mood = state.userDat?.currentMood;
+      if (mood && 'eigenRegie' in mood) {
+        return (mood as any).eigenRegie !== null;
+      }
+      return false;
+    }
+    return true;
+  });
+
+  const handleVspSubmit = useCallback(async (level: VspLevel) => {
+    await updateVsp(level);
+    setPreChatDone(true);
+  }, [updateVsp]);
+
+  const handleEigenRegieSubmit = useCallback(async (value: number) => {
+    await updateEigenRegie(value);
+    setPreChatDone(true);
+  }, [updateEigenRegie]);
 
   // ── Track keyboard visibility + scroll to end ──
   useEffect(() => {
@@ -135,8 +168,10 @@ export default function ChatScreen() {
   // Start session and send greeting ONLY when Chat tab gains focus.
   // This prevents the greeting from firing during intake/backpack fill
   // (Expo Router mounts all tabs simultaneously).
+  // GUARD: For Elias users, greeting is blocked until VSP is submitted.
   useFocusEffect(
     useCallback(() => {
+      if (!preChatDone) return; // Pre-chat gate: required input not yet submitted
       if (state.intakeCompleted && state.backpack && state.userDat && !greetingSent.current) {
         // Don't fire greeting if backpack sections are all empty
         // (happens right after intake, before user fills life story sections)
@@ -148,7 +183,7 @@ export default function ChatScreen() {
         startSession();
         sendGreetingViaP();
       }
-    }, [state.intakeCompleted, state.backpack, state.userDat])
+    }, [state.intakeCompleted, state.backpack, state.userDat, preChatDone])
   );
 
   const sendGreetingViaP = useCallback(async () => {
@@ -350,6 +385,24 @@ export default function ChatScreen() {
    *   No special handling needed.
    */
   const isIOS = Platform.OS === 'ios';
+
+  // ── PRE-CHAT GATE: show required input before chat can start ──
+  if (!preChatDone) {
+    if (state.userType === 'elias') {
+      return (
+        <View style={{ flex: 1, backgroundColor: colors.background, paddingTop: insets.top }}>
+          <PreChatVsp onSubmit={handleVspSubmit} userName={userName} />
+        </View>
+      );
+    }
+    if (state.userType === 'kim') {
+      return (
+        <View style={{ flex: 1, backgroundColor: colors.background, paddingTop: insets.top }}>
+          <PreChatEigenRegie onSubmit={handleEigenRegieSubmit} userName={userName} />
+        </View>
+      );
+    }
+  }
 
   const chatContent = (
     <View style={{ flex: 1, backgroundColor: colors.background }}>

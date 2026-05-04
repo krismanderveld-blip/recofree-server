@@ -137,9 +137,9 @@ export interface PipelineResult {
   /** The AI-generated response text */
   response: string;
   /** The state analysis that drove this response */
-  analysis: StateAnalysis;
+  analysis?: StateAnalysis;
   /** Updated Rugzak after processing (composed view) */
-  updatedRugzak: Rugzak;
+  updatedRugzak?: Rugzak;
   /** Updated UserDat after processing (for persistence) */
   updatedUserDat: UserDat;
   /** Crisis level (0 = none, 1 = elevated, 2 = active crisis) */
@@ -152,6 +152,16 @@ export interface PipelineResult {
   bufferSnapshot?: BufferSnapshot;
   /** Post-GPT log entry */
   messageLog?: MessageLog;
+  /**
+   * Pipeline status. Defaults to 'OK' for normal flow.
+   * 'BLOCKED_PRECHAT_REQUIRED' = VSP not submitted, chat cannot start.
+   * 'CRISIS_MODE' = PAARS/severity 5, crisis directive issued.
+   */
+  status?: 'OK' | 'BLOCKED_PRECHAT_REQUIRED' | 'CRISIS_MODE';
+  /** Whether pipeline was blocked (VSP not submitted). */
+  isBlocked?: boolean;
+  /** Reason for blocking. */
+  blockReason?: string;
 }
 
 /** Consolidated log entry for each message exchange */
@@ -442,6 +452,7 @@ export async function processMessage(
       moodSliders: currentUserDat.currentMood || (ELIAS_DEFAULT_MOOD as any),
       currentZoneColor: sessionBuffer.currentZoneColor as ZoneColor,
       currentZoneScore: sessionBuffer.currentZoneScore,
+      vspInput: ('vsp' in currentUserDat.currentMood) ? (currentUserDat.currentMood as import('../ai/types').EliasMoodSliders).vsp : null,
     });
   } else {
     kimDecision = createKimDecision({
@@ -458,12 +469,26 @@ export async function processMessage(
   sessionEliasDecision = elisDecision;
   sessionKimDecision = kimDecision;
 
+  // ── HARD STOP: if Elias VSP not submitted, pipeline must not proceed ──
+  // No computeEliasImpact. No GPT call. Direct pre-chat flow.
+  if (elisDecision?.isBlocked) {
+    return {
+      response: '',
+      crisisLevel: 0,
+      showEmergency: false,
+      updatedUserDat: currentUserDat,
+      status: 'BLOCKED_PRECHAT_REQUIRED',
+      isBlocked: true,
+      blockReason: 'VSP_MISSING',
+    };
+  }
+
   // ── Route engine directive: select correct engine output based on userType ──
   const activeDecision = elisDecision ?? kimDecision;
   const engineDirective: EngineDirective | null = routeEngineDirective({
     userType: backpack.userType,
-    eliasZone: elisDecision?.zone.engine
-      ? { level: elisDecision.zone.engine.level, label: elisDecision.zone.engine.label, impact: elisDecision.zone.engine.impact }
+    eliasZone: (elisDecision?.zone.impact)
+      ? { level: elisDecision.zone.computed.level, label: elisDecision.zone.computed.label, impact: elisDecision.zone.impact }
       : null,
     kimZone: kimDecision?.zone.engine
       ? { level: kimDecision.zone.engine.level, label: kimDecision.zone.engine.label, impact: kimDecision.zone.engine.impact }
