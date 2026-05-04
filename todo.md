@@ -476,3 +476,7 @@
 - [x] Fix 2: zone.ts — precontemplation only forces GEEL when distress < 3.5 (tiebreaker, not override)
 - [x] Fix 3: intervention-continuity.ts — crisis keywords (help, red, nood, sos) not classified as 'ignored'
 - [x] Fix 4: server/ai-chat.ts — static crisis-fallback response when GPT call fails and crisisLevel >= 1
+
+## Follow-up Tasks
+- [x] Integration test: crisis-fallback-on-network-failure (mock fetch, verify 113/112 in response)
+- [x] Update recofree_audit_snapshot.txt with Round 2 fixes (CRISIS_KEYWORDS, precontemplation, VSP/ER check, crisis-fallback)

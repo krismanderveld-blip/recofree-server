@@ -1,8 +1,8 @@
 ================================================================================
 RECOFREE APP — AUDIT SNAPSHOT
 Generated: 2026-05-04
-Version: post-checkpoint 1d3d6dd4 (Intervention Continuity Layer + 5 Fixes)
-Tests: 290 passing | TypeScript: 0 errors
+Version: post-checkpoint 90422f7e (Round 2 Fixes: pipeline Step 0, zone precontemplation, crisis keywords, GPT crisis-fallback)
+Tests: 319 passing | TypeScript: 0 errors
 ================================================================================
 
 
@@ -661,6 +661,8 @@ lib/engine/elias/intervention-continuity.ts (various lines)
   ENGAGED_MIN_LENGTH = 20 (chars)
   IGNORED_MAX_LENGTH = 5 (chars)
   ACKNOWLEDGMENT_TOKENS: ['ok', 'ja', 'oke', 'oké', 'hmm', 'yes', 'yeah', 'nee', 'no', + dot variants]
+  CRISIS_KEYWORDS: ['help', 'red', 'nood', 'sos', 'please', 'alsjeblieft', 'stop']  ← NEW (Round 2 Fix 3)
+    Rule: short messages (≤5 chars) containing a crisis keyword → 'escalated' (not 'ignored')
   DEFLECTION_MARKERS: ['maar eigenlijk', 'laat maar', 'maakt niet uit', 'iets anders', 'anyway', 'whatever', 'never mind', "doesn't matter", 'kan ik iets anders', 'wil ik het over iets anders', 'verander van onderwerp', 'ander onderwerp', 'change the subject', 'something else']
 
 
@@ -773,7 +775,7 @@ lib/engine/elias/zone.ts (computeEliasZone priority):
   crisisLevel === 1 → ORANJE
   distress >= 5.5 → ORANJE
   distress >= 3.5 → GEEL
-  stageOfChange === 'precontemplation' → GEEL
+  stageOfChange === 'precontemplation' && distress < 3.5 → GEEL  ← UPDATED (Round 2 Fix 2: tiebreaker only, not override)
   distress < 3.5 && resilience >= 5 → GROEN
   default → LICHTGROEN
 
@@ -1034,13 +1036,22 @@ server/db.ts:92
    - Single model per message (never two calls)
    - gpt-4o for high-stakes (crisis, session start, complex modules)
    - gpt-4o-mini for everything else
-   - No fallback chain — if call fails, generic error message returned
+   - Crisis fallback: if GPT call fails AND crisisLevel >= 1, returns static Dutch response
+     with 113 (zelfmoordpreventie) and 112 (nood) numbers. No generic error thrown.
+     ← NEW (Round 2 Fix 4, server/ai-chat.ts lines 1237-1263)
 
 6. Buffer vs UserDat:
    - Buffer = live session state (volatile, resets per session)
    - UserDat = persistent state (survives sessions, stored in AsyncStorage)
    - Backpack = stable identity (NEVER modified by pipeline)
    - Full buffer NEVER goes to GPT — only BufferSnapshot (subset)
+
+
+7. Pipeline Step 0 — Minimal Context (Round 2 Fix 1):
+   - VSP (Elias) and Eigen Regie (Kim) now count as valid minimal context
+   - A user with only VSP filled (all sliders at default) passes the hasMinimalContext check
+   - A user with only eigenRegie filled (all sliders at default) passes the hasMinimalContext check
+   - File: lib/rugzak/pipeline.ts (two occurrences of hasMinimalContext)
 
 
 --- POTENTIAL FUTURE WORK (not bugs, not blockers) ---
