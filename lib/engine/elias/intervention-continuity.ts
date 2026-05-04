@@ -18,14 +18,23 @@
  *   - effectivenessScore is measured by zone transitions relative to expectedShift
  *
  * FUTURE HOOK:
- *   - getSessionSummary() returns intervention summary for session-end persistence
- *   - Can be stored in user.dat at session end for cross-session learning
+ *   - getSessionSummary() returns intervention summary as a pure function (read-only)
+ *   - NOT connected to user.dat or any durable persistence until database migration is complete
+ *   - Current storage (AsyncStorage) = local within-device memory only
  *
  * RULES:
  *   - No GPT calls — purely local state tracking
  *   - No modification of resolvedZone — read-only consumer
  *   - No inference — only tracks what actually happened
  *   - Session-scoped — resets at session start
+ *   - Zone evolution trail: max 5 entries sent to GPT (MAX_TRAIL_LENGTH)
+ *
+ * BLOCKED — Kim Continuity Layer:
+ *   - A Kim equivalent of this layer is NOT implemented.
+ *   - REASON: Eigen Regie is not yet mandatory at chat start.
+ *   - A continuity layer on non-guaranteed input is unstable.
+ *   - This item is blocked until Eigen Regie is enforced as a pre-chat requirement.
+ *   - DO NOT build Kim continuity until that precondition is met.
  */
 
 import type { FinalZoneLabel, ResolvedEliasZone } from './vsp-resolution';
@@ -227,45 +236,90 @@ export function detectZoneShift(
 
 /**
  * Detect user response pattern from their message relative to the active intervention.
- * Simple heuristic — no GPT call.
  *
- * Rules:
- * - If zone worsened → escalated
- * - If message is very short (<10 chars) and off-topic → ignored
- * - If message references the intervention topic → engaged
- * - Default → engaged (benefit of the doubt)
+ * EXACT DETECTION RULES (no AI interpretation, no defaults):
+ *
+ * ESCALATED:
+ *   Condition: zone severity increased (zoneShift.direction === 'worsened')
+ *   Rationale: objective measurement — sliders/VSP moved to higher severity
+ *
+ * IGNORED:
+ *   Condition: message length < 5 characters AND not an acknowledgment token
+ *   Acknowledgment tokens: 'ok', 'ja', 'oke', 'oké', 'hmm', 'yes', 'yeah', 'nee', 'no'
+ *   Rationale: sub-5-char non-ack = no meaningful engagement with intervention content
+ *
+ * DEFLECTED:
+ *   Condition: message contains one or more explicit deflection markers (exact substring match)
+ *   Markers are topic-change phrases, not emotional expressions
+ *   Rationale: user explicitly signals they want to move away from current intervention
+ *
+ * ENGAGED:
+ *   Condition: message length >= 20 characters AND no deflection markers AND zone did not worsen
+ *   Rationale: substantive response without avoidance signals = engagement
+ *
+ * UNKNOWN:
+ *   Condition: no active intervention OR none of the above conditions are met
+ *   This is the fallback — NOT 'engaged'. System does not assume engagement.
  */
+
+/** Exact acknowledgment tokens (case-insensitive, must match full message after trim) */
+const ACKNOWLEDGMENT_TOKENS: ReadonlyArray<string> = Object.freeze([
+  'ok', 'ja', 'oke', 'oké', 'hmm', 'yes', 'yeah', 'nee', 'no',
+  'ok.', 'ja.', 'oke.', 'oké.', 'hmm.', 'yes.', 'yeah.', 'nee.', 'no.',
+]);
+
+/** Exact deflection markers (case-insensitive substring match) */
+const DEFLECTION_MARKERS: ReadonlyArray<string> = Object.freeze([
+  'maar eigenlijk',
+  'laat maar',
+  'maakt niet uit',
+  'iets anders',
+  'anyway',
+  'whatever',
+  'never mind',
+  "doesn't matter",
+  'kan ik iets anders',
+  'wil ik het over iets anders',
+  'verander van onderwerp',
+  'ander onderwerp',
+  'change the subject',
+  'something else',
+]);
+
+/** Minimum message length to qualify as 'engaged' (substantive response) */
+const ENGAGED_MIN_LENGTH = 20;
+
+/** Maximum message length to qualify as 'ignored' (non-ack short message) */
+const IGNORED_MAX_LENGTH = 5;
+
 export function detectUserResponse(
   userMessage: string,
   zoneShift: ZoneShift | null,
   activeIntervention: InterventionType,
 ): UserResponsePattern {
-  // No previous intervention → unknown
+  // Rule 0: No active intervention → unknown (cannot classify response to nothing)
   if (activeIntervention === 'none') return 'unknown';
 
-  // Zone worsened → escalated
+  // Rule 1: ESCALATED — zone severity increased (objective measurement)
   if (zoneShift && zoneShift.direction === 'worsened') return 'escalated';
 
   const msg = userMessage.toLowerCase().trim();
 
-  // Very short + no engagement signal → ignored
-  if (msg.length < 10) {
-    // Check for minimal acknowledgment
-    const acks = ['ok', 'ja', 'oke', 'hmm', 'oké', 'yes', 'yeah'];
-    if (acks.some(a => msg === a || msg === a + '.')) return 'engaged';
+  // Rule 2: IGNORED — very short message that is not an acknowledgment
+  if (msg.length <= IGNORED_MAX_LENGTH) {
+    if (ACKNOWLEDGMENT_TOKENS.includes(msg)) return 'engaged';
     return 'ignored';
   }
 
-  // Deflection signals: topic change, avoidance
-  const deflectionMarkers = [
-    'maar eigenlijk', 'laat maar', 'maakt niet uit', 'iets anders',
-    'anyway', 'whatever', 'never mind', 'doesn\'t matter',
-    'kan ik', 'wil ik het over', 'verander van onderwerp',
-  ];
-  if (deflectionMarkers.some(m => msg.includes(m))) return 'deflected';
+  // Rule 3: DEFLECTED — contains explicit deflection marker
+  if (DEFLECTION_MARKERS.some(marker => msg.includes(marker))) return 'deflected';
 
-  // Default: engaged (user is responding to the conversation)
-  return 'engaged';
+  // Rule 4: ENGAGED — substantive response (>= 20 chars) without deflection or escalation
+  if (msg.length >= ENGAGED_MIN_LENGTH) return 'engaged';
+
+  // Rule 5: UNKNOWN — message is 6-19 chars, no deflection, no escalation
+  // System does not assume engagement for ambiguous short messages
+  return 'unknown';
 }
 
 // ─── Effectiveness Scoring ───────────────────────────────────
@@ -450,8 +504,12 @@ export function updateInterventionAfterResponse(
 // ─── Session Summary (future hook for persistence) ───────────
 
 /**
- * Get intervention summary for session-end persistence.
- * Can be stored in user.dat for cross-session learning.
+ * Get intervention summary as a pure function.
+ * Returns a read-only snapshot of the current session's intervention data.
+ *
+ * NOT connected to user.dat or any persistence layer.
+ * Storage contract: local within-device memory only (AsyncStorage).
+ * Do NOT use for durable learning until database migration is complete.
  */
 export interface InterventionSessionSummary {
   readonly totalTurns: number;
@@ -496,11 +554,26 @@ export function getSessionSummary(): InterventionSessionSummary | null {
   });
 }
 
-// ─── GPT Context Builder ─────────────────────────────────────
+// ─// ─── GPT Context Builder ─────────────────────────────────
+
+/**
+ * RULE: Maximum zone evolution trail entries sent to GPT.
+ * Only the last MAX_TRAIL_LENGTH entries are included in the prompt.
+ * Older entries are NOT sent. This is a hard limit, not a suggestion.
+ *
+ * Rationale: GPT context window efficiency + prevent stale history from
+ * influencing current therapeutic decisions.
+ */
+export const MAX_TRAIL_LENGTH = 5;
 
 /**
  * Build the intervention continuity context string for GPT injection.
  * Concise, structured, actionable for GPT.
+ *
+ * RULE: Zone evolution trail is capped at MAX_TRAIL_LENGTH (5) entries.
+ * Only the most recent entries are included. Older entries are discarded
+ * from the prompt (they remain in memory for effectiveness calculation
+ * but are NOT sent to GPT).
  *
  * Returns null if no intervention state exists yet.
  */
@@ -538,6 +611,15 @@ export function buildInterventionContext(state: InterventionState): string {
     lines.push('- Let op: Escalatie ondanks interventie. Verlaag intensiteit, meer aanwezigheid.');
   } else if (state.lastUserResponse === 'ignored') {
     lines.push('- Let op: Gebruiker reageert niet op interventie. Volg de gebruiker, niet je plan.');
+  }
+
+  // Zone evolution trail — HARD LIMIT: only last 5 entries sent to GPT
+  const trail = state.zoneEvolution.slice(-MAX_TRAIL_LENGTH);
+  if (trail.length > 0) {
+    lines.push('- Zone-evolutie (laatste ' + trail.length + '):');
+    for (const entry of trail) {
+      lines.push(`  [${entry.turnIndex}] ${entry.zoneLabel} (sev ${entry.severity}) | ${entry.interventionType} | response: ${entry.userResponse}`);
+    }
   }
 
   return lines.join('\n');

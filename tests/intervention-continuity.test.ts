@@ -27,6 +27,7 @@ import {
   resetInterventionState,
   getSessionSummary,
   buildInterventionContext,
+  MAX_TRAIL_LENGTH,
   type InterventionState,
   type ZoneEvolutionEntry,
 } from '../lib/engine/elias/intervention-continuity';
@@ -128,35 +129,45 @@ describe('detectZoneShift', () => {
 // ─── 3. detectUserResponse ──────────────────────────────────────
 
 describe('detectUserResponse', () => {
-  it('returns unknown when no active intervention', () => {
-    expect(detectUserResponse('hello', null, 'none')).toBe('unknown');
+  const stable = { from: 'ORANJE' as const, to: 'ORANJE' as const, direction: 'stable' as const, delta: 0 };
+
+  it('Rule 0: returns unknown when no active intervention', () => {
+    expect(detectUserResponse('hello world this is a test', null, 'none')).toBe('unknown');
   });
 
-  it('returns escalated when zone worsened', () => {
-    const shift = { from: 'GEEL' as const, to: 'ROOD' as const, direction: 'worsened' as const, delta: 2 };
-    expect(detectUserResponse('ik voel me slecht', shift, 'regulation')).toBe('escalated');
+  it('Rule 1: returns escalated when zone worsened (objective measurement)', () => {
+    const worsened = { from: 'GEEL' as const, to: 'ROOD' as const, direction: 'worsened' as const, delta: 2 };
+    expect(detectUserResponse('ik voel me slecht en wil stoppen', worsened, 'regulation')).toBe('escalated');
   });
 
-  it('returns engaged for short acknowledgment', () => {
-    const shift = { from: 'ORANJE' as const, to: 'ORANJE' as const, direction: 'stable' as const, delta: 0 };
-    expect(detectUserResponse('ok', shift, 'regulation')).toBe('engaged');
-    expect(detectUserResponse('ja', shift, 'regulation')).toBe('engaged');
+  it('Rule 2: returns engaged for acknowledgment tokens (<= 5 chars)', () => {
+    expect(detectUserResponse('ok', stable, 'regulation')).toBe('engaged');
+    expect(detectUserResponse('ja', stable, 'regulation')).toBe('engaged');
+    expect(detectUserResponse('nee', stable, 'regulation')).toBe('engaged');
+    expect(detectUserResponse('hmm.', stable, 'regulation')).toBe('engaged');
   });
 
-  it('returns ignored for very short non-acknowledgment', () => {
-    const shift = { from: 'ORANJE' as const, to: 'ORANJE' as const, direction: 'stable' as const, delta: 0 };
-    expect(detectUserResponse('xyz', shift, 'regulation')).toBe('ignored');
+  it('Rule 2: returns ignored for non-ack message <= 5 chars', () => {
+    expect(detectUserResponse('xyz', stable, 'regulation')).toBe('ignored');
+    expect(detectUserResponse('...', stable, 'regulation')).toBe('ignored');
+    expect(detectUserResponse('huh', stable, 'regulation')).toBe('ignored');
   });
 
-  it('returns deflected for deflection markers', () => {
-    const shift = { from: 'ORANJE' as const, to: 'ORANJE' as const, direction: 'stable' as const, delta: 0 };
-    expect(detectUserResponse('maar eigenlijk wil ik het over iets anders hebben', shift, 'regulation')).toBe('deflected');
-    expect(detectUserResponse('laat maar, maakt niet uit', shift, 'regulation')).toBe('deflected');
+  it('Rule 3: returns deflected for explicit deflection markers', () => {
+    expect(detectUserResponse('maar eigenlijk wil ik het over iets anders hebben', stable, 'regulation')).toBe('deflected');
+    expect(detectUserResponse('laat maar, maakt niet uit voor mij', stable, 'regulation')).toBe('deflected');
+    expect(detectUserResponse('can we change the subject please', stable, 'regulation')).toBe('deflected');
   });
 
-  it('returns engaged for normal response', () => {
-    const shift = { from: 'ORANJE' as const, to: 'ORANJE' as const, direction: 'stable' as const, delta: 0 };
-    expect(detectUserResponse('ik heb geprobeerd om rustig te ademen zoals je zei', shift, 'regulation')).toBe('engaged');
+  it('Rule 4: returns engaged for substantive response (>= 20 chars, no deflection)', () => {
+    expect(detectUserResponse('ik heb geprobeerd om rustig te ademen zoals je zei', stable, 'regulation')).toBe('engaged');
+    expect(detectUserResponse('dat helpt wel een beetje denk ik', stable, 'regulation')).toBe('engaged');
+  });
+
+  it('Rule 5: returns unknown for ambiguous messages (6-19 chars, no other signal)', () => {
+    expect(detectUserResponse('weet niet', stable, 'regulation')).toBe('unknown');
+    expect(detectUserResponse('misschien', stable, 'regulation')).toBe('unknown');
+    expect(detectUserResponse('ik denk het', stable, 'regulation')).toBe('unknown');
   });
 });
 
@@ -475,5 +486,89 @@ describe('resetInterventionState', () => {
     // Should behave as first turn again
     const result = evaluateInterventionContinuity(zone, 'hallo');
     expect(result).toBeNull();
+  });
+});
+
+// ─── 12. buildInterventionContext trail limit ──────────────────
+
+describe('buildInterventionContext trail limit (MAX_TRAIL_LENGTH = 5)', () => {
+  it('includes at most 5 zone evolution entries in GPT context', () => {
+
+    // Create state with 8 entries — only last 5 should appear in output
+    const state: InterventionState = {
+      lastInterventionType: 'regulation',
+      interventionGoal: 'Reduce arousal',
+      linkedZone: 'ORANJE',
+      linkedSeverity: 3,
+      expectedShift: { from: 'ORANJE', to: 'GEEL' },
+      effectivenessScore: 60,
+      turnsActive: 8,
+      lastUserResponse: 'engaged',
+      zoneEvolution: Array.from({ length: 8 }, (_, i) => ({
+        turnIndex: i,
+        zoneLabel: 'ORANJE' as const,
+        severity: 3,
+        interventionType: 'regulation' as const,
+        userResponse: 'engaged' as const,
+        timestamp: '',
+      })),
+      wasReEvaluated: false,
+    };
+
+    expect(MAX_TRAIL_LENGTH).toBe(5);
+    const context = buildInterventionContext(state);
+
+    // Should contain entries 3-7 (last 5), NOT entries 0-2
+    expect(context).toContain('[3]');
+    expect(context).toContain('[4]');
+    expect(context).toContain('[5]');
+    expect(context).toContain('[6]');
+    expect(context).toContain('[7]');
+    expect(context).not.toContain('[0]');
+    expect(context).not.toContain('[1]');
+    expect(context).not.toContain('[2]');
+  });
+
+  it('includes all entries when trail is shorter than MAX_TRAIL_LENGTH', () => {
+
+    const state: InterventionState = {
+      lastInterventionType: 'deceleration',
+      interventionGoal: 'Slow down',
+      linkedZone: 'GEEL',
+      linkedSeverity: 2,
+      expectedShift: { from: 'GEEL', to: 'GROEN' },
+      effectivenessScore: 80,
+      turnsActive: 3,
+      lastUserResponse: 'engaged',
+      zoneEvolution: [
+        { turnIndex: 0, zoneLabel: 'GEEL' as const, severity: 2, interventionType: 'deceleration' as const, userResponse: 'engaged' as const, timestamp: '' },
+        { turnIndex: 1, zoneLabel: 'GEEL' as const, severity: 2, interventionType: 'deceleration' as const, userResponse: 'engaged' as const, timestamp: '' },
+      ],
+      wasReEvaluated: false,
+    };
+
+    const context = buildInterventionContext(state);
+    expect(context).toContain('[0]');
+    expect(context).toContain('[1]');
+    expect(context).toContain('laatste 2');
+  });
+
+  it('does not include trail section when evolution is empty', () => {
+
+    const state: InterventionState = {
+      lastInterventionType: 'regulation',
+      interventionGoal: 'Reduce arousal',
+      linkedZone: 'ORANJE',
+      linkedSeverity: 3,
+      expectedShift: { from: 'ORANJE', to: 'GEEL' },
+      effectivenessScore: 50,
+      turnsActive: 1,
+      lastUserResponse: 'unknown',
+      zoneEvolution: [],
+      wasReEvaluated: false,
+    };
+
+    const context = buildInterventionContext(state);
+    expect(context).not.toContain('Zone-evolutie');
   });
 });

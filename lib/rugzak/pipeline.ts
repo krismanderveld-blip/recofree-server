@@ -102,7 +102,7 @@ export interface PatternSignal {
   cooldownUntil: string | null;
 }
 
-/** Promotion threshold: pattern must repeat >= 3 times in session or across sessions */
+/** Promotion threshold: pattern must repeat >= 3 times (local within-device memory) */
 const PROMOTION_THRESHOLD = 3;
 /** Cooldown: same pattern cannot be promoted again within 24 hours */
 const PROMOTION_COOLDOWN_MS = 24 * 60 * 60 * 1000;

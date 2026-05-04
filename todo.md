@@ -463,3 +463,10 @@
 - [x] Wire into pipeline: evaluate zone shift PRE-GPT, update interventionState POST-GPT
 - [x] Write tests for zone-linked intervention tracking (38 tests)
 - [x] Verify: 0 TS errors, 290 tests passing (11 test files)
+
+## Intervention Continuity Layer — Fixes
+- [x] Fix 1: Define exact codeable detection rules for engaged/deflected/escalated/ignored (no AI interpretation)
+- [x] Fix 2: Effectiveness scoring uses zone-severity comparisons; instruction thresholds (70/40) are intentional behavioral categories
+- [x] Fix 3: Remove cross-session learning claims, replace with "local within-device memory", getSessionSummary as pure function only
+- [x] Fix 4: Enforce max 5 entries in zone evolution trail before GPT injection (older entries not sent)
+- [x] Fix 5: Block Kim continuity layer until Eigen Regie is mandatory at chat start (document as blocked)

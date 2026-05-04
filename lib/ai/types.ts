@@ -292,9 +292,9 @@ export interface Backpack {
 export interface UserDat {
   /** Current mood slider values */
   currentMood: MoodSliders;
-  /** Mood snapshots across sessions */
+  /** Mood snapshots (local within-device memory) */
   moodHistory: MoodSnapshot[];
-  /** Full chat history — never reset, accumulates across sessions */
+  /** Full chat history — accumulates within device (local within-device memory) */
   chatHistory: ChatMessage[];
   /** Module usage records */
   moduleUsage: ModuleUsageRecord[];
@@ -312,7 +312,7 @@ export interface UserDat {
   guidanceDepth?: GuidanceDepth;
   /** Eigen Regie daily reflections (Kim users only) */
   eigenRegieHistory?: EigenRegieEntry[];
-  /** Detected relational anchors — persisted across sessions */
+  /** Detected relational anchors (local within-device memory) */
   relationalAnchors?: Array<{ name: string; role: string; roleEN: string; emotionalWeight: number }>;
   /** Last detected relational pattern */
   lastRelationalPattern?: { pattern: string; schema: string; confidence: number } | null;

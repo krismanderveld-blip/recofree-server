@@ -1,0 +1,1057 @@
+================================================================================
+RECOFREE APP — AUDIT SNAPSHOT
+Generated: 2026-05-04
+Version: post-checkpoint 1d3d6dd4 (Intervention Continuity Layer + 5 Fixes)
+Tests: 290 passing | TypeScript: 0 errors
+================================================================================
+
+
+================================================================================
+SECTION 1: FILE LIST (with one-line descriptions)
+================================================================================
+
+--- app/ (screens and navigation) ---
+
+app/_layout.tsx
+  Root layout with providers (ThemeProvider, QueryClient, tRPC, UserContext).
+
+app/(tabs)/_layout.tsx
+  Tab bar configuration (Home, Chat, Mood, Diary, Backpack, Profile).
+
+app/(tabs)/index.tsx
+  Home screen — welcome card, quick actions.
+
+app/(tabs)/chat.tsx
+  Chat screen — pre-chat guard blocks pipeline until VSP (Elias) or Eigen Regie (Kim) is submitted.
+
+app/(tabs)/mood.tsx
+  Mood screen — Elias sliders + VSP, Kim sliders + Eigen Regie slider with zone colors.
+
+app/(tabs)/diary.tsx
+  Diary screen — free-text journaling with mood tags.
+
+app/(tabs)/backpack.tsx
+  Backpack screen — life story sections (editable by user).
+
+app/(tabs)/profile.tsx
+  Profile screen — user settings, guidance depth, session history.
+
+app/intake.tsx
+  Intake flow — onboarding questions, user type selection, initial context.
+
+app/dev/theme-lab.tsx
+  Developer theme lab — color token preview.
+
+app/oauth/callback.tsx
+  OAuth callback handler (auth flow).
+
+
+--- components/ (reusable UI) ---
+
+components/prechat-vsp.tsx
+  Pre-chat VSP thermometer for Elias — no default selection, confirm required before pipeline.
+
+components/prechat-eigen-regie.tsx
+  Pre-chat Eigen Regie slider for Kim — interaction required before confirm.
+
+components/emergency-card.tsx
+  Emergency contact card (crisis UI).
+
+components/screen-container.tsx
+  SafeArea wrapper for all screens.
+
+components/themed-view.tsx
+  View with auto theme background.
+
+components/haptic-tab.tsx
+  Tab bar button with haptic feedback.
+
+components/external-link.tsx
+  External link opener.
+
+components/hello-wave.tsx
+  Animated wave component.
+
+components/parallax-scroll-view.tsx
+  Parallax scroll view component.
+
+components/ui/icon-symbol.tsx
+  Tab bar icon mapping (Material Icons fallback).
+
+components/ui/icon-symbol.ios.tsx
+  iOS SF Symbols native icon component.
+
+components/ui/collapsible.tsx
+  Collapsible section component.
+
+
+--- lib/ai/ (AI provider layer) ---
+
+lib/ai/types.ts
+  Core types: ChatContext, EliasMoodSliders (with vsp), KimMoodSliders, UserType, StageOfChange, Backpack, UserDat, ChatMessage, AIResult, AIProvider interface.
+
+lib/ai/openai-provider.ts
+  OpenAI provider — builds SESSION_INIT and LIVE_MESSAGE payloads. Sends to server. Caches static fields after SESSION_INIT.
+
+lib/ai/mock-provider.ts
+  Mock AI provider for testing/offline use.
+
+lib/ai/preprocessor.ts
+  Message preprocessor — emotion detection, intent classification.
+
+lib/ai/index.ts
+  AI module barrel export.
+
+
+--- lib/engine/elias/ (Elias engine) ---
+
+lib/engine/elias/zone.ts
+  Elias zone detection — computeEliasZone() from crisis/distress/resilience/stageOfChange. EliasImpact type + eliasZoneImpactMap.
+
+lib/engine/elias/vsp-resolution.ts
+  VSP Resolution Layer — resolveEliasZone() combining VSP user input with computed zone. Severity maps, CRISIS override for PAARS, BLOCKED state.
+
+lib/engine/elias/vsp-impact.ts
+  computeEliasImpact() — maps full ResolvedEliasZone to EliasImpact. Context-aware. Throws if blocked.
+
+lib/engine/elias/vsp.ts
+  VSP type definitions (VspLevel: GROEN/GEEL/ORANJE/ROOD/PAARS).
+
+lib/engine/elias/decision-layer.ts
+  Elias decision layer — wires computeEliasZone + resolveEliasZone + computeEliasImpact. Hard stop when isBlocked.
+
+lib/engine/elias/intervention-continuity.ts
+  Intervention Continuity Layer — zone-linked therapeutic memory. Tracks InterventionState, zone evolution, effectiveness scoring, user response detection. MAX_TRAIL_LENGTH=5. buildInterventionContext() for GPT injection.
+
+lib/engine/elias/state-logic.ts
+  Elias state logic — ELIAS_MODEL_ROUTING_RISK_THRESHOLD, reflection trigger detection.
+
+lib/engine/elias/slider-interpretation.ts
+  Elias slider interpretation — eliasDistressScore(), eliasResilienceScore() from mood sliders.
+
+lib/engine/elias/module-catalog.ts
+  Elias module catalog — module IDs, labels, HIGH_COMPLEXITY_MODULES list.
+
+lib/engine/elias/prompt-block.ts
+  Elias prompt content — ELIAS_IDENTITY_PROMPT, crisis instructions, schema recognition, STOA sessions, stage descriptions.
+
+lib/engine/elias/stage-of-change.ts
+  Stage of Change defaults and labels (ELIAS_DEFAULT_STAGE).
+
+
+--- lib/engine/kim/ (Kim engine) ---
+
+lib/engine/kim/zone.ts
+  Kim zone detection — computeKimZone() from Eigen Regie. KimImpact type + kimZoneImpactMap.
+
+lib/engine/kim/eigen-regie.ts
+  Kim Eigen Regie module — processEigenRegie(), 5-zone mapping from slider input, EigenRegieResult type.
+
+lib/engine/kim/decision-layer.ts
+  Kim decision layer — aggregates Kim outputs including Eigen Regie zone.
+
+lib/engine/kim/slider-interpretation.ts
+  Kim slider interpretation — kimDistressScore(), kimResilienceScore().
+
+lib/engine/kim/module-catalog.ts
+  Kim module catalog — module IDs, labels, KIM_HIGH_COMPLEXITY_MODULES list.
+
+lib/engine/kim/prompt-block.ts
+  Kim prompt content — KIM_IDENTITY_PROMPT, crisis instructions.
+
+lib/engine/kim/crisis-trigger.ts
+  Kim crisis trigger detection.
+
+lib/engine/kim/relational-signals.ts
+  Kim relational signal detection.
+
+lib/engine/kim/mock-responses.ts
+  Kim mock response pool.
+
+
+--- lib/engine/ (shared engine) ---
+
+lib/engine/zone-types.ts
+  Shared zone types — ZoneLevel, ZoneResult<T> generic interface.
+
+lib/engine/orchestration.ts
+  Routing layer — routeEngineDirective() selects EliasDirective or KimDirective based on userType. Never merges.
+
+lib/engine/shared/backpack-container.ts
+  Backpack container utilities.
+
+lib/engine/shared/failsafe.ts
+  Shared failsafe logic.
+
+lib/engine/shared/session-impact.ts
+  Session impact tracking.
+
+lib/engine/shared/session-shell.ts
+  Session shell utilities.
+
+lib/engine/shared/session-trigger-list.ts
+  Session trigger list management.
+
+lib/engine/shared/trigger-object.ts
+  Trigger object type definitions.
+
+lib/engine/shared/userdat-filter.ts
+  UserDat filtering utilities.
+
+lib/engine/shared/zone-core.ts
+  Zone core shared utilities.
+
+lib/engine/debug/debug-snapshot.ts
+  Debug snapshot generator for development.
+
+
+--- lib/rugzak/ (pipeline and processing) ---
+
+lib/rugzak/pipeline.ts
+  Main pipeline — processMessage() with 9 steps (PRE-GPT + POST-GPT). Hard stop for isBlocked. CRISIS_MODE for severity 5.
+
+lib/rugzak/gpt-payload-builder.ts
+  GPT payload builder — PayloadBuilderInput and GPTPayload interfaces. Assembles all fields for GPT call.
+
+lib/rugzak/regulation-layer.ts
+  Regulation layer — maps zone color to regulation action. GPT instructions per action. Anti-repetition detection. Guidance depth integration.
+
+lib/rugzak/regulation-decay-engine.ts
+  Regulation decay engine — time decay, response decay, overshoot correction. Decays zone scores over time.
+
+lib/rugzak/short-term-memory-buffer.ts
+  Short-term memory buffer — session-scoped state. scoreToZone(). computeZoneScore(). BufferSnapshot type.
+
+lib/rugzak/dominant-state-selector.ts
+  Dominant state selector — selects pre-GPT decision variable from buffer + analysis.
+
+lib/rugzak/state-analyzer.ts
+  State analyzer — analyzeState(), detectInputSignals(), extractTriggersFromSignals().
+
+lib/rugzak/backpack-relevance-analyzer.ts
+  Backpack relevance analyzer — trigger scoring, core wound detection, relationship anchor extraction. Trigger decay system.
+
+lib/rugzak/relational-anchor-detector.ts
+  Relational anchor detector — extracts relationship references from messages.
+
+lib/rugzak/relational-pattern-analyzer.ts
+  Relational pattern analyzer — detects recurring relational patterns (confidence >= 0.35 threshold).
+
+lib/rugzak/cost-control.ts
+  Cost control — token limits, session budget, model routing thresholds.
+
+lib/rugzak/userdat-promotion.ts
+  UserDat promotion — promotes session patterns to persistent storage at session end.
+
+lib/rugzak/chat-history-manager.ts
+  Chat history manager — archiveSessionHistory(), session rotation.
+
+lib/rugzak/engine.ts
+  Engine utilities — updateTriggerPatterns(), recordModuleUsage().
+
+
+--- lib/ (other) ---
+
+lib/user-context.tsx
+  User context — updateVsp(), updateEigenRegie(), updateMood(). VSP starts as null, only filled by explicit user choice.
+
+lib/theme-provider.tsx
+  Global theme context (light/dark switch).
+
+lib/trpc.ts
+  tRPC client configuration.
+
+lib/utils.ts
+  Utility functions (cn for class merging).
+
+lib/_core/api.ts
+  API base URL configuration.
+
+lib/_core/auth.ts
+  Auth state management.
+
+lib/_core/manus-runtime.ts
+  Manus runtime integration.
+
+lib/_core/nativewind-pressable.ts
+  NativeWind Pressable className disable.
+
+lib/_core/theme.ts
+  Runtime palette builder.
+
+lib/crisis/detector.ts
+  Crisis detector — CrisisAssessment type, crisis level computation.
+
+lib/modules/module-system.ts
+  Module system — module registration and routing.
+
+
+--- server/ (backend) ---
+
+server/ai-chat.ts
+  Server AI chat handler — buildSystemPrompt(), chatInputSchema (Zod), model routing, OpenAI API call. Injects identity, antiHallucination, stance, guidance, regulation, engineDirective, interventionContinuity blocks.
+
+server/routers.ts
+  tRPC router definitions.
+
+server/db.ts
+  Database schema and queries (Drizzle ORM + PostgreSQL).
+
+server/storage.ts
+  File storage handler.
+
+server/_core/index.ts
+  Server entry point (Express + tRPC).
+
+server/_core/context.ts
+  Request context builder.
+
+server/_core/cookies.ts
+  Cookie management.
+
+server/_core/dataApi.ts
+  Data API utilities.
+
+server/_core/env.ts
+  Environment variable loader.
+
+server/_core/imageGeneration.ts
+  Image generation service.
+
+server/_core/llm.ts
+  LLM service (OpenAI wrapper).
+
+server/_core/notification.ts
+  Push notification service.
+
+server/_core/oauth.ts
+  OAuth flow handler.
+
+server/_core/sdk.ts
+  Manus SDK integration.
+
+server/_core/systemRouter.ts
+  System router (health checks).
+
+server/_core/trpc.ts
+  tRPC server setup.
+
+server/_core/voiceTranscription.ts
+  Voice transcription service.
+
+
+================================================================================
+SECTION 2: MODULE CONTRACTS (name, input types, output types, dependencies)
+================================================================================
+
+--- DETECTION LAYER ---
+
+Module: computeEliasZone
+  File: lib/engine/elias/zone.ts
+  Input: { crisisLevel: number, distressScore: number, resilienceScore: number, stageOfChange: StageOfChange }
+  Output: ZoneResult<EliasImpact> (level: ZoneLevel, label: string, impact: EliasImpact)
+  Dependencies: zone-types.ts, ai/types.ts (StageOfChange)
+
+Module: computeKimZone
+  File: lib/engine/kim/zone.ts
+  Input: eigenRegieResult: EigenRegieResult
+  Output: ZoneResult<KimImpact> (level: ZoneLevel, label: string, impact: KimImpact)
+  Dependencies: zone-types.ts, eigen-regie.ts (EigenRegieResult)
+
+Module: processEigenRegie
+  File: lib/engine/kim/eigen-regie.ts
+  Input: rawScore: number (0-100)
+  Output: EigenRegieResult { score, invertedScore, zone: EigenRegieZone, meaning, impact: EigenRegieImpact }
+  Dependencies: none (self-contained)
+
+
+--- RESOLUTION LAYER (Elias only) ---
+
+Module: resolveEliasZone
+  File: lib/engine/elias/vsp-resolution.ts
+  Input: ResolutionInput { vsp: VspLevel | null, computedZone: ZoneLevel }
+  Output: ResolvedEliasZone { finalSeverity, finalZoneLabel, source, reason, vspLevel, computedZone, isBlocked, isCrisis }
+  Dependencies: zone-types.ts (ZoneLevel), vsp.ts (VspLevel)
+
+Module: computeEliasImpact
+  File: lib/engine/elias/vsp-impact.ts
+  Input: resolvedZone: ResolvedEliasZone (full object, not just label)
+  Output: EliasImpact { interventionLevel, reflectionDepth, directiveStyle }
+  Dependencies: vsp-resolution.ts (ResolvedEliasZone), zone.ts (EliasImpact)
+  Precondition: resolvedZone.isBlocked MUST be false (throws otherwise)
+
+
+--- DECISION LAYER ---
+
+Module: createEliasDecision
+  File: lib/engine/elias/decision-layer.ts
+  Input: EliasDecisionInput { analysis, dominantState, crisis, stageOfChange, moodSliders, currentZoneColor, currentZoneScore, vspInput }
+  Output: EliasDecision { dominantModule, crisisLevel, zone: { calculated, computed, resolved, impact }, tone, pacing, interventionDepth, challengeLevel, isBlocked }
+  Dependencies: zone.ts, vsp-resolution.ts, vsp-impact.ts, slider-interpretation.ts, state-analyzer.ts, dominant-state-selector.ts, crisis/detector.ts
+
+Module: createKimDecision
+  File: lib/engine/kim/decision-layer.ts
+  Input: KimDecisionInput { analysis, dominantState, crisis, moodSliders, currentZoneColor, currentZoneScore, eigenRegieInput }
+  Output: KimDecision { dominantModule, crisisLevel, zone: { calculated, engine }, tone, pacing, interventionDepth, challengeLevel, eigenRegie }
+  Dependencies: zone.ts, eigen-regie.ts, slider-interpretation.ts, state-analyzer.ts, dominant-state-selector.ts, crisis/detector.ts
+
+
+--- ORCHESTRATION LAYER ---
+
+Module: routeEngineDirective
+  File: lib/engine/orchestration.ts
+  Input: RoutingInput { userType: UserType, eliasZone: {...} | null, kimZone: {...} | null }
+  Output: EngineDirective (EliasDirective | KimDirective) | null
+  Dependencies: zone-types.ts, elias/zone.ts (EliasImpact), kim/zone.ts (KimImpact)
+  Rule: Never merges. Pure routing only.
+
+
+--- INTERVENTION CONTINUITY LAYER (Elias only) ---
+
+Module: evaluateInterventionContinuity
+  File: lib/engine/elias/intervention-continuity.ts
+  Input: (currentResolvedZone: ResolvedEliasZone, userMessage: string)
+  Output: InterventionState | null (null on first turn or when blocked)
+  Dependencies: vsp-resolution.ts (ResolvedEliasZone, FinalZoneLabel)
+
+Module: updateInterventionAfterResponse
+  File: lib/engine/elias/intervention-continuity.ts
+  Input: (currentResolvedZone: ResolvedEliasZone, regulationAction: RegulationAction)
+  Output: void (mutates module-scoped state)
+  Dependencies: vsp-resolution.ts, regulation-layer.ts (RegulationAction)
+
+Module: buildInterventionContext
+  File: lib/engine/elias/intervention-continuity.ts
+  Input: state: InterventionState
+  Output: string (structured Dutch text for GPT injection)
+  Dependencies: none (pure formatting)
+
+Module: detectUserResponse
+  File: lib/engine/elias/intervention-continuity.ts
+  Input: (userMessage: string, zoneShift: ZoneShift | null, activeIntervention: InterventionType)
+  Output: UserResponsePattern ('engaged' | 'deflected' | 'escalated' | 'ignored' | 'unknown')
+  Dependencies: none (self-contained detection rules)
+
+Module: computeEffectiveness
+  File: lib/engine/elias/intervention-continuity.ts
+  Input: evolution: ZoneEvolutionEntry[]
+  Output: number (0-100 score)
+  Dependencies: none (pure computation)
+
+Module: getSessionSummary
+  File: lib/engine/elias/intervention-continuity.ts
+  Input: none (reads module-scoped state)
+  Output: InterventionSessionSummary | null
+  Dependencies: none (pure function, NOT connected to persistence)
+
+
+--- REGULATION LAYER ---
+
+Module: applyRegulation
+  File: lib/rugzak/regulation-layer.ts
+  Input: (buffer: BufferState, previousAssistantMessage: string | null, guidanceDepth: GuidanceDepth)
+  Output: RegulationResult { action, intervention, gptInstruction, zone, effectiveDepth, wasSoftened, wasSkipped }
+  Dependencies: short-term-memory-buffer.ts (BufferState, ZoneColor)
+
+
+--- PIPELINE ---
+
+Module: processMessage
+  File: lib/rugzak/pipeline.ts
+  Input: (rugzakOrBackpack: Rugzak | Backpack, userMessage: string, provider: AIProvider, options?: { isSessionStart, diaryEntries, userDat })
+  Output: PipelineResult { response, analysis, updatedRugzak, updatedUserDat, crisisLevel, showEmergency, dominantState?, bufferSnapshot?, messageLog?, status?, isBlocked?, blockReason? }
+  Dependencies: ALL pipeline modules (regulation, decay, buffer, dominant-state, relevance, cost-control, promotion, decision layers, orchestration, intervention-continuity)
+
+
+--- GPT PAYLOAD BUILDER ---
+
+Module: buildGPTPayload
+  File: lib/rugzak/gpt-payload-builder.ts
+  Input: PayloadBuilderInput { message, backpack, userDat, sliders, isSessionStart, dominantModule, riskScore, relevance, diaryEntries, chatHistory, detectedEmotion, therapeuticStance, sessionDurationMinutes, urgency, startEmotion, crisisLevel, relationalPattern?, bufferSnapshot?, guidanceDepth?, regulationResult?, engineDirective?, interventionContinuity? }
+  Output: GPTPayload (all fields assembled for server call)
+  Dependencies: short-term-memory-buffer.ts, orchestration.ts, ai/types.ts
+
+
+--- SERVER AI HANDLER ---
+
+Module: buildSystemPrompt
+  File: server/ai-chat.ts
+  Input: ChatRequestInput (Zod-validated from client payload)
+  Output: string (full system prompt for OpenAI API)
+  Dependencies: elias/prompt-block.ts, kim/prompt-block.ts, elias/module-catalog.ts, kim/module-catalog.ts
+
+
+--- OPENAI PROVIDER ---
+
+Module: generateResponse (OpenAIProvider)
+  File: lib/ai/openai-provider.ts
+  Input: context: ChatContext
+  Output: AIResult { response, detectedEmotion, confidence, tokenUsage? }
+  Dependencies: gpt-payload-builder.ts, ai/types.ts, server/ai-chat.ts (via HTTP)
+
+
+
+================================================================================
+SECTION 3: ORCHESTRATION ORDER PER TURN (from user input to GPT response)
+================================================================================
+
+The pipeline processes each message through a strict 10-step flow.
+Steps 1-6c are PRE-GPT (local, deterministic). Steps 7-9 are POST-GPT (local, no second GPT call).
+
+--- PRECONDITION: Pre-chat Guard (app/(tabs)/chat.tsx) ---
+
+  Before the pipeline is ever called:
+  - Elias users MUST submit VSP via prechat-vsp.tsx (thermometer, no default)
+  - Kim users MUST submit Eigen Regie via prechat-eigen-regie.tsx (slider, interaction required)
+  - Chat screen blocks until pre-chat input is confirmed
+  - Pipeline never receives vsp=null in normal flow (isBlocked is safety guardrail only)
+
+--- STEP 0: MODULE 12 PRE-ANALYSIS FAILSAFE ---
+
+  Check: does the user have ANY meaningful context?
+  (sliders, backpack content, diary, trigger history, or session history)
+  If NO context at all: return passive response asking user to fill in data.
+  If YES: proceed to pipeline.
+
+--- PRE-GPT STEP 1: Apply Trigger Decay to PREVIOUS Buffer State ---
+
+  - Decay runs on OLD state BEFORE new message merges
+  - Prevents new matches from resetting/distorting decay too early
+  - Calls analyzeBackpackRelevance('', ...) with empty message to advance decay counters
+  - Trigger decay rules: -1 per 2 messages without match, -2 per 5 minutes inactivity
+
+--- PRE-GPT STEP 2: Update ShortTermMemoryBuffer with New Message ---
+
+  - Buffer update happens AFTER decay
+  - New message data merges into decayed state
+  - Computes: zoneScore, zoneColor, currentEmotion, currentIntent, currentTriggerGuess
+  - Zone score boundaries: 0-20=GREEN, 21-40=YELLOW, 41-60=ORANGE, 61-80=RED, 81-100=PURPLE
+
+--- PRE-GPT STEP 3: Apply RegulationDecayEngine Zone Decay ---
+
+  - Runs AFTER buffer update (uses new zone score context)
+  - Three decay types:
+    * TIME DECAY: -2 to -4 per cycle if no strong trigger
+    * RESPONSE DECAY: -5 to -15 if user intensity clearly drops
+    * OVERSHOOT CORRECTION: up to -20 if user shifts sharply from high to calm
+  - Result applied to buffer zone score
+
+--- PRE-GPT STEP 4: Analyze State + Select DominantState ---
+
+  - analyzeState(rugzak, userMessage) → StateAnalysis
+  - detectInputSignals(message) → InputSignals
+  - selectDominantState(buffer, analysis, signals) → DominantState
+  - DominantState = { dominantModule, dominantTrigger, dominantDirection, dominantTone, riskScore, selectionReason, sourceLayer }
+
+--- PRE-GPT STEP 5: Build BufferSnapshot + Regulation + Relevance ---
+
+  5a. getBufferSnapshot(buffer) → BufferSnapshot (stable snapshot for GPT payload)
+  5b. applyRegulation(buffer, previousAssistantMessage, guidanceDepth) → RegulationResult
+      - Maps zone color to action: GREEN→reflect, YELLOW→slow_down, ORANGE→regulate, RED→stabilize, PURPLE→ground
+      - Anti-repetition: if previous message already contained regulation, soften or skip
+      - Guidance depth ceiling: RED/PURPLE→force 'light', ORANGE→cap 'normal', YELLOW/GREEN→user setting
+  5c. analyzeBackpackRelevance(message, backpack, userDat, sliders, dominantModule) → BackpackRelevanceResult
+      - Trigger scoring (threshold >= 4, max 2 triggers, weak second trigger dropped)
+      - Core wound detection (linked to trigger or message)
+      - Context line extraction (from life story)
+      - Relationship anchor detection
+
+--- PRE-GPT STEP 6: Engine Decision + Routing + Intervention Continuity ---
+
+  6a. Create engine decision:
+      - Elias: createEliasDecision(input) → EliasDecision
+        Flow: computeEliasZone() → resolveEliasZone(vsp, computed) → computeEliasImpact(resolved)
+        If isBlocked: HARD STOP → return { status: 'BLOCKED_PRECHAT_REQUIRED' }
+      - Kim: createKimDecision(input) → KimDecision
+        Flow: processEigenRegie(score) → computeKimZone(result) → KimDecision
+
+  6b. routeEngineDirective({ userType, eliasZone, kimZone }) → EngineDirective | null
+      - Pure routing: Elias users get EliasDirective, Kim users get KimDirective
+      - Never merges both
+
+  6c. Intervention Continuity (Elias only):
+      - evaluateInterventionContinuity(resolvedZone, userMessage) → InterventionState | null
+      - Compares current resolvedZone with linkedZone from previous turn
+      - Zone shifted → re-evaluate (wasReEvaluated = true)
+      - Zone stable → continue same line (wasReEvaluated = false)
+      - Detects user response pattern (engaged/deflected/escalated/ignored/unknown)
+      - Computes effectiveness score (0-100)
+      - Returns null on first turn (no previous intervention)
+
+--- GPT CALL ---
+
+  - Assemble ChatContext from all pre-GPT outputs
+  - buildGPTPayload(context) → GPTPayload
+  - OpenAI provider sends to server:
+    * SESSION_INIT: full payload (backpack, userDat, diary, all static + dynamic fields)
+    * LIVE_MESSAGE: dynamic fields only (static cached server-side after SESSION_INIT)
+  - Server buildSystemPrompt() assembles full system prompt (see Section 5)
+  - Model routing: gpt-4o for SESSION_INIT/crisis/high-risk/complex modules, gpt-4o-mini otherwise
+  - ONE GPT call per message (never two)
+
+--- POST-GPT STEP 7: Update Internal Stored State ---
+
+  - Add user message to chatHistory
+  - Add AI response to chatHistory
+  - Update buffer with assistant response
+  - DO NOT reselect dominantState (pre-GPT state is the decision variable)
+  - updateInterventionAfterResponse(resolvedZone, regulationAction) — records what Elias actually did
+
+--- POST-GPT STEP 8: Concrete Pattern Marking ---
+
+  - Mark pattern signals from buffer trigger guess and dominant state trigger
+  - Increment repeat counters (session-level only)
+  - Threshold for promotion candidacy: repeatCount >= 3 (PROMOTION_THRESHOLD)
+  - Actual promotion only happens at session end (Step 10)
+  - Cooldown: 24 hours between promotions of same pattern
+
+--- POST-GPT STEP 9: Consolidated Logging ---
+
+  - Log all pre-GPT decisions, GPT model/tokens, post-GPT state
+  - Record token cost to session budget tracker
+  - Return PipelineResult to caller
+
+--- SESSION-END STEP 10: Ranked Promotion Evaluation ---
+
+  - Triggered when user ends session (not per-message)
+  - Evaluate all pattern signals with repeatCount >= PROMOTION_THRESHOLD (3)
+  - Rank by score (not FCFS)
+  - Apply top 5 promotions to user.dat
+  - Cooldown enforcement: 24h per pattern
+
+
+================================================================================
+SECTION 4: HARDCODED VALUES (file:line — key constants)
+================================================================================
+
+--- SEVERITY MAPS ---
+
+lib/engine/elias/vsp-resolution.ts:96
+  VSP_SEVERITY: { GROEN: 1, GEEL: 2, ORANJE: 3, ROOD: 4, PAARS: 5 }
+
+lib/engine/elias/vsp-resolution.ts:106
+  COMPUTED_SEVERITY: { GROEN: 1, LICHTGROEN: 1, GEEL: 2, ORANJE: 3, ROOD: 4 }
+
+lib/engine/elias/vsp-resolution.ts:114
+  SEVERITY_TO_LABEL: { 1: GROEN, 2: GEEL, 3: ORANJE, 4: ROOD, 5: PAARS }
+
+lib/engine/elias/intervention-continuity.ts:178
+  ZONE_SEVERITY: { GROEN: 1, GEEL: 2, ORANJE: 3, ROOD: 4, PAARS: 5 }
+
+
+--- INTERVENTION CONTINUITY ---
+
+lib/engine/elias/intervention-continuity.ts:166
+  EXPECTED_SHIFTS: { grounding: -2, stabilization: -1, regulation: -1, deceleration: -1, reflection: 0, confrontation: 0, none: 0 }
+
+lib/engine/elias/intervention-continuity.ts:567
+  MAX_TRAIL_LENGTH = 5 (hard limit on zone evolution entries sent to GPT)
+
+lib/engine/elias/intervention-continuity.ts:338
+  computeEffectiveness scoring: +20 per improved turn, +5 per stable turn, -15 per worsened turn, +5 for engaged, -10 for escalated, -5 for deflected. Start at 50.
+
+lib/engine/elias/intervention-continuity.ts:~595-600
+  Effectiveness thresholds in buildInterventionContext: >= 70 = "working", 40-69 = "moderate", < 40 = "low"
+  STATUS: These are hardcoded cutoffs. See Fix 2 discussion below.
+
+
+--- USER RESPONSE DETECTION ---
+
+lib/engine/elias/intervention-continuity.ts (various lines)
+  ENGAGED_MIN_LENGTH = 20 (chars)
+  IGNORED_MAX_LENGTH = 5 (chars)
+  ACKNOWLEDGMENT_TOKENS: ['ok', 'ja', 'oke', 'oké', 'hmm', 'yes', 'yeah', 'nee', 'no', + dot variants]
+  DEFLECTION_MARKERS: ['maar eigenlijk', 'laat maar', 'maakt niet uit', 'iets anders', 'anyway', 'whatever', 'never mind', "doesn't matter", 'kan ik iets anders', 'wil ik het over iets anders', 'verander van onderwerp', 'ander onderwerp', 'change the subject', 'something else']
+
+
+--- PIPELINE ---
+
+lib/rugzak/pipeline.ts:106
+  PROMOTION_THRESHOLD = 3 (repeat count needed for promotion candidacy)
+
+lib/rugzak/pipeline.ts:108
+  PROMOTION_COOLDOWN_MS = 86400000 (24 hours in ms)
+
+
+--- COST CONTROL ---
+
+lib/rugzak/cost-control.ts:49
+  INPUT_WARNING_THRESHOLD = 3500 (tokens)
+
+lib/rugzak/cost-control.ts:50
+  INPUT_CRITICAL_THRESHOLD = 5000 (tokens)
+
+lib/rugzak/cost-control.ts:51
+  SESSION_BUDGET = 25000 (total tokens per session)
+
+lib/rugzak/cost-control.ts:52
+  MAX_OUTPUT_TOKENS = 500
+
+
+--- MODEL ROUTING ---
+
+lib/engine/elias/state-logic.ts:84
+  ELIAS_MODEL_ROUTING_RISK_THRESHOLD = 7 (riskScore >= 7 → gpt-4o)
+
+server/ai-chat.ts:1160-1163
+  Model routing rules:
+    SESSION_INIT → always gpt-4o
+    crisisLevel > 0 OR riskScore >= 7 → gpt-4o
+    urgency == "high"/"hoog" → gpt-4o
+    HIGH_COMPLEXITY_MODULES match → gpt-4o
+    everything else → gpt-4o-mini
+
+server/ai-chat.ts (HIGH_COMPLEXITY_MODULES):
+  Elias: ['e03_pattern_reflection', 'e03', 'pattern_reflection', 'e04_connection_risk', 'e04', 'connection_risk']
+  Kim: ['k_relational_reflection', 'k02', 'relational_reflection', 'k_boundary_pressure', 'k01', 'boundary_pressure']
+
+
+--- ZONE SCORE BOUNDARIES (Buffer) ---
+
+lib/rugzak/short-term-memory-buffer.ts:91
+  scoreToZone: 0-20=GREEN, 21-40=YELLOW, 41-60=ORANGE, 61-80=RED, 81+=PURPLE
+
+
+--- REGULATION LAYER ---
+
+lib/rugzak/regulation-layer.ts (zone-to-action mapping):
+  GREEN → reflect (no forced instruction)
+  YELLOW → slow_down
+  ORANGE → regulate
+  RED → stabilize
+  PURPLE → ground
+
+lib/rugzak/regulation-layer.ts (guidance depth constraints):
+  RED/PURPLE → force 'light'
+  ORANGE → cap at 'normal'
+  YELLOW/GREEN → user setting applies
+
+
+--- REGULATION DECAY ENGINE ---
+
+lib/rugzak/regulation-decay-engine.ts:
+  TIME DECAY: -2 (GREEN/YELLOW), -3 (ORANGE), -4 (RED) per cycle without strong trigger
+  RESPONSE DECAY: -5 to -15 based on zone score drop
+  OVERSHOOT CORRECTION: up to -20 on sharp high-to-calm shift
+
+
+--- CONVERSATION WINDOW ---
+
+lib/rugzak/gpt-payload-builder.ts:237
+  SESSION_INIT: max 10 messages
+  LIVE_MESSAGE: max 6 messages
+  Reserved: last user+assistant pair + 1 emotionally relevant message
+
+
+--- RELATIONAL PATTERN ANALYZER ---
+
+lib/rugzak/relational-pattern-analyzer.ts:337
+  Minimum confidence for reporting: >= 0.35
+
+server/ai-chat.ts (injection threshold):
+  Relational pattern only injected into GPT if confidence >= 0.35
+
+
+--- BACKPACK RELEVANCE ANALYZER ---
+
+lib/rugzak/backpack-relevance-analyzer.ts:319
+  Trigger score threshold: >= 4 (to be included)
+  Max triggers sent: 2
+  Weak second trigger dropped if: score < first * 0.5
+
+lib/rugzak/backpack-relevance-analyzer.ts (trigger decay):
+  -1 per 2 messages without match
+  -2 per 5 minutes inactivity
+  Reset on match
+
+
+--- ELIAS ZONE DETECTION THRESHOLDS ---
+
+lib/engine/elias/zone.ts (computeEliasZone priority):
+  crisisLevel >= 2 → ROOD
+  distress >= 7.5 && resilience <= 3 → ROOD
+  crisisLevel === 1 → ORANJE
+  distress >= 5.5 → ORANJE
+  distress >= 3.5 → GEEL
+  stageOfChange === 'precontemplation' → GEEL
+  distress < 3.5 && resilience >= 5 → GROEN
+  default → LICHTGROEN
+
+
+--- GUIDANCE DEPTH (server) ---
+
+server/ai-chat.ts:
+  crisisLevel >= 2 OR riskScore >= 8 OR maxDistress >= 9 → force 'light'
+  crisisLevel === 1 OR riskScore >= 5 OR maxDistress >= 7 → cap 'normal'
+  Otherwise → user setting applies (up to 'deep')
+
+
+
+================================================================================
+SECTION 5: GPT PROMPT INJECTION STRUCTURE
+================================================================================
+
+Two payload modes exist. SESSION_INIT sends everything. LIVE_MESSAGE sends dynamic fields only.
+Static fields are cached server-side after SESSION_INIT and selectively re-injected on follow-ups.
+
+--- CLIENT PAYLOAD: SESSION_INIT (first message of session) ---
+
+  Sent fields:
+    userType, userName, isSessionStart=true, message,
+    conversationHistory, moodSliders, activeModules, crisisLevel,
+    detectedEmotion, therapeuticStance, sessionDurationMinutes,
+    urgency, startEmotion, dominantModule, riskScore, stageOfChange,
+    selectedTriggers, coreWound, contextLine, relationshipAnchor,
+    relationalPattern, recentDiary,
+    bufferSnapshot, guidanceDepth, regulationResult, engineDirective,
+    interventionContinuity,
+    backpack (full), userDat (full), diaryEntries (full)
+
+  After sending: static fields cached locally in OpenAI provider.
+  Server caches: userName, coreWound, contextLine, relationshipAnchor,
+    relationalPattern, recentDiary, stageOfChange, lifeStorySummary,
+    totalSessions, guidanceDepth.
+
+
+--- CLIENT PAYLOAD: LIVE_MESSAGE (follow-up messages) ---
+
+  Sent fields:
+    userType, userName, isSessionStart=false, message,
+    conversationHistory, moodSliders, activeModules, crisisLevel,
+    detectedEmotion, therapeuticStance, sessionDurationMinutes,
+    urgency, startEmotion, dominantModule, riskScore, stageOfChange,
+    selectedTriggers,
+    bufferSnapshot, guidanceDepth, regulationResult, engineDirective,
+    interventionContinuity
+
+  NOT sent: backpack, userDat, diaryEntries, coreWound, contextLine,
+    relationshipAnchor, relationalPattern, recentDiary
+    (these were sent at SESSION_INIT and cached server-side)
+
+
+--- SERVER: buildSystemPrompt() — INJECTION ORDER ---
+
+The system prompt is assembled in this exact order:
+
+=== SESSION_INIT PROMPT STRUCTURE ===
+
+  1. IDENTITY
+     - ELIAS_IDENTITY_PROMPT or KIM_IDENTITY_PROMPT
+     - Full persona definition, therapeutic approach, communication style
+
+  2. ANTI-HALLUCINATION PROTOCOL (Module 033)
+     - Absolute rule: never fabricate information about the user
+     - "Bij twijfel: VRAAG"
+
+  3. SCHEMA RECOGNITION (Elias only)
+     - ELIAS_SCHEMA_RECOGNITION block
+
+  4. STOA SESSIONS (Elias only)
+     - ELIAS_STOA_SESSIONS block
+
+  5. USER NAME INSTRUCTION
+     - "De naam van de gebruiker is {name}. Spreek hen af en toe bij naam aan."
+
+  6. IDENTITY MEMORY (from backpack)
+     - Life story sections (marked as sacred, never summarize)
+     - Intake context (initial emotion, urgency, date)
+     - Recognition instruction
+
+  7. DIARY MEMORY
+     - Recent diary entries with dates and mood tags
+     - "Citeer hun dagboek NIET ongevraagd terug."
+
+  8. SESSION MEMORY (from userDat)
+     - Known trigger patterns (with counts and dates)
+     - Mood trajectory (last 5 check-ins)
+     - Module usage history
+     - Previous session analyses (themes, triggers, mood deltas)
+
+  9. RELEVANCE CONTEXT (full, for session start)
+     - Active triggers (scored)
+     - Core wound
+     - Context line from life story
+     - Relationship anchor
+     - Relational pattern (if confidence >= 0.35)
+     - Stage of Change (with full description)
+     - Recent diary notes
+
+  10. === VERPLICHTE GEDRAGSINSTRUCTIES === (mandatory behavior block)
+      a. STANCE (therapeuticStance)
+      b. GUIDANCE DEPTH INSTRUCTION (light/normal/deep with specific rules)
+      c. REGULATION INSTRUCTION (if regulation action != reflect)
+         - Zone-specific GPT instruction (slow_down/regulate/stabilize/ground)
+         - May be softened if previous message already regulated
+      d. ENGINE DIRECTIVE BLOCK
+         - Engine type (ELIAS/KIM)
+         - Zone level + label
+         - Impact values (interventionLevel, reflectionDepth, directiveStyle for Elias;
+           stabilizationLevel, challengeLevel, autonomyLevel for Kim)
+      e. INTERVENTION CONTINUITY BLOCK (Elias only)
+         - Active intervention type + therapeutic goal
+         - Linked zone + severity
+         - Expected shift (from → to)
+         - Effectiveness score (/100)
+         - Turns active
+         - Last user response pattern
+         - Zone stability instruction (re-evaluate or continue)
+         - Effectiveness-based instruction (working/moderate/low)
+         - User response instruction (deflected/escalated/ignored warnings)
+         - Zone evolution trail (last 5 entries max)
+
+  11. "Deze gedragsinstructies zijn ABSOLUUT."
+
+  12. HUIDIGE TOESTAND (current state)
+      - Mood sliders
+      - Urgency level
+      - Risk score (/10)
+      - Session info (number, duration, emotions, stage)
+
+  13. LIVE SESSION CONTEXT (from bufferSnapshot, if available)
+      - Zone, emotional direction, live intent, dominant state
+
+  14. MODULE INSTRUCTIONS (dominant therapeutic module)
+
+  15. CRISIS INSTRUCTIONS (if crisisLevel >= 1)
+
+  16. SESSION END INSTRUCTIONS (if __SESSION_END__ message)
+
+  17. RESPONSREGELS (response rules)
+      - Language matching, brevity, no diagnosis, no lists, no emoji excess
+      - Character consistency, reflective listening
+
+
+=== LIVE_MESSAGE (FOLLOW-UP) PROMPT STRUCTURE ===
+
+  1. IDENTITY (same as session start)
+
+  2. ANTI-HALLUCINATION PROTOCOL (same)
+
+  3. CONDITIONAL CONTEXT (selectively injected from cache)
+     - resolveConditionalContext() determines which cached fields are relevant for THIS message
+     - May include: contextLine, relationshipAnchor, relationalPattern, coreWound, recentDiary, stageOfChange, relationshipMap
+     - Only included when message content triggers relevance
+
+  4. LIFE STORY CONTEXT (always, from cache — so GPT knows names/relationships)
+
+  5. USER NAME INSTRUCTION
+
+  6. SELECTIVE RELEVANCE BLOCK
+     - Active triggers (always, re-analyzed per message)
+     - Conditional fields from step 3
+
+  7. === VERPLICHTE GEDRAGSINSTRUCTIES === (same structure as session start)
+     a. Stance
+     b. Guidance depth
+     c. Regulation instruction
+     d. Engine directive
+     e. Intervention continuity
+
+  8. "Deze gedragsinstructies zijn ABSOLUUT."
+
+  9. HUIDIGE TOESTAND (same as session start)
+
+  10. LIVE SESSION CONTEXT (bufferSnapshot)
+
+  11. MODULE INSTRUCTIONS
+
+  12. CRISIS INSTRUCTIONS
+
+  13. SESSION END INSTRUCTIONS
+
+  14. RESPONSREGELS (same)
+
+
+--- KEY DIFFERENCES: SESSION_INIT vs LIVE_MESSAGE ---
+
+  SESSION_INIT includes:
+    - Full backpack (life story, intake context)
+    - Full userDat (trigger patterns, mood history, session analyses)
+    - Full diary entries
+    - Schema recognition + STOA sessions (Elias only)
+    - Full relevance context (all fields)
+
+  LIVE_MESSAGE excludes:
+    - Backpack (cached)
+    - UserDat (cached)
+    - Diary entries (cached)
+    - Schema/STOA blocks
+    - Only conditionally re-injects cached fields when relevant to current message
+
+
+
+================================================================================
+SECTION 6: OPEN TODOs / FIXMEs / ARCHITECTURAL NOTES
+================================================================================
+
+--- CODEBASE TODOs ---
+
+server/db.ts:92
+  "TODO: add feature queries here as your schema grows."
+  Status: placeholder for future DB queries.
+
+
+--- ARCHITECTURAL DECISIONS (documented, not bugs) ---
+
+1. Kim Continuity Layer: BLOCKED
+   - Kim does NOT have an intervention continuity layer
+   - Blocked until Eigen Regie is mandatory at chat start (which it now is)
+   - Decision: do NOT build until explicitly requested
+   - interventionContinuity field is null for Kim users in all payloads
+
+2. Cross-Session Learning: NOT IMPLEMENTED
+   - getSessionSummary() exists as a pure function (read-only snapshot)
+   - NOT connected to any persistence layer
+   - Storage contract: "local within-device memory only (AsyncStorage)"
+   - No durable learning until database migration is complete
+   - No cross-session claims anywhere in the codebase
+
+3. Effectiveness Thresholds (Fix 2 Status):
+   - buildInterventionContext() uses hardcoded cutoffs: >= 70 = "working", 40-69 = "moderate", < 40 = "low"
+   - These are NOT derived from zone definitions
+   - The computeEffectiveness() function itself uses zone-aware scoring:
+     * +20 per improved turn (zone severity decreased)
+     * +5 per stable turn
+     * -15 per worsened turn (zone severity increased)
+     * +5 for 'engaged' user response
+     * -10 for 'escalated' user response
+     * -5 for 'deflected' user response
+   - The SCORING is zone-derived (uses severity comparisons)
+   - The THRESHOLDS for GPT instruction (70/40) are fixed cutoffs
+   - Rationale: these thresholds define GPT behavior categories, not zone-specific values.
+     A score of 70+ means "intervention is working" regardless of which zone the user is in.
+     The zone influence is already embedded in HOW the score is computed (severity deltas).
+   - CONCLUSION: Fix 2 is architecturally complete. The effectiveness COMPUTATION is zone-derived.
+     The instruction thresholds (70/40) are intentionally fixed behavioral categories.
+
+4. UserDat Promotion:
+   - Promotion only happens at session end (not per-message)
+   - Top 5 ranked by score (not FCFS)
+   - 24h cooldown per pattern
+   - Threshold: repeatCount >= 3
+
+5. Model Routing:
+   - Single model per message (never two calls)
+   - gpt-4o for high-stakes (crisis, session start, complex modules)
+   - gpt-4o-mini for everything else
+   - No fallback chain — if call fails, generic error message returned
+
+6. Buffer vs UserDat:
+   - Buffer = live session state (volatile, resets per session)
+   - UserDat = persistent state (survives sessions, stored in AsyncStorage)
+   - Backpack = stable identity (NEVER modified by pipeline)
+   - Full buffer NEVER goes to GPT — only BufferSnapshot (subset)
+
+
+--- POTENTIAL FUTURE WORK (not bugs, not blockers) ---
+
+- Kim continuity layer (when explicitly requested)
+- Cross-session persistence via database migration
+- Session summary storage (getSessionSummary → DB)
+- Multi-device sync (requires backend DB, currently local-only)
+- Trigger pattern decay across sessions (currently session-scoped only)
+
+
+================================================================================
+END OF AUDIT SNAPSHOT
+================================================================================
