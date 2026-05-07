@@ -28,6 +28,8 @@ import { useColors } from '@/hooks/use-colors';
 import { PreChatVsp } from '@/components/prechat-vsp';
 import { PreChatEigenRegie } from '@/components/prechat-eigen-regie';
 import type { VspLevel } from '@/lib/engine/elias/vsp';
+import { loadAndRestoreEliasProjection } from '@/lib/engine/elias/projection';
+import { loadAndRestoreKimProjection } from '@/lib/engine/kim/projection';
 
 const BACKPACK_KEY = '@recofree_backpack';
 const USERDAT_KEY = '@recofree_userdat';
@@ -181,6 +183,16 @@ export default function ChatScreen() {
         if (!hasContent) return;
         greetingSent.current = true;
         startSession();
+        // Restore projection state from AsyncStorage (local within-device memory)
+        try {
+          if (state.userType === 'elias') {
+            loadAndRestoreEliasProjection();
+          } else {
+            loadAndRestoreKimProjection();
+          }
+        } catch (e) {
+          console.error('[Chat] Failed to restore projection state, continuing with empty projection:', e);
+        }
         sendGreetingViaP();
       }
     }, [state.intakeCompleted, state.backpack, state.userDat, preChatDone])

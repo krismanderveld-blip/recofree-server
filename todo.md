@@ -527,3 +527,9 @@
 - [x] Implement loadKimProjection() and saveKimProjection() in lib/engine/kim/projection.ts
 - [x] Wire load into loadAndRestoreKimProjection() (session start), save after applyKimProjectionDecay() (session end)
 - [x] Write 11 tests for projection persistence (load empty, save/load roundtrip, corrupted data, decay before save)
+
+## Projection Persistence — Wiring & Utilities
+- [x] Wire loadAndRestoreEliasProjection() into chat.tsx session start (Elias users)
+- [x] Wire loadAndRestoreKimProjection() into chat.tsx session start (Kim users)
+- [x] Add clearEliasProjection() utility to elias/projection.ts
+- [x] Add clearKimProjection() utility to kim/projection.ts

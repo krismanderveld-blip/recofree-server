@@ -91,6 +91,19 @@ export async function saveKimProjection(projection: KimProjection): Promise<void
   }
 }
 
+/**
+ * Clear Kim projection from AsyncStorage (local within-device memory).
+ * For on-device testing/debugging only. Resets in-memory state as well.
+ */
+export async function clearKimProjection(): Promise<void> {
+  try {
+    await AsyncStorage.removeItem(KIM_PROJECTION_STORAGE_KEY);
+    currentProjection = createEmptyKimProjection();
+  } catch (error) {
+    console.error('[Projection/Kim] Failed to clear AsyncStorage:', error);
+  }
+}
+
 function createEmptyKimProjection(): KimProjection {
   return {
     userType: 'kim',

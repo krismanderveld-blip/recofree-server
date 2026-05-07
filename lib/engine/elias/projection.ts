@@ -141,6 +141,19 @@ export async function saveEliasProjection(projection: EliasProjection): Promise<
   }
 }
 
+/**
+ * Clear Elias projection from AsyncStorage (local within-device memory).
+ * For on-device testing/debugging only. Resets in-memory state as well.
+ */
+export async function clearEliasProjection(): Promise<void> {
+  try {
+    await AsyncStorage.removeItem(ELIAS_PROJECTION_STORAGE_KEY);
+    currentProjection = createEmptyEliasProjection();
+  } catch (error) {
+    console.error('[Projection/Elias] Failed to clear AsyncStorage:', error);
+  }
+}
+
 function createEmptyEliasProjection(): EliasProjection {
   return {
     userType: 'elias',
