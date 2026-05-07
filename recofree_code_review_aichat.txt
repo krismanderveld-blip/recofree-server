@@ -1,0 +1,1313 @@
+/**
+ * Server-side AI Chat Handler — ENGINE SPEC V2 + PATCH N
+ *
+ * PATCH N: SESSION_INIT / LIVE_MESSAGE split.
+ *
+ *   SESSION_INIT (first call): Full payload cached server-side.
+ *   LIVE_MESSAGE (follow-up): Dynamic data only. Cached static fields
+ *     are SELECTIVELY injected into the prompt based on relevance.
+ *
+ * Follow-up prompt injection rules:
+ *   ALWAYS: identity, anti-hallucination, userName, sliders, triggers, module, stance, risk
+ *   CONDITIONAL: contextLine, anchor, pattern, wound, diary, stageOfChange
+ *   NEVER: full backpack, full userDat, full diary, sessionAnalyses, schema block, stoa block
+ *
+ * CANON SOURCES:
+ *   - elias.dat V19 / kim.dat V1
+ *   - ELIAS_IDENTITEIT_COMPLETE_V2025.txt
+ *   - Module 033 (Kwaliteitscontrole / anti-fabricatie)
+ *   - Module 091 (Schema Integratie)
+ *   - Module 012 (Vooranalyse / Failsafe)
+ *   - Master Engine Spec V2
+ */
+
+import { z } from "zod";
+import { KIM_IDENTITY_PROMPT, kimCrisisInstructions } from "../lib/engine/kim/prompt-block";
+import { KIM_POSITIVE_SLIDERS } from "../lib/engine/kim/slider-interpretation";
+import { ELIAS_POSITIVE_SLIDERS } from "../lib/engine/elias/slider-interpretation";
+import { ELIAS_HIGH_COMPLEXITY_MODULES } from "../lib/engine/elias/module-catalog";
+import { KIM_HIGH_COMPLEXITY_MODULES } from "../lib/engine/kim/module-catalog";
+import { ELIAS_IDENTITY_PROMPT, ELIAS_SCHEMA_RECOGNITION, ELIAS_STOA_SESSIONS, eliasCrisisInstructions } from "../lib/engine/elias/prompt-block";
+import { ELIAS_STAGE_DESCRIPTIONS_SHORT, ELIAS_STAGE_DESCRIPTIONS_FULL } from "../lib/engine/elias/stage-of-change";
+
+// ─── Types ────────────────────────────────────────────────────────
+
+interface ChatRequestInput {
+  userType: "elias" | "kim";
+  userName: string;
+  message: string;
+  conversationHistory: Array<{
+    role: "user" | "assistant";
+    content: string;
+  }>;
+  moodSliders: Record<string, number>;
+  isSessionStart: boolean;
+
+  // Live-selected triggers (re-analyzed per message)
+  selectedTriggers?: Array<{ trigger: string; score: number }>;
+  riskScore?: number;
+  dominantModule?: string;
+
+  // Static context (SESSION_INIT only — cached server-side)
+  coreWound?: string | null;
+  contextLine?: string | null;
+  relationshipAnchor?: { name: string; role: string; roleEN?: string } | null;
+  recentDiary?: Array<{ content: string; moodTag: string; date: string }>;
+  stageOfChange?: string;
+  relationalPattern?: { pattern: string; schema: string; confidence: number } | null;
+
+  // Full data (SESSION_INIT only)
+  backpack?: {
+    naam: string;
+    userType: "elias" | "kim";
+    lifeStory: Array<{
+      id: string;
+      label: string;
+      ageRange: string;
+      content: string;
+    }>;
+    intakeContext: {
+      startEmotion: string;
+      urgency: string;
+      initialContext: string;
+      intakeDate: string;
+    };
+    createdAt: string;
+  };
+  userDat?: {
+    totalSessions: number;
+    triggerPatterns: Array<{
+      trigger: string;
+      count: number;
+      firstSeen: string;
+      lastSeen: string;
+    }>;
+    moodHistory: Array<{
+      sliders: Record<string, number>;
+      timestamp: string;
+    }>;
+    moduleUsageSummary: string[];
+    lastSessionDate: string | null;
+    sessionAnalyses: Array<{
+      sessionNumber: number;
+      date: string;
+      messageCount: number;
+      durationMinutes: number;
+      dominantEmotion: string;
+      themes: string[];
+      newTriggers: string[];
+      modulesUsed: string[];
+      moodDelta: {
+        distressChange: number;
+        resilienceChange: number;
+      };
+      endRiskLevel: string;
+    }>;
+  };
+  diaryEntries?: Array<{
+    content: string;
+    moodTag: string;
+    timestamp: string;
+  }>;
+
+  activeModules: string[];
+  crisisLevel: number;
+  detectedEmotion: string;
+  therapeuticStance: string;
+  sessionDurationMinutes: number;
+  urgency: string;
+  startEmotion: string;
+
+  // User-controlled guidance depth
+  guidanceDepth?: 'light' | 'normal' | 'deep';
+
+  // Live buffer snapshot from ShortTermMemoryBuffer (per-message)
+  bufferSnapshot?: {
+    zone: string;
+    emotionalDirection: string;
+    liveIntent: string;
+    dominantState: string;
+  };
+
+  // Regulation result from regulation layer (per-message)
+  regulationResult?: {
+    action: string;
+    intervention: string | null;
+    gptInstruction: string | null;
+    zone: string;
+    effectiveDepth: string;
+    wasSoftened: boolean;
+    wasSkipped: boolean;
+  } | null;
+
+  // Routed engine directive (Elias OR Kim, from orchestration routing)
+  engineDirective?: {
+    engine: 'elias' | 'kim';
+    zoneLevel: string;
+    zoneLabel: string;
+    impact: Record<string, string>;
+  } | null;
+
+  // Intervention continuity (Elias only, zone-linked therapeutic memory)
+  interventionContinuity?: string | null;
+
+  // Projection layer (future-facing fears/hopes/goals)
+  projectionContext?: string | null;
+  projectionDeepening?: string | null;
+}
+
+// ─── Server-side Session Cache ───────────────────────────────────
+// Stores static context from SESSION_INIT for selective follow-up injection.
+// Simple in-memory cache — one session at a time (single-user server).
+
+interface SessionCache {
+  userName: string;
+  userType: "elias" | "kim";
+  coreWound: string | null;
+  contextLine: string | null;
+  relationshipAnchor: { name: string; role: string; roleEN?: string } | null;
+  relationalPattern: { pattern: string; schema: string; confidence: number } | null;
+  recentDiary: Array<{ content: string; moodTag: string; date: string }>;
+  stageOfChange: string | null;
+  // Extracted at session start for conditional use
+  relationshipMap: string;
+  // Compact life story summary for follow-up injection (names, events, relationships)
+  lifeStorySummary: string;
+  totalSessions: number;
+  triggerPatterns: Array<{ trigger: string; count: number }>;
+  messageCount: number; // Track messages for conditional injection
+  guidanceDepth: 'light' | 'normal' | 'deep';
+}
+
+let sessionCache: SessionCache | null = null;
+
+function cacheSessionInit(input: ChatRequestInput): void {
+  sessionCache = {
+    userName: input.userName,
+    userType: input.userType,
+    coreWound: input.coreWound ?? null,
+    contextLine: input.contextLine ?? null,
+    relationshipAnchor: input.relationshipAnchor ?? null,
+    relationalPattern: input.relationalPattern ?? null,
+    recentDiary: input.recentDiary ?? [],
+    stageOfChange: input.stageOfChange ?? null,
+    relationshipMap: input.backpack
+      ? extractRelationshipMap(input.backpack.lifeStory, input.backpack.intakeContext.initialContext)
+      : "",
+    lifeStorySummary: input.backpack
+      ? buildCompactLifeStorySummary(input.backpack.lifeStory, input.backpack.intakeContext.initialContext, input.userName)
+      : "",
+    totalSessions: input.userDat?.totalSessions ?? 0,
+    triggerPatterns: (input.userDat?.triggerPatterns ?? []).map(tp => ({
+      trigger: tp.trigger,
+      count: tp.count,
+    })),
+    messageCount: 0,
+    guidanceDepth: input.guidanceDepth ?? 'normal',
+  };
+  console.log("[AI Chat] Session cache created for:", input.userName);
+}
+
+function incrementMessageCount(): void {
+  if (sessionCache) {
+    sessionCache.messageCount++;
+  }
+}
+
+// ─── Zod Schema ───────────────────────────────────────────────────
+
+export const chatInputSchema = z.object({
+  userType: z.enum(["elias", "kim"]),
+  userName: z.string(),
+  message: z.string(),
+  conversationHistory: z.array(
+    z.object({
+      role: z.enum(["user", "assistant"]),
+      content: z.string(),
+    })
+  ),
+  moodSliders: z.record(z.string(), z.number()),
+  isSessionStart: z.boolean().default(false),
+
+  // Live triggers (every call)
+  selectedTriggers: z.array(
+    z.object({ trigger: z.string(), score: z.number() })
+  ).optional(),
+  riskScore: z.number().optional(),
+  dominantModule: z.string().optional(),
+
+  // Static context (SESSION_INIT only)
+  coreWound: z.string().nullable().optional(),
+  contextLine: z.string().nullable().optional(),
+  relationshipAnchor: z.object({
+    name: z.string(),
+    role: z.string(),
+    roleEN: z.string().optional(),
+  }).nullable().optional(),
+  recentDiary: z.array(
+    z.object({ content: z.string(), moodTag: z.string(), date: z.string() })
+  ).optional(),
+  stageOfChange: z.string().optional(),
+  relationalPattern: z.object({
+    pattern: z.string(),
+    schema: z.string(),
+    confidence: z.number(),
+  }).nullable().optional(),
+
+  // Full data (SESSION_INIT only)
+  backpack: z.object({
+    naam: z.string(),
+    userType: z.enum(["elias", "kim"]),
+    lifeStory: z.array(
+      z.object({
+        id: z.string(),
+        label: z.string(),
+        ageRange: z.string(),
+        content: z.string(),
+      })
+    ),
+    intakeContext: z.object({
+      startEmotion: z.string(),
+      urgency: z.string(),
+      initialContext: z.string(),
+      intakeDate: z.string(),
+    }),
+    createdAt: z.string(),
+  }).optional(),
+  userDat: z.object({
+    totalSessions: z.number(),
+    triggerPatterns: z.array(
+      z.object({
+        trigger: z.string(),
+        count: z.number(),
+        firstSeen: z.string(),
+        lastSeen: z.string(),
+      })
+    ),
+    moodHistory: z.array(
+      z.object({
+        sliders: z.record(z.string(), z.number()),
+        timestamp: z.string(),
+      })
+    ),
+    moduleUsageSummary: z.array(z.string()),
+    lastSessionDate: z.nullable(z.string()),
+    sessionAnalyses: z.array(
+      z.object({
+        sessionNumber: z.number(),
+        date: z.string(),
+        messageCount: z.number(),
+        durationMinutes: z.number(),
+        dominantEmotion: z.string(),
+        themes: z.array(z.string()),
+        newTriggers: z.array(z.string()),
+        modulesUsed: z.array(z.string()),
+        moodDelta: z.object({
+          distressChange: z.number(),
+          resilienceChange: z.number(),
+        }),
+        endRiskLevel: z.string(),
+      })
+    ),
+  }).optional(),
+  diaryEntries: z.array(
+    z.object({
+      content: z.string(),
+      moodTag: z.string(),
+      timestamp: z.string(),
+    })
+  ).optional(),
+  activeModules: z.array(z.string()),
+  crisisLevel: z.number(),
+  detectedEmotion: z.string(),
+  therapeuticStance: z.string(),
+  sessionDurationMinutes: z.number(),
+  urgency: z.string(),
+  startEmotion: z.string(),
+  guidanceDepth: z.enum(['light', 'normal', 'deep']).optional(),
+  bufferSnapshot: z.any().optional(),
+
+  // Regulation layer result (from client-side regulation engine)
+  regulationResult: z.object({
+    action: z.enum(['reflect', 'slow_down', 'regulate', 'stabilize', 'ground']),
+    intervention: z.string().nullable(),
+    gptInstruction: z.string().nullable(),
+    zone: z.enum(['GREEN', 'YELLOW', 'ORANGE', 'RED', 'PURPLE']),
+    effectiveDepth: z.enum(['light', 'normal', 'deep']),
+    wasSoftened: z.boolean(),
+    wasSkipped: z.boolean(),
+  }).nullable().optional(),
+
+  // Routed engine directive (Elias OR Kim, from orchestration routing)
+  engineDirective: z.object({
+    engine: z.enum(['elias', 'kim']),
+    zoneLevel: z.string(),
+    zoneLabel: z.string(),
+    impact: z.record(z.string(), z.string()),
+  }).nullable().optional(),
+
+  // Intervention continuity (Elias only, zone-linked therapeutic memory)
+  interventionContinuity: z.string().nullable().optional(),
+  // Projection layer (future-facing fears/hopes/goals)
+  projectionContext: z.string().nullable().optional(),
+  projectionDeepening: z.string().nullable().optional(),
+});
+
+// ─── Relationship Map Extractor ──────────────────────────────────
+
+function extractRelationshipMap(
+  lifeStory: Array<{ label: string; content: string }>,
+  intakeContext: string
+): string {
+  const allText = [
+    ...lifeStory.map((s) => s.content),
+    intakeContext,
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  if (!allText || allText.trim().length < 20) return "";
+
+  return `
+─── RELATIONSHIP EXTRACTION INSTRUCTION ───
+Below is context about the user's relationships. Before responding, you MUST mentally extract every person mentioned and their EXACT relationship as stated by the user. For example:
+- If the user wrote "mijn zoon Jules" → Jules = zoon (son)
+- If the user wrote "mijn vriendin Melissa" → Melissa = vriendin (girlfriend/partner)
+
+You must ONLY use the relationship as the user described it. NEVER guess or invent a relationship.
+
+Common Dutch relationship words:
+zoon = son, dochter = daughter, vrouw/vriendin = wife/girlfriend/partner,
+man/vriend = husband/boyfriend/partner, moeder/mama = mother, vader/papa = father,
+zus = sister, broer = brother, oma = grandmother, opa = grandfather,
+vriend(in) = friend, collega = colleague, buurman/buurvrouw = neighbor
+─── END RELATIONSHIP INSTRUCTION ───`;
+}
+
+/**
+ * Build a compact life story summary for follow-up injection.
+ * Includes all life story sections and intake context so GPT can
+ * recognise names, places, and events mentioned by the user.
+ */
+function buildCompactLifeStorySummary(
+  lifeStory: Array<{ label: string; content: string }>,
+  intakeContext: string,
+  userName: string,
+): string {
+  const sections = lifeStory
+    .filter(s => s.content.trim().length > 0)
+    .map(s => `[${s.label}]: ${s.content.trim()}`);
+
+  if (sections.length === 0 && (!intakeContext || intakeContext.trim().length < 10)) {
+    return "";
+  }
+
+  let summary = `\n─── PERSOONLIJK GEHEUGEN OVER ${userName.toUpperCase()} (samenvatting) ───`;
+  if (intakeContext && intakeContext.trim().length > 0) {
+    summary += `\nIntake: ${intakeContext.trim()}`;
+  }
+  for (const section of sections) {
+    summary += `\n${section}`;
+  }
+  summary += `\n─── EINDE PERSOONLIJK GEHEUGEN ───`;
+  summary += `\nJe KENT dit verhaal. Als ${userName} een persoon, plek of gebeurtenis noemt die hierboven staat, herken je het ONMIDDELLIJK.`;
+  summary += `\nAls iets NIET hierboven staat, VERZIN je het niet. Dan vraag je ernaar.`;
+  return summary;
+}
+
+// ─── Relevance-based Conditional Injection ───────────────────────
+// Determines which cached static fields are relevant for THIS specific message.
+
+interface ConditionalContext {
+  contextLine: string | null;
+  relationshipAnchor: { name: string; role: string; roleEN?: string } | null;
+  relationalPattern: { pattern: string; schema: string; confidence: number } | null;
+  coreWound: string | null;
+  recentDiary: Array<{ content: string; moodTag: string; date: string }>;
+  stageOfChange: string | null;
+  relationshipMap: string;
+}
+
+function resolveConditionalContext(
+  message: string,
+  conversationHistory: Array<{ role: string; content: string }>,
+  selectedTriggers: Array<{ trigger: string; score: number }>,
+  dominantModule: string,
+  cache: SessionCache,
+): ConditionalContext {
+  const msgLower = message.toLowerCase();
+  const last2Messages = conversationHistory.slice(-2).map(m => m.content.toLowerCase()).join(" ");
+  const combinedContext = msgLower + " " + last2Messages;
+
+  // ── contextLine: only if keyword overlap with current message ──
+  let contextLine: string | null = null;
+  if (cache.contextLine) {
+    const contextWords = cache.contextLine.toLowerCase().split(/\s+/).filter(w => w.length > 3);
+    const matchCount = contextWords.filter(w => msgLower.includes(w)).length;
+    if (matchCount >= 2 || (contextWords.length <= 4 && matchCount >= 1)) {
+      contextLine = cache.contextLine;
+    }
+  }
+
+  // ── relationshipAnchor: only if name appears in current or last 2 messages ──
+  let relationshipAnchor = cache.relationshipAnchor;
+  if (relationshipAnchor) {
+    const nameInContext = combinedContext.includes(relationshipAnchor.name.toLowerCase());
+    if (!nameInContext) {
+      relationshipAnchor = null;
+    }
+  }
+
+  // ── relationshipMap: only if any name-like word appears in message ──
+  // (lightweight check — if user mentions any person, include the map)
+  let relationshipMap = "";
+  if (cache.relationshipMap) {
+    // Check if message contains a capitalized word that could be a name
+    const hasNameLikeWord = /\b[A-Z][a-z]{2,}\b/.test(message);
+    // Or if message asks about someone ("wie is", "ken je", "weet je van")
+    const asksAboutPerson = /wie is|ken je|weet je van|vertel.*over/i.test(message);
+    if (hasNameLikeWord || asksAboutPerson || relationshipAnchor) {
+      relationshipMap = cache.relationshipMap;
+    }
+  }
+
+  // ── relationalPattern: only if confidence >= 0.35 AND relevant to message ──
+  let relationalPattern = cache.relationalPattern;
+  if (relationalPattern) {
+    if (relationalPattern.confidence < 0.35) {
+      relationalPattern = null;
+    } else {
+      // Check if the pattern theme appears in the message context
+      const patternWords = [
+        relationalPattern.pattern.toLowerCase(),
+        relationalPattern.schema.toLowerCase(),
+      ];
+      const patternRelevant = patternWords.some(w =>
+        combinedContext.includes(w) ||
+        combinedContext.includes("relatie") ||
+        combinedContext.includes("grens") ||
+        combinedContext.includes("partner") ||
+        combinedContext.includes("samen")
+      );
+      if (!patternRelevant) {
+        relationalPattern = null;
+      }
+    }
+  }
+
+  // ── coreWound: only if dominant module or trigger relates to wound theme ──
+  let coreWound: string | null = null;
+  if (cache.coreWound) {
+    const woundLower = cache.coreWound.toLowerCase();
+    const triggerNames = selectedTriggers.map(t => t.trigger.toLowerCase());
+    const moduleLower = dominantModule.toLowerCase();
+
+    // Wound-to-trigger/module mapping
+    const woundRelevant =
+      triggerNames.some(t => woundLower.includes(t) || t.includes(woundLower)) ||
+      moduleLower.includes("trauma") ||
+      moduleLower.includes("schema") ||
+      moduleLower.includes("relational") ||
+      msgLower.includes(woundLower) ||
+      msgLower.includes("pijn") ||
+      msgLower.includes("wond") ||
+      msgLower.includes("altijd") ||
+      msgLower.includes("nooit") ||
+      msgLower.includes("niet goed genoeg");
+
+    if (woundRelevant) {
+      coreWound = cache.coreWound;
+    }
+  }
+
+  // ── recentDiary: only if message touches a diary theme ──
+  let recentDiary: Array<{ content: string; moodTag: string; date: string }> = [];
+  if (cache.recentDiary.length > 0) {
+    for (const entry of cache.recentDiary) {
+      const entryWords = entry.content.toLowerCase().split(/\s+/).filter(w => w.length > 3);
+      const matchCount = entryWords.filter(w => msgLower.includes(w)).length;
+      if (matchCount >= 2) {
+        recentDiary.push(entry);
+        if (recentDiary.length >= 2) break; // Max 2
+      }
+    }
+  }
+
+  // ── stageOfChange: only in first 2 messages OR if user talks about change/motivation ──
+  let stageOfChange: string | null = null;
+  if (cache.stageOfChange) {
+    const isEarlyInSession = cache.messageCount <= 2;
+    const talksAboutChange = /verandering|motivat|stoppen|volhoud|terugval|doorgaan|opgeven|probeer|lukt niet|wil ik|moet ik|kan ik/i.test(message);
+    if (isEarlyInSession || talksAboutChange) {
+      stageOfChange = cache.stageOfChange;
+    }
+  }
+
+  return {
+    contextLine,
+    relationshipAnchor,
+    relationalPattern,
+    coreWound,
+    recentDiary,
+    stageOfChange,
+    relationshipMap,
+  };
+}
+
+// ─── Build Selective Relevance Block (for follow-up) ─────────────
+
+function buildSelectiveRelevanceBlock(
+  input: ChatRequestInput,
+  conditional: ConditionalContext,
+): string {
+  const parts: string[] = [];
+
+  // Selected triggers (ALWAYS — live-analyzed per message)
+  const triggers = input.selectedTriggers || [];
+  if (triggers.length > 0) {
+    parts.push(`ACTIEVE TRIGGERS:`);
+    for (const t of triggers) {
+      parts.push(`  - ${t.trigger} (relevantie: ${t.score})`);
+    }
+  }
+
+  // Core wound (CONDITIONAL)
+  if (conditional.coreWound) {
+    parts.push(`KERNWOND: ${conditional.coreWound}`);
+    parts.push(`  → Wees je bewust van dit onderliggende patroon.`);
+  }
+
+  // Context line (CONDITIONAL)
+  if (conditional.contextLine) {
+    parts.push(`RELEVANTE CONTEXT UIT LEVENSVERHAAL:`);
+    parts.push(`  "${conditional.contextLine}"`);
+    parts.push(`  → Relevant voor dit bericht. Je mag er voorzichtig naar verwijzen.`);
+  }
+
+  // Relationship anchor (CONDITIONAL)
+  if (conditional.relationshipAnchor) {
+    const roleDisplay = conditional.relationshipAnchor.roleEN
+      ? `${conditional.relationshipAnchor.role} / ${conditional.relationshipAnchor.roleEN}`
+      : conditional.relationshipAnchor.role;
+    parts.push(`RELATIE-ANKER: ${conditional.relationshipAnchor.name} (${roleDisplay})`);
+    parts.push(`  → Gebruik ALLEEN deze exacte relatie.`);
+  }
+
+  // Relational pattern (CONDITIONAL)
+  if (conditional.relationalPattern) {
+    parts.push(`RELATIONEEL PATROON: ${conditional.relationalPattern.pattern}`);
+    if (conditional.relationalPattern.schema) {
+      parts.push(`  Schema: ${conditional.relationalPattern.schema}`);
+    }
+    parts.push(`  → Benoem voorzichtig als relevant.`);
+  }
+
+  // Stage of Change (CONDITIONAL)
+  if (conditional.stageOfChange) {
+    const desc = ELIAS_STAGE_DESCRIPTIONS_SHORT[conditional.stageOfChange] || conditional.stageOfChange;
+    parts.push(`FASE: ${conditional.stageOfChange} — ${desc}`);
+  }
+
+  // Recent diary (CONDITIONAL)
+  if (conditional.recentDiary.length > 0) {
+    parts.push(`RELEVANTE DAGBOEKNOTITIES:`);
+    for (const d of conditional.recentDiary) {
+      parts.push(`  [${d.date}] (${d.moodTag}): ${d.content}`);
+    }
+  }
+
+  if (parts.length === 0) return "";
+
+  return `
+─── RELEVANTIE-CONTEXT (selectief voor dit bericht) ───
+${parts.join("\n")}
+─── EINDE ───`;
+}
+
+// ─── Build Full Relevance Block (for SESSION_INIT) ───────────────
+
+function buildFullRelevanceBlock(input: ChatRequestInput): string {
+  const parts: string[] = [];
+
+  const triggers = input.selectedTriggers || [];
+  if (triggers.length > 0) {
+    parts.push(`ACTIEVE TRIGGERS (geselecteerd door het systeem):`);
+    for (const t of triggers) {
+      parts.push(`  - ${t.trigger} (relevantie: ${t.score})`);
+    }
+  }
+
+  if (input.coreWound) {
+    parts.push(`KERNWOND: ${input.coreWound}`);
+    parts.push(`  → Wees je bewust van dit onderliggende patroon. Benoem het voorzichtig als het relevant is.`);
+  }
+
+  if (input.contextLine) {
+    parts.push(`RELEVANTE CONTEXT UIT LEVENSVERHAAL:`);
+    parts.push(`  "${input.contextLine}"`);
+    parts.push(`  → Dit is een passage uit het levensverhaal van ${input.userName} die relevant is voor dit bericht. Je mag er voorzichtig naar verwijzen.`);
+  }
+
+  if (input.relationshipAnchor) {
+    const roleDisplay = input.relationshipAnchor.roleEN
+      ? `${input.relationshipAnchor.role} / ${input.relationshipAnchor.roleEN}`
+      : input.relationshipAnchor.role;
+    parts.push(`RELATIE-ANKER: ${input.relationshipAnchor.name} (${roleDisplay})`);
+    parts.push(`  → Deze persoon is relevant voor het huidige gesprek. Gebruik ALLEEN de relatie zoals beschreven.`);
+  }
+
+  if (input.relationalPattern && input.relationalPattern.confidence >= 0.35) {
+    parts.push(`RELATIONEEL PATROON GEDETECTEERD: ${input.relationalPattern.pattern}`);
+    if (input.relationalPattern.schema) {
+      parts.push(`  Gelinkt schema: ${input.relationalPattern.schema}`);
+    }
+    parts.push(`  Betrouwbaarheid: ${Math.round(input.relationalPattern.confidence * 100)}%`);
+    parts.push(`  → Dit is een terugkerend relationeel patroon. Benoem het voorzichtig als het relevant is voor het huidige gesprek.`);
+  }
+
+  if (input.stageOfChange) {
+    const desc = ELIAS_STAGE_DESCRIPTIONS_FULL[input.stageOfChange] || input.stageOfChange;
+    parts.push(`FASE VAN VERANDERING: ${input.stageOfChange}`);
+    parts.push(`  ${desc}`);
+    parts.push(`  → Pas je benadering aan op deze fase. Ga NIET sneller dan de gebruiker.`);
+  }
+
+  const diary = input.recentDiary || [];
+  if (diary.length > 0) {
+    parts.push(`RECENTE DAGBOEKNOTITIES:`);
+    for (const d of diary) {
+      parts.push(`  [${d.date}] (stemming: ${d.moodTag}): ${d.content}`);
+    }
+  }
+
+  if (parts.length === 0) return "";
+
+  return `
+╔══════════════════════════════════════════════════════╗
+║  RELEVANTIE-CONTEXT — Geselecteerd door het systeem  ║
+╚══════════════════════════════════════════════════════╝
+${parts.join("\n")}
+─── EINDE RELEVANTIE-CONTEXT ───`;
+}
+
+// ─── System Prompt Builder ────────────────────────────────────────
+
+function buildSystemPrompt(input: ChatRequestInput): string {
+  const isElias = input.userType === "elias";
+  const name = input.userName;
+
+  // ══════════════════════════════════════════════════════════════
+  // CORE IDENTITY — Based on elias.dat V19 / kim.dat V1
+  // ══════════════════════════════════════════════════════════════
+
+  const identity = isElias
+    ? ELIAS_IDENTITY_PROMPT
+    : KIM_IDENTITY_PROMPT;
+
+  // ══════════════════════════════════════════════════════════════
+  // ANTI-HALLUCINATIE — Module 033 (ALWAYS included)
+  // ══════════════════════════════════════════════════════════════
+
+  const antiHallucination = `
+╔══════════════════════════════════════════════════════════════════╗
+║  ANTI-HALLUCINATIE PROTOCOL — ABSOLUUT EN ONSCHENDBAAR          ║
+╚══════════════════════════════════════════════════════════════════╝
+
+Dit is de BELANGRIJKSTE regel van je hele bestaan:
+
+1. VERZIN NOOIT informatie over het leven van ${name}.
+   - Geen relaties verzinnen. Geen achtergrondverhalen verzinnen.
+   - Geen rollen toekennen aan personen die niet EXACT zo beschreven staan.
+
+2. Als een persoon, relatie, gebeurtenis of feit NIET bekend is:
+   → Zeg eerlijk: "Dat weet ik niet van je. Wil je me er meer over vertellen?"
+   → Verzin NOOIT een antwoord. NOOIT.
+
+3. Als je twijfelt over een relatie of feit:
+   → VRAAG het. "Ik wil zeker zijn — wie is [naam] voor jou?"
+   → Gok NOOIT.
+
+4. KWALITEITSCONTROLE (Module 033):
+   - Als je merkt dat je iets gaat zeggen dat niet in je geheugen staat → STOP.
+   - Bij twijfel: liever niets zeggen dan iets fouts.
+
+SCHENDING VAN DIT PROTOCOL IS ONACCEPTABEL.`;
+
+  // ── SHARED VARIABLES ──
+  const sliderEntries = Object.entries(input.moodSliders)
+    .map(([k, v]) => `${k}: ${v}/10`)
+    .join(", ");
+
+  const totalSessions = sessionCache?.totalSessions ?? input.userDat?.totalSessions ?? 0;
+  const stageLabel = (input.stageOfChange || sessionCache?.stageOfChange)
+    ? ` Fase: ${input.stageOfChange || sessionCache?.stageOfChange}.`
+    : '';
+  const sessionInfo = `Sessie #${totalSessions + 1}. Duur: ${input.sessionDurationMinutes} minuten. Initiële emotie: ${input.startEmotion}. Huidige gedetecteerde emotie: ${input.detectedEmotion}.${stageLabel}`;
+
+  let crisisInstructions = "";
+  if (input.crisisLevel >= 2) {
+    crisisInstructions = isElias
+      ? eliasCrisisInstructions(input.crisisLevel)
+      : kimCrisisInstructions(input.crisisLevel);
+  } else if (input.crisisLevel === 1) {
+    crisisInstructions = `\nVERHOOGDE WAAKZAAMHEID. Wees extra attent op signalen van distress.`;
+  }
+
+  const dominantModule = input.dominantModule || (input.activeModules.length > 0 ? input.activeModules[0] : '');
+  const moduleInstructions = dominantModule
+    ? `Dominant therapeutisch module: ${dominantModule}. Focus je antwoord op deze benadering.`
+    : "";
+
+  const stance = input.therapeuticStance
+    ? `Therapeutische houding: ${input.therapeuticStance}`
+    : "";
+
+  // ── Guidance Depth (ceiling logic) ──
+  // User setting is a MAXIMUM, not absolute. Effective depth = min(userSetting, stateAllowedDepth)
+  // Zone mapping: RED/PURPLE → force 'light', ORANGE → cap 'normal', YELLOW/GREEN → user setting applies
+  const DEPTH_ORDER: Array<'light' | 'normal' | 'deep'> = ['light', 'normal', 'deep'];
+  const userDepth = input.guidanceDepth ?? sessionCache?.guidanceDepth ?? 'normal';
+
+  // Determine state-allowed depth from crisis level + risk score + mood sliders
+  let stateAllowedDepth: 'light' | 'normal' | 'deep' = 'deep';
+  const riskScore = input.riskScore ?? 0;
+  const sliderValues = Object.values(input.moodSliders);
+  const maxDistress = Math.max(...sliderValues.filter((_, i) => {
+    const keys = Object.keys(input.moodSliders);
+    // Distress sliders: exclude positive sliders (Elias: focus, Kim: selfCare)
+    const POSITIVE_SLIDERS = [...ELIAS_POSITIVE_SLIDERS, ...KIM_POSITIVE_SLIDERS];
+    return !POSITIVE_SLIDERS.includes(keys[i]);
+  }), 0);
+
+  if (input.crisisLevel >= 2 || riskScore >= 8 || maxDistress >= 9) {
+    // RED/PURPLE zone → force light: stabilize first, no deep exploration
+    stateAllowedDepth = 'light';
+  } else if (input.crisisLevel === 1 || riskScore >= 5 || maxDistress >= 7) {
+    // ORANGE zone → cap at normal: some reflection ok, no deep confrontation
+    stateAllowedDepth = 'normal';
+  }
+  // YELLOW/GREEN → stateAllowedDepth stays 'deep' (user setting applies)
+
+  // Effective depth = min(userSetting, stateAllowedDepth)
+  const userIdx = DEPTH_ORDER.indexOf(userDepth);
+  const stateIdx = DEPTH_ORDER.indexOf(stateAllowedDepth);
+  const effectiveDepth = DEPTH_ORDER[Math.min(userIdx, stateIdx)];
+
+  let guidanceInstruction = '';
+  if (effectiveDepth === 'light') {
+    guidanceInstruction = `\nBEGELEIDINGSDIEPTE: LICHT (${stateAllowedDepth !== userDepth ? 'verlaagd vanwege huidige toestand' : 'gebruikersvoorkeur'})\n- Luister meer dan je vraagt.\n- Stel maximaal 1 open vraag per bericht.\n- Geef ruimte en stilte. Valideer kort.\n- Geen doorvragen tenzij de gebruiker zelf dieper gaat.\n- Toon: warm, rustig, terughoudend.`;
+  } else if (effectiveDepth === 'deep') {
+    guidanceInstruction = `\nBEGELEIDINGSDIEPTE: DIEP (gebruikersvoorkeur, toestand staat dit toe)\n- Vraag actief door op patronen, emoties en onderliggende overtuigingen.\n- Benoem wat je opmerkt, ook als het oncomfortabel kan zijn.\n- Gebruik reflectie en confrontatie (respectvol maar direct).\n- Verbind huidige situatie met eerdere patronen uit het levensverhaal.\n- Toon: betrokken, scherp, uitdagend maar veilig.`;
+  } else {
+    guidanceInstruction = `\nBEGELEIDINGSDIEPTE: NORMAAL (${stateAllowedDepth !== userDepth ? 'verlaagd vanwege huidige toestand' : 'gebruikersvoorkeur'})\n- Balans tussen luisteren en reflecteren.\n- Stel 1-2 open vragen per bericht.\n- Benoem patronen wanneer relevant, maar dring niet aan.\n- Toon: warm, betrokken, reflectief.`;
+  }
+
+  console.log(`[AI Chat] Guidance depth: user=${userDepth}, stateAllowed=${stateAllowedDepth}, effective=${effectiveDepth} (crisis=${input.crisisLevel}, risk=${riskScore}, maxDistress=${maxDistress})`);
+
+  // ── Regulation Layer Injection ──
+  // If the regulation layer determined an action (non-reflect), inject its GPT instruction.
+  // This runs BEFORE the system prompt is assembled, so it's available for both follow-up and session-start.
+  let regulationInstruction = '';
+  if (input.regulationResult && input.regulationResult.gptInstruction) {
+    const reg = input.regulationResult;
+    const softenedLabel = reg.wasSoftened ? ' (verzacht — vorige bericht bevatte al regulatie)' : '';
+    const skippedLabel = reg.wasSkipped ? ' (overgeslagen — vorige bericht bevatte al regulatie)' : '';
+    regulationInstruction = `\n═══ EMOTIONELE REGULATIE${softenedLabel}${skippedLabel} ═══\n${reg.gptInstruction}\n═══ EINDE REGULATIE ═══`;
+    console.log(`[AI Chat] Regulation injected: action=${reg.action}, zone=${reg.zone}, depth=${reg.effectiveDepth}, softened=${reg.wasSoftened}, skipped=${reg.wasSkipped}`);
+  }
+
+  // ── Engine Directive Injection ──
+  // Passes routed zone impact values directly into the prompt. No transformation.
+  let engineDirectiveBlock = '';
+  if (input.engineDirective) {
+    const ed = input.engineDirective;
+    const impactLines = Object.entries(ed.impact)
+      .map(([k, v]) => `- ${k}: ${v}`)
+      .join('\n');
+    engineDirectiveBlock = `\n═══ ENGINE DIRECTIVE (${ed.engine.toUpperCase()}) ═══\nZone: ${ed.zoneLevel} — ${ed.zoneLabel}\n${impactLines}\n═══ EINDE ENGINE DIRECTIVE ═══`;
+    console.log(`[AI Chat] Engine directive injected: engine=${ed.engine}, zone=${ed.zoneLevel}, impact=${JSON.stringify(ed.impact)}`);
+  }
+
+  // ── Intervention Continuity Injection (Elias only) ──
+  // Passes zone-linked therapeutic memory into the prompt for consistent therapeutic line.
+  let interventionContinuityBlock = '';
+  if (input.interventionContinuity) {
+    interventionContinuityBlock = `\n═══ ${input.interventionContinuity}\n═══ EINDE INTERVENTIE-CONTINUÏTEIT ═══`;
+    console.log(`[AI Chat] Intervention continuity injected`);
+  }
+
+  let projectionBlock = '';
+  if (input.projectionContext) {
+    projectionBlock = `\n${input.projectionContext}`;
+    if (input.projectionDeepening) {
+      projectionBlock += `\nDEEPENING INSTRUCTIE: ${input.projectionDeepening}`;
+    }
+    console.log(`[AI Chat] Projection context injected${input.projectionDeepening ? ' (with deepening)' : ''}`);
+  }
+
+  let sessionEndInstructions = "";
+  if (input.message === "__SESSION_END__") {
+    sessionEndInstructions = `\nDe gebruiker beëindigt deze sessie. Genereer een warm afscheid dat:
+1. Kort benoemt wat besproken is (1-2 zinnen)
+2. De moed/inzet van de gebruiker bevestigt
+3. Bevestigt dat de sessie bewaard is
+4. Zachtjes aanmoedigt voor de volgende keer
+Houd het kort (3-5 zinnen max). Stel GEEN nieuwe vragen.`;
+  }
+
+  // ══════════════════════════════════════════════════════════════
+  // FOLLOW-UP MESSAGES — SELECTIVE INJECTION from cache
+  // ══════════════════════════════════════════════════════════════
+
+  if (!input.isSessionStart) {
+    // Resolve which cached fields are relevant for THIS message
+    const conditional = sessionCache
+      ? resolveConditionalContext(
+          input.message,
+          input.conversationHistory,
+          input.selectedTriggers || [],
+          dominantModule,
+          sessionCache,
+        )
+      : {
+          contextLine: null,
+          relationshipAnchor: null,
+          relationalPattern: null,
+          coreWound: null,
+          recentDiary: [],
+          stageOfChange: null,
+          relationshipMap: "",
+        };
+
+    const selectiveRelevance = buildSelectiveRelevanceBlock(input, conditional);
+
+    // Log what was conditionally included
+    const included: string[] = [];
+    if (conditional.contextLine) included.push('contextLine');
+    if (conditional.relationshipAnchor) included.push('anchor');
+    if (conditional.relationalPattern) included.push('pattern');
+    if (conditional.coreWound) included.push('wound');
+    if (conditional.recentDiary.length > 0) included.push(`diary(${conditional.recentDiary.length})`);
+    if (conditional.stageOfChange) included.push('stage');
+    if (conditional.relationshipMap) included.push('relationMap');
+    console.log(`[AI Chat] Follow-up selective injection: [${included.join(', ') || 'none'}]`);
+
+    // Always include life story summary in follow-ups so GPT knows names/relationships
+    const lifeStoryContext = sessionCache?.lifeStorySummary ?? '';
+
+    return `${identity}
+
+${antiHallucination}
+${conditional.relationshipMap}
+${lifeStoryContext}
+
+De naam van de gebruiker is ${name}. Spreek hen af en toe bij naam aan.
+
+${selectiveRelevance}
+
+=== VERPLICHTE GEDRAGSINSTRUCTIES ===
+${stance}
+${guidanceInstruction}
+${regulationInstruction}
+${engineDirectiveBlock}
+${interventionContinuityBlock}
+${projectionBlock}
+
+Deze gedragsinstructies zijn ABSOLUUT. Ze overschrijven je standaard gespreksstijl.
+De sliders vertellen je exact hoe de gebruiker zich voelt — GEBRUIK ze in je antwoord.
+=== EINDE VERPLICHTE INSTRUCTIES ===
+
+HUIDIGE TOESTAND:
+- Mood sliders: ${sliderEntries}
+- Urgentieniveau: ${input.urgency}
+- Risicoscore: ${input.riskScore ?? 0}/10
+${sessionInfo}
+${input.bufferSnapshot ? `
+LIVE SESSIE CONTEXT (real-time analyse):
+- Zone: ${input.bufferSnapshot.zone ?? 'unknown'}
+- Emotionele richting: ${input.bufferSnapshot.emotionalDirection ?? 'unknown'}
+- Live intent: ${input.bufferSnapshot.liveIntent ?? 'none'}
+- Dominant state: ${input.bufferSnapshot.dominantState ?? 'none'}
+Gebruik deze live context om je toon en diepte af te stemmen op het HUIDIGE moment.` : ''}
+
+${moduleInstructions}
+${crisisInstructions}
+${sessionEndInstructions}
+
+RESPONSREGELS:
+- Je KENT ${name}. Gebruik de context hierboven om je antwoord te informeren.
+- MAAR: verwijs ALLEEN naar wat je ECHT weet. Verzin NIETS. Bij twijfel: VRAAG.
+- Als ${name} vraagt over iemand die je niet kent → "Dat weet ik niet van je. Vertel me meer?"
+- Antwoord in dezelfde taal als de gebruiker schrijft (Nederlands of Engels)
+- Houd antwoorden beknopt: volg de PACING instructie strikt
+- Diagnoseer nooit, schrijf nooit voor, claim nooit professioneel te zijn
+- Breek nooit karakter
+- Gebruik "ik"-uitspraken en reflectief luisteren
+- Gebruik GEEN opsommingstekens of genummerde lijsten — spreek natuurlijk
+- Gebruik GEEN emoji's excessief (max 0-1 per bericht)
+- Wees oprecht, niet performatief`;
+  }
+
+  // ══════════════════════════════════════════════════════════════
+  // SESSION START: Full system prompt with backpack + userDat + diary
+  // Cache the static context for follow-up use.
+  // ══════════════════════════════════════════════════════════════
+
+  // Cache the session init data
+  cacheSessionInit(input);
+
+  const schemaRecognition = isElias ? ELIAS_SCHEMA_RECOGNITION : '';
+
+  const stoaSessions = isElias ? ELIAS_STOA_SESSIONS : '';
+
+  const backpack = input.backpack;
+  let identityMemory = "";
+
+  if (backpack) {
+    identityMemory += `\n╔══════════════════════════════════════════════════════╗`;
+    identityMemory += `\n║  RUGZAK — HET IDENTITEITSANKER VAN ${name.toUpperCase()}`;
+    identityMemory += `\n║  Geschreven door ${name} persoonlijk.`;
+    identityMemory += `\n║  NOOIT samenvatten. NOOIT inkorten. Dit is heilig.`;
+    identityMemory += `\n╚══════════════════════════════════════════════════════╝`;
+
+    if (backpack.intakeContext.initialContext) {
+      identityMemory += `\n\nToen ${name} voor het eerst bij je kwam, deelde hij/zij: "${backpack.intakeContext.initialContext}"`;
+      identityMemory += `\nInitiële emotie: ${backpack.intakeContext.startEmotion}`;
+      identityMemory += `\nUrgentie bij intake: ${backpack.intakeContext.urgency}`;
+      if (backpack.intakeContext.intakeDate) {
+        identityMemory += `\nEerste sessie: ${backpack.intakeContext.intakeDate}`;
+      }
+    }
+
+    const relationMap = extractRelationshipMap(
+      backpack.lifeStory,
+      backpack.intakeContext.initialContext
+    );
+    if (relationMap) {
+      identityMemory += `\n${relationMap}`;
+    }
+
+    if (backpack.lifeStory.some((s) => s.content.trim().length > 0)) {
+      identityMemory += `\n\n─── LEVENSVERHAAL VAN ${name.toUpperCase()} (geschreven door ${name}) ───`;
+      for (const section of backpack.lifeStory) {
+        if (section.content.trim()) {
+          identityMemory += `\n\n[${section.label} (${section.ageRange})]:\n${section.content}`;
+        }
+      }
+      identityMemory += `\n─── EINDE LEVENSVERHAAL ───`;
+      identityMemory += `\n\nJe KENT dit verhaal. Het is je persoonlijk geheugen over ${name}.`;
+      identityMemory += `\nAls ${name} een persoon, plek of gebeurtenis noemt die in dit verhaal staat, herken je het ONMIDDELLIJK.`;
+      identityMemory += `\nJe vraagt NIET opnieuw wat ze al verteld hebben.`;
+      identityMemory += `\nMAAR: als iets NIET in dit verhaal staat, VERZIN je het niet. Dan vraag je ernaar.`;
+    } else {
+      identityMemory += `\n${name} heeft nog geen levensverhaal gedeeld. Je kunt hen zachtjes uitnodigen om te delen wanneer gepast, maar dring nooit aan.`;
+    }
+  } else {
+    identityMemory = `\n(Geen backpack beschikbaar voor dit bericht.)`;
+  }
+
+  // ── DIARY ──
+  const diaryEntries = input.diaryEntries;
+  let diaryMemory = "";
+  if (diaryEntries && diaryEntries.length > 0) {
+    diaryMemory += `\n\n╔══════════════════════════════════════════════════════╗`;
+    diaryMemory += `\n║  DAGBOEK — Persoonlijke notities van ${name}`;
+    diaryMemory += `\n╚══════════════════════════════════════════════════════╝`;
+    diaryMemory += `\n\n─── RECENTE DAGBOEKNOTITIES ───`;
+    for (const entry of diaryEntries) {
+      const date = new Date(entry.timestamp).toLocaleDateString();
+      diaryMemory += `\n\n[${date}] (stemming: ${entry.moodTag}):\n${entry.content}`;
+    }
+    diaryMemory += `\n─── EINDE DAGBOEK ───`;
+    diaryMemory += `\nDit zijn ${name}'s eigen woorden. Citeer hun dagboek NIET ongevraagd terug.`;
+  }
+
+  // ── USER.DAT (Session Memory) ──
+  const userDat = input.userDat;
+  let sessionMemory = "";
+
+  if (!userDat) {
+    sessionMemory = "\n\n(Geen sessiegeheugen beschikbaar.)";
+  } else {
+    sessionMemory = `\n\n╔══════════════════════════════════════════════════════╗`;
+    sessionMemory += `\n║  SESSIEGEHEUGEN — Dynamische data over ${userDat.totalSessions} sessies`;
+    sessionMemory += `\n╚══════════════════════════════════════════════════════╝`;
+
+    if (userDat.triggerPatterns.length > 0) {
+      sessionMemory += `\n\n─── BEKENDE TRIGGERPATRONEN ───`;
+      for (const tp of userDat.triggerPatterns) {
+        sessionMemory += `\n- "${tp.trigger}" (${tp.count}x gedetecteerd, eerste: ${tp.firstSeen}, laatste: ${tp.lastSeen})`;
+      }
+      sessionMemory += `\nDit zijn terugkerende patronen. Wees alert wanneer deze thema's opkomen.`;
+    }
+
+    if (userDat.moodHistory.length > 0) {
+      const recent = userDat.moodHistory.slice(-5);
+      sessionMemory += `\n\n─── STEMMINGSTRAJECT (laatste ${recent.length} check-ins) ───`;
+      for (const mh of recent) {
+        const sliderStr = Object.entries(mh.sliders)
+          .map(([k, v]) => `${k}: ${v}/10`)
+          .join(", ");
+        sessionMemory += `\n- ${mh.timestamp}: ${sliderStr}`;
+      }
+    }
+
+    if (userDat.moduleUsageSummary.length > 0) {
+      sessionMemory += `\n\nEerder gebruikte modules: ${userDat.moduleUsageSummary.join(", ")}`;
+    }
+
+    if (userDat.sessionAnalyses.length > 0) {
+      sessionMemory += `\n\n─── EERDERE SESSIE-ANALYSES ───`;
+      for (const sa of userDat.sessionAnalyses) {
+        sessionMemory += `\n\nSessie #${sa.sessionNumber} (${sa.date}):`;
+        sessionMemory += `\n  Duur: ${sa.durationMinutes}min, Berichten: ${sa.messageCount}`;
+        sessionMemory += `\n  Dominante emotie: ${sa.dominantEmotion}`;
+        if (sa.themes.length > 0) sessionMemory += `\n  Thema's: ${sa.themes.join(", ")}`;
+        if (sa.newTriggers.length > 0) sessionMemory += `\n  Nieuwe triggers: ${sa.newTriggers.join(", ")}`;
+        sessionMemory += `\n  Stemmingsverandering: distress ${sa.moodDelta.distressChange > 0 ? "+" : ""}${sa.moodDelta.distressChange.toFixed(1)}, veerkracht ${sa.moodDelta.resilienceChange > 0 ? "+" : ""}${sa.moodDelta.resilienceChange.toFixed(1)}`;
+        sessionMemory += `\n  Risiconiveau einde: ${sa.endRiskLevel}`;
+      }
+      sessionMemory += `\n─── EINDE SESSIE-ANALYSES ───`;
+    }
+  }
+
+  // ── RELEVANCE CONTEXT (full at session start) ──
+  const relevanceContext = buildFullRelevanceBlock(input);
+
+  // ══════════════════════════════════════════════════════════════
+  // ASSEMBLE FULL SESSION-START PROMPT
+  // ══════════════════════════════════════════════════════════════
+
+  return `${identity}
+
+${antiHallucination}
+
+${schemaRecognition}
+
+${stoaSessions}
+
+De naam van de gebruiker is ${name}. Spreek hen af en toe bij naam aan.
+${identityMemory}
+${diaryMemory}
+${sessionMemory}
+
+${relevanceContext}
+
+=== VERPLICHTE GEDRAGSINSTRUCTIES ===
+${stance}
+${guidanceInstruction}
+${regulationInstruction}
+${engineDirectiveBlock}
+${interventionContinuityBlock}
+${projectionBlock}
+
+Deze gedragsinstructies zijn ABSOLUUT. Ze overschrijven je standaard gespreksstijl.
+De sliders vertellen je exact hoe de gebruiker zich voelt — GEBRUIK ze in je antwoord.
+=== EINDE VERPLICHTE INSTRUCTIES ===
+
+HUIDIGE TOESTAND:
+- Mood sliders: ${sliderEntries}
+- Urgentieniveau: ${input.urgency}
+- Risicoscore: ${input.riskScore ?? 0}/10
+${sessionInfo}
+
+${moduleInstructions}
+${crisisInstructions}
+${sessionEndInstructions}
+
+RESPONSREGELS:
+- Je KENT ${name}. Gebruik je persoonlijk geheugen natuurlijk.
+- MAAR: verwijs ALLEEN naar wat je ECHT weet uit de rugzak. Verzin NIETS. Bij twijfel: VRAAG.
+- Als ${name} vraagt "wie is [naam]?" → controleer EERST of die naam in het levensverhaal staat.
+- Antwoord in dezelfde taal als de gebruiker schrijft (Nederlands of Engels)
+- Houd antwoorden beknopt: volg de PACING instructie strikt
+- Diagnoseer nooit, schrijf nooit voor, claim nooit professioneel te zijn
+- Breek nooit karakter
+- Gebruik "ik"-uitspraken en reflectief luisteren
+- Gebruik GEEN opsommingstekens of genummerde lijsten — spreek natuurlijk
+- Gebruik GEEN emoji's excessief (max 0-1 per bericht)
+- Wees oprecht, niet performatief`;
+}
+
+// ─── OpenAI Call ──────────────────────────────────────────────────
+
+export async function generateAIResponse(
+  input: ChatRequestInput
+): Promise<{
+  response: string;
+  advisoryEmotion?: string;
+  advisoryConfidence?: number;
+  tokenUsage?: {
+    promptTokens: number;
+    completionTokens: number;
+    totalTokens: number;
+  };
+  selectedModel?: string;
+}> {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) {
+    throw new Error("OPENAI_API_KEY is not configured on the server");
+  }
+
+  // Increment message count for conditional injection tracking
+  incrementMessageCount();
+
+  const systemPrompt = buildSystemPrompt(input);
+
+  const messages: Array<{ role: string; content: string }> = [
+    { role: "system", content: systemPrompt },
+  ];
+
+  for (const msg of input.conversationHistory) {
+    messages.push({ role: msg.role, content: msg.content });
+  }
+
+  if (input.message && input.message !== "__SESSION_END__") {
+    messages.push({ role: "user", content: input.message });
+  } else if (input.message === "__SESSION_END__") {
+    messages.push({
+      role: "user",
+      content: "Ik wil deze sessie nu beëindigen.",
+    });
+  }
+
+  // ─── MODEL ROUTING LAYER (Patch N Step 4) ───────────────────
+  // Determine model per message. Only ONE model is called.
+  //
+  // Rules:
+  //   crisisLevel > 0 OR riskScore >= 7         → gpt-4o
+  //   urgency == "high" OR module is relational/trauma → gpt-4o
+  //   everything else                            → gpt-4o-mini
+  //   SESSION_INIT always uses gpt-4o (first impression matters)
+
+  const riskScore = input.riskScore ?? 0;
+  const crisisLevel = input.crisisLevel ?? 0;
+  const dominantModuleForRouting = (input.dominantModule || input.activeModules[0] || '').toLowerCase();
+  const urgencyForRouting = (input.urgency || '').toLowerCase();
+
+  const HIGH_COMPLEXITY_MODULES = [
+    ...ELIAS_HIGH_COMPLEXITY_MODULES,
+    ...KIM_HIGH_COMPLEXITY_MODULES,
+  ];
+
+  let selectedModel: 'gpt-4o' | 'gpt-4o-mini' = 'gpt-4o-mini';
+  let routingReason = 'default (low complexity)';
+
+  if (input.isSessionStart) {
+    selectedModel = 'gpt-4o';
+    routingReason = 'SESSION_INIT (first impression)';
+  } else if (crisisLevel > 0 || riskScore >= 7) {
+    selectedModel = 'gpt-4o';
+    routingReason = `crisis/risk (crisis=${crisisLevel}, risk=${riskScore})`;
+  } else if (urgencyForRouting === 'high' || urgencyForRouting === 'hoog') {
+    selectedModel = 'gpt-4o';
+    routingReason = `high urgency (${input.urgency})`;
+  } else if (HIGH_COMPLEXITY_MODULES.some(m => dominantModuleForRouting.includes(m))) {
+    selectedModel = 'gpt-4o';
+    routingReason = `complex module (${dominantModuleForRouting})`;
+  }
+
+  // ─── LOGGING (Patch N Step 6) ──────────────────────────────
+  console.log("[AI Chat] System prompt length:", systemPrompt.length, "chars");
+  console.log("[AI Chat] Total messages:", messages.length);
+  console.log("[AI Chat] Type:", input.isSessionStart ? "SESSION_INIT" : "LIVE_MESSAGE");
+  console.log("[AI Chat] Dominant module:", input.dominantModule || input.activeModules[0] || 'none');
+  console.log("[AI Chat] Risk score:", riskScore);
+  console.log(`[ModelRouting] Selected: ${selectedModel} | Reason: ${routingReason}`);
+  if (input.selectedTriggers && input.selectedTriggers.length > 0) {
+    console.log("[AI Chat] Selected triggers:", input.selectedTriggers.map(t => `${t.trigger}(${t.score})`).join(', '));
+  }
+  // Estimate payload token size (rough: 1 token ≈ 4 chars)
+  const totalChars = messages.reduce((sum, m) => sum + m.content.length, 0);
+  const estimatedTokens = Math.ceil(totalChars / 4);
+  console.log(`[CostControl] Estimated payload: ~${estimatedTokens} tokens (${totalChars} chars)`);
+  if (input.isSessionStart) {
+    if (input.backpack) {
+      console.log("[AI Chat] Backpack life story sections:", input.backpack.lifeStory.length);
+      console.log("[AI Chat] Backpack total chars:", input.backpack.lifeStory.reduce((sum, s) => sum + s.content.length, 0));
+    }
+    if (input.userDat) {
+      console.log("[AI Chat] UserDat trigger patterns:", input.userDat.triggerPatterns.length);
+      console.log("[AI Chat] UserDat session analyses:", input.userDat.sessionAnalyses.length);
+    }
+  }
+
+  let openaiResponse: Response;
+  try {
+    openaiResponse = await fetch(
+      "https://api.openai.com/v1/chat/completions",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model: selectedModel,
+          messages,
+          max_tokens: 500,
+          temperature: 0.7,
+          presence_penalty: 0.3,
+          frequency_penalty: 0.2,
+        }),
+      }
+    );
+  } catch (error) {
+    console.error("[AI Chat] OpenAI API network error:", error);
+    if (crisisLevel >= 1) {
+      return {
+        response: 'Ik kan je op dit moment niet bereiken via de verbinding. Als je je nu niet veilig voelt, bel dan 113 (zelfmoordpreventie) of 112 (nood). Je hoeft dit niet alleen te dragen.',
+        advisoryEmotion: input.detectedEmotion,
+        advisoryConfidence: 0,
+        tokenUsage: undefined,
+        selectedModel,
+      };
+    }
+    throw error;
+  }
+
+  if (!openaiResponse.ok) {
+    const errorText = await openaiResponse.text();
+    console.error("[AI Chat] OpenAI API error:", openaiResponse.status, errorText);
+    if (crisisLevel >= 1) {
+      return {
+        response: 'Ik kan je op dit moment niet bereiken via de verbinding. Als je je nu niet veilig voelt, bel dan 113 (zelfmoordpreventie) of 112 (nood). Je hoeft dit niet alleen te dragen.',
+        advisoryEmotion: input.detectedEmotion,
+        advisoryConfidence: 0,
+        tokenUsage: undefined,
+        selectedModel,
+      };
+    }
+    throw new Error(`OpenAI API error: ${openaiResponse.status}`);
+  }
+
+  const data = await openaiResponse.json();
+  const responseText =
+    data.choices?.[0]?.message?.content?.trim() ??
+    "Ik ben er voor je. Er ging iets mis — probeer het opnieuw.";
+
+  const usage = data.usage;
+  const tokenUsage = usage ? {
+    promptTokens: usage.prompt_tokens ?? 0,
+    completionTokens: usage.completion_tokens ?? 0,
+    totalTokens: usage.total_tokens ?? 0,
+  } : undefined;
+
+  if (tokenUsage) {
+    console.log(`[CostControl] Tokens: ${tokenUsage.promptTokens} in + ${tokenUsage.completionTokens} out = ${tokenUsage.totalTokens} total`);
+    if (tokenUsage.promptTokens > 3500) {
+      console.warn(`[CostControl] WARNING: Prompt tokens (${tokenUsage.promptTokens}) exceed warning threshold (3500)`);
+    }
+    if (tokenUsage.promptTokens > 5000) {
+      console.warn(`[CostControl] CRITICAL: Prompt tokens (${tokenUsage.promptTokens}) exceed critical threshold (5000)`);
+    }
+  }
+
+  return {
+    response: responseText,
+    advisoryEmotion: input.detectedEmotion,
+    advisoryConfidence: 0.7,
+    tokenUsage,
+    selectedModel,
+  };
+}

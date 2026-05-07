@@ -1,8 +1,8 @@
 ================================================================================
 RECOFREE APP — AUDIT SNAPSHOT
-Generated: 2026-05-04
-Version: post-checkpoint 90422f7e (Round 2 Fixes: pipeline Step 0, zone precontemplation, crisis keywords, GPT crisis-fallback)
-Tests: 319 passing | TypeScript: 0 errors
+Generated: 2026-05-07
+Version: post-checkpoint 86137494 (Projection Layer + Round 3: English deflection markers)
+Tests: 347 passing | TypeScript: 0 errors
 ================================================================================
 
 
@@ -123,6 +123,9 @@ lib/engine/elias/decision-layer.ts
 lib/engine/elias/intervention-continuity.ts
   Intervention Continuity Layer — zone-linked therapeutic memory. Tracks InterventionState, zone evolution, effectiveness scoring, user response detection. MAX_TRAIL_LENGTH=5. buildInterventionContext() for GPT injection.
 
+lib/engine/elias/projection.ts
+  Elias Projection Layer — future-facing therapeutic memory. Signal detection (fear/hope/goal markers + VSP + zone patterns). Decay engine (per-session). GPT injection block builder. Shared types: ProjectionEntry, ProjectionCategory, ProjectionSource, ProjectionStrength.
+
 lib/engine/elias/state-logic.ts
   Elias state logic — ELIAS_MODEL_ROUTING_RISK_THRESHOLD, reflection trigger detection.
 
@@ -167,6 +170,9 @@ lib/engine/kim/relational-signals.ts
 
 lib/engine/kim/mock-responses.ts
   Kim mock response pool.
+
+lib/engine/kim/projection.ts
+  Kim Projection Layer — Eigen Regie-based signal detection. Reuses shared types from Elias projection. Kim-specific rules: low eigenRegie (<30) creates fear, consecutive high ER sessions reinforce hope.
 
 
 --- lib/engine/ (shared engine) ---
@@ -242,6 +248,9 @@ lib/rugzak/cost-control.ts
 
 lib/rugzak/userdat-promotion.ts
   UserDat promotion — promotes session patterns to persistent storage at session end.
+
+lib/rugzak/projection-layer.ts
+  Projection orchestrator (Step 5d) — routes to Elias or Kim projection detector. Deepening module (activates on E03/E04/E06 for Elias, eigenRegie>50 for Kim). Deflection detection blocks deepening. Builds injection block for GPT.
 
 lib/rugzak/chat-history-manager.ts
   Chat history manager — archiveSessionHistory(), session rotation.
@@ -445,6 +454,51 @@ Module: getSessionSummary
   Dependencies: none (pure function, NOT connected to persistence)
 
 
+--- PROJECTION LAYER ---
+
+Module: detectProjectionSignals
+  File: lib/engine/elias/projection.ts
+  Input: ProjectionSignalInput { message: string, distressScore: number, resilienceScore: number, vspLevel: string, zoneImproved: boolean, consecutiveGreenSessions: number }
+  Output: ProjectionSignalResult { newEntries: ProjectionEntry[], reinforcedEntryIds: string[], totalSignals: number }
+  Dependencies: none (self-contained, module-scoped state)
+
+Module: applyProjectionDecay
+  File: lib/engine/elias/projection.ts
+  Input: sessionTimestamp: string (ISO)
+  Output: DecayResult { decayedEntries: number, removedEntries: number }
+  Dependencies: none (operates on module-scoped state)
+
+Module: buildProjectionContext
+  File: lib/engine/elias/projection.ts
+  Input: none (reads module-scoped state)
+  Output: string | null (GPT injection block or null if no active entries)
+  Dependencies: none
+
+Module: detectKimProjectionSignals
+  File: lib/engine/kim/projection.ts
+  Input: KimProjectionSignalInput { message: string, eigenRegieScore: number | null, consecutiveHighRegieSessions: number, distressScore: number, resilienceScore: number, zoneImproved: boolean }
+  Output: KimProjectionSignalResult { newEntries: ProjectionEntry[], reinforcedEntryIds: string[], totalSignals: number }
+  Dependencies: elias/projection.ts (shared types + marker arrays)
+
+Module: applyKimProjectionDecay
+  File: lib/engine/kim/projection.ts
+  Input: sessionTimestamp: string (ISO)
+  Output: KimDecayResult { decayedEntries: number, removedEntries: number }
+  Dependencies: elias/projection.ts (shared constants)
+
+Module: runProjectionLayer
+  File: lib/rugzak/projection-layer.ts
+  Input: ProjectionLayerInput { userType, message, distressScore, resilienceScore, vspLevel?, eigenRegieScore?, consecutiveGreenSessions, consecutiveHighRegieSessions, zoneImproved, dominantModule }
+  Output: ProjectionResult { hasActiveEntries: boolean, injectionBlock: string | null, newEntriesCount: number, deepeningDirective: string | null }
+  Dependencies: elias/projection.ts, kim/projection.ts
+
+Module: checkDeflectionInResponse
+  File: lib/rugzak/projection-layer.ts
+  Input: userMessage: string
+  Output: boolean (true if deflection detected)
+  Dependencies: none (marks internal session state)
+
+
 --- REGULATION LAYER ---
 
 Module: applyRegulation
@@ -556,6 +610,17 @@ Steps 1-6c are PRE-GPT (local, deterministic). Steps 7-9 are POST-GPT (local, no
       - Context line extraction (from life story)
       - Relationship anchor detection
 
+--- PRE-GPT STEP 5d: Projection Signal Detection ---
+
+  - runProjectionLayer(input) → ProjectionResult
+  - Detects fear/hope/goal signals from message keywords + slider state
+  - Elias: VSP ROOD/PAARS creates relapse fear, consecutive green sessions reinforce hope
+  - Kim: eigenRegie < 30 creates fear, consecutive high ER sessions reinforce hope
+  - Builds injection block for GPT (active entries formatted as TOEKOMSTPERSPECTIEF)
+  - Deepening module: activates on E03/E04/E06 (Elias) or eigenRegie > 50 (Kim)
+  - Deepening blocked if user deflected earlier in session
+  - Result stored on context.projectionContext + context.projectionDeepening
+
 --- PRE-GPT STEP 6: Engine Decision + Routing + Intervention Continuity ---
 
   6a. Create engine decision:
@@ -611,13 +676,19 @@ Steps 1-6c are PRE-GPT (local, deterministic). Steps 7-9 are POST-GPT (local, no
   - Record token cost to session budget tracker
   - Return PipelineResult to caller
 
---- SESSION-END STEP 10: Ranked Promotion Evaluation ---
+--- SESSION-END STEP 10: Ranked Promotion Evaluation + Projection Decay ---
 
   - Triggered when user ends session (not per-message)
   - Evaluate all pattern signals with repeatCount >= PROMOTION_THRESHOLD (3)
   - Rank by score (not FCFS)
   - Apply top 5 promotions to user.dat
   - Cooldown enforcement: 24h per pattern
+  - PROJECTION DECAY (directly after promotion):
+    * applyProjectionDecay(sessionTimestamp) for Elias users
+    * applyKimProjectionDecay(sessionTimestamp) for Kim users
+    * Decay: -5 per session without signal (standard), -10 if 3+ sessions without signal (fast)
+    * Entries with decayScore <= 0 AND isUserConfirmed=false are removed
+    * Sessions-without-signal derived from lastReinforcedAt vs current timestamp
 
 
 ================================================================================
@@ -663,7 +734,7 @@ lib/engine/elias/intervention-continuity.ts (various lines)
   ACKNOWLEDGMENT_TOKENS: ['ok', 'ja', 'oke', 'oké', 'hmm', 'yes', 'yeah', 'nee', 'no', + dot variants]
   CRISIS_KEYWORDS: ['help', 'red', 'nood', 'sos', 'please', 'alsjeblieft', 'stop']  ← NEW (Round 2 Fix 3)
     Rule: short messages (≤5 chars) containing a crisis keyword → 'escalated' (not 'ignored')
-  DEFLECTION_MARKERS: ['maar eigenlijk', 'laat maar', 'maakt niet uit', 'iets anders', 'anyway', 'whatever', 'never mind', "doesn't matter", 'kan ik iets anders', 'wil ik het over iets anders', 'verander van onderwerp', 'ander onderwerp', 'change the subject', 'something else']
+  DEFLECTION_MARKERS (English, Round 3): ['but actually', 'never mind', 'forget it', 'something else', 'anyway', 'whatever', "doesn't matter", 'can we talk about something else', 'change the subject', 'different topic', 'move on', 'let it go', 'not important']
 
 
 --- PIPELINE ---
@@ -735,6 +806,27 @@ lib/rugzak/regulation-decay-engine.ts:
   TIME DECAY: -2 (GREEN/YELLOW), -3 (ORANGE), -4 (RED) per cycle without strong trigger
   RESPONSE DECAY: -5 to -15 based on zone score drop
   OVERSHOOT CORRECTION: up to -20 on sharp high-to-calm shift
+
+
+--- PROJECTION LAYER ---
+
+lib/engine/elias/projection.ts:
+  PROJECTION_ACTIVE_THRESHOLD = 20 (decayScore minimum to remain active)
+  PROJECTION_MAX_ACTIVE_ENTRIES = 5 (hard cap on entries sent to GPT)
+  PROJECTION_DECAY_PER_SESSION = -5 (standard decay per session without signal)
+  PROJECTION_DECAY_FAST = -10 (fast decay after 3+ sessions without signal)
+  PROJECTION_REINFORCE_ON_SIGNAL = 15 (decayScore boost on reinforcement)
+  PROJECTION_STRENGTHEN_ON_ZONE_IMPROVEMENT = 10 (hope boost on zone improvement)
+  PROJECTION_MAX_CONTENT_LENGTH = 200 (chars, entry content limit)
+  PROJECTION_PROMOTION_THRESHOLD = 2 (reinforcement count to mark as confirmed)
+  FEAR_MARKERS: ['bang', 'angst', 'vrees', 'afraid', 'fear', 'scared', 'worried', 'panic', 'terrified']
+  HOPE_MARKERS: ['hoop', 'wens', 'droom', 'hope', 'wish', 'dream', 'aspire', 'look forward', 'optimistic']
+  GOAL_MARKERS: ['wil', 'ga proberen', 'plan', 'neem voor', 'going to', 'will try', 'want to', 'goal', 'target', 'aim']
+
+lib/rugzak/projection-layer.ts:
+  ELIAS_DEEPENING_MODULES = ['E03', 'E04', 'E06'] (modules that activate deepening)
+  PROJECTION_DEEPENING_DIRECTIVE = 'Als het moment geschikt is, vraag voorzichtig naar hoop of angst voor de toekomst.'
+  Local deflection markers: ['weet niet', 'geen idee', 'laat maar', 'maakt niet uit', "don't know", 'no idea', 'whatever', "doesn't matter", 'liever niet', 'hoeft niet', 'skip', 'overslaan']
 
 
 --- CONVERSATION WINDOW ---
@@ -900,6 +992,13 @@ The system prompt is assembled in this exact order:
          - Effectiveness-based instruction (working/moderate/low)
          - User response instruction (deflected/escalated/ignored warnings)
          - Zone evolution trail (last 5 entries max)
+      f. PROJECTION BLOCK (if active entries exist)
+         - Header: TOEKOMSTPERSPECTIEF (Elias) or TOEKOMSTPERSPECTIEF (KIM)
+         - Active fears (category, content, strength, reinforcement count)
+         - Active hopes (category, content, strength, reinforcement count)
+         - Active goals (category, content, strength, reinforcement count)
+         - Instructions: acknowledge without pushing, use as context, never fabricate
+         - Deepening directive (if deepening module activated and not deflected)
 
   11. "Deze gedragsinstructies zijn ABSOLUUT."
 
@@ -948,6 +1047,7 @@ The system prompt is assembled in this exact order:
      c. Regulation instruction
      d. Engine directive
      e. Intervention continuity
+     f. Projection block (same as session start)
 
   8. "Deze gedragsinstructies zijn ABSOLUUT."
 
@@ -1061,6 +1161,8 @@ server/db.ts:92
 - Session summary storage (getSessionSummary → DB)
 - Multi-device sync (requires backend DB, currently local-only)
 - Trigger pattern decay across sessions (currently session-scoped only)
+- Projection persistence (currently in-memory only, needs AsyncStorage/DB for cross-session decay)
+- Deepening module expansion (E04 activation when goal-entry is active)
 
 
 ================================================================================

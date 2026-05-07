@@ -491,3 +491,8 @@
 - [x] Deepening module: activates on E03/E06 (Elias) or high Eigen Regie (Kim)
 - [x] Deflection detection: blocks deepening when user deflects
 - [x] All tests passing: 347 tests, 0 TS errors
+
+## Maintenance Tasks — Round 3
+- [x] Replace DEFLECTION_MARKERS in intervention-continuity.ts with English equivalents
+- [x] Update recofree_audit_snapshot.txt with Projection Layer modules, contracts, and constants
+- [x] Export server/ai-chat.ts as recofree_code_review_aichat.txt

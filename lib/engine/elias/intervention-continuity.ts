@@ -275,20 +275,20 @@ const ACKNOWLEDGMENT_TOKENS: ReadonlyArray<string> = Object.freeze([
 
 /** Exact deflection markers (case-insensitive substring match) */
 const DEFLECTION_MARKERS: ReadonlyArray<string> = Object.freeze([
-  'maar eigenlijk',
-  'laat maar',
-  'maakt niet uit',
-  'iets anders',
+  'but actually',
+  'never mind',
+  'forget it',
+  'something else',
   'anyway',
   'whatever',
-  'never mind',
   "doesn't matter",
-  'kan ik iets anders',
-  'wil ik het over iets anders',
-  'verander van onderwerp',
-  'ander onderwerp',
+  'never mind',
+  'can we talk about something else',
   'change the subject',
-  'something else',
+  'different topic',
+  'move on',
+  'let it go',
+  'not important',
 ]);
 
 /** Minimum message length to qualify as 'engaged' (substantive response) */

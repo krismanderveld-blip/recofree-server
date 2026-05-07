@@ -154,8 +154,8 @@ describe('detectUserResponse', () => {
   });
 
   it('Rule 3: returns deflected for explicit deflection markers', () => {
-    expect(detectUserResponse('maar eigenlijk wil ik het over iets anders hebben', stable, 'regulation')).toBe('deflected');
-    expect(detectUserResponse('laat maar, maakt niet uit voor mij', stable, 'regulation')).toBe('deflected');
+    expect(detectUserResponse('but actually I want to talk about something else', stable, 'regulation')).toBe('deflected');
+    expect(detectUserResponse('forget it, it doesn\'t matter to me anyway', stable, 'regulation')).toBe('deflected');
     expect(detectUserResponse('can we change the subject please', stable, 'regulation')).toBe('deflected');
   });
 
