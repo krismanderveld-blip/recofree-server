@@ -1,6 +1,7 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { Text, View, ScrollView, Pressable, Alert, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useRouter } from 'expo-router';
 import { ScreenContainer } from '@/components/screen-container';
 import { useUser } from '@/lib/user-context';
 import { useColors } from '@/hooks/use-colors';
@@ -16,9 +17,12 @@ const STAGE_LABELS: Record<string, string> = {
   maintenance: 'Maintenance',
 };
 
+const APP_VERSION = '1.0.0';
+
 export default function ProfileScreen() {
   const { state, getUserName, getBackpack, getUserDat, updateGuidanceDepth, getGuidanceDepth } = useUser();
   const colors = useColors();
+  const router = useRouter();
   const userName = getUserName();
   const backpack = getBackpack();
   const userDat = getUserDat();
@@ -30,6 +34,28 @@ export default function ProfileScreen() {
   const stageOfChange = userDat?.stageOfChange ?? 'contemplation';
   const totalSessions = userDat?.totalSessions ?? 0;
   const moodCheckIns = userDat?.moodHistory?.length ?? 0;
+
+  // 5-tap activation for debug screen
+  const tapCountRef = useRef(0);
+  const lastTapRef = useRef(0);
+
+  const handleVersionTap = useCallback(() => {
+    const now = Date.now();
+    if (now - lastTapRef.current > 2000) {
+      tapCountRef.current = 0;
+    }
+    lastTapRef.current = now;
+    tapCountRef.current += 1;
+    if (tapCountRef.current >= 5) {
+      tapCountRef.current = 0;
+      if (__DEV__) {
+        if (Platform.OS !== 'web') {
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        }
+        router.push('/dev/debug-log' as any);
+      }
+    }
+  }, [router]);
 
   const handleDepthChange = useCallback(async (depth: GuidanceDepth) => {
     await updateGuidanceDepth(depth);
@@ -175,6 +201,11 @@ export default function ProfileScreen() {
             Permanently deletes all data and restarts the intake process.
           </Text>
         </View>
+
+        {/* Version number — tap 5x to open debug screen */}
+        <Pressable onPress={handleVersionTap} style={{ marginTop: 24, alignItems: 'center' }}>
+          <Text className="text-xs text-muted">v{APP_VERSION}</Text>
+        </Pressable>
       </ScrollView>
     </ScreenContainer>
   );

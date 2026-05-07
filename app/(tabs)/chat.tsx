@@ -30,6 +30,7 @@ import { PreChatEigenRegie } from '@/components/prechat-eigen-regie';
 import type { VspLevel } from '@/lib/engine/elias/vsp';
 import { loadAndRestoreEliasProjection } from '@/lib/engine/elias/projection';
 import { loadAndRestoreKimProjection } from '@/lib/engine/kim/projection';
+import { logDebugEvent } from '@/lib/debug/session-logger';
 
 const BACKPACK_KEY = '@recofree_backpack';
 const USERDAT_KEY = '@recofree_userdat';
@@ -237,6 +238,13 @@ export default function ChatScreen() {
       // Only persist userDat (backpack is NEVER modified by the system)
       await AsyncStorage.setItem(USERDAT_KEY, JSON.stringify(result.updatedUserDat));
       setMessages(result.updatedUserDat.chatHistory);
+      // Debug: log session start
+      if (__DEV__) {
+        logDebugEvent('session_start', {
+          userType: state.userType ?? 'unknown',
+          sessionNumber: result.updatedUserDat.totalSessions,
+        });
+      }
     } catch (error) {
       console.error('Greeting error:', error);
     } finally {
@@ -282,6 +290,31 @@ export default function ChatScreen() {
       if (result.crisisLevel > 0) setCrisisLevel(result.crisisLevel);
       if (result.showEmergency) setShowEmergency(true);
       setMessages(result.updatedUserDat.chatHistory);
+      // Debug logging (only in __DEV__)
+      if (__DEV__ && result.messageLog) {
+        logDebugEvent('message_processed', {
+          messageIndex: result.messageLog.messageIndex,
+          zone: result.messageLog.preGPT.bufferZoneColor,
+          model: result.messageLog.gpt.selectedModel ?? 'unknown',
+          estimatedTokens: result.messageLog.gpt.tokenUsage?.totalTokens ?? 0,
+          dominantModule: result.messageLog.preGPT.dominantState.dominantModule,
+          riskScore: result.messageLog.preGPT.dominantState.riskScore,
+          activeBlocks: [
+            'identity',
+            result.messageLog.preGPT.regulation.hasIntervention ? 'regulation' : null,
+            result.dominantState?.dominantTrigger ? 'backpack' : null,
+            'projection',
+            'intervention_continuity',
+          ].filter(Boolean),
+        });
+        if (result.crisisLevel > 0) {
+          logDebugEvent('crisis_detected', {
+            level: result.crisisLevel,
+            riskScore: result.messageLog.preGPT.dominantState.riskScore,
+            source: result.messageLog.preGPT.dominantState.sourceLayer,
+          });
+        }
+      }
     } catch (error) {
       console.error('Pipeline error:', error);
       const errorMsg: ChatMessage = {
@@ -324,6 +357,13 @@ export default function ChatScreen() {
       };
       setMessages((prev) => [...prev, confirmationMsg]);
       setSessionPhase('completed');
+      // Debug: log session end
+      if (__DEV__) {
+        logDebugEvent('session_end', {
+          messageCount: result.updatedUserDat.chatHistory.length,
+          durationMs: 0, // not tracked currently
+        });
+      }
     } catch (error) {
       console.error('End session error:', error);
       const fallbackMsg: ChatMessage = {

@@ -533,3 +533,11 @@
 - [x] Wire loadAndRestoreKimProjection() into chat.tsx session start (Kim users)
 - [x] Add clearEliasProjection() utility to elias/projection.ts
 - [x] Add clearKimProjection() utility to kim/projection.ts
+
+## Debug Log Screen — On-device Engine Monitoring
+- [x] Create debug session logger utility (lib/debug/session-logger.ts)
+- [x] Create debug screen modal (app/dev/debug-log.tsx) with Live State + Session Log tabs
+- [x] Wire 5-tap activation on version number in profile.tsx (5 taps within 2s)
+- [x] Add utility buttons (Clear Elias/Kim Projection, Clear UserDat with confirmation)
+- [x] Add Copy Full Log button (via Share API, no new dependencies)
+- [x] Wire logDebugEvent calls into chat.tsx (session_start, message_processed, session_end, crisis_detected)
