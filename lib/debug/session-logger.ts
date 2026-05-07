@@ -40,7 +40,7 @@ let eventCounter = 0;
  * Log a debug event. Only works in __DEV__ mode.
  */
 export function logDebugEvent(type: DebugEventType, data: Record<string, unknown>): void {
-  if (!__DEV__) return;
+  if (typeof __DEV__ === 'undefined' || !__DEV__) return;
   eventCounter++;
   events.push({
     id: eventCounter,

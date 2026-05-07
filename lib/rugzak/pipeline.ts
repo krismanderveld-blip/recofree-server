@@ -54,9 +54,11 @@ import {
   updateBuffer,
   createBuffer,
   getBufferSnapshot,
+  scoreToZone,
   type BufferState,
   type BufferSnapshot,
 } from './short-term-memory-buffer';
+import { logDebugEvent } from '../debug/session-logger';
 import { selectDominantState, type DominantState } from './dominant-state-selector';
 import { applyDecay, applyDecayToBuffer, type DecayResult } from './regulation-decay-engine';
 import { analyzeBackpackRelevance, resetTriggerDecay } from './backpack-relevance-analyzer';
@@ -351,6 +353,7 @@ export async function processMessage(
     content: userMessage,
     timestamp: new Date().toISOString(),
   }];
+  const previousZoneColor = sessionBuffer?.currentZoneColor ?? null;
   sessionBuffer = updateBuffer(
     sessionBuffer,
     userMessage,
@@ -358,6 +361,15 @@ export async function processMessage(
     currentUserDat.currentMood || (ELIAS_DEFAULT_MOOD as any),
     backpack.userType,
   );
+
+  // ── Zone shift detection (debug logging) ──
+  if (previousZoneColor && previousZoneColor !== sessionBuffer.currentZoneColor) {
+    logDebugEvent('zone_shift', {
+      from: previousZoneColor,
+      to: sessionBuffer.currentZoneColor,
+      reason: `score ${sessionBuffer.previousZoneScore} → ${sessionBuffer.currentZoneScore}`,
+    });
+  }
 
   // ── PRE-GPT STEP 3: Apply RegulationDecayEngine zone decay ──
   // Zone decay runs AFTER buffer update (uses new zone score context).

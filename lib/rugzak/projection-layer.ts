@@ -24,6 +24,7 @@ import {
 } from '../engine/kim/projection';
 
 import type { UserType } from '../ai/types';
+import { logDebugEvent } from '../debug/session-logger';
 
 // ─── Output Types ───────────────────────────────────────────────
 
@@ -121,6 +122,24 @@ export function runProjectionLayer(input: ProjectionLayerInput): ProjectionResul
     };
     signalResult = detectKimProjectionSignals(signalInput);
     injectionBlock = buildKimProjectionContext();
+  }
+
+  // ── Debug logging for projection signals ──
+  for (const entry of signalResult.newEntries) {
+    logDebugEvent('projection_signal', {
+      action: 'created',
+      category: entry.category,
+      content: entry.content,
+      source: entry.source,
+      strength: entry.strength,
+    });
+  }
+  if (signalResult.reinforcedEntryIds.length > 0) {
+    logDebugEvent('projection_signal', {
+      action: 'reinforced',
+      count: signalResult.reinforcedEntryIds.length,
+      ids: signalResult.reinforcedEntryIds,
+    });
   }
 
   // Deepening module

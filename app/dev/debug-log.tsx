@@ -25,7 +25,7 @@ import { getDebugEvents, formatDebugLog, clearDebugEvents } from '@/lib/debug/se
 import { getProjectionSummary, clearEliasProjection } from '@/lib/engine/elias/projection';
 import { getKimProjectionSummary, clearKimProjection } from '@/lib/engine/kim/projection';
 import { getInterventionState } from '@/lib/engine/elias/intervention-continuity';
-import { getSessionCostSummary } from '@/lib/rugzak/cost-control';
+import { getSessionCostSummary, getRemainingBudget, isOverBudget } from '@/lib/rugzak/cost-control';
 
 type TabId = 'live' | 'log';
 
@@ -55,6 +55,14 @@ export default function DebugLogScreen() {
     const events = getDebugEvents();
     const lastMsgEvent = [...events].reverse().find((e) => e.type === 'message_processed');
 
+    const remaining = getRemainingBudget();
+    const overBudget = isOverBudget();
+    const budgetStatus = overBudget
+      ? 'CRITICAL'
+      : costSummary.totalTokens > 20000
+        ? 'WARNING'
+        : 'OK';
+
     return {
       userType: state.userType ?? 'unknown',
       guidanceDepth,
@@ -66,6 +74,8 @@ export default function DebugLogScreen() {
       intervention: interventionState,
       cost: costSummary,
       lastMessage: lastMsgEvent?.data ?? null,
+      remaining,
+      budgetStatus,
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [refreshKey, state.userType]);
@@ -230,6 +240,27 @@ export default function DebugLogScreen() {
               <Row label="Total Calls" value={liveState.cost.totalCalls} />
               <Row label="Total Tokens" value={liveState.cost.totalTokens} />
               <Row label="Peak Call" value={liveState.cost.peakCallTokens} />
+            </Section>
+
+            <Section title="Token Budget">
+              <Row
+                label="Last Call"
+                value={
+                  liveState.cost.totalCalls > 0
+                    ? `${liveState.cost.totalPromptTokens > 0 ? Math.round(liveState.cost.totalPromptTokens / liveState.cost.totalCalls) : 0} in + ${liveState.cost.totalCompletionTokens > 0 ? Math.round(liveState.cost.totalCompletionTokens / liveState.cost.totalCalls) : 0} out = ${liveState.cost.averageTokensPerCall} avg`
+                    : '—'
+                }
+              />
+              <Row label="Session Total" value={`${liveState.cost.totalTokens} / 25000`} />
+              <Row label="Remaining" value={liveState.remaining} />
+              <Row label="Warning Threshold" value="3500 / Critical: 5000" />
+              <Row
+                label="Status"
+                value={liveState.budgetStatus}
+              />
+              {liveState.cost.warnings.length > 0 && (
+                <Row label="Warnings" value={liveState.cost.warnings.join('; ')} />
+              )}
             </Section>
 
             <Section title="Buffer Snapshot">

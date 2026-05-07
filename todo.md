@@ -541,3 +541,8 @@
 - [x] Add utility buttons (Clear Elias/Kim Projection, Clear UserDat with confirmation)
 - [x] Add Copy Full Log button (via Share API, no new dependencies)
 - [x] Wire logDebugEvent calls into chat.tsx (session_start, message_processed, session_end, crisis_detected)
+
+## Logging Improvements — Zone Shift, Projection Signal, Token Budget
+- [x] Add zone_shift event logging in pipeline.ts when bufferZoneColor changes between messages
+- [x] Add projection_signal event logging in projection-layer.ts when fear/hope/goal is created or reinforced
+- [x] Add token budget indicator to Live State tab in debug screen (remaining budget, status OK/WARNING/CRITICAL)
