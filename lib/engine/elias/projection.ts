@@ -1,5 +1,5 @@
 /**
- * Elias Projection Layer — TOEKOMSTLAAG
+ * Elias Projection Layer — FUTURE LAYER
  *
  * Captures how the user sees their own future: fears, hopes, goals.
  * This layer gives RecoFree a third temporal dimension (future-facing).
@@ -79,20 +79,20 @@ export const PROJECTION_PROMOTION_THRESHOLD = 2;
 // ─── Keyword Maps ───────────────────────────────────────────────
 
 export const FEAR_MARKERS = [
-  'bang', 'angst', 'vrees', 'stel dat', 'wat als', 'scared',
+  'afraid', 'anxiety', 'fear', 'suppose that', 'what if', 'scared',
   'afraid', 'terrified', 'worried', 'fear', 'dread',
-  'nooit beter', 'gaat fout', 'mislukt',
+  'never better', 'goes wrong', 'fails',
 ];
 
 export const HOPE_MARKERS = [
-  'hoop', 'wil graag', 'droom', 'als het lukt', 'ooit',
-  'beter worden', 'hope', 'wish', 'dream', 'someday',
+  'hope', 'would like', 'dream', 'if it works', 'someday',
+  'get better', 'hope', 'wish', 'dream', 'someday',
   'maybe one day', 'if things change',
 ];
 
 export const GOAL_MARKERS = [
-  'wil', 'ga proberen', 'plan', 'neem voor', 'going to',
-  'will try', 'want to', 'goal', 'target', 'aim',
+  'want to', 'going to', 'plan', 'will try', 'goal',
+  'target', 'aim', 'intend', 'commit', 'decide',
 ];
 
 // ─── Module State (per-session, resets at session start) ────────
@@ -159,14 +159,14 @@ export function detectProjectionSignals(input: ProjectionSignalInput): Projectio
 
   // ── VSP Signals ──
   if (input.vspLevel === 'ROOD' || input.vspLevel === 'PAARS') {
-    const existingFear = findMatchingEntry('fear', ['terugval', 'crisis', 'relapse']);
+    const existingFear = findMatchingEntry('fear', ['relapse', 'crisis', 'fall back']);
     if (existingFear) {
       reinforceEntry(existingFear.id);
       reinforcedIds.push(existingFear.id);
     } else {
       const entry = createEntry({
         category: 'fear',
-        content: 'Angst voor terugval of crisis',
+        content: 'Fear of relapse or crisis',
         source: 'slider_signal',
         strength: 'strong',
         decayScore: 80,
@@ -383,21 +383,21 @@ export function buildProjectionContext(): string | null {
   const hopes = activeEntries.filter(e => e.category === 'hope');
   const goals = activeEntries.filter(e => e.category === 'goal');
 
-  let block = 'TOEKOMSTPERSPECTIEF:\n';
+  let block = 'FUTURE PERSPECTIVE:\n';
 
   if (fears.length > 0) {
-    block += fears.map(f => `- Actieve angst: ${f.content} (sterkte: ${f.strength})`).join('\n') + '\n';
+    block += fears.map(f => `- Active fear: ${f.content} (strength: ${f.strength})`).join('\n') + '\n';
   }
   if (hopes.length > 0) {
-    block += hopes.map(h => `- Actieve hoop: ${h.content} (sterkte: ${h.strength})`).join('\n') + '\n';
+    block += hopes.map(h => `- Active hope: ${h.content} (strength: ${h.strength})`).join('\n') + '\n';
   }
   if (goals.length > 0) {
-    block += goals.map(g => `- Actief doel: ${g.content} (sterkte: ${g.strength})`).join('\n') + '\n';
+    block += goals.map(g => `- Active goal: ${g.content} (strength: ${g.strength})`).join('\n') + '\n';
   }
 
-  block += '- Instructie: Gebruik dit als achtergrondcontext. Niet benoemen tenzij relevant.\n';
-  block += '  Als de user zelf naar toekomst verwijst: verdiep voorzichtig.\n';
-  block += '  Als de user deflecteert: respecteer dit volledig, ga niet forceren.';
+  block += '- Instruction: Use this as background context. Do not mention unless relevant.\n';
+  block += '  If the user themselves refers to the future: deepen carefully.\n';
+  block += '  If the user deflects: respect this fully, do not force.';
 
   return block;
 }
@@ -542,9 +542,9 @@ function extractProjectionContent(message: string, keyword: string, category: Pr
   }
   // Fallback: use the keyword itself with category prefix
   const prefixes: Record<ProjectionCategory, string> = {
-    fear: 'Angst gerelateerd aan: ',
-    hope: 'Hoop gerelateerd aan: ',
-    goal: 'Doel gerelateerd aan: ',
+    fear: 'Fear related to: ',
+    hope: 'Hope related to: ',
+    goal: 'Goal related to: ',
   };
   return `${prefixes[category]}${keyword}`;
 }

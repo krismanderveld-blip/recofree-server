@@ -40,7 +40,7 @@ export type ZoneLevel = 'ROOD' | 'ORANJE' | 'GEEL' | 'LICHTGROEN' | 'GROEN';
 export interface ZoneResult<T> {
   /** The computed zone level. */
   readonly level: ZoneLevel;
-  /** Human-readable label for this zone (Dutch). */
+  /** Human-readable label for this zone. */
   readonly label: string;
   /** Typed behavioral impact for this zone. */
   readonly impact: T;

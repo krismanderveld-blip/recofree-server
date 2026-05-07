@@ -24,11 +24,11 @@ export const ELIAS_DEFAULT_STAGE = 'contemplation' as const;
  * Source: ai-chat.ts buildSelectiveRelevanceBlock() line 576
  */
 export const ELIAS_STAGE_DESCRIPTIONS_SHORT: Record<string, string> = {
-  precontemplation: 'Nog niet klaar voor verandering — niet pushen',
-  contemplation: 'Overweegt verandering — ambivalentie verkennen',
-  preparation: 'Bereidt zich voor — concrete stappen helpen',
-  action: 'Actief bezig — successen bevestigen',
-  maintenance: 'Houdt vol — terugvalpreventie',
+  precontemplation: 'Not yet ready for change — do not push',
+  contemplation: 'Considering change — explore ambivalence',
+  preparation: 'Preparing for change — help with concrete steps',
+  action: 'Actively changing — affirm successes',
+  maintenance: 'Sustaining change — relapse prevention',
 };
 
 // ─── STAGE DESCRIPTIONS (Session Start / Full Relevance) ───────
@@ -40,9 +40,9 @@ export const ELIAS_STAGE_DESCRIPTIONS_SHORT: Record<string, string> = {
  * Source: ai-chat.ts buildFullRelevanceBlock() line 645
  */
 export const ELIAS_STAGE_DESCRIPTIONS_FULL: Record<string, string> = {
-  precontemplation: 'Nog niet klaar voor verandering — bewustwording stimuleren, niet pushen',
-  contemplation: 'Overweegt verandering — ambivalentie verkennen, motivatie ondersteunen',
-  preparation: 'Bereidt zich voor op verandering — concrete stappen helpen plannen',
-  action: 'Actief bezig met verandering — successen bevestigen, obstakels bespreken',
-  maintenance: 'Houdt verandering vol — terugvalpreventie, groei bevestigen',
+  precontemplation: 'Not yet ready for change — stimulate awareness, do not push',
+  contemplation: 'Considering change — explore ambivalence, support motivation',
+  preparation: 'Preparing for change — help plan concrete steps',
+  action: 'Actively changing — affirm successes, discuss obstacles',
+  maintenance: 'Sustaining change — relapse prevention, affirm growth',
 };

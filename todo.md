@@ -496,3 +496,24 @@
 - [x] Replace DEFLECTION_MARKERS in intervention-continuity.ts with English equivalents
 - [x] Update recofree_audit_snapshot.txt with Projection Layer modules, contracts, and constants
 - [x] Export server/ai-chat.ts as recofree_code_review_aichat.txt
+
+## Maintenance Tasks — Round 4
+- [ ] Fix 1: projection-layer.ts — replace all NL/EN mixed markers with English only
+- [ ] Fix 2: server/ai-chat.ts — add single-user comment above sessionCache
+- [ ] Fix 3: server/ai-chat.ts — translate buildSystemPrompt() fully to English
+
+## Full English Migration (codebase-wide)
+- [x] Translate CRISIS_KEYWORDS in intervention-continuity.ts from Dutch to English
+- [x] Translate ACKNOWLEDGMENT_TOKENS in intervention-continuity.ts from Dutch to English
+- [x] Translate REGULATION_MARKERS in regulation-layer.ts from Dutch to English
+- [x] Translate MICRO_INTERVENTIONS in regulation-layer.ts from Dutch to English
+- [x] Translate SOFTENED_INTERVENTIONS in regulation-layer.ts from Dutch to English
+- [x] Translate GPT_INSTRUCTIONS in regulation-layer.ts from Dutch to English
+- [x] Translate SOFTENED_GPT_INSTRUCTIONS in regulation-layer.ts from Dutch to English
+- [x] Translate passive response messages in pipeline.ts from Dutch to English
+- [x] Translate Dutch regex patterns in server/ai-chat.ts to English (asksAboutPerson, patternRelevant, woundRelevant)
+- [x] Translate Dutch comments in server/ai-chat.ts to English
+- [x] Fix IGNORED_MAX_LENGTH from 5 to 4 (accommodates English ack tokens: ok, yes, no, yep, nope, sure, yeah, hmm)
+- [x] Fix crisis keyword detection: exact match + short-message substring (prevents false positives in longer messages)
+- [x] Update all test files to use English assertions (regulation-layer.test.ts, intervention-continuity.test.ts, targeted-fixes-round2.test.ts, vsp-resolution.test.ts)
+- [x] Verify: 0 TypeScript errors, 347 tests passing (all green)

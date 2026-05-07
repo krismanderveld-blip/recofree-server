@@ -54,13 +54,13 @@ const MAX_OUTPUT_TOKENS = 500;
 // ─── Token Estimator (local, no API call) ────────────────────────
 
 /**
- * Rough token estimation: ~4 chars per token for English/Dutch text.
+ * Rough token estimation: ~4 chars per token for English text.
  * This is an approximation — actual tokenization varies.
  * Used for pre-call budget checks and logging.
  */
 export function estimateTokens(text: string): number {
   if (!text) return 0;
-  // Average: 1 token ≈ 4 characters for mixed English/Dutch
+  // Average: 1 token ≈ 4 characters for English text
   return Math.ceil(text.length / 4);
 }
 

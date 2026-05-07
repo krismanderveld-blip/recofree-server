@@ -130,33 +130,33 @@ function detectIntentFromStructure(text: string): LiveIntent | null {
   if (/\b(want to die|kill myself|end it all|suicide|can'?t go on|don'?t want to (live|be here|exist))\b/.test(lower)) {
     return 'crisis';
   }
-  if (/\b(wil dood|maak me dood|zelfmoord|kan niet meer|wil er niet meer zijn)\b/.test(lower)) {
+  if (/\b(want to die|kill me|end my life|can'?t take it anymore|don'?t want to exist)\b/.test(lower)) {
     return 'crisis';
   }
 
   // Imperatives / action requests
-  if (/^(help|geef|zeg|vertel|doe|leer|show|give|tell|teach|do)\b/.test(lower)) {
+  if (/^(help|show|give|tell|teach|do)\b/.test(lower)) {
     return 'seeking_action';
   }
-  if (/\b(wat (moet|kan) ik|what (should|can) i|how (do|can) i)\b/.test(lower)) {
+  if (/\b(what (should|can) i|how (do|can) i)\b/.test(lower)) {
     return 'seeking_action';
   }
 
   // Questions seeking reassurance
-  if (/\b(is (dat|dit|het) normaal|is (that|this|it) normal|ben ik (gek|slecht)|am i (crazy|bad|wrong))\b/.test(lower)) {
+  if (/\b(is (that|this|it) normal|am i (crazy|bad|wrong))\b/.test(lower)) {
     return 'seeking_reassurance';
   }
-  if (/\b(vind je|denk je|think you|do you think)\b/.test(lower)) {
+  if (/\b(think you|do you think)\b/.test(lower)) {
     return 'seeking_reassurance';
   }
 
   // Reflective questions (why, what if)
-  if (/^(waarom|why|hoe komt|how come|wat als|what if)\b/.test(lower)) {
+  if (/^(why|how come|what if)\b/.test(lower)) {
     return 'reflecting';
   }
 
   // Testing / challenging
-  if (/\b(maar jij bent|but you'?re|je bent maar|you'?re just|snap je|do you (even|really))\b/.test(lower)) {
+  if (/\b(but you'?re|you'?re just|do you (even|really))\b/.test(lower)) {
     return 'testing';
   }
 
@@ -288,14 +288,14 @@ function computeTextIntensity(text: string): number {
   const capsWords = (text.match(/\b[A-Z]{3,}\b/g) || []).length;
   score += Math.min(capsWords * 8, 20);
 
-  // Emotional intensity keywords (Dutch + English)
-  const highIntensity = /\b(niet meer|kan niet|wil niet|haat|bang|dood|pijn|hurt|hate|scared|pain|can'?t|won'?t|never|always|hopeless|worthless|desperate)\b/;
+  // Emotional intensity keywords
+  const highIntensity = /\b(no more|can'?t|won'?t|hate|scared|dead|pain|hurt|never|always|hopeless|worthless|desperate)\b/;
   if (highIntensity.test(lower)) score += 20;
 
-  const medIntensity = /\b(moeilijk|zwaar|lastig|verdrietig|boos|frustrated|angry|sad|tired|exhausted|overwhelmed|stressed)\b/;
+  const medIntensity = /\b(difficult|hard|tough|sad|angry|frustrated|tired|exhausted|overwhelmed|stressed)\b/;
   if (medIntensity.test(lower)) score += 10;
 
-  const lowIntensity = /\b(goed|beter|rustig|ok|fine|better|calm|okay|good)\b/;
+  const lowIntensity = /\b(good|better|calm|ok|fine|okay|peaceful|relaxed)\b/;
   if (lowIntensity.test(lower)) score -= 10;
 
   // Repetition of words (same word 3+ times)
@@ -316,26 +316,26 @@ function detectEmotionFromText(text: string): string {
   const lower = text.toLowerCase();
 
   // Crisis emotions
-  if (/\b(wil dood|suicide|kill myself|can'?t go on|end it)\b/.test(lower)) return 'crisis';
-  if (/\b(numb|leeg|empty|niets voelen|don'?t feel)\b/.test(lower)) return 'dissociated';
+  if (/\b(want to die|suicide|kill myself|can'?t go on|end it)\b/.test(lower)) return 'crisis';
+  if (/\b(numb|empty|don'?t feel|feel nothing)\b/.test(lower)) return 'dissociated';
 
   // High intensity
-  if (/\b(boos|woedend|angry|furious|rage|kwaad)\b/.test(lower)) return 'angry';
-  if (/\b(bang|angst|scared|afraid|terrified|paniek)\b/.test(lower)) return 'fearful';
-  if (/\b(wanhoop|hopeless|desperate|hopeloos)\b/.test(lower)) return 'hopeless';
+  if (/\b(angry|furious|rage|enraged)\b/.test(lower)) return 'angry';
+  if (/\b(scared|afraid|terrified|panic|anxious|fear)\b/.test(lower)) return 'fearful';
+  if (/\b(hopeless|desperate|despair)\b/.test(lower)) return 'hopeless';
 
   // Medium intensity
-  if (/\b(verdrietig|sad|huilen|crying|tranen|tears)\b/.test(lower)) return 'sad';
-  if (/\b(eenzaam|lonely|alleen|alone|isolated)\b/.test(lower)) return 'lonely';
-  if (/\b(schuld|guilt|schaam|shame|ashamed)\b/.test(lower)) return 'guilty';
-  if (/\b(moe|tired|uitgeput|exhausted|op)\b/.test(lower)) return 'exhausted';
-  if (/\b(gestrest|stressed|overweldigd|overwhelmed)\b/.test(lower)) return 'overwhelmed';
-  if (/\b(craving|trek|zucht|urge|verlangen)\b/.test(lower)) return 'craving';
-  if (/\b(gefrustreerd|frustrated|irritated|geïrriteerd)\b/.test(lower)) return 'frustrated';
+  if (/\b(sad|crying|tears|grief)\b/.test(lower)) return 'sad';
+  if (/\b(lonely|alone|isolated)\b/.test(lower)) return 'lonely';
+  if (/\b(guilt|shame|ashamed)\b/.test(lower)) return 'guilty';
+  if (/\b(tired|exhausted|drained|burnt out)\b/.test(lower)) return 'exhausted';
+  if (/\b(stressed|overwhelmed)\b/.test(lower)) return 'overwhelmed';
+  if (/\b(craving|urge|longing|desire)\b/.test(lower)) return 'craving';
+  if (/\b(frustrated|irritated|annoyed)\b/.test(lower)) return 'frustrated';
 
   // Positive
-  if (/\b(blij|happy|trots|proud|dankbaar|grateful|hopeful|hoopvol)\b/.test(lower)) return 'hopeful';
-  if (/\b(beter|better|rustig|calm|goed|good|ok)\b/.test(lower)) return 'calm';
+  if (/\b(happy|proud|grateful|hopeful)\b/.test(lower)) return 'hopeful';
+  if (/\b(better|calm|good|ok|peaceful)\b/.test(lower)) return 'calm';
 
   return 'neutral';
 }
@@ -346,13 +346,13 @@ function detectTriggerGuess(text: string, userType: UserType): string {
   const lower = text.toLowerCase();
 
   if (userType === 'elias') {
-    if (/\b(craving|trek|zucht|urge|verlangen|wil (drinken|gebruiken|roken))\b/.test(lower)) return 'craving';
-    if (/\b(alleen|lonely|eenzaam|niemand|alone|isolated)\b/.test(lower)) return 'isolation';
-    if (/\b(ruzie|conflict|fight|argument|botsing)\b/.test(lower)) return 'conflict';
-    if (/\b(verveel|bored|leegte|emptiness|niets te doen)\b/.test(lower)) return 'boredom';
-    if (/\b(stress|druk|pressure|deadline|werk|work)\b/.test(lower)) return 'stress';
-    if (/\b(slapen|sleep|insomnia|nachtmerrie|nightmare)\b/.test(lower)) return 'sleep_disruption';
-    if (/\b(herinnering|memory|flashback|vroeger|past)\b/.test(lower)) return 'trauma_memory';
+    if (/\b(craving|urge|longing|want to (drink|use|smoke))\b/.test(lower)) return 'craving';
+    if (/\b(lonely|alone|isolated|no one)\b/.test(lower)) return 'isolation';
+    if (/\b(conflict|fight|argument|clash)\b/.test(lower)) return 'conflict';
+    if (/\b(bored|boredom|emptiness|nothing to do)\b/.test(lower)) return 'boredom';
+    if (/\b(stress|pressure|deadline|work)\b/.test(lower)) return 'stress';
+    if (/\b(sleep|insomnia|nightmare)\b/.test(lower)) return 'sleep_disruption';
+    if (/\b(memory|flashback|past|trauma)\b/.test(lower)) return 'trauma_memory';
   } else {
     // Kim — delegated to kimEngine relational-signals
     return detectKimTrigger(lower);
@@ -366,24 +366,19 @@ function detectTriggerGuess(text: string, userType: UserType): string {
 function detectLiveAnchor(text: string): string {
   const lower = text.toLowerCase();
 
-  // Dutch relationship words
-  const dutchRoles = /\b(mijn\s+)(man|vrouw|zoon|dochter|moeder|vader|broer|zus|partner|vriend|vriendin|kind|oma|opa|ex)\b/;
-  const dutchMatch = lower.match(dutchRoles);
-  if (dutchMatch) return dutchMatch[2];
-
-  // English relationship words
-  const englishRoles = /\b(my\s+)(husband|wife|son|daughter|mother|father|brother|sister|partner|friend|child|grandma|grandpa|ex)\b/;
-  const englishMatch = lower.match(englishRoles);
-  if (englishMatch) return englishMatch[2];
+  // Relationship words
+  const roles = /\b(my\s+)(husband|wife|son|daughter|mother|father|brother|sister|partner|friend|child|grandma|grandpa|ex)\b/;
+  const roleMatch = lower.match(roles);
+  if (roleMatch) return roleMatch[2];
 
   // Proper names (capitalized words that aren't sentence starters)
-  const namePattern = /(?:^|\.\s+)?(?:(?:mijn|my|zijn|haar|his|her)\s+)?([A-Z][a-z]{2,})\b/g;
+  const namePattern = /(?:^|\.\s+)?(?:(?:my|his|her)\s+)?([A-Z][a-z]{2,})\b/g;
   const names: string[] = [];
   let match;
   while ((match = namePattern.exec(text)) !== null) {
     const name = match[1];
     // Filter common non-name words
-    if (!/^(The|This|That|What|When|Where|How|Why|But|And|Also|Just|Still|Even|Het|Dit|Dat|Wat|Waar|Hoe|Maar|Ook|Nog)$/.test(name)) {
+    if (!/^(The|This|That|What|When|Where|How|Why|But|And|Also|Just|Still|Even)$/.test(name)) {
       names.push(name);
     }
   }
@@ -404,18 +399,18 @@ function updateTemporaryRepeats(
   // Extract significant words/phrases to track
   const significantPatterns = [
     // Emotional themes
-    { pattern: /\b(alleen|lonely|eenzaam|alone)\b/g, signal: 'isolation' },
-    { pattern: /\b(bang|scared|angst|afraid)\b/g, signal: 'fear' },
-    { pattern: /\b(boos|angry|kwaad|furious)\b/g, signal: 'anger' },
-    { pattern: /\b(schuld|guilt|schaam|shame)\b/g, signal: 'guilt_shame' },
-    { pattern: /\b(hopeloos|hopeless|zinloos|pointless)\b/g, signal: 'hopelessness' },
-    { pattern: /\b(moe|tired|uitgeput|exhausted)\b/g, signal: 'exhaustion' },
-    { pattern: /\b(craving|trek|zucht|urge)\b/g, signal: 'craving' },
-    { pattern: /\b(machteloos|powerless|hulpeloos|helpless)\b/g, signal: 'powerlessness' },
-    { pattern: /\b(weer|again|altijd|always|elke keer|every time)\b/g, signal: 'recurrence' },
-    { pattern: /\b(grens|boundary|te veel|too much)\b/g, signal: 'boundary_strain' },
-    { pattern: /\b(niemand|no one|nobody|begrijpt|understands)\b/g, signal: 'misunderstood' },
-    { pattern: /\b(kan niet|can'?t|lukt niet|impossible)\b/g, signal: 'inability' },
+    { pattern: /\b(lonely|alone|isolated)\b/g, signal: 'isolation' },
+    { pattern: /\b(scared|afraid|anxious|fear)\b/g, signal: 'fear' },
+    { pattern: /\b(angry|furious|rage)\b/g, signal: 'anger' },
+    { pattern: /\b(guilt|shame|ashamed)\b/g, signal: 'guilt_shame' },
+    { pattern: /\b(hopeless|pointless|meaningless)\b/g, signal: 'hopelessness' },
+    { pattern: /\b(tired|exhausted|drained)\b/g, signal: 'exhaustion' },
+    { pattern: /\b(craving|urge|longing)\b/g, signal: 'craving' },
+    { pattern: /\b(powerless|helpless)\b/g, signal: 'powerlessness' },
+    { pattern: /\b(again|always|every time)\b/g, signal: 'recurrence' },
+    { pattern: /\b(boundary|too much)\b/g, signal: 'boundary_strain' },
+    { pattern: /\b(no one|nobody|understands)\b/g, signal: 'misunderstood' },
+    { pattern: /\b(can'?t|impossible|unable)\b/g, signal: 'inability' },
   ];
 
   const updated = [...existing];

@@ -388,7 +388,7 @@ export class OpenAIProvider implements AIProvider {
       }
 
       return {
-        response: result?.response ?? "Er ging iets mis. Ik ben er nog \u2014 probeer het opnieuw.",
+        response: result?.response ?? "Something went wrong. I'm still here \u2014 please try again.",
         advisoryEmotion: result?.advisoryEmotion,
         advisoryConfidence: result?.advisoryConfidence,
         tokenUsage: result?.tokenUsage,
@@ -396,7 +396,7 @@ export class OpenAIProvider implements AIProvider {
     } catch (error) {
       console.error('[OpenAIProvider] Error after retries:', error);
 
-      // Provide a more helpful error message in Dutch
+      // Provide a helpful error message for the user
       const errorMessage = (error as Error)?.message ?? '';
       const isNetworkError = errorMessage.includes('Network') ||
         errorMessage.includes('fetch') ||
@@ -407,7 +407,7 @@ export class OpenAIProvider implements AIProvider {
 
       if (isNetworkError) {
         return {
-          response: "De verbinding met de server is even onderbroken. Dit kan gebeuren als de app lang niet is gebruikt. Probeer het over een paar seconden opnieuw \u2014 ik ben er nog.",
+          response: "The connection to the server was briefly interrupted. This can happen when the app hasn't been used for a while. Please try again in a few seconds \u2014 I'm still here.",
           advisoryEmotion: undefined,
           advisoryConfidence: undefined,
           tokenUsage: undefined,
@@ -415,7 +415,7 @@ export class OpenAIProvider implements AIProvider {
       }
 
       return {
-        response: "Er ging iets mis met de verbinding. Ik ben er nog \u2014 probeer het opnieuw.",
+        response: "Something went wrong with the connection. I'm still here \u2014 please try again.",
         advisoryEmotion: undefined,
         advisoryConfidence: undefined,
         tokenUsage: undefined,

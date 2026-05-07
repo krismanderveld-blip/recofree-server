@@ -1,5 +1,5 @@
 /**
- * Kim Projection Layer — TOEKOMSTLAAG (Kim variant)
+ * Kim Projection Layer — FUTURE LAYER (Kim variant)
  *
  * Same architecture as Elias projection, but signals are derived from
  * Eigen Regie instead of VSP.
@@ -112,14 +112,14 @@ export function detectKimProjectionSignals(input: KimProjectionSignalInput): Kim
 
   // ── Eigen Regie Signals ──
   if (input.eigenRegieScore !== null && input.eigenRegieScore < 30) {
-    const existingFear = findMatchingEntry('fear', ['controle', 'autonomie', 'control', 'autonomy']);
+    const existingFear = findMatchingEntry('fear', ['control', 'autonomy', 'losing control']);
     if (existingFear) {
       reinforceEntry(existingFear.id);
       reinforcedIds.push(existingFear.id);
     } else {
       const entry = createEntry({
         category: 'fear',
-        content: 'Angst om controle te verliezen',
+        content: 'Fear of losing control',
         source: 'slider_signal',
         strength: 'strong',
         decayScore: 80,
@@ -327,21 +327,21 @@ export function buildKimProjectionContext(): string | null {
   const hopes = activeEntries.filter(e => e.category === 'hope');
   const goals = activeEntries.filter(e => e.category === 'goal');
 
-  let block = 'TOEKOMSTPERSPECTIEF (KIM):\n';
+  let block = 'FUTURE PERSPECTIVE (KIM):\n';
 
   if (fears.length > 0) {
-    block += fears.map(f => `- Actieve angst: ${f.content} (sterkte: ${f.strength})`).join('\n') + '\n';
+    block += fears.map(f => `- Active fear: ${f.content} (strength: ${f.strength})`).join('\n') + '\n';
   }
   if (hopes.length > 0) {
-    block += hopes.map(h => `- Actieve hoop: ${h.content} (sterkte: ${h.strength})`).join('\n') + '\n';
+    block += hopes.map(h => `- Active hope: ${h.content} (strength: ${h.strength})`).join('\n') + '\n';
   }
   if (goals.length > 0) {
-    block += goals.map(g => `- Actief doel: ${g.content} (sterkte: ${g.strength})`).join('\n') + '\n';
+    block += goals.map(g => `- Active goal: ${g.content} (strength: ${g.strength})`).join('\n') + '\n';
   }
 
-  block += '- Instructie: Gebruik dit als achtergrondcontext. Niet benoemen tenzij relevant.\n';
-  block += '  Als de user zelf naar toekomst verwijst: verdiep voorzichtig.\n';
-  block += '  Als de user deflecteert: respecteer dit volledig, ga niet forceren.';
+  block += '- Instruction: Use this as background context. Do not mention unless relevant.\n';
+  block += '  If the user themselves refers to the future: deepen carefully.\n';
+  block += '  If the user deflects: respect this fully, do not force.';
 
   return block;
 }
@@ -478,9 +478,9 @@ function extractProjectionContent(message: string, keyword: string, category: Pr
     return relevantSentence.trim().slice(0, PROJECTION_MAX_CONTENT_LENGTH);
   }
   const prefixes: Record<ProjectionCategory, string> = {
-    fear: 'Angst gerelateerd aan: ',
-    hope: 'Hoop gerelateerd aan: ',
-    goal: 'Doel gerelateerd aan: ',
+    fear: 'Fear related to: ',
+    hope: 'Hope related to: ',
+    goal: 'Goal related to: ',
   };
   return `${prefixes[category]}${keyword}`;
 }

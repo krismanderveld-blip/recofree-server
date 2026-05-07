@@ -143,8 +143,8 @@ describe('Fix 3 — crisis keywords in short messages', () => {
     expect(result).toBe('escalated');
   });
 
-  it('"nood" (4 chars) → escalated, not ignored', () => {
-    const result = detectUserResponse('nood', stableShift, 'regulation');
+  it('"crisis" (6 chars) → escalated, not ignored', () => {
+    const result = detectUserResponse('crisis', stableShift, 'regulation');
     expect(result).toBe('escalated');
   });
 
@@ -163,8 +163,8 @@ describe('Fix 3 — crisis keywords in short messages', () => {
     expect(result).toBe('ignored');
   });
 
-  it('"ja" (2 chars, acknowledgment) → engaged', () => {
-    const result = detectUserResponse('ja', stableShift, 'regulation');
+  it('"ok" (2 chars, acknowledgment) → engaged', () => {
+    const result = detectUserResponse('ok', stableShift, 'regulation');
     expect(result).toBe('engaged');
   });
 });
@@ -175,7 +175,7 @@ describe('Fix 3 — crisis keywords in short messages', () => {
 // ═══════════════════════════════════════════════════════════════
 
 describe('Fix 4 — crisis fallback message', () => {
-  const CRISIS_FALLBACK = 'Ik kan je op dit moment niet bereiken via de verbinding. Als je je nu niet veilig voelt, bel dan 113 (zelfmoordpreventie) of 112 (nood). Je hoeft dit niet alleen te dragen.';
+  const CRISIS_FALLBACK = 'I cannot reach you through the connection right now. If you do not feel safe, call 113 (suicide prevention) or 112 (emergency). You do not have to carry this alone.';
 
   it('crisis fallback contains 113 (suicide prevention line)', () => {
     expect(CRISIS_FALLBACK).toContain('113');
@@ -185,8 +185,8 @@ describe('Fix 4 — crisis fallback message', () => {
     expect(CRISIS_FALLBACK).toContain('112');
   });
 
-  it('crisis fallback is in Dutch', () => {
-    expect(CRISIS_FALLBACK).toContain('niet veilig voelt');
+  it('crisis fallback is in English', () => {
+    expect(CRISIS_FALLBACK).toContain('do not feel safe');
   });
 
   it('crisis fallback does not contain generic error language', () => {

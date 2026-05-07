@@ -225,11 +225,11 @@ export type EigenRegieLevel = 1 | 2 | 3 | 4 | 5;
 
 /** Eigen Regie intake options shown to Kim users */
 export const EIGEN_REGIE_INTAKE_OPTIONS: { value: EigenRegieLevel; zone: string; label: string }[] = [
-  { value: 1, zone: 'ROOD', label: 'Mijn leven draait volledig rond de ander' },
-  { value: 2, zone: 'ORANJE', label: 'Ik ben vooral met de ander bezig' },
-  { value: 3, zone: 'GEEL', label: 'Er is een mix tussen mezelf en de ander' },
-  { value: 4, zone: 'LICHT GROEN', label: 'Ik hou grotendeels mijn eigen richting' },
-  { value: 5, zone: 'DONKER GROEN', label: 'Ik leef volledig mijn eigen leven' },
+  { value: 1, zone: 'ROOD', label: 'My life revolves entirely around the other person' },
+  { value: 2, zone: 'ORANJE', label: 'I am mostly focused on the other person' },
+  { value: 3, zone: 'GEEL', label: 'There is a mix between myself and the other person' },
+  { value: 4, zone: 'LICHT GROEN', label: 'I mostly maintain my own direction' },
+  { value: 5, zone: 'DONKER GROEN', label: 'I fully live my own life' },
 ];
 
 export interface IntakeData {

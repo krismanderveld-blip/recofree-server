@@ -179,6 +179,8 @@ interface SessionCache {
   guidanceDepth: 'light' | 'normal' | 'deep';
 }
 
+// SINGLE-USER ONLY — this module-scoped cache assumes one active session at a time.
+// Must be replaced with a session-keyed map before any multi-user deployment.
 let sessionCache: SessionCache | null = null;
 
 function cacheSessionInit(input: ChatRequestInput): void {
@@ -371,16 +373,15 @@ function extractRelationshipMap(
   return `
 ─── RELATIONSHIP EXTRACTION INSTRUCTION ───
 Below is context about the user's relationships. Before responding, you MUST mentally extract every person mentioned and their EXACT relationship as stated by the user. For example:
-- If the user wrote "mijn zoon Jules" → Jules = zoon (son)
-- If the user wrote "mijn vriendin Melissa" → Melissa = vriendin (girlfriend/partner)
+- If the user wrote "my son Jules" → Jules = son
+- If the user wrote "my girlfriend Melissa" → Melissa = girlfriend/partner
 
 You must ONLY use the relationship as the user described it. NEVER guess or invent a relationship.
 
-Common Dutch relationship words:
-zoon = son, dochter = daughter, vrouw/vriendin = wife/girlfriend/partner,
-man/vriend = husband/boyfriend/partner, moeder/mama = mother, vader/papa = father,
-zus = sister, broer = brother, oma = grandmother, opa = grandfather,
-vriend(in) = friend, collega = colleague, buurman/buurvrouw = neighbor
+Common relationship words:
+son, daughter, wife, girlfriend, partner, husband, boyfriend,
+mother, mom, father, dad, sister, brother, grandmother, grandfather,
+friend, colleague, neighbor, ex, boss, therapist
 ─── END RELATIONSHIP INSTRUCTION ───`;
 }
 
@@ -402,16 +403,16 @@ function buildCompactLifeStorySummary(
     return "";
   }
 
-  let summary = `\n─── PERSOONLIJK GEHEUGEN OVER ${userName.toUpperCase()} (samenvatting) ───`;
+  let summary = `\n─── PERSONAL MEMORY OF ${userName.toUpperCase()} (summary) ───`;
   if (intakeContext && intakeContext.trim().length > 0) {
     summary += `\nIntake: ${intakeContext.trim()}`;
   }
   for (const section of sections) {
     summary += `\n${section}`;
   }
-  summary += `\n─── EINDE PERSOONLIJK GEHEUGEN ───`;
-  summary += `\nJe KENT dit verhaal. Als ${userName} een persoon, plek of gebeurtenis noemt die hierboven staat, herken je het ONMIDDELLIJK.`;
-  summary += `\nAls iets NIET hierboven staat, VERZIN je het niet. Dan vraag je ernaar.`;
+  summary += `\n─── END PERSONAL MEMORY ───`;
+  summary += `\nYou KNOW this story. If ${userName} mentions a person, place, or event listed above, you recognize it IMMEDIATELY.`;
+  summary += `\nIf something is NOT listed above, do NOT fabricate it. Ask about it instead.`;
   return summary;
 }
 
@@ -464,8 +465,8 @@ function resolveConditionalContext(
   if (cache.relationshipMap) {
     // Check if message contains a capitalized word that could be a name
     const hasNameLikeWord = /\b[A-Z][a-z]{2,}\b/.test(message);
-    // Or if message asks about someone ("wie is", "ken je", "weet je van")
-    const asksAboutPerson = /wie is|ken je|weet je van|vertel.*over/i.test(message);
+    // Or if message asks about someone ("who is", "do you know", "tell about")
+    const asksAboutPerson = /who is|do you know|tell.*about/i.test(message);
     if (hasNameLikeWord || asksAboutPerson || relationshipAnchor) {
       relationshipMap = cache.relationshipMap;
     }
@@ -484,10 +485,10 @@ function resolveConditionalContext(
       ];
       const patternRelevant = patternWords.some(w =>
         combinedContext.includes(w) ||
-        combinedContext.includes("relatie") ||
-        combinedContext.includes("grens") ||
+        combinedContext.includes("relationship") ||
+        combinedContext.includes("boundary") ||
         combinedContext.includes("partner") ||
-        combinedContext.includes("samen")
+        combinedContext.includes("together")
       );
       if (!patternRelevant) {
         relationalPattern = null;
@@ -509,11 +510,11 @@ function resolveConditionalContext(
       moduleLower.includes("schema") ||
       moduleLower.includes("relational") ||
       msgLower.includes(woundLower) ||
-      msgLower.includes("pijn") ||
-      msgLower.includes("wond") ||
-      msgLower.includes("altijd") ||
-      msgLower.includes("nooit") ||
-      msgLower.includes("niet goed genoeg");
+      msgLower.includes("pain") ||
+      msgLower.includes("wound") ||
+      msgLower.includes("always") ||
+      msgLower.includes("never") ||
+      msgLower.includes("not good enough");
 
     if (woundRelevant) {
       coreWound = cache.coreWound;
@@ -537,7 +538,7 @@ function resolveConditionalContext(
   let stageOfChange: string | null = null;
   if (cache.stageOfChange) {
     const isEarlyInSession = cache.messageCount <= 2;
-    const talksAboutChange = /verandering|motivat|stoppen|volhoud|terugval|doorgaan|opgeven|probeer|lukt niet|wil ik|moet ik|kan ik/i.test(message);
+    const talksAboutChange = /change|motivat|quit|stop|persist|relapse|continue|give up|try|can't manage|do I want|should I|can I/i.test(message);
     if (isEarlyInSession || talksAboutChange) {
       stageOfChange = cache.stageOfChange;
     }
@@ -565,23 +566,23 @@ function buildSelectiveRelevanceBlock(
   // Selected triggers (ALWAYS — live-analyzed per message)
   const triggers = input.selectedTriggers || [];
   if (triggers.length > 0) {
-    parts.push(`ACTIEVE TRIGGERS:`);
+    parts.push(`ACTIVE TRIGGERS:`);
     for (const t of triggers) {
-      parts.push(`  - ${t.trigger} (relevantie: ${t.score})`);
+      parts.push(`  - ${t.trigger} (relevance: ${t.score})`);
     }
   }
 
   // Core wound (CONDITIONAL)
   if (conditional.coreWound) {
-    parts.push(`KERNWOND: ${conditional.coreWound}`);
-    parts.push(`  → Wees je bewust van dit onderliggende patroon.`);
+    parts.push(`CORE WOUND: ${conditional.coreWound}`);
+    parts.push(`  → Be aware of this underlying pattern.`);
   }
 
   // Context line (CONDITIONAL)
   if (conditional.contextLine) {
-    parts.push(`RELEVANTE CONTEXT UIT LEVENSVERHAAL:`);
+    parts.push(`RELEVANT CONTEXT FROM LIFE STORY:`);
     parts.push(`  "${conditional.contextLine}"`);
-    parts.push(`  → Relevant voor dit bericht. Je mag er voorzichtig naar verwijzen.`);
+    parts.push(`  → Relevant to this message. You may carefully reference it.`);
   }
 
   // Relationship anchor (CONDITIONAL)
@@ -589,28 +590,28 @@ function buildSelectiveRelevanceBlock(
     const roleDisplay = conditional.relationshipAnchor.roleEN
       ? `${conditional.relationshipAnchor.role} / ${conditional.relationshipAnchor.roleEN}`
       : conditional.relationshipAnchor.role;
-    parts.push(`RELATIE-ANKER: ${conditional.relationshipAnchor.name} (${roleDisplay})`);
-    parts.push(`  → Gebruik ALLEEN deze exacte relatie.`);
+    parts.push(`RELATIONSHIP ANCHOR: ${conditional.relationshipAnchor.name} (${roleDisplay})`);
+    parts.push(`  → Use ONLY this exact relationship.`);
   }
 
   // Relational pattern (CONDITIONAL)
   if (conditional.relationalPattern) {
-    parts.push(`RELATIONEEL PATROON: ${conditional.relationalPattern.pattern}`);
+    parts.push(`RELATIONAL PATTERN: ${conditional.relationalPattern.pattern}`);
     if (conditional.relationalPattern.schema) {
       parts.push(`  Schema: ${conditional.relationalPattern.schema}`);
     }
-    parts.push(`  → Benoem voorzichtig als relevant.`);
+    parts.push(`  → Name carefully if relevant.`);
   }
 
   // Stage of Change (CONDITIONAL)
   if (conditional.stageOfChange) {
     const desc = ELIAS_STAGE_DESCRIPTIONS_SHORT[conditional.stageOfChange] || conditional.stageOfChange;
-    parts.push(`FASE: ${conditional.stageOfChange} — ${desc}`);
+    parts.push(`STAGE: ${conditional.stageOfChange} — ${desc}`);
   }
 
   // Recent diary (CONDITIONAL)
   if (conditional.recentDiary.length > 0) {
-    parts.push(`RELEVANTE DAGBOEKNOTITIES:`);
+    parts.push(`RELEVANT DIARY ENTRIES:`);
     for (const d of conditional.recentDiary) {
       parts.push(`  [${d.date}] (${d.moodTag}): ${d.content}`);
     }
@@ -619,9 +620,9 @@ function buildSelectiveRelevanceBlock(
   if (parts.length === 0) return "";
 
   return `
-─── RELEVANTIE-CONTEXT (selectief voor dit bericht) ───
+─── RELEVANCE CONTEXT (selective for this message) ───
 ${parts.join("\n")}
-─── EINDE ───`;
+─── END ───`;
 }
 
 // ─── Build Full Relevance Block (for SESSION_INIT) ───────────────
@@ -631,52 +632,52 @@ function buildFullRelevanceBlock(input: ChatRequestInput): string {
 
   const triggers = input.selectedTriggers || [];
   if (triggers.length > 0) {
-    parts.push(`ACTIEVE TRIGGERS (geselecteerd door het systeem):`);
+    parts.push(`ACTIVE TRIGGERS (system-selected):`);
     for (const t of triggers) {
-      parts.push(`  - ${t.trigger} (relevantie: ${t.score})`);
+      parts.push(`  - ${t.trigger} (relevance: ${t.score})`);
     }
   }
 
   if (input.coreWound) {
-    parts.push(`KERNWOND: ${input.coreWound}`);
-    parts.push(`  → Wees je bewust van dit onderliggende patroon. Benoem het voorzichtig als het relevant is.`);
+    parts.push(`CORE WOUND: ${input.coreWound}`);
+    parts.push(`  → Be aware of this underlying pattern. Name it carefully if relevant.`);
   }
 
   if (input.contextLine) {
-    parts.push(`RELEVANTE CONTEXT UIT LEVENSVERHAAL:`);
+    parts.push(`RELEVANT CONTEXT FROM LIFE STORY:`);
     parts.push(`  "${input.contextLine}"`);
-    parts.push(`  → Dit is een passage uit het levensverhaal van ${input.userName} die relevant is voor dit bericht. Je mag er voorzichtig naar verwijzen.`);
+    parts.push(`  → This is a passage from ${input.userName}'s life story relevant to this message. You may carefully reference it.`);
   }
 
   if (input.relationshipAnchor) {
     const roleDisplay = input.relationshipAnchor.roleEN
       ? `${input.relationshipAnchor.role} / ${input.relationshipAnchor.roleEN}`
       : input.relationshipAnchor.role;
-    parts.push(`RELATIE-ANKER: ${input.relationshipAnchor.name} (${roleDisplay})`);
-    parts.push(`  → Deze persoon is relevant voor het huidige gesprek. Gebruik ALLEEN de relatie zoals beschreven.`);
+    parts.push(`RELATIONSHIP ANCHOR: ${input.relationshipAnchor.name} (${roleDisplay})`);
+    parts.push(`  → This person is relevant to the current conversation. Use ONLY the relationship as described.`);
   }
 
   if (input.relationalPattern && input.relationalPattern.confidence >= 0.35) {
-    parts.push(`RELATIONEEL PATROON GEDETECTEERD: ${input.relationalPattern.pattern}`);
+    parts.push(`RELATIONAL PATTERN DETECTED: ${input.relationalPattern.pattern}`);
     if (input.relationalPattern.schema) {
-      parts.push(`  Gelinkt schema: ${input.relationalPattern.schema}`);
+      parts.push(`  Linked schema: ${input.relationalPattern.schema}`);
     }
-    parts.push(`  Betrouwbaarheid: ${Math.round(input.relationalPattern.confidence * 100)}%`);
-    parts.push(`  → Dit is een terugkerend relationeel patroon. Benoem het voorzichtig als het relevant is voor het huidige gesprek.`);
+    parts.push(`  Confidence: ${Math.round(input.relationalPattern.confidence * 100)}%`);
+    parts.push(`  → This is a recurring relational pattern. Name it carefully if relevant to the current conversation.`);
   }
 
   if (input.stageOfChange) {
     const desc = ELIAS_STAGE_DESCRIPTIONS_FULL[input.stageOfChange] || input.stageOfChange;
-    parts.push(`FASE VAN VERANDERING: ${input.stageOfChange}`);
+    parts.push(`STAGE OF CHANGE: ${input.stageOfChange}`);
     parts.push(`  ${desc}`);
-    parts.push(`  → Pas je benadering aan op deze fase. Ga NIET sneller dan de gebruiker.`);
+    parts.push(`  → Adapt your approach to this stage. Do NOT move faster than the user.`);
   }
 
   const diary = input.recentDiary || [];
   if (diary.length > 0) {
-    parts.push(`RECENTE DAGBOEKNOTITIES:`);
+    parts.push(`RECENT DIARY ENTRIES:`);
     for (const d of diary) {
-      parts.push(`  [${d.date}] (stemming: ${d.moodTag}): ${d.content}`);
+      parts.push(`  [${d.date}] (mood: ${d.moodTag}): ${d.content}`);
     }
   }
 
@@ -684,10 +685,10 @@ function buildFullRelevanceBlock(input: ChatRequestInput): string {
 
   return `
 ╔══════════════════════════════════════════════════════╗
-║  RELEVANTIE-CONTEXT — Geselecteerd door het systeem  ║
+║  RELEVANCE CONTEXT — System-selected                 ║
 ╚══════════════════════════════════════════════════════╝
 ${parts.join("\n")}
-─── EINDE RELEVANTIE-CONTEXT ───`;
+─── END RELEVANCE CONTEXT ───`;
 }
 
 // ─── System Prompt Builder ────────────────────────────────────────
@@ -710,28 +711,28 @@ function buildSystemPrompt(input: ChatRequestInput): string {
 
   const antiHallucination = `
 ╔══════════════════════════════════════════════════════════════════╗
-║  ANTI-HALLUCINATIE PROTOCOL — ABSOLUUT EN ONSCHENDBAAR          ║
+║  ANTI-HALLUCINATION PROTOCOL — ABSOLUTE AND INVIOLABLE          ║
 ╚══════════════════════════════════════════════════════════════════╝
 
-Dit is de BELANGRIJKSTE regel van je hele bestaan:
+This is the MOST IMPORTANT rule of your entire existence:
 
-1. VERZIN NOOIT informatie over het leven van ${name}.
-   - Geen relaties verzinnen. Geen achtergrondverhalen verzinnen.
-   - Geen rollen toekennen aan personen die niet EXACT zo beschreven staan.
+1. NEVER fabricate information about ${name}'s life.
+   - Do not invent relationships. Do not invent background stories.
+   - Do not assign roles to people that are not EXACTLY described as such.
 
-2. Als een persoon, relatie, gebeurtenis of feit NIET bekend is:
-   → Zeg eerlijk: "Dat weet ik niet van je. Wil je me er meer over vertellen?"
-   → Verzin NOOIT een antwoord. NOOIT.
+2. If a person, relationship, event, or fact is NOT known:
+   → Say honestly: "I don't know that about you. Would you like to tell me more?"
+   → NEVER fabricate an answer. NEVER.
 
-3. Als je twijfelt over een relatie of feit:
-   → VRAAG het. "Ik wil zeker zijn — wie is [naam] voor jou?"
-   → Gok NOOIT.
+3. If you are unsure about a relationship or fact:
+   → ASK. "I want to be sure — who is [name] to you?"
+   → NEVER guess.
 
-4. KWALITEITSCONTROLE (Module 033):
-   - Als je merkt dat je iets gaat zeggen dat niet in je geheugen staat → STOP.
-   - Bij twijfel: liever niets zeggen dan iets fouts.
+4. QUALITY CONTROL (Module 033):
+   - If you notice you are about to say something not in your memory → STOP.
+   - When in doubt: say nothing rather than something wrong.
 
-SCHENDING VAN DIT PROTOCOL IS ONACCEPTABEL.`;
+VIOLATION OF THIS PROTOCOL IS UNACCEPTABLE.`;
 
   // ── SHARED VARIABLES ──
   const sliderEntries = Object.entries(input.moodSliders)
@@ -740,9 +741,9 @@ SCHENDING VAN DIT PROTOCOL IS ONACCEPTABEL.`;
 
   const totalSessions = sessionCache?.totalSessions ?? input.userDat?.totalSessions ?? 0;
   const stageLabel = (input.stageOfChange || sessionCache?.stageOfChange)
-    ? ` Fase: ${input.stageOfChange || sessionCache?.stageOfChange}.`
+    ? ` Stage: ${input.stageOfChange || sessionCache?.stageOfChange}.`
     : '';
-  const sessionInfo = `Sessie #${totalSessions + 1}. Duur: ${input.sessionDurationMinutes} minuten. Initiële emotie: ${input.startEmotion}. Huidige gedetecteerde emotie: ${input.detectedEmotion}.${stageLabel}`;
+  const sessionInfo = `Session #${totalSessions + 1}. Duration: ${input.sessionDurationMinutes} minutes. Initial emotion: ${input.startEmotion}. Current detected emotion: ${input.detectedEmotion}.${stageLabel}`;
 
   let crisisInstructions = "";
   if (input.crisisLevel >= 2) {
@@ -750,16 +751,16 @@ SCHENDING VAN DIT PROTOCOL IS ONACCEPTABEL.`;
       ? eliasCrisisInstructions(input.crisisLevel)
       : kimCrisisInstructions(input.crisisLevel);
   } else if (input.crisisLevel === 1) {
-    crisisInstructions = `\nVERHOOGDE WAAKZAAMHEID. Wees extra attent op signalen van distress.`;
+    crisisInstructions = `\nHEIGHTENED VIGILANCE. Be extra attentive to signs of distress.`;
   }
 
   const dominantModule = input.dominantModule || (input.activeModules.length > 0 ? input.activeModules[0] : '');
   const moduleInstructions = dominantModule
-    ? `Dominant therapeutisch module: ${dominantModule}. Focus je antwoord op deze benadering.`
+    ? `Dominant therapeutic module: ${dominantModule}. Focus your response on this approach.`
     : "";
 
   const stance = input.therapeuticStance
-    ? `Therapeutische houding: ${input.therapeuticStance}`
+    ? `Therapeutic stance: ${input.therapeuticStance}`
     : "";
 
   // ── Guidance Depth (ceiling logic) ──
@@ -795,11 +796,11 @@ SCHENDING VAN DIT PROTOCOL IS ONACCEPTABEL.`;
 
   let guidanceInstruction = '';
   if (effectiveDepth === 'light') {
-    guidanceInstruction = `\nBEGELEIDINGSDIEPTE: LICHT (${stateAllowedDepth !== userDepth ? 'verlaagd vanwege huidige toestand' : 'gebruikersvoorkeur'})\n- Luister meer dan je vraagt.\n- Stel maximaal 1 open vraag per bericht.\n- Geef ruimte en stilte. Valideer kort.\n- Geen doorvragen tenzij de gebruiker zelf dieper gaat.\n- Toon: warm, rustig, terughoudend.`;
+    guidanceInstruction = `\nGUIDANCE DEPTH: LIGHT (${stateAllowedDepth !== userDepth ? 'lowered due to current state' : 'user preference'})\n- Listen more than you ask.\n- Ask at most 1 open question per message.\n- Give space and silence. Validate briefly.\n- Do not probe deeper unless the user goes there themselves.\n- Tone: warm, calm, restrained.`;
   } else if (effectiveDepth === 'deep') {
-    guidanceInstruction = `\nBEGELEIDINGSDIEPTE: DIEP (gebruikersvoorkeur, toestand staat dit toe)\n- Vraag actief door op patronen, emoties en onderliggende overtuigingen.\n- Benoem wat je opmerkt, ook als het oncomfortabel kan zijn.\n- Gebruik reflectie en confrontatie (respectvol maar direct).\n- Verbind huidige situatie met eerdere patronen uit het levensverhaal.\n- Toon: betrokken, scherp, uitdagend maar veilig.`;
+    guidanceInstruction = `\nGUIDANCE DEPTH: DEEP (user preference, state allows this)\n- Actively probe patterns, emotions, and underlying beliefs.\n- Name what you observe, even if it may be uncomfortable.\n- Use reflection and confrontation (respectful but direct).\n- Connect current situation to earlier patterns from the life story.\n- Tone: engaged, sharp, challenging but safe.`;
   } else {
-    guidanceInstruction = `\nBEGELEIDINGSDIEPTE: NORMAAL (${stateAllowedDepth !== userDepth ? 'verlaagd vanwege huidige toestand' : 'gebruikersvoorkeur'})\n- Balans tussen luisteren en reflecteren.\n- Stel 1-2 open vragen per bericht.\n- Benoem patronen wanneer relevant, maar dring niet aan.\n- Toon: warm, betrokken, reflectief.`;
+    guidanceInstruction = `\nGUIDANCE DEPTH: NORMAL (${stateAllowedDepth !== userDepth ? 'lowered due to current state' : 'user preference'})\n- Balance between listening and reflecting.\n- Ask 1-2 open questions per message.\n- Name patterns when relevant, but do not insist.\n- Tone: warm, engaged, reflective.`;
   }
 
   console.log(`[AI Chat] Guidance depth: user=${userDepth}, stateAllowed=${stateAllowedDepth}, effective=${effectiveDepth} (crisis=${input.crisisLevel}, risk=${riskScore}, maxDistress=${maxDistress})`);
@@ -810,9 +811,9 @@ SCHENDING VAN DIT PROTOCOL IS ONACCEPTABEL.`;
   let regulationInstruction = '';
   if (input.regulationResult && input.regulationResult.gptInstruction) {
     const reg = input.regulationResult;
-    const softenedLabel = reg.wasSoftened ? ' (verzacht — vorige bericht bevatte al regulatie)' : '';
-    const skippedLabel = reg.wasSkipped ? ' (overgeslagen — vorige bericht bevatte al regulatie)' : '';
-    regulationInstruction = `\n═══ EMOTIONELE REGULATIE${softenedLabel}${skippedLabel} ═══\n${reg.gptInstruction}\n═══ EINDE REGULATIE ═══`;
+    const softenedLabel = reg.wasSoftened ? ' (softened — previous message already contained regulation)' : '';
+    const skippedLabel = reg.wasSkipped ? ' (skipped — previous message already contained regulation)' : '';
+    regulationInstruction = `\n═══ EMOTIONAL REGULATION${softenedLabel}${skippedLabel} ═══\n${reg.gptInstruction}\n═══ END REGULATION ═══`;
     console.log(`[AI Chat] Regulation injected: action=${reg.action}, zone=${reg.zone}, depth=${reg.effectiveDepth}, softened=${reg.wasSoftened}, skipped=${reg.wasSkipped}`);
   }
 
@@ -824,7 +825,7 @@ SCHENDING VAN DIT PROTOCOL IS ONACCEPTABEL.`;
     const impactLines = Object.entries(ed.impact)
       .map(([k, v]) => `- ${k}: ${v}`)
       .join('\n');
-    engineDirectiveBlock = `\n═══ ENGINE DIRECTIVE (${ed.engine.toUpperCase()}) ═══\nZone: ${ed.zoneLevel} — ${ed.zoneLabel}\n${impactLines}\n═══ EINDE ENGINE DIRECTIVE ═══`;
+    engineDirectiveBlock = `\n═══ ENGINE DIRECTIVE (${ed.engine.toUpperCase()}) ═══\nZone: ${ed.zoneLevel} — ${ed.zoneLabel}\n${impactLines}\n═══ END ENGINE DIRECTIVE ═══`;
     console.log(`[AI Chat] Engine directive injected: engine=${ed.engine}, zone=${ed.zoneLevel}, impact=${JSON.stringify(ed.impact)}`);
   }
 
@@ -832,7 +833,7 @@ SCHENDING VAN DIT PROTOCOL IS ONACCEPTABEL.`;
   // Passes zone-linked therapeutic memory into the prompt for consistent therapeutic line.
   let interventionContinuityBlock = '';
   if (input.interventionContinuity) {
-    interventionContinuityBlock = `\n═══ ${input.interventionContinuity}\n═══ EINDE INTERVENTIE-CONTINUÏTEIT ═══`;
+    interventionContinuityBlock = `\n═══ ${input.interventionContinuity}\n═══ END INTERVENTION CONTINUITY ═══`;
     console.log(`[AI Chat] Intervention continuity injected`);
   }
 
@@ -840,19 +841,19 @@ SCHENDING VAN DIT PROTOCOL IS ONACCEPTABEL.`;
   if (input.projectionContext) {
     projectionBlock = `\n${input.projectionContext}`;
     if (input.projectionDeepening) {
-      projectionBlock += `\nDEEPENING INSTRUCTIE: ${input.projectionDeepening}`;
+      projectionBlock += `\nDEEPENING INSTRUCTION: ${input.projectionDeepening}`;
     }
     console.log(`[AI Chat] Projection context injected${input.projectionDeepening ? ' (with deepening)' : ''}`);
   }
 
   let sessionEndInstructions = "";
   if (input.message === "__SESSION_END__") {
-    sessionEndInstructions = `\nDe gebruiker beëindigt deze sessie. Genereer een warm afscheid dat:
-1. Kort benoemt wat besproken is (1-2 zinnen)
-2. De moed/inzet van de gebruiker bevestigt
-3. Bevestigt dat de sessie bewaard is
-4. Zachtjes aanmoedigt voor de volgende keer
-Houd het kort (3-5 zinnen max). Stel GEEN nieuwe vragen.`;
+    sessionEndInstructions = `\nThe user is ending this session. Generate a warm farewell that:
+1. Briefly names what was discussed (1-2 sentences)
+2. Affirms the user's courage/effort
+3. Confirms that the session has been saved
+4. Gently encourages for next time
+Keep it short (3-5 sentences max). Do NOT ask new questions.`;
   }
 
   // ══════════════════════════════════════════════════════════════
@@ -901,11 +902,11 @@ ${antiHallucination}
 ${conditional.relationshipMap}
 ${lifeStoryContext}
 
-De naam van de gebruiker is ${name}. Spreek hen af en toe bij naam aan.
+The user's name is ${name}. Address them by name occasionally.
 
 ${selectiveRelevance}
 
-=== VERPLICHTE GEDRAGSINSTRUCTIES ===
+=== MANDATORY BEHAVIORAL INSTRUCTIONS ===
 ${stance}
 ${guidanceInstruction}
 ${regulationInstruction}
@@ -913,39 +914,39 @@ ${engineDirectiveBlock}
 ${interventionContinuityBlock}
 ${projectionBlock}
 
-Deze gedragsinstructies zijn ABSOLUUT. Ze overschrijven je standaard gespreksstijl.
-De sliders vertellen je exact hoe de gebruiker zich voelt — GEBRUIK ze in je antwoord.
-=== EINDE VERPLICHTE INSTRUCTIES ===
+These behavioral instructions are ABSOLUTE. They override your default conversational style.
+The sliders tell you exactly how the user feels — USE them in your response.
+=== END MANDATORY INSTRUCTIONS ===
 
-HUIDIGE TOESTAND:
+CURRENT STATE:
 - Mood sliders: ${sliderEntries}
-- Urgentieniveau: ${input.urgency}
-- Risicoscore: ${input.riskScore ?? 0}/10
+- Urgency level: ${input.urgency}
+- Risk score: ${input.riskScore ?? 0}/10
 ${sessionInfo}
 ${input.bufferSnapshot ? `
-LIVE SESSIE CONTEXT (real-time analyse):
+LIVE SESSION CONTEXT (real-time analysis):
 - Zone: ${input.bufferSnapshot.zone ?? 'unknown'}
-- Emotionele richting: ${input.bufferSnapshot.emotionalDirection ?? 'unknown'}
+- Emotional direction: ${input.bufferSnapshot.emotionalDirection ?? 'unknown'}
 - Live intent: ${input.bufferSnapshot.liveIntent ?? 'none'}
 - Dominant state: ${input.bufferSnapshot.dominantState ?? 'none'}
-Gebruik deze live context om je toon en diepte af te stemmen op het HUIDIGE moment.` : ''}
+Use this live context to attune your tone and depth to the CURRENT moment.` : ''}
 
 ${moduleInstructions}
 ${crisisInstructions}
 ${sessionEndInstructions}
 
-RESPONSREGELS:
-- Je KENT ${name}. Gebruik de context hierboven om je antwoord te informeren.
-- MAAR: verwijs ALLEEN naar wat je ECHT weet. Verzin NIETS. Bij twijfel: VRAAG.
-- Als ${name} vraagt over iemand die je niet kent → "Dat weet ik niet van je. Vertel me meer?"
-- Antwoord in dezelfde taal als de gebruiker schrijft (Nederlands of Engels)
-- Houd antwoorden beknopt: volg de PACING instructie strikt
-- Diagnoseer nooit, schrijf nooit voor, claim nooit professioneel te zijn
-- Breek nooit karakter
-- Gebruik "ik"-uitspraken en reflectief luisteren
-- Gebruik GEEN opsommingstekens of genummerde lijsten — spreek natuurlijk
-- Gebruik GEEN emoji's excessief (max 0-1 per bericht)
-- Wees oprecht, niet performatief`;
+RESPONSE RULES:
+- You KNOW ${name}. Use the context above to inform your response.
+- BUT: refer ONLY to what you ACTUALLY know. Fabricate NOTHING. When in doubt: ASK.
+- If ${name} asks about someone you don't know → "I don't know that about you. Tell me more?"
+- Respond in the same language the user writes in
+- Keep responses concise: follow the PACING instruction strictly
+- Never diagnose, never prescribe, never claim to be a professional
+- Never break character
+- Use "I" statements and reflective listening
+- Do NOT use bullet points or numbered lists — speak naturally
+- Do NOT use emojis excessively (max 0-1 per message)
+- Be genuine, not performative`;
   }
 
   // ══════════════════════════════════════════════════════════════
@@ -965,17 +966,17 @@ RESPONSREGELS:
 
   if (backpack) {
     identityMemory += `\n╔══════════════════════════════════════════════════════╗`;
-    identityMemory += `\n║  RUGZAK — HET IDENTITEITSANKER VAN ${name.toUpperCase()}`;
-    identityMemory += `\n║  Geschreven door ${name} persoonlijk.`;
-    identityMemory += `\n║  NOOIT samenvatten. NOOIT inkorten. Dit is heilig.`;
+    identityMemory += `\n║  BACKPACK — IDENTITY ANCHOR OF ${name.toUpperCase()}`;
+    identityMemory += `\n║  Written by ${name} personally.`;
+    identityMemory += `\n║  NEVER summarize. NEVER shorten. This is sacred.`;
     identityMemory += `\n╚══════════════════════════════════════════════════════╝`;
 
     if (backpack.intakeContext.initialContext) {
-      identityMemory += `\n\nToen ${name} voor het eerst bij je kwam, deelde hij/zij: "${backpack.intakeContext.initialContext}"`;
-      identityMemory += `\nInitiële emotie: ${backpack.intakeContext.startEmotion}`;
-      identityMemory += `\nUrgentie bij intake: ${backpack.intakeContext.urgency}`;
+      identityMemory += `\n\nWhen ${name} first came to you, they shared: "${backpack.intakeContext.initialContext}"`;
+      identityMemory += `\nInitial emotion: ${backpack.intakeContext.startEmotion}`;
+      identityMemory += `\nUrgency at intake: ${backpack.intakeContext.urgency}`;
       if (backpack.intakeContext.intakeDate) {
-        identityMemory += `\nEerste sessie: ${backpack.intakeContext.intakeDate}`;
+        identityMemory += `\nFirst session: ${backpack.intakeContext.intakeDate}`;
       }
     }
 
@@ -988,22 +989,22 @@ RESPONSREGELS:
     }
 
     if (backpack.lifeStory.some((s) => s.content.trim().length > 0)) {
-      identityMemory += `\n\n─── LEVENSVERHAAL VAN ${name.toUpperCase()} (geschreven door ${name}) ───`;
+      identityMemory += `\n\n─── LIFE STORY OF ${name.toUpperCase()} (written by ${name}) ───`;
       for (const section of backpack.lifeStory) {
         if (section.content.trim()) {
           identityMemory += `\n\n[${section.label} (${section.ageRange})]:\n${section.content}`;
         }
       }
-      identityMemory += `\n─── EINDE LEVENSVERHAAL ───`;
-      identityMemory += `\n\nJe KENT dit verhaal. Het is je persoonlijk geheugen over ${name}.`;
-      identityMemory += `\nAls ${name} een persoon, plek of gebeurtenis noemt die in dit verhaal staat, herken je het ONMIDDELLIJK.`;
-      identityMemory += `\nJe vraagt NIET opnieuw wat ze al verteld hebben.`;
-      identityMemory += `\nMAAR: als iets NIET in dit verhaal staat, VERZIN je het niet. Dan vraag je ernaar.`;
+      identityMemory += `\n─── END LIFE STORY ───`;
+      identityMemory += `\n\nYou KNOW this story. It is your personal memory of ${name}.`;
+      identityMemory += `\nIf ${name} mentions a person, place, or event that appears in this story, you recognize it IMMEDIATELY.`;
+      identityMemory += `\nYou do NOT ask again about what they already told you.`;
+      identityMemory += `\nBUT: if something is NOT in this story, do NOT fabricate it. Ask about it instead.`;
     } else {
-      identityMemory += `\n${name} heeft nog geen levensverhaal gedeeld. Je kunt hen zachtjes uitnodigen om te delen wanneer gepast, maar dring nooit aan.`;
+      identityMemory += `\n${name} has not yet shared a life story. You may gently invite them to share when appropriate, but never insist.`;
     }
   } else {
-    identityMemory = `\n(Geen backpack beschikbaar voor dit bericht.)`;
+    identityMemory = `\n(No backpack available for this message.)`;
   }
 
   // ── DIARY ──
@@ -1011,15 +1012,15 @@ RESPONSREGELS:
   let diaryMemory = "";
   if (diaryEntries && diaryEntries.length > 0) {
     diaryMemory += `\n\n╔══════════════════════════════════════════════════════╗`;
-    diaryMemory += `\n║  DAGBOEK — Persoonlijke notities van ${name}`;
+    diaryMemory += `\n║  DIARY — Personal notes by ${name}`;
     diaryMemory += `\n╚══════════════════════════════════════════════════════╝`;
-    diaryMemory += `\n\n─── RECENTE DAGBOEKNOTITIES ───`;
+    diaryMemory += `\n\n─── RECENT DIARY ENTRIES ───`;
     for (const entry of diaryEntries) {
       const date = new Date(entry.timestamp).toLocaleDateString();
-      diaryMemory += `\n\n[${date}] (stemming: ${entry.moodTag}):\n${entry.content}`;
+      diaryMemory += `\n\n[${date}] (mood: ${entry.moodTag}):\n${entry.content}`;
     }
-    diaryMemory += `\n─── EINDE DAGBOEK ───`;
-    diaryMemory += `\nDit zijn ${name}'s eigen woorden. Citeer hun dagboek NIET ongevraagd terug.`;
+    diaryMemory += `\n─── END DIARY ───`;
+    diaryMemory += `\nThese are ${name}'s own words. Do NOT quote their diary back unsolicited.`;
   }
 
   // ── USER.DAT (Session Memory) ──
@@ -1027,23 +1028,23 @@ RESPONSREGELS:
   let sessionMemory = "";
 
   if (!userDat) {
-    sessionMemory = "\n\n(Geen sessiegeheugen beschikbaar.)";
+    sessionMemory = "\n\n(No session memory available.)";
   } else {
     sessionMemory = `\n\n╔══════════════════════════════════════════════════════╗`;
-    sessionMemory += `\n║  SESSIEGEHEUGEN — Dynamische data over ${userDat.totalSessions} sessies`;
+    sessionMemory += `\n║  SESSION MEMORY — Dynamic data over ${userDat.totalSessions} sessions`;
     sessionMemory += `\n╚══════════════════════════════════════════════════════╝`;
 
     if (userDat.triggerPatterns.length > 0) {
-      sessionMemory += `\n\n─── BEKENDE TRIGGERPATRONEN ───`;
+      sessionMemory += `\n\n─── KNOWN TRIGGER PATTERNS ───`;
       for (const tp of userDat.triggerPatterns) {
-        sessionMemory += `\n- "${tp.trigger}" (${tp.count}x gedetecteerd, eerste: ${tp.firstSeen}, laatste: ${tp.lastSeen})`;
+        sessionMemory += `\n- "${tp.trigger}" (${tp.count}x detected, first: ${tp.firstSeen}, last: ${tp.lastSeen})`;
       }
-      sessionMemory += `\nDit zijn terugkerende patronen. Wees alert wanneer deze thema's opkomen.`;
+      sessionMemory += `\nThese are recurring patterns. Be alert when these themes arise.`;
     }
 
     if (userDat.moodHistory.length > 0) {
       const recent = userDat.moodHistory.slice(-5);
-      sessionMemory += `\n\n─── STEMMINGSTRAJECT (laatste ${recent.length} check-ins) ───`;
+      sessionMemory += `\n\n─── MOOD TRAJECTORY (last ${recent.length} check-ins) ───`;
       for (const mh of recent) {
         const sliderStr = Object.entries(mh.sliders)
           .map(([k, v]) => `${k}: ${v}/10`)
@@ -1053,21 +1054,21 @@ RESPONSREGELS:
     }
 
     if (userDat.moduleUsageSummary.length > 0) {
-      sessionMemory += `\n\nEerder gebruikte modules: ${userDat.moduleUsageSummary.join(", ")}`;
+      sessionMemory += `\n\nPreviously used modules: ${userDat.moduleUsageSummary.join(", ")}`;
     }
 
     if (userDat.sessionAnalyses.length > 0) {
-      sessionMemory += `\n\n─── EERDERE SESSIE-ANALYSES ───`;
+      sessionMemory += `\n\n─── PREVIOUS SESSION ANALYSES ───`;
       for (const sa of userDat.sessionAnalyses) {
-        sessionMemory += `\n\nSessie #${sa.sessionNumber} (${sa.date}):`;
-        sessionMemory += `\n  Duur: ${sa.durationMinutes}min, Berichten: ${sa.messageCount}`;
-        sessionMemory += `\n  Dominante emotie: ${sa.dominantEmotion}`;
-        if (sa.themes.length > 0) sessionMemory += `\n  Thema's: ${sa.themes.join(", ")}`;
-        if (sa.newTriggers.length > 0) sessionMemory += `\n  Nieuwe triggers: ${sa.newTriggers.join(", ")}`;
-        sessionMemory += `\n  Stemmingsverandering: distress ${sa.moodDelta.distressChange > 0 ? "+" : ""}${sa.moodDelta.distressChange.toFixed(1)}, veerkracht ${sa.moodDelta.resilienceChange > 0 ? "+" : ""}${sa.moodDelta.resilienceChange.toFixed(1)}`;
-        sessionMemory += `\n  Risiconiveau einde: ${sa.endRiskLevel}`;
+        sessionMemory += `\n\nSession #${sa.sessionNumber} (${sa.date}):`;
+        sessionMemory += `\n  Duration: ${sa.durationMinutes}min, Messages: ${sa.messageCount}`;
+        sessionMemory += `\n  Dominant emotion: ${sa.dominantEmotion}`;
+        if (sa.themes.length > 0) sessionMemory += `\n  Themes: ${sa.themes.join(", ")}`;
+        if (sa.newTriggers.length > 0) sessionMemory += `\n  New triggers: ${sa.newTriggers.join(", ")}`;
+        sessionMemory += `\n  Mood change: distress ${sa.moodDelta.distressChange > 0 ? "+" : ""}${sa.moodDelta.distressChange.toFixed(1)}, resilience ${sa.moodDelta.resilienceChange > 0 ? "+" : ""}${sa.moodDelta.resilienceChange.toFixed(1)}`;
+        sessionMemory += `\n  End risk level: ${sa.endRiskLevel}`;
       }
-      sessionMemory += `\n─── EINDE SESSIE-ANALYSES ───`;
+      sessionMemory += `\n─── END SESSION ANALYSES ───`;
     }
   }
 
@@ -1086,14 +1087,14 @@ ${schemaRecognition}
 
 ${stoaSessions}
 
-De naam van de gebruiker is ${name}. Spreek hen af en toe bij naam aan.
+The user's name is ${name}. Address them by name occasionally.
 ${identityMemory}
 ${diaryMemory}
 ${sessionMemory}
 
 ${relevanceContext}
 
-=== VERPLICHTE GEDRAGSINSTRUCTIES ===
+=== MANDATORY BEHAVIORAL INSTRUCTIONS ===
 ${stance}
 ${guidanceInstruction}
 ${regulationInstruction}
@@ -1101,32 +1102,32 @@ ${engineDirectiveBlock}
 ${interventionContinuityBlock}
 ${projectionBlock}
 
-Deze gedragsinstructies zijn ABSOLUUT. Ze overschrijven je standaard gespreksstijl.
-De sliders vertellen je exact hoe de gebruiker zich voelt — GEBRUIK ze in je antwoord.
-=== EINDE VERPLICHTE INSTRUCTIES ===
+These behavioral instructions are ABSOLUTE. They override your default conversational style.
+The sliders tell you exactly how the user feels — USE them in your response.
+=== END MANDATORY INSTRUCTIONS ===
 
-HUIDIGE TOESTAND:
+CURRENT STATE:
 - Mood sliders: ${sliderEntries}
-- Urgentieniveau: ${input.urgency}
-- Risicoscore: ${input.riskScore ?? 0}/10
+- Urgency level: ${input.urgency}
+- Risk score: ${input.riskScore ?? 0}/10
 ${sessionInfo}
 
 ${moduleInstructions}
 ${crisisInstructions}
 ${sessionEndInstructions}
 
-RESPONSREGELS:
-- Je KENT ${name}. Gebruik je persoonlijk geheugen natuurlijk.
-- MAAR: verwijs ALLEEN naar wat je ECHT weet uit de rugzak. Verzin NIETS. Bij twijfel: VRAAG.
-- Als ${name} vraagt "wie is [naam]?" → controleer EERST of die naam in het levensverhaal staat.
-- Antwoord in dezelfde taal als de gebruiker schrijft (Nederlands of Engels)
-- Houd antwoorden beknopt: volg de PACING instructie strikt
-- Diagnoseer nooit, schrijf nooit voor, claim nooit professioneel te zijn
-- Breek nooit karakter
-- Gebruik "ik"-uitspraken en reflectief luisteren
-- Gebruik GEEN opsommingstekens of genummerde lijsten — spreek natuurlijk
-- Gebruik GEEN emoji's excessief (max 0-1 per bericht)
-- Wees oprecht, niet performatief`;
+RESPONSE RULES:
+- You KNOW ${name}. Use your personal memory naturally.
+- BUT: refer ONLY to what you ACTUALLY know from the backpack. Fabricate NOTHING. When in doubt: ASK.
+- If ${name} asks "who is [name]?" → check FIRST whether that name appears in the life story.
+- Respond in the same language the user writes in
+- Keep responses concise: follow the PACING instruction strictly
+- Never diagnose, never prescribe, never claim to be a professional
+- Never break character
+- Use "I" statements and reflective listening
+- Do NOT use bullet points or numbered lists — speak naturally
+- Do NOT use emojis excessively (max 0-1 per message)
+- Be genuine, not performative`;
 }
 
 // ─── OpenAI Call ──────────────────────────────────────────────────
@@ -1167,7 +1168,7 @@ export async function generateAIResponse(
   } else if (input.message === "__SESSION_END__") {
     messages.push({
       role: "user",
-      content: "Ik wil deze sessie nu beëindigen.",
+      content: "I want to end this session now.",
     });
   }
 
@@ -1256,7 +1257,7 @@ export async function generateAIResponse(
     console.error("[AI Chat] OpenAI API network error:", error);
     if (crisisLevel >= 1) {
       return {
-        response: 'Ik kan je op dit moment niet bereiken via de verbinding. Als je je nu niet veilig voelt, bel dan 113 (zelfmoordpreventie) of 112 (nood). Je hoeft dit niet alleen te dragen.',
+        response: 'I cannot reach you through the connection right now. If you do not feel safe, call 113 (suicide prevention) or 112 (emergency). You do not have to carry this alone.',
         advisoryEmotion: input.detectedEmotion,
         advisoryConfidence: 0,
         tokenUsage: undefined,
@@ -1271,7 +1272,7 @@ export async function generateAIResponse(
     console.error("[AI Chat] OpenAI API error:", openaiResponse.status, errorText);
     if (crisisLevel >= 1) {
       return {
-        response: 'Ik kan je op dit moment niet bereiken via de verbinding. Als je je nu niet veilig voelt, bel dan 113 (zelfmoordpreventie) of 112 (nood). Je hoeft dit niet alleen te dragen.',
+        response: 'I cannot reach you through the connection right now. If you do not feel safe, call 113 (suicide prevention) or 112 (emergency). You do not have to carry this alone.',
         advisoryEmotion: input.detectedEmotion,
         advisoryConfidence: 0,
         tokenUsage: undefined,
@@ -1284,7 +1285,7 @@ export async function generateAIResponse(
   const data = await openaiResponse.json();
   const responseText =
     data.choices?.[0]?.message?.content?.trim() ??
-    "Ik ben er voor je. Er ging iets mis — probeer het opnieuw.";
+    "I am here for you. Something went wrong — please try again.";
 
   const usage = data.usage;
   const tokenUsage = usage ? {

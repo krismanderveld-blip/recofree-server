@@ -47,7 +47,7 @@ describe('Elias Projection — Signal Detection', () => {
 
   it('detects fear markers in user message', () => {
     const result = detectProjectionSignals({
-      message: 'Ik ben bang dat ik weer ga gebruiken als ik stress heb',
+      message: 'I am afraid that I will use again when I have stress',
       distressScore: 7,
       resilienceScore: 3,
       vspLevel: 'ORANJE',
@@ -64,7 +64,7 @@ describe('Elias Projection — Signal Detection', () => {
 
   it('detects hope markers in user message', () => {
     const result = detectProjectionSignals({
-      message: 'Ik hoop dat ik ooit clean kan leven en gelukkig kan zijn',
+      message: 'I hope that I can live clean someday and be happy',
       distressScore: 4,
       resilienceScore: 6,
       vspLevel: 'GROEN',
@@ -79,7 +79,7 @@ describe('Elias Projection — Signal Detection', () => {
 
   it('detects goal markers in user message', () => {
     const result = detectProjectionSignals({
-      message: 'Ik wil weer gaan werken en mijn kinderen terug krijgen',
+      message: 'I want to work again and get my children back',
       distressScore: 5,
       resilienceScore: 5,
       vspLevel: 'GEEL',
@@ -95,7 +95,7 @@ describe('Elias Projection — Signal Detection', () => {
   it('reinforces existing entry on keyword overlap', () => {
     // First detection
     detectProjectionSignals({
-      message: 'Ik ben bang dat ik terugval',
+      message: 'I am afraid of relapse',
       distressScore: 7,
       resilienceScore: 3,
       vspLevel: 'ORANJE',
@@ -112,7 +112,7 @@ describe('Elias Projection — Signal Detection', () => {
 
     // Second detection with same keyword
     detectProjectionSignals({
-      message: 'Die angst voor terugval blijft maar komen',
+      message: 'That fear of relapse keeps coming back',
       distressScore: 6,
       resilienceScore: 4,
       vspLevel: 'ORANJE',
@@ -130,7 +130,7 @@ describe('Elias Projection — Signal Detection', () => {
 
   it('creates VSP-triggered fear when vspLevel is ROOD', () => {
     const result = detectProjectionSignals({
-      message: 'Ik weet niet meer wat ik moet doen',
+      message: 'I do not know what to do anymore',
       distressScore: 9,
       resilienceScore: 1,
       vspLevel: 'ROOD',
@@ -146,7 +146,7 @@ describe('Elias Projection — Signal Detection', () => {
   it('strengthens hope entries on zone improvement', () => {
     // First create a hope entry
     detectProjectionSignals({
-      message: 'Ik hoop dat het beter wordt',
+      message: 'I hope it gets better',
       distressScore: 5,
       resilienceScore: 5,
       vspLevel: 'GEEL',
@@ -158,7 +158,7 @@ describe('Elias Projection — Signal Detection', () => {
 
     // Now trigger with zone improvement
     detectProjectionSignals({
-      message: 'Vandaag gaat het iets beter',
+      message: 'Today it is going a bit better',
       distressScore: 4,
       resilienceScore: 6,
       vspLevel: 'GROEN',
@@ -174,12 +174,12 @@ describe('Elias Projection — Signal Detection', () => {
   it('respects max 5 active entries limit', () => {
     // Create 6 different entries
     const messages = [
-      'Ik ben bang voor terugval',
-      'Ik hoop op herstel',
-      'Mijn doel is werk vinden',
-      'Ik vrees eenzaamheid',
-      'Ik wil graag studeren',
-      'Ik ben bang voor afwijzing',
+      'I am afraid of relapse',
+      'I hope for recovery',
+      'My goal is to find work',
+      'I fear loneliness',
+      'I want to study',
+      'I am afraid of rejection',
     ];
 
     for (const msg of messages) {
@@ -210,7 +210,7 @@ describe('Kim Projection — Signal Detection', () => {
 
   it('creates fear entry when eigenRegieScore is low (< 30)', () => {
     const result = detectKimProjectionSignals({
-      message: 'Ik heb het gevoel dat ik geen controle meer heb',
+      message: 'I feel like I have no control anymore',
       distressScore: 7,
       resilienceScore: 3,
       eigenRegieScore: 20,
@@ -226,7 +226,7 @@ describe('Kim Projection — Signal Detection', () => {
   it('creates/reinforces hope entry on consecutive high Eigen Regie sessions', () => {
     // First create a hope entry via message marker
     detectKimProjectionSignals({
-      message: 'Ik hoop dat ik sterker word',
+      message: 'I hope I become stronger',
       distressScore: 4,
       resilienceScore: 6,
       eigenRegieScore: 60,
@@ -236,7 +236,7 @@ describe('Kim Projection — Signal Detection', () => {
 
     // Now reinforce it with consecutive high ER sessions
     const result = detectKimProjectionSignals({
-      message: 'Ik voel me sterker vandaag',
+      message: 'I feel stronger today',
       distressScore: 3,
       resilienceScore: 7,
       eigenRegieScore: 75,
@@ -251,7 +251,7 @@ describe('Kim Projection — Signal Detection', () => {
 
   it('detects fear markers in Kim user messages', () => {
     const result = detectKimProjectionSignals({
-      message: 'Ik ben bang dat ik het niet aankan zonder hulp',
+      message: 'I am afraid I cannot handle it without help',
       distressScore: 6,
       resilienceScore: 4,
       eigenRegieScore: 45,
@@ -267,7 +267,7 @@ describe('Kim Projection — Signal Detection', () => {
   it('strengthens hope entries on zone improvement', () => {
     // First create a hope entry
     detectKimProjectionSignals({
-      message: 'Ik hoop dat ik sterker word',
+      message: 'I hope I become stronger',
       distressScore: 4,
       resilienceScore: 6,
       eigenRegieScore: 60,
@@ -305,7 +305,7 @@ describe('Projection Decay Engine', () => {
   it('Elias: decays entries that were not reinforced this session', () => {
     // Create an entry
     detectProjectionSignals({
-      message: 'Ik ben bang voor terugval',
+      message: 'I am afraid of relapse',
       distressScore: 7,
       resilienceScore: 3,
       vspLevel: 'ORANJE',
@@ -332,7 +332,7 @@ describe('Projection Decay Engine', () => {
   it('Elias: removes entries below threshold after repeated decay', () => {
     // Create an entry with minimal strength
     detectProjectionSignals({
-      message: 'Ik ben een beetje bang',
+      message: 'I am a little afraid',
       distressScore: 4,
       resilienceScore: 6,
       vspLevel: 'GROEN',
@@ -356,7 +356,7 @@ describe('Projection Decay Engine', () => {
 
   it('Kim: decays entries not reinforced', () => {
     detectKimProjectionSignals({
-      message: 'Ik ben bang dat ik geen controle heb',
+      message: 'I am afraid I have no control',
       distressScore: 7,
       resilienceScore: 3,
       eigenRegieScore: 20,
@@ -382,7 +382,7 @@ describe('Projection GPT Injection', () => {
 
   it('Elias: builds injection block with active entries', () => {
     detectProjectionSignals({
-      message: 'Ik ben bang dat ik weer ga gebruiken',
+      message: 'I am afraid I will use again',
       distressScore: 7,
       resilienceScore: 3,
       vspLevel: 'ORANJE',
@@ -392,7 +392,7 @@ describe('Projection GPT Injection', () => {
 
     const block = buildProjectionContext();
     expect(block).not.toBeNull();
-    expect(block).toContain('TOEKOMSTPERSPECTIEF');
+    expect(block).toContain('FUTURE PERSPECTIVE');
   });
 
   it('Elias: returns null when no active entries', () => {
@@ -402,7 +402,7 @@ describe('Projection GPT Injection', () => {
 
   it('Kim: builds injection block with active entries', () => {
     detectKimProjectionSignals({
-      message: 'Ik ben bang dat ik geen controle heb',
+      message: 'I am afraid I have no control',
       distressScore: 7,
       resilienceScore: 3,
       eigenRegieScore: 20,
@@ -412,7 +412,7 @@ describe('Projection GPT Injection', () => {
 
     const block = buildKimProjectionContext();
     expect(block).not.toBeNull();
-    expect(block).toContain('TOEKOMSTPERSPECTIEF');
+    expect(block).toContain('FUTURE PERSPECTIVE');
   });
 
   it('Kim: returns null when no active entries', () => {
@@ -436,7 +436,7 @@ describe('Projection Deepening Module', () => {
   it('activates deepening for Elias when dominantModule is E03 (reflection)', () => {
     // Create a projection entry first
     detectProjectionSignals({
-      message: 'Ik ben bang dat ik weer ga gebruiken',
+      message: 'I am afraid I will use again',
       distressScore: 7,
       resilienceScore: 3,
       vspLevel: 'ORANJE',
@@ -445,7 +445,7 @@ describe('Projection Deepening Module', () => {
     });
 
     const result = runProjectionLayer({
-      message: 'Ik denk na over mijn patronen',
+      message: 'I am thinking about my patterns',
       userType: 'elias',
       dominantModule: 'E03',
       distressScore: 6,
@@ -462,7 +462,7 @@ describe('Projection Deepening Module', () => {
 
   it('activates deepening for Elias when dominantModule is E06 (confrontation)', () => {
     detectProjectionSignals({
-      message: 'Ik hoop dat ik ooit clean ben',
+      message: 'I hope I will be clean someday',
       distressScore: 5,
       resilienceScore: 5,
       vspLevel: 'GEEL',
@@ -471,7 +471,7 @@ describe('Projection Deepening Module', () => {
     });
 
     const result = runProjectionLayer({
-      message: 'Wat zijn mijn waarden eigenlijk',
+      message: 'What are my values actually',
       userType: 'elias',
       dominantModule: 'E06',
       distressScore: 5,
@@ -488,7 +488,7 @@ describe('Projection Deepening Module', () => {
 
   it('does NOT activate deepening for non-reflection modules', () => {
     detectProjectionSignals({
-      message: 'Ik ben bang voor terugval',
+      message: 'I am afraid of relapse',
       distressScore: 7,
       resilienceScore: 3,
       vspLevel: 'ORANJE',
@@ -497,7 +497,7 @@ describe('Projection Deepening Module', () => {
     });
 
     const result = runProjectionLayer({
-      message: 'Ik voel me slecht',
+      message: 'I feel bad',
       userType: 'elias',
       dominantModule: 'E01',
       distressScore: 7,
@@ -514,7 +514,7 @@ describe('Projection Deepening Module', () => {
 
   it('blocks deepening after user deflection', () => {
     detectProjectionSignals({
-      message: 'Ik ben bang voor terugval',
+      message: 'I am afraid of relapse',
       distressScore: 7,
       resilienceScore: 3,
       vspLevel: 'ORANJE',
@@ -523,12 +523,12 @@ describe('Projection Deepening Module', () => {
     });
 
     // User deflects
-    checkDeflectionInResponse('Weet ik niet, laat maar');
+    checkDeflectionInResponse('I don\'t know, never mind');
 
     expect(isDeepeningBlocked()).toBe(true);
 
     const result = runProjectionLayer({
-      message: 'Ik denk na over patronen',
+      message: 'I am thinking about my patterns',
       userType: 'elias',
       dominantModule: 'E03',
       distressScore: 6,
@@ -544,7 +544,7 @@ describe('Projection Deepening Module', () => {
   });
 
   it('detects deflection markers correctly', () => {
-    const deflectionPhrases = ['weet niet', 'laat maar', 'geen idee', 'skip', 'overslaan'];
+    const deflectionPhrases = ['don\'t know', 'never mind', 'no idea', 'skip', 'not important'];
 
     for (const phrase of deflectionPhrases) {
       resetDeepeningState();
@@ -554,7 +554,7 @@ describe('Projection Deepening Module', () => {
   });
 
   it('does NOT block on normal messages', () => {
-    checkDeflectionInResponse('Ja dat klopt, ik voel me inderdaad zo');
+    checkDeflectionInResponse('Yes that is correct, I do feel that way');
     expect(isDeepeningBlocked()).toBe(false);
   });
 });
@@ -573,7 +573,7 @@ describe('Projection Layer Orchestrator', () => {
 
   it('returns hasActiveEntries=false when no signals detected', () => {
     const result = runProjectionLayer({
-      message: 'Hallo, hoe gaat het',
+      message: 'Hello, how are you',
       userType: 'elias',
       dominantModule: 'E01',
       distressScore: 5,
@@ -591,7 +591,7 @@ describe('Projection Layer Orchestrator', () => {
 
   it('returns injection block when signals are detected', () => {
     const result = runProjectionLayer({
-      message: 'Ik ben bang dat ik weer ga gebruiken als ik stress heb',
+      message: 'I am afraid that I will use again when I have stress',
       userType: 'elias',
       dominantModule: 'E03',
       distressScore: 7,
@@ -605,12 +605,12 @@ describe('Projection Layer Orchestrator', () => {
 
     expect(result.hasActiveEntries).toBe(true);
     expect(result.injectionBlock).not.toBeNull();
-    expect(result.injectionBlock).toContain('TOEKOMSTPERSPECTIEF');
+    expect(result.injectionBlock).toContain('FUTURE PERSPECTIVE');
   });
 
   it('routes to Kim engine for kim userType', () => {
     const result = runProjectionLayer({
-      message: 'Ik ben bang dat ik geen controle meer heb',
+      message: 'I am afraid I have no control anymore',
       userType: 'kim',
       dominantModule: 'K01',
       distressScore: 7,
@@ -623,13 +623,13 @@ describe('Projection Layer Orchestrator', () => {
     });
 
     expect(result.hasActiveEntries).toBe(true);
-    expect(result.injectionBlock).toContain('TOEKOMSTPERSPECTIEF');
+    expect(result.injectionBlock).toContain('FUTURE PERSPECTIVE');
   });
 
   it('Kim deepening activates when eigenRegieScore > 50', () => {
     // First create an entry
     runProjectionLayer({
-      message: 'Ik ben bang dat ik geen controle heb',
+      message: 'I am afraid I have no control',
       userType: 'kim',
       dominantModule: 'K01',
       distressScore: 7,
@@ -643,7 +643,7 @@ describe('Projection Layer Orchestrator', () => {
 
     // Now run with high eigenRegie
     const result = runProjectionLayer({
-      message: 'Ik voel me sterker vandaag',
+      message: 'I feel stronger today',
       userType: 'kim',
       dominantModule: 'K03',
       distressScore: 4,

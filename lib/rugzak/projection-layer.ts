@@ -55,7 +55,7 @@ export function isDeepeningBlocked(): boolean {
 // E03 = Relapse Prevention (pattern_reflection), E04 = Self-Compassion (connection_risk/confrontation)
 // E06 = Values & Meaning (reflective exploration)
 const ELIAS_DEEPENING_MODULES = ['E03', 'E04', 'E06'];
-const PROJECTION_DEEPENING_DIRECTIVE = 'Als het moment geschikt is, vraag voorzichtig naar hoop of angst voor de toekomst.';
+const PROJECTION_DEEPENING_DIRECTIVE = 'When the moment is right, gently ask about hopes or fears for the future.';
 
 function shouldActivateDeepening(
   userType: UserType,
@@ -146,9 +146,9 @@ export function runProjectionLayer(input: ProjectionLayerInput): ProjectionResul
  */
 export function checkDeflectionInResponse(userMessage: string): boolean {
   const deflectionMarkers = [
-    'weet niet', 'geen idee', 'laat maar', 'maakt niet uit',
     'don\'t know', 'no idea', 'whatever', 'doesn\'t matter',
-    'liever niet', 'hoeft niet', 'skip', 'overslaan',
+    'never mind', 'forget it', 'not important', 'skip',
+    'rather not', 'no need', 'move on', 'let it go',
   ];
   const lower = userMessage.toLowerCase();
   const deflected = deflectionMarkers.some(m => lower.includes(m));

@@ -260,7 +260,7 @@ describe('VSP Resolution — Kim Eigen Regie unaffected', () => {
     const result = processEigenRegie(80);
     expect(result.zone).toBe('ROOD');
     expect(result.engineScore).toBe(20);
-    expect(result.impact.primaryDirective).toBe('stabiliseren');
+    expect(result.impact.primaryDirective).toBe('stabilize');
   });
 
   it('processEigenRegie at 0 (full eigen regie) → GROEN', () => {

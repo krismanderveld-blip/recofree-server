@@ -289,8 +289,8 @@ export async function processMessage(
   const hasMinimalContext = hasSliders || hasBackpackContent || hasDiary || hasTriggerHistory || hasSessionHistory || hasVsp || hasEigenRegie;
   if (!hasMinimalContext) {
     const passiveResponse = backpack.userType === 'elias'
-      ? `Ik weet nu nog weinig van je, ${backpack.naam}. Ik wacht tot jij iets deelt. Dan pas kan ik iets dragen. Vul je sliders in, schrijf iets in je dagboek, of deel je verhaal in je rugzak — dan kan ik je beter helpen.`
-      : `Hoi ${backpack.naam}. Ik heb nog niet genoeg context om je goed te kunnen helpen. Vul je sliders in of deel iets via je dagboek of rugzak, dan kan ik je gerichter ondersteunen.`;
+      ? `I don't know much about you yet, ${backpack.naam}. I'll wait until you share something. Fill in your sliders, write something in your diary, or share your story in your backpack — then I can help you better.`
+      : `Hi ${backpack.naam}. I don't have enough context yet to help you well. Fill in your sliders or share something via your diary or backpack, then I can support you more effectively.`;
 
     const passiveMsg: ChatMessage = {
       id: `msg_${Date.now()}`,
@@ -922,8 +922,8 @@ export async function generateGreeting(
 
   if (!hasMinimalContext) {
     const passiveResponse = backpack.userType === 'elias'
-      ? `Hoi ${backpack.naam}. Ik ben er voor je, maar ik weet nu nog weinig van je. Vul je sliders in, schrijf iets in je dagboek, of deel je verhaal in je rugzak — dan kan ik je echt helpen.`
-      : `Hoi ${backpack.naam}. Ik ben er. Maar om je goed te kunnen helpen, heb ik meer context nodig. Vul je sliders in of deel iets via je dagboek of rugzak.`;
+      ? `Hi ${backpack.naam}. I'm here for you, but I don't know much about you yet. Fill in your sliders, write something in your diary, or share your story in your backpack — then I can truly help you.`
+      : `Hi ${backpack.naam}. I'm here. But to help you well, I need more context. Fill in your sliders or share something via your diary or backpack.`;
     const passiveAiMsg: ChatMessage = {
       id: `msg_${Date.now()}`,
       role: 'assistant',

@@ -98,14 +98,14 @@ export interface EliasZoneInput {
   readonly stageOfChange: StageOfChange;
 }
 
-// ─── Zone Labels (Dutch) ───────────────────────────────────────
+// // ─── Zone Labels ────────────────────────────────────────
 
 const ELIAS_ZONE_LABELS: Readonly<Record<ZoneLevel, string>> = Object.freeze({
-  ROOD: 'Crisis of hoge nood',
-  ORANJE: 'Verhoogde spanning',
-  GEEL: 'Matige spanning',
-  LICHTGROEN: 'Groeiende stabiliteit',
-  GROEN: 'Stabiel en veerkrachtig',
+  ROOD: 'Crisis or high distress',
+  ORANJE: 'Elevated tension',
+  GEEL: 'Moderate tension',
+  LICHTGROEN: 'Growing stability',
+  GROEN: 'Stable and resilient',
 });
 
 // ─── Zone Level Determination ──────────────────────────────────

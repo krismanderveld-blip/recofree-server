@@ -56,33 +56,33 @@ export interface RegulationResult {
   wasSkipped: boolean;
 }
 
-// ─── Micro-Interventions (Dutch, natural, 1-2 sentences) ──────
+// ─── Micro-Interventions (natural, 1-2 sentences) ──────
 
 const MICRO_INTERVENTIONS: Record<Exclude<RegulationAction, 'reflect'>, string> = {
-  slow_down: 'Even vertragen. Wat voel je nu precies?',
-  regulate: 'Blijf even hier. Adem rustig in en uit.',
-  stabilize: 'Je hoeft nu niets te begrijpen. Gewoon even hier blijven.',
-  ground: 'Kijk even rond. Noem 3 dingen die je ziet.',
+  slow_down: 'Let\'s slow down. What are you feeling right now?',
+  regulate: 'Stay here for a moment. Breathe in and out slowly.',
+  stabilize: 'You don\'t need to understand anything right now. Just stay here.',
+  ground: 'Look around. Name 3 things you can see.',
 };
 
 // ─── Softened Variants (used when previous message already regulated) ──
 // These are warmer, shorter, and feel like continuation rather than repetition.
 
 const SOFTENED_INTERVENTIONS: Record<Exclude<RegulationAction, 'reflect'>, string> = {
-  slow_down: 'Ik ben er. Neem je tijd.',
-  regulate: 'Goed zo. Blijf rustig ademen.',
-  stabilize: 'Ik ga nergens heen. Je bent niet alleen.',
-  ground: 'Je bent hier. Dat is genoeg.',
+  slow_down: 'I\'m here. Take your time.',
+  regulate: 'Good. Keep breathing calmly.',
+  stabilize: 'I\'m not going anywhere. You\'re not alone.',
+  ground: 'You\'re here. That\'s enough.',
 };
 
 // ─── GPT Instructions per action (injected into system prompt) ──
 
 const GPT_INSTRUCTIONS: Record<RegulationAction, string | null> = {
   reflect: null, // No forced instruction — continue normal flow
-  slow_down: 'REGULATIE-INSTRUCTIE: De gebruiker zit in een gele zone. Begin je reactie door even te vertragen. Stel één rustige vraag. Geen analyse, geen doorvragen. Houd het kort.',
-  regulate: 'REGULATIE-INSTRUCTIE: De gebruiker zit in een oranje zone. Begin ALTIJD met een korte regulatie (ademhaling, grounding). Pas DAARNA mag je reflecteren. Geen analyse. Maximaal 2-3 zinnen.',
-  stabilize: 'REGULATIE-INSTRUCTIE: De gebruiker zit in een rode zone. Stabiliseer EERST. Geen vragen, geen analyse, geen reflectie. Alleen aanwezigheid en veiligheid. Maximaal 2 zinnen. Wacht tot de gebruiker zelf verder gaat.',
-  ground: 'REGULATIE-INSTRUCTIE: De gebruiker zit in een paarse zone (crisis). Gebruik ALLEEN grounding. Geen therapeutische interventie. Kort, concreet, zintuiglijk. "Kijk om je heen. Wat zie je?" Maximaal 1-2 zinnen.',
+  slow_down: 'REGULATION INSTRUCTION: The user is in a yellow zone. Start your response by slowing down. Ask one calm question. No analysis, no probing. Keep it short.',
+  regulate: 'REGULATION INSTRUCTION: The user is in an orange zone. ALWAYS start with a short regulation (breathing, grounding). Only THEN may you reflect. No analysis. Maximum 2-3 sentences.',
+  stabilize: 'REGULATION INSTRUCTION: The user is in a red zone. Stabilize FIRST. No questions, no analysis, no reflection. Only presence and safety. Maximum 2 sentences. Wait until the user continues on their own.',
+  ground: 'REGULATION INSTRUCTION: The user is in a purple zone (crisis). Use ONLY grounding. No therapeutic intervention. Short, concrete, sensory. "Look around you. What do you see?" Maximum 1-2 sentences.',
 };
 
 // ─── Softened GPT Instructions (when previous message already regulated) ──
@@ -90,10 +90,10 @@ const GPT_INSTRUCTIONS: Record<RegulationAction, string | null> = {
 
 const SOFTENED_GPT_INSTRUCTIONS: Record<RegulationAction, string | null> = {
   reflect: null,
-  slow_down: 'REGULATIE-INSTRUCTIE (vervolg): Je hebt al vertraagd in je vorige bericht. Herhaal de regulatie NIET. Blijf rustig en aanwezig. Je mag nu voorzichtig één vraag stellen.',
-  regulate: 'REGULATIE-INSTRUCTIE (vervolg): Je hebt al gereguleerd in je vorige bericht. Herhaal de ademhalingsoefening NIET. Blijf kalm en aanwezig. Als de gebruiker rustiger lijkt, mag je kort reflecteren.',
-  stabilize: 'REGULATIE-INSTRUCTIE (vervolg): Je hebt al gestabiliseerd in je vorige bericht. Herhaal de stabilisatie NIET. Blijf aanwezig en stil. Alleen reageren als de gebruiker zelf iets deelt.',
-  ground: 'REGULATIE-INSTRUCTIE (vervolg): Je hebt al grounding aangeboden in je vorige bericht. Herhaal de grounding-oefening NIET. Blijf aanwezig. Wacht op de gebruiker.',
+  slow_down: 'REGULATION INSTRUCTION (continuation): You already slowed down in your previous message. Do NOT repeat the regulation. Stay calm and present. You may now carefully ask one question.',
+  regulate: 'REGULATION INSTRUCTION (continuation): You already regulated in your previous message. Do NOT repeat the breathing exercise. Stay calm and present. If the user seems calmer, you may briefly reflect.',
+  stabilize: 'REGULATION INSTRUCTION (continuation): You already stabilized in your previous message. Do NOT repeat the stabilization. Stay present and quiet. Only respond if the user shares something.',
+  ground: 'REGULATION INSTRUCTION (continuation): You already offered grounding in your previous message. Do NOT repeat the grounding exercise. Stay present. Wait for the user.',
 };
 
 // ─── Zone → Action Mapping ────────────────────────────────────
@@ -152,17 +152,17 @@ function adjustInstructionForDepth(
   switch (effectiveDepth) {
     case 'light':
       // Short regulation only, no explanation, no reflection
-      return instruction + ' Houd het zo kort mogelijk. Geen uitleg, geen reflectie.';
+      return instruction + ' Keep it as short as possible. No explanation, no reflection.';
     case 'normal':
       // Regulation + light reflection
-      return instruction + ' Na regulatie mag je kort reflecteren (1 zin).';
+      return instruction + ' After regulation you may briefly reflect (1 sentence).';
     case 'deep':
       // Regulation + gentle probing AFTER stabilization (only for yellow/green)
       if (action === 'slow_down' || action === 'reflect') {
-        return instruction + ' Na regulatie mag je voorzichtig doorvragen.';
+        return instruction + ' After regulation you may carefully probe further.';
       }
       // For orange+ zones, deep probing is NOT allowed even if depth says deep
-      return instruction + ' Na regulatie mag je kort reflecteren (1 zin).';
+      return instruction + ' After regulation you may briefly reflect (1 sentence).';
     default:
       return instruction;
   }
@@ -175,26 +175,26 @@ function adjustInstructionForDepth(
 
 const REGULATION_MARKERS = [
   // Exact micro-intervention fragments
-  'even vertragen',
-  'wat voel je nu',
-  'blijf even hier',
-  'adem rustig',
-  'je hoeft nu niets te begrijpen',
-  'gewoon even hier blijven',
-  'kijk even rond',
-  'noem 3 dingen',
+  'slow down',
+  'what do you feel right now',
+  'stay here for a moment',
+  'breathe calmly',
+  'you don\'t need to understand anything right now',
+  'just stay here',
+  'look around',
+  'name 3 things',
   // Softened variant fragments
-  'ik ben er. neem je tijd',
-  'goed zo. blijf rustig',
-  'ik ga nergens heen',
-  'je bent hier. dat is genoeg',
+  'i\'m here. take your time',
+  'good. stay calm',
+  'i\'m not going anywhere',
+  'you are here. that is enough',
   // Common regulation phrases GPT might generate
-  'adem in',
-  'adem uit',
-  'je bent veilig',
-  'je hoeft niets',
-  'neem even de tijd',
-  'ik blijf hier',
+  'breathe in',
+  'breathe out',
+  'you are safe',
+  'you don\'t have to',
+  'take a moment',
+  'i\'m staying here',
 ];
 
 /**

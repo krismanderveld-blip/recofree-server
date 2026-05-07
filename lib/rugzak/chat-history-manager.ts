@@ -145,16 +145,16 @@ function createArchiveSummary(
 function extractSimpleThemes(text: string): string[] {
   const themes: string[] = [];
   const themeKeywords: Record<string, string[]> = {
-    'craving': ['craving', 'urge', 'want to use', 'temptation', 'verlangen'],
-    'relapse': ['relapse', 'used again', 'slipped', 'terugval'],
-    'family': ['family', 'partner', 'children', 'parents', 'mother', 'father', 'gezin', 'ouders'],
-    'work': ['work', 'job', 'boss', 'colleague', 'werk', 'baan'],
-    'emotions': ['angry', 'sad', 'anxious', 'scared', 'lonely', 'boos', 'verdrietig', 'bang'],
-    'progress': ['better', 'progress', 'proud', 'achievement', 'milestone', 'trots', 'vooruitgang'],
-    'boundaries': ['boundary', 'boundaries', 'say no', 'grenzen', 'nee zeggen'],
-    'self-care': ['self-care', 'exercise', 'sleep', 'eating', 'zelfzorg', 'bewegen', 'slapen'],
-    'triggers': ['trigger', 'triggered', 'situation', 'stress', 'spanning'],
-    'relationships': ['relationship', 'friend', 'trust', 'relatie', 'vertrouwen'],
+    'craving': ['craving', 'urge', 'want to use', 'temptation'],
+    'relapse': ['relapse', 'used again', 'slipped', 'fell back'],
+    'family': ['family', 'partner', 'children', 'parents', 'mother', 'father'],
+    'work': ['work', 'job', 'boss', 'colleague'],
+    'emotions': ['angry', 'sad', 'anxious', 'scared', 'lonely', 'frustrated'],
+    'progress': ['better', 'progress', 'proud', 'achievement', 'milestone'],
+    'boundaries': ['boundary', 'boundaries', 'say no', 'stand up for myself'],
+    'self-care': ['self-care', 'exercise', 'sleep', 'eating', 'rest'],
+    'triggers': ['trigger', 'triggered', 'situation', 'stress', 'tension'],
+    'relationships': ['relationship', 'friend', 'trust', 'connection'],
   };
 
   for (const [theme, keywords] of Object.entries(themeKeywords)) {

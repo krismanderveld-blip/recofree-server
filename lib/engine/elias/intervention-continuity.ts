@@ -245,7 +245,7 @@ export function detectZoneShift(
  *
  * IGNORED:
  *   Condition: message length < 5 characters AND not an acknowledgment token
- *   Acknowledgment tokens: 'ok', 'ja', 'oke', 'oké', 'hmm', 'yes', 'yeah', 'nee', 'no'
+ *   Acknowledgment tokens: 'ok', 'yes', 'yeah', 'hmm', 'no', 'yep', 'nope', 'sure'
  *   Rationale: sub-5-char non-ack = no meaningful engagement with intervention content
  *
  * DEFLECTED:
@@ -264,13 +264,13 @@ export function detectZoneShift(
 
 /** Crisis keywords — short messages containing these are escalation signals, not 'ignored' */
 const CRISIS_KEYWORDS: ReadonlyArray<string> = Object.freeze([
-  'help', 'red', 'nood', 'sos', 'please', 'alsjeblieft', 'stop',
+  'help', 'red', 'emergency', 'sos', 'please', 'crisis', 'stop',
 ]);
 
 /** Exact acknowledgment tokens (case-insensitive, must match full message after trim) */
 const ACKNOWLEDGMENT_TOKENS: ReadonlyArray<string> = Object.freeze([
-  'ok', 'ja', 'oke', 'oké', 'hmm', 'yes', 'yeah', 'nee', 'no',
-  'ok.', 'ja.', 'oke.', 'oké.', 'hmm.', 'yes.', 'yeah.', 'nee.', 'no.',
+  'ok', 'yes', 'yeah', 'hmm', 'no', 'yep', 'nope', 'sure',
+  'ok.', 'yes.', 'yeah.', 'hmm.', 'no.', 'yep.', 'nope.', 'sure.',
 ]);
 
 /** Exact deflection markers (case-insensitive substring match) */
@@ -295,7 +295,7 @@ const DEFLECTION_MARKERS: ReadonlyArray<string> = Object.freeze([
 const ENGAGED_MIN_LENGTH = 20;
 
 /** Maximum message length to qualify as 'ignored' (non-ack short message) */
-const IGNORED_MAX_LENGTH = 5;
+const IGNORED_MAX_LENGTH = 4;
 
 export function detectUserResponse(
   userMessage: string,
@@ -310,10 +310,14 @@ export function detectUserResponse(
 
   const msg = userMessage.toLowerCase().trim();
 
-  // Rule 2: IGNORED — very short message that is not an acknowledgment
+  // Rule 2: ESCALATED — message IS a crisis keyword (exact match or very short message containing one)
+  if (CRISIS_KEYWORDS.some(k => msg === k || msg === k + '!' || msg === k + '.')) return 'escalated';
+  // Also check for crisis keywords in short messages (up to 10 chars) to catch e.g. "help me"
+  if (msg.length <= 10 && CRISIS_KEYWORDS.some(k => msg.includes(k))) return 'escalated';
+
+  // Rule 2b: IGNORED — very short message that is not an acknowledgment
   if (msg.length <= IGNORED_MAX_LENGTH) {
     if (ACKNOWLEDGMENT_TOKENS.includes(msg)) return 'engaged';
-    if (CRISIS_KEYWORDS.some(k => msg.includes(k))) return 'escalated';
     return 'ignored';
   }
 
@@ -585,44 +589,44 @@ export const MAX_TRAIL_LENGTH = 5;
  */
 export function buildInterventionContext(state: InterventionState): string {
   const lines: string[] = [
-    'INTERVENTIE-CONTINUÏTEIT:',
-    `- Actieve interventie: ${state.lastInterventionType}`,
-    `- Therapeutisch doel: ${state.interventionGoal}`,
-    `- Gelinkte zone: ${state.linkedZone} (severity ${state.linkedSeverity})`,
-    `- Verwachte shift: ${state.expectedShift.from} → ${state.expectedShift.to}`,
-    `- Effectiviteit: ${state.effectivenessScore}/100`,
-    `- Turns actief: ${state.turnsActive}`,
-    `- Laatste user response: ${state.lastUserResponse}`,
+    'INTERVENTION CONTINUITY:',
+    `- Active intervention: ${state.lastInterventionType}`,
+    `- Therapeutic goal: ${state.interventionGoal}`,
+    `- Linked zone: ${state.linkedZone} (severity ${state.linkedSeverity})`,
+    `- Expected shift: ${state.expectedShift.from} → ${state.expectedShift.to}`,
+    `- Effectiveness: ${state.effectivenessScore}/100`,
+    `- Turns active: ${state.turnsActive}`,
+    `- Last user response: ${state.lastUserResponse}`,
   ];
 
   if (state.wasReEvaluated) {
-    lines.push('- ⚠️ Zone is verschoven — her-evalueer je aanpak');
+    lines.push('- ⚠️ Zone has shifted — re-evaluate your approach');
   } else {
-    lines.push('- ✓ Zone stabiel — bouw verder op dezelfde lijn');
+    lines.push('- ✓ Zone stable — continue building on the same line');
   }
 
   // Effectiveness-based instruction
   if (state.effectivenessScore >= 70) {
-    lines.push('- Instructie: Huidige aanpak werkt. Doorgaan op dezelfde lijn.');
+    lines.push('- Instruction: Current approach is working. Continue on the same line.');
   } else if (state.effectivenessScore >= 40) {
-    lines.push('- Instructie: Matig effectief. Varieer licht binnen dezelfde strategie.');
+    lines.push('- Instruction: Moderately effective. Vary slightly within the same strategy.');
   } else {
-    lines.push('- Instructie: Lage effectiviteit. Overweeg andere benadering binnen de zone.');
+    lines.push('- Instruction: Low effectiveness. Consider a different approach within the zone.');
   }
 
   // User response instruction
   if (state.lastUserResponse === 'deflected') {
-    lines.push('- Let op: Gebruiker ontwijkt. Niet forceren, maar zachtjes terugbrengen.');
+    lines.push('- Note: User is deflecting. Do not force, but gently bring back.');
   } else if (state.lastUserResponse === 'escalated') {
-    lines.push('- Let op: Escalatie ondanks interventie. Verlaag intensiteit, meer aanwezigheid.');
+    lines.push('- Note: Escalation despite intervention. Lower intensity, more presence.');
   } else if (state.lastUserResponse === 'ignored') {
-    lines.push('- Let op: Gebruiker reageert niet op interventie. Volg de gebruiker, niet je plan.');
+    lines.push('- Note: User is not responding to intervention. Follow the user, not your plan.');
   }
 
   // Zone evolution trail — HARD LIMIT: only last 5 entries sent to GPT
   const trail = state.zoneEvolution.slice(-MAX_TRAIL_LENGTH);
   if (trail.length > 0) {
-    lines.push('- Zone-evolutie (laatste ' + trail.length + '):');
+    lines.push('- Zone evolution (last ' + trail.length + '):');
     for (const entry of trail) {
       lines.push(`  [${entry.turnIndex}] ${entry.zoneLabel} (sev ${entry.severity}) | ${entry.interventionType} | response: ${entry.userResponse}`);
     }

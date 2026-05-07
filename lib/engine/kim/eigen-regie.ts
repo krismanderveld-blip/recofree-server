@@ -4,26 +4,26 @@
  * Implements the complete Eigen Regie system for Kim users:
  *
  * 1. INPUT: Daily reflection question — percentage 0–100
- *    "In hoeverre werd jouw dag vandaag bepaald door de keuzes van de ander?"
- *    0 = volledig eigen regie, 100 = volledig bepaald door de ander
+ *    "To what extent was your day determined by the other person's choices?"
+ *    0 = full self-direction, 100 = fully determined by the other
  *
- * 2. INTERNE SCORE: engineEigenRegieScore = 100 - userInput
- *    Hoge score = hoge eigen regie, lage score = lage eigen regie
- *    Geen averaging, geen smoothing, geen trends
+ * 2. INTERNAL SCORE: engineEigenRegieScore = 100 - userInput
+ *    High score = high self-direction, low score = low self-direction
+ *    No averaging, no smoothing, no trends
  *
- * 3. ZONES: 5 niveaus gebaseerd op engineEigenRegieScore
+ * 3. ZONES: 5 levels based on engineEigenRegieScore
  *
- * 4. BETEKENIS: Vaste tekst per zone (gebaseerd op user ervaring)
+ * 4. MEANING: Fixed text per zone (based on user experience)
  *
- * 5. ENGINE IMPACT: Kim gedrag per zone
+ * 5. ENGINE IMPACT: Kim behavior per zone
  *
- * REGELS:
- * - UI toont userInput (niet omgekeerde waarde)
- * - Engine werkt met engineEigenRegieScore
- * - Geen logica buiten Kim engine
- * - Geen combinatie met andere systemen
- * - Geen inferentie
- * - Geen fallback
+ * RULES:
+ * - UI shows userInput (not inverted value)
+ * - Engine works with engineEigenRegieScore
+ * - No logic outside Kim engine
+ * - No combination with other systems
+ * - No inference
+ * - No fallback
  */
 
 // ─── Types ──────────────────────────────────────────────────
@@ -37,7 +37,7 @@ export interface EigenRegieResult {
   readonly engineScore: number;
   /** The 5-level zone derived from engineScore. */
   readonly zone: EigenRegieZone;
-  /** Fixed meaning text for this zone (Dutch, based on user experience). */
+  /** Fixed meaning text for this zone (based on user experience). */
   readonly meaning: string;
   /** Engine impact directives for Kim behavior in this zone. */
   readonly impact: EigenRegieImpact;
@@ -85,15 +85,15 @@ export function getEigenRegieZone(engineScore: number): EigenRegieZone {
 // ─── Step 4: Zone Meaning ───────────────────────────────────
 
 /**
- * Fixed meaning per zone. Based on user experience (Dutch).
+ * Fixed meaning per zone. Based on user experience.
  * These texts do not change. No interpolation. No inference.
  */
 const ZONE_MEANINGS: Readonly<Record<EigenRegieZone, string>> = Object.freeze({
-  ROOD: 'Ik was volledig gefocust op de ander. Ik voelde me verantwoordelijk voor zijn/haar gedrag.',
-  ORANJE: 'Ik was grotendeels bezig met de ander. Mijn eigen behoeften kwamen weinig aan bod.',
-  GEEL: 'Ik was veel met de ander bezig, maar heb ook even aan mezelf gedacht.',
-  LICHTGROEN: 'Ik hield rekening met de ander, maar bleef ook bij mezelf.',
-  GROEN: 'Ik heb mijn eigen plan getrokken. Ik voelde me vrij, ongeacht wat de ander deed.',
+  ROOD: 'I was completely focused on the other person. I felt responsible for their behavior.',
+  ORANJE: 'I was mostly occupied with the other person. My own needs barely came up.',
+  GEEL: 'I was often thinking about the other person, but also thought about myself briefly.',
+  LICHTGROEN: 'I considered the other person, but also stayed with myself.',
+  GROEN: 'I followed my own plan. I felt free, regardless of what the other person did.',
 });
 
 export function getEigenRegieMeaning(zone: EigenRegieZone): string {
@@ -106,32 +106,32 @@ export function getEigenRegieMeaning(zone: EigenRegieZone): string {
  * Kim behavior directives per zone.
  * These directly impact how Kim responds.
  *
- * ROOD:       stabiliseren, geen confrontatie
- * ORANJE:     bewustmaken, lichte reflectie
- * GEEL:       inzicht verdiepen, zachte spiegeling
- * LICHTGROEN: versterken, kleine richting geven
- * GROEN:      autonomie, uitdaging mogelijk
+ * ROOD:       stabilize, no confrontation
+ * ORANJE:     raise awareness, light reflection
+ * GEEL:       deepen insight, gentle mirroring
+ * LICHTGROEN: strengthen, give small direction
+ * GROEN:      autonomy, challenge possible
  */
 const ZONE_IMPACTS: Readonly<Record<EigenRegieZone, EigenRegieImpact>> = Object.freeze({
   ROOD: Object.freeze({
-    primaryDirective: 'stabiliseren',
-    secondaryDirective: 'geen confrontatie',
+    primaryDirective: 'stabilize',
+    secondaryDirective: 'no confrontation',
   }),
   ORANJE: Object.freeze({
-    primaryDirective: 'bewustmaken',
-    secondaryDirective: 'lichte reflectie',
+    primaryDirective: 'raise awareness',
+    secondaryDirective: 'light reflection',
   }),
   GEEL: Object.freeze({
-    primaryDirective: 'inzicht verdiepen',
-    secondaryDirective: 'zachte spiegeling',
+    primaryDirective: 'deepen insight',
+    secondaryDirective: 'gentle mirroring',
   }),
   LICHTGROEN: Object.freeze({
-    primaryDirective: 'versterken',
-    secondaryDirective: 'kleine richting geven',
+    primaryDirective: 'strengthen',
+    secondaryDirective: 'give small direction',
   }),
   GROEN: Object.freeze({
-    primaryDirective: 'autonomie',
-    secondaryDirective: 'uitdaging mogelijk',
+    primaryDirective: 'autonomy',
+    secondaryDirective: 'challenge possible',
   }),
 });
 
@@ -171,13 +171,13 @@ export function processEigenRegie(userInput: number): EigenRegieResult {
  * The daily reflection question shown to Kim users.
  * Single source of truth for the question text.
  */
-export const EIGEN_REGIE_QUESTION = 'In hoeverre werd jouw dag vandaag bepaald door de keuzes van de ander?' as const;
+export const EIGEN_REGIE_QUESTION = 'To what extent was your day today determined by the choices of the other person?' as const;
 
 /**
  * Labels for the slider extremes shown in UI.
- * UI displays userInput (0 = eigen regie, 100 = bepaald door ander).
+ * UI displays userInput (0 = full self-direction, 100 = fully determined by the other).
  */
 export const EIGEN_REGIE_SLIDER_LABELS = Object.freeze({
-  min: 'Volledig eigen regie',
-  max: 'Volledig bepaald door de ander',
+  min: 'Full self-direction',
+  max: 'Fully determined by the other',
 } as const);

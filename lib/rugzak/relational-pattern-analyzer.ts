@@ -65,7 +65,7 @@ export interface RelationalPatternResult {
 
 interface PatternDef {
   id: RelationalPatternId;
-  /** Keywords/phrases that indicate this pattern (Dutch + English) */
+  /** Keywords/phrases that indicate this pattern */
   keywords: RegExp[];
   /** Linked schemas (first = most likely) */
   schemas: SchemaId[];
@@ -77,12 +77,12 @@ const PATTERN_DEFINITIONS: PatternDef[] = [
   {
     id: 'repeated_boundary_violation',
     keywords: [
-      /\b(grens|grenzen|boundary|boundaries)\b/i,
-      /\b(overschrijd|overschrijden|oversteppen|violated|violating|crossed)\b/i,
-      /\b(te veel gevraagd|too much asked|altijd beschikbaar|always available)\b/i,
-      /\b(nee zeggen|can't say no|kan niet weigeren|cannot refuse)\b/i,
-      /\b(weer gebeurd|happened again|opnieuw|once again)\b/i,
-      /\b(respecteert niet|doesn't respect|negeert|ignores)\b/i,
+      /\b(boundary|boundaries)\b/i,
+      /\b(violated|violating|crossed|overstepped)\b/i,
+      /\b(too much asked|always available|taken advantage)\b/i,
+      /\b(can't say no|cannot refuse|unable to refuse)\b/i,
+      /\b(happened again|once again|keeps happening)\b/i,
+      /\b(doesn't respect|ignores|disregards)\b/i,
     ],
     schemas: ['depletion', 'self_worth'],
     baseConfidence: 0.4,
@@ -90,12 +90,12 @@ const PATTERN_DEFINITIONS: PatternDef[] = [
   {
     id: 'emotional_neglect',
     keywords: [
-      /\b(genegeerd|ignored|onzichtbaar|invisible|niet gezien|not seen)\b/i,
-      /\b(emotioneel verwaarloos|emotionally neglect|afwezig|absent)\b/i,
-      /\b(nooit geluisterd|never listened|niet gehoord|not heard)\b/i,
-      /\b(alleen gelaten|left alone|in de steek|abandoned)\b/i,
-      /\b(koud|cold|afstandelijk|distant|onverschillig|indifferent)\b/i,
-      /\b(niemand die|nobody who|niemand vraagt|nobody asks)\b/i,
+      /\b(ignored|invisible|not seen|overlooked)\b/i,
+      /\b(emotionally neglect|absent|emotionally unavailable)\b/i,
+      /\b(never listened|not heard|nobody listens)\b/i,
+      /\b(left alone|abandoned|deserted)\b/i,
+      /\b(cold|distant|indifferent|detached)\b/i,
+      /\b(nobody who|nobody asks|no one cares)\b/i,
     ],
     schemas: ['abandonment', 'rejection'],
     baseConfidence: 0.4,
@@ -103,12 +103,12 @@ const PATTERN_DEFINITIONS: PatternDef[] = [
   {
     id: 'inconsistency',
     keywords: [
-      /\b(beloofd|promised|belofte|promise)\b/i,
-      /\b(weer niet|again not|niet nagekomen|didn't follow through)\b/i,
-      /\b(onbetrouwbaar|unreliable|wisselend|inconsistent)\b/i,
-      /\b(ene moment|one moment|dan weer|then again)\b/i,
-      /\b(nooit weet|never know|weet nooit|unpredictable)\b/i,
-      /\b(hot and cold|warm en koud)\b/i,
+      /\b(promised|promise|broke their word)\b/i,
+      /\b(again not|didn't follow through|never follows through)\b/i,
+      /\b(unreliable|inconsistent|unpredictable)\b/i,
+      /\b(one moment|then again|back and forth)\b/i,
+      /\b(never know|can't predict|don't know what to expect)\b/i,
+      /\b(hot and cold|mixed signals)\b/i,
     ],
     schemas: ['abandonment', 'rejection'],
     baseConfidence: 0.35,
@@ -116,12 +116,12 @@ const PATTERN_DEFINITIONS: PatternDef[] = [
   {
     id: 'control_behavior',
     keywords: [
-      /\b(controle|control|controleren|controlling)\b/i,
-      /\b(bepaalt|decides|beslist voor|decides for)\b/i,
-      /\b(manipulat|manipuleer|manipulating)\b/i,
-      /\b(moet van|has to|dwing|force|gedwongen|forced)\b/i,
-      /\b(geen keuze|no choice|geen stem|no voice)\b/i,
-      /\b(dreig|threaten|chantage|blackmail)\b/i,
+      /\b(control|controlling|controlled)\b/i,
+      /\b(decides|decides for me|dictates)\b/i,
+      /\b(manipulat|manipulating|manipulated)\b/i,
+      /\b(has to|force|forced|coerced)\b/i,
+      /\b(no choice|no voice|no say)\b/i,
+      /\b(threaten|blackmail|intimidate)\b/i,
     ],
     schemas: ['self_worth', 'shame'],
     baseConfidence: 0.4,
@@ -129,11 +129,11 @@ const PATTERN_DEFINITIONS: PatternDef[] = [
   {
     id: 'repeated_disappointment',
     keywords: [
-      /\b(teleurgesteld|disappointed|teleurstelling|disappointment)\b/i,
-      /\b(weer teleurgesteld|disappointed again|altijd hetzelfde|always the same)\b/i,
-      /\b(verwacht|expected|hoopte|hoped)\b/i,
-      /\b(laat me vallen|lets me down|in de steek|let down)\b/i,
-      /\b(nooit goed genoeg|never good enough|niet genoeg|not enough)\b/i,
+      /\b(disappointed|disappointment)\b/i,
+      /\b(disappointed again|always the same|same thing)\b/i,
+      /\b(expected|hoped|thought it would be different)\b/i,
+      /\b(lets me down|let down|failed me)\b/i,
+      /\b(never good enough|not enough|insufficient)\b/i,
     ],
     schemas: ['rejection', 'self_worth'],
     baseConfidence: 0.35,
@@ -141,12 +141,12 @@ const PATTERN_DEFINITIONS: PatternDef[] = [
   {
     id: 'guilt_cycle',
     keywords: [
-      /\b(schuld|guilt|schuldig|guilty)\b/i,
-      /\b(mijn fout|my fault|ik ben de oorzaak|I caused)\b/i,
-      /\b(had moeten|should have|had ik maar|if only I)\b/i,
-      /\b(verantwoordelijk voor|responsible for|op mij|on me)\b/i,
-      /\b(schaamte|shame|schaam me|ashamed)\b/i,
-      /\b(verdien het niet|don't deserve|straf|punishment)\b/i,
+      /\b(guilt|guilty)\b/i,
+      /\b(my fault|I caused|I'm to blame)\b/i,
+      /\b(should have|if only I|could have prevented)\b/i,
+      /\b(responsible for|it's on me|all on me)\b/i,
+      /\b(shame|ashamed|disgusted with myself)\b/i,
+      /\b(don't deserve|punishment|deserve this)\b/i,
     ],
     schemas: ['shame', 'self_worth'],
     baseConfidence: 0.4,
@@ -154,12 +154,12 @@ const PATTERN_DEFINITIONS: PatternDef[] = [
   {
     id: 'collapse_after_overgiving',
     keywords: [
-      /\b(uitgeput|exhausted|op|burned out|leeg|empty)\b/i,
-      /\b(te veel gegeven|given too much|alles gegeven|gave everything)\b/i,
-      /\b(niets over|nothing left|niks meer|no more)\b/i,
-      /\b(instorten|collapse|crashen|crash|ineenstorten)\b/i,
-      /\b(voor iedereen|for everyone|altijd klaar|always ready)\b/i,
-      /\b(vergeet mezelf|forget myself|zelf niet|not myself)\b/i,
+      /\b(exhausted|burned out|empty|depleted)\b/i,
+      /\b(given too much|gave everything|overextended)\b/i,
+      /\b(nothing left|no more|can't anymore)\b/i,
+      /\b(collapse|crash|breaking down|falling apart)\b/i,
+      /\b(for everyone|always ready|always there for others)\b/i,
+      /\b(forget myself|lost myself|not myself)\b/i,
     ],
     schemas: ['depletion', 'self_worth'],
     baseConfidence: 0.4,
@@ -172,10 +172,10 @@ const PATTERN_DEFINITIONS: PatternDef[] = [
  * Words that indicate repetition/recurrence — boosts confidence.
  */
 const REPETITION_INDICATORS = [
-  /\b(weer|again|opnieuw|once more|steeds|always|altijd|elke keer|every time)\b/i,
-  /\b(patroon|pattern|herhaalt|repeats|hetzelfde|the same)\b/i,
-  /\b(al jaren|for years|al lang|for a long time|al mijn hele leven|my whole life)\b/i,
-  /\b(nooit verandert|never changes|blijft maar|keeps on)\b/i,
+  /\b(again|once more|always|every time|keeps happening)\b/i,
+  /\b(pattern|repeats|the same|same thing)\b/i,
+  /\b(for years|for a long time|my whole life|since forever)\b/i,
+  /\b(never changes|keeps on|won't stop|doesn't stop)\b/i,
 ];
 
 /**
@@ -184,16 +184,16 @@ const REPETITION_INDICATORS = [
  * the same relational pain again.
  */
 const REPEATED_EVENT_SIGNALS = [
-  /\b(weer|again)\b/i,
-  /\b(altijd|always)\b/i,
-  /\b(elke keer|every time)\b/i,
-  /\b(hetzelfde|same thing)\b/i,
-  /\b(blijft (maar )?doen|keeps doing)\b/i,
-  /\b(verandert nooit|never changes)\b/i,
-  /\b(steeds opnieuw|over and over)\b/i,
-  /\b(net als (de )?vorige keer|just like last time)\b/i,
-  /\b(al zo lang|for so long)\b/i,
-  /\b(het stopt niet|it doesn't stop|it won't stop)\b/i,
+  /\b(again)\b/i,
+  /\b(always)\b/i,
+  /\b(every time)\b/i,
+  /\b(same thing|the same)\b/i,
+  /\b(keeps doing|keeps happening)\b/i,
+  /\b(never changes)\b/i,
+  /\b(over and over)\b/i,
+  /\b(just like last time|like before)\b/i,
+  /\b(for so long)\b/i,
+  /\b(it doesn't stop|it won't stop)\b/i,
 ];
 
 // ─── Analysis ─────────────────────────────────────────────────────

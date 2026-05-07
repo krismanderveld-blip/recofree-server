@@ -17,13 +17,13 @@
 export function detectKimTrigger(text: string): string {
   const lower = text.toLowerCase();
 
-  if (/\b(grens|boundary|grenzen|limits|te veel)\b/.test(lower)) return 'boundary_violation';
-  if (/\b(weer|again|altijd|always|elke keer|every time)\b/.test(lower)) return 'repeated_pattern';
-  if (/\b(schuld|guilt|mijn fout|my fault|verantwoordelijk)\b/.test(lower)) return 'guilt';
-  if (/\b(moe|tired|uitgeput|exhausted|op|burned out)\b/.test(lower)) return 'caregiver_fatigue';
-  if (/\b(alleen|lonely|niemand begrijpt|no one understands)\b/.test(lower)) return 'isolation';
-  if (/\b(terugval|relapse|weer begonnen|started again)\b/.test(lower)) return 'loved_one_relapse';
-  if (/\b(boos|angry|kwaad|furious|woedend)\b/.test(lower)) return 'anger_at_situation';
+  if (/\b(boundary|boundaries|limits|too much|overstepped)\b/.test(lower)) return 'boundary_violation';
+  if (/\b(again|always|every time|keeps happening)\b/.test(lower)) return 'repeated_pattern';
+  if (/\b(guilt|guilty|my fault|responsible)\b/.test(lower)) return 'guilt';
+  if (/\b(tired|exhausted|burned out|drained)\b/.test(lower)) return 'caregiver_fatigue';
+  if (/\b(lonely|alone|no one understands|isolated)\b/.test(lower)) return 'isolation';
+  if (/\b(relapse|relapsed|started again|using again)\b/.test(lower)) return 'loved_one_relapse';
+  if (/\b(angry|furious|rage|frustrated)\b/.test(lower)) return 'anger_at_situation';
 
   return '';
 }

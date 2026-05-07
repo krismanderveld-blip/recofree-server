@@ -23,7 +23,7 @@ describe('regulation-layer', () => {
     it('YELLOW zone → slow_down', () => {
       const result = applyRegulation('YELLOW', 'normal');
       expect(result.action).toBe('slow_down');
-      expect(result.intervention).toContain('vertragen');
+      expect(result.intervention).toContain('slow down');
       expect(result.gptInstruction).toBeTruthy();
       expect(result.requiresRegulationTone).toBe(true);
     });
@@ -31,22 +31,22 @@ describe('regulation-layer', () => {
     it('ORANGE zone → regulate', () => {
       const result = applyRegulation('ORANGE', 'normal');
       expect(result.action).toBe('regulate');
-      expect(result.intervention).toContain('Blijf even hier');
-      expect(result.gptInstruction).toContain('oranje zone');
+      expect(result.intervention).toContain('Stay here for a moment');
+      expect(result.gptInstruction).toContain('orange zone');
     });
 
     it('RED zone → stabilize', () => {
       const result = applyRegulation('RED', 'normal');
       expect(result.action).toBe('stabilize');
-      expect(result.intervention).toContain('niets te begrijpen');
-      expect(result.gptInstruction).toContain('rode zone');
+      expect(result.intervention).toContain('don\'t need to understand');
+      expect(result.gptInstruction).toContain('red zone');
     });
 
     it('PURPLE zone → ground', () => {
       const result = applyRegulation('PURPLE', 'normal');
       expect(result.action).toBe('ground');
-      expect(result.intervention).toContain('3 dingen');
-      expect(result.gptInstruction).toContain('paarse zone');
+      expect(result.intervention).toContain('3 things');
+      expect(result.gptInstruction).toContain('purple zone');
     });
   });
 
@@ -89,19 +89,19 @@ describe('regulation-layer', () => {
   // ─── Depth-Adjusted Instructions ────────────────────────────
 
   describe('depth-adjusted GPT instructions', () => {
-    it('light depth adds "geen uitleg, geen reflectie"', () => {
+    it('light depth adds "No explanation, no reflection"', () => {
       const result = applyRegulation('RED', 'deep'); // forced to light
-      expect(result.gptInstruction).toContain('Geen uitleg, geen reflectie');
+      expect(result.gptInstruction).toContain('No explanation, no reflection');
     });
 
-    it('normal depth adds "kort reflecteren"', () => {
+    it('normal depth adds "briefly reflect"', () => {
       const result = applyRegulation('ORANGE', 'normal');
-      expect(result.gptInstruction).toContain('kort reflecteren');
+      expect(result.gptInstruction).toContain('briefly reflect');
     });
 
-    it('deep depth on yellow allows doorvragen', () => {
+    it('deep depth on yellow allows probe further', () => {
       const result = applyRegulation('YELLOW', 'deep');
-      expect(result.gptInstruction).toContain('doorvragen');
+      expect(result.gptInstruction).toContain('probe further');
     });
   });
 
@@ -112,53 +112,53 @@ describe('regulation-layer', () => {
       const result = applyRegulation('ORANGE', 'normal', null);
       expect(result.wasSoftened).toBe(false);
       expect(result.wasSkipped).toBe(false);
-      expect(result.intervention).toContain('Blijf even hier');
+      expect(result.intervention).toContain('Stay here for a moment');
     });
 
     it('previous message WITHOUT regulation → normal intervention', () => {
-      const result = applyRegulation('ORANGE', 'normal', 'Ik begrijp dat het moeilijk is. Vertel me meer.');
+      const result = applyRegulation('ORANGE', 'normal', 'I understand that it is difficult. Tell me more.');
       expect(result.wasSoftened).toBe(false);
       expect(result.wasSkipped).toBe(false);
-      expect(result.intervention).toContain('Blijf even hier');
+      expect(result.intervention).toContain('Stay here for a moment');
     });
 
     it('previous message WITH regulation + YELLOW zone → SKIP intervention', () => {
-      const prevMsg = 'Even vertragen. Wat voel je nu precies? Ik ben hier voor je.';
+      const prevMsg = 'Let\'s slow down. What do you feel right now? I\'m here for you.';
       const result = applyRegulation('YELLOW', 'normal', prevMsg);
       expect(result.wasSkipped).toBe(true);
       expect(result.wasSoftened).toBe(false);
       expect(result.intervention).toBeNull(); // skipped = no intervention text
       expect(result.gptInstruction).toBeTruthy(); // still gets softened instruction
-      expect(result.gptInstruction).toContain('vervolg');
+      expect(result.gptInstruction).toContain('continuation');
     });
 
     it('previous message WITH regulation + ORANGE zone → SOFTEN intervention', () => {
-      const prevMsg = 'Blijf even hier. Adem rustig in en uit.';
+      const prevMsg = 'Stay here for a moment. Breathe calmly in and out.';
       const result = applyRegulation('ORANGE', 'normal', prevMsg);
       expect(result.wasSoftened).toBe(true);
       expect(result.wasSkipped).toBe(false);
       expect(result.intervention).toBeTruthy();
-      expect(result.intervention).not.toContain('Blijf even hier'); // not the original
-      expect(result.intervention).toContain('Goed zo'); // softened variant
+      expect(result.intervention).not.toContain('Stay here for a moment'); // not the original
+      expect(result.intervention).toContain('Good'); // softened variant
     });
 
     it('previous message WITH regulation + RED zone → SOFTEN intervention', () => {
-      const prevMsg = 'Je hoeft nu niets te begrijpen. Gewoon even hier blijven.';
+      const prevMsg = 'You don\'t need to understand anything right now. Just stay here.';
       const result = applyRegulation('RED', 'normal', prevMsg);
       expect(result.wasSoftened).toBe(true);
       expect(result.wasSkipped).toBe(false);
-      expect(result.intervention).toContain('nergens heen'); // softened variant
+      expect(result.intervention).toContain('not going anywhere'); // softened variant
     });
 
     it('previous message WITH regulation + PURPLE zone → SOFTEN intervention', () => {
-      const prevMsg = 'Kijk even rond. Noem 3 dingen die je ziet.';
+      const prevMsg = 'Look around. Name 3 things you can see.';
       const result = applyRegulation('PURPLE', 'normal', prevMsg);
       expect(result.wasSoftened).toBe(true);
-      expect(result.intervention).toContain('hier. Dat is genoeg'); // softened variant
+      expect(result.intervention).toContain('here. That'); // softened variant
     });
 
     it('previous message WITH regulation + GREEN zone → no intervention (reflect)', () => {
-      const prevMsg = 'Adem rustig in en uit. Je bent veilig.';
+      const prevMsg = 'Breathe in and out slowly. You are safe.';
       const result = applyRegulation('GREEN', 'normal', prevMsg);
       expect(result.action).toBe('reflect');
       expect(result.intervention).toBeNull();
@@ -166,18 +166,18 @@ describe('regulation-layer', () => {
       expect(result.wasSkipped).toBe(false);
     });
 
-    it('softened GPT instructions contain "vervolg" label', () => {
-      const prevMsg = 'Adem rustig in en uit. Blijf even hier.';
+    it('softened GPT instructions contain "continuation" label', () => {
+      const prevMsg = 'Breathe in and out slowly. Stay here for a moment.';
       const result = applyRegulation('ORANGE', 'normal', prevMsg);
-      expect(result.gptInstruction).toContain('vervolg');
-      expect(result.gptInstruction).toContain('Herhaal');
+      expect(result.gptInstruction).toContain('continuation');
+      expect(result.gptInstruction).toContain('NOT repeat');
     });
 
     it('detects GPT-generated regulation phrases (not just exact micro-interventions)', () => {
       // GPT might generate its own regulation phrasing
-      const prevMsg = 'Ik ben er voor je. Adem in... en adem uit. Je bent veilig hier.';
+      const prevMsg = 'I\'m here for you. Breathe in... and breathe out. You are safe here.';
       const result = applyRegulation('ORANGE', 'normal', prevMsg);
-      expect(result.wasSoftened).toBe(true); // should detect 'adem in' and 'je bent veilig'
+      expect(result.wasSoftened).toBe(true); // should detect 'breathe in' and 'you are safe'
     });
   });
 

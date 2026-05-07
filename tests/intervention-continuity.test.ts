@@ -137,13 +137,13 @@ describe('detectUserResponse', () => {
 
   it('Rule 1: returns escalated when zone worsened (objective measurement)', () => {
     const worsened = { from: 'GEEL' as const, to: 'ROOD' as const, direction: 'worsened' as const, delta: 2 };
-    expect(detectUserResponse('ik voel me slecht en wil stoppen', worsened, 'regulation')).toBe('escalated');
+    expect(detectUserResponse('I feel bad and want to stop', worsened, 'regulation')).toBe('escalated');
   });
 
   it('Rule 2: returns engaged for acknowledgment tokens (<= 5 chars)', () => {
     expect(detectUserResponse('ok', stable, 'regulation')).toBe('engaged');
-    expect(detectUserResponse('ja', stable, 'regulation')).toBe('engaged');
-    expect(detectUserResponse('nee', stable, 'regulation')).toBe('engaged');
+    expect(detectUserResponse('yes', stable, 'regulation')).toBe('engaged');
+    expect(detectUserResponse('no', stable, 'regulation')).toBe('engaged');
     expect(detectUserResponse('hmm.', stable, 'regulation')).toBe('engaged');
   });
 
@@ -160,14 +160,14 @@ describe('detectUserResponse', () => {
   });
 
   it('Rule 4: returns engaged for substantive response (>= 20 chars, no deflection)', () => {
-    expect(detectUserResponse('ik heb geprobeerd om rustig te ademen zoals je zei', stable, 'regulation')).toBe('engaged');
-    expect(detectUserResponse('dat helpt wel een beetje denk ik', stable, 'regulation')).toBe('engaged');
+    expect(detectUserResponse('I tried to breathe calmly like you said', stable, 'regulation')).toBe('engaged');
+    expect(detectUserResponse('that does help a little I think', stable, 'regulation')).toBe('engaged');
   });
 
   it('Rule 5: returns unknown for ambiguous messages (6-19 chars, no other signal)', () => {
-    expect(detectUserResponse('weet niet', stable, 'regulation')).toBe('unknown');
-    expect(detectUserResponse('misschien', stable, 'regulation')).toBe('unknown');
-    expect(detectUserResponse('ik denk het', stable, 'regulation')).toBe('unknown');
+    expect(detectUserResponse('not sure', stable, 'regulation')).toBe('unknown');
+    expect(detectUserResponse('maybe', stable, 'regulation')).toBe('unknown');
+    expect(detectUserResponse('I think so', stable, 'regulation')).toBe('unknown');
   });
 });
 
@@ -247,7 +247,7 @@ describe('evaluateInterventionContinuity (PRE-GPT)', () => {
     // Simulate first turn POST-GPT
     updateInterventionAfterResponse(zone, 'regulate');
     // Second turn PRE-GPT
-    const result = evaluateInterventionContinuity(zone, 'ik voel me nog steeds gespannen');
+    const result = evaluateInterventionContinuity(zone, 'I still feel tense and stressed out');
     expect(result).not.toBeNull();
     expect(result!.lastInterventionType).toBe('regulation');
     expect(result!.linkedZone).toBe('ORANJE');
@@ -286,7 +286,7 @@ describe('updateInterventionAfterResponse (POST-GPT)', () => {
     expect(getInterventionState()!.lastInterventionType).toBe('regulation');
 
     // Simulate PRE-GPT evaluation (zone stable)
-    evaluateInterventionContinuity(zone, 'ok ik probeer het');
+    evaluateInterventionContinuity(zone, 'ok I will try it');
 
     // POST-GPT: Elias switched to deceleration
     updateInterventionAfterResponse(zone, 'slow_down');
@@ -322,7 +322,7 @@ describe('Zone shift → re-evaluation', () => {
 
     // Second turn: zone worsened to ROOD
     const roodZone = makeResolvedZone('ROOD', 4);
-    const state = evaluateInterventionContinuity(roodZone, 'ik kan niet meer');
+    const state = evaluateInterventionContinuity(roodZone, 'I cannot take it anymore');
 
     expect(state).not.toBeNull();
     expect(state!.wasReEvaluated).toBe(true);
@@ -343,7 +343,7 @@ describe('Zone stable → continuation', () => {
     updateInterventionAfterResponse(oranjeZone, 'regulate');
 
     // Same zone next turn
-    const state = evaluateInterventionContinuity(oranjeZone, 'ik probeer rustig te ademen');
+    const state = evaluateInterventionContinuity(oranjeZone, 'I am trying to breathe calmly');
 
     expect(state).not.toBeNull();
     expect(state!.wasReEvaluated).toBe(false);
@@ -358,7 +358,7 @@ describe('Zone stable → continuation', () => {
     evaluateInterventionContinuity(geelZone, 'ok');
     updateInterventionAfterResponse(geelZone, 'slow_down');
 
-    evaluateInterventionContinuity(geelZone, 'ik luister');
+    evaluateInterventionContinuity(geelZone, 'I am listening');
     const state = getInterventionState();
     expect(state!.turnsActive).toBe(3);
   });
@@ -387,7 +387,7 @@ describe('getSessionSummary', () => {
 
     // Turn 3: improved to GEEL
     const geelZone = makeResolvedZone('GEEL', 2);
-    evaluateInterventionContinuity(geelZone, 'ik voel me rustiger');
+    evaluateInterventionContinuity(geelZone, 'I feel calmer now');
     updateInterventionAfterResponse(geelZone, 'slow_down');
 
     const summary = getSessionSummary();
@@ -418,13 +418,13 @@ describe('buildInterventionContext', () => {
     };
 
     const context = buildInterventionContext(state);
-    expect(context).toContain('INTERVENTIE-CONTINUÏTEIT:');
+    expect(context).toContain('INTERVENTION CONTINUITY:');
     expect(context).toContain('regulation');
     expect(context).toContain('ORANJE');
     expect(context).toContain('GEEL');
     expect(context).toContain('75/100');
-    expect(context).toContain('Zone stabiel — bouw verder op dezelfde lijn');
-    expect(context).toContain('Huidige aanpak werkt');
+    expect(context).toContain('Zone stable — continue building on the same line');
+    expect(context).toContain('Current approach is working');
   });
 
   it('includes re-evaluation warning when zone shifted', () => {
@@ -442,9 +442,9 @@ describe('buildInterventionContext', () => {
     };
 
     const context = buildInterventionContext(state);
-    expect(context).toContain('Zone is verschoven — her-evalueer je aanpak');
-    expect(context).toContain('Lage effectiviteit');
-    expect(context).toContain('Escalatie ondanks interventie');
+    expect(context).toContain('Zone has shifted — re-evaluate your approach');
+    expect(context).toContain('Low effectiveness');
+    expect(context).toContain('Escalation despite intervention');
   });
 
   it('includes deflection warning', () => {
@@ -462,7 +462,7 @@ describe('buildInterventionContext', () => {
     };
 
     const context = buildInterventionContext(state);
-    expect(context).toContain('Gebruiker ontwijkt');
+    expect(context).toContain('User is deflecting');
   });
 });
 
@@ -550,7 +550,7 @@ describe('buildInterventionContext trail limit (MAX_TRAIL_LENGTH = 5)', () => {
     const context = buildInterventionContext(state);
     expect(context).toContain('[0]');
     expect(context).toContain('[1]');
-    expect(context).toContain('laatste 2');
+    expect(context).toContain('last 2');
   });
 
   it('does not include trail section when evolution is empty', () => {

@@ -72,14 +72,14 @@ export const kimZoneImpactMap: Readonly<Record<ZoneLevel, KimImpact>> = Object.f
   }),
 });
 
-// ─── Zone Labels (Dutch) ───────────────────────────────────────
+// ─── Zone Labels ─────────────────────────────────────────────
 
 const KIM_ZONE_LABELS: Readonly<Record<ZoneLevel, string>> = Object.freeze({
-  ROOD: 'Verlies van eigen regie',
-  ORANJE: 'Beperkte eigen regie',
-  GEEL: 'Wisselende eigen regie',
-  LICHTGROEN: 'Groeiende eigen regie',
-  GROEN: 'Sterke eigen regie',
+  ROOD: 'Loss of self-direction',
+  ORANJE: 'Limited self-direction',
+  GEEL: 'Fluctuating self-direction',
+  LICHTGROEN: 'Growing self-direction',
+  GROEN: 'Strong self-direction',
 });
 
 // ─── Eigen Regie Zone → ZoneLevel Mapping ──────────────────────

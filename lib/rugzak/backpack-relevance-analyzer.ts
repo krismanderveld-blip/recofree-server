@@ -50,43 +50,43 @@ export interface SelectedRelationshipAnchor {
 // ─── Trigger Keywords ──────────────────────────────────────────
 
 const TRIGGER_KEYWORDS: Record<string, string[]> = {
-  isolation: ['alone', 'lonely', 'nobody', 'isolated', 'by myself', 'no one', 'alleen', 'eenzaam', 'niemand'],
-  rejection: ['rejected', 'pushed away', 'not wanted', 'unwanted', 'afgewezen', 'niet gewild'],
-  abandonment: ['abandoned', 'left', 'walked away', 'gone', 'verlaten', 'achtergelaten', 'weg'],
-  shame: ['ashamed', 'shame', 'embarrassed', 'disgusted with myself', 'schaamte', 'schaam'],
-  self_worth: ['worthless', 'not good enough', 'failure', 'useless', 'waardeloos', 'niet goed genoeg'],
-  craving: ['craving', 'urge', 'want to drink', 'want to use', 'tempted', 'relapse', 'verlangen', 'drang', 'terugval'],
-  fear_of_loss: ['lose', 'losing', 'afraid to lose', 'scared of losing', 'verliezen', 'bang om te verliezen'],
-  guilt: ['guilty', 'guilt', 'my fault', 'blame myself', 'schuld', 'schuldig', 'mijn fout'],
-  anger: ['angry', 'furious', 'rage', 'hate', 'boos', 'woedend', 'kwaad'],
-  hopelessness: ['hopeless', 'no hope', 'pointless', 'give up', 'hopeloos', 'geen hoop', 'opgeven'],
-  control: ['control', 'controlling', 'manipulate', 'controle', 'manipuleren'],
-  boundary_violation: ['boundary', 'boundaries', 'crossed the line', 'too much', 'grens', 'grenzen', 'te ver'],
-  overgiving: ['too much for them', 'always giving', 'exhausted from caring', 'te veel geven', 'uitgeput'],
-  disappointment: ['disappointed', 'let down', 'again', 'every time', 'teleurgesteld', 'weer', 'elke keer'],
+  isolation: ['alone', 'lonely', 'nobody', 'isolated', 'by myself', 'no one'],
+  rejection: ['rejected', 'pushed away', 'not wanted', 'unwanted'],
+  abandonment: ['abandoned', 'left', 'walked away', 'gone'],
+  shame: ['ashamed', 'shame', 'embarrassed', 'disgusted with myself'],
+  self_worth: ['worthless', 'not good enough', 'failure', 'useless'],
+  craving: ['craving', 'urge', 'want to drink', 'want to use', 'tempted', 'relapse'],
+  fear_of_loss: ['lose', 'losing', 'afraid to lose', 'scared of losing'],
+  guilt: ['guilty', 'guilt', 'my fault', 'blame myself'],
+  anger: ['angry', 'furious', 'rage', 'hate'],
+  hopelessness: ['hopeless', 'no hope', 'pointless', 'give up'],
+  control: ['control', 'controlling', 'manipulate'],
+  boundary_violation: ['boundary', 'boundaries', 'crossed the line', 'too much'],
+  overgiving: ['too much for them', 'always giving', 'exhausted from caring'],
+  disappointment: ['disappointed', 'let down', 'again', 'every time'],
 };
 
 // ─── Relationship Detection ────────────────────────────────────
 
 const RELATIONSHIP_ROLES: Record<string, string[]> = {
-  father: ['father', 'dad', 'papa', 'vader', 'pa'],
-  mother: ['mother', 'mom', 'mama', 'moeder', 'ma', 'mam'],
-  son: ['son', 'zoon', 'jongen'],
-  daughter: ['daughter', 'dochter'],
-  partner: ['partner', 'wife', 'husband', 'girlfriend', 'boyfriend', 'vrouw', 'man', 'vriendin', 'vriend', 'echtgenoot', 'echtgenote'],
-  ex: ['ex', 'ex-partner', 'ex-vrouw', 'ex-man', 'ex-vriendin', 'ex-vriend'],
-  sibling: ['brother', 'sister', 'broer', 'zus'],
-  friend: ['friend', 'beste vriend', 'beste vriendin', 'vriend', 'vriendin'],
+  father: ['father', 'dad', 'papa'],
+  mother: ['mother', 'mom', 'mama'],
+  son: ['son', 'boy'],
+  daughter: ['daughter'],
+  partner: ['partner', 'wife', 'husband', 'girlfriend', 'boyfriend'],
+  ex: ['ex', 'ex-partner', 'ex-wife', 'ex-husband', 'ex-girlfriend', 'ex-boyfriend'],
+  sibling: ['brother', 'sister'],
+  friend: ['friend', 'best friend'],
 };
 
 // ─── Core Wound Detection ──────────────────────────────────────
 
 const CORE_WOUND_PATTERNS: Record<string, string[]> = {
-  abandonment: ['abandoned', 'left behind', 'walked away', 'verlaten', 'achtergelaten', 'alleen gelaten', 'weg', 'iedereen gaat weg'],
-  shame: ['ashamed', 'shame', 'not worthy', 'schaamte', 'schaam me', 'niet waard'],
-  rejection: ['rejected', 'not accepted', 'pushed away', 'afgewezen', 'niet geaccepteerd'],
-  self_worth: ['not good enough', 'worthless', 'failure', 'niet goed genoeg', 'waardeloos', 'mislukt'],
-  depletion: ['exhausted', 'nothing left', 'empty', 'burned out', 'uitgeput', 'leeg', 'niets meer over', 'opgebrand'],
+  abandonment: ['abandoned', 'left behind', 'walked away', 'everyone leaves'],
+  shame: ['ashamed', 'shame', 'not worthy'],
+  rejection: ['rejected', 'not accepted', 'pushed away'],
+  self_worth: ['not good enough', 'worthless', 'failure'],
+  depletion: ['exhausted', 'nothing left', 'empty', 'burned out'],
 };
 
 // ─── Trigger Decay State ──────────────────────────────────────
@@ -245,7 +245,7 @@ function scoreRelationshipAnchor(
 
   // Emotional language around the relation
   const emotionalWords = ['love', 'miss', 'hurt', 'afraid', 'angry', 'guilt', 'sorry',
-    'liefde', 'mis', 'pijn', 'bang', 'boos', 'schuld', 'sorry', 'verdriet'];
+    'grief', 'pain', 'scared', 'sad', 'lonely', 'lost'];
   const hasEmotionalContext = emotionalWords.some((ew) => messageLower.includes(ew));
   if (hasEmotionalContext && (directMention || inBackpack)) score += 2;
 
@@ -259,14 +259,14 @@ function scoreRelationshipAnchor(
 
 /**
  * Try to extract a proper name associated with a relationship role from backpack text.
- * Looks for patterns like "mijn zoon Jules" or "my son Jules"
+ * Looks for patterns like "my son Jules" or "son Jules"
  */
 function extractNameForRole(role: string, roleKeywords: string[], text: string): string | null {
   const textLower = text.toLowerCase();
   for (const kw of roleKeywords) {
-    // Pattern: "mijn/my <role> <Name>" or "<role> <Name>"
+    // Pattern: "my <role> <Name>" or "<role> <Name>"
     const patterns = [
-      new RegExp(`(?:mijn|my|m'n)\\s+${kw}\\s+([A-Z][a-záéíóúàèìòùäëïöü]+)`, 'i'),
+      new RegExp(`(?:my)\\s+${kw}\\s+([A-Z][a-záéíóúàèìòùäëïöü]+)`, 'i'),
       new RegExp(`${kw}\\s+([A-Z][a-záéíóúàèìòùäëïöü]+)`, 'i'),
     ];
     for (const pattern of patterns) {
@@ -381,7 +381,7 @@ function findRelevantContextLine(
 ): string | null {
   // Extract meaningful words from the message (3+ chars, not common words)
   const stopWords = new Set(['the', 'and', 'but', 'for', 'are', 'not', 'you', 'all', 'can', 'had', 'her', 'was', 'one', 'our', 'out',
-    'het', 'een', 'van', 'dat', 'die', 'niet', 'met', 'ook', 'maar', 'ben', 'nog', 'wel', 'heb', 'mijn']);
+    'this', 'that', 'with', 'from', 'have', 'been', 'will', 'just', 'also', 'still', 'more', 'than']);
   const messageWords = messageLower.split(/\s+/)
     .filter((w) => w.length >= 3 && !stopWords.has(w));
 

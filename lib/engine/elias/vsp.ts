@@ -5,11 +5,11 @@
  * It is a DIRECT USER INPUT — not computed, not inferred.
  *
  * VSP Zones (from safe to crisis):
- * 1. GROEN   — Geen spanning
- * 2. GEEL    — Lichte spanning
- * 3. ORANJE  — Hogere spanning / tijd om in te grijpen
- * 4. ROOD    — Terugval dichtbij / actie nodig
- * 5. PAARS   — Herval
+ * 1. GROEN   — No tension
+ * 2. GEEL    — Mild tension
+ * 3. ORANJE  — Higher tension / time to intervene
+ * 4. ROOD    — Relapse near / action needed
+ * 5. PAARS   — Relapse
  *
  * VspImpact: deterministic behavioral directives per VSP zone.
  * Uses the same field structure as EliasImpact for consistency:
@@ -100,24 +100,24 @@ export const vspZoneImpactMap: Readonly<Record<VspLevel, VspImpact>> = Object.fr
   }),
 });
 
-// ─── VSP Zone Labels (Dutch) ──────────────────────────────────
+// ─── VSP Zone Labels ─────────────────────────────────────
 
 export const VSP_ZONE_LABELS: Readonly<Record<VspLevel, string>> = Object.freeze({
-  GROEN: 'Geen spanning',
-  GEEL: 'Lichte spanning',
-  ORANJE: 'Hogere spanning / tijd om in te grijpen',
-  ROOD: 'Terugval dichtbij / actie nodig',
-  PAARS: 'Herval',
+  GROEN: 'No tension',
+  GEEL: 'Mild tension',
+  ORANJE: 'Higher tension / time to intervene',
+  ROOD: 'Relapse near / action needed',
+  PAARS: 'Relapse',
 });
 
 // ─── VSP Options (for UI rendering) ──────────────────────────
 
 export const VSP_OPTIONS: readonly { value: VspLevel; label: string; color: string }[] = Object.freeze([
-  { value: 'GROEN', label: 'Geen spanning', color: '#22C55E' },
-  { value: 'GEEL', label: 'Lichte spanning', color: '#F59E0B' },
-  { value: 'ORANJE', label: 'Hogere spanning / tijd om in te grijpen', color: '#F97316' },
-  { value: 'ROOD', label: 'Terugval dichtbij / actie nodig', color: '#EF4444' },
-  { value: 'PAARS', label: 'Herval', color: '#8B5CF6' },
+  { value: 'GROEN', label: 'No tension', color: '#22C55E' },
+  { value: 'GEEL', label: 'Mild tension', color: '#F59E0B' },
+  { value: 'ORANJE', label: 'Higher tension / time to intervene', color: '#F97316' },
+  { value: 'ROOD', label: 'Relapse near / action needed', color: '#EF4444' },
+  { value: 'PAARS', label: 'Relapse', color: '#8B5CF6' },
 ]);
 
 // ─── Compute VSP Result ───────────────────────────────────────

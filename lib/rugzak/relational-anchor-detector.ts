@@ -26,7 +26,7 @@ import type { Backpack, UserDat } from '../ai/types';
 export interface RelationalAnchor {
   /** The person's name as written by the user */
   name: string;
-  /** The relationship role as described by the user (e.g., "zoon", "vriendin", "moeder") */
+  /** The relationship role */
   role: string;
   /** Normalized English role for internal use */
   roleEN: string;
@@ -57,51 +57,12 @@ interface RolePattern {
 }
 
 /**
- * Dutch + English relationship patterns.
+ * English relationship patterns.
  * Each pattern captures the NAME after the relationship word.
  * Order matters: more specific patterns first.
  */
 const ROLE_PATTERNS: RolePattern[] = [
-  // Dutch patterns (most common for this app)
-  { pattern: /\bmijn\s+zoon(?:tje)?\s+(\w+)/gi, roleEN: 'son', baseWeight: 5 },
-  { pattern: /\bmijn\s+dochter(?:tje)?\s+(\w+)/gi, roleEN: 'daughter', baseWeight: 5 },
-  { pattern: /\bmijn\s+vrouw\s+(\w+)/gi, roleEN: 'wife', baseWeight: 5 },
-  { pattern: /\bmijn\s+man\s+(\w+)/gi, roleEN: 'husband', baseWeight: 5 },
-  { pattern: /\bmijn\s+vriendin\s+(\w+)/gi, roleEN: 'partner', baseWeight: 5 },
-  { pattern: /\bmijn\s+vriend\s+(\w+)/gi, roleEN: 'partner', baseWeight: 4 },
-  { pattern: /\bmijn\s+partner\s+(\w+)/gi, roleEN: 'partner', baseWeight: 5 },
-  { pattern: /\bmijn\s+ex(?:-vrouw|-man|-vriendin|-vriend|-partner)?\s+(\w+)/gi, roleEN: 'ex', baseWeight: 4 },
-  { pattern: /\bmijn\s+moeder\s+(\w+)/gi, roleEN: 'mother', baseWeight: 4 },
-  { pattern: /\bmijn\s+vader\s+(\w+)/gi, roleEN: 'father', baseWeight: 4 },
-  { pattern: /\bmijn\s+mama\s+(\w+)/gi, roleEN: 'mother', baseWeight: 4 },
-  { pattern: /\bmijn\s+papa\s+(\w+)/gi, roleEN: 'father', baseWeight: 4 },
-  { pattern: /\bmijn\s+zus(?:je)?\s+(\w+)/gi, roleEN: 'sister', baseWeight: 3 },
-  { pattern: /\bmijn\s+broer(?:tje)?\s+(\w+)/gi, roleEN: 'brother', baseWeight: 3 },
-  { pattern: /\bmijn\s+oma\s+(\w+)/gi, roleEN: 'grandmother', baseWeight: 3 },
-  { pattern: /\bmijn\s+opa\s+(\w+)/gi, roleEN: 'grandfather', baseWeight: 3 },
-  { pattern: /\bmijn\s+neef\s+(\w+)/gi, roleEN: 'cousin', baseWeight: 2 },
-  { pattern: /\bmijn\s+nicht\s+(\w+)/gi, roleEN: 'cousin', baseWeight: 2 },
-  { pattern: /\bmijn\s+collega\s+(\w+)/gi, roleEN: 'colleague', baseWeight: 2 },
-  { pattern: /\bmijn\s+baas\s+(\w+)/gi, roleEN: 'boss', baseWeight: 3 },
-  { pattern: /\bmijn\s+therapeut\s+(\w+)/gi, roleEN: 'therapist', baseWeight: 3 },
-  { pattern: /\bmijn\s+dokter\s+(\w+)/gi, roleEN: 'doctor', baseWeight: 2 },
-  { pattern: /\bmijn\s+buurman\s+(\w+)/gi, roleEN: 'neighbor', baseWeight: 2 },
-  { pattern: /\bmijn\s+buurvrouw\s+(\w+)/gi, roleEN: 'neighbor', baseWeight: 2 },
-
-  // Dutch patterns without name (role only — name extracted separately)
-  { pattern: /\bmijn\s+(zoon(?:tje)?)\b/gi, roleEN: 'son', baseWeight: 5 },
-  { pattern: /\bmijn\s+(dochter(?:tje)?)\b/gi, roleEN: 'daughter', baseWeight: 5 },
-  { pattern: /\bmijn\s+(vrouw)\b/gi, roleEN: 'wife', baseWeight: 5 },
-  { pattern: /\bmijn\s+(man)\b/gi, roleEN: 'husband', baseWeight: 5 },
-  { pattern: /\bmijn\s+(vriendin)\b/gi, roleEN: 'partner', baseWeight: 5 },
-  { pattern: /\bmijn\s+(vriend)\b/gi, roleEN: 'partner', baseWeight: 4 },
-  { pattern: /\bmijn\s+(partner)\b/gi, roleEN: 'partner', baseWeight: 5 },
-  { pattern: /\bmijn\s+(moeder|mama)\b/gi, roleEN: 'mother', baseWeight: 4 },
-  { pattern: /\bmijn\s+(vader|papa)\b/gi, roleEN: 'father', baseWeight: 4 },
-  { pattern: /\bmijn\s+(zus(?:je)?)\b/gi, roleEN: 'sister', baseWeight: 3 },
-  { pattern: /\bmijn\s+(broer(?:tje)?)\b/gi, roleEN: 'brother', baseWeight: 3 },
-
-  // English patterns
+  // Patterns with name capture ("my [role] [Name]")
   { pattern: /\bmy\s+son\s+(\w+)/gi, roleEN: 'son', baseWeight: 5 },
   { pattern: /\bmy\s+daughter\s+(\w+)/gi, roleEN: 'daughter', baseWeight: 5 },
   { pattern: /\bmy\s+wife\s+(\w+)/gi, roleEN: 'wife', baseWeight: 5 },
@@ -116,39 +77,59 @@ const ROLE_PATTERNS: RolePattern[] = [
   { pattern: /\bmy\s+dad\s+(\w+)/gi, roleEN: 'father', baseWeight: 4 },
   { pattern: /\bmy\s+sister\s+(\w+)/gi, roleEN: 'sister', baseWeight: 3 },
   { pattern: /\bmy\s+brother\s+(\w+)/gi, roleEN: 'brother', baseWeight: 3 },
+  { pattern: /\bmy\s+grandmother\s+(\w+)/gi, roleEN: 'grandmother', baseWeight: 3 },
+  { pattern: /\bmy\s+grandfather\s+(\w+)/gi, roleEN: 'grandfather', baseWeight: 3 },
+  { pattern: /\bmy\s+grandma\s+(\w+)/gi, roleEN: 'grandmother', baseWeight: 3 },
+  { pattern: /\bmy\s+grandpa\s+(\w+)/gi, roleEN: 'grandfather', baseWeight: 3 },
+  { pattern: /\bmy\s+cousin\s+(\w+)/gi, roleEN: 'cousin', baseWeight: 2 },
+  { pattern: /\bmy\s+colleague\s+(\w+)/gi, roleEN: 'colleague', baseWeight: 2 },
+  { pattern: /\bmy\s+boss\s+(\w+)/gi, roleEN: 'boss', baseWeight: 3 },
+  { pattern: /\bmy\s+therapist\s+(\w+)/gi, roleEN: 'therapist', baseWeight: 3 },
+  { pattern: /\bmy\s+doctor\s+(\w+)/gi, roleEN: 'doctor', baseWeight: 2 },
+  { pattern: /\bmy\s+neighbor\s+(\w+)/gi, roleEN: 'neighbor', baseWeight: 2 },
   { pattern: /\bmy\s+friend\s+(\w+)/gi, roleEN: 'friend', baseWeight: 2 },
+
+  // Patterns without name (role only)
+  { pattern: /\bmy\s+(son)\b/gi, roleEN: 'son', baseWeight: 5 },
+  { pattern: /\bmy\s+(daughter)\b/gi, roleEN: 'daughter', baseWeight: 5 },
+  { pattern: /\bmy\s+(wife)\b/gi, roleEN: 'wife', baseWeight: 5 },
+  { pattern: /\bmy\s+(husband)\b/gi, roleEN: 'husband', baseWeight: 5 },
+  { pattern: /\bmy\s+(girlfriend|boyfriend)\b/gi, roleEN: 'partner', baseWeight: 5 },
+  { pattern: /\bmy\s+(partner)\b/gi, roleEN: 'partner', baseWeight: 5 },
+  { pattern: /\bmy\s+(mother|mom)\b/gi, roleEN: 'mother', baseWeight: 4 },
+  { pattern: /\bmy\s+(father|dad)\b/gi, roleEN: 'father', baseWeight: 4 },
+  { pattern: /\bmy\s+(sister)\b/gi, roleEN: 'sister', baseWeight: 3 },
+  { pattern: /\bmy\s+(brother)\b/gi, roleEN: 'brother', baseWeight: 3 },
+  { pattern: /\bmy\s+(grandmother|grandma)\b/gi, roleEN: 'grandmother', baseWeight: 3 },
+  { pattern: /\bmy\s+(grandfather|grandpa)\b/gi, roleEN: 'grandfather', baseWeight: 3 },
+  { pattern: /\bmy\s+(ex)\b/gi, roleEN: 'ex', baseWeight: 4 },
 ];
 
 /**
  * Emotional language patterns that boost anchor weight.
  */
 const EMOTIONAL_PATTERNS = [
-  /\b(mis|missen|gemis|verlies|verloren|dood|overleden|weg|kwijt)\b/i,
   /\b(miss|missing|lost|gone|died|death|grief|mourning)\b/i,
-  /\b(liefde|houd van|hou van|love|care|zorgen)\b/i,
-  /\b(boos|woede|kwaad|angry|furious|rage|frustrated)\b/i,
-  /\b(schuld|schaamte|guilt|shame|sorry|spijt)\b/i,
-  /\b(angst|bang|afraid|scared|fear|worried|zorgen)\b/i,
-  /\b(pijn|hurt|pain|wounded|gekwetst|verdriet|sad)\b/i,
-  /\b(trots|proud|dankbaar|grateful|blij|happy)\b/i,
-  /\b(teleurgesteld|disappointed|verraden|betrayed)\b/i,
+  /\b(love|care|caring)\b/i,
+  /\b(angry|furious|rage|frustrated)\b/i,
+  /\b(guilt|shame|sorry|regret)\b/i,
+  /\b(afraid|scared|fear|worried|anxious)\b/i,
+  /\b(hurt|pain|wounded|sad|sorrow)\b/i,
+  /\b(proud|grateful|happy)\b/i,
+  /\b(disappointed|betrayed)\b/i,
 ];
 
 /**
- * Role words (without "mijn"/"my") for implicit mention detection.
+ * Role words (without "my") for implicit mention detection.
  */
 const IMPLICIT_ROLE_WORDS: Record<string, string> = {
-  // Dutch
-  'zoon': 'son', 'zoontje': 'son', 'dochter': 'daughter', 'dochtertje': 'daughter',
-  'vrouw': 'wife', 'man': 'husband', 'vriendin': 'partner', 'vriend': 'partner',
-  'partner': 'partner', 'ex': 'ex', 'moeder': 'mother', 'mama': 'mother',
-  'vader': 'father', 'papa': 'father', 'zus': 'sister', 'zusje': 'sister',
-  'broer': 'brother', 'broertje': 'brother', 'oma': 'grandmother', 'opa': 'grandfather',
-  // English
   'son': 'son', 'daughter': 'daughter', 'wife': 'wife', 'husband': 'husband',
-  'girlfriend': 'partner', 'boyfriend': 'partner', 'mother': 'mother', 'mom': 'mother',
-  'father': 'father', 'dad': 'father', 'sister': 'sister', 'brother': 'brother',
-  'grandmother': 'grandmother', 'grandfather': 'grandfather',
+  'girlfriend': 'partner', 'boyfriend': 'partner', 'partner': 'partner', 'ex': 'ex',
+  'mother': 'mother', 'mom': 'mother', 'father': 'father', 'dad': 'father',
+  'sister': 'sister', 'brother': 'brother', 'grandmother': 'grandmother',
+  'grandfather': 'grandfather', 'grandma': 'grandmother', 'grandpa': 'grandfather',
+  'cousin': 'cousin', 'colleague': 'colleague', 'boss': 'boss',
+  'therapist': 'therapist', 'doctor': 'doctor', 'neighbor': 'neighbor', 'friend': 'friend',
 };
 
 // ─── Extraction ───────────────────────────────────────────────────

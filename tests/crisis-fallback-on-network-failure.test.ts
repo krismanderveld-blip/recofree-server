@@ -13,9 +13,9 @@ import { generateAIResponse } from '../server/ai-chat';
 const crisisInput = {
   userType: 'elias' as const,
   userName: 'CrisisUser',
-  message: 'Ik wil er niet meer zijn',
+  message: 'I do not want to be here anymore',
   conversationHistory: [
-    { role: 'assistant' as const, content: 'Hey CrisisUser, ik ben er voor je.' },
+    { role: 'assistant' as const, content: 'Hey CrisisUser, I am here for you.' },
   ],
   moodSliders: { craving: 8, frustration: 9, despondency: 9, focus: 1 },
   activeModules: ['E01'],
@@ -24,7 +24,7 @@ const crisisInput = {
   therapeuticStance: 'tone:grounding | Direct and safe.',
   sessionDurationMinutes: 2,
   urgency: 'high',
-  startEmotion: 'wanhoop',
+  startEmotion: 'despair',
   isSessionStart: false,
 };
 
@@ -75,8 +75,8 @@ describe('crisis-fallback-on-network-failure', () => {
     expect(result.response).toContain('113');
     expect(result.response).toContain('112');
     expect(result.response).not.toContain('Something went wrong');
-    // Should be in Dutch
-    expect(result.response).toContain('niet veilig voelt');
+    // Should be in English
+    expect(result.response).toContain('do not feel safe');
     expect(result.advisoryConfidence).toBe(0);
     expect(result.tokenUsage).toBeUndefined();
   });
