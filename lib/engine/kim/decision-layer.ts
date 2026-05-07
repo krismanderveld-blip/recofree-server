@@ -45,8 +45,8 @@ export interface KimDecisionInput {
   readonly currentZoneScore: number;
   /**
    * Raw user input from Eigen Regie daily reflection (0–100).
-   * "In hoeverre werd jouw dag vandaag bepaald door de keuzes van de ander?"
-   * 0 = volledig eigen regie, 100 = volledig bepaald door de ander.
+   * "To what extent was your day today determined by the choices of the other person?"
+   * 0 = full self-governance, 100 = fully determined by the other person.
    *
    * If not yet submitted today, pass null.
    */

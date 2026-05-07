@@ -498,9 +498,9 @@
 - [x] Export server/ai-chat.ts as recofree_code_review_aichat.txt
 
 ## Maintenance Tasks — Round 4
-- [ ] Fix 1: projection-layer.ts — replace all NL/EN mixed markers with English only
-- [ ] Fix 2: server/ai-chat.ts — add single-user comment above sessionCache
-- [ ] Fix 3: server/ai-chat.ts — translate buildSystemPrompt() fully to English
+- [x] Fix 1: projection-layer.ts — replace all NL/EN mixed markers with English only (already English)
+- [x] Fix 2: server/ai-chat.ts — add single-user comment above sessionCache
+- [x] Fix 3: server/ai-chat.ts — translate buildSystemPrompt() fully to English (last Dutch comment translated)
 
 ## Full English Migration (codebase-wide)
 - [x] Translate CRISIS_KEYWORDS in intervention-continuity.ts from Dutch to English
@@ -517,3 +517,6 @@
 - [x] Fix crisis keyword detection: exact match + short-message substring (prevents false positives in longer messages)
 - [x] Update all test files to use English assertions (regulation-layer.test.ts, intervention-continuity.test.ts, targeted-fixes-round2.test.ts, vsp-resolution.test.ts)
 - [x] Verify: 0 TypeScript errors, 347 tests passing (all green)
+
+## Maintenance Tasks — Round 5
+- [x] Translate Dutch docblock in lib/engine/kim/decision-layer.ts to English (eigenRegieInput comment)

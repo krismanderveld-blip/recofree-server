@@ -706,7 +706,7 @@ function buildSystemPrompt(input: ChatRequestInput): string {
     : KIM_IDENTITY_PROMPT;
 
   // ══════════════════════════════════════════════════════════════
-  // ANTI-HALLUCINATIE — Module 033 (ALWAYS included)
+  // ANTI-HALLUCINATION — Module 033 (ALWAYS included)
   // ══════════════════════════════════════════════════════════════
 
   const antiHallucination = `
