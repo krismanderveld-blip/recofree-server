@@ -520,3 +520,10 @@
 
 ## Maintenance Tasks — Round 5
 - [x] Translate Dutch docblock in lib/engine/kim/decision-layer.ts to English (eigenRegieInput comment)
+
+## Projection Persistence — AsyncStorage
+- [x] Implement loadEliasProjection() and saveEliasProjection() in lib/engine/elias/projection.ts
+- [x] Wire load into loadAndRestoreEliasProjection() (session start), save after applyProjectionDecay() (session end)
+- [x] Implement loadKimProjection() and saveKimProjection() in lib/engine/kim/projection.ts
+- [x] Wire load into loadAndRestoreKimProjection() (session start), save after applyKimProjectionDecay() (session end)
+- [x] Write 11 tests for projection persistence (load empty, save/load roundtrip, corrupted data, decay before save)

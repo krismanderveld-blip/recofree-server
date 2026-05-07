@@ -95,25 +95,90 @@ export const GOAL_MARKERS = [
   'target', 'aim', 'intend', 'commit', 'decide',
 ];
 
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+// ─── AsyncStorage Persistence (local within-device memory) ─────
+
+const ELIAS_PROJECTION_STORAGE_KEY = '@recofree_projection_elias';
+
+/**
+ * Load Elias projection from AsyncStorage (local within-device memory).
+ * Returns empty projection on missing key or corrupted data — never crashes.
+ */
+export async function loadEliasProjection(): Promise<EliasProjection> {
+  try {
+    const raw = await AsyncStorage.getItem(ELIAS_PROJECTION_STORAGE_KEY);
+    if (!raw) {
+      return createEmptyEliasProjection();
+    }
+    const parsed = JSON.parse(raw);
+    // Basic shape validation
+    if (
+      parsed &&
+      parsed.userType === 'elias' &&
+      Array.isArray(parsed.entries) &&
+      typeof parsed.lastUpdatedAt === 'string'
+    ) {
+      return parsed as EliasProjection;
+    }
+    console.error('[Projection/Elias] Corrupted data in storage, returning empty projection');
+    return createEmptyEliasProjection();
+  } catch (error) {
+    console.error('[Projection/Elias] Failed to load from AsyncStorage:', error);
+    return createEmptyEliasProjection();
+  }
+}
+
+/**
+ * Save Elias projection to AsyncStorage (local within-device memory).
+ * Silently fails on write error — never crashes.
+ */
+export async function saveEliasProjection(projection: EliasProjection): Promise<void> {
+  try {
+    await AsyncStorage.setItem(ELIAS_PROJECTION_STORAGE_KEY, JSON.stringify(projection));
+  } catch (error) {
+    console.error('[Projection/Elias] Failed to save to AsyncStorage:', error);
+  }
+}
+
+function createEmptyEliasProjection(): EliasProjection {
+  return {
+    userType: 'elias',
+    entries: [],
+    lastUpdatedAt: new Date().toISOString(),
+    sessionSignalCount: 0,
+  };
+}
+
 // ─── Module State (per-session, resets at session start) ────────
 
-let currentProjection: EliasProjection = {
-  userType: 'elias',
-  entries: [],
-  lastUpdatedAt: new Date().toISOString(),
-  sessionSignalCount: 0,
-};
+let currentProjection: EliasProjection = createEmptyEliasProjection();
 
 let sessionNewCount = 0;
 let sessionDecayedCount = 0;
 
 // ─── State Management ───────────────────────────────────────────
 
+/**
+ * Reset projection state (synchronous, for tests and immediate resets).
+ * Does NOT load from storage — use loadAndRestoreEliasProjection() at session start.
+ */
 export function resetProjectionState(): void {
+  currentProjection = createEmptyEliasProjection();
+  sessionNewCount = 0;
+  sessionDecayedCount = 0;
+}
+
+/**
+ * Load persisted projection from AsyncStorage (local within-device memory)
+ * and restore it as the active state. Call this at session start.
+ * Resets session-specific counters while preserving persisted entries.
+ */
+export async function loadAndRestoreEliasProjection(): Promise<void> {
+  currentProjection = await loadEliasProjection();
+  // Reset session-specific counters (entries persist, counters don't)
   currentProjection = {
-    userType: 'elias',
-    entries: [],
-    lastUpdatedAt: new Date().toISOString(),
+    ...currentProjection,
     sessionSignalCount: 0,
   };
   sessionNewCount = 0;
@@ -300,7 +365,7 @@ export interface DecayResult {
  * Apply projection decay at session end.
  * Same timing as UserDat promotion.
  */
-export function applyProjectionDecay(sessionTimestamp: string): DecayResult {
+export async function applyProjectionDecay(sessionTimestamp: string): Promise<DecayResult> {
   let decayed = 0;
   let removed = 0;
   let strengthened = 0;
@@ -355,6 +420,9 @@ export function applyProjectionDecay(sessionTimestamp: string): DecayResult {
     entries: updatedEntries,
     lastUpdatedAt: sessionTimestamp,
   };
+
+  // Persist after decay (local within-device memory)
+  await saveEliasProjection(currentProjection);
 
   return { decayedEntries: decayed, removedEntries: removed, strengthenedEntries: strengthened };
 }

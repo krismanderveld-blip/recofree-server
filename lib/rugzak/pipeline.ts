@@ -1232,12 +1232,12 @@ export async function endSession(
   // Runs directly after UserDat promotion, within the same session-end block.
   const sessionEndTimestamp = new Date().toISOString();
   if (backpack.userType === 'elias') {
-    const decayResult = applyProjectionDecay(sessionEndTimestamp);
+    const decayResult = await applyProjectionDecay(sessionEndTimestamp);
     if (decayResult.decayedEntries > 0 || decayResult.removedEntries > 0) {
       console.log(`[Pipeline] Projection decay (Elias): decayed=${decayResult.decayedEntries}, removed=${decayResult.removedEntries}`);
     }
   } else {
-    const decayResult = applyKimProjectionDecay(sessionEndTimestamp);
+    const decayResult = await applyKimProjectionDecay(sessionEndTimestamp);
     if (decayResult.decayedEntries > 0 || decayResult.removedEntries > 0) {
       console.log(`[Pipeline] Projection decay (Kim): decayed=${decayResult.decayedEntries}, removed=${decayResult.removedEntries}`);
     }

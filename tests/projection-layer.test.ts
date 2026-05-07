@@ -302,7 +302,7 @@ describe('Projection Decay Engine', () => {
     resetKimProjectionState();
   });
 
-  it('Elias: decays entries that were not reinforced this session', () => {
+  it('Elias: decays entries that were not reinforced this session', async () => {
     // Create an entry
     detectProjectionSignals({
       message: 'I am afraid of relapse',
@@ -319,7 +319,7 @@ describe('Projection Decay Engine', () => {
 
     // Apply decay (simulating session end without reinforcement)
     resetSessionTracking(); // Ensures entry is not marked as reinforced this session
-    const result = applyProjectionDecay(new Date().toISOString());
+    const result = await applyProjectionDecay(new Date().toISOString());
 
     expect(result.decayedEntries).toBeGreaterThanOrEqual(0);
     // Entry should still exist but potentially weaker
@@ -329,7 +329,7 @@ describe('Projection Decay Engine', () => {
     }
   });
 
-  it('Elias: removes entries below threshold after repeated decay', () => {
+  it('Elias: removes entries below threshold after repeated decay', async () => {
     // Create an entry with minimal strength
     detectProjectionSignals({
       message: 'I am a little afraid',
@@ -344,7 +344,7 @@ describe('Projection Decay Engine', () => {
     for (let i = 0; i < 10; i++) {
       resetSessionTracking();
       const ts = new Date(Date.now() + i * 86400000).toISOString();
-      applyProjectionDecay(ts);
+      await applyProjectionDecay(ts);
     }
 
     const state = getProjectionState();
@@ -354,7 +354,7 @@ describe('Projection Decay Engine', () => {
     }
   });
 
-  it('Kim: decays entries not reinforced', () => {
+  it('Kim: decays entries not reinforced', async () => {
     detectKimProjectionSignals({
       message: 'I am afraid I have no control',
       distressScore: 7,
@@ -364,7 +364,7 @@ describe('Projection Decay Engine', () => {
       zoneImproved: false,
     });
 
-    const result = applyKimProjectionDecay(new Date().toISOString());
+    const result = await applyKimProjectionDecay(new Date().toISOString());
     expect(result.decayedEntries).toBeGreaterThanOrEqual(0);
   });
 });

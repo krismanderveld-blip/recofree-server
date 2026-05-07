@@ -15,6 +15,8 @@
  *   - Eigen Regie signals do NOT affect EliasProjection (strict separation)
  */
 
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 import type {
   ProjectionCategory,
   ProjectionSource,
@@ -45,14 +47,62 @@ export interface KimProjection {
   readonly sessionSignalCount: number;
 }
 
+// ─── AsyncStorage Persistence (local within-device memory) ─────
+
+const KIM_PROJECTION_STORAGE_KEY = '@recofree_projection_kim';
+
+/**
+ * Load Kim projection from AsyncStorage (local within-device memory).
+ * Returns empty projection on missing key or corrupted data — never crashes.
+ */
+export async function loadKimProjection(): Promise<KimProjection> {
+  try {
+    const raw = await AsyncStorage.getItem(KIM_PROJECTION_STORAGE_KEY);
+    if (!raw) {
+      return createEmptyKimProjection();
+    }
+    const parsed = JSON.parse(raw);
+    // Basic shape validation
+    if (
+      parsed &&
+      parsed.userType === 'kim' &&
+      Array.isArray(parsed.entries) &&
+      typeof parsed.lastUpdatedAt === 'string'
+    ) {
+      return parsed as KimProjection;
+    }
+    console.error('[Projection/Kim] Corrupted data in storage, returning empty projection');
+    return createEmptyKimProjection();
+  } catch (error) {
+    console.error('[Projection/Kim] Failed to load from AsyncStorage:', error);
+    return createEmptyKimProjection();
+  }
+}
+
+/**
+ * Save Kim projection to AsyncStorage (local within-device memory).
+ * Silently fails on write error — never crashes.
+ */
+export async function saveKimProjection(projection: KimProjection): Promise<void> {
+  try {
+    await AsyncStorage.setItem(KIM_PROJECTION_STORAGE_KEY, JSON.stringify(projection));
+  } catch (error) {
+    console.error('[Projection/Kim] Failed to save to AsyncStorage:', error);
+  }
+}
+
+function createEmptyKimProjection(): KimProjection {
+  return {
+    userType: 'kim',
+    entries: [],
+    lastUpdatedAt: new Date().toISOString(),
+    sessionSignalCount: 0,
+  };
+}
+
 // ─── Module State (per-session, resets at session start) ────────
 
-let currentProjection: KimProjection = {
-  userType: 'kim',
-  entries: [],
-  lastUpdatedAt: new Date().toISOString(),
-  sessionSignalCount: 0,
-};
+let currentProjection: KimProjection = createEmptyKimProjection();
 
 let sessionNewCount = 0;
 let sessionDecayedCount = 0;
@@ -60,11 +110,26 @@ let sessionReinforcedIds: Set<string> = new Set();
 
 // ─── State Management ───────────────────────────────────────────
 
+/**
+ * Reset Kim projection state (synchronous, for tests and immediate resets).
+ * Does NOT load from storage — use loadAndRestoreKimProjection() at session start.
+ */
 export function resetKimProjectionState(): void {
+  currentProjection = createEmptyKimProjection();
+  sessionNewCount = 0;
+  sessionDecayedCount = 0;
+  sessionReinforcedIds = new Set();
+}
+
+/**
+ * Load persisted Kim projection from AsyncStorage (local within-device memory)
+ * and restore it as the active state. Call this at session start.
+ * Resets session-specific counters while preserving persisted entries.
+ */
+export async function loadAndRestoreKimProjection(): Promise<void> {
+  currentProjection = await loadKimProjection();
   currentProjection = {
-    userType: 'kim',
-    entries: [],
-    lastUpdatedAt: new Date().toISOString(),
+    ...currentProjection,
     sessionSignalCount: 0,
   };
   sessionNewCount = 0;
@@ -251,7 +316,7 @@ export interface KimDecayResult {
 /**
  * Apply Kim projection decay at session end.
  */
-export function applyKimProjectionDecay(sessionTimestamp: string): KimDecayResult {
+export async function applyKimProjectionDecay(sessionTimestamp: string): Promise<KimDecayResult> {
   let decayed = 0;
   let removed = 0;
   let strengthened = 0;
@@ -300,6 +365,9 @@ export function applyKimProjectionDecay(sessionTimestamp: string): KimDecayResul
     entries: updatedEntries,
     lastUpdatedAt: sessionTimestamp,
   };
+
+  // Persist after decay (local within-device memory)
+  await saveKimProjection(currentProjection);
 
   return { decayedEntries: decayed, removedEntries: removed, strengthenedEntries: strengthened };
 }
