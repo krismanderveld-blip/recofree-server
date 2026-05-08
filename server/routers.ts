@@ -32,8 +32,13 @@ export const appRouter = router({
             advisoryConfidence: result.advisoryConfidence,
             tokenUsage: result.tokenUsage,
           };
-        } catch (error) {
-          console.error("[AI Chat] Error:", error);
+        } catch (error: any) {
+          console.error("[AI Chat] Router error:", error?.message ?? error);
+          if (error?.stack) console.error("[AI Chat] Stack:", error.stack);
+          // Log Zod validation errors specifically
+          if (error?.code === 'BAD_REQUEST' || error?.name === 'TRPCError') {
+            console.error("[AI Chat] tRPC/Zod validation failure — input may not match schema");
+          }
           return {
             success: false as const,
             response:

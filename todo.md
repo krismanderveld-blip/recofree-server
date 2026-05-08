@@ -557,3 +557,7 @@
 ## Fixes — Round 6
 - [x] Fix 1: Reset currentMood.vsp and eigenRegie to null at session-end (prevent stale values in next session)
 - [x] Fix 2: Add ChatErrorBoundary around chat component (restart button + debug log on crash, never crashes whole app)
+
+## Fixes — Round 7
+- [x] Fix 1: Elias connection error — root cause: userDat.moodHistory[*].sliders contained vsp string. Fix: server Zod schema now accepts mixed types and transforms/filters to numbers only
+- [x] Fix 2: Pipeline Step 0 — all blocking conditions removed. Pipeline NEVER blocks. VSP-missing fallback proceeds with GREEN zone defaults. Greeting also non-blocking.

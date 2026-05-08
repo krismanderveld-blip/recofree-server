@@ -277,49 +277,20 @@ export async function processMessage(
 
   const isSessionStart = options?.isSessionStart ?? false;
 
-  // ── STEP 0: MODULE 12 PRE-ANALYSIS FAILSAFE ──
+  // ── STEP 0: CONTEXT AWARENESS (non-blocking) ──
+  // Pipeline NEVER blocks. If context is minimal, we still proceed to GPT
+  // but flag it so the system prompt can adapt tone accordingly.
   const hasSliders = currentUserDat.currentMood &&
-    Object.values(currentUserDat.currentMood).some((v) => v !== 0 && v !== 5);
+    Object.values(currentUserDat.currentMood).some((v) => typeof v === 'number' && v !== 0 && v !== 5);
   const hasBackpackContent = backpack.sections &&
     backpack.sections.some((s) => s.content && s.content.trim().length > 10);
   const hasDiary = (options?.diaryEntries ?? []).length > 0;
   const hasTriggerHistory = (currentUserDat.triggerPatterns ?? []).length > 0;
   const hasSessionHistory = (currentUserDat.totalSessions ?? 0) > 0;
-
   const hasVsp = backpack.userType === 'elias' && currentUserDat.currentMood && 'vsp' in currentUserDat.currentMood && (currentUserDat.currentMood as import('../ai/types').EliasMoodSliders).vsp != null;
   const hasEigenRegie = backpack.userType === 'kim' && currentUserDat.currentMood && 'eigenRegie' in currentUserDat.currentMood && (currentUserDat.currentMood as import('../ai/types').KimMoodSliders).eigenRegie != null;
   const hasMinimalContext = hasSliders || hasBackpackContent || hasDiary || hasTriggerHistory || hasSessionHistory || hasVsp || hasEigenRegie;
-  if (!hasMinimalContext) {
-    const passiveResponse = backpack.userType === 'elias'
-      ? `I don't know much about you yet, ${backpack.naam}. I'll wait until you share something. Fill in your sliders, write something in your diary, or share your story in your backpack — then I can help you better.`
-      : `Hi ${backpack.naam}. I don't have enough context yet to help you well. Fill in your sliders or share something via your diary or backpack, then I can support you more effectively.`;
-
-    const passiveMsg: ChatMessage = {
-      id: `msg_${Date.now()}`,
-      role: 'user',
-      content: userMessage,
-      timestamp: new Date().toISOString(),
-    };
-    const passiveAiMsg: ChatMessage = {
-      id: `msg_${Date.now() + 1}`,
-      role: 'assistant',
-      content: passiveResponse,
-      timestamp: new Date().toISOString(),
-    };
-    const updatedUserDat: UserDat = {
-      ...currentUserDat,
-      chatHistory: [...(currentUserDat.chatHistory || []), passiveMsg, passiveAiMsg],
-    };
-    const updatedRugzak = composeRugzak(backpack, updatedUserDat);
-    return {
-      response: passiveResponse,
-      analysis: analyzeState(rugzak, userMessage),
-      updatedRugzak,
-      updatedUserDat,
-      crisisLevel: 0,
-      showEmergency: false,
-    };
-  }
+  // Note: hasMinimalContext is used downstream for tone adaptation but NEVER blocks the pipeline.
 
   // ══════════════════════════════════════════════════════════════
   // PRE-GPT FLOW (all local, deterministic)
@@ -563,17 +534,27 @@ export async function processMessage(
   sessionEliasDecision = elisDecision;
   sessionKimDecision = kimDecision;
 
-  // ── HARD STOP: if Elias VSP not submitted, pipeline must not proceed ──
-  // No computeEliasImpact. No GPT call. Direct pre-chat flow.
+  // ── VSP MISSING FALLBACK (non-blocking) ──
+  // If Elias VSP is not submitted, we still proceed but with reduced engine context.
+  // The pre-chat thermometer UI handles enforcement; pipeline never blocks.
   if (elisDecision?.isBlocked) {
-    return {
-      response: '',
-      crisisLevel: 0,
-      showEmergency: false,
-      updatedUserDat: currentUserDat,
-      status: 'BLOCKED_PRECHAT_REQUIRED',
-      isBlocked: true,
-      blockReason: 'VSP_MISSING',
+    // Override: treat as GREEN zone with no impact, proceed to GPT
+    elisDecision = {
+      ...elisDecision,
+      isBlocked: false,
+      zone: {
+        ...elisDecision.zone,
+        resolved: elisDecision.zone.resolved ?? {
+          finalSeverity: 0,
+          finalZoneLabel: 'GREEN',
+          source: 'fallback' as const,
+          reason: 'VSP not submitted, proceeding with safe defaults',
+          vspLevel: null,
+          computedZone: 'GREEN',
+          isCrisis: false,
+        },
+        impact: null,
+      },
     };
   }
 
@@ -920,9 +901,10 @@ export async function generateGreeting(
     };
   }
 
-  // ── MODULE 12 PRE-ANALYSIS FAILSAFE (greeting) ──
+  // ── CONTEXT AWARENESS (greeting, non-blocking) ──
+  // Pipeline NEVER blocks at greeting. Proceed to GPT regardless of context level.
   const hasSliders = currentUserDat.currentMood &&
-    Object.values(currentUserDat.currentMood).some((v) => v !== 0 && v !== 5);
+    Object.values(currentUserDat.currentMood).some((v) => typeof v === 'number' && v !== 0 && v !== 5);
   const hasBackpackContent = backpack.sections &&
     backpack.sections.some((s) => s.content && s.content.trim().length > 10);
   const hasDiary = (diaryEntries ?? []).length > 0;
@@ -931,31 +913,7 @@ export async function generateGreeting(
   const hasVsp = backpack.userType === 'elias' && currentUserDat.currentMood && 'vsp' in currentUserDat.currentMood && (currentUserDat.currentMood as import('../ai/types').EliasMoodSliders).vsp != null;
   const hasEigenRegie = backpack.userType === 'kim' && currentUserDat.currentMood && 'eigenRegie' in currentUserDat.currentMood && (currentUserDat.currentMood as import('../ai/types').KimMoodSliders).eigenRegie != null;
   const hasMinimalContext = hasSliders || hasBackpackContent || hasDiary || hasTriggerHistory || hasSessionHistory || hasVsp || hasEigenRegie;
-
-  if (!hasMinimalContext) {
-    const passiveResponse = backpack.userType === 'elias'
-      ? `Hi ${backpack.naam}. I'm here for you, but I don't know much about you yet. Fill in your sliders, write something in your diary, or share your story in your backpack — then I can truly help you.`
-      : `Hi ${backpack.naam}. I'm here. But to help you well, I need more context. Fill in your sliders or share something via your diary or backpack.`;
-    const passiveAiMsg: ChatMessage = {
-      id: `msg_${Date.now()}`,
-      role: 'assistant',
-      content: passiveResponse,
-      timestamp: new Date().toISOString(),
-    };
-    const updatedUserDat: UserDat = {
-      ...currentUserDat,
-      chatHistory: [...(currentUserDat.chatHistory || []), passiveAiMsg],
-    };
-    const updatedRugzak = composeRugzak(backpack, updatedUserDat);
-    return {
-      response: passiveResponse,
-      analysis: analyzeState(rugzak, ''),
-      updatedRugzak,
-      updatedUserDat,
-      crisisLevel: 0,
-      showEmergency: false,
-    };
-  }
+  // Note: hasMinimalContext is used downstream for tone adaptation but NEVER blocks the greeting.
 
   // Initialize buffer for session
   sessionBuffer = createBuffer();

@@ -469,7 +469,9 @@ export function buildGPTPayload(input: PayloadBuilderInput): GPTPayload {
         lastSeen: tp.lastSeen,
       })),
       moodHistory: (userDat.moodHistory || []).slice(-5).map((mh) => ({
-        sliders: { ...mh.sliders } as Record<string, number>,
+        sliders: Object.fromEntries(
+          Object.entries(mh.sliders).filter(([, v]) => typeof v === 'number')
+        ) as Record<string, number>,
         timestamp: mh.timestamp,
       })),
       moduleUsageSummary: [...new Set((userDat.moduleUsage || []).map((m) => m.moduleId))],

@@ -228,7 +228,11 @@ export const chatInputSchema = z.object({
       content: z.string(),
     })
   ),
-  moodSliders: z.record(z.string(), z.number()),
+  moodSliders: z.record(z.string(), z.union([z.number(), z.string(), z.null()])).transform(
+    (sliders) => Object.fromEntries(
+      Object.entries(sliders).filter(([, v]) => typeof v === 'number')
+    ) as Record<string, number>
+  ),
   isSessionStart: z.boolean().default(false),
 
   // Live triggers (every call)
@@ -288,7 +292,11 @@ export const chatInputSchema = z.object({
     ),
     moodHistory: z.array(
       z.object({
-        sliders: z.record(z.string(), z.number()),
+        sliders: z.record(z.string(), z.union([z.number(), z.string(), z.null()])).transform(
+          (sliders) => Object.fromEntries(
+            Object.entries(sliders).filter(([, v]) => typeof v === 'number')
+          ) as Record<string, number>
+        ),
         timestamp: z.string(),
       })
     ),
