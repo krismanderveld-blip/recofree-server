@@ -205,7 +205,7 @@ export default function ProfileScreen() {
         </View>
 
         {/* Version number — tap 5x to open debug screen */}
-        <Pressable onPress={handleVersionTap} style={{ marginTop: 24, alignItems: 'center' }}>
+        <Pressable onPress={handleVersionTap} hitSlop={{ top: 20, bottom: 20, left: 40, right: 40 }} style={{ marginTop: 24, alignItems: 'center' }}>
           <Text className="text-xs text-muted">v{APP_VERSION}</Text>
         </Pressable>
       </ScrollView>

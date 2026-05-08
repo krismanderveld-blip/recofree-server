@@ -568,3 +568,7 @@
 - [x] Migration at app load: migrateUserDat() sanitizes existing polluted moodHistory entries + re-persists to AsyncStorage
 - [x] Zod workaround reverted: server/ai-chat.ts back to strict z.record(z.string(), z.number())
 - [x] Integration test added: __tests__/slider-sanitize-integration.test.ts (8 assertions)
+
+## Fixes — Round 9
+- [x] Fix debug tap: register dev/debug-log route in root _layout.tsx as modal
+- [x] Fix debug tap: enlarge touch target with hitSlop on version Pressable

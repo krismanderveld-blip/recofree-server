@@ -86,6 +86,7 @@ export default function RootLayout() {
               <Stack.Screen name="(tabs)" />
               <Stack.Screen name="intake" options={{ gestureEnabled: false }} />
               <Stack.Screen name="oauth/callback" />
+              <Stack.Screen name="dev/debug-log" options={{ presentation: 'modal' }} />
             </Stack>
             <StatusBar style="auto" />
           </QueryClientProvider>
