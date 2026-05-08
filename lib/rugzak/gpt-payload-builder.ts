@@ -363,7 +363,7 @@ export function buildGPTPayload(input: PayloadBuilderInput): GPTPayload {
     userName: backpack.naam,
     dominantModule: input.dominantModule,
     riskScore: input.riskScore,
-    sliders: sanitizeSliders(input.sliders as unknown as Record<string, unknown>),
+    sliders: (() => { const s = sanitizeSliders(input.sliders as unknown as Record<string, unknown>); delete s.vspScore; return s; })(),
     conversationWindow,
     message: input.message,
     isSessionStart,
@@ -468,7 +468,7 @@ export function buildGPTPayload(input: PayloadBuilderInput): GPTPayload {
         lastSeen: tp.lastSeen,
       })),
       moodHistory: (userDat.moodHistory || []).slice(-5).map((mh) => ({
-        sliders: sanitizeSliders(mh.sliders as unknown as Record<string, unknown>),
+        sliders: (() => { const s = sanitizeSliders(mh.sliders as unknown as Record<string, unknown>); delete s.vspScore; return s; })(),
         timestamp: mh.timestamp,
       })),
       moduleUsageSummary: [...new Set((userDat.moduleUsage || []).map((m) => m.moduleId))],

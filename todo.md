@@ -580,3 +580,6 @@
 
 ## Fixes — Round 11
 - [x] Add safe defaults in gpt-payload-builder.ts for all fields that can be undefined in Elias payload (crisisLevel→0, detectedEmotion→'unknown', therapeuticStance→'supportive', sessionDurationMinutes→0, urgency→'low', startEmotion→'unknown', backpack.naam→'', backpack.createdAt→ISO now)
+
+## Fixes — Round 12
+- [x] Temporarily remove vsp AND vspScore from Elias SESSION_INIT payload (neither sent to server in moodSliders or moodHistory)
