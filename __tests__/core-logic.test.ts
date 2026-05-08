@@ -31,10 +31,10 @@ function createTestRugzak(overrides?: Record<string, unknown>): Rugzak {
 
 // ─── Default test moods ────────────────────────────────────────
 
-const normalElias: EliasMoodSliders = { craving: 2, frustration: 2, despondency: 2, focus: 7, vsp: null };
-const highCravingElias: EliasMoodSliders = { craving: 8, frustration: 4, despondency: 3, focus: 5, vsp: null };
-const highDistressElias: EliasMoodSliders = { craving: 9, frustration: 8, despondency: 9, focus: 1, vsp: null };
-const lowDistressElias: EliasMoodSliders = { craving: 1, frustration: 1, despondency: 1, focus: 8, vsp: null };
+const normalElias: EliasMoodSliders = { craving: 2, frustration: 2, despondency: 2, focus: 7, vsp: null, vspScore: null };
+const highCravingElias: EliasMoodSliders = { craving: 8, frustration: 4, despondency: 3, focus: 5, vsp: null, vspScore: null };
+const highDistressElias: EliasMoodSliders = { craving: 9, frustration: 8, despondency: 9, focus: 1, vsp: null, vspScore: null };
+const lowDistressElias: EliasMoodSliders = { craving: 1, frustration: 1, despondency: 1, focus: 8, vsp: null, vspScore: null };
 
 const normalKim: KimMoodSliders = { stress: 2, boundaryFatigue: 2, emotionalBurden: 2, selfCare: 7, eigenRegie: null };
 const highStressKim: KimMoodSliders = { stress: 8, boundaryFatigue: 7, emotionalBurden: 8, selfCare: 1, eigenRegie: null };
@@ -130,7 +130,7 @@ describe('Module System', () => {
   });
 
   it('should recommend Emotional Regulation for high despondency (Elias)', () => {
-    const mood: EliasMoodSliders = { craving: 2, frustration: 2, despondency: 7, focus: 4, vsp: null };
+    const mood: EliasMoodSliders = { craving: 2, frustration: 2, despondency: 7, focus: 4, vsp: null, vspScore: null };
     const recs = getModuleRecommendations('elias', 'I feel overwhelmed', mood);
     const emotionModule = recs.find((r) => r.module.id === 'E02');
     expect(emotionModule).toBeDefined();
@@ -207,7 +207,7 @@ describe('State Analyzer', () => {
 
   it('returns high risk for "giving up" with high distress (Elias)', () => {
     const rugzak = createTestRugzak();
-    rugzak.currentMood = { craving: 8, frustration: 7, despondency: 8, focus: 1, vsp: null } as EliasMoodSliders;
+    rugzak.currentMood = { craving: 8, frustration: 7, despondency: 8, focus: 1, vsp: null, vspScore: null } as EliasMoodSliders;
 
     const analysis = analyzeState(rugzak, 'I feel like giving up');
     expect(analysis.riskLevel).toBe('high');
@@ -380,10 +380,10 @@ describe('Session End Pipeline', () => {
     ];
     rugzak.lastSessionDate = '2025-04-06T10:00:00Z';
     rugzak.totalSessions = 3;
-    rugzak.currentMood = { craving: 6, frustration: 4, despondency: 5, focus: 3, vsp: null } as EliasMoodSliders;
+    rugzak.currentMood = { craving: 6, frustration: 4, despondency: 5, focus: 3, vsp: null, vspScore: null } as EliasMoodSliders;
     rugzak.moodHistory = [
-      { sliders: { craving: 3, frustration: 2, despondency: 2, focus: 6, vsp: null } as EliasMoodSliders, timestamp: '2025-04-05T10:00:00Z' },
-      { sliders: { craving: 6, frustration: 4, despondency: 5, focus: 3, vsp: null } as EliasMoodSliders, timestamp: '2025-04-06T10:00:00Z' },
+      { sliders: { craving: 3, frustration: 2, despondency: 2, focus: 6, vsp: null, vspScore: null } as EliasMoodSliders, timestamp: '2025-04-05T10:00:00Z' },
+      { sliders: { craving: 6, frustration: 4, despondency: 5, focus: 3, vsp: null, vspScore: null } as EliasMoodSliders, timestamp: '2025-04-06T10:00:00Z' },
     ];
     return rugzak;
   }
@@ -509,14 +509,14 @@ import { checkInterventions } from '../lib/ai/types';
 
 describe('Intervention Thresholds', () => {
   it('should NOT alert when focus is high (good)', () => {
-    const sliders: EliasMoodSliders = { craving: 2, frustration: 2, despondency: 2, focus: 9, vsp: null };
+    const sliders: EliasMoodSliders = { craving: 2, frustration: 2, despondency: 2, focus: 9, vsp: null, vspScore: null };
     const alerts = checkInterventions(sliders, 'elias');
     const focusAlert = alerts.find((a) => a.key === 'focus');
     expect(focusAlert).toBeUndefined();
   });
 
   it('should alert severe when focus is very low (bad)', () => {
-    const sliders: EliasMoodSliders = { craving: 2, frustration: 2, despondency: 2, focus: 1, vsp: null };
+    const sliders: EliasMoodSliders = { craving: 2, frustration: 2, despondency: 2, focus: 1, vsp: null, vspScore: null };
     const alerts = checkInterventions(sliders, 'elias');
     const focusAlert = alerts.find((a) => a.key === 'focus');
     expect(focusAlert).toBeDefined();
@@ -524,7 +524,7 @@ describe('Intervention Thresholds', () => {
   });
 
   it('should alert moderate when focus is low', () => {
-    const sliders: EliasMoodSliders = { craving: 2, frustration: 2, despondency: 2, focus: 3, vsp: null };
+    const sliders: EliasMoodSliders = { craving: 2, frustration: 2, despondency: 2, focus: 3, vsp: null, vspScore: null };
     const alerts = checkInterventions(sliders, 'elias');
     const focusAlert = alerts.find((a) => a.key === 'focus');
     expect(focusAlert).toBeDefined();
@@ -532,7 +532,7 @@ describe('Intervention Thresholds', () => {
   });
 
   it('should alert severe when craving is very high (bad)', () => {
-    const sliders: EliasMoodSliders = { craving: 9, frustration: 2, despondency: 2, focus: 7, vsp: null };
+    const sliders: EliasMoodSliders = { craving: 9, frustration: 2, despondency: 2, focus: 7, vsp: null, vspScore: null };
     const alerts = checkInterventions(sliders, 'elias');
     const cravingAlert = alerts.find((a) => a.key === 'craving');
     expect(cravingAlert).toBeDefined();
@@ -540,7 +540,7 @@ describe('Intervention Thresholds', () => {
   });
 
   it('should NOT alert when craving is low (good)', () => {
-    const sliders: EliasMoodSliders = { craving: 2, frustration: 2, despondency: 2, focus: 7, vsp: null };
+    const sliders: EliasMoodSliders = { craving: 2, frustration: 2, despondency: 2, focus: 7, vsp: null, vspScore: null };
     const alerts = checkInterventions(sliders, 'elias');
     const cravingAlert = alerts.find((a) => a.key === 'craving');
     expect(cravingAlert).toBeUndefined();

@@ -572,3 +572,8 @@
 ## Fixes — Round 9
 - [x] Fix debug tap: register dev/debug-log route in root _layout.tsx as modal
 - [x] Fix debug tap: enlarge touch target with hitSlop on version Pressable
+
+## Fixes — Round 10
+- [x] Add vspScore: number | null field to EliasMoodSliders interface and defaults
+- [x] Compute vspScore in updateVsp() using mapping GROEN→1, GEEL→2, ORANJE→3, ROOD→4, PAARS→5
+- [x] vspScore included in moodSliders (sanitizeSliders keeps it as numeric); vsp string filtered out by sanitizeSliders

@@ -70,6 +70,8 @@ export const ELIAS_DEFAULT_MOOD = {
   frustration: 0,
   despondency: 0,
   focus: 5,
+  vsp: null,
+  vspScore: null,
 } as const;
 
 // ─── Positive Sliders ───────────────────────────────────────────

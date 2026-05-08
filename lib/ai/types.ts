@@ -71,6 +71,8 @@ export interface EliasMoodSliders {
   focus: number;
   /** VSP (Vroeg Signalerings Plan) — current relapse risk state. null if not yet submitted. */
   vsp: VspLevel | null;
+  /** Numeric VSP score for server payload. GROEN=1, GEEL=2, ORANJE=3, ROOD=4, PAARS=5. null if not yet submitted. */
+  vspScore: number | null;
 }
 
 /** Kim slider keys */
@@ -127,7 +129,7 @@ export function getSliderConfig(userType: UserType): SliderConfig[] {
 /** Create default slider values for a given user type */
 export function createDefaultSliders(userType: UserType): MoodSliders {
   if (userType === 'elias') {
-    return { craving: 0, frustration: 0, despondency: 0, focus: 5, vsp: null };
+    return { craving: 0, frustration: 0, despondency: 0, focus: 5, vsp: null, vspScore: null };
   }
   return { stress: 0, boundaryFatigue: 0, emotionalBurden: 0, selfCare: 5, eigenRegie: null };
 }

@@ -482,8 +482,11 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
   const updateVsp = useCallback(async (level: import('./engine/elias/vsp').VspLevel) => {
     if (!state.userDat) return;
-    // Write VSP to currentMood.vsp (Elias sliders)
-    const updatedMood = { ...state.userDat.currentMood, vsp: level };
+    // VSP level → numeric score mapping for server payload
+    const VSP_SCORE_MAP: Record<string, number> = { GROEN: 1, GEEL: 2, ORANJE: 3, ROOD: 4, PAARS: 5 };
+    const vspScore = VSP_SCORE_MAP[level] ?? null;
+    // Write VSP string + numeric score to currentMood
+    const updatedMood = { ...state.userDat.currentMood, vsp: level, vspScore };
     const updatedUserDat: UserDat = { ...state.userDat, currentMood: updatedMood };
     dispatch({ type: 'UPDATE_USERDAT', payload: updatedUserDat });
     await persistUserDat(updatedUserDat);
