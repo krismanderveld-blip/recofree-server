@@ -25,6 +25,7 @@ import { kimDistressScore, kimResilienceScore, kimPrimaryConcern } from '../engi
 import { computeKimEngineModules } from '../engine/kim/module-catalog';
 import { eliasDistressScore, eliasResilienceScore, eliasPrimaryConcern } from '../engine/elias/slider-interpretation';
 import { computeEliasPriorityModules } from '../engine/elias/module-catalog';
+import { sanitizeSliders } from '../engine/shared/slider-sanitize';
 
 // ─── Generic Slider Access ─────────────────────────────────────
 
@@ -239,7 +240,7 @@ export function recordMoodSnapshot(
   mood: MoodSliders
 ): Rugzak {
   const snapshot: MoodSnapshot = {
-    sliders: { ...mood },
+    sliders: sanitizeSliders(mood as unknown as Record<string, unknown>) as unknown as MoodSliders,
     timestamp: new Date().toISOString(),
   };
 

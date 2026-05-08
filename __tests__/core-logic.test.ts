@@ -270,7 +270,8 @@ describe('Rugzak Engine', () => {
 
     expect(rugzak.currentMood).toEqual(normalElias);
     expect(rugzak.moodHistory.length).toBe(1);
-    expect(rugzak.moodHistory[0].sliders).toEqual(normalElias);
+    // moodHistory.sliders are sanitized: only numeric values (vsp: null is stripped)
+    expect(rugzak.moodHistory[0].sliders).toEqual({ craving: 2, frustration: 2, despondency: 2, focus: 7 });
   });
 
   it('adds message to Rugzak', () => {

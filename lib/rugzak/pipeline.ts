@@ -96,6 +96,7 @@ import {
   checkDeflectionInResponse,
   type ProjectionResult,
 } from './projection-layer';
+import { sanitizeSliders } from '../engine/shared/slider-sanitize';
 
 // ─── Pattern Marking (post-GPT local state) ─────────────────
 
@@ -1225,7 +1226,7 @@ export async function endSession(
   if (updatedUserDat.currentMood) {
     const snapshot = {
       timestamp: new Date().toISOString(),
-      sliders: { ...updatedUserDat.currentMood },
+      sliders: sanitizeSliders(updatedUserDat.currentMood as unknown as Record<string, unknown>) as unknown as import('../ai/types').MoodSliders,
     };
     updatedUserDat = {
       ...updatedUserDat,

@@ -27,6 +27,7 @@ import type { Backpack, UserDat, MoodSliders, ChatMessage, DiaryEntry, StageOfCh
 import type { BackpackRelevanceResult } from './backpack-relevance-analyzer';
 import type { RelationalPatternResult } from './relational-pattern-analyzer';
 import { ELIAS_DEFAULT_STAGE } from '../engine/elias/stage-of-change';
+import { sanitizeSliders } from '../engine/shared/slider-sanitize';
 
 // ─── Output Types ──────────────────────────────────────────────
 
@@ -362,9 +363,7 @@ export function buildGPTPayload(input: PayloadBuilderInput): GPTPayload {
     userName: backpack.naam,
     dominantModule: input.dominantModule,
     riskScore: input.riskScore,
-    sliders: Object.fromEntries(
-      Object.entries(input.sliders).filter(([_, v]) => typeof v === 'number')
-    ) as Record<string, number>,
+    sliders: sanitizeSliders(input.sliders as unknown as Record<string, unknown>),
     conversationWindow,
     message: input.message,
     isSessionStart,
@@ -469,9 +468,7 @@ export function buildGPTPayload(input: PayloadBuilderInput): GPTPayload {
         lastSeen: tp.lastSeen,
       })),
       moodHistory: (userDat.moodHistory || []).slice(-5).map((mh) => ({
-        sliders: Object.fromEntries(
-          Object.entries(mh.sliders).filter(([, v]) => typeof v === 'number')
-        ) as Record<string, number>,
+        sliders: sanitizeSliders(mh.sliders as unknown as Record<string, unknown>),
         timestamp: mh.timestamp,
       })),
       moduleUsageSummary: [...new Set((userDat.moduleUsage || []).map((m) => m.moduleId))],

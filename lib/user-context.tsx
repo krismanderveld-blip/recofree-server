@@ -16,6 +16,7 @@ import {
   updateTriggerPatterns,
   startNewSession,
 } from './rugzak/engine';
+import { sanitizeSliders } from './engine/shared/slider-sanitize';
 
 // ─── State Types ────────────────────────────────────────────────
 
@@ -279,6 +280,14 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
           const rawUserDat = JSON.parse(userDatJson);
           const backpack = migrateBackpack(rawBackpack);
           const userDat = migrateUserDat(rawUserDat, backpack.userType);
+          // Re-persist if migration sanitized any entries (idempotent)
+          const originalHistory = rawUserDat.moodHistory ?? [];
+          const needsRepersist = originalHistory.some((entry: any) =>
+            entry?.sliders && Object.keys(entry.sliders).length !== Object.keys(sanitizeSliders(entry.sliders)).length
+          );
+          if (needsRepersist) {
+            await persistUserDat(userDat);
+          }
           dispatch({ type: 'RESTORE_STORES', payload: { backpack, userDat } });
           return;
         }
@@ -680,9 +689,24 @@ function migrateBackpack(raw: any): Backpack {
 }
 
 function migrateUserDat(raw: any, userType: UserType): UserDat {
+  // Sanitize existing moodHistory entries: strip non-numeric keys (e.g. vsp string)
+  const rawHistory = raw.moodHistory ?? [];
+  let sanitizedCount = 0;
+  const cleanHistory = rawHistory.map((entry: any) => {
+    if (!entry?.sliders) return entry;
+    const sanitized = sanitizeSliders(entry.sliders);
+    if (Object.keys(sanitized).length !== Object.keys(entry.sliders).length) {
+      sanitizedCount++;
+    }
+    return { ...entry, sliders: sanitized };
+  });
+  if (sanitizedCount > 0) {
+    console.log(`[MIGRATION] Sanitized ${sanitizedCount} moodHistory entries (stripped string VSPs)`);
+  }
+
   return {
     currentMood: raw.currentMood ?? createDefaultSliders(userType),
-    moodHistory: raw.moodHistory ?? [],
+    moodHistory: cleanHistory,
     chatHistory: raw.chatHistory ?? [],
     moduleUsage: raw.moduleUsage ?? [],
     triggerPatterns: raw.triggerPatterns ?? [],

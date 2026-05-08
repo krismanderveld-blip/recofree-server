@@ -561,3 +561,10 @@
 ## Fixes — Round 7
 - [x] Fix 1: Elias connection error — root cause: userDat.moodHistory[*].sliders contained vsp string. Fix: server Zod schema now accepts mixed types and transforms/filters to numbers only
 - [x] Fix 2: Pipeline Step 0 — all blocking conditions removed. Pipeline NEVER blocks. VSP-missing fallback proceeds with GREEN zone defaults. Greeting also non-blocking.
+
+## Fixes — Round 8
+- [x] Structural fix: VSP stripped from moodHistory snapshots via shared sanitizeSliders() util (Optie A)
+- [x] Fix all storage points: pipeline.ts session-end, engine.ts recordMoodSnapshot, gpt-payload-builder.ts (all use sanitizeSliders)
+- [x] Migration at app load: migrateUserDat() sanitizes existing polluted moodHistory entries + re-persists to AsyncStorage
+- [x] Zod workaround reverted: server/ai-chat.ts back to strict z.record(z.string(), z.number())
+- [x] Integration test added: __tests__/slider-sanitize-integration.test.ts (8 assertions)
