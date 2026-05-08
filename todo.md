@@ -583,3 +583,6 @@
 
 ## Fixes — Round 12
 - [x] Temporarily remove vsp AND vspScore from Elias SESSION_INIT payload (neither sent to server in moodSliders or moodHistory)
+
+## Fixes — Round 13
+- [x] Update EXPO_PUBLIC_API_BASE_URL from sandbox URL to production domain (https://recobase-vhsxu5ua.manus.space)

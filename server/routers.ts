@@ -1,3 +1,4 @@
+import { TRPCError } from "@trpc/server";
 import { COOKIE_NAME } from "../shared/const.js";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
@@ -23,26 +24,19 @@ export const appRouter = router({
     chat: publicProcedure
       .input(chatInputSchema)
       .mutation(async ({ input }) => {
+        console.log('[ROUTER] userType:', input.userType);
+        console.log('[ROUTER] isSessionStart:', input.isSessionStart);
+
         try {
           const result = await generateAIResponse(input);
-          return {
-            success: true as const,
-            response: result.response,
-            advisoryEmotion: result.advisoryEmotion,
-            advisoryConfidence: result.advisoryConfidence,
-            tokenUsage: result.tokenUsage,
-          };
-        } catch (error: any) {
-          console.error("[AI Chat] Router error:", error?.message ?? error);
-          if (error?.stack) console.error("[AI Chat] Stack:", error.stack);
-          return {
-            success: false as const,
-            response:
-              "Something went wrong with the connection. I'm still here — please try again.",
-            advisoryEmotion: undefined,
-            advisoryConfidence: undefined,
-            tokenUsage: undefined,
-          };
+          return result;
+        } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          console.error(`[ROUTER ERROR] userType=${input.userType}:`, errorMessage);
+          throw new TRPCError({
+            code: 'INTERNAL_SERVER_ERROR',
+            message: `[${input.userType}] ${errorMessage}`,
+          });
         }
       }),
   }),
