@@ -383,12 +383,12 @@ export function buildGPTPayload(input: PayloadBuilderInput): GPTPayload {
 
     recentDiary,
 
-    sessionDurationMinutes: input.sessionDurationMinutes,
-    detectedEmotion: input.detectedEmotion,
-    therapeuticStance: input.therapeuticStance,
-    urgency: input.urgency,
-    startEmotion: input.startEmotion,
-    crisisLevel: input.crisisLevel,
+    sessionDurationMinutes: input.sessionDurationMinutes ?? 0,
+    detectedEmotion: input.detectedEmotion ?? 'unknown',
+    therapeuticStance: input.therapeuticStance ?? 'supportive',
+    urgency: input.urgency ?? 'low',
+    startEmotion: input.startEmotion ?? 'unknown',
+    crisisLevel: input.crisisLevel ?? 0,
   };
 
   // ── Guidance depth (user-controlled) ──
@@ -441,8 +441,8 @@ export function buildGPTPayload(input: PayloadBuilderInput): GPTPayload {
   // ── Session start: add full backpack + userDat + diary ──
   if (isSessionStart) {
     payload.backpack = {
-      naam: backpack.naam,
-      userType: backpack.userType,
+      naam: backpack.naam || '',
+      userType: backpack.userType || 'elias',
       lifeStory: (backpack.sections || []).map((s) => ({
         id: s.id,
         label: s.label,
@@ -456,7 +456,7 @@ export function buildGPTPayload(input: PayloadBuilderInput): GPTPayload {
         initialContext: backpack.intakeContext?.initialContext || '',
         intakeDate: backpack.intakeContext?.intakeDate || '',
       },
-      createdAt: backpack.createdAt || '',
+      createdAt: backpack.createdAt || new Date().toISOString(),
     };
 
     payload.userDat = {

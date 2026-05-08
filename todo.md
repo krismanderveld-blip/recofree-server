@@ -577,3 +577,6 @@
 - [x] Add vspScore: number | null field to EliasMoodSliders interface and defaults
 - [x] Compute vspScore in updateVsp() using mapping GROEN→1, GEEL→2, ORANJE→3, ROOD→4, PAARS→5
 - [x] vspScore included in moodSliders (sanitizeSliders keeps it as numeric); vsp string filtered out by sanitizeSliders
+
+## Fixes — Round 11
+- [x] Add safe defaults in gpt-payload-builder.ts for all fields that can be undefined in Elias payload (crisisLevel→0, detectedEmotion→'unknown', therapeuticStance→'supportive', sessionDurationMinutes→0, urgency→'low', startEmotion→'unknown', backpack.naam→'', backpack.createdAt→ISO now)
