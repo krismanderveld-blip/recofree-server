@@ -8,6 +8,7 @@ import { useColors } from '@/hooks/use-colors';
 import { GUIDANCE_DEPTH_OPTIONS } from '@/lib/ai/types';
 import type { GuidanceDepth } from '@/lib/ai/types';
 import * as Haptics from 'expo-haptics';
+import Constants from 'expo-constants';
 
 const STAGE_LABELS: Record<string, string> = {
   precontemplation: 'Precontemplation',
@@ -17,7 +18,8 @@ const STAGE_LABELS: Record<string, string> = {
   maintenance: 'Maintenance',
 };
 
-const APP_VERSION = '1.0.0';
+// Use the version from app.config.ts (via expo-constants) for consistency with publish page
+const APP_VERSION = Constants.expoConfig?.version ?? '1.0.0';
 
 export default function ProfileScreen() {
   const { state, getUserName, getBackpack, getUserDat, updateGuidanceDepth, getGuidanceDepth } = useUser();
@@ -120,7 +122,7 @@ export default function ProfileScreen() {
               <Text className="text-xl font-bold text-foreground">{userName || 'User'}</Text>
               <Text className="text-sm text-muted mt-0.5">{userTypeLabel}</Text>
               <Text className="text-xs text-muted mt-0.5">
-                {companionName} · {STAGE_LABELS[stageOfChange] ?? stageOfChange} · {totalSessions} session{totalSessions !== 1 ? 's' : ''} · {moodCheckIns} check-in{moodCheckIns !== 1 ? 's' : ''}
+                {companionName}{isElias ? ` · ${STAGE_LABELS[stageOfChange] ?? stageOfChange}` : ''} · {totalSessions} session{totalSessions !== 1 ? 's' : ''} · {moodCheckIns} check-in{moodCheckIns !== 1 ? 's' : ''}
               </Text>
             </View>
           </View>

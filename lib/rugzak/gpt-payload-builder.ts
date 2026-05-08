@@ -362,7 +362,9 @@ export function buildGPTPayload(input: PayloadBuilderInput): GPTPayload {
     userName: backpack.naam,
     dominantModule: input.dominantModule,
     riskScore: input.riskScore,
-    sliders: { ...input.sliders } as Record<string, number>,
+    sliders: Object.fromEntries(
+      Object.entries(input.sliders).filter(([_, v]) => typeof v === 'number')
+    ) as Record<string, number>,
     conversationWindow,
     message: input.message,
     isSessionStart,

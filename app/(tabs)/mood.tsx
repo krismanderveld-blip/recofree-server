@@ -370,7 +370,7 @@ export default function MoodScreen() {
               >
                 <View className={`rounded-2xl py-3 items-center ${eigenRegieSaved ? 'bg-success' : 'bg-primary'}`}>
                   <Text className="text-white text-base font-bold">
-                    {eigenRegieSaved ? 'Opgeslagen!' : 'Sla reflectie op'}
+                    {eigenRegieSaved ? 'Saved!' : 'Save reflection'}
                   </Text>
                 </View>
               </Pressable>

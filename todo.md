@@ -546,3 +546,10 @@
 - [x] Add zone_shift event logging in pipeline.ts when bufferZoneColor changes between messages
 - [x] Add projection_signal event logging in projection-layer.ts when fear/hope/goal is created or reinforced
 - [x] Add token budget indicator to Live State tab in debug screen (remaining budget, status OK/WARNING/CRITICAL)
+
+## Bug Fixes — Round 5
+- [x] Bug 1 BLOCKER: Elias chat connection error — moodSliders.vsp (string) rejected by server z.record(z.string(), z.number()). Fix: filter non-numeric values from sliders in gpt-payload-builder.ts
+- [x] Bug 2: VSP/Eigen Regie thermometer always shown at every chat start — preChatDone now always starts false
+- [x] Bug 3: Version number sync — profile now reads from Constants.expoConfig.version (same source as publish)
+- [x] Bug 4: Stage of Change hidden for Kim users in backpack.tsx and profile.tsx (userType guard added)
+- [x] Bug 5: "Sla reflectie op" / "Opgeslagen!" translated to "Save reflection" / "Saved!"

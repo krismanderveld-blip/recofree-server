@@ -71,22 +71,10 @@ export default function ChatScreen() {
   const userName = getUserName();
   const companionName = state.userType === 'elias' ? 'Elias' : 'Kim';
 
-  // ── Pre-chat gate: VSP required for Elias, Eigen Regie required for Kim ──
-  const [preChatDone, setPreChatDone] = useState<boolean>(() => {
-    if (state.userType === 'elias') {
-      const currentVsp = getVsp();
-      return currentVsp !== null;
-    }
-    if (state.userType === 'kim') {
-      // Kim: eigenRegie must be submitted this session
-      const mood = state.userDat?.currentMood;
-      if (mood && 'eigenRegie' in mood) {
-        return (mood as any).eigenRegie !== null;
-      }
-      return false;
-    }
-    return true;
-  });
+  // ── Pre-chat gate: VSP/Eigen Regie ALWAYS shown at every chat start ──
+  // The thermometer is both engine-input and a self-reflection mirror for the user.
+  // It must appear at the start of every new session, regardless of prior submissions.
+  const [preChatDone, setPreChatDone] = useState<boolean>(false);
 
   const handleVspSubmit = useCallback(async (level: VspLevel) => {
     await updateVsp(level);

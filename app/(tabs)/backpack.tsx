@@ -248,7 +248,8 @@ export default function BackpackScreen() {
           </View>
         </View>
 
-        {/* Stage of Change */}
+        {/* Stage of Change — Elias only */}
+        {state.backpack?.userType === 'elias' && (
         <View className="bg-surface border border-border rounded-2xl p-4 mb-6">
           <Text className="text-base font-semibold text-foreground mb-1">Stage of Change</Text>
           <Text className="text-xs text-muted mb-3 leading-relaxed">
@@ -301,6 +302,7 @@ export default function BackpackScreen() {
             );
           })}
         </View>
+        )}
 
         {/* Sections */}
         {sections.map(renderSection)}
