@@ -553,3 +553,7 @@
 - [x] Bug 3: Version number sync — profile now reads from Constants.expoConfig.version (same source as publish)
 - [x] Bug 4: Stage of Change hidden for Kim users in backpack.tsx and profile.tsx (userType guard added)
 - [x] Bug 5: "Sla reflectie op" / "Opgeslagen!" translated to "Save reflection" / "Saved!"
+
+## Fixes — Round 6
+- [x] Fix 1: Reset currentMood.vsp and eigenRegie to null at session-end (prevent stale values in next session)
+- [x] Fix 2: Add ChatErrorBoundary around chat component (restart button + debug log on crash, never crashes whole app)

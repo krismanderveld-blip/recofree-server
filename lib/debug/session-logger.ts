@@ -12,7 +12,8 @@ export type DebugEventType =
   | 'zone_shift'
   | 'projection_signal'
   | 'crisis_detected'
-  | 'model_selected';
+  | 'model_selected'
+  | 'chat_crash';
 
 export interface DebugEvent {
   id: number;

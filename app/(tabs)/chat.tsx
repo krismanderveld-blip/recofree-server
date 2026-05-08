@@ -31,6 +31,7 @@ import type { VspLevel } from '@/lib/engine/elias/vsp';
 import { loadAndRestoreEliasProjection } from '@/lib/engine/elias/projection';
 import { loadAndRestoreKimProjection } from '@/lib/engine/kim/projection';
 import { logDebugEvent } from '@/lib/debug/session-logger';
+import { ChatErrorBoundary } from '@/components/chat-error-boundary';
 
 const BACKPACK_KEY = '@recofree_backpack';
 const USERDAT_KEY = '@recofree_userdat';
@@ -39,7 +40,15 @@ const DIARY_KEY = '@recofree_diary';
 
 type SessionPhase = 'active' | 'ending' | 'completed';
 
-export default function ChatScreen() {
+export default function ChatScreenWithBoundary() {
+  return (
+    <ChatErrorBoundary>
+      <ChatScreenInner />
+    </ChatErrorBoundary>
+  );
+}
+
+function ChatScreenInner() {
   const {
     state,
     startSession,

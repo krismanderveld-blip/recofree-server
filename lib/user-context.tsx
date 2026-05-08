@@ -558,8 +558,17 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   // ── End Session (new: accepts UserDat directly) ──
 
   const endSessionWithUserDat = useCallback(async (updatedUserDat: UserDat) => {
-    dispatch({ type: 'END_SESSION', payload: updatedUserDat });
-    await persistUserDat(updatedUserDat);
+    // Reset VSP/eigenRegie in currentMood so next session starts with a clean thermometer
+    const resetMood = { ...updatedUserDat.currentMood };
+    if ('vsp' in resetMood) {
+      (resetMood as any).vsp = null;
+    }
+    if ('eigenRegie' in resetMood) {
+      (resetMood as any).eigenRegie = null;
+    }
+    const finalUserDat: UserDat = { ...updatedUserDat, currentMood: resetMood };
+    dispatch({ type: 'END_SESSION', payload: finalUserDat });
+    await persistUserDat(finalUserDat);
   }, []);
 
   // ── Reset ──
