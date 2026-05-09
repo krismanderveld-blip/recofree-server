@@ -129,12 +129,15 @@ export class OpenAIProvider implements AIProvider {
       // ── STEP 1: Local Analysis (runs EVERY call) ──
       const dominantModule = context.activeModules[0] || ELIAS_DEFAULT_MODULE;
 
-      const sliders = { ...context.moodSliders } as Record<string, number>;
-      const sliderValues = Object.values(sliders);
+      const sliders = { ...context.moodSliders } as Record<string, unknown>;
+      // Filter to only finite numbers (excludes vsp string, NaN, undefined)
+      const sliderValues = Object.values(sliders).filter(
+        (v): v is number => typeof v === 'number' && Number.isFinite(v)
+      );
       const avgDistress = sliderValues.length > 0
         ? sliderValues.reduce((a, b) => a + b, 0) / sliderValues.length
         : 0;
-      const riskScore = Math.min(10, context.crisisLevel * 3 + Math.round(avgDistress));
+      const riskScore = Math.min(10, (context.crisisLevel || 0) * 3 + Math.round(avgDistress));
 
       // Backpack Relevance Analyzer (local, every call)
       const relevance = analyzeBackpackRelevance(
