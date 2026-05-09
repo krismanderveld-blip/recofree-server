@@ -595,3 +595,6 @@
 - [x] Fix riskScore: NaN causing 400 error — added safeNumber() guard to all numeric payload fields
 - [x] Fix sanitizeSliders to filter NaN (typeof NaN === 'number' in JS)
 - [x] Guard bufferSnapshot.dominantState.riskScore, zoneScore, messageCount against NaN
+
+## Round 15
+- [x] Add Copy tab to debug screen to copy all debug info to clipboard for external sharing

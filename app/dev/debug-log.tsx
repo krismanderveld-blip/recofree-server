@@ -27,7 +27,7 @@ import { getKimProjectionSummary, clearKimProjection } from '@/lib/engine/kim/pr
 import { getInterventionState } from '@/lib/engine/elias/intervention-continuity';
 import { getSessionCostSummary, getRemainingBudget, isOverBudget } from '@/lib/rugzak/cost-control';
 
-type TabId = 'live' | 'log';
+type TabId = 'live' | 'log' | 'copy';
 
 const USERDAT_KEY = '@recofree_userdat';
 const BACKPACK_KEY = '@recofree_backpack';
@@ -179,7 +179,7 @@ export default function DebugLogScreen() {
 
       {/* Tab Bar */}
       <View style={[styles.tabBar, { borderColor: colors.border }]}>
-        {(['live', 'log'] as TabId[]).map((tab) => (
+        {(['live', 'log', 'copy'] as TabId[]).map((tab) => (
           <Pressable
             key={tab}
             onPress={() => { setActiveTab(tab); refresh(); }}
@@ -195,7 +195,7 @@ export default function DebugLogScreen() {
                 { color: activeTab === tab ? colors.primary : colors.muted },
               ]}
             >
-              {tab === 'live' ? 'Live State' : 'Session Log'}
+              {tab === 'live' ? 'Live State' : tab === 'log' ? 'Session Log' : 'Copy All'}
             </Text>
           </Pressable>
         ))}
@@ -203,7 +203,9 @@ export default function DebugLogScreen() {
 
       {/* Content */}
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {activeTab === 'live' ? (
+        {activeTab === 'copy' ? (
+          <CopyAllTab liveState={liveState} events={events} colors={colors} />
+        ) : activeTab === 'live' ? (
           <>
             <Section title="Zone & Dominant">
               <Row
@@ -387,6 +389,121 @@ export default function DebugLogScreen() {
         <View style={{ height: 40 }} />
       </ScrollView>
     </ScreenContainer>
+  );
+}
+
+// ── Copy All Tab ──
+function CopyAllTab({ liveState, events, colors }: { liveState: any; events: any[]; colors: any }) {
+  const [copied, setCopied] = useState(false);
+
+  const buildFullText = useCallback(() => {
+    const lines: string[] = [];
+    lines.push('=== RECOFREE DEBUG DUMP ===');
+    lines.push(`Timestamp: ${new Date().toISOString()}`);
+    lines.push('');
+    lines.push('── ZONE & DOMINANT ──');
+    lines.push(`Zone: ${liveState.lastMessage?.zone ?? '—'}`);
+    lines.push(`Dominant Module: ${liveState.lastMessage?.dominantModule ?? '—'}`);
+    lines.push(`Risk Score: ${liveState.lastMessage?.riskScore ?? '—'}`);
+    lines.push('');
+    lines.push('── GUIDANCE DEPTH ──');
+    lines.push(`User Setting: ${liveState.guidanceDepth}`);
+    lines.push(`Effective: zone=${liveState.intervention?.linkedZone ?? '—'} sev=${liveState.intervention?.linkedSeverity ?? '—'}`);
+    lines.push('');
+    lines.push('── MODEL & TOKENS ──');
+    lines.push(`Model (last): ${liveState.lastMessage?.model ?? '—'}`);
+    lines.push(`Est. Tokens (last): ${liveState.lastMessage?.estimatedTokens ?? '—'}`);
+    lines.push(`Total Calls: ${liveState.cost.totalCalls}`);
+    lines.push(`Total Tokens: ${liveState.cost.totalTokens}`);
+    lines.push(`Peak Call: ${liveState.cost.peakCallTokens}`);
+    lines.push('');
+    lines.push('── TOKEN BUDGET ──');
+    lines.push(`Session Total: ${liveState.cost.totalTokens} / 25000`);
+    lines.push(`Remaining: ${liveState.remaining}`);
+    lines.push(`Status: ${liveState.budgetStatus}`);
+    lines.push('');
+    lines.push('── BUFFER SNAPSHOT ──');
+    lines.push(`Zone: ${liveState.lastMessage?.zone ?? '—'}`);
+    lines.push(`Active Blocks: ${Array.isArray(liveState.lastMessage?.activeBlocks) ? liveState.lastMessage.activeBlocks.join(', ') : '—'}`);
+    lines.push('');
+    lines.push('── PROJECTION ──');
+    lines.push(`Active Entries: ${liveState.projection.activeEntries}`);
+    lines.push(`Total Entries: ${liveState.projection.totalEntries}`);
+    lines.push(`Dominant Category: ${liveState.projection.dominantCategory ?? '—'}`);
+    lines.push(`Strongest Fear: ${liveState.projection.strongestFear?.content ?? '—'}`);
+    lines.push(`Strongest Hope: ${liveState.projection.strongestHope?.content ?? '—'}`);
+    lines.push(`Active Goals: ${liveState.projection.activeGoals.length}`);
+    lines.push('');
+    lines.push('── USERDAT ──');
+    lines.push(`Total Sessions: ${liveState.totalSessions}`);
+    lines.push(`Last Session: ${liveState.lastSessionDate}`);
+    lines.push(`User Type: ${liveState.userType}`);
+    lines.push('');
+    lines.push('── VSP / EIGEN REGIE ──');
+    lines.push(`VSP (Elias): ${liveState.vsp ?? '—'}`);
+    lines.push(`Eigen Regie (Kim): ${liveState.eigenRegieLatest ? `${liveState.eigenRegieLatest.userInput}/100` : '—'}`);
+    lines.push('');
+    lines.push('── INTERVENTION CONTINUITY ──');
+    lines.push(`Type: ${liveState.intervention?.lastInterventionType ?? '—'}`);
+    lines.push(`Goal: ${liveState.intervention?.interventionGoal ?? '—'}`);
+    lines.push(`Turns Active: ${liveState.intervention?.turnsActive ?? '—'}`);
+    lines.push(`Effectiveness: ${liveState.intervention?.effectivenessScore ?? '—'}`);
+    lines.push(`Last Response: ${liveState.intervention?.lastUserResponse ?? '—'}`);
+    lines.push('');
+    lines.push('── SESSION LOG ──');
+    if (events.length === 0) {
+      lines.push('(no events)');
+    } else {
+      events.forEach((event) => {
+        const time = event.timestamp.split('T')[1]?.split('.')[0] ?? '';
+        lines.push(`[${time}] ${event.type}: ${formatEventDataCompact(event)}`);
+      });
+    }
+    lines.push('');
+    lines.push('=== END DEBUG DUMP ===');
+    return lines.join('\n');
+  }, [liveState, events]);
+
+  const handleCopyAll = useCallback(async () => {
+    const text = buildFullText();
+    try {
+      await Share.share({ message: text, title: 'RecoFree Debug Dump' });
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (e) {
+      console.error('[DebugLog] Copy all failed:', e);
+    }
+  }, [buildFullText]);
+
+  return (
+    <View style={{ gap: 16, paddingVertical: 16 }}>
+      <Text style={[styles.sectionTitle, { color: colors.primary, textAlign: 'center' }]}>
+        Copy All Debug Info
+      </Text>
+      <Text style={{ color: colors.muted, fontSize: 13, textAlign: 'center', paddingHorizontal: 16 }}>
+        Copies all live state + session log as plain text. You can paste it in any external chat.
+      </Text>
+      <Pressable
+        onPress={handleCopyAll}
+        style={({ pressed }) => [
+          styles.utilBtn,
+          {
+            borderColor: copied ? colors.success + '60' : colors.primary + '40',
+            backgroundColor: copied ? colors.success + '15' : colors.primary + '10',
+            opacity: pressed ? 0.7 : 1,
+          },
+        ]}
+      >
+        <Text style={[styles.utilBtnText, { color: copied ? colors.success : colors.primary }]}>
+          {copied ? '✓ Copied!' : 'Copy Full Debug Dump'}
+        </Text>
+      </Pressable>
+      <View style={[styles.section, { borderColor: colors.border }]}>
+        <Text style={{ color: colors.muted, fontSize: 11, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace' }} numberOfLines={30}>
+          {buildFullText()}
+        </Text>
+      </View>
+    </View>
   );
 }
 
