@@ -358,11 +358,17 @@ export function buildGPTPayload(input: PayloadBuilderInput): GPTPayload {
     }));
 
   // ── Build base payload (always present) ──
+  // Guard against NaN values that would fail server-side Zod validation
+  const safeNumber = (val: unknown, fallback: number = 0): number => {
+    const n = Number(val);
+    return Number.isFinite(n) ? n : fallback;
+  };
+
   const payload: GPTPayload = {
     route: backpack.userType,
     userName: backpack.naam,
-    dominantModule: input.dominantModule,
-    riskScore: input.riskScore,
+    dominantModule: input.dominantModule || 'E01',
+    riskScore: safeNumber(input.riskScore, 0),
     sliders: (() => { const s = sanitizeSliders(input.sliders as unknown as Record<string, unknown>); delete s.vspScore; return s; })(),
     conversationWindow,
     message: input.message,
@@ -383,12 +389,12 @@ export function buildGPTPayload(input: PayloadBuilderInput): GPTPayload {
 
     recentDiary,
 
-    sessionDurationMinutes: input.sessionDurationMinutes ?? 0,
+    sessionDurationMinutes: safeNumber(input.sessionDurationMinutes, 0),
     detectedEmotion: input.detectedEmotion ?? 'unknown',
     therapeuticStance: input.therapeuticStance ?? 'supportive',
     urgency: input.urgency ?? 'low',
     startEmotion: input.startEmotion ?? 'unknown',
-    crisisLevel: input.crisisLevel ?? 0,
+    crisisLevel: safeNumber(input.crisisLevel, 0),
   };
 
   // ── Guidance depth (user-controlled) ──
@@ -426,15 +432,18 @@ export function buildGPTPayload(input: PayloadBuilderInput): GPTPayload {
   if (input.bufferSnapshot) {
     const snap = input.bufferSnapshot;
     payload.bufferSnapshot = {
-      zoneScore: snap.zoneScore,
-      zoneColor: snap.zoneColor,
-      liveIntent: snap.liveIntent,
-      intensityTrajectory: snap.intensityTrajectory,
-      currentEmotion: snap.currentEmotion,
-      responseDirection: snap.responseDirection,
-      currentRelationshipAnchor: snap.currentRelationshipAnchor,
-      messageCount: snap.messageCount,
-      dominantState: snap.dominantState,
+      zoneScore: safeNumber(snap.zoneScore, 0),
+      zoneColor: snap.zoneColor || 'GREEN',
+      liveIntent: snap.liveIntent || 'unknown',
+      intensityTrajectory: snap.intensityTrajectory || 'stable',
+      currentEmotion: snap.currentEmotion || 'neutral',
+      responseDirection: snap.responseDirection || 'supportive',
+      currentRelationshipAnchor: snap.currentRelationshipAnchor || '',
+      messageCount: safeNumber(snap.messageCount, 0),
+      dominantState: snap.dominantState ? {
+        ...snap.dominantState,
+        riskScore: safeNumber(snap.dominantState.riskScore, 0),
+      } : null,
     };
   }
 

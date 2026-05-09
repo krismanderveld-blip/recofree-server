@@ -18,6 +18,6 @@
  */
 export function sanitizeSliders(sliders: Record<string, unknown>): Record<string, number> {
   return Object.fromEntries(
-    Object.entries(sliders).filter(([, v]) => typeof v === 'number')
+    Object.entries(sliders).filter(([, v]) => typeof v === 'number' && Number.isFinite(v as number))
   ) as Record<string, number>;
 }

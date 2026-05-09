@@ -592,3 +592,6 @@
 - [x] Show actual error message + URL on screen instead of generic "Something went wrong"
 - [x] Remove __DEV__ gates from debug screen access, session logger, and chat logging
 - [x] Verify the tRPC request format matches what the production server expects (confirmed: server returns 200 OK with GPT response)
+- [x] Fix riskScore: NaN causing 400 error — added safeNumber() guard to all numeric payload fields
+- [x] Fix sanitizeSliders to filter NaN (typeof NaN === 'number' in JS)
+- [x] Guard bufferSnapshot.dominantState.riskScore, zoneScore, messageCount against NaN
