@@ -50,12 +50,10 @@ export default function ProfileScreen() {
     tapCountRef.current += 1;
     if (tapCountRef.current >= 5) {
       tapCountRef.current = 0;
-      if (__DEV__) {
-        if (Platform.OS !== 'web') {
-          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        }
-        router.push('/dev/debug-log' as any);
+      if (Platform.OS !== 'web') {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       }
+      router.push('/dev/debug-log' as any);
     }
   }, [router]);
 

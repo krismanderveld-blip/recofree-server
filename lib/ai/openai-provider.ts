@@ -362,7 +362,14 @@ export class OpenAIProvider implements AIProvider {
       if (!response.ok) {
         const errorText = await response.text();
         console.error('[OpenAIProvider] Backend error:', response.status, errorText);
-        throw new Error(`Backend API error: ${response.status}`);
+        // Instead of throwing (which gives generic message), return the actual error
+        const shortError = errorText.length > 200 ? errorText.substring(0, 200) + '...' : errorText;
+        return {
+          response: `[DEBUG] Server returned ${response.status}.\n\nURL: ${url}\nDetails: ${shortError}\n\nPlease screenshot this and report it.`,
+          advisoryEmotion: undefined,
+          advisoryConfidence: undefined,
+          tokenUsage: undefined,
+        };
       }
 
       const data = await response.json();
@@ -396,26 +403,12 @@ export class OpenAIProvider implements AIProvider {
     } catch (error) {
       console.error('[OpenAIProvider] Error after retries:', error);
 
-      // Provide a helpful error message for the user
-      const errorMessage = (error as Error)?.message ?? '';
-      const isNetworkError = errorMessage.includes('Network') ||
-        errorMessage.includes('fetch') ||
-        errorMessage.includes('timeout') ||
-        errorMessage.includes('Failed') ||
-        errorMessage.includes('502') ||
-        errorMessage.includes('503');
-
-      if (isNetworkError) {
-        return {
-          response: "The connection to the server was briefly interrupted. This can happen when the app hasn't been used for a while. Please try again in a few seconds \u2014 I'm still here.",
-          advisoryEmotion: undefined,
-          advisoryConfidence: undefined,
-          tokenUsage: undefined,
-        };
-      }
+      // Show the actual error + URL so we can debug on device
+      const errorMessage = (error as Error)?.message ?? 'Unknown error';
+      const apiUrl = getApiBaseUrl();
 
       return {
-        response: "Something went wrong with the connection. I'm still here \u2014 please try again.",
+        response: `[DEBUG] Connection failed.\n\nURL: ${apiUrl}/api/trpc/ai.chat\nError: ${errorMessage}\n\nPlease screenshot this and report it.`,
         advisoryEmotion: undefined,
         advisoryConfidence: undefined,
         tokenUsage: undefined,

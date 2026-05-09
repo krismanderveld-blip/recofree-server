@@ -38,10 +38,9 @@ let events: DebugEvent[] = [];
 let eventCounter = 0;
 
 /**
- * Log a debug event. Only works in __DEV__ mode.
+ * Log a debug event. Works in all builds (needed for on-device debugging).
  */
 export function logDebugEvent(type: DebugEventType, data: Record<string, unknown>): void {
-  if (typeof __DEV__ === 'undefined' || !__DEV__) return;
   eventCounter++;
   events.push({
     id: eventCounter,

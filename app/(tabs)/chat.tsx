@@ -236,14 +236,20 @@ function ChatScreenInner() {
       await AsyncStorage.setItem(USERDAT_KEY, JSON.stringify(result.updatedUserDat));
       setMessages(result.updatedUserDat.chatHistory);
       // Debug: log session start
-      if (__DEV__) {
-        logDebugEvent('session_start', {
-          userType: state.userType ?? 'unknown',
-          sessionNumber: result.updatedUserDat.totalSessions,
-        });
-      }
+      logDebugEvent('session_start', {
+        userType: state.userType ?? 'unknown',
+        sessionNumber: result.updatedUserDat.totalSessions,
+      });
     } catch (error) {
       console.error('Greeting error:', error);
+      // Show the error to the user so we can debug on device
+      const errorMsg: ChatMessage = {
+        id: `msg_err_${Date.now()}`,
+        role: 'assistant',
+        content: `[DEBUG] Greeting failed: ${(error as Error)?.message ?? 'Unknown error'}`,
+        timestamp: new Date().toISOString(),
+      };
+      setMessages((prev) => [...prev, errorMsg]);
     } finally {
       setIsTyping(false);
     }
@@ -288,7 +294,7 @@ function ChatScreenInner() {
       if (result.showEmergency) setShowEmergency(true);
       setMessages(result.updatedUserDat.chatHistory);
       // Debug logging (only in __DEV__)
-      if (__DEV__ && result.messageLog) {
+      if (result.messageLog) {
         logDebugEvent('message_processed', {
           messageIndex: result.messageLog.messageIndex,
           zone: result.messageLog.preGPT.bufferZoneColor,
@@ -317,7 +323,7 @@ function ChatScreenInner() {
       const errorMsg: ChatMessage = {
         id: `msg_${Date.now() + 1}`,
         role: 'assistant',
-        content: "Ik ben er nog. Er ging iets mis met de verbinding — probeer het opnieuw.",
+        content: `[DEBUG] Pipeline error: ${(error as Error)?.message ?? 'Unknown error'}`,
         timestamp: new Date().toISOString(),
       };
       setMessages((prev) => [...prev, errorMsg]);
@@ -355,12 +361,10 @@ function ChatScreenInner() {
       setMessages((prev) => [...prev, confirmationMsg]);
       setSessionPhase('completed');
       // Debug: log session end
-      if (__DEV__) {
-        logDebugEvent('session_end', {
-          messageCount: result.updatedUserDat.chatHistory.length,
-          durationMs: 0, // not tracked currently
-        });
-      }
+      logDebugEvent('session_end', {
+        messageCount: result.updatedUserDat.chatHistory.length,
+        durationMs: 0, // not tracked currently
+      });
     } catch (error) {
       console.error('End session error:', error);
       const fallbackMsg: ChatMessage = {

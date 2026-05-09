@@ -586,3 +586,9 @@
 
 ## Fixes — Round 13
 - [x] Update EXPO_PUBLIC_API_BASE_URL from sandbox URL to production domain (https://recobase-vhsxu5ua.manus.space)
+
+## Fixes — Round 14 (Critical: Chat still not working on device)
+- [x] Hardcode production URL as fallback in getApiBaseUrl() so env var issues cannot block it
+- [x] Show actual error message + URL on screen instead of generic "Something went wrong"
+- [x] Remove __DEV__ gates from debug screen access, session logger, and chat logging
+- [x] Verify the tRPC request format matches what the production server expects (confirmed: server returns 200 OK with GPT response)

@@ -7,6 +7,11 @@ const bundleId = "space.manus.recofree.app.t20260405113127";
 const timestamp = bundleId.split(".").pop()?.replace(/^t/, "") ?? "";
 const schemeFromBundleId = `manus${timestamp}`;
 
+// HARDCODED PRODUCTION URL — This is the deployed server.
+// This ensures the app ALWAYS reaches the correct server,
+// even if EXPO_PUBLIC_API_BASE_URL is not properly baked into the APK.
+const PRODUCTION_API_URL = "https://recobase-vhsxu5ua.manus.space";
+
 const env = {
   portal: process.env.EXPO_PUBLIC_OAUTH_PORTAL_URL ?? "",
   server: process.env.EXPO_PUBLIC_OAUTH_SERVER_URL ?? "",
@@ -25,13 +30,16 @@ export const OWNER_NAME = env.ownerName;
 export const API_BASE_URL = env.apiBaseUrl;
 
 /**
- * Get the API base URL, deriving from current hostname if not set.
- * Metro runs on 8081, API server runs on 3000.
- * URL pattern: https://PORT-sandboxid.region.domain
+ * Get the API base URL.
+ * 
+ * Priority:
+ * 1. EXPO_PUBLIC_API_BASE_URL env var (if set and not empty)
+ * 2. On web: derive from current hostname (dev mode)
+ * 3. HARDCODED PRODUCTION URL (fallback — ensures device always works)
  */
 export function getApiBaseUrl(): string {
-  // If API_BASE_URL is set, use it
-  if (API_BASE_URL) {
+  // If API_BASE_URL is set and looks like a real URL, use it
+  if (API_BASE_URL && API_BASE_URL.startsWith("http")) {
     return API_BASE_URL.replace(/\/$/, "");
   }
 
@@ -45,8 +53,9 @@ export function getApiBaseUrl(): string {
     }
   }
 
-  // Fallback to empty (will use relative URL)
-  return "";
+  // FALLBACK: Always use the hardcoded production URL on native devices
+  // This guarantees the app works even if env vars are not baked in correctly
+  return PRODUCTION_API_URL;
 }
 
 export const SESSION_TOKEN_KEY = "app_session_token";
@@ -115,7 +124,6 @@ export async function startOAuthLogin(): Promise<string | null> {
   const supported = await Linking.canOpenURL(loginUrl);
   if (!supported) {
     console.warn("[OAuth] Cannot open login URL: URL scheme not supported");
-    // 可考虑抛出错误或返回错误状态，让调用方处理
     return null;
   }
 
@@ -123,7 +131,6 @@ export async function startOAuthLogin(): Promise<string | null> {
     await Linking.openURL(loginUrl);
   } catch (error) {
     console.error("[OAuth] Failed to open login URL:", error);
-    // 可考虑抛出错误让调用方处理
   }
 
   // The OAuth callback will reopen the app via deep link.
