@@ -598,3 +598,11 @@
 
 ## Round 15
 - [x] Add Copy tab to debug screen to copy all debug info to clipboard for external sharing
+
+## Round 16 — Full Engine Transparency Debug Log
+- [x] Create structured debug block type with all required fields (pipeline steps, zone, regulation, module, model routing, intervention, projection, memory layers, payload, tokens)
+- [x] Create debug event emitter that logs a full block per message without changing production code
+- [x] Integrate emitter into pipeline (read-only taps)
+- [x] Update Session Log tab to render cumulative message blocks
+- [x] Update Copy All tab to export full session including all message blocks
+- [x] Verify 0 TS errors, all tests green

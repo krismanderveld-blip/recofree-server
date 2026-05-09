@@ -562,6 +562,7 @@ export interface AIResult {
     completionTokens: number;
     totalTokens: number;
   };
+  selectedModel?: string;
 }
 
 /**

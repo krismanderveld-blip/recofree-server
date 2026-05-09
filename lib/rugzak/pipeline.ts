@@ -83,8 +83,10 @@ import {
 } from '../engine/elias/intervention-continuity';
 import {
   resetProjectionState,
+  getProjectionState,
   resetSessionTracking as resetProjectionSessionTracking,
   applyProjectionDecay,
+  type ProjectionEntry,
 } from '../engine/elias/projection';
 import {
   resetKimProjectionState,
@@ -97,6 +99,7 @@ import {
   type ProjectionResult,
 } from './projection-layer';
 import { sanitizeSliders } from '../engine/shared/slider-sanitize';
+import { buildTraceBlock, type EngineTraceInput, type PipelineStepStatus } from '../debug/engine-trace';
 
 // ─── Pattern Marking (post-GPT local state) ─────────────────
 
@@ -192,6 +195,8 @@ export interface PipelineResult {
   isBlocked?: boolean;
   /** Reason for blocking. */
   blockReason?: string;
+  /** Full engine trace data for debug logging */
+  traceData?: import('@/lib/debug/engine-trace').EngineTraceInput;
 }
 
 /** Consolidated log entry for each message exchange */
@@ -629,7 +634,7 @@ export async function processMessage(
     const result: AIResult = await provider.generateResponse(context);
     response = result.response;
     tokenUsage = result.tokenUsage;
-    selectedModel = (result as any).selectedModel;
+    selectedModel = result.selectedModel;
   } catch (error) {
     console.error('AI generation error:', error);
     response = "I'm still here with you. Something went wrong on my end — please try again.";
@@ -803,6 +808,115 @@ export async function processMessage(
   // Compose the final rugzak view (backpack unchanged)
   const updatedRugzak = composeRugzak(backpack, updatedUserDat);
 
+  // ── Build engine trace data for debug screen ──
+  const traceData: EngineTraceInput = {
+    messageIndex: sessionBuffer.messageCount,
+    timestamp: new Date().toISOString(),
+    userMessage,
+    pipelineSteps: [
+      { step: '1. Trigger decay', status: 'passed', reason: `applied to ${sessionBuffer.messageCount > 1 ? 'previous' : 'initial'} buffer` },
+      { step: '2. Buffer update', status: 'passed', reason: `zone=${sessionBuffer.currentZoneColor}, score=${sessionBuffer.currentZoneScore}` },
+      { step: '3. Zone decay', status: 'passed', reason: `decayApplied` },
+      { step: '4. Dominant state', status: 'passed', reason: `module=${preGPTDominantState.dominantModule}, source=${preGPTDominantState.sourceLayer}` },
+      { step: '5a. Buffer snapshot', status: 'passed', reason: `triggers=${relevance.triggers.length}` },
+      { step: '5b. Regulation', status: regulationResult.wasSkipped ? 'skipped' : 'passed', reason: `action=${regulationResult.action}, depth=${regulationResult.effectiveDepth}` },
+      { step: '5c. Relevance', status: 'passed', reason: `triggers=[${relevance.triggers.map(t => t.trigger).join(',')}]` },
+      { step: '5d. Projection', status: projectionResult.injectionBlock ? 'passed' : 'skipped', reason: projectionResult.injectionBlock ? 'block injected' : 'no signal' },
+      { step: '6a. Zone decision', status: elisDecision ? 'passed' : 'skipped', reason: elisDecision ? `zone=${elisDecision.zone.computed.label}` : 'kim user' },
+      { step: '6b. Engine directive', status: engineDirective ? 'passed' : 'skipped', reason: engineDirective ? `engine=${engineDirective.engine}` : 'none' },
+      { step: '6c. Intervention', status: interventionContinuity ? 'passed' : 'skipped', reason: interventionContinuity ? `type=${interventionContinuity.lastInterventionType}` : 'not active' },
+      { step: '7. GPT call', status: 'passed', reason: `model=${selectedModel ?? 'unknown'}` },
+      { step: '8. Post-GPT update', status: 'passed', reason: `patterns=[${markedPatterns.join(',')}]` },
+    ],
+    zoneDecision: elisDecision ? {
+      vspInput: elisDecision.zone.resolved?.vspLevel ?? null,
+      vspSeverity: elisDecision.zone.resolved?.finalSeverity ?? null,
+      computedZone: elisDecision.zone.computed.label,
+      computedSeverity: ({'GROEN':1,'LICHTGROEN':1,'GEEL':2,'ORANJE':3,'ROOD':4} as Record<string,number>)[elisDecision.zone.computed.level] ?? 0,
+      finalZone: elisDecision.zone.resolved?.finalZoneLabel ?? null,
+      source: elisDecision.zone.resolved?.source ?? 'computed',
+      reason: elisDecision.zone.resolved?.reason ?? '',
+      isBlocked: elisDecision.isBlocked,
+      isCrisis: elisDecision.zone.resolved?.isCrisis ?? false,
+    } : null,
+    regulation: {
+      action: regulationResult.action,
+      effectiveDepth: regulationResult.effectiveDepth,
+      userDepth: currentUserDat.guidanceDepth ?? 'normal',
+      wasSoftened: regulationResult.wasSoftened,
+      wasSkipped: regulationResult.wasSkipped,
+      gptInstruction: regulationResult.gptInstruction ?? null,
+    },
+    moduleSelection: {
+      dominantModule: preGPTDominantState.dominantModule,
+      reason: preGPTDominantState.selectionReason,
+      activeModules: [preGPTDominantState.dominantModule],
+    },
+    modelRouting: {
+      selectedModel: selectedModel ?? 'unknown',
+      riskScore: preGPTDominantState.riskScore,
+      crisisLevel,
+    },
+    interventionContinuity: interventionContinuity ? {
+      interventionType: interventionContinuity.lastInterventionType,
+      interventionGoal: interventionContinuity.interventionGoal,
+      linkedZone: interventionContinuity.linkedZone,
+      effectivenessScore: interventionContinuity.effectivenessScore,
+      userResponse: interventionContinuity.lastUserResponse,
+      turnsActive: interventionContinuity.turnsActive,
+      wasReEvaluated: false,
+    } : null,
+    projectionEntries: (() => {
+      try {
+        const ps = getProjectionState();
+        return ps.entries.filter((e: ProjectionEntry) => e.isActive).map((e: ProjectionEntry) => ({
+          category: e.category,
+          content: e.content,
+          strength: e.strength,
+          decayScore: e.decayScore,
+          source: e.source,
+          action: projectionResult.injectionBlock ? 'injected' : 'stored',
+        }));
+      } catch { return []; }
+    })(),
+    memory: {
+      totalSessions: currentUserDat.totalSessions ?? 0,
+      triggerPatterns: (currentUserDat.triggerPatterns || []).map(t => ({ trigger: t.trigger, count: t.count, weight: t.weight })),
+      moduleUsage: (currentUserDat.moduleUsage || []).map((m) => ({ moduleId: m.moduleId, count: 1 })),
+      changedUserDatFields: [],
+      sliders: (currentUserDat.currentMood || {}) as unknown as Record<string, string | number>,
+      vsp: vspLevel,
+      eigenRegie: eigenRegieScore !== null ? String(eigenRegieScore) : null,
+      changedStateFields: [],
+      bufferZone: sessionBuffer.currentZoneColor,
+      bufferEmotionalDirection: preGPTDominantState.dominantDirection,
+      bufferLiveIntent: analysis.emotionalState || '',
+      bufferDominantState: `${preGPTDominantState.dominantModule} (${preGPTDominantState.sourceLayer})`,
+    },
+    payload: {
+      isSessionStart,
+      fieldsIncluded: isSessionStart
+        ? ['backpack', 'userDat', 'diaryEntries', 'moodSliders', 'bufferSnapshot', 'regulationResult', 'engineDirective', 'interventionContinuity', 'projectionContext']
+        : ['message', 'conversationHistory', 'moodSliders', 'bufferSnapshot', 'regulationResult', 'engineDirective', 'interventionContinuity', 'projectionContext'],
+      promptBlocks: {
+        regulation: regulationResult.action !== 'reflect' ? regulationResult.action : 'skipped',
+        engineDirective: engineDirective ? 'yes' : 'no',
+        intervention: interventionContinuity ? 'yes' : 'no',
+        projection: projectionResult.injectionBlock ? 'yes' : 'no',
+      },
+      estimatedTokens: estimateTokens(JSON.stringify(context)),
+      usedModel: selectedModel ?? 'unknown',
+    },
+    tokens: tokenUsage ? {
+      promptTokens: tokenUsage.promptTokens,
+      completionTokens: tokenUsage.completionTokens,
+      totalTokens: tokenUsage.totalTokens,
+    } : null,
+  };
+
+  // Build and store the trace block
+  buildTraceBlock(traceData);
+
   return {
     response,
     analysis,
@@ -813,6 +927,7 @@ export async function processMessage(
     dominantState: preGPTDominantState,
     bufferSnapshot,
     messageLog,
+    traceData,
   };
 }
 

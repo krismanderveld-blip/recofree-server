@@ -402,6 +402,7 @@ export class OpenAIProvider implements AIProvider {
         advisoryEmotion: result?.advisoryEmotion,
         advisoryConfidence: result?.advisoryConfidence,
         tokenUsage: result?.tokenUsage,
+        selectedModel: result?.selectedModel,
       };
     } catch (error) {
       console.error('[OpenAIProvider] Error after retries:', error);

@@ -22,6 +22,7 @@ import { ScreenContainer } from '@/components/screen-container';
 import { useColors } from '@/hooks/use-colors';
 import { useUser } from '@/lib/user-context';
 import { getDebugEvents, formatDebugLog, clearDebugEvents } from '@/lib/debug/session-logger';
+import { getTraceBlocks, getTraceBlockCount, getFullTraceExport, clearTraceBlocks } from '@/lib/debug/engine-trace';
 import { getProjectionSummary, clearEliasProjection } from '@/lib/engine/elias/projection';
 import { getKimProjectionSummary, clearKimProjection } from '@/lib/engine/kim/projection';
 import { getInterventionState } from '@/lib/engine/elias/intervention-continuity';
@@ -88,6 +89,17 @@ export default function DebugLogScreen() {
 
   const events = useMemo(() => {
     return getDebugEvents();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [refreshKey]);
+
+  // ── Engine Trace Data ──
+  const traceBlocks = useMemo(() => {
+    return getTraceBlocks();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [refreshKey]);
+
+  const traceCount = useMemo(() => {
+    return getTraceBlockCount();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [refreshKey]);
 
@@ -204,7 +216,37 @@ export default function DebugLogScreen() {
       {/* Content */}
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {activeTab === 'copy' ? (
-          <CopyAllTab liveState={liveState} events={events} colors={colors} />
+          <CopyAllTab liveState={liveState} events={events} colors={colors} traceBlocks={traceBlocks} />
+        ) : activeTab === 'log' ? (
+          <>
+            {/* Session Log Tab — Engine Trace Blocks */}
+            <View style={[styles.logHeader, { borderColor: colors.border }]}>
+              <Text style={[styles.logCount, { color: colors.muted }]}>
+                {traceCount} trace block{traceCount !== 1 ? 's' : ''}
+              </Text>
+              <Pressable onPress={handleCopyLog} style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1 }]}>
+                <Text style={[styles.copyBtn, { color: colors.primary }]}>Share Log</Text>
+              </Pressable>
+            </View>
+            {traceCount === 0 ? (
+              <Text style={[styles.emptyLog, { color: colors.muted }]}>
+                No trace blocks yet. Send a message to start tracing.
+              </Text>
+            ) : (
+              <View style={styles.logList}>
+                {traceBlocks.map((block, i) => (
+                  <View key={`trace-${i}`} style={[styles.logEntry, { borderColor: colors.border }]}>
+                    <Text
+                      style={[styles.logData, { color: colors.foreground }]}
+                      selectable
+                    >
+                      {block}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            )}
+          </>
         ) : activeTab === 'live' ? (
           <>
             <Section title="Zone & Dominant">
@@ -318,46 +360,7 @@ export default function DebugLogScreen() {
               <Row label="Last Response" value={liveState.intervention?.lastUserResponse ?? '—'} />
             </Section>
           </>
-        ) : (
-          <>
-            {/* Session Log Tab */}
-            <View style={[styles.logHeader, { borderColor: colors.border }]}>
-              <Text style={[styles.logCount, { color: colors.muted }]}>
-                {events.length} event{events.length !== 1 ? 's' : ''}
-              </Text>
-              <Pressable onPress={handleCopyLog} style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1 }]}>
-                <Text style={[styles.copyBtn, { color: colors.primary }]}>Copy Full Log</Text>
-              </Pressable>
-            </View>
-            {events.length === 0 ? (
-              <Text style={[styles.emptyLog, { color: colors.muted }]}>
-                No events logged this session. Send a message to start logging.
-              </Text>
-            ) : (
-              <View style={styles.logList}>
-                {events.map((event) => {
-                  const time = event.timestamp.split('T')[1]?.split('.')[0] ?? '';
-                  const typeColor =
-                    event.type === 'crisis_detected' ? colors.error
-                    : event.type === 'zone_shift' ? colors.warning
-                    : event.type === 'session_start' || event.type === 'session_end' ? colors.success
-                    : colors.foreground;
-                  return (
-                    <View key={event.id} style={[styles.logEntry, { borderColor: colors.border }]}>
-                      <View style={styles.logEntryHeader}>
-                        <Text style={[styles.logTime, { color: colors.muted }]}>{time}</Text>
-                        <Text style={[styles.logType, { color: typeColor }]}>{event.type}</Text>
-                      </View>
-                      <Text style={[styles.logData, { color: colors.foreground }]} numberOfLines={3}>
-                        {formatEventDataCompact(event)}
-                      </Text>
-                    </View>
-                  );
-                })}
-              </View>
-            )}
-          </>
-        )}
+        ) : null}
 
         {/* Utilities */}
         <View style={[styles.utilities, { borderColor: colors.border }]}>
@@ -393,74 +396,29 @@ export default function DebugLogScreen() {
 }
 
 // ── Copy All Tab ──
-function CopyAllTab({ liveState, events, colors }: { liveState: any; events: any[]; colors: any }) {
+function CopyAllTab({ liveState, events, colors, traceBlocks }: { liveState: any; events: any[]; colors: any; traceBlocks: readonly string[] }) {
   const [copied, setCopied] = useState(false);
 
   const buildFullText = useCallback(() => {
+    // Primary: engine trace blocks (the full per-message decision log)
+    const traceExport = getFullTraceExport();
+    if (traceExport) return traceExport;
+    // Fallback: old-style dump if no trace blocks yet
     const lines: string[] = [];
-    lines.push('=== RECOFREE DEBUG DUMP ===');
+    lines.push('=== RECOFREE DEBUG DUMP (no trace blocks yet) ===');
     lines.push(`Timestamp: ${new Date().toISOString()}`);
-    lines.push('');
-    lines.push('── ZONE & DOMINANT ──');
-    lines.push(`Zone: ${liveState.lastMessage?.zone ?? '—'}`);
-    lines.push(`Dominant Module: ${liveState.lastMessage?.dominantModule ?? '—'}`);
-    lines.push(`Risk Score: ${liveState.lastMessage?.riskScore ?? '—'}`);
-    lines.push('');
-    lines.push('── GUIDANCE DEPTH ──');
-    lines.push(`User Setting: ${liveState.guidanceDepth}`);
-    lines.push(`Effective: zone=${liveState.intervention?.linkedZone ?? '—'} sev=${liveState.intervention?.linkedSeverity ?? '—'}`);
-    lines.push('');
-    lines.push('── MODEL & TOKENS ──');
-    lines.push(`Model (last): ${liveState.lastMessage?.model ?? '—'}`);
-    lines.push(`Est. Tokens (last): ${liveState.lastMessage?.estimatedTokens ?? '—'}`);
-    lines.push(`Total Calls: ${liveState.cost.totalCalls}`);
-    lines.push(`Total Tokens: ${liveState.cost.totalTokens}`);
-    lines.push(`Peak Call: ${liveState.cost.peakCallTokens}`);
-    lines.push('');
-    lines.push('── TOKEN BUDGET ──');
-    lines.push(`Session Total: ${liveState.cost.totalTokens} / 25000`);
-    lines.push(`Remaining: ${liveState.remaining}`);
-    lines.push(`Status: ${liveState.budgetStatus}`);
-    lines.push('');
-    lines.push('── BUFFER SNAPSHOT ──');
-    lines.push(`Zone: ${liveState.lastMessage?.zone ?? '—'}`);
-    lines.push(`Active Blocks: ${Array.isArray(liveState.lastMessage?.activeBlocks) ? liveState.lastMessage.activeBlocks.join(', ') : '—'}`);
-    lines.push('');
-    lines.push('── PROJECTION ──');
-    lines.push(`Active Entries: ${liveState.projection.activeEntries}`);
-    lines.push(`Total Entries: ${liveState.projection.totalEntries}`);
-    lines.push(`Dominant Category: ${liveState.projection.dominantCategory ?? '—'}`);
-    lines.push(`Strongest Fear: ${liveState.projection.strongestFear?.content ?? '—'}`);
-    lines.push(`Strongest Hope: ${liveState.projection.strongestHope?.content ?? '—'}`);
-    lines.push(`Active Goals: ${liveState.projection.activeGoals.length}`);
-    lines.push('');
-    lines.push('── USERDAT ──');
-    lines.push(`Total Sessions: ${liveState.totalSessions}`);
-    lines.push(`Last Session: ${liveState.lastSessionDate}`);
     lines.push(`User Type: ${liveState.userType}`);
+    lines.push(`Total Sessions: ${liveState.totalSessions}`);
+    lines.push(`Budget Status: ${liveState.budgetStatus}`);
     lines.push('');
-    lines.push('── VSP / EIGEN REGIE ──');
-    lines.push(`VSP (Elias): ${liveState.vsp ?? '—'}`);
-    lines.push(`Eigen Regie (Kim): ${liveState.eigenRegieLatest ? `${liveState.eigenRegieLatest.userInput}/100` : '—'}`);
-    lines.push('');
-    lines.push('── INTERVENTION CONTINUITY ──');
-    lines.push(`Type: ${liveState.intervention?.lastInterventionType ?? '—'}`);
-    lines.push(`Goal: ${liveState.intervention?.interventionGoal ?? '—'}`);
-    lines.push(`Turns Active: ${liveState.intervention?.turnsActive ?? '—'}`);
-    lines.push(`Effectiveness: ${liveState.intervention?.effectivenessScore ?? '—'}`);
-    lines.push(`Last Response: ${liveState.intervention?.lastUserResponse ?? '—'}`);
-    lines.push('');
-    lines.push('── SESSION LOG ──');
-    if (events.length === 0) {
-      lines.push('(no events)');
-    } else {
-      events.forEach((event) => {
+    if (events.length > 0) {
+      lines.push('── SESSION EVENTS ──');
+      events.forEach((event: any) => {
         const time = event.timestamp.split('T')[1]?.split('.')[0] ?? '';
         lines.push(`[${time}] ${event.type}: ${formatEventDataCompact(event)}`);
       });
     }
-    lines.push('');
-    lines.push('=== END DEBUG DUMP ===');
+    lines.push('=== END ===');
     return lines.join('\n');
   }, [liveState, events]);
 
