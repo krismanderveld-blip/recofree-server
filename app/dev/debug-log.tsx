@@ -13,9 +13,9 @@ import {
   Pressable,
   Alert,
   Platform,
-  Share,
   StyleSheet,
 } from 'react-native';
+import * as Clipboard from 'expo-clipboard';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import { ScreenContainer } from '@/components/screen-container';
@@ -105,11 +105,12 @@ export default function DebugLogScreen() {
 
   // ── Actions ──
   const handleCopyLog = useCallback(async () => {
-    const text = formatDebugLog();
+    const text = getFullTraceExport() || formatDebugLog();
     try {
-      await Share.share({ message: text, title: 'RecoFree Debug Log' });
+      await Clipboard.setStringAsync(text);
+      Alert.alert('Copied', 'Debug log copied to clipboard.');
     } catch (e) {
-      console.error('[DebugLog] Share failed:', e);
+      console.error('[DebugLog] Copy failed:', e);
     }
   }, []);
 
@@ -425,7 +426,7 @@ function CopyAllTab({ liveState, events, colors, traceBlocks }: { liveState: any
   const handleCopyAll = useCallback(async () => {
     const text = buildFullText();
     try {
-      await Share.share({ message: text, title: 'RecoFree Debug Dump' });
+      await Clipboard.setStringAsync(text);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch (e) {

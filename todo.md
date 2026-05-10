@@ -606,3 +606,6 @@
 - [x] Update Session Log tab to render cumulative message blocks
 - [x] Update Copy All tab to export full session including all message blocks
 - [x] Verify 0 TS errors, all tests green
+
+## Round 17
+- [x] Fix Copy All: use Clipboard.setStringAsync() instead of Share.share() so text actually copies to clipboard
