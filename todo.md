@@ -678,3 +678,13 @@
 - [x] Taak 2: scoreRelevance() wired in pipeline (step 5c-ii: bp/diary/trig/proj scores, 0.5 neutral fallback)
 - [x] relevanceScores added to ChatContext
 - [x] 0 TS errors, 405 tests green
+
+## Round 29 — GemmaSignalEngine implementation
+- [x] Research: llama.rn v0.12.4, GGUF format, Gemma 3 1B Q4_K_M (806 MB)
+- [x] Created lib/engine/local-llm/gemma-signal-engine.ts (full implementation)
+- [x] detectSignals(): structured prompt → JSON parse with fault-tolerant extractJSON
+- [x] scoreRelevance(): structured prompt → parse 4 float scores 0-1
+- [x] summarizeContext(): structured prompt → parse theme/urgency/focus
+- [x] Async model loading via initLlama() with Metal/OpenCL GPU layers
+- [x] Updated engine-provider.ts with initGemmaEngine(modelPath) helper
+- [x] 0 TS errors, 405 tests green
