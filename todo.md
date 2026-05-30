@@ -624,3 +624,11 @@
 - [x] Bug 2: identified regulation uses sessionBuffer.currentZoneColor (buffer-computed from text/sliders), NOT resolved zone
 - [x] Bug 2: moved regulation call after elisDecision/kimDecision; now uses resolvedZoneForRegulation (Elias: finalZoneLabel, Kim: engine.level, fallback: buffer)
 - [x] 0 TS errors, 375 tests green (17 files + 1 skipped)
+
+## Round 20
+- [x] Taak 1: Add resolvedZoneForRegulation + isFallbackZone to debug trace (Session Log shows resolved vs fallback)
+- [x] Taak 2: Integration test vsp-paars-full-path-integration (3 tests: PAARS→PURPLE→ground→gpt-4o, PAARS overrides GROEN, ROOD→stabilize)
+- [x] Taak 3: Kim isCrisis equivalent (eigenRegie.userInput < 10 → isKimCrisis=true on KimDecision)
+- [x] Taak 3: Wire isKimCrisis in model routing (via ChatContext.isCrisis) and regulation (force PURPLE zone)
+- [x] Taak 3: 9 new tests for Kim crisis (decision flag, model routing, regulation ground)
+- [x] 0 TS errors, 387 tests green (19 files + 1 skipped)

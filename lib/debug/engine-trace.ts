@@ -43,6 +43,8 @@ export interface EngineTraceInput {
     wasSoftened: boolean;
     wasSkipped: boolean;
     gptInstruction: string | null;
+    resolvedZoneInput: string;
+    isFallbackZone: boolean;
   };
 
   // Module selection
@@ -175,6 +177,7 @@ export function buildTraceBlock(input: EngineTraceInput): string {
   // Regulation
   lines.push('REGULATION:');
   const reg = input.regulation;
+  lines.push(`  zoneInput: ${reg.resolvedZoneInput}${reg.isFallbackZone ? ' (FALLBACK buffer zone)' : ' (resolved engine zone)'}`);
   lines.push(`  action: ${reg.action}`);
   lines.push(`  effectiveDepth: ${reg.effectiveDepth}`);
   lines.push(`  userDepth: ${reg.userDepth}`);

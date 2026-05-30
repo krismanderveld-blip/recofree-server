@@ -73,6 +73,11 @@ export interface KimDecision {
    * When present, the impact directives should guide Kim's behavior.
    */
   readonly eigenRegie: EigenRegieResult | null;
+  /**
+   * Kim crisis flag — true when eigenRegie userInput < 10.
+   * Equivalent of Elias isCrisis (PAARS). Triggers gpt-4o + ground regulation.
+   */
+  readonly isKimCrisis: boolean;
 }
 
 // ─── Aggregation ────────────────────────────────────────────
@@ -124,6 +129,9 @@ export function createKimDecision(input: KimDecisionInput): KimDecision {
 
     // Eigen Regie — null if not submitted, full result if submitted
     eigenRegie,
+
+    // Kim crisis: eigenRegie userInput < 10 (user reports almost no self-regulation)
+    isKimCrisis: eigenRegie !== null && eigenRegie.userInput < 10,
   });
 }
 

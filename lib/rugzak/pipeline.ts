@@ -556,6 +556,10 @@ export async function processMessage(
       };
       return labelMap[elisDecision.zone.resolved.finalZoneLabel] ?? (sessionBuffer.currentZoneColor as ZoneColor);
     }
+    if (kimDecision?.isKimCrisis) {
+      // Kim crisis (eigenRegie < 10) → force PURPLE, equivalent to Elias PAARS
+      return 'PURPLE';
+    }
     if (kimDecision?.zone.engine?.level) {
       // Map Dutch ZoneLevel → English ZoneColor
       const levelMap: Record<string, ZoneColor> = {
@@ -622,7 +626,7 @@ export async function processMessage(
     diaryEntries: options?.diaryEntries ?? [],
     activeModules: [activeDecision ? activeDecision.dominantModule : preGPTDominantState.dominantModule],
     crisisLevel: activeDecision ? activeDecision.crisisLevel : crisisLevel,
-    isCrisis: elisDecision?.zone.resolved?.isCrisis ?? false,
+    isCrisis: (elisDecision?.zone.resolved?.isCrisis ?? false) || (kimDecision?.isKimCrisis ?? false),
     engineDirective: engineDirective ?? undefined,
     detectedEmotion: analysis.emotionalState,
     therapeuticStance: buildTherapeuticStance(analysis),
@@ -866,6 +870,8 @@ export async function processMessage(
       wasSoftened: regulationResult.wasSoftened,
       wasSkipped: regulationResult.wasSkipped,
       gptInstruction: regulationResult.gptInstruction ?? null,
+      resolvedZoneInput: resolvedZoneForRegulation,
+      isFallbackZone: !elisDecision?.zone.resolved?.finalZoneLabel && !kimDecision?.zone.engine?.level,
     },
     moduleSelection: {
       dominantModule: preGPTDominantState.dominantModule,
