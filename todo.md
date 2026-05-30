@@ -661,3 +661,8 @@
 - [x] Taak 1: Bevestigings-alert voor bellen (NL: "Wil je 1813 bellen?" / EN: "Do you want to call 1813?") met Bevestig/Annuleer
 - [x] Taak 2: SMS 1813 knop onder bel-knop (outlined style, paperplane icon, NL: "SMS 1813" / EN: "Text 1813")
 - [x] 0 TS errors, 401 tests green
+
+## Round 26
+- [x] Create lib/engine/local-llm/signal-engine.ts — interface definitions (SignalInput, ContextInput, ContextData, CandidateSignals, RelevanceMap, ContextSummary, LocalSignalEngine)
+- [x] Create lib/engine/local-llm/null-engine.ts — NullSignalEngine fallback (empty/neutral values, isReady()=false)
+- [x] 0 TS errors, 401 tests green
