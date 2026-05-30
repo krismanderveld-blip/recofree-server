@@ -1,0 +1,4 @@
+onlyBuiltDependencies:
+  - esbuild
+  - llama.rn
+  - unrs-resolver

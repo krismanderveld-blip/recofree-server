@@ -15,7 +15,7 @@ import { GEMMA_MODEL_FILENAME } from './gemma-signal-engine';
 
 // ─── Constants ──────────────────────────────────────────────────
 
-const MODEL_URL = 'https://huggingface.co/bartowski/gemma-3-4b-it-GGUF/resolve/main/gemma-3-4b-it-Q4_K_M.gguf';
+const MODEL_URL = 'https://huggingface.co/ggml-org/gemma-3-4b-it-GGUF/resolve/main/gemma-3-4b-it-Q4_K_M.gguf';
 const MODELS_DIR = 'models/';
 
 export type DownloadStatus = 'idle' | 'checking' | 'downloading' | 'completed' | 'error' | 'no-wifi' | 'paused';
