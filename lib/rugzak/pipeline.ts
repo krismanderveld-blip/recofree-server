@@ -100,7 +100,6 @@ import {
 } from './projection-layer';
 import { sanitizeSliders } from '../engine/shared/slider-sanitize';
 import { buildTraceBlock, type EngineTraceInput, type PipelineStepStatus } from '../debug/engine-trace';
-import { getEngine } from '../engine/local-llm/engine-provider';
 
 // ─── Pattern Marking (post-GPT local state) ─────────────────
 
@@ -405,34 +404,6 @@ export async function processMessage(
   // ── PRE-GPT STEP 5b: Regulation Layer (moved below — runs after engine decision) ──
   const userGuidanceDepth = currentUserDat.guidanceDepth ?? 'normal';
 
-  // ── PRE-GPT STEP 5c: LocalSignalEngine (on-device signal detection) ──
-  // Non-blocking: if engine not ready, returns empty signals and pipeline continues.
-  const signalEngine = getEngine();
-  const candidateSignals = signalEngine.isReady()
-    ? await signalEngine.detectSignals({
-        currentMessage: userMessage,
-        conversationHistory: (currentUserDat.chatHistory || []).map((m: { role: string; content: string }) => ({ role: m.role as 'user' | 'assistant', content: m.content })),
-        bufferSnapshot,
-        moodSliders: (currentUserDat.currentMood as unknown as Record<string, number>) || {},
-        projectionEntries: getProjectionState().entries,
-        userDatSummary: {
-          totalSessions: currentUserDat.sessionAnalyses?.length || 0,
-          recentTriggers: (currentUserDat.triggerPatterns || []).map((t: any) => t.trigger || t.pattern || ''),
-          dominantModules: analysis.priorityModules.slice(0, 3),
-        },
-      })
-    : { fears: [], hopes: [], goals: [], triggers: [] };
-
-  // scoreRelevance — context scoring for backpack/diary/trigger/projection relevance
-  const relevanceScores = signalEngine.isReady()
-    ? await signalEngine.scoreRelevance({
-        message: userMessage,
-        backpackSections: (backpack.sections || []).map(s => ({ label: s.label, content: s.content })),
-        recentDiary: (options?.diaryEntries || []).slice(-5).map((d: any) => ({ content: d.content, moodTag: d.moodTag })),
-        triggerPatterns: (currentUserDat.triggerPatterns || []).map((t: any) => ({ trigger: t.trigger || t.pattern || '', count: t.count || 1 })),
-      })
-    : { backpackRelevance: 0.5, diaryRelevance: 0.5, triggerRelevance: 0.5, projectionRelevance: 0.5 };
-
   // ── PRE-GPT STEP 5d: Projection Layer (signal detection + injection) ──
   // Runs after backpack-relevance-analyzer (5c), before GPT call.
   // Detects future-facing signals (fears, hopes, goals) from message + sliders.
@@ -678,8 +649,6 @@ export async function processMessage(
       : undefined,
     projectionContext: projectionResult.injectionBlock ?? undefined,
     projectionDeepening: projectionResult.deepeningDirective ?? undefined,
-    candidateSignals,
-    relevanceScores,
   };
 
   let response: string;
@@ -875,9 +844,7 @@ export async function processMessage(
       { step: '4. Dominant state', status: 'passed', reason: `module=${preGPTDominantState.dominantModule}, source=${preGPTDominantState.sourceLayer}` },
       { step: '5a. Buffer snapshot', status: 'passed', reason: `triggers=${relevance.triggers.length}` },
       { step: '5b. Regulation', status: regulationResult.wasSkipped ? 'skipped' : 'passed', reason: `action=${regulationResult.action}, depth=${regulationResult.effectiveDepth}` },
-      { step: '5c-i. SignalEngine', status: signalEngine.isReady() ? 'passed' : 'skipped', reason: signalEngine.isReady() ? `fears=${candidateSignals.fears.length} hopes=${candidateSignals.hopes.length} goals=${candidateSignals.goals.length} triggers=${candidateSignals.triggers.length}` : 'not-ready (NullEngine)' },
-      { step: '5c-ii. Relevance', status: 'passed', reason: `bp=${relevanceScores.backpackRelevance.toFixed(2)} diary=${relevanceScores.diaryRelevance.toFixed(2)} trig=${relevanceScores.triggerRelevance.toFixed(2)} proj=${relevanceScores.projectionRelevance.toFixed(2)}` },
-      { step: '5c-iii. BackpackRelevance', status: 'passed', reason: `triggers=[${relevance.triggers.map(t => t.trigger).join(',')}]` },
+      { step: '5c. Relevance', status: 'passed', reason: `triggers=[${relevance.triggers.map(t => t.trigger).join(',')}]` },
       { step: '5d. Projection', status: projectionResult.injectionBlock ? 'passed' : 'skipped', reason: projectionResult.injectionBlock ? 'block injected' : 'no signal' },
       { step: '6a. Zone decision', status: elisDecision ? 'passed' : 'skipped', reason: elisDecision ? `zone=${elisDecision.zone.computed.label}` : 'kim user' },
       { step: '6b. Engine directive', status: engineDirective ? 'passed' : 'skipped', reason: engineDirective ? `engine=${engineDirective.engine}` : 'none' },

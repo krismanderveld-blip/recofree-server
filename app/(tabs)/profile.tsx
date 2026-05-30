@@ -37,7 +37,6 @@ export default function ProfileScreen() {
   const totalSessions = userDat?.totalSessions ?? 0;
   const moodCheckIns = userDat?.moodHistory?.length ?? 0;
 
-
   // 5-tap activation for debug screen
   const tapCountRef = useRef(0);
   const lastTapRef = useRef(0);
@@ -180,7 +179,6 @@ export default function ProfileScreen() {
             })}
           </View>
         </View>
-
 
         {/* Danger Zone */}
         <View className="mt-8">
