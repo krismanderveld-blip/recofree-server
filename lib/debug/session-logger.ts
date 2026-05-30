@@ -93,7 +93,8 @@ function formatEventData(type: DebugEventType, data: Record<string, unknown>): s
     case 'zone_shift':
       return `${data.from} → ${data.to} reason=${data.reason ?? '?'}`;
     case 'projection_signal':
-      return `category=${data.category} content="${data.content}" strength=${data.strength}`;
+      if (data.action === 'reinforced') return `reinforced ${data.count ?? 0} entries [${(Array.isArray(data.ids) ? data.ids : []).join(', ')}]`;
+      return `${data.category ?? '?'}: "${data.content ?? '?'}" str=${data.strength ?? '?'}`;
     case 'crisis_detected':
       return `level=${data.level} risk=${data.riskScore} source=${data.source ?? '?'}`;
     case 'model_selected':

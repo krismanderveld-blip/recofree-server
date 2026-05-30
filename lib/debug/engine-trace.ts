@@ -93,8 +93,6 @@ export interface EngineTraceInput {
     changedUserDatFields: string[];
 
     sliders: Record<string, number | string>;
-    vsp: string | null;
-    eigenRegie: string | null;
     changedStateFields: string[];
 
     bufferZone: string;
@@ -254,8 +252,6 @@ export function buildTraceBlock(input: EngineTraceInput): string {
   for (const [key, val] of Object.entries(mem.sliders)) {
     lines.push(`    ${key}: ${val}`);
   }
-  lines.push(`    vsp: ${mem.vsp ?? 'null'}`);
-  lines.push(`    eigenRegie: ${mem.eigenRegie ?? 'null'}`);
   lines.push(`    gewijzigde velden: [${mem.changedStateFields.join(', ') || 'geen'}]`);
   lines.push('');
   lines.push('  buffer (ShortTermMemoryBuffer):');

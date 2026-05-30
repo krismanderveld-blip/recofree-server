@@ -496,7 +496,8 @@ function formatEventDataCompact(event: { type: string; data: Record<string, unkn
     case 'zone_shift':
       return `${d.from} → ${d.to} (${d.reason ?? '?'})`;
     case 'projection_signal':
-      return `${d.category}: "${d.content}" str=${d.strength}`;
+      if (d.action === 'reinforced') return `reinforced ${d.count ?? 0} entries`;
+      return `${d.category ?? '?'}: "${d.content ?? '?'}" str=${d.strength ?? '?'}`;
     case 'crisis_detected':
       return `level=${d.level} risk=${d.riskScore} src=${d.source ?? '?'}`;
     case 'model_selected':

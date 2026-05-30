@@ -637,3 +637,8 @@
 - [x] Taak 1: isKimCrisis + eigenRegie.userInput in debug trace ZONE BESLISSING (Kim users now show zone decision block)
 - [x] Taak 2: kim-eigen-regie-crisis-full-path integration test (5 tests: eigenRegie=5/0/9 → crisis path, eigenRegie=10/50 → normal path)
 - [x] 0 TS errors, 392 tests green (20 files + 1 skipped)
+
+## Round 22
+- [x] Bug 1: Remove duplicate vsp/eigenRegie from state.dat snapshot (already in sliders loop via currentMood)
+- [x] Bug 2: Fix projection_signal undefined — reinforced events have no category/content/strength; now renders "reinforced N entries" instead
+- [x] 0 TS errors, 392 tests green

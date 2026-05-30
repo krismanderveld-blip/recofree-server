@@ -923,8 +923,6 @@ export async function processMessage(
       moduleUsage: (currentUserDat.moduleUsage || []).map((m) => ({ moduleId: m.moduleId, count: 1 })),
       changedUserDatFields: [],
       sliders: (currentUserDat.currentMood || {}) as unknown as Record<string, string | number>,
-      vsp: vspLevel,
-      eigenRegie: eigenRegieScore !== null ? String(eigenRegieScore) : null,
       changedStateFields: [],
       bufferZone: sessionBuffer.currentZoneColor,
       bufferEmotionalDirection: preGPTDominantState.dominantDirection,
