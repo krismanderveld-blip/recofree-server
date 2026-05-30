@@ -57,7 +57,6 @@
     "expo-web-browser": "~15.0.10",
     "express": "^4.22.1",
     "jose": "6.1.0",
-    "llama.rn": "^0.12.4",
     "mysql2": "^3.16.0",
     "nativewind": "^4.2.1",
     "react": "19.1.0",
@@ -94,6 +93,5 @@
     "tsx": "^4.21.0",
     "typescript": "~5.9.3",
     "vitest": "^2.1.9"
-  },
-  "packageManager": "pnpm@11.5.0+sha512.dbfcc4f81cf48597afd4bc391ffdf12c11f1a9fb83a395bfa6b0a2d9cc2fd8ffebafdb1ccbd529632153f793904c2615b7f09fe1a345473fd1c35845172a8eb1"
+  }
 }

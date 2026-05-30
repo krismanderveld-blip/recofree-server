@@ -9,7 +9,6 @@ import { GUIDANCE_DEPTH_OPTIONS } from '@/lib/ai/types';
 import type { GuidanceDepth } from '@/lib/ai/types';
 import * as Haptics from 'expo-haptics';
 import Constants from 'expo-constants';
-import { useModelDownload } from '@/lib/engine/local-llm/model-download-context';
 
 const STAGE_LABELS: Record<string, string> = {
   precontemplation: 'Precontemplation',
@@ -38,29 +37,6 @@ export default function ProfileScreen() {
   const totalSessions = userDat?.totalSessions ?? 0;
   const moodCheckIns = userDat?.moodHistory?.length ?? 0;
 
-  // Model download state
-  const modelDownload = useModelDownload();
-  const modelStatus = modelDownload.modelReady ? 'ready' : modelDownload.status === 'downloading' ? 'downloading' : 'not-downloaded';
-
-  const handleDeleteModel = useCallback(() => {
-    Alert.alert(
-      'Delete AI Model',
-      'This will remove the 2.5 GB model from your device. You can re-download it later.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            await modelDownload.deleteModelData();
-            if (Platform.OS !== 'web') {
-              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-            }
-          },
-        },
-      ],
-    );
-  }, [modelDownload]);
 
   // 5-tap activation for debug screen
   const tapCountRef = useRef(0);
@@ -205,47 +181,6 @@ export default function ProfileScreen() {
           </View>
         </View>
 
-        {/* On-device AI */}
-        <View className="mt-6">
-          <Text className="text-xs font-semibold uppercase tracking-wide text-muted mb-3 ml-1">
-            On-device AI
-          </Text>
-          <View
-            className="rounded-2xl p-5"
-            style={{ backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }}
-          >
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-              <Text className="text-base font-semibold text-foreground">Gemma 3 4B</Text>
-              <View style={{ paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6, backgroundColor: modelStatus === 'ready' ? colors.success + '20' : modelStatus === 'downloading' ? colors.primary + '20' : colors.muted + '20' }}>
-                <Text style={{ fontSize: 11, fontWeight: '600', color: modelStatus === 'ready' ? colors.success : modelStatus === 'downloading' ? colors.primary : colors.muted }}>
-                  {modelStatus === 'ready' ? 'Ready' : modelStatus === 'downloading' ? 'Downloading...' : 'Not downloaded'}
-                </Text>
-              </View>
-            </View>
-            <Text className="text-xs text-muted" style={{ marginBottom: 12 }}>Model size: 2.5 GB</Text>
-            {modelStatus === 'not-downloaded' && (
-              <Pressable
-                onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); modelDownload.startModelDownload(); }}
-                style={({ pressed }) => [{ opacity: pressed ? 0.8 : 1, backgroundColor: colors.primary, paddingVertical: 12, borderRadius: 10, alignItems: 'center' }]}
-              >
-                <Text style={{ color: '#FFFFFF', fontSize: 14, fontWeight: '600' }}>Download Model</Text>
-              </Pressable>
-            )}
-            {modelStatus === 'ready' && (
-              <Pressable
-                onPress={handleDeleteModel}
-                style={({ pressed }) => [{ opacity: pressed ? 0.8 : 1, borderWidth: 1, borderColor: colors.error + '50', paddingVertical: 12, borderRadius: 10, alignItems: 'center' }]}
-              >
-                <Text style={{ color: colors.error, fontSize: 14, fontWeight: '600' }}>Delete Model</Text>
-              </Pressable>
-            )}
-            {modelStatus === 'downloading' && (
-              <View style={{ height: 6, borderRadius: 3, backgroundColor: colors.border, overflow: 'hidden' }}>
-                <View style={{ height: '100%', borderRadius: 3, backgroundColor: colors.primary, width: `${Math.round(modelDownload.progress * 100)}%` }} />
-              </View>
-            )}
-          </View>
-        </View>
 
         {/* Danger Zone */}
         <View className="mt-8">

@@ -24,7 +24,6 @@ import { EmergencyCard } from '@/components/emergency-card';
 import type { ChatMessage, Rugzak, Backpack, UserDat, DiaryEntry } from '@/lib/ai/types';
 import { composeRugzak } from '@/lib/ai/types';
 import { IconSymbol } from '@/components/ui/icon-symbol';
-import { ModelDownloadIndicator, CloudAIBanner } from '@/components/model-download-screen';
 import { useColors } from '@/hooks/use-colors';
 import { PreChatVsp } from '@/components/prechat-vsp';
 import { PreChatEigenRegie } from '@/components/prechat-eigen-regie';
@@ -512,9 +511,7 @@ function ChatScreenInner() {
             </Pressable>
           )}
         </View>
-        <ModelDownloadIndicator />
       </View>
-      <CloudAIBanner />
 
       {/* Messages + Input: flex:1 container */}
       <View style={{ flex: 1 }}>

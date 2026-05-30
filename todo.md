@@ -729,3 +729,19 @@
 - [x] Fix 5: Verified `pnpm run build` works with pnpm 11.5.0 locally
 - [x] 0 TS errors, 405 tests green
 - [x] Build verified locally with pnpm 11.5.0
+
+## Round 36 — Revert LLM-download (Fase 4 geparkeerd)
+- [x] Removed llama.rn from package.json
+- [x] Deleted: gemma-signal-engine.ts, model-download-manager.ts, model-download-context.tsx, model-download-screen.tsx
+- [x] Cleaned engine-provider.ts (removed Gemma import, kept NullEngine/setEngine/resetEngine)
+- [x] Removed ModelDownloadProvider from _layout.tsx
+- [x] Removed ModelDownloadIndicator + CloudAIBanner from chat.tsx
+- [x] Removed On-device AI section from profile.tsx
+- [x] Removed "llama.rn" from pnpm-workspace.yaml allowBuilds
+- [x] Removed packageManager field from package.json (symptoomfix no longer needed)
+- [x] Regenerated lockfile with pnpm 10 (no llama.rn)
+- [x] Created docs/fase4-local-llm-archive.md
+- [x] Preserved: signal-engine.ts (interface), null-engine.ts (fallback), engine-provider.ts (singleton)
+- [x] Preserved: expo-file-system, expo-network (useful for other features)
+- [x] Bugfixes intact: model routing (gpt-4o for crisis), regulation layer (resolvedZoneForRegulation)
+- [x] 0 TS errors, 405 tests green, pnpm run build succeeds
