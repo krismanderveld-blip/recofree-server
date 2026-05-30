@@ -112,6 +112,7 @@ interface ChatRequestInput {
 
   activeModules: string[];
   crisisLevel: number;
+  isCrisis?: boolean;
   detectedEmotion: string;
   therapeuticStance: string;
   sessionDurationMinutes: number;
@@ -321,6 +322,7 @@ export const chatInputSchema = z.object({
   ).optional(),
   activeModules: z.array(z.string()),
   crisisLevel: z.number(),
+  isCrisis: z.boolean().optional(),
   detectedEmotion: z.string(),
   therapeuticStance: z.string(),
   sessionDurationMinutes: z.number(),
@@ -1197,9 +1199,9 @@ export async function generateAIResponse(
   if (input.isSessionStart) {
     selectedModel = 'gpt-4o';
     routingReason = 'SESSION_INIT (first impression)';
-  } else if (crisisLevel > 0 || riskScore >= 7) {
+  } else if (crisisLevel > 0 || riskScore >= 7 || input.isCrisis === true) {
     selectedModel = 'gpt-4o';
-    routingReason = `crisis/risk (crisis=${crisisLevel}, risk=${riskScore})`;
+    routingReason = `crisis/risk (crisis=${crisisLevel}, risk=${riskScore}, isCrisis=${input.isCrisis ?? false})`;
   } else if (urgencyForRouting === 'high' || urgencyForRouting === 'hoog') {
     selectedModel = 'gpt-4o';
     routingReason = `high urgency (${input.urgency})`;

@@ -609,3 +609,12 @@
 
 ## Round 17
 - [x] Fix Copy All: use Clipboard.setStringAsync() instead of Share.share() so text actually copies to clipboard
+
+## Round 18
+- [x] Add isCrisis flag from ResolvedEliasZone to model routing in server/ai-chat.ts
+- [x] Add isCrisis to ChatContext interface (lib/ai/types.ts)
+- [x] Pass isCrisis from pipeline context (elisDecision.zone.resolved.isCrisis) to ChatContext
+- [x] Add isCrisis to both SESSION_INIT and LIVE_MESSAGE payloads in openai-provider.ts
+- [x] Add isCrisis to server-side ChatRequestInput interface and Zod schema
+- [x] Fix vitest config: add @/ alias resolution and include both test directories
+- [x] 0 TS errors, 369 tests pass (16 files + 1 skipped)

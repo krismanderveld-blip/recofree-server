@@ -603,6 +603,7 @@ export async function processMessage(
     diaryEntries: options?.diaryEntries ?? [],
     activeModules: [activeDecision ? activeDecision.dominantModule : preGPTDominantState.dominantModule],
     crisisLevel: activeDecision ? activeDecision.crisisLevel : crisisLevel,
+    isCrisis: elisDecision?.zone.resolved?.isCrisis ?? false,
     engineDirective: engineDirective ?? undefined,
     detectedEmotion: analysis.emotionalState,
     therapeuticStance: buildTherapeuticStance(analysis),

@@ -518,6 +518,8 @@ export interface ChatContext {
   diaryEntries: DiaryEntry[];
   activeModules: string[];
   crisisLevel: number;
+  /** Whether the resolved zone is a crisis state (PAARS / severity 5). From ResolvedEliasZone.isCrisis. */
+  isCrisis?: boolean;
   detectedEmotion: string;
   therapeuticStance: string;
   sessionDurationMinutes: number;
