@@ -723,7 +723,7 @@
 
 ## Round 35 — Download URL + build fixes
 - [x] Fix 1: Replace bartowski download URL with ggml-org (ungated) in model-download-manager.ts
-- [x] Fix 2: Move onlyBuiltDependencies from package.json to pnpm-workspace.yaml for pnpm 10+
+- [x] Fix 2: Move build settings to pnpm-workspace.yaml using correct `allowBuilds` map format (not onlyBuiltDependencies)
 - [x] Fix 3: Run pnpm install to sync lockfile after expo-dev-client removal
 - [x] 0 TS errors, 405 tests green
 - [ ] Republish and verify build succeeds

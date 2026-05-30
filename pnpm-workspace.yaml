@@ -1,4 +1,4 @@
-onlyBuiltDependencies:
-  - esbuild
-  - llama.rn
-  - unrs-resolver
+allowBuilds:
+  esbuild: true
+  "llama.rn": true
+  unrs-resolver: true
