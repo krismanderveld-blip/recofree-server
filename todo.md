@@ -650,3 +650,9 @@
 - [x] Wire lastUserMessage prop from chat.tsx to EmergencyCard
 - [x] Update legacy EMERGENCY_RESOURCES to Belgian numbers, mark as deprecated
 - [x] 0 TS errors, 392 tests green
+
+## Round 24
+- [x] Taak 1: Unit tests for detectCrisisLanguage() — 9 edge cases (empty, null, undefined, single word, short EN, short NL, mixed NL majority, mixed EN majority, crisis NL, whitespace)
+- [x] Taak 2: Primary "Bel 1813" button at top of crisis card with heavy haptic, red background, phone icon
+- [x] Added phone.fill icon mapping
+- [x] 0 TS errors, 401 tests green

@@ -24,6 +24,7 @@ const MAPPING = {
   "backpack.fill": "backpack",
   "stop.circle.fill": "stop-circle",
   "arrow.left": "arrow-back",
+  "phone.fill": "phone",
 } as IconMapping;
 
 export function IconSymbol({

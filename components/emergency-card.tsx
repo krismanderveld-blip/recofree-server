@@ -1,6 +1,7 @@
-import { Text, View, Pressable, Linking } from 'react-native';
+import { Text, View, Pressable, Linking, Platform } from 'react-native';
 import { getCrisisContentForMessage, type CrisisContent } from '@/lib/crisis/resources';
 import { IconSymbol } from '@/components/ui/icon-symbol';
+import * as Haptics from 'expo-haptics';
 
 interface EmergencyCardProps {
   visible: boolean;
@@ -17,8 +18,18 @@ export function EmergencyCard({ visible, onDismiss, lastUserMessage }: Emergency
   const handleCall = (number: string) => {
     const cleaned = number.replace(/\D/g, '');
     if (cleaned) {
+      if (Platform.OS !== 'web') {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      }
       Linking.openURL(`tel:${cleaned}`);
     }
+  };
+
+  const handlePrimaryCall = () => {
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+    }
+    Linking.openURL('tel:1813');
   };
 
   return (
@@ -32,7 +43,31 @@ export function EmergencyCard({ visible, onDismiss, lastUserMessage }: Emergency
         {content.intro}
       </Text>
 
-      {content.resources.map((resource) => (
+      {/* Primary call button — always 1813 */}
+      <Pressable
+        onPress={handlePrimaryCall}
+        style={({ pressed }) => [
+          {
+            backgroundColor: pressed ? '#C62828' : '#E53935',
+            borderRadius: 16,
+            paddingVertical: 18,
+            paddingHorizontal: 24,
+            marginBottom: 16,
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexDirection: 'row',
+            transform: [{ scale: pressed ? 0.97 : 1 }],
+          },
+        ]}
+      >
+        <IconSymbol name="phone.fill" size={22} color="#FFFFFF" />
+        <Text style={{ color: '#FFFFFF', fontSize: 18, fontWeight: '700', marginLeft: 10 }}>
+          Bel 1813
+        </Text>
+      </Pressable>
+
+      {/* Other resources */}
+      {content.resources.filter(r => r.number !== '1813').map((resource) => (
         <Pressable
           key={resource.name}
           onPress={() => handleCall(resource.number)}
