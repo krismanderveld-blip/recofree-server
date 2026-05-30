@@ -709,3 +709,8 @@
 - [x] Taak 1: CloudAIBanner component — subtle banner "On-device AI not active" auto-fades after 5s
 - [x] Taak 2: On-device AI section in Profile with status badge (Ready/Downloading/Not downloaded), download/delete buttons, confirmation dialog
 - [x] 0 TS errors, 405 tests green
+
+## Round 33 — Build fix + cleanup
+- [x] Verified: Stripe and Twilio are NOT in codebase (no package.json entry, no code references, no node_modules)
+- [x] Removed `packageManager` field from package.json to fix Corepack signature verification error on build server
+- [x] 0 TS errors, 405 tests green
