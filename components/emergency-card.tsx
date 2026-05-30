@@ -1,4 +1,4 @@
-import { Text, View, Pressable, Linking, Platform } from 'react-native';
+import { Text, View, Pressable, Linking, Platform, Alert } from 'react-native';
 import { getCrisisContentForMessage, type CrisisContent } from '@/lib/crisis/resources';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import * as Haptics from 'expo-haptics';
@@ -29,7 +29,21 @@ export function EmergencyCard({ visible, onDismiss, lastUserMessage }: Emergency
     if (Platform.OS !== 'web') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
     }
-    Linking.openURL('tel:1813');
+    Alert.alert(
+      content.callConfirmTitle,
+      content.callConfirmMessage,
+      [
+        { text: content.cancelButton, style: 'cancel' },
+        { text: content.confirmButton, style: 'default', onPress: () => Linking.openURL('tel:1813') },
+      ]
+    );
+  };
+
+  const handleSms = () => {
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
+    Linking.openURL('sms:1813');
   };
 
   return (
@@ -52,7 +66,7 @@ export function EmergencyCard({ visible, onDismiss, lastUserMessage }: Emergency
             borderRadius: 16,
             paddingVertical: 18,
             paddingHorizontal: 24,
-            marginBottom: 16,
+            marginBottom: 8,
             alignItems: 'center',
             justifyContent: 'center',
             flexDirection: 'row',
@@ -62,7 +76,32 @@ export function EmergencyCard({ visible, onDismiss, lastUserMessage }: Emergency
       >
         <IconSymbol name="phone.fill" size={22} color="#FFFFFF" />
         <Text style={{ color: '#FFFFFF', fontSize: 18, fontWeight: '700', marginLeft: 10 }}>
-          Bel 1813
+          {content.callButtonText}
+        </Text>
+      </Pressable>
+
+      {/* SMS button — lower threshold alternative */}
+      <Pressable
+        onPress={handleSms}
+        style={({ pressed }) => [
+          {
+            backgroundColor: pressed ? '#D32F2F' : 'transparent',
+            borderRadius: 12,
+            borderWidth: 2,
+            borderColor: '#E53935',
+            paddingVertical: 12,
+            paddingHorizontal: 20,
+            marginBottom: 16,
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexDirection: 'row',
+            transform: [{ scale: pressed ? 0.97 : 1 }],
+          },
+        ]}
+      >
+        <IconSymbol name="paperplane.fill" size={18} color="#E53935" />
+        <Text style={{ color: '#E53935', fontSize: 16, fontWeight: '600', marginLeft: 8 }}>
+          {content.smsButtonText}
         </Text>
       </Pressable>
 

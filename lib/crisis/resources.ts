@@ -15,6 +15,12 @@ export interface CrisisContent {
   title: string;
   intro: string;
   dismissText: string;
+  callButtonText: string;
+  smsButtonText: string;
+  callConfirmTitle: string;
+  callConfirmMessage: string;
+  confirmButton: string;
+  cancelButton: string;
   resources: CrisisResource[];
 }
 
@@ -58,6 +64,12 @@ const CONTENT_NL: CrisisContent = {
   title: 'Je staat er niet alleen voor',
   intro: 'Het klinkt alsof je het nu heel zwaar hebt. Neem contact op met één van deze hulplijnen — ze zijn er voor jou, dag en nacht.',
   dismissText: 'Het gaat nu even',
+  callButtonText: 'Bel 1813',
+  smsButtonText: 'SMS 1813',
+  callConfirmTitle: 'Wil je 1813 bellen?',
+  callConfirmMessage: 'Je wordt doorverbonden met de Zelfmoordlijn (24/7, gratis, anoniem).',
+  confirmButton: 'Bevestig',
+  cancelButton: 'Annuleer',
   resources: RESOURCES_NL,
 };
 
@@ -65,6 +77,12 @@ const CONTENT_EN: CrisisContent = {
   title: "You're not alone",
   intro: "It sounds like you're going through something really difficult. Please reach out to one of these helplines — they're here for you, day and night.",
   dismissText: "I'm okay for now",
+  callButtonText: 'Call 1813',
+  smsButtonText: 'Text 1813',
+  callConfirmTitle: 'Do you want to call 1813?',
+  callConfirmMessage: 'You will be connected to the Suicide Prevention Line (24/7, free, anonymous).',
+  confirmButton: 'Confirm',
+  cancelButton: 'Cancel',
   resources: RESOURCES_EN,
 };
 
