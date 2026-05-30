@@ -862,6 +862,18 @@ export async function processMessage(
       reason: elisDecision.zone.resolved?.reason ?? '',
       isBlocked: elisDecision.isBlocked,
       isCrisis: elisDecision.zone.resolved?.isCrisis ?? false,
+    } : kimDecision ? {
+      vspInput: null,
+      vspSeverity: null,
+      computedZone: kimDecision.zone.engine?.level ?? 'unknown',
+      computedSeverity: ({'GROEN':1,'LICHTGROEN':1,'GEEL':2,'ORANJE':3,'ROOD':4} as Record<string,number>)[kimDecision.zone.engine?.level ?? ''] ?? 0,
+      finalZone: kimDecision.zone.engine?.level ?? null,
+      source: 'kim-engine',
+      reason: 'kim-engine-zone',
+      isBlocked: false,
+      isCrisis: kimDecision.isKimCrisis,
+      isKimCrisis: kimDecision.isKimCrisis,
+      eigenRegieUserInput: kimDecision.eigenRegie?.userInput ?? null,
     } : null,
     regulation: {
       action: regulationResult.action,

@@ -632,3 +632,8 @@
 - [x] Taak 3: Wire isKimCrisis in model routing (via ChatContext.isCrisis) and regulation (force PURPLE zone)
 - [x] Taak 3: 9 new tests for Kim crisis (decision flag, model routing, regulation ground)
 - [x] 0 TS errors, 387 tests green (19 files + 1 skipped)
+
+## Round 21
+- [x] Taak 1: isKimCrisis + eigenRegie.userInput in debug trace ZONE BESLISSING (Kim users now show zone decision block)
+- [x] Taak 2: kim-eigen-regie-crisis-full-path integration test (5 tests: eigenRegie=5/0/9 → crisis path, eigenRegie=10/50 → normal path)
+- [x] 0 TS errors, 392 tests green (20 files + 1 skipped)

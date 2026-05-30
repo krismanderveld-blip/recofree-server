@@ -33,6 +33,9 @@ export interface EngineTraceInput {
     reason: string;
     isBlocked: boolean;
     isCrisis: boolean;
+    // Kim-specific crisis fields (only present for Kim users)
+    isKimCrisis?: boolean;
+    eigenRegieUserInput?: number | null;
   } | null;
 
   // Regulation
@@ -169,8 +172,12 @@ export function buildTraceBlock(input: EngineTraceInput): string {
     lines.push(`  Reden: ${zd.reason}`);
     lines.push(`  isBlocked: ${zd.isBlocked}`);
     lines.push(`  isCrisis: ${zd.isCrisis}`);
+    if (zd.isKimCrisis !== undefined) {
+      lines.push(`  isKimCrisis: ${zd.isKimCrisis}`);
+      lines.push(`  eigenRegie.userInput: ${zd.eigenRegieUserInput ?? 'null'}`);
+    }
   } else {
-    lines.push('  (geen Elias zone beslissing — Kim user of niet beschikbaar)');
+    lines.push('  (geen Elias zone beslissing \u2014 Kim user)');
   }
   lines.push('');
 
