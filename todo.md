@@ -695,3 +695,11 @@
 - [x] Added expo-dev-client plugin to app.config.ts
 - [x] Updated engine-provider.ts with initGemmaEngine() for 4B model
 - [x] 0 TS errors, 405 tests green
+
+## Round 31 — Model download flow
+- [x] Create model download manager (WiFi check, resumable via expo-file-system, progress callback)
+- [x] Create model download screen (progress bar, percentage, pause/resume/retry)
+- [x] Wire into app: ModelDownloadProvider in _layout.tsx, checks model on mount
+- [x] Model status indicator in chat header during download
+- [x] NullEngine stays active during download, auto-loads Gemma on completion
+- [x] 0 TS errors, 405 tests green
