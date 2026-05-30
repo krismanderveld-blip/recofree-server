@@ -618,3 +618,9 @@
 - [x] Add isCrisis to server-side ChatRequestInput interface and Zod schema
 - [x] Fix vitest config: add @/ alias resolution and include both test directories
 - [x] 0 TS errors, 369 tests pass (16 files + 1 skipped)
+
+## Round 19
+- [x] Bug 1 verification: confirm isCrisis=true selects gpt-4o when VSP=PAARS (6 tests green)
+- [x] Bug 2: identified regulation uses sessionBuffer.currentZoneColor (buffer-computed from text/sliders), NOT resolved zone
+- [x] Bug 2: moved regulation call after elisDecision/kimDecision; now uses resolvedZoneForRegulation (Elias: finalZoneLabel, Kim: engine.level, fallback: buffer)
+- [x] 0 TS errors, 375 tests green (17 files + 1 skipped)

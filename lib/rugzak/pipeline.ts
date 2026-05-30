@@ -401,30 +401,8 @@ export async function processMessage(
     relevance.triggers,
   );
 
-  // ── PRE-GPT STEP 5b: Apply Regulation Layer ──
-  // Runs AFTER zone detection + dominant state, BEFORE GPT call.
-  // Uses buffer zone color + guidance depth + previous assistant message for anti-repetition.
-  const currentZone = sessionBuffer.currentZoneColor as ZoneColor;
+  // ── PRE-GPT STEP 5b: Regulation Layer (moved below — runs after engine decision) ──
   const userGuidanceDepth = currentUserDat.guidanceDepth ?? 'normal';
-
-  // Get previous assistant message for anti-repetition safeguard
-  const chatHistory = currentUserDat.chatHistory || [];
-  const lastAssistantMsg = [...chatHistory].reverse().find(m => m.role === 'assistant');
-  const previousAssistantContent = lastAssistantMsg?.content ?? null;
-
-  const regulationResult = applyRegulation(
-    currentZone,
-    userGuidanceDepth,
-    previousAssistantContent,
-  );
-
-  // Update session tracking for next message's anti-repetition
-  sessionLastRegulationResult = regulationResult;
-
-  // Log regulation decision
-  if (regulationResult.action !== 'reflect') {
-    console.log(`[Pipeline] Regulation: ${regulationResult.action} | zone=${regulationResult.zone} | depth=${regulationResult.effectiveDepth} | softened=${regulationResult.wasSoftened} | skipped=${regulationResult.wasSkipped}`);
-  }
 
   // ── PRE-GPT STEP 5d: Projection Layer (signal detection + injection) ──
   // Runs after backpack-relevance-analyzer (5c), before GPT call.
@@ -566,6 +544,47 @@ export async function processMessage(
 
   // ── Route engine directive: select correct engine output based on userType ──
   const activeDecision = elisDecision ?? kimDecision;
+
+  // ── PRE-GPT STEP 5b: Apply Regulation Layer ──
+  // Runs AFTER engine decision so we use the RESOLVED zone (not buffer-computed zone).
+  // Elias: use resolved finalZoneLabel. Kim: use engine zone level. Fallback: buffer zone.
+  const resolvedZoneForRegulation: ZoneColor = (() => {
+    if (elisDecision?.zone.resolved?.finalZoneLabel) {
+      // Map Dutch FinalZoneLabel → English ZoneColor
+      const labelMap: Record<string, ZoneColor> = {
+        'GROEN': 'GREEN', 'GEEL': 'YELLOW', 'ORANJE': 'ORANGE', 'ROOD': 'RED', 'PAARS': 'PURPLE',
+      };
+      return labelMap[elisDecision.zone.resolved.finalZoneLabel] ?? (sessionBuffer.currentZoneColor as ZoneColor);
+    }
+    if (kimDecision?.zone.engine?.level) {
+      // Map Dutch ZoneLevel → English ZoneColor
+      const levelMap: Record<string, ZoneColor> = {
+        'GROEN': 'GREEN', 'LICHTGROEN': 'GREEN', 'GEEL': 'YELLOW', 'ORANJE': 'ORANGE', 'ROOD': 'RED',
+      };
+      return levelMap[kimDecision.zone.engine.level] ?? (sessionBuffer.currentZoneColor as ZoneColor);
+    }
+    // Fallback: buffer-computed zone (pre-engine)
+    return sessionBuffer.currentZoneColor as ZoneColor;
+  })();
+
+  // Get previous assistant message for anti-repetition safeguard
+  const chatHistory = currentUserDat.chatHistory || [];
+  const lastAssistantMsg = [...chatHistory].reverse().find(m => m.role === 'assistant');
+  const previousAssistantContent = lastAssistantMsg?.content ?? null;
+
+  const regulationResult = applyRegulation(
+    resolvedZoneForRegulation,
+    userGuidanceDepth,
+    previousAssistantContent,
+  );
+
+  // Update session tracking for next message's anti-repetition
+  sessionLastRegulationResult = regulationResult;
+
+  // Log regulation decision
+  if (regulationResult.action !== 'reflect') {
+    console.log(`[Pipeline] Regulation: ${regulationResult.action} | zone=${regulationResult.zone} (resolved) | depth=${regulationResult.effectiveDepth} | softened=${regulationResult.wasSoftened} | skipped=${regulationResult.wasSkipped}`);
+  }
   const engineDirective: EngineDirective | null = routeEngineDirective({
     userType: backpack.userType,
     eliasZone: (elisDecision?.zone.impact)
