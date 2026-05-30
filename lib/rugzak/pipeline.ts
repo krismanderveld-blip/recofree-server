@@ -100,6 +100,7 @@ import {
 } from './projection-layer';
 import { sanitizeSliders } from '../engine/shared/slider-sanitize';
 import { buildTraceBlock, type EngineTraceInput, type PipelineStepStatus } from '../debug/engine-trace';
+import { getEngine } from '../engine/local-llm/engine-provider';
 
 // ─── Pattern Marking (post-GPT local state) ─────────────────
 
@@ -404,6 +405,24 @@ export async function processMessage(
   // ── PRE-GPT STEP 5b: Regulation Layer (moved below — runs after engine decision) ──
   const userGuidanceDepth = currentUserDat.guidanceDepth ?? 'normal';
 
+  // ── PRE-GPT STEP 5c: LocalSignalEngine (on-device signal detection) ──
+  // Non-blocking: if engine not ready, returns empty signals and pipeline continues.
+  const signalEngine = getEngine();
+  const candidateSignals = signalEngine.isReady()
+    ? await signalEngine.detectSignals({
+        currentMessage: userMessage,
+        conversationHistory: (currentUserDat.chatHistory || []).map((m: { role: string; content: string }) => ({ role: m.role as 'user' | 'assistant', content: m.content })),
+        bufferSnapshot,
+        moodSliders: (currentUserDat.currentMood as unknown as Record<string, number>) || {},
+        projectionEntries: getProjectionState().entries,
+        userDatSummary: {
+          totalSessions: currentUserDat.sessionAnalyses?.length || 0,
+          recentTriggers: (currentUserDat.triggerPatterns || []).map((t: any) => t.trigger || t.pattern || ''),
+          dominantModules: analysis.priorityModules.slice(0, 3),
+        },
+      })
+    : { fears: [], hopes: [], goals: [], triggers: [] };
+
   // ── PRE-GPT STEP 5d: Projection Layer (signal detection + injection) ──
   // Runs after backpack-relevance-analyzer (5c), before GPT call.
   // Detects future-facing signals (fears, hopes, goals) from message + sliders.
@@ -649,6 +668,7 @@ export async function processMessage(
       : undefined,
     projectionContext: projectionResult.injectionBlock ?? undefined,
     projectionDeepening: projectionResult.deepeningDirective ?? undefined,
+    candidateSignals,
   };
 
   let response: string;

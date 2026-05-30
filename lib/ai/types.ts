@@ -547,6 +547,8 @@ export interface ChatContext {
   projectionContext?: string;
   /** Projection deepening directive — instruction for GPT to explore future projections when safe */
   projectionDeepening?: string;
+  /** Candidate signals from LocalSignalEngine (fears, hopes, goals, triggers) — empty if engine not ready */
+  candidateSignals?: import('../engine/local-llm/signal-engine').CandidateSignals;
 }
 
 /**

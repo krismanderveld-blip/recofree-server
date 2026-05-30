@@ -666,3 +666,9 @@
 - [x] Create lib/engine/local-llm/signal-engine.ts — interface definitions (SignalInput, ContextInput, ContextData, CandidateSignals, RelevanceMap, ContextSummary, LocalSignalEngine)
 - [x] Create lib/engine/local-llm/null-engine.ts — NullSignalEngine fallback (empty/neutral values, isReady()=false)
 - [x] 0 TS errors, 401 tests green
+
+## Round 27
+- [x] Taak 1: Unit tests NullSignalEngine (4 tests: detectSignals empty, scoreRelevance 0s, summarizeContext neutral, isReady false)
+- [x] Taak 2: EngineProvider (getEngine/setEngine/resetEngine singleton, default NullSignalEngine)
+- [x] Taak 3: Wire detectSignals() in pipeline Step 5c (after buffer snapshot, before projection). Non-blocking, candidateSignals in ChatContext.
+- [x] 0 TS errors, 405 tests green
