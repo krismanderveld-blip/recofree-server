@@ -549,6 +549,8 @@ export interface ChatContext {
   projectionDeepening?: string;
   /** Candidate signals from LocalSignalEngine (fears, hopes, goals, triggers) — empty if engine not ready */
   candidateSignals?: import('../engine/local-llm/signal-engine').CandidateSignals;
+  /** Relevance scores from LocalSignalEngine (0-1 per context source) — 0.5 neutral if engine not ready */
+  relevanceScores?: import('../engine/local-llm/signal-engine').RelevanceMap;
 }
 
 /**

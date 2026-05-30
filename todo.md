@@ -672,3 +672,9 @@
 - [x] Taak 2: EngineProvider (getEngine/setEngine/resetEngine singleton, default NullSignalEngine)
 - [x] Taak 3: Wire detectSignals() in pipeline Step 5c (after buffer snapshot, before projection). Non-blocking, candidateSignals in ChatContext.
 - [x] 0 TS errors, 405 tests green
+
+## Round 28
+- [x] Taak 1: candidateSignals in debug trace (step 5c-i: SignalEngine ready/not-ready + counts per category)
+- [x] Taak 2: scoreRelevance() wired in pipeline (step 5c-ii: bp/diary/trig/proj scores, 0.5 neutral fallback)
+- [x] relevanceScores added to ChatContext
+- [x] 0 TS errors, 405 tests green
