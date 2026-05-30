@@ -642,3 +642,11 @@
 - [x] Bug 1: Remove duplicate vsp/eigenRegie from state.dat snapshot (already in sliders loop via currentMood)
 - [x] Bug 2: Fix projection_signal undefined — reinforced events have no category/content/strength; now renders "reinforced N entries" instead
 - [x] 0 TS errors, 392 tests green
+
+## Round 23 — Crisis card taaldetectie + Belgische nummers
+- [x] Define NL/EN crisis resource sets (Belgische nummers: 1813, 106, 112) in lib/crisis/resources.ts
+- [x] Implement language detection from last user message (Dutch markers + ratio threshold)
+- [x] Translate crisis card title + intro + dismiss text (NL default, EN fallback)
+- [x] Wire lastUserMessage prop from chat.tsx to EmergencyCard
+- [x] Update legacy EMERGENCY_RESOURCES to Belgian numbers, mark as deprecated
+- [x] 0 TS errors, 392 tests green

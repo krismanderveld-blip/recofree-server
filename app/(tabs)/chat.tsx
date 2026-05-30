@@ -537,6 +537,7 @@ function ChatScreenInner() {
               <EmergencyCard
                 visible={showEmergency}
                 onDismiss={() => setShowEmergency(false)}
+                lastUserMessage={messages.filter(m => m.role === 'user').pop()?.content ?? null}
               />
             ) : null
           }

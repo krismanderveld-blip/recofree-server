@@ -103,7 +103,7 @@ describe('Crisis Detection', () => {
 
   it('should have emergency resources defined', () => {
     expect(EMERGENCY_RESOURCES).toHaveLength(3);
-    expect(EMERGENCY_RESOURCES[0].number).toBe('988');
+    expect(EMERGENCY_RESOURCES[0].number).toBe('1813');
   });
 });
 

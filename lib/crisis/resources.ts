@@ -1,0 +1,132 @@
+/**
+ * Crisis Resources — Belgian helplines with NL/EN language support.
+ * Numbers are always Belgian. Only text changes with language.
+ */
+
+export type CrisisLanguage = 'nl' | 'en';
+
+export interface CrisisResource {
+  name: string;
+  number: string;
+  description: string;
+}
+
+export interface CrisisContent {
+  title: string;
+  intro: string;
+  dismissText: string;
+  resources: CrisisResource[];
+}
+
+const RESOURCES_NL: CrisisResource[] = [
+  {
+    name: 'Zelfmoordlijn',
+    number: '1813',
+    description: 'Bel 1813, 24/7 gratis anoniem',
+  },
+  {
+    name: 'Tele-Onthaal',
+    number: '106',
+    description: 'Bel 106, 24/7 gratis voor iedereen',
+  },
+  {
+    name: 'Noodnummer',
+    number: '112',
+    description: 'Bel 112, bij onmiddellijk gevaar',
+  },
+];
+
+const RESOURCES_EN: CrisisResource[] = [
+  {
+    name: 'Suicide Prevention',
+    number: '1813',
+    description: 'Call 1813, 24/7 free anonymous',
+  },
+  {
+    name: 'Support Line',
+    number: '106',
+    description: 'Call 106, 24/7 free for everyone',
+  },
+  {
+    name: 'Emergency',
+    number: '112',
+    description: 'Call 112, immediate danger',
+  },
+];
+
+const CONTENT_NL: CrisisContent = {
+  title: 'Je staat er niet alleen voor',
+  intro: 'Het klinkt alsof je het nu heel zwaar hebt. Neem contact op met één van deze hulplijnen — ze zijn er voor jou, dag en nacht.',
+  dismissText: 'Het gaat nu even',
+  resources: RESOURCES_NL,
+};
+
+const CONTENT_EN: CrisisContent = {
+  title: "You're not alone",
+  intro: "It sounds like you're going through something really difficult. Please reach out to one of these helplines — they're here for you, day and night.",
+  dismissText: "I'm okay for now",
+  resources: RESOURCES_EN,
+};
+
+/**
+ * Common Dutch words/patterns for language detection.
+ * We check the last user message for these markers.
+ */
+const DUTCH_MARKERS = [
+  // Common words
+  'ik', 'het', 'een', 'dat', 'niet', 'van', 'maar', 'met', 'ook', 'nog',
+  'wel', 'ben', 'heb', 'kan', 'wil', 'moet', 'zou', 'als', 'naar', 'voor',
+  'wat', 'wie', 'hoe', 'waar', 'wanneer', 'waarom', 'omdat', 'dus', 'toch',
+  // Pronouns
+  'mij', 'jij', 'zij', 'hij', 'wij', 'jullie', 'hun', 'haar',
+  // Verbs
+  'hebben', 'zijn', 'worden', 'gaan', 'komen', 'doen', 'zeggen', 'denken', 'voelen',
+  // Crisis-related
+  'hulp', 'pijn', 'alleen', 'bang', 'moe', 'dood', 'zelfmoord', 'einde',
+  // Addiction-related
+  'terugval', 'craving', 'gebruik', 'verslaving', 'zucht', 'drinken', 'stoppen',
+  // Common endings
+  'heid', 'lijk', 'baar',
+];
+
+/**
+ * Detect language from the last user message in conversation history.
+ * Returns 'nl' if Dutch is detected, 'en' otherwise.
+ * Default (no messages / empty) = 'nl'.
+ */
+export function detectCrisisLanguage(lastUserMessage: string | null | undefined): CrisisLanguage {
+  if (!lastUserMessage || lastUserMessage.trim().length === 0) return 'nl';
+
+  const words = lastUserMessage.toLowerCase().replace(/[^a-zàáâãäåèéêëìíîïòóôõöùúûüýÿñ\s]/g, '').split(/\s+/);
+  let dutchScore = 0;
+
+  for (const word of words) {
+    if (DUTCH_MARKERS.includes(word)) {
+      dutchScore++;
+    }
+    // Check Dutch suffixes
+    if (word.endsWith('heid') || word.endsWith('lijk') || word.endsWith('baar') || word.endsWith('tion') === false && word.endsWith('tie')) {
+      dutchScore++;
+    }
+  }
+
+  // If at least 2 Dutch markers found, or ratio > 20% of words, it's Dutch
+  const dutchRatio = words.length > 0 ? dutchScore / words.length : 0;
+  return (dutchScore >= 2 || dutchRatio >= 0.2) ? 'nl' : 'en';
+}
+
+/**
+ * Get crisis content based on detected language.
+ */
+export function getCrisisContent(language: CrisisLanguage): CrisisContent {
+  return language === 'nl' ? CONTENT_NL : CONTENT_EN;
+}
+
+/**
+ * Get crisis content based on the last user message.
+ * Convenience function combining detection + content retrieval.
+ */
+export function getCrisisContentForMessage(lastUserMessage: string | null | undefined): CrisisContent {
+  const lang = detectCrisisLanguage(lastUserMessage);
+  return getCrisisContent(lang);
+}

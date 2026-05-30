@@ -150,22 +150,23 @@ export function assessCrisis(
 }
 
 /**
- * Emergency resources shown during crisis.
+ * @deprecated Use getCrisisContentForMessage() from '@/lib/crisis/resources' instead.
+ * Kept for backward compatibility with existing tests.
  */
 export const EMERGENCY_RESOURCES = [
   {
-    name: 'National Suicide Prevention Lifeline',
-    number: '988',
-    description: 'Call or text 988 for immediate help',
+    name: 'Zelfmoordlijn',
+    number: '1813',
+    description: 'Bel 1813, 24/7 gratis anoniem',
   },
   {
-    name: 'Crisis Text Line',
-    number: 'Text HOME to 741741',
-    description: 'Free 24/7 crisis support via text',
+    name: 'Tele-Onthaal',
+    number: '106',
+    description: 'Bel 106, 24/7 gratis voor iedereen',
   },
   {
-    name: 'Emergency Services',
-    number: '911',
-    description: 'For immediate danger',
+    name: 'Noodnummer',
+    number: '112',
+    description: 'Bel 112, bij onmiddellijk gevaar',
   },
 ];
