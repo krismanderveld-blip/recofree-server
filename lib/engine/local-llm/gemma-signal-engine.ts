@@ -1,9 +1,12 @@
 /**
- * GemmaSignalEngine — LocalSignalEngine implementation using Gemma 3 1B via llama.rn.
+ * GemmaSignalEngine — LocalSignalEngine implementation using Gemma 3 4B via llama.rn.
  *
- * Model: gemma-3-1b-it-Q4_K_M.gguf (~806 MB)
+ * Model: gemma-3-4b-it-Q4_K_M.gguf (~2.5 GB)
  * Runtime: llama.rn (React Native binding of llama.cpp)
  * Inference: fully on-device, no server calls
+ *
+ * The 4B model provides significantly better reasoning and structured output
+ * compared to 1B, while still fitting in modern phone RAM (6GB+).
  */
 
 import type {
@@ -34,6 +37,14 @@ type InitLlamaParams = {
   n_ctx?: number;
   n_gpu_layers?: number;
 };
+
+// ─── Constants ──────────────────────────────────────────────────
+
+/** Expected model filename on device */
+export const GEMMA_MODEL_FILENAME = 'gemma-3-4b-it-Q4_K_M.gguf';
+
+/** Expected model size in bytes (~2.5 GB) */
+export const GEMMA_MODEL_SIZE_BYTES = 2_700_000_000;
 
 // ─── Prompts ────────────────────────────────────────────────────
 
@@ -75,9 +86,12 @@ export class GemmaSignalEngine implements LocalSignalEngine {
   }
 
   /**
-   * Load the Gemma model asynchronously.
+   * Load the Gemma 3 4B model asynchronously.
    * Call this at app start via EngineProvider.setEngine().
-   * If model file not found, logs warning and stays not-ready.
+   * If model file not found or load fails, logs warning and stays not-ready.
+   *
+   * Expected load time: 5-10 seconds on modern devices.
+   * RAM usage: ~3-4 GB during inference.
    */
   async load(): Promise<boolean> {
     if (this.context) return true;
@@ -94,14 +108,14 @@ export class GemmaSignalEngine implements LocalSignalEngine {
       this.context = await initLlama({
         model: this.modelPath,
         use_mlock: true,
-        n_ctx: 2048,
+        n_ctx: 4096, // 4B model can handle larger context
         n_gpu_layers: 99, // Metal (iOS) / OpenCL (Android)
       });
 
-      console.log('[GemmaSignalEngine] Model loaded successfully');
+      console.log('[GemmaSignalEngine] Gemma 3 4B model loaded successfully');
       return true;
     } catch (error) {
-      console.warn('[GemmaSignalEngine] Failed to load model:', error);
+      console.warn('[GemmaSignalEngine] Failed to load Gemma 3 4B model:', error);
       this.context = null;
       return false;
     } finally {

@@ -688,3 +688,10 @@
 - [x] Async model loading via initLlama() with Metal/OpenCL GPU layers
 - [x] Updated engine-provider.ts with initGemmaEngine(modelPath) helper
 - [x] 0 TS errors, 405 tests green
+
+## Round 30 — GemmaSignalEngine 4B + llama.rn + expo-dev-client
+- [x] Recreated gemma-signal-engine.ts with Gemma 3 4B (Q4_K_M, ~2.5 GB)
+- [x] Installed llama.rn + expo-dev-client as dependencies
+- [x] Added expo-dev-client plugin to app.config.ts
+- [x] Updated engine-provider.ts with initGemmaEngine() for 4B model
+- [x] 0 TS errors, 405 tests green
