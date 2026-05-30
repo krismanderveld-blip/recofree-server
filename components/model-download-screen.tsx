@@ -1,10 +1,10 @@
 /**
  * ModelDownloadScreen — shown at first app start when model is not present.
- * Full-screen overlay with progress bar and download controls.
+ * Full-screen overlay with progress bar, download controls, and skip option.
  */
 
-import React from 'react';
-import { View, Text, Pressable, StyleSheet, ActivityIndicator } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, Pressable, StyleSheet, ActivityIndicator, Animated } from 'react-native';
 import { useModelDownload } from '@/lib/engine/local-llm/model-download-context';
 import { useColors } from '@/hooks/use-colors';
 
@@ -25,6 +25,7 @@ export function ModelDownloadScreen() {
     pauseModelDownload,
     resumeModelDownload,
     retryModelDownload,
+    skipDownload,
   } = useModelDownload();
   const colors = useColors();
 
@@ -132,15 +133,72 @@ export function ModelDownloadScreen() {
           )}
         </View>
 
-        {/* Skip option */}
+        {/* Skip button */}
+        {status !== 'completed' && status !== 'checking' && (
+          <Pressable
+            onPress={skipDownload}
+            style={({ pressed }) => [
+              styles.skipButton,
+              { opacity: pressed ? 0.6 : 1 },
+            ]}
+          >
+            <Text style={[styles.skipButtonText, { color: colors.muted }]}>
+              Skip for now
+            </Text>
+          </Pressable>
+        )}
+
+        {/* Info text */}
         {(status === 'idle' || status === 'no-wifi' || status === 'error') && (
-          <Text style={[styles.skipText, { color: colors.muted }]}>
-            You can skip this and use the app without on-device AI.{'\n'}
-            The app will use cloud AI instead.
+          <Text style={[styles.infoText, { color: colors.muted }]}>
+            Without on-device AI, the app uses cloud AI instead.{'\n'}
+            You can download later in Settings.
           </Text>
         )}
       </View>
     </View>
+  );
+}
+
+/**
+ * CloudAIBanner — shows a subtle banner when user skipped model download.
+ * Auto-disappears after 5 seconds.
+ */
+export function CloudAIBanner() {
+  const { dismissed, modelReady } = useModelDownload();
+  const colors = useColors();
+  const [visible, setVisible] = useState(false);
+  const [opacity] = useState(new Animated.Value(0));
+
+  useEffect(() => {
+    if (dismissed && !modelReady) {
+      setVisible(true);
+      Animated.timing(opacity, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+
+      const timer = setTimeout(() => {
+        Animated.timing(opacity, {
+          toValue: 0,
+          duration: 500,
+          useNativeDriver: true,
+        }).start(() => setVisible(false));
+      }, 5000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [dismissed, modelReady]);
+
+  if (!visible) return null;
+
+  return (
+    <Animated.View style={[styles.banner, { backgroundColor: colors.surface, borderColor: colors.border, opacity }]}>
+      <Text style={[styles.bannerText, { color: colors.muted }]}>
+        On-device AI not active — using cloud AI
+      </Text>
+    </Animated.View>
   );
 }
 
@@ -263,11 +321,34 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-  skipText: {
+  skipButton: {
+    marginTop: 20,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+  },
+  skipButtonText: {
+    fontSize: 15,
+    fontWeight: '500',
+  },
+  infoText: {
     fontSize: 13,
     textAlign: 'center',
-    marginTop: 24,
+    marginTop: 16,
     lineHeight: 18,
+  },
+  // Banner styles
+  banner: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 10,
+    borderWidth: 0.5,
+    marginHorizontal: 16,
+    marginTop: 8,
+    alignItems: 'center',
+  },
+  bannerText: {
+    fontSize: 13,
+    fontWeight: '500',
   },
   // Indicator styles
   indicator: {

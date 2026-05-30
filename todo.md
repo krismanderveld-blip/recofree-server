@@ -703,3 +703,9 @@
 - [x] Model status indicator in chat header during download
 - [x] NullEngine stays active during download, auto-loads Gemma on completion
 - [x] 0 TS errors, 405 tests green
+
+## Round 32 — Skip button + Settings toggle
+- [x] Taak 1: Skip button on download screen → skipDownload() sets dismissed=true, app continues with NullEngine
+- [x] Taak 1: CloudAIBanner component — subtle banner "On-device AI not active" auto-fades after 5s
+- [x] Taak 2: On-device AI section in Profile with status badge (Ready/Downloading/Not downloaded), download/delete buttons, confirmation dialog
+- [x] 0 TS errors, 405 tests green

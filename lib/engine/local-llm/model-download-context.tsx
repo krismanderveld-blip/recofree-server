@@ -11,10 +11,11 @@ import {
   startDownload,
   pauseDownload,
   resumeDownload,
+  deleteModel,
   onProgress,
   getModelPath,
 } from './model-download-manager';
-import { initGemmaEngine } from './engine-provider';
+import { initGemmaEngine, resetEngine } from './engine-provider';
 
 interface ModelDownloadState {
   status: DownloadStatus;
@@ -23,6 +24,7 @@ interface ModelDownloadState {
   totalBytes: number;
   error?: string;
   modelReady: boolean;
+  dismissed: boolean; // user skipped the download screen
 }
 
 interface ModelDownloadActions {
@@ -30,6 +32,8 @@ interface ModelDownloadActions {
   pauseModelDownload: () => Promise<void>;
   resumeModelDownload: () => Promise<void>;
   retryModelDownload: () => Promise<void>;
+  skipDownload: () => void;
+  deleteModelData: () => Promise<void>;
 }
 
 type ModelDownloadContextType = ModelDownloadState & ModelDownloadActions;
@@ -43,6 +47,7 @@ export function ModelDownloadProvider({ children }: { children: React.ReactNode 
     bytesDownloaded: 0,
     totalBytes: 2_700_000_000,
     modelReady: false,
+    dismissed: false,
   });
   const initialCheckDone = useRef(false);
 
@@ -117,12 +122,30 @@ export function ModelDownloadProvider({ children }: { children: React.ReactNode 
     await startModelDownload();
   }, [startModelDownload]);
 
+  const skipDownload = useCallback(() => {
+    setState(prev => ({ ...prev, dismissed: true }));
+  }, []);
+
+  const deleteModelData = useCallback(async () => {
+    await deleteModel();
+    resetEngine();
+    setState(prev => ({
+      ...prev,
+      status: 'idle',
+      progress: 0,
+      bytesDownloaded: 0,
+      modelReady: false,
+    }));
+  }, []);
+
   const value: ModelDownloadContextType = {
     ...state,
     startModelDownload,
     pauseModelDownload,
     resumeModelDownload,
     retryModelDownload,
+    skipDownload,
+    deleteModelData,
   };
 
   return (
