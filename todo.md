@@ -714,3 +714,9 @@
 - [x] Verified: Stripe and Twilio are NOT in codebase (no package.json entry, no code references, no node_modules)
 - [x] Removed `packageManager` field from package.json to fix Corepack signature verification error on build server
 - [x] 0 TS errors, 405 tests green
+
+## Round 34 — Build fixes (crash at start)
+- [x] Fix 1: Add pnpm.onlyBuiltDependencies whitelist (esbuild, llama.rn, unrs-resolver) to package.json
+- [x] Fix 2: Remove expo-dev-client from package.json dependencies and app.config.ts plugins
+- [x] 0 TS errors, 405 tests green
+- [ ] Republish and verify build succeeds
