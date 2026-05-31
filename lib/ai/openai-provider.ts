@@ -197,6 +197,8 @@ export class OpenAIProvider implements AIProvider {
         interventionContinuity: context.interventionContinuity,
         projectionContext: context.projectionContext,
         projectionDeepening: context.projectionDeepening,
+        candidateSignals: context.candidateSignals,
+        relevanceScores: context.relevanceScores,
       });
 
       // ── STEP 3: Build server payload based on SESSION_INIT / LIVE_MESSAGE split ──
@@ -254,6 +256,10 @@ export class OpenAIProvider implements AIProvider {
           // Projection layer (future-facing fears/hopes/goals)
           projectionContext: gptPayload.projectionContext ?? null,
           projectionDeepening: gptPayload.projectionDeepening ?? null,
+
+          // SignalEngine preprocessing (GPT-4o-mini, non-blocking)
+          candidateSignals: gptPayload.candidateSignals ?? null,
+          relevanceScores: gptPayload.relevanceScores ?? null,
 
           // Full data (SESSION_INIT only)
           backpack: gptPayload.backpack,
@@ -321,6 +327,10 @@ export class OpenAIProvider implements AIProvider {
           // Projection layer (future-facing fears/hopes/goals)
           projectionContext: gptPayload.projectionContext ?? null,
           projectionDeepening: gptPayload.projectionDeepening ?? null,
+
+          // SignalEngine preprocessing (GPT-4o-mini, non-blocking)
+          candidateSignals: gptPayload.candidateSignals ?? null,
+          relevanceScores: gptPayload.relevanceScores ?? null,
           // NO backpack, NO userDat, NO diaryEntries, NO coreWound,
           // NO contextLine, NO relationshipAnchor, NO relationalPattern
           // These were sent at SESSION_INIT and cached server-side.

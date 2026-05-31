@@ -98,6 +98,20 @@ export interface GPTPayload {
   projectionContext?: string;
   projectionDeepening?: string;
 
+  // ── SignalEngine preprocessing (GPT-4o-mini, non-blocking) ──
+  candidateSignals?: {
+    fears: Array<{ keyword: string; confidence: number }>;
+    hopes: Array<{ keyword: string; confidence: number }>;
+    goals: Array<{ keyword: string; confidence: number }>;
+    triggers: Array<{ keyword: string; confidence: number }>;
+  };
+  relevanceScores?: {
+    backpackRelevance: number;
+    diaryRelevance: number;
+    triggerRelevance: number;
+    projectionRelevance: number;
+  };
+
   // ── Buffer snapshot (from pipeline, per message) ──
   bufferSnapshot?: {
     zoneScore: number;
@@ -191,6 +205,20 @@ export interface PayloadBuilderInput {
   projectionContext?: string;
   /** Projection deepening directive (instruction for GPT to explore projections) */
   projectionDeepening?: string;
+  /** SignalEngine: detected signals from current message (confidence > 0.3 filtered before injection) */
+  candidateSignals?: {
+    fears: Array<{ keyword: string; confidence: number }>;
+    hopes: Array<{ keyword: string; confidence: number }>;
+    goals: Array<{ keyword: string; confidence: number }>;
+    triggers: Array<{ keyword: string; confidence: number }>;
+  };
+  /** SignalEngine: relevance scores for context blocks */
+  relevanceScores?: {
+    backpackRelevance: number;
+    diaryRelevance: number;
+    triggerRelevance: number;
+    projectionRelevance: number;
+  };
 }
 
 // ─── Conversation History Optimisation (Patch N Step 5) ──────
@@ -426,6 +454,26 @@ export function buildGPTPayload(input: PayloadBuilderInput): GPTPayload {
   }
   if (input.projectionDeepening) {
     payload.projectionDeepening = input.projectionDeepening;
+  }
+
+  // ── SignalEngine results (confidence > 0.3 filter) ──
+  if (input.candidateSignals) {
+    const filter = (arr: Array<{ keyword: string; confidence: number }>) =>
+      arr.filter(s => s.confidence > 0.3);
+    const filtered = {
+      fears: filter(input.candidateSignals.fears),
+      hopes: filter(input.candidateSignals.hopes),
+      goals: filter(input.candidateSignals.goals),
+      triggers: filter(input.candidateSignals.triggers),
+    };
+    // Only include if at least one signal passes the threshold
+    const hasSignals = filtered.fears.length + filtered.hopes.length + filtered.goals.length + filtered.triggers.length > 0;
+    if (hasSignals) {
+      payload.candidateSignals = filtered;
+    }
+  }
+  if (input.relevanceScores) {
+    payload.relevanceScores = input.relevanceScores;
   }
 
   // ── Buffer snapshot (from pipeline, per message) ──

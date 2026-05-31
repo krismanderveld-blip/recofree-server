@@ -691,7 +691,13 @@
 
 ## Round 40 — verifyDepsBeforeRun fix + Taak 1 & 2
 - [x] Added verifyDepsBeforeRun: false to pnpm-workspace.yaml (fixes build server crash from pnpm 11 runDepsStatusCheck)
-- [ ] Taak 1: Wire SignalEngine results (candidateSignals + relevanceScores) into GPT payload in gpt-payload-builder.ts (confidence > 0.3 filter)
-- [ ] Taak 2a: Fix NL/EN mixed markers in projection-layer.ts (full English)
-- [ ] Taak 2b: Add single-user comment above sessionCache in ai-chat.ts
-- [ ] Taak 2c: Translate buildSystemPrompt() to English in ai-chat.ts
+- [x] Taak 1: Wire SignalEngine results (candidateSignals + relevanceScores) into GPT payload
+  - Added to GPTPayload interface + PayloadBuilderInput
+  - Confidence > 0.3 filter in buildGPTPayload()
+  - Forwarded in openai-provider.ts (SESSION_INIT + LIVE_MESSAGE)
+  - Added to server ChatRequestInput + Zod schema
+  - Injected as signalEngineBlock in system prompt (before regulation instruction)
+- [x] Taak 2a: projection-layer.ts — replaced NL/EN mixed comment (Eigen Regie → Self-Governance)
+- [x] Taak 2b: server/ai-chat.ts — single-user comment above sessionCache (already present)
+- [x] Taak 2c: server/ai-chat.ts — translated header comments + removed Dutch 'hoog' fallback in routing
+- [x] 0 TS errors, 401 tests green

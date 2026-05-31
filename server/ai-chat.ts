@@ -14,10 +14,10 @@
  *
  * CANON SOURCES:
  *   - elias.dat V19 / kim.dat V1
- *   - ELIAS_IDENTITEIT_COMPLETE_V2025.txt
- *   - Module 033 (Kwaliteitscontrole / anti-fabricatie)
- *   - Module 091 (Schema Integratie)
- *   - Module 012 (Vooranalyse / Failsafe)
+ *   - ELIAS_IDENTITY_COMPLETE_V2025.txt
+ *   - Module 033 (Quality Control / anti-fabrication)
+ *   - Module 091 (Schema Integration)
+ *   - Module 012 (Pre-analysis / Failsafe)
  *   - Master Engine Spec V2
  */
 
@@ -155,6 +155,20 @@ interface ChatRequestInput {
   // Projection layer (future-facing fears/hopes/goals)
   projectionContext?: string | null;
   projectionDeepening?: string | null;
+
+  // SignalEngine preprocessing (GPT-4o-mini, non-blocking)
+  candidateSignals?: {
+    fears: Array<{ keyword: string; confidence: number }>;
+    hopes: Array<{ keyword: string; confidence: number }>;
+    goals: Array<{ keyword: string; confidence: number }>;
+    triggers: Array<{ keyword: string; confidence: number }>;
+  } | null;
+  relevanceScores?: {
+    backpackRelevance: number;
+    diaryRelevance: number;
+    triggerRelevance: number;
+    projectionRelevance: number;
+  } | null;
 }
 
 // ─── Server-side Session Cache ───────────────────────────────────
@@ -355,6 +369,20 @@ export const chatInputSchema = z.object({
   // Projection layer (future-facing fears/hopes/goals)
   projectionContext: z.string().nullable().optional(),
   projectionDeepening: z.string().nullable().optional(),
+
+  // SignalEngine preprocessing (GPT-4o-mini, non-blocking)
+  candidateSignals: z.object({
+    fears: z.array(z.object({ keyword: z.string(), confidence: z.number() })),
+    hopes: z.array(z.object({ keyword: z.string(), confidence: z.number() })),
+    goals: z.array(z.object({ keyword: z.string(), confidence: z.number() })),
+    triggers: z.array(z.object({ keyword: z.string(), confidence: z.number() })),
+  }).nullable().optional(),
+  relevanceScores: z.object({
+    backpackRelevance: z.number(),
+    diaryRelevance: z.number(),
+    triggerRelevance: z.number(),
+    projectionRelevance: z.number(),
+  }).nullable().optional(),
 });
 
 // ─── Relationship Map Extractor ──────────────────────────────────
@@ -807,6 +835,28 @@ VIOLATION OF THIS PROTOCOL IS UNACCEPTABLE.`;
 
   console.log(`[AI Chat] Guidance depth: user=${userDepth}, stateAllowed=${stateAllowedDepth}, effective=${effectiveDepth} (crisis=${input.crisisLevel}, risk=${riskScore}, maxDistress=${maxDistress})`);
 
+  // ── SignalEngine Context Injection ──
+  // Injects detected signals (fears, hopes, goals, triggers) from GPT-4o-mini preprocessing.
+  // Only signals with confidence > 0.3 are included (filtered client-side).
+  // Placed BEFORE regulation instruction so GPT has signal awareness when applying regulation.
+  let signalEngineBlock = '';
+  if (input.candidateSignals) {
+    const cs = input.candidateSignals;
+    const lines: string[] = [];
+    if (cs.fears.length > 0) lines.push(`  Fears: ${cs.fears.map(s => `${s.keyword}(${s.confidence.toFixed(2)})`).join(', ')}`);
+    if (cs.hopes.length > 0) lines.push(`  Hopes: ${cs.hopes.map(s => `${s.keyword}(${s.confidence.toFixed(2)})`).join(', ')}`);
+    if (cs.goals.length > 0) lines.push(`  Goals: ${cs.goals.map(s => `${s.keyword}(${s.confidence.toFixed(2)})`).join(', ')}`);
+    if (cs.triggers.length > 0) lines.push(`  Triggers: ${cs.triggers.map(s => `${s.keyword}(${s.confidence.toFixed(2)})`).join(', ')}`);
+    if (lines.length > 0) {
+      signalEngineBlock = `\n═══ DETECTED SIGNALS (preprocessing) ═══\n${lines.join('\n')}\nUse these signals to attune your response. Do NOT repeat them literally to the user.\n═══ END SIGNALS ═══`;
+      console.log(`[AI Chat] SignalEngine block injected: fears=${cs.fears.length} hopes=${cs.hopes.length} goals=${cs.goals.length} triggers=${cs.triggers.length}`);
+    }
+  }
+  if (input.relevanceScores) {
+    const rs = input.relevanceScores;
+    signalEngineBlock += `\nContext relevance: backpack=${rs.backpackRelevance.toFixed(2)}, diary=${rs.diaryRelevance.toFixed(2)}, triggers=${rs.triggerRelevance.toFixed(2)}, projection=${rs.projectionRelevance.toFixed(2)}`;
+  }
+
   // ── Regulation Layer Injection ──
   // If the regulation layer determined an action (non-reflect), inject its GPT instruction.
   // This runs BEFORE the system prompt is assembled, so it's available for both follow-up and session-start.
@@ -911,6 +961,7 @@ ${selectiveRelevance}
 === MANDATORY BEHAVIORAL INSTRUCTIONS ===
 ${stance}
 ${guidanceInstruction}
+${signalEngineBlock}
 ${regulationInstruction}
 ${engineDirectiveBlock}
 ${interventionContinuityBlock}
@@ -1099,6 +1150,7 @@ ${relevanceContext}
 === MANDATORY BEHAVIORAL INSTRUCTIONS ===
 ${stance}
 ${guidanceInstruction}
+${signalEngineBlock}
 ${regulationInstruction}
 ${engineDirectiveBlock}
 ${interventionContinuityBlock}
@@ -1202,7 +1254,7 @@ export async function generateAIResponse(
   } else if (crisisLevel > 0 || riskScore >= 7 || input.isCrisis === true) {
     selectedModel = 'gpt-4o';
     routingReason = `crisis/risk (crisis=${crisisLevel}, risk=${riskScore}, isCrisis=${input.isCrisis ?? false})`;
-  } else if (urgencyForRouting === 'high' || urgencyForRouting === 'hoog') {
+  } else if (urgencyForRouting === 'high') {
     selectedModel = 'gpt-4o';
     routingReason = `high urgency (${input.urgency})`;
   } else if (HIGH_COMPLEXITY_MODULES.some(m => dominantModuleForRouting.includes(m))) {
