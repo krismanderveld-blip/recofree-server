@@ -160,6 +160,9 @@ interface ChatRequestInput {
   // STOA engine (Elias only, Stoic session injection block)
   stoaContext?: string | null;
 
+  // Schema/Mode engine (deterministic intervention context)
+  schemaModeContext?: string | null;
+
   // Signal engine: relevance scores for context gating (LIVE_MESSAGE only)
   relevanceScores?: {
     backpackRelevance: number;
@@ -373,6 +376,9 @@ export const chatInputSchema = z.object({
 
   // STOA engine (Elias only, Stoic session injection block)
   stoaContext: z.string().nullable().optional(),
+
+  // Schema/Mode engine (deterministic intervention context)
+  schemaModeContext: z.string().nullable().optional(),
 
   // Signal engine: relevance scores for context gating (LIVE_MESSAGE only)
   relevanceScores: z.object({
@@ -882,6 +888,12 @@ VIOLATION OF THIS PROTOCOL IS UNACCEPTABLE.`;
     console.log(`[AI Chat] STOA context injected`);
   }
 
+  let schemaModeBlock = '';
+  if (input.schemaModeContext) {
+    schemaModeBlock = `\n${input.schemaModeContext}`;
+    console.log(`[AI Chat] Schema/Mode context injected`);
+  }
+
   let sessionEndInstructions = "";
   if (input.message === "__SESSION_END__") {
     sessionEndInstructions = `\nThe user is ending this session. Generate a warm farewell that:
@@ -966,6 +978,7 @@ ${engineDirectiveBlock}
 ${interventionContinuityBlock}
 ${projectionBlock}
 ${stoaBlock}
+${schemaModeBlock}
 
 These behavioral instructions are ABSOLUTE. They override your default conversational style.
 The sliders tell you exactly how the user feels — USE them in your response.
@@ -1153,6 +1166,7 @@ ${engineDirectiveBlock}
 ${interventionContinuityBlock}
 ${projectionBlock}
 ${stoaBlock}
+${schemaModeBlock}
 
 These behavioral instructions are ABSOLUTE. They override your default conversational style.
 The sliders tell you exactly how the user feels — USE them in your response.

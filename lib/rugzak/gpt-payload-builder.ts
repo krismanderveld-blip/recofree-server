@@ -101,6 +101,9 @@ export interface GPTPayload {
   // ── STOA engine (Elias only, Stoic session injection) ──
   stoaContext?: string;
 
+  // ── Schema/Mode engine (deterministic intervention context) ──
+  schemaModeContext?: string;
+
   // ── Buffer snapshot (from pipeline, per message) ──
   bufferSnapshot?: {
     zoneScore: number;
@@ -196,6 +199,8 @@ export interface PayloadBuilderInput {
   projectionDeepening?: string;
   /** STOA engine injection block (Elias only, Stoic session) */
   stoaContext?: string;
+  /** Schema/Mode engine: compact intervention context from deterministic detection */
+  schemaModeContext?: string;
 }
 
 // ─── Conversation History Optimisation (Patch N Step 5) ──────
@@ -436,6 +441,11 @@ export function buildGPTPayload(input: PayloadBuilderInput): GPTPayload {
   // ── STOA engine (Elias only, Stoic session injection) ──
   if (input.stoaContext) {
     payload.stoaContext = input.stoaContext;
+  }
+
+  // ── Schema/Mode engine context ──
+  if (input.schemaModeContext) {
+    payload.schemaModeContext = input.schemaModeContext;
   }
 
   // ── Buffer snapshot (from pipeline, per message) ──

@@ -320,6 +320,10 @@ export interface UserDat {
   lastRelationalPattern?: { pattern: string; schema: string; confidence: number } | null;
   /** STOA sessions used in previous sessions (cross-session cooldown tracking) */
   stoaSessionsUsed?: Array<{ sessionId: number; usedAtSession: number }>;
+  /** Schema/Mode: recurring mode tendencies (hybrid persistence — patterns only, never identity) */
+  modeTendencies?: Array<{ modeId: string; frequency: number; lastSeen: string; effectiveInterventions: string[] }>;
+  /** Schema/Mode: recurring schema tendencies (hybrid persistence — patterns only, never diagnosis) */
+  schemaTendencies?: Array<{ schemaId: string; domain: string; frequency: number; lastSeen: string; copingStyle: string | null }>;
 }
 
 /** A record of a completed session's analysis */
@@ -462,6 +466,8 @@ export function createNewUserDat(
     relationalAnchors: [],
     lastRelationalPattern: null,
     stoaSessionsUsed: [],
+    modeTendencies: [],
+    schemaTendencies: [],
   };
 }
 
@@ -570,6 +576,8 @@ export interface ChatContext {
   contextSummary?: string;
   /** STOA engine: injection block for Stoic session (Elias only) */
   stoaContext?: string;
+  /** Schema/Mode engine: compact intervention context from deterministic mode/schema detection */
+  schemaModeContext?: string;
 }
 
 /**

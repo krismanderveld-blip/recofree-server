@@ -135,6 +135,12 @@ import {
   getStoaSessionState,
   type StoaEngineResult,
 } from '../engine/elias/stoa-engine';
+import {
+  runSchemaModeEngine,
+  resetSchemaModeSessionState,
+  getSessionActivatedModes,
+} from '../engine/shared/schema-mode-router';
+import type { SchemaModeEngineResult, ModeId } from '../engine/shared/schema-mode-types';
 
 // ─── Pattern Marking (post-GPT local state) ─────────────────
 
@@ -198,6 +204,7 @@ export function resetSessionState(): void {
   resetProjectionSessionTracking();
   resetDeepeningState();
   resetStoaSessionState();
+  resetSchemaModeSessionState();
 }
 
 // ─── Pipeline Result ────────────────────────────────────────────
@@ -524,6 +531,44 @@ export async function processMessage(
     }
   }
 
+  // ── PRE-GPT STEP 5f: Schema/Mode Engine (deterministic, both user types) ──
+  let schemaModeResult: SchemaModeEngineResult = {
+    modeDecision: { acceptedModes: [], rejectedModes: [], dominantMode: null, modeConflict: false, reason: 'not_run', promptSummary: '' },
+    schemaDecision: { acceptedSchemas: [], rejectedSchemas: [], dominantSchema: null, dominantDomain: null, safeToExplore: true, promptSummary: '' },
+    promptInjection: '',
+    activated: false,
+    sessionActivatedModes: [],
+  };
+  {
+    const smActiveProjections: Array<{ category: string; content: string; strength: number }> = (() => {
+      try {
+        const ps = getProjectionState();
+        return ps.entries.filter((e: ProjectionEntry) => e.isActive).map((e: ProjectionEntry) => ({
+          category: e.category as string,
+          content: e.content,
+          strength: e.strength as unknown as number,
+        }));
+      } catch { return []; }
+    })();
+
+    schemaModeResult = runSchemaModeEngine({
+      message: userMessage,
+      userType: backpack.userType,
+      zoneColor: sessionBuffer.currentZoneColor.toUpperCase(),
+      vspLevel: vspLevel ?? null,
+      sliders: currentUserDat.currentMood as unknown as Record<string, number>,
+      activeProjections: smActiveProjections,
+      modeTendencies: (currentUserDat.modeTendencies ?? []).map(t => ({ modeId: t.modeId, frequency: t.frequency, lastSeen: t.lastSeen })),
+      schemaTendencies: (currentUserDat.schemaTendencies ?? []).map(t => ({ schemaId: t.schemaId, frequency: t.frequency, lastSeen: t.lastSeen })),
+      isCrisis: analysis.riskLevel === 'critical' || analysis.riskLevel === 'high',
+      messageCount: sessionBuffer.messageCount,
+    });
+
+    if (schemaModeResult.activated) {
+      console.log(`[Pipeline] SchemaMode: dominant_mode=${schemaModeResult.modeDecision.dominantMode} | dominant_schema=${schemaModeResult.schemaDecision.dominantSchema} | safe=${schemaModeResult.schemaDecision.safeToExplore}`);
+    }
+  }
+
   // ── PRE-GPT STEP 6: Build ChatContext + ONE GPT call ──
   let crisisLevel = 0;
   let showEmergency = false;
@@ -783,6 +828,7 @@ export async function processMessage(
     relevanceScores,
     contextSummary,
     stoaContext: stoaResult.injectionBlock ?? undefined,
+    schemaModeContext: schemaModeResult.promptInjection || undefined,
   };
 
   let response: string;
@@ -981,6 +1027,7 @@ export async function processMessage(
       { step: '5c. SignalEngine', status: signalEngineReady ? 'passed' : 'skipped', reason: signalEngineReady ? `fears=${candidateSignals?.fears.length ?? 0} hopes=${candidateSignals?.hopes.length ?? 0} goals=${candidateSignals?.goals.length ?? 0} triggers=${candidateSignals?.triggers.length ?? 0}` : 'engine not ready' },
       { step: '5d. Projection', status: projectionResult.injectionBlock ? 'passed' : 'skipped', reason: projectionResult.injectionBlock ? 'block injected' : 'no signal' },
       { step: '5e. STOA', status: stoaResult.activated ? 'passed' : 'skipped', reason: stoaResult.reason },
+      { step: '5f. SchemaMode', status: schemaModeResult.activated ? 'passed' : 'skipped', reason: schemaModeResult.modeDecision.reason },
       { step: '6a. Zone decision', status: elisDecision ? 'passed' : 'skipped', reason: elisDecision ? `zone=${elisDecision.zone.computed.label}` : 'kim user' },
       { step: '6b. Engine directive', status: engineDirective ? 'passed' : 'skipped', reason: engineDirective ? `engine=${engineDirective.engine}` : 'none' },
       { step: '6c. Intervention', status: interventionContinuity ? 'passed' : 'skipped', reason: interventionContinuity ? `type=${interventionContinuity.lastInterventionType}` : 'not active' },
@@ -1075,6 +1122,7 @@ export async function processMessage(
         intervention: interventionContinuity ? 'yes' : 'no',
         projection: projectionResult.injectionBlock ? 'yes' : 'no',
         stoa: stoaResult.activated ? 'yes' : 'no',
+        schemaMode: schemaModeResult.activated ? 'yes' : 'no',
       },
       estimatedTokens: estimateTokens(JSON.stringify(context)),
       usedModel: selectedModel ?? 'unknown',
@@ -1548,6 +1596,25 @@ export async function endSession(
     filtered.push({ sessionId: stoaState.sessionId, usedAtSession: currentUserDat.totalSessions });
     updatedUserDat = { ...updatedUserDat, stoaSessionsUsed: filtered };
     console.log(`[Pipeline] STOA persistence: session ${stoaState.sessionId} recorded at session #${currentUserDat.totalSessions}`);
+  }
+
+  // ── STEP 5a2: Schema/Mode tendency persistence (hybrid model — patterns only, never identity) ──
+  const activatedModes = getSessionActivatedModes();
+  if (activatedModes.length > 0) {
+    const existingTendencies = updatedUserDat.modeTendencies ?? [];
+    const now = new Date().toISOString();
+    const updatedTendencies = [...existingTendencies];
+    for (const modeId of activatedModes) {
+      const existing = updatedTendencies.find(t => t.modeId === modeId);
+      if (existing) {
+        existing.frequency += 1;
+        existing.lastSeen = now;
+      } else {
+        updatedTendencies.push({ modeId, frequency: 1, lastSeen: now, effectiveInterventions: [] });
+      }
+    }
+    updatedUserDat = { ...updatedUserDat, modeTendencies: updatedTendencies };
+    console.log(`[Pipeline] SchemaMode persistence: ${activatedModes.length} mode tendencies updated`);
   }
 
   // ── STEP 5b: Archive old chat history to prevent unbounded growth ──

@@ -716,3 +716,14 @@
 - [x] Taak 4: Update stoaSessionsUsed after STOA session is activated (endSession persistence)
 - [x] Taak 4: Update all 3 persistence paths in user-context.tsx (legacy, migrate, compat)
 - [x] 0 TS errors, 404 tests green (21 test files, 1 skipped)
+
+## Round 51 — Fase 5: Schema en Modi Engine
+
+- [x] Stap 1: Create lib/engine/shared/schema-mode-types.ts (22 modes, 18 schemas, 5 domains, all type contracts)
+- [x] Stap 2: Create lib/engine/shared/schema-detector.ts (deterministic marker detection for 18 schemas)
+- [x] Stap 3: Create lib/engine/shared/mode-detector.ts (deterministic marker detection for 22 modes)
+- [x] Stap 4: Create lib/engine/shared/schema-mode-router.ts (intervention routing + prompt builder + safety gating)
+- [x] Stap 5: Add hybrid persistence (modeTendencies/schemaTendencies in UserDat, all 3 persistence paths)
+- [x] Stap 6: Wire as Step 5f in pipeline.ts after STOA, result in ChatContext as schemaModeContext
+- [x] Stap 7: Wire through gpt-payload-builder.ts + openai-provider.ts + server/ai-chat.ts
+- [x] 0 TS errors, 404 tests green (21 passed, 1 skipped)
