@@ -711,3 +711,15 @@
 - [x] Taak 2: Replace hardcoded SESSION_INIT gpt-4o with engineDirective.recommendedModel in server/ai-chat.ts
 - [x] Taak 2: Add sessionInit line to debug trace MODEL ROUTING (engine-trace.ts + pipeline.ts)
 - [x] 0 TS errors, 408 tests green (7 new)
+
+## Round 42 — recommendedModel edge case tests
+
+- [x] Elias: riskScore=6 → gpt-4o-mini
+- [x] Elias: riskScore=7 → gpt-4o
+- [x] Elias: vspLevel=GEEL → gpt-4o-mini
+- [x] Elias: vspLevel=ORANJE → gpt-4o
+- [x] Kim: eigenRegie=31 → gpt-4o-mini
+- [x] Kim: eigenRegie=30 → gpt-4o
+- [x] Kim: riskScore=6 → gpt-4o-mini
+- [x] Kim: riskScore=7 → gpt-4o
+- [x] 0 TS errors, 416 tests green (8 new edge case tests)
