@@ -162,6 +162,7 @@ interface ChatRequestInput {
 
   // Schema/Mode engine (deterministic intervention context)
   schemaModeContext?: string | null;
+  actContext?: string | null;
 
   // Signal engine: relevance scores for context gating (LIVE_MESSAGE only)
   relevanceScores?: {
@@ -379,6 +380,7 @@ export const chatInputSchema = z.object({
 
   // Schema/Mode engine (deterministic intervention context)
   schemaModeContext: z.string().nullable().optional(),
+  actContext: z.string().nullable().optional(),
 
   // Signal engine: relevance scores for context gating (LIVE_MESSAGE only)
   relevanceScores: z.object({
@@ -894,6 +896,12 @@ VIOLATION OF THIS PROTOCOL IS UNACCEPTABLE.`;
     console.log(`[AI Chat] Schema/Mode context injected`);
   }
 
+  let actBlock = '';
+  if (input.actContext) {
+    actBlock = `\n${input.actContext}`;
+    console.log(`[AI Chat] ACT context injected`);
+  }
+
   let sessionEndInstructions = "";
   if (input.message === "__SESSION_END__") {
     sessionEndInstructions = `\nThe user is ending this session. Generate a warm farewell that:
@@ -979,6 +987,7 @@ ${interventionContinuityBlock}
 ${projectionBlock}
 ${stoaBlock}
 ${schemaModeBlock}
+${actBlock}
 
 These behavioral instructions are ABSOLUTE. They override your default conversational style.
 The sliders tell you exactly how the user feels — USE them in your response.
@@ -1167,6 +1176,7 @@ ${interventionContinuityBlock}
 ${projectionBlock}
 ${stoaBlock}
 ${schemaModeBlock}
+${actBlock}
 
 These behavioral instructions are ABSOLUTE. They override your default conversational style.
 The sliders tell you exactly how the user feels — USE them in your response.

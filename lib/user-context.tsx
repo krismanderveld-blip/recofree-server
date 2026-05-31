@@ -328,6 +328,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
             stoaSessionsUsed: [],
             modeTendencies: [],
             schemaTendencies: [],
+            actProgress: undefined,
           };
 
           // Persist both new stores
@@ -568,6 +569,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       stoaSessionsUsed: state.userDat?.stoaSessionsUsed ?? [],
       modeTendencies: state.userDat?.modeTendencies ?? [],
       schemaTendencies: state.userDat?.schemaTendencies ?? [],
+      actProgress: state.userDat?.actProgress ?? undefined,
     };
     dispatch({ type: 'END_SESSION', payload: updatedUserDat });
     await persistUserDat(updatedUserDat);
@@ -729,5 +731,6 @@ function migrateUserDat(raw: any, userType: UserType): UserDat {
     stoaSessionsUsed: raw.stoaSessionsUsed ?? [],
     modeTendencies: raw.modeTendencies ?? [],
     schemaTendencies: raw.schemaTendencies ?? [],
+    actProgress: raw.actProgress ?? undefined,
   };
 }

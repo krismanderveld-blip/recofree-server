@@ -739,3 +739,13 @@
 - [x] Taak 2: Cap at max 10 tendencies per category
 - [x] 0 TS errors, 409 tests green (22 passed, 1 skipped)
 - [x] Write SignalEngine integration test (5 assertions: engine active, fears detection, hopes detection, model selection, projection boost)
+
+## Round 53 — Fase 5: ACT Therapy Engine
+
+- [x] Stap 1: Create lib/engine/shared/act-types.ts (ACTProcessId, ACTSignalId, ACTCandidate, ACTDecision, ACTProgress)
+- [x] Stap 2: Create lib/engine/shared/act-detector.ts (deterministic marker detection for 14 signals)
+- [x] Stap 3: Create lib/engine/shared/act-router.ts (6 ACT processes, safety gating, VSP/EigenRegie gating, schema/mode integration, prompt builder)
+- [x] Stap 4: Wire into pipeline.ts as Step 5g after schema/mode, add actContext to ChatContext
+- [x] Stap 5: Wire through gpt-payload-builder.ts + openai-provider.ts + server/ai-chat.ts
+- [x] Stap 6: Add ACT progress to user.dat (values, preferred tools, fusion patterns, all 3 persistence paths)
+- [x] Stap 7: 0 TS errors, 409 tests green (22 passed, 1 skipped)

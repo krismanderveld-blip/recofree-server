@@ -143,6 +143,13 @@ import {
   getSessionActivatedSchemas,
 } from '../engine/shared/schema-mode-router';
 import type { SchemaModeEngineResult, ModeId, SchemaId } from '../engine/shared/schema-mode-types';
+import {
+  routeACTEngine,
+  resetACTSessionState,
+  getSessionACTProcessesUsed,
+} from '../engine/shared/act-router';
+import type { ACTEngineResult, ACTProgress } from '../engine/shared/act-types';
+import { createDefaultACTProgress } from '../engine/shared/act-types';
 
 // ─── Pattern Marking (post-GPT local state) ─────────────────
 
@@ -207,6 +214,7 @@ export function resetSessionState(): void {
   resetDeepeningState();
   resetStoaSessionState();
   resetSchemaModeSessionState();
+  resetACTSessionState();
 }
 
 // ─── Pipeline Result ────────────────────────────────────────────
@@ -593,6 +601,50 @@ export async function processMessage(
     }
   }
 
+  // ── PRE-GPT STEP 5g: ACT Engine (deterministic, both user types) ──
+  let actResult: ACTEngineResult = {
+    decision: {
+      acceptedACTCandidates: [],
+      rejectedACTCandidates: [],
+      dominantProcess: null,
+      dominantSignal: null,
+      safeToUseACT: false,
+      reason: 'not_run',
+      promptSummary: '',
+    },
+    promptBlock: '',
+    activated: false,
+  };
+  {
+    const actCrisisLevel = analysis.riskLevel === 'critical' || analysis.riskLevel === 'high' ? 2 : analysis.riskLevel === 'moderate' ? 1 : 0;
+    const actProgress: ACTProgress = (currentUserDat.actProgress as unknown as ACTProgress) ?? createDefaultACTProgress();
+
+    actResult = routeACTEngine({
+      userMessage,
+      userType: backpack.userType,
+      vspLevel: vspLevel ?? 'GROEN',
+      eigenRegieScore: backpack.userType === 'kim' ? (currentUserDat.currentMood as any)?.eigenRegie ?? null : null,
+      crisisLevel: actCrisisLevel,
+      resolvedZone: sessionBuffer.currentZoneColor.toUpperCase(),
+      distressScore: distressScore ?? 0,
+      activeMode: schemaModeResult.modeDecision.dominantMode,
+      activeSchema: schemaModeResult.schemaDecision.dominantSchema,
+      candidateSignals: [],
+      activeProjections: (() => {
+        try {
+          const ps = getProjectionState();
+          return ps.entries.filter((e: ProjectionEntry) => e.isActive).map((e: ProjectionEntry) => e.content);
+        } catch { return []; }
+      })(),
+      stageOfChange: currentUserDat.stageOfChange ?? 'CONTEMPLATION',
+      guidanceDepth: (typeof currentUserDat.guidanceDepth === 'number' ? currentUserDat.guidanceDepth : 2) as number,
+    }, actProgress);
+
+    if (actResult.activated) {
+      console.log(`[Pipeline] ACT: process=${actResult.decision.dominantProcess} | signal=${actResult.decision.dominantSignal} | reason=${actResult.decision.reason}`);
+    }
+  }
+
   // ── PRE-GPT STEP 6: Build ChatContext + ONE GPT call ──
   let crisisLevel = 0;
   let showEmergency = false;
@@ -853,6 +905,7 @@ export async function processMessage(
     contextSummary,
     stoaContext: stoaResult.injectionBlock ?? undefined,
     schemaModeContext: schemaModeResult.promptInjection || undefined,
+    actContext: actResult.promptBlock || undefined,
   };
 
   let response: string;
@@ -1053,6 +1106,7 @@ export async function processMessage(
       { step: '5e1. RETP', status: retpResult.activated ? 'passed' : 'skipped', reason: retpResult.reason },
       { step: '5e2. STOA', status: stoaResult.activated ? 'passed' : 'skipped', reason: stoaResult.reason },
       { step: '5f. SchemaMode', status: schemaModeResult.activated ? 'passed' : 'skipped', reason: schemaModeResult.modeDecision.reason },
+      { step: '5g. ACT', status: actResult.activated ? 'passed' : 'skipped', reason: actResult.decision.reason },
       { step: '6a. Zone decision', status: elisDecision ? 'passed' : 'skipped', reason: elisDecision ? `zone=${elisDecision.zone.computed.label}` : 'kim user' },
       { step: '6b. Engine directive', status: engineDirective ? 'passed' : 'skipped', reason: engineDirective ? `engine=${engineDirective.engine}` : 'none' },
       { step: '6c. Intervention', status: interventionContinuity ? 'passed' : 'skipped', reason: interventionContinuity ? `type=${interventionContinuity.lastInterventionType}` : 'not active' },
@@ -1149,6 +1203,7 @@ export async function processMessage(
         retp: retpResult.activated ? `emotion=${retpResult.primaryEmotion}` : 'no',
         stoa: stoaResult.activated ? 'yes' : 'no',
         schemaMode: schemaModeResult.activated ? 'yes' : 'no',
+        act: actResult.activated ? 'yes' : 'no',
       },
       estimatedTokens: estimateTokens(JSON.stringify(context)),
       usedModel: selectedModel ?? 'unknown',
@@ -1690,6 +1745,20 @@ export async function endSession(
     const decayedModes = modeTendencies.length;
     const decayedSchemas = schemaTendencies.length;
     console.log(`[Pipeline] Tendency persistence: modes=${decayedModes} (activated=${activatedModes.length}), schemas=${decayedSchemas} (activated=${activatedSchemas.length})`);
+  }
+
+  // ── STEP 4d: ACT progress persistence ──
+  {
+    const actProcessesUsed = getSessionACTProcessesUsed();
+    if (actProcessesUsed.length > 0) {
+      const actNow = new Date().toISOString();
+      const existingProgress = updatedUserDat.actProgress ?? createDefaultACTProgress();
+      const updatedProgress = { ...existingProgress };
+      updatedProgress.lastACTProcessUsed = actProcessesUsed[actProcessesUsed.length - 1];
+      updatedProgress.lastACTSessionDate = actNow;
+      updatedUserDat = { ...updatedUserDat, actProgress: updatedProgress };
+      console.log(`[Pipeline] ACT persistence: processes_used=${actProcessesUsed.length}, last=${updatedProgress.lastACTProcessUsed}`);
+    }
   }
 
   // ── STEP 5b: Archive old chat history to prevent unbounded growth ──

@@ -324,6 +324,18 @@ export interface UserDat {
   modeTendencies?: Array<{ modeId: string; frequency: number; lastSeen: string; effectiveInterventions: string[] }>;
   /** Schema/Mode: recurring schema tendencies (hybrid persistence — patterns only, never diagnosis) */
   schemaTendencies?: Array<{ schemaId: string; domain: string; frequency: number; lastSeen: string; copingStyle: string | null }>;
+  /** ACT: progress tracking (values, preferred tools, fusion patterns, success counts) */
+  actProgress?: {
+    userValues: string[];
+    preferredTools: string[];
+    repeatedFusionPatterns: string[];
+    successfulDefusionCount: number;
+    successfulGroundingCount: number;
+    successfulUrgeSurfingCount: number;
+    valuesBasedActionsCompleted: number;
+    lastACTProcessUsed: string | null;
+    lastACTSessionDate: string | null;
+  };
 }
 
 /** A record of a completed session's analysis */
@@ -468,6 +480,17 @@ export function createNewUserDat(
     stoaSessionsUsed: [],
     modeTendencies: [],
     schemaTendencies: [],
+    actProgress: {
+      userValues: [],
+      preferredTools: [],
+      repeatedFusionPatterns: [],
+      successfulDefusionCount: 0,
+      successfulGroundingCount: 0,
+      successfulUrgeSurfingCount: 0,
+      valuesBasedActionsCompleted: 0,
+      lastACTProcessUsed: null,
+      lastACTSessionDate: null,
+    },
   };
 }
 
@@ -578,6 +601,7 @@ export interface ChatContext {
   stoaContext?: string;
   /** Schema/Mode engine: compact intervention context from deterministic mode/schema detection */
   schemaModeContext?: string;
+  actContext?: string;
 }
 
 /**
