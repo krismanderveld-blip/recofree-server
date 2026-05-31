@@ -129,6 +129,30 @@ describe('Elias recommendedModel edge cases', () => {
 
 // ─── Kim Edge Cases ────────────────────────────────────────────
 
+describe('Elias recommendedModel — hasBackpackContent', () => {
+  it('isCrisis=false, riskScore=0, vspLevel=GROEN, hasBackpackContent=true → gpt-4o', () => {
+    const decision = createEliasDecision(makeEliasInput({
+      riskScore: 0,
+      vspInput: 'GROEN',
+      hasBackpackContent: true,
+    }));
+    expect(decision.recommendedModel).toBe('gpt-4o');
+    expect(decision.recommendedModelReason).toContain('backpack has content');
+  });
+});
+
+describe('Kim recommendedModel — hasBackpackContent', () => {
+  it('isKimCrisis=false, riskScore=0, eigenRegie=50, hasBackpackContent=true → gpt-4o', () => {
+    const decision = createKimDecision(makeKimInput({
+      riskScore: 0,
+      eigenRegieInput: 50,
+      hasBackpackContent: true,
+    }));
+    expect(decision.recommendedModel).toBe('gpt-4o');
+    expect(decision.recommendedModelReason).toContain('backpack has content');
+  });
+});
+
 describe('Kim recommendedModel edge cases', () => {
   it('eigenRegie=31 → gpt-4o-mini', () => {
     const decision = createKimDecision(makeKimInput({ eigenRegieInput: 31 }));

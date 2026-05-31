@@ -723,3 +723,9 @@
 - [x] Kim: riskScore=6 → gpt-4o-mini
 - [x] Kim: riskScore=7 → gpt-4o
 - [x] 0 TS errors, 416 tests green (8 new edge case tests)
+
+## Round 42b — hasBackpackContent edge case tests
+
+- [x] Elias: isCrisis=false, riskScore=0, vspLevel=GROEN, hasBackpackContent=true → gpt-4o
+- [x] Kim: isKimCrisis=false, riskScore=0, eigenRegie=50, hasBackpackContent=true → gpt-4o
+- [x] 0 TS errors, 418 tests green (2 new)
