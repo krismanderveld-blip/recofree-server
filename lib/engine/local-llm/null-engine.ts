@@ -19,7 +19,7 @@ export class NullSignalEngine implements LocalSignalEngine {
     return true;
   }
 
-  async detectSignals(_message: string): Promise<SignalDetectionResult> {
+  async detectSignals(_message: string, _context?: import('./signal-engine').SignalContext): Promise<SignalDetectionResult> {
     return { fears: [], hopes: [], goals: [], triggers: [] };
   }
 

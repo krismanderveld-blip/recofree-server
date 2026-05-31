@@ -101,6 +101,7 @@ import {
 import { sanitizeSliders } from '../engine/shared/slider-sanitize';
 import { buildTraceBlock, type EngineTraceInput, type PipelineStepStatus } from '../debug/engine-trace';
 import { getEngine } from '../engine/local-llm/engine-provider';
+import type { SignalContext, SignalDetectionResult } from '../engine/local-llm/signal-engine';
 
 // ─── Pattern Marking (post-GPT local state) ─────────────────
 
@@ -356,8 +357,37 @@ export async function processMessage(
     sessionBuffer = applyDecayToBuffer(sessionBuffer, zoneDecayResult);
   }
 
+  // ── PRE-GPT STEP 3.5: SignalEngine (semantic signal detection — runs before module selection) ──
+  // Moved before Step 4 so candidateSignals can influence module selection in analyzeState().
+  const signalContext: SignalContext = {
+    zone: sessionBuffer.currentZoneColor,
+    vspOrEigenRegie: backpack.userType === 'elias'
+      ? (currentUserDat.currentMood as import('../ai/types').EliasMoodSliders)?.vsp ?? 'unknown'
+      : String((currentUserDat.currentMood as import('../ai/types').KimMoodSliders)?.eigenRegie ?? 'unknown'),
+    keySliders: currentUserDat.currentMood
+      ? Object.fromEntries(
+          Object.entries(currentUserDat.currentMood).filter(([_, v]) => typeof v === 'number')
+        ) as Record<string, number>
+      : {},
+  };
+  const engine = getEngine();
+  const engineType = engine.constructor.name; // 'GptSignalEngine' or 'NullSignalEngine'
+  let signalEngineReady = false;
+  let candidateSignals: ChatContext['candidateSignals'] = undefined;
+  let relevanceScores: ChatContext['relevanceScores'] = undefined;
+
+  try {
+    if (engine.isReady()) {
+      signalEngineReady = true;
+      candidateSignals = await engine.detectSignals(userMessage, signalContext);
+    }
+  } catch (e) {
+    // Non-blocking: engine failure does not stop the pipeline
+    console.log(`[Pipeline] SignalEngine pre-Step4 error (non-blocking): ${(e as Error).message}`);
+  }
+
   // ── PRE-GPT STEP 4: Analyze state + Select DominantState ──
-  const analysis = analyzeState(rugzak, userMessage);
+  const analysis = analyzeState(rugzak, userMessage, candidateSignals as SignalDetectionResult | undefined);
 
   // Run backpack relevance with the ACTUAL new message (after decay was pre-advanced)
   const relevance = analyzeBackpackRelevance(
@@ -625,32 +655,21 @@ export async function processMessage(
     );
   }
 
-  // ── PRE-GPT STEP 5c: SignalEngine (non-blocking) ──
-  // Calls GptSignalEngine for signal detection + relevance scoring.
-  // Fault-tolerant: if engine not ready or call fails, empty/neutral results.
-  const engine = getEngine();
-  const engineType = engine.constructor.name; // GptSignalEngine or NullSignalEngine
-  let candidateSignals: ChatContext['candidateSignals'] = undefined;
-  let relevanceScores: ChatContext['relevanceScores'] = undefined;
-  let signalEngineReady = false;
-
+  // ── PRE-GPT STEP 5c: SignalEngine relevance scoring (post-module-selection) ──
+  // detectSignals() already ran in Step 3.5 (pre-Step 4). Here we only run scoreRelevance()
+  // which needs backpack relevance data computed after Step 4.
   try {
-    if (engine.isReady()) {
-      signalEngineReady = true;
-      const [signals, scores] = await Promise.all([
-        engine.detectSignals(userMessage),
-        engine.scoreRelevance(userMessage, {
-          backpackSummary: backpack.sections?.map(s => s.content).filter(Boolean).join('; ').slice(0, 200) ?? '',
-          diarySummary: (options?.diaryEntries ?? []).slice(0, 3).map(d => d.content || '').join('; '),
-          triggerList: relevance.triggers.map(t => t.trigger),
-        }),
-      ]);
-      candidateSignals = signals;
+    if (signalEngineReady) {
+      const scores = await engine.scoreRelevance(userMessage, {
+        backpackSummary: backpack.sections?.map(s => s.content).filter(Boolean).join('; ').slice(0, 200) ?? '',
+        diarySummary: (options?.diaryEntries ?? []).slice(0, 3).map(d => d.content || '').join('; '),
+        triggerList: relevance.triggers.map(t => t.trigger),
+      });
       relevanceScores = scores;
     }
   } catch (e) {
     // Non-blocking: engine failure does not stop the pipeline
-    console.log(`[Pipeline] SignalEngine error (non-blocking): ${(e as Error).message}`);
+    console.log(`[Pipeline] SignalEngine relevance scoring error (non-blocking): ${(e as Error).message}`);
   }
 
   // ── Step 5c-enrichment: Post-hoc module enrichment from candidateSignals ──
@@ -929,7 +948,7 @@ export async function processMessage(
       { step: '4. Dominant state', status: 'passed', reason: `module=${preGPTDominantState.dominantModule}, source=${preGPTDominantState.sourceLayer}` },
       { step: '5a. Buffer snapshot', status: 'passed', reason: `triggers=${relevance.triggers.length}` },
       { step: '5b. Regulation', status: regulationResult.wasSkipped ? 'skipped' : 'passed', reason: `action=${regulationResult.action}, depth=${regulationResult.effectiveDepth}` },
-      { step: '5c. SignalEngine', status: signalEngineReady ? 'passed' : 'skipped', reason: signalEngineReady ? `[${engineType}] fears=${candidateSignals?.fears.length ?? 0} hopes=${candidateSignals?.hopes.length ?? 0} goals=${candidateSignals?.goals.length ?? 0} triggers=${candidateSignals?.triggers.length ?? 0}` : `not ready (${engineType})` },
+      { step: '3.5. SignalEngine (pre-module-selection)', status: signalEngineReady ? 'passed' : 'skipped', reason: signalEngineReady ? `[${engineType}] fears=${candidateSignals?.fears.length ?? 0} hopes=${candidateSignals?.hopes.length ?? 0} goals=${candidateSignals?.goals.length ?? 0} triggers=${candidateSignals?.triggers.length ?? 0}` : `not ready (${engineType})` },
       { step: '5c-enrichment. SignalEngine enrichment', status: signalEnrichedModules.length > 0 ? 'passed' : 'skipped', reason: signalEnrichedModules.length > 0 ? `+${signalEnrichedModules.join(', +')}` : 'no enrichment' },
       { step: '5d. Projection', status: projectionResult.injectionBlock ? 'passed' : 'skipped', reason: projectionResult.injectionBlock ? 'block injected' : 'no signal' },
       { step: '6a. Zone decision', status: elisDecision ? 'passed' : 'skipped', reason: elisDecision ? `zone=${elisDecision.zone.computed.label}` : 'kim user' },

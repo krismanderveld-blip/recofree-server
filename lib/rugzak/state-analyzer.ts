@@ -13,7 +13,9 @@ import { createDefaultSliders, getSliderConfig } from '../ai/types';
 import { kimDistressScore, kimResilienceScore, kimPrimaryConcern } from '../engine/kim/slider-interpretation';
 import { selectKimPriorityModules } from '../engine/kim/module-catalog';
 import { eliasDistressScore, eliasResilienceScore, eliasPrimaryConcern } from '../engine/elias/slider-interpretation';
-import { computeEliasPriorityModules, ELIAS_DEFAULT_MODULE, eliasSignalToModules } from '../engine/elias/module-catalog';
+import { computeEliasPriorityModules, ELIAS_DEFAULT_MODULE, eliasSignalToModules, eliasTriggerToModule } from '../engine/elias/module-catalog';
+import { kimTriggerToModule } from '../engine/kim/module-catalog';
+import type { SignalDetectionResult } from '../engine/local-llm/signal-engine';
 
 // ─── Output Types ───────────────────────────────────────────────
 
@@ -293,7 +295,8 @@ function selectPriorityModules(
   mood: MoodSliders,
   moodTrend: MoodTrend,
   signals: InputSignals,
-  activeTriggers: string[]
+  activeTriggers: string[],
+  candidateSignals?: SignalDetectionResult
 ): string[] {
   const modules: string[] = [];
 
@@ -307,9 +310,50 @@ function selectPriorityModules(
     }
     modules.push(...eliasModules);
 
+    // Additive: semantic signals from GptSignalEngine (confidence > 0.5)
+    if (candidateSignals) {
+      if (candidateSignals.fears.some(s => s.confidence > 0.5)) {
+        modules.push('E02', 'E03', 'E05');
+      }
+      if (candidateSignals.hopes.some(s => s.confidence > 0.5)) {
+        modules.push('E06');
+      }
+      if (candidateSignals.goals.some(s => s.confidence > 0.5)) {
+        modules.push('E06', 'E08');
+      }
+      for (const t of candidateSignals.triggers) {
+        if (t.confidence > 0.5) {
+          modules.push(eliasTriggerToModule(t.keyword));
+        }
+      }
+    }
+
     if (modules.length === 0) modules.push(ELIAS_DEFAULT_MODULE);
   } else {
-    return selectKimPriorityModules(mood, signals, activeTriggers);
+    // Kim: existing rule-based selection
+    const kimModules = selectKimPriorityModules(mood, signals, activeTriggers);
+
+    // Additive: semantic signals from GptSignalEngine (confidence > 0.5)
+    if (candidateSignals) {
+      const extra: string[] = [];
+      if (candidateSignals.fears.some(s => s.confidence > 0.5)) {
+        extra.push('K03');
+      }
+      if (candidateSignals.hopes.some(s => s.confidence > 0.5)) {
+        extra.push('K06');
+      }
+      if (candidateSignals.goals.some(s => s.confidence > 0.5)) {
+        extra.push('K06');
+      }
+      for (const t of candidateSignals.triggers) {
+        if (t.confidence > 0.5) {
+          extra.push(kimTriggerToModule(t.keyword));
+        }
+      }
+      return [...new Set([...kimModules, ...extra])].slice(0, 3);
+    }
+
+    return kimModules;
   }
 
   return [...new Set(modules)].slice(0, 3);
@@ -350,7 +394,8 @@ function buildStateSummary(
 
 export function analyzeState(
   rugzak: Rugzak | null | undefined,
-  inputText: string
+  inputText: string,
+  candidateSignals?: SignalDetectionResult
 ): StateAnalysis {
   const userType: UserType = rugzak?.userType ?? 'elias';
   const defaultMood = createDefaultSliders(userType);
@@ -378,8 +423,8 @@ export function analyzeState(
   // 6. Emotional state
   const emotionalState = assessEmotionalState(currentMood, userType, moodTrend, riskLevel, signals);
 
-  // 7. Module selection (rule-based)
-  const priorityModules = selectPriorityModules(userType, currentMood, moodTrend, signals, activeTriggers);
+  // 7. Module selection (rule-based + semantic signals)
+  const priorityModules = selectPriorityModules(userType, currentMood, moodTrend, signals, activeTriggers, candidateSignals);
 
   // 8. Behavior directives
   const tone = determineTone(riskLevel, emotionalState, moodTrend, currentMood, userType);

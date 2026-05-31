@@ -763,3 +763,15 @@
 - [x] Added edge case test: vspLevel=ORANJE, backpack=false, riskScore=0 → gpt-4o
 - [x] Added edge case test: vspLevel=GEEL, backpack=false, riskScore=0 → gpt-4o-mini
 - [x] 0 TS errors, 420 tests green (2 new)
+
+## Round 46 — SignalEngine context enrichment + move before Step 4
+
+- [x] Taak 1: Extend GptSignalEngine detectSignals prompt with zone, VSP/eigenRegie, key sliders
+- [x] Taak 1: Add SignalContext type (zone, vspOrEigenRegie, keySliders)
+- [x] Taak 1: Pass context from pipeline to detectSignals call
+- [x] Taak 2: Move SignalEngine detectSignals call to before Step 4 in pipeline.ts
+- [x] Taak 2: Add optional candidateSignals parameter to selectPriorityModules (state-analyzer.ts)
+- [x] Taak 2: Add optional candidateSignals parameter to analyzeState
+- [x] Taak 2: Wire candidateSignals through pipeline.ts → analyzeState → selectPriorityModules
+- [x] Taak 2: In selectPriorityModules, add signals confidence > 0.5 as extra modules (additive only)
+- [x] 0 TS errors, all 420 tests green

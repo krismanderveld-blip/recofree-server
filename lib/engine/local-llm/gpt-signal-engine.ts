@@ -15,6 +15,7 @@
 import type {
   LocalSignalEngine,
   SignalDetectionResult,
+  SignalContext,
   RelevanceScores,
   RelevanceContext,
   ContextSummary,
@@ -23,11 +24,15 @@ import type {
 
 // ─── Prompts ────────────────────────────────────────────────────
 
-const SIGNAL_DETECTION_PROMPT = (message: string) =>
-  `Analyze this message and return JSON only:
-Message: "${message}"
+const SIGNAL_DETECTION_PROMPT = (message: string, context?: SignalContext) => {
+  const contextBlock = context
+    ? `\nCurrent emotional state:\n- Zone: ${context.zone}\n- VSP/Eigen Regie: ${context.vspOrEigenRegie}\n- Key sliders: ${Object.entries(context.keySliders).map(([k, v]) => `${k}=${v}`).join(', ')}\n`
+    : '';
+  return `Analyze this message and return JSON only.${contextBlock}
+User message: "${message}"
 Return: {"fears": [{"keyword": "...", "confidence": 0.0-1.0}], "hopes": [{"keyword": "...", "confidence": 0.0-1.0}], "goals": [{"keyword": "...", "confidence": 0.0-1.0}], "triggers": [{"keyword": "...", "confidence": 0.0-1.0}]}
 Max 3 items per category. Only what is clearly present. If nothing detected, use empty arrays.`;
+};
 
 const RELEVANCE_SCORING_PROMPT = (message: string, context: RelevanceContext) =>
   `Score relevance of these context blocks for this message (0.0-1.0):
@@ -71,9 +76,9 @@ export class GptSignalEngine implements LocalSignalEngine {
     return true;
   }
 
-  async detectSignals(message: string): Promise<SignalDetectionResult> {
+  async detectSignals(message: string, context?: SignalContext): Promise<SignalDetectionResult> {
     try {
-      const response = await this.callGptMini(SIGNAL_DETECTION_PROMPT(message));
+      const response = await this.callGptMini(SIGNAL_DETECTION_PROMPT(message, context));
       const parsed = JSON.parse(response);
 
       // Validate structure
