@@ -129,6 +129,27 @@ describe('Elias recommendedModel edge cases', () => {
 
 // ─── Kim Edge Cases ────────────────────────────────────────────
 
+describe('Elias recommendedModel — vspLevel isolation', () => {
+  it('vspLevel=ORANJE, backpack leeg, riskScore=0 → gpt-4o', () => {
+    const decision = createEliasDecision(makeEliasInput({
+      riskScore: 0,
+      vspInput: 'ORANJE',
+      hasBackpackContent: false,
+    }));
+    expect(decision.recommendedModel).toBe('gpt-4o');
+    expect(decision.recommendedModelReason).toContain('vspLevel=ORANJE');
+  });
+
+  it('vspLevel=GEEL, backpack leeg, riskScore=0 → gpt-4o-mini', () => {
+    const decision = createEliasDecision(makeEliasInput({
+      riskScore: 0,
+      vspInput: 'GEEL',
+      hasBackpackContent: false,
+    }));
+    expect(decision.recommendedModel).toBe('gpt-4o-mini');
+  });
+});
+
 describe('Elias recommendedModel — hasBackpackContent', () => {
   it('isCrisis=false, riskScore=0, vspLevel=GROEN, hasBackpackContent=true → gpt-4o', () => {
     const decision = createEliasDecision(makeEliasInput({

@@ -121,7 +121,7 @@ export function createEliasDecision(input: EliasDecisionInput): EliasDecision {
     : computeEliasImpact(resolvedZone);
 
   // ── Model recommendation logic ──
-  // gpt-4o when: isCrisis OR riskScore >= 7 OR vspLevel >= ORANJE OR backpack has content
+  // gpt-4o when: isCrisis OR riskScore >= 7 OR vspLevel >= ORANJE (always, regardless of other conditions) OR backpack has content
   const isCrisis = resolvedZone.isCrisis;
   const riskScore = input.dominantState.riskScore;
   const vspLevel = input.vspInput;

@@ -756,3 +756,10 @@
 - [x] Added engineType (constructor.name) to Step 5c debug trace: [GptSignalEngine] or (NullSignalEngine)
 - [x] Console log at init: [SignalEngine] Initialized with apiBaseUrl: ...
 - [x] 0 TS errors, 418 tests green
+
+## Round 45 — vspLevel >= ORANJE isolation test
+
+- [x] Verified: vspLevel >= ORANJE already triggers gpt-4o regardless of backpack/riskScore (logic was correct)
+- [x] Added edge case test: vspLevel=ORANJE, backpack=false, riskScore=0 → gpt-4o
+- [x] Added edge case test: vspLevel=GEEL, backpack=false, riskScore=0 → gpt-4o-mini
+- [x] 0 TS errors, 420 tests green (2 new)
