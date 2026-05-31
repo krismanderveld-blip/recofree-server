@@ -301,9 +301,12 @@ function buildPromptInjection(
 
 /** Session-level tracking of activated modes (reset per session) */
 let sessionActivatedModes: ModeId[] = [];
+/** Session-level tracking of activated schemas (reset per session) */
+let sessionActivatedSchemas: SchemaId[] = [];
 
 export function resetSchemaModeSessionState(): void {
   sessionActivatedModes = [];
+  sessionActivatedSchemas = [];
 }
 
 /**
@@ -327,10 +330,13 @@ export function runSchemaModeEngine(input: SchemaModeDetectionInput): SchemaMode
   // Step 5-6: Build prompt injection
   const promptInjection = buildPromptInjection(modeDecision, schemaDecision, input.isCrisis);
 
-  // Track activated modes for this session
+  // Track activated modes and schemas for this session
   const activated = modeDecision.dominantMode !== null || schemaDecision.dominantSchema !== null;
   if (modeDecision.dominantMode && !sessionActivatedModes.includes(modeDecision.dominantMode)) {
     sessionActivatedModes.push(modeDecision.dominantMode);
+  }
+  if (schemaDecision.dominantSchema && !sessionActivatedSchemas.includes(schemaDecision.dominantSchema)) {
+    sessionActivatedSchemas.push(schemaDecision.dominantSchema);
   }
 
   // Build prompt summaries for decisions
@@ -347,6 +353,7 @@ export function runSchemaModeEngine(input: SchemaModeDetectionInput): SchemaMode
     promptInjection,
     activated,
     sessionActivatedModes: [...sessionActivatedModes],
+    sessionActivatedSchemas: [...sessionActivatedSchemas],
   };
 }
 
@@ -355,4 +362,11 @@ export function runSchemaModeEngine(input: SchemaModeDetectionInput): SchemaMode
  */
 export function getSessionActivatedModes(): ModeId[] {
   return [...sessionActivatedModes];
+}
+
+/**
+ * Get current session activated schemas (for decay logic).
+ */
+export function getSessionActivatedSchemas(): SchemaId[] {
+  return [...sessionActivatedSchemas];
 }

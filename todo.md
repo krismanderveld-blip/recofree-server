@@ -727,3 +727,15 @@
 - [x] Stap 6: Wire as Step 5f in pipeline.ts after STOA, result in ChatContext as schemaModeContext
 - [x] Stap 7: Wire through gpt-payload-builder.ts + openai-provider.ts + server/ai-chat.ts
 - [x] 0 TS errors, 404 tests green (21 passed, 1 skipped)
+
+## Round 52 — RETP Routing + Tendency Decay
+
+- [x] Taak 1: Create lib/engine/elias/retp-router.ts (emotie→interventie routing)
+- [x] Taak 1: Safety gating (no RETP at crisisLevel >= 2)
+- [x] Taak 1: Wire RETP output as input to STOA selector in pipeline (Step 5e1)
+- [x] Taak 2: Add lastSeenAt to modeTendencies/schemaTendencies entries
+- [x] Taak 2: Implement 10% decay at session-end for unseen tendencies
+- [x] Taak 2: Prune entries with score < 0.1
+- [x] Taak 2: Cap at max 10 tendencies per category
+- [x] 0 TS errors, 409 tests green (22 passed, 1 skipped)
+- [x] Write SignalEngine integration test (5 assertions: engine active, fears detection, hopes detection, model selection, projection boost)

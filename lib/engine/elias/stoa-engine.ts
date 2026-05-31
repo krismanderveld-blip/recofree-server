@@ -51,6 +51,8 @@ export interface StoaEngineInput {
     goals: { keyword: string; confidence: number }[];
     triggers: { keyword: string; confidence: number }[];
   };
+  /** RETP-suggested STOA session IDs (boost score for these sessions) */
+  retpSuggestedSessionIds?: number[];
   /** Sessions already used in previous sessions (for cooldown) */
   stoaSessionsUsed: Array<{ sessionId: number; usedAtSession: number }>;
   /** Current session number */
@@ -439,7 +441,10 @@ export function selectStoaSession(input: StoaEngineInput): StoaEngineResult {
     const projectionScore = matchesProjections(session, input.activeProjections);
     const signalScore = matchesSignals(session, input.candidateSignals);
 
-    const totalScore = keywordScore + projectionScore + signalScore;
+    // RETP boost: sessions suggested by RETP emotion routing get +2
+    const retpBoost = (input.retpSuggestedSessionIds ?? []).includes(session.id) ? 2 : 0;
+
+    const totalScore = keywordScore + projectionScore + signalScore + retpBoost;
 
     if (totalScore >= 2) {
       candidates.push({ session, score: totalScore });

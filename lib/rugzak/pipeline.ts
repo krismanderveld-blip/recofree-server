@@ -135,12 +135,14 @@ import {
   getStoaSessionState,
   type StoaEngineResult,
 } from '../engine/elias/stoa-engine';
+import { routeRetp, type RetpRouterResult } from '../engine/elias/retp-router';
 import {
   runSchemaModeEngine,
   resetSchemaModeSessionState,
   getSessionActivatedModes,
+  getSessionActivatedSchemas,
 } from '../engine/shared/schema-mode-router';
-import type { SchemaModeEngineResult, ModeId } from '../engine/shared/schema-mode-types';
+import type { SchemaModeEngineResult, ModeId, SchemaId } from '../engine/shared/schema-mode-types';
 
 // ─── Pattern Marking (post-GPT local state) ─────────────────
 
@@ -500,7 +502,27 @@ export async function processMessage(
     console.log(`[Pipeline] Projection: active=${projectionResult.hasActiveEntries}, new=${projectionResult.newEntriesCount}, deepening=${!!projectionResult.deepeningDirective}`);
   }
 
-  // ── PRE-GPT STEP 5e: STOA Engine (Elias only, deterministic) ──
+  // ── PRE-GPT STEP 5e1: RETP Router (Elias only, emotion→intervention routing) ──
+  // NOTE: RETP runs before Schema/Mode, so activeMode uses previous session's dominant mode if available
+  let retpResult: RetpRouterResult = { activated: false, primaryEmotion: null, themes: [], suggestedStoaSessionIds: [], reason: 'not_elias' };
+  if (backpack.userType === 'elias') {
+    retpResult = routeRetp({
+      message: userMessage,
+      zoneColor: sessionBuffer.currentZoneColor.toUpperCase(),
+      crisisLevel: analysis.riskLevel === 'critical' || analysis.riskLevel === 'high' ? 2 : analysis.riskLevel === 'moderate' ? 1 : 0,
+      emotionalState: analysis.emotionalState,
+      activeMode: (currentUserDat.modeTendencies ?? []).length > 0
+        ? currentUserDat.modeTendencies![0].modeId
+        : null,
+      distressScore,
+      candidateSignals: undefined,
+    });
+    if (retpResult.activated) {
+      console.log(`[Pipeline] RETP: emotion=${retpResult.primaryEmotion} | stoaSuggestions=[${retpResult.suggestedStoaSessionIds.join(',')}]`);
+    }
+  }
+
+  // ── PRE-GPT STEP 5e2: STOA Engine (Elias only, deterministic) ──
   let stoaResult: StoaEngineResult = { activated: false, selectedSession: null, injectionBlock: null, reason: 'not_elias' };
   if (backpack.userType === 'elias') {
     const activeProjections: Array<{ category: string; content: string; strength: number }> = (() => {
@@ -522,6 +544,7 @@ export async function processMessage(
       distressScore,
       activeProjections,
       candidateSignals: undefined, // Will be filled after signal engine if available
+      retpSuggestedSessionIds: retpResult.suggestedStoaSessionIds,
       stoaSessionsUsed: currentUserDat.stoaSessionsUsed ?? [],
       currentSessionNumber: currentUserDat.totalSessions ?? 0,
     });
@@ -538,6 +561,7 @@ export async function processMessage(
     promptInjection: '',
     activated: false,
     sessionActivatedModes: [],
+    sessionActivatedSchemas: [],
   };
   {
     const smActiveProjections: Array<{ category: string; content: string; strength: number }> = (() => {
@@ -1026,7 +1050,8 @@ export async function processMessage(
       { step: '5b. Regulation', status: regulationResult.wasSkipped ? 'skipped' : 'passed', reason: `action=${regulationResult.action}, depth=${regulationResult.effectiveDepth}` },
       { step: '5c. SignalEngine', status: signalEngineReady ? 'passed' : 'skipped', reason: signalEngineReady ? `fears=${candidateSignals?.fears.length ?? 0} hopes=${candidateSignals?.hopes.length ?? 0} goals=${candidateSignals?.goals.length ?? 0} triggers=${candidateSignals?.triggers.length ?? 0}` : 'engine not ready' },
       { step: '5d. Projection', status: projectionResult.injectionBlock ? 'passed' : 'skipped', reason: projectionResult.injectionBlock ? 'block injected' : 'no signal' },
-      { step: '5e. STOA', status: stoaResult.activated ? 'passed' : 'skipped', reason: stoaResult.reason },
+      { step: '5e1. RETP', status: retpResult.activated ? 'passed' : 'skipped', reason: retpResult.reason },
+      { step: '5e2. STOA', status: stoaResult.activated ? 'passed' : 'skipped', reason: stoaResult.reason },
       { step: '5f. SchemaMode', status: schemaModeResult.activated ? 'passed' : 'skipped', reason: schemaModeResult.modeDecision.reason },
       { step: '6a. Zone decision', status: elisDecision ? 'passed' : 'skipped', reason: elisDecision ? `zone=${elisDecision.zone.computed.label}` : 'kim user' },
       { step: '6b. Engine directive', status: engineDirective ? 'passed' : 'skipped', reason: engineDirective ? `engine=${engineDirective.engine}` : 'none' },
@@ -1121,6 +1146,7 @@ export async function processMessage(
         engineDirective: engineDirective ? 'yes' : 'no',
         intervention: interventionContinuity ? 'yes' : 'no',
         projection: projectionResult.injectionBlock ? 'yes' : 'no',
+        retp: retpResult.activated ? `emotion=${retpResult.primaryEmotion}` : 'no',
         stoa: stoaResult.activated ? 'yes' : 'no',
         schemaMode: schemaModeResult.activated ? 'yes' : 'no',
       },
@@ -1598,23 +1624,72 @@ export async function endSession(
     console.log(`[Pipeline] STOA persistence: session ${stoaState.sessionId} recorded at session #${currentUserDat.totalSessions}`);
   }
 
-  // ── STEP 5a2: Schema/Mode tendency persistence (hybrid model — patterns only, never identity) ──
-  const activatedModes = getSessionActivatedModes();
-  if (activatedModes.length > 0) {
-    const existingTendencies = updatedUserDat.modeTendencies ?? [];
+  // ── STEP 5a2: Schema/Mode tendency persistence with decay (hybrid model — patterns only, never identity) ──
+  {
+    const activatedModes = getSessionActivatedModes();
     const now = new Date().toISOString();
-    const updatedTendencies = [...existingTendencies];
-    for (const modeId of activatedModes) {
-      const existing = updatedTendencies.find(t => t.modeId === modeId);
-      if (existing) {
-        existing.frequency += 1;
-        existing.lastSeen = now;
+    const DECAY_RATE = 0.10; // 10% decay per session for unseen tendencies
+    const PRUNE_THRESHOLD = 0.1; // Remove entries below this score
+    const MAX_TENDENCIES = 10; // Cap per category
+
+    // --- Mode tendencies: increment seen, decay unseen, prune, cap ---
+    let modeTendencies = [...(updatedUserDat.modeTendencies ?? [])];
+    for (const t of modeTendencies) {
+      if (activatedModes.includes(t.modeId as ModeId)) {
+        // Seen this session: increment frequency, update lastSeen
+        t.frequency += 1;
+        t.lastSeen = now;
       } else {
-        updatedTendencies.push({ modeId, frequency: 1, lastSeen: now, effectiveInterventions: [] });
+        // Not seen: decay by 10%
+        t.frequency = t.frequency * (1 - DECAY_RATE);
       }
     }
-    updatedUserDat = { ...updatedUserDat, modeTendencies: updatedTendencies };
-    console.log(`[Pipeline] SchemaMode persistence: ${activatedModes.length} mode tendencies updated`);
+    // Add new modes not yet in tendencies
+    for (const modeId of activatedModes) {
+      if (!modeTendencies.find(t => t.modeId === modeId)) {
+        modeTendencies.push({ modeId, frequency: 1, lastSeen: now, effectiveInterventions: [] });
+      }
+    }
+    // Prune below threshold
+    modeTendencies = modeTendencies.filter(t => t.frequency >= PRUNE_THRESHOLD);
+    // Cap at max 10 (keep highest frequency)
+    if (modeTendencies.length > MAX_TENDENCIES) {
+      modeTendencies.sort((a, b) => b.frequency - a.frequency);
+      modeTendencies = modeTendencies.slice(0, MAX_TENDENCIES);
+    }
+    updatedUserDat = { ...updatedUserDat, modeTendencies };
+
+    // --- Schema tendencies: decay unseen, prune, cap ---
+    const activatedSchemas = getSessionActivatedSchemas();
+    let schemaTendencies = [...(updatedUserDat.schemaTendencies ?? [])];
+    for (const t of schemaTendencies) {
+      if (activatedSchemas.includes(t.schemaId as SchemaId)) {
+        // Seen this session: increment frequency, update lastSeen
+        t.frequency += 1;
+        t.lastSeen = now;
+      } else {
+        // Not seen: decay by 10%
+        t.frequency = t.frequency * (1 - DECAY_RATE);
+      }
+    }
+    // Add new schemas not yet in tendencies
+    for (const schemaId of activatedSchemas) {
+      if (!schemaTendencies.find(t => t.schemaId === schemaId)) {
+        schemaTendencies.push({ schemaId, domain: 'unknown', frequency: 1, lastSeen: now, copingStyle: null });
+      }
+    }
+    // Prune below threshold
+    schemaTendencies = schemaTendencies.filter(t => t.frequency >= PRUNE_THRESHOLD);
+    // Cap at max 10
+    if (schemaTendencies.length > MAX_TENDENCIES) {
+      schemaTendencies.sort((a, b) => b.frequency - a.frequency);
+      schemaTendencies = schemaTendencies.slice(0, MAX_TENDENCIES);
+    }
+    updatedUserDat = { ...updatedUserDat, schemaTendencies };
+
+    const decayedModes = modeTendencies.length;
+    const decayedSchemas = schemaTendencies.length;
+    console.log(`[Pipeline] Tendency persistence: modes=${decayedModes} (activated=${activatedModes.length}), schemas=${decayedSchemas} (activated=${activatedSchemas.length})`);
   }
 
   // ── STEP 5b: Archive old chat history to prevent unbounded growth ──

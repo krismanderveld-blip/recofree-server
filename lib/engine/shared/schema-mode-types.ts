@@ -297,6 +297,8 @@ export type SchemaModeEngineResult = {
   activated: boolean;
   /** Modes activated this session (for within-session tracking) */
   sessionActivatedModes: ModeId[];
+  /** Schemas activated this session (for within-session tracking) */
+  sessionActivatedSchemas: SchemaId[];
 };
 
 // ═══════════════════════════════════════════════════════════════════════════════
