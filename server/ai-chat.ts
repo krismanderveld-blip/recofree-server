@@ -27,7 +27,7 @@ import { KIM_POSITIVE_SLIDERS } from "../lib/engine/kim/slider-interpretation";
 import { ELIAS_POSITIVE_SLIDERS } from "../lib/engine/elias/slider-interpretation";
 import { ELIAS_HIGH_COMPLEXITY_MODULES } from "../lib/engine/elias/module-catalog";
 import { KIM_HIGH_COMPLEXITY_MODULES } from "../lib/engine/kim/module-catalog";
-import { ELIAS_IDENTITY_PROMPT, ELIAS_SCHEMA_RECOGNITION, ELIAS_STOA_SESSIONS, eliasCrisisInstructions } from "../lib/engine/elias/prompt-block";
+import { ELIAS_IDENTITY_PROMPT, ELIAS_SCHEMA_RECOGNITION, eliasCrisisInstructions } from "../lib/engine/elias/prompt-block";
 import { ELIAS_STAGE_DESCRIPTIONS_SHORT, ELIAS_STAGE_DESCRIPTIONS_FULL } from "../lib/engine/elias/stage-of-change";
 
 // ─── Types ────────────────────────────────────────────────────────
@@ -156,6 +156,9 @@ interface ChatRequestInput {
   // Projection layer (future-facing fears/hopes/goals)
   projectionContext?: string | null;
   projectionDeepening?: string | null;
+
+  // STOA engine (Elias only, Stoic session injection block)
+  stoaContext?: string | null;
 
   // Signal engine: relevance scores for context gating (LIVE_MESSAGE only)
   relevanceScores?: {
@@ -367,6 +370,9 @@ export const chatInputSchema = z.object({
   // Projection layer (future-facing fears/hopes/goals)
   projectionContext: z.string().nullable().optional(),
   projectionDeepening: z.string().nullable().optional(),
+
+  // STOA engine (Elias only, Stoic session injection block)
+  stoaContext: z.string().nullable().optional(),
 
   // Signal engine: relevance scores for context gating (LIVE_MESSAGE only)
   relevanceScores: z.object({
@@ -870,6 +876,12 @@ VIOLATION OF THIS PROTOCOL IS UNACCEPTABLE.`;
     console.log(`[AI Chat] Projection context injected${input.projectionDeepening ? ' (with deepening)' : ''}`);
   }
 
+  let stoaBlock = '';
+  if (input.stoaContext) {
+    stoaBlock = `\n${input.stoaContext}`;
+    console.log(`[AI Chat] STOA context injected`);
+  }
+
   let sessionEndInstructions = "";
   if (input.message === "__SESSION_END__") {
     sessionEndInstructions = `\nThe user is ending this session. Generate a warm farewell that:
@@ -953,6 +965,7 @@ ${regulationInstruction}
 ${engineDirectiveBlock}
 ${interventionContinuityBlock}
 ${projectionBlock}
+${stoaBlock}
 
 These behavioral instructions are ABSOLUTE. They override your default conversational style.
 The sliders tell you exactly how the user feels — USE them in your response.
@@ -999,7 +1012,7 @@ RESPONSE RULES:
 
   const schemaRecognition = isElias ? ELIAS_SCHEMA_RECOGNITION : '';
 
-  const stoaSessions = isElias ? ELIAS_STOA_SESSIONS : '';
+  // STOA sessions now injected dynamically via stoaBlock (from pipeline stoa-engine.ts)
 
   const backpack = input.backpack;
   let identityMemory = "";
@@ -1125,8 +1138,6 @@ ${antiHallucination}
 
 ${schemaRecognition}
 
-${stoaSessions}
-
 The user's name is ${name}. Address them by name occasionally.
 ${identityMemory}
 ${diaryMemory}
@@ -1141,6 +1152,7 @@ ${regulationInstruction}
 ${engineDirectiveBlock}
 ${interventionContinuityBlock}
 ${projectionBlock}
+${stoaBlock}
 
 These behavioral instructions are ABSOLUTE. They override your default conversational style.
 The sliders tell you exactly how the user feels — USE them in your response.

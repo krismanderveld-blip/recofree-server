@@ -700,3 +700,19 @@
 - [x] Fix 2: GptSignalEngine.detectSignals() uses context in prompt (Kim/Elias routing, 3s timeout)
 - [x] Tests updated: 3 new VSP routing tests, ROOD assertion corrected
 - [x] 0 TS errors, 404 tests green, build succeeds
+
+## Round 50 — Fase 5: STOA Engine
+
+- [x] Taak 1: Create StoaSession and StoaEngineResult types in lib/engine/elias/stoa-engine.ts
+- [x] Taak 1: Define all 15 STOA sessions as typed data from V102 JSON
+- [x] Taak 2: Implement selectStoaSession() with trigger matching against zone, VSP, signals, projections
+- [x] Taak 2: Prevent same session from being selected twice in one session (within-session + cross-session cooldown)
+- [x] Taak 3: Wire selectStoaSession() into pipeline.ts as Step 5e after projection
+- [x] Taak 3: Add stoaContext to ChatContext type
+- [x] Taak 3: Inject STOA result as separate prompt block in GPT payload
+- [x] Taak 3: Wire through gpt-payload-builder.ts + openai-provider.ts + server/ai-chat.ts
+- [x] Taak 3: Replace legacy static ELIAS_STOA_SESSIONS with dynamic stoaBlock injection
+- [x] Taak 4: Add stoaSessionsUsed to user.dat type for cross-session tracking
+- [x] Taak 4: Update stoaSessionsUsed after STOA session is activated (endSession persistence)
+- [x] Taak 4: Update all 3 persistence paths in user-context.tsx (legacy, migrate, compat)
+- [x] 0 TS errors, 404 tests green (21 test files, 1 skipped)

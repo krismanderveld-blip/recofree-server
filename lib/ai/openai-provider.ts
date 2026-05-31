@@ -197,6 +197,7 @@ export class OpenAIProvider implements AIProvider {
         interventionContinuity: context.interventionContinuity,
         projectionContext: context.projectionContext,
         projectionDeepening: context.projectionDeepening,
+        stoaContext: context.stoaContext,
       });
 
       // ── STEP 3: Build server payload based on SESSION_INIT / LIVE_MESSAGE split ──
@@ -255,6 +256,9 @@ export class OpenAIProvider implements AIProvider {
           // Projection layer (future-facing fears/hopes/goals)
           projectionContext: gptPayload.projectionContext ?? null,
           projectionDeepening: gptPayload.projectionDeepening ?? null,
+
+          // STOA engine (Elias only, Stoic session injection)
+          stoaContext: gptPayload.stoaContext ?? null,
 
           // Full data (SESSION_INIT only)
           backpack: gptPayload.backpack,
@@ -323,6 +327,8 @@ export class OpenAIProvider implements AIProvider {
           // Projection layer (future-facing fears/hopes/goals)
           projectionContext: gptPayload.projectionContext ?? null,
           projectionDeepening: gptPayload.projectionDeepening ?? null,
+          // STOA engine (Elias only, Stoic session injection)
+          stoaContext: gptPayload.stoaContext ?? null,
 
           // Signal engine: relevance scores for context gating (threshold 0.3)
           relevanceScores: context.relevanceScores ?? null,

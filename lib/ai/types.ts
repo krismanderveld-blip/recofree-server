@@ -318,6 +318,8 @@ export interface UserDat {
   relationalAnchors?: Array<{ name: string; role: string; roleEN: string; emotionalWeight: number }>;
   /** Last detected relational pattern */
   lastRelationalPattern?: { pattern: string; schema: string; confidence: number } | null;
+  /** STOA sessions used in previous sessions (cross-session cooldown tracking) */
+  stoaSessionsUsed?: Array<{ sessionId: number; usedAtSession: number }>;
 }
 
 /** A record of a completed session's analysis */
@@ -459,6 +461,7 @@ export function createNewUserDat(
     stageOfChange,
     relationalAnchors: [],
     lastRelationalPattern: null,
+    stoaSessionsUsed: [],
   };
 }
 
@@ -565,6 +568,8 @@ export interface ChatContext {
   };
   /** Signal engine: compressed context summary for LIVE_MESSAGE (replaces full lifeStorySummary) */
   contextSummary?: string;
+  /** STOA engine: injection block for Stoic session (Elias only) */
+  stoaContext?: string;
 }
 
 /**

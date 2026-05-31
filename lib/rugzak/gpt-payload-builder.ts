@@ -98,6 +98,9 @@ export interface GPTPayload {
   projectionContext?: string;
   projectionDeepening?: string;
 
+  // ── STOA engine (Elias only, Stoic session injection) ──
+  stoaContext?: string;
+
   // ── Buffer snapshot (from pipeline, per message) ──
   bufferSnapshot?: {
     zoneScore: number;
@@ -191,6 +194,8 @@ export interface PayloadBuilderInput {
   projectionContext?: string;
   /** Projection deepening directive (instruction for GPT to explore projections) */
   projectionDeepening?: string;
+  /** STOA engine injection block (Elias only, Stoic session) */
+  stoaContext?: string;
 }
 
 // ─── Conversation History Optimisation (Patch N Step 5) ──────
@@ -426,6 +431,11 @@ export function buildGPTPayload(input: PayloadBuilderInput): GPTPayload {
   }
   if (input.projectionDeepening) {
     payload.projectionDeepening = input.projectionDeepening;
+  }
+
+  // ── STOA engine (Elias only, Stoic session injection) ──
+  if (input.stoaContext) {
+    payload.stoaContext = input.stoaContext;
   }
 
   // ── Buffer snapshot (from pipeline, per message) ──

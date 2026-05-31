@@ -325,6 +325,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
             lastSessionDate: raw.lastSessionDate ?? null,
             sessionAnalyses: [],
             stageOfChange: raw.stageOfChange ?? 'contemplation' as const,
+            stoaSessionsUsed: [],
           };
 
           // Persist both new stores
@@ -562,6 +563,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       lastSessionDate: updatedRugzak.lastSessionDate,
       sessionAnalyses: state.userDat?.sessionAnalyses ?? [],
       stageOfChange: state.userDat?.stageOfChange ?? 'contemplation' as const,
+      stoaSessionsUsed: state.userDat?.stoaSessionsUsed ?? [],
     };
     dispatch({ type: 'END_SESSION', payload: updatedUserDat });
     await persistUserDat(updatedUserDat);
@@ -720,5 +722,6 @@ function migrateUserDat(raw: any, userType: UserType): UserDat {
     eigenRegieHistory: raw.eigenRegieHistory ?? [],
     relationalAnchors: raw.relationalAnchors ?? [],
     lastRelationalPattern: raw.lastRelationalPattern ?? null,
+    stoaSessionsUsed: raw.stoaSessionsUsed ?? [],
   };
 }

@@ -129,6 +129,12 @@ import {
 import { sanitizeSliders } from '../engine/shared/slider-sanitize';
 import { buildTraceBlock, type EngineTraceInput, type PipelineStepStatus } from '../debug/engine-trace';
 import { getEngine } from '../engine/local-llm/engine-provider';
+import {
+  selectStoaSession,
+  resetStoaSessionState,
+  getStoaSessionState,
+  type StoaEngineResult,
+} from '../engine/elias/stoa-engine';
 
 // ─── Pattern Marking (post-GPT local state) ─────────────────
 
@@ -191,6 +197,7 @@ export function resetSessionState(): void {
   resetKimProjectionState();
   resetProjectionSessionTracking();
   resetDeepeningState();
+  resetStoaSessionState();
 }
 
 // ─── Pipeline Result ────────────────────────────────────────────
@@ -486,6 +493,37 @@ export async function processMessage(
     console.log(`[Pipeline] Projection: active=${projectionResult.hasActiveEntries}, new=${projectionResult.newEntriesCount}, deepening=${!!projectionResult.deepeningDirective}`);
   }
 
+  // ── PRE-GPT STEP 5e: STOA Engine (Elias only, deterministic) ──
+  let stoaResult: StoaEngineResult = { activated: false, selectedSession: null, injectionBlock: null, reason: 'not_elias' };
+  if (backpack.userType === 'elias') {
+    const activeProjections: Array<{ category: string; content: string; strength: number }> = (() => {
+      try {
+        const ps = getProjectionState();
+        return ps.entries.filter((e: ProjectionEntry) => e.isActive).map((e: ProjectionEntry) => ({
+          category: e.category as string,
+          content: e.content,
+          strength: e.strength as unknown as number,
+        }));
+      } catch { return []; }
+    })();
+
+    stoaResult = selectStoaSession({
+      message: userMessage,
+      zoneColor: sessionBuffer.currentZoneColor.toUpperCase(),
+      vspLevel,
+      dominantModule: preGPTDominantState.dominantModule,
+      distressScore,
+      activeProjections,
+      candidateSignals: undefined, // Will be filled after signal engine if available
+      stoaSessionsUsed: currentUserDat.stoaSessionsUsed ?? [],
+      currentSessionNumber: currentUserDat.totalSessions ?? 0,
+    });
+
+    if (stoaResult.activated) {
+      console.log(`[Pipeline] STOA: session=${stoaResult.selectedSession?.id} | reason=${stoaResult.reason}`);
+    }
+  }
+
   // ── PRE-GPT STEP 6: Build ChatContext + ONE GPT call ──
   let crisisLevel = 0;
   let showEmergency = false;
@@ -744,6 +782,7 @@ export async function processMessage(
     candidateSignals,
     relevanceScores,
     contextSummary,
+    stoaContext: stoaResult.injectionBlock ?? undefined,
   };
 
   let response: string;
@@ -941,6 +980,7 @@ export async function processMessage(
       { step: '5b. Regulation', status: regulationResult.wasSkipped ? 'skipped' : 'passed', reason: `action=${regulationResult.action}, depth=${regulationResult.effectiveDepth}` },
       { step: '5c. SignalEngine', status: signalEngineReady ? 'passed' : 'skipped', reason: signalEngineReady ? `fears=${candidateSignals?.fears.length ?? 0} hopes=${candidateSignals?.hopes.length ?? 0} goals=${candidateSignals?.goals.length ?? 0} triggers=${candidateSignals?.triggers.length ?? 0}` : 'engine not ready' },
       { step: '5d. Projection', status: projectionResult.injectionBlock ? 'passed' : 'skipped', reason: projectionResult.injectionBlock ? 'block injected' : 'no signal' },
+      { step: '5e. STOA', status: stoaResult.activated ? 'passed' : 'skipped', reason: stoaResult.reason },
       { step: '6a. Zone decision', status: elisDecision ? 'passed' : 'skipped', reason: elisDecision ? `zone=${elisDecision.zone.computed.label}` : 'kim user' },
       { step: '6b. Engine directive', status: engineDirective ? 'passed' : 'skipped', reason: engineDirective ? `engine=${engineDirective.engine}` : 'none' },
       { step: '6c. Intervention', status: interventionContinuity ? 'passed' : 'skipped', reason: interventionContinuity ? `type=${interventionContinuity.lastInterventionType}` : 'not active' },
@@ -1027,13 +1067,14 @@ export async function processMessage(
     payload: {
       isSessionStart,
       fieldsIncluded: isSessionStart
-        ? ['backpack', 'userDat', 'diaryEntries', 'moodSliders', 'bufferSnapshot', 'regulationResult', 'engineDirective', 'interventionContinuity', 'projectionContext']
-        : ['message', 'conversationHistory', 'moodSliders', 'bufferSnapshot', 'regulationResult', 'engineDirective', 'interventionContinuity', 'projectionContext'],
+        ? ['backpack', 'userDat', 'diaryEntries', 'moodSliders', 'bufferSnapshot', 'regulationResult', 'engineDirective', 'interventionContinuity', 'projectionContext', 'stoaContext']
+        : ['message', 'conversationHistory', 'moodSliders', 'bufferSnapshot', 'regulationResult', 'engineDirective', 'interventionContinuity', 'projectionContext', 'stoaContext'],
       promptBlocks: {
         regulation: regulationResult.action !== 'reflect' ? regulationResult.action : 'skipped',
         engineDirective: engineDirective ? 'yes' : 'no',
         intervention: interventionContinuity ? 'yes' : 'no',
         projection: projectionResult.injectionBlock ? 'yes' : 'no',
+        stoa: stoaResult.activated ? 'yes' : 'no',
       },
       estimatedTokens: estimateTokens(JSON.stringify(context)),
       usedModel: selectedModel ?? 'unknown',
@@ -1498,7 +1539,18 @@ export async function endSession(
     sessionAnalyses: [...(updatedUserDat.sessionAnalyses || []), analysisRecord],
   };
 
-  // ── STEP 5: Archive old chat history to prevent unbounded growth ──
+  // ── STEP 5a: Persist STOA session usage (cross-session cooldown) ──
+  const stoaState = getStoaSessionState();
+  if (stoaState.activated && stoaState.sessionId != null) {
+    const existingStoa = updatedUserDat.stoaSessionsUsed ?? [];
+    // Update or add the session usage record
+    const filtered = existingStoa.filter(s => s.sessionId !== stoaState.sessionId);
+    filtered.push({ sessionId: stoaState.sessionId, usedAtSession: currentUserDat.totalSessions });
+    updatedUserDat = { ...updatedUserDat, stoaSessionsUsed: filtered };
+    console.log(`[Pipeline] STOA persistence: session ${stoaState.sessionId} recorded at session #${currentUserDat.totalSessions}`);
+  }
+
+  // ── STEP 5b: Archive old chat history to prevent unbounded growth ──
   const archived = archiveSessionHistory(
     updatedUserDat.chatHistory || [],
     (updatedUserDat as any).archivedSessions || [],
