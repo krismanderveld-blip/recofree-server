@@ -100,6 +100,7 @@ import {
 } from './projection-layer';
 import { sanitizeSliders } from '../engine/shared/slider-sanitize';
 import { buildTraceBlock, type EngineTraceInput, type PipelineStepStatus } from '../debug/engine-trace';
+import { getEngine } from '../engine/local-llm/engine-provider';
 
 // ─── Pattern Marking (post-GPT local state) ─────────────────
 
@@ -610,6 +611,33 @@ export async function processMessage(
     );
   }
 
+  // ── PRE-GPT STEP 5c: SignalEngine (non-blocking) ──
+  // Calls GptSignalEngine for signal detection + relevance scoring.
+  // Fault-tolerant: if engine not ready or call fails, empty/neutral results.
+  const engine = getEngine();
+  let candidateSignals: ChatContext['candidateSignals'] = undefined;
+  let relevanceScores: ChatContext['relevanceScores'] = undefined;
+  let signalEngineReady = false;
+
+  try {
+    if (engine.isReady()) {
+      signalEngineReady = true;
+      const [signals, scores] = await Promise.all([
+        engine.detectSignals(userMessage),
+        engine.scoreRelevance(userMessage, {
+          backpackSummary: backpack.sections?.map(s => s.content).filter(Boolean).join('; ').slice(0, 200) ?? '',
+          diarySummary: (options?.diaryEntries ?? []).slice(0, 3).map(d => d.content || '').join('; '),
+          triggerList: relevance.triggers.map(t => t.trigger),
+        }),
+      ]);
+      candidateSignals = signals;
+      relevanceScores = scores;
+    }
+  } catch (e) {
+    // Non-blocking: engine failure does not stop the pipeline
+    console.log(`[Pipeline] SignalEngine error (non-blocking): ${(e as Error).message}`);
+  }
+
   const sessionStart = currentUserDat.lastSessionDate ? new Date(currentUserDat.lastSessionDate) : new Date();
   const sessionMinutes = Math.floor((Date.now() - sessionStart.getTime()) / 60000);
 
@@ -649,6 +677,8 @@ export async function processMessage(
       : undefined,
     projectionContext: projectionResult.injectionBlock ?? undefined,
     projectionDeepening: projectionResult.deepeningDirective ?? undefined,
+    candidateSignals,
+    relevanceScores,
   };
 
   let response: string;
@@ -844,7 +874,7 @@ export async function processMessage(
       { step: '4. Dominant state', status: 'passed', reason: `module=${preGPTDominantState.dominantModule}, source=${preGPTDominantState.sourceLayer}` },
       { step: '5a. Buffer snapshot', status: 'passed', reason: `triggers=${relevance.triggers.length}` },
       { step: '5b. Regulation', status: regulationResult.wasSkipped ? 'skipped' : 'passed', reason: `action=${regulationResult.action}, depth=${regulationResult.effectiveDepth}` },
-      { step: '5c. Relevance', status: 'passed', reason: `triggers=[${relevance.triggers.map(t => t.trigger).join(',')}]` },
+      { step: '5c. SignalEngine', status: signalEngineReady ? 'passed' : 'skipped', reason: signalEngineReady ? `fears=${candidateSignals?.fears.length ?? 0} hopes=${candidateSignals?.hopes.length ?? 0} goals=${candidateSignals?.goals.length ?? 0} triggers=${candidateSignals?.triggers.length ?? 0}` : 'engine not ready' },
       { step: '5d. Projection', status: projectionResult.injectionBlock ? 'passed' : 'skipped', reason: projectionResult.injectionBlock ? 'block injected' : 'no signal' },
       { step: '6a. Zone decision', status: elisDecision ? 'passed' : 'skipped', reason: elisDecision ? `zone=${elisDecision.zone.computed.label}` : 'kim user' },
       { step: '6b. Engine directive', status: engineDirective ? 'passed' : 'skipped', reason: engineDirective ? `engine=${engineDirective.engine}` : 'none' },

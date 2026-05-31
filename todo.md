@@ -672,3 +672,11 @@
 - [x] No llama.rn, no expo-dev-client, no model-download code
 - [x] pnpm.onlyBuiltDependencies whitelist for esbuild + unrs-resolver
 - [x] 0 TS errors, 401 tests green, pnpm run build succeeds
+
+## Round 38 — Pipeline wiring + build fix
+- [x] Added candidateSignals + relevanceScores fields to ChatContext interface
+- [x] Wired getEngine().detectSignals() + scoreRelevance() in pipeline Step 5c (non-blocking, fault-tolerant)
+- [x] Updated debug trace Step 5c: "SignalEngine [passed/skipped] fears=N hopes=N goals=N triggers=N"
+- [x] Added pnpm-workspace.yaml with dangerouslyAllowAllBuilds: true (definitive build fix)
+- [x] Created docs/fase4-local-llm-archive.md
+- [x] 0 TS errors, 401 tests green, pnpm run build succeeds

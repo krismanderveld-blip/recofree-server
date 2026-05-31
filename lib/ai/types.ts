@@ -547,6 +547,20 @@ export interface ChatContext {
   projectionContext?: string;
   /** Projection deepening directive — instruction for GPT to explore future projections when safe */
   projectionDeepening?: string;
+  /** Signal engine: detected signals from current message (fears, hopes, goals, triggers) */
+  candidateSignals?: {
+    fears: { keyword: string; confidence: number }[];
+    hopes: { keyword: string; confidence: number }[];
+    goals: { keyword: string; confidence: number }[];
+    triggers: { keyword: string; confidence: number }[];
+  };
+  /** Signal engine: relevance scores for context blocks */
+  relevanceScores?: {
+    backpackRelevance: number;
+    diaryRelevance: number;
+    triggerRelevance: number;
+    projectionRelevance: number;
+  };
 }
 
 /**
