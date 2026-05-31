@@ -28,10 +28,19 @@ const SIGNAL_DETECTION_PROMPT = (message: string, context?: SignalContext) => {
   const contextBlock = context
     ? `\nCurrent emotional state:\n- Zone: ${context.zone}\n- VSP/Eigen Regie: ${context.vspOrEigenRegie}\n- Key sliders: ${Object.entries(context.keySliders).map(([k, v]) => `${k}=${v}`).join(', ')}\n`
     : '';
-  return `Analyze this message and return JSON only.${contextBlock}
+  return `You are analyzing a message from someone in addiction recovery.
+
+Detect emotional signals relevant to recovery:
+- fears: fear of relapse, loss of control, shame, isolation
+- hopes: motivation to stay clean, desire for change, positive goals
+- goals: concrete intentions, recovery milestones, behavioral changes
+- triggers: situations/emotions that risk relapse (stress, loneliness, conflict)
+${contextBlock}
 User message: "${message}"
-Return: {"fears": [{"keyword": "...", "confidence": 0.0-1.0}], "hopes": [{"keyword": "...", "confidence": 0.0-1.0}], "goals": [{"keyword": "...", "confidence": 0.0-1.0}], "triggers": [{"keyword": "...", "confidence": 0.0-1.0}]}
-Max 3 items per category. Only what is clearly present. If nothing detected, use empty arrays.`;
+
+Return JSON only:
+{"fears": [{"keyword": "...", "confidence": 0.0-1.0}], "hopes": [...], "goals": [...], "triggers": [...]}
+Max 3 items per category. Empty array if nothing detected.`;
 };
 
 const RELEVANCE_SCORING_PROMPT = (message: string, context: RelevanceContext) =>

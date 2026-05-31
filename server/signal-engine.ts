@@ -46,7 +46,7 @@ export function registerSignalEngineRoute(app: Express): void {
               content: prompt,
             },
           ],
-          max_tokens: 150,
+          max_tokens: 400,
           temperature: 0,
         }),
       });

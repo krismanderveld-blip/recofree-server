@@ -775,3 +775,9 @@
 - [x] Taak 2: Wire candidateSignals through pipeline.ts → analyzeState → selectPriorityModules
 - [x] Taak 2: In selectPriorityModules, add signals confidence > 0.5 as extra modules (additive only)
 - [x] 0 TS errors, all 420 tests green
+
+## Round 46b — Improved SignalEngine prompt + max_tokens increase
+
+- [x] Rewrote SIGNAL_DETECTION_PROMPT with recovery-focused context (fears/hopes/goals/triggers explained)
+- [x] Increased max_tokens from 150 to 400 in server/signal-engine.ts
+- [x] 0 TS errors, 420 tests green
