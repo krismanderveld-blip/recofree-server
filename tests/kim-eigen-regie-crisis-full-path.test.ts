@@ -49,6 +49,7 @@ function makeKimInput(eigenRegieInput: number | null): KimDecisionInput {
     currentZoneColor: 'GREEN',
     currentZoneScore: 20,
     eigenRegieInput,
+    hasBackpackContent: false,
   };
 }
 

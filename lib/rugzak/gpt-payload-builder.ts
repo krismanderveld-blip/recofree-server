@@ -89,6 +89,8 @@ export interface GPTPayload {
     zoneLevel: string;
     zoneLabel: string;
     impact: Record<string, string>;
+    recommendedModel: 'gpt-4o' | 'gpt-4o-mini';
+    recommendedModelReason: string;
   };
 
   // ── Intervention continuity (Elias only, zone-linked therapeutic memory) ──
@@ -440,6 +442,8 @@ export function buildGPTPayload(input: PayloadBuilderInput): GPTPayload {
       zoneLevel: input.engineDirective.zoneLevel,
       zoneLabel: input.engineDirective.zoneLabel,
       impact: { ...input.engineDirective.impact } as Record<string, string>,
+      recommendedModel: input.engineDirective.recommendedModel,
+      recommendedModelReason: input.engineDirective.recommendedModelReason,
     };
   }
 

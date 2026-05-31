@@ -503,6 +503,7 @@ export async function processMessage(
       currentZoneColor: sessionBuffer.currentZoneColor as ZoneColor,
       currentZoneScore: sessionBuffer.currentZoneScore,
       vspInput: ('vsp' in currentUserDat.currentMood) ? (currentUserDat.currentMood as import('../ai/types').EliasMoodSliders).vsp : null,
+      hasBackpackContent: (backpack.sections || []).some(s => s.content.trim().length > 0),
     });
   } else {
     kimDecision = createKimDecision({
@@ -513,6 +514,7 @@ export async function processMessage(
       currentZoneColor: sessionBuffer.currentZoneColor as ZoneColor,
       currentZoneScore: sessionBuffer.currentZoneScore,
       eigenRegieInput: ('eigenRegie' in currentUserDat.currentMood) ? (currentUserDat.currentMood as import('../ai/types').KimMoodSliders).eigenRegie : null,
+      hasBackpackContent: (backpack.sections || []).some(s => s.content.trim().length > 0),
     });
   }
 
@@ -593,10 +595,22 @@ export async function processMessage(
   const engineDirective: EngineDirective | null = routeEngineDirective({
     userType: backpack.userType,
     eliasZone: (elisDecision?.zone.impact)
-      ? { level: elisDecision.zone.computed.level, label: elisDecision.zone.computed.label, impact: elisDecision.zone.impact }
+      ? {
+          level: elisDecision.zone.computed.level,
+          label: elisDecision.zone.computed.label,
+          impact: elisDecision.zone.impact,
+          recommendedModel: elisDecision.recommendedModel,
+          recommendedModelReason: elisDecision.recommendedModelReason,
+        }
       : null,
     kimZone: kimDecision?.zone.engine
-      ? { level: kimDecision.zone.engine.level, label: kimDecision.zone.engine.label, impact: kimDecision.zone.engine.impact }
+      ? {
+          level: kimDecision.zone.engine.level,
+          label: kimDecision.zone.engine.label,
+          impact: kimDecision.zone.engine.impact,
+          recommendedModel: kimDecision.recommendedModel,
+          recommendedModelReason: kimDecision.recommendedModelReason,
+        }
       : null,
   });
 
@@ -924,6 +938,12 @@ export async function processMessage(
       selectedModel: selectedModel ?? 'unknown',
       riskScore: preGPTDominantState.riskScore,
       crisisLevel,
+      sessionInitModel: isSessionStart
+        ? (engineDirective?.recommendedModel ?? 'gpt-4o')
+        : undefined,
+      sessionInitReason: isSessionStart
+        ? (engineDirective?.recommendedModelReason ?? 'no engine recommendation, fallback')
+        : undefined,
     },
     interventionContinuity: interventionContinuity ? {
       interventionType: interventionContinuity.lastInterventionType,

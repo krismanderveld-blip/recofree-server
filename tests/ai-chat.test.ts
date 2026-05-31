@@ -252,6 +252,143 @@ describe('AI Chat Input Schema (Dual-Store)', () => {
   });
 });
 
+// ─── SignalEngine Schema Validation Tests ─────────────────────────
+
+describe('SignalEngine Schema Validation', () => {
+  it('should accept empty candidateSignals (all arrays empty)', () => {
+    const input = {
+      ...validInput,
+      candidateSignals: {
+        fears: [],
+        hopes: [],
+        goals: [],
+        triggers: [],
+      },
+      relevanceScores: {
+        backpackRelevance: 0,
+        diaryRelevance: 0,
+        triggerRelevance: 0,
+        projectionRelevance: 0,
+      },
+    };
+    const result = chatInputSchema.safeParse(input);
+    expect(result.success).toBe(true);
+  });
+
+  it('should accept candidateSignals with confidence > 0.3', () => {
+    const input = {
+      ...validInput,
+      candidateSignals: {
+        fears: [
+          { keyword: 'relapse', confidence: 0.8 },
+          { keyword: 'isolation', confidence: 0.5 },
+        ],
+        hopes: [
+          { keyword: 'recovery', confidence: 0.7 },
+        ],
+        goals: [
+          { keyword: 'sobriety', confidence: 0.9 },
+        ],
+        triggers: [
+          { keyword: 'stress', confidence: 0.6 },
+        ],
+      },
+      relevanceScores: {
+        backpackRelevance: 0.7,
+        diaryRelevance: 0.4,
+        triggerRelevance: 0.8,
+        projectionRelevance: 0.3,
+      },
+    };
+    const result = chatInputSchema.safeParse(input);
+    expect(result.success).toBe(true);
+    if (result.success) {
+      // All signals have confidence > 0.3, so they should all pass through
+      expect(result.data.candidateSignals!.fears).toHaveLength(2);
+      expect(result.data.candidateSignals!.hopes).toHaveLength(1);
+      expect(result.data.candidateSignals!.goals).toHaveLength(1);
+      expect(result.data.candidateSignals!.triggers).toHaveLength(1);
+    }
+  });
+
+  it('should accept candidateSignals with confidence < 0.3 (filtering is client-side)', () => {
+    // Note: The Zod schema accepts all valid signal objects.
+    // The confidence > 0.3 filtering happens in gpt-payload-builder.ts (client-side),
+    // NOT in the server schema. The server accepts whatever the client sends.
+    const input = {
+      ...validInput,
+      candidateSignals: {
+        fears: [
+          { keyword: 'minor-worry', confidence: 0.1 },
+          { keyword: 'vague-concern', confidence: 0.2 },
+        ],
+        hopes: [
+          { keyword: 'faint-hope', confidence: 0.15 },
+        ],
+        goals: [],
+        triggers: [
+          { keyword: 'weak-trigger', confidence: 0.05 },
+        ],
+      },
+      relevanceScores: {
+        backpackRelevance: 0.1,
+        diaryRelevance: 0.05,
+        triggerRelevance: 0.2,
+        projectionRelevance: 0.0,
+      },
+    };
+    const result = chatInputSchema.safeParse(input);
+    expect(result.success).toBe(true);
+    if (result.success) {
+      // Schema accepts all — filtering is done client-side before sending
+      expect(result.data.candidateSignals!.fears).toHaveLength(2);
+      expect(result.data.candidateSignals!.triggers).toHaveLength(1);
+    }
+  });
+
+  it('should accept null candidateSignals and null relevanceScores', () => {
+    const input = {
+      ...validInput,
+      candidateSignals: null,
+      relevanceScores: null,
+    };
+    const result = chatInputSchema.safeParse(input);
+    expect(result.success).toBe(true);
+  });
+
+  it('should accept input without candidateSignals (field omitted)', () => {
+    // candidateSignals is optional — omitting it should be valid
+    const result = chatInputSchema.safeParse(validInput);
+    expect(result.success).toBe(true);
+  });
+
+  it('should reject candidateSignals with invalid structure', () => {
+    const input = {
+      ...validInput,
+      candidateSignals: {
+        fears: [{ keyword: 'relapse' }], // missing confidence
+        hopes: [],
+        goals: [],
+        triggers: [],
+      },
+    };
+    const result = chatInputSchema.safeParse(input);
+    expect(result.success).toBe(false);
+  });
+
+  it('should reject relevanceScores with missing fields', () => {
+    const input = {
+      ...validInput,
+      relevanceScores: {
+        backpackRelevance: 0.5,
+        // missing diaryRelevance, triggerRelevance, projectionRelevance
+      },
+    };
+    const result = chatInputSchema.safeParse(input);
+    expect(result.success).toBe(false);
+  });
+});
+
 // ─── OpenAI Integration Test ──────────────────────────────────────
 
 describe('AI Chat OpenAI Integration (Dual-Store)', () => {

@@ -62,6 +62,8 @@ export interface EngineTraceInput {
     selectedModel: string;
     riskScore: number;
     crisisLevel: number;
+    sessionInitModel?: string;
+    sessionInitReason?: string;
   };
 
   // Intervention continuity (Elias only)
@@ -205,6 +207,9 @@ export function buildTraceBlock(input: EngineTraceInput): string {
   lines.push(`  selectedModel: ${mr.selectedModel}`);
   lines.push(`  riskScore: ${mr.riskScore}`);
   lines.push(`  crisisLevel: ${mr.crisisLevel}`);
+  if (mr.sessionInitModel) {
+    lines.push(`  sessionInit: ${mr.sessionInitModel} (${mr.sessionInitReason ?? 'unknown'})`);
+  }
   lines.push('');
 
   // Intervention continuity

@@ -701,3 +701,13 @@
 - [x] Taak 2b: server/ai-chat.ts — single-user comment above sessionCache (already present)
 - [x] Taak 2c: server/ai-chat.ts — translated header comments + removed Dutch 'hoog' fallback in routing
 - [x] 0 TS errors, 401 tests green
+
+## Round 41 — SignalEngine tests + Model routing via engine
+
+- [x] Taak 1: Add SignalEngine schema tests to ai-chat.test.ts (7 tests: empty, confidence > 0.3, confidence < 0.3 filter)
+- [x] Taak 2: Add recommendedModel to Elias decision-layer.ts (isCrisis || riskScore>=7 || vspLevel>=ORANJE || hasBackpackContent → gpt-4o)
+- [x] Taak 2: Add recommendedModel to Kim decision-layer.ts (isKimCrisis || riskScore>=7 || eigenRegie<=30 || hasBackpackContent → gpt-4o)
+- [x] Taak 2: Wire recommendedModel through EngineDirective (orchestration.ts + pipeline.ts)
+- [x] Taak 2: Replace hardcoded SESSION_INIT gpt-4o with engineDirective.recommendedModel in server/ai-chat.ts
+- [x] Taak 2: Add sessionInit line to debug trace MODEL ROUTING (engine-trace.ts + pipeline.ts)
+- [x] 0 TS errors, 408 tests green (7 new)

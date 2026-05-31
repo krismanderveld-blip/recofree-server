@@ -147,6 +147,8 @@ interface ChatRequestInput {
     zoneLevel: string;
     zoneLabel: string;
     impact: Record<string, string>;
+    recommendedModel?: 'gpt-4o' | 'gpt-4o-mini';
+    recommendedModelReason?: string;
   } | null;
 
   // Intervention continuity (Elias only, zone-linked therapeutic memory)
@@ -362,6 +364,8 @@ export const chatInputSchema = z.object({
     zoneLevel: z.string(),
     zoneLabel: z.string(),
     impact: z.record(z.string(), z.string()),
+    recommendedModel: z.enum(['gpt-4o', 'gpt-4o-mini']).optional(),
+    recommendedModelReason: z.string().optional(),
   }).nullable().optional(),
 
   // Intervention continuity (Elias only, zone-linked therapeutic memory)
@@ -1249,8 +1253,15 @@ export async function generateAIResponse(
   let routingReason = 'default (low complexity)';
 
   if (input.isSessionStart) {
-    selectedModel = 'gpt-4o';
-    routingReason = 'SESSION_INIT (first impression)';
+    // Use engine-recommended model for SESSION_INIT (engine decides based on crisis/risk/backpack)
+    const engineRecommendation = input.engineDirective?.recommendedModel;
+    if (engineRecommendation) {
+      selectedModel = engineRecommendation;
+      routingReason = `SESSION_INIT via engine (${input.engineDirective?.recommendedModelReason ?? 'engine decision'})`;
+    } else {
+      selectedModel = 'gpt-4o';
+      routingReason = 'SESSION_INIT (no engine recommendation, fallback to gpt-4o)';
+    }
   } else if (crisisLevel > 0 || riskScore >= 7 || input.isCrisis === true) {
     selectedModel = 'gpt-4o';
     routingReason = `crisis/risk (crisis=${crisisLevel}, risk=${riskScore}, isCrisis=${input.isCrisis ?? false})`;

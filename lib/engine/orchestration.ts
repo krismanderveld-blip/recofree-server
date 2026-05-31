@@ -25,6 +25,8 @@ export interface EliasDirective {
   readonly zoneLevel: ZoneLevel;
   readonly zoneLabel: string;
   readonly impact: EliasImpact;
+  readonly recommendedModel: 'gpt-4o' | 'gpt-4o-mini';
+  readonly recommendedModelReason: string;
 }
 
 export interface KimDirective {
@@ -32,6 +34,8 @@ export interface KimDirective {
   readonly zoneLevel: ZoneLevel;
   readonly zoneLabel: string;
   readonly impact: KimImpact;
+  readonly recommendedModel: 'gpt-4o' | 'gpt-4o-mini';
+  readonly recommendedModelReason: string;
 }
 
 export type EngineDirective = EliasDirective | KimDirective;
@@ -44,11 +48,15 @@ export interface RoutingInput {
     readonly level: ZoneLevel;
     readonly label: string;
     readonly impact: EliasImpact;
+    readonly recommendedModel: 'gpt-4o' | 'gpt-4o-mini';
+    readonly recommendedModelReason: string;
   } | null;
   readonly kimZone: {
     readonly level: ZoneLevel;
     readonly label: string;
     readonly impact: KimImpact;
+    readonly recommendedModel: 'gpt-4o' | 'gpt-4o-mini';
+    readonly recommendedModelReason: string;
   } | null;
 }
 
@@ -72,6 +80,8 @@ export function routeEngineDirective(input: RoutingInput): EngineDirective | nul
       zoneLevel: input.eliasZone.level,
       zoneLabel: input.eliasZone.label,
       impact: input.eliasZone.impact,
+      recommendedModel: input.eliasZone.recommendedModel,
+      recommendedModelReason: input.eliasZone.recommendedModelReason,
     });
   }
 
@@ -84,6 +94,8 @@ export function routeEngineDirective(input: RoutingInput): EngineDirective | nul
       zoneLevel: input.kimZone.level,
       zoneLabel: input.kimZone.label,
       impact: input.kimZone.impact,
+      recommendedModel: input.kimZone.recommendedModel,
+      recommendedModelReason: input.kimZone.recommendedModelReason,
     });
   }
 
