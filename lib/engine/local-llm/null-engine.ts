@@ -1,0 +1,38 @@
+/**
+ * NullSignalEngine — Fallback implementation
+ *
+ * Returns empty/neutral values for all operations.
+ * Used when the real engine is unavailable or during testing.
+ */
+
+import type {
+  LocalSignalEngine,
+  SignalDetectionResult,
+  RelevanceScores,
+  RelevanceContext,
+  ContextSummary,
+  SummarizationContext,
+} from './signal-engine';
+
+export class NullSignalEngine implements LocalSignalEngine {
+  isReady(): boolean {
+    return true;
+  }
+
+  async detectSignals(_message: string): Promise<SignalDetectionResult> {
+    return { fears: [], hopes: [], goals: [], triggers: [] };
+  }
+
+  async scoreRelevance(_message: string, _context: RelevanceContext): Promise<RelevanceScores> {
+    return {
+      backpackRelevance: 0.5,
+      diaryRelevance: 0.5,
+      triggerRelevance: 0.5,
+      projectionRelevance: 0.5,
+    };
+  }
+
+  async summarizeContext(_context: SummarizationContext): Promise<ContextSummary> {
+    return { text: '' };
+  }
+}

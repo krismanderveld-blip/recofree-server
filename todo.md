@@ -661,3 +661,14 @@
 - [x] Taak 1: Bevestigings-alert voor bellen (NL: "Wil je 1813 bellen?" / EN: "Do you want to call 1813?") met Bevestig/Annuleer
 - [x] Taak 2: SMS 1813 knop onder bel-knop (outlined style, paperplane icon, NL: "SMS 1813" / EN: "Text 1813")
 - [x] 0 TS errors, 401 tests green
+
+## Round 37 — GPT-4o-mini SignalEngine (server-side)
+- [x] Created lib/engine/local-llm/signal-engine.ts (LocalSignalEngine interface)
+- [x] Created lib/engine/local-llm/null-engine.ts (NullSignalEngine fallback)
+- [x] Created lib/engine/local-llm/gpt-signal-engine.ts (GPT-4o-mini implementation)
+- [x] Created lib/engine/local-llm/engine-provider.ts (singleton, initGptSignalEngine)
+- [x] Created server/signal-engine.ts (POST /api/signal-engine endpoint)
+- [x] Registered signal-engine route in server/_core/index.ts
+- [x] No llama.rn, no expo-dev-client, no model-download code
+- [x] pnpm.onlyBuiltDependencies whitelist for esbuild + unrs-resolver
+- [x] 0 TS errors, 401 tests green, pnpm run build succeeds
