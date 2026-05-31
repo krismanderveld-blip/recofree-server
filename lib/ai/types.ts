@@ -561,6 +561,8 @@ export interface ChatContext {
     triggerRelevance: number;
     projectionRelevance: number;
   };
+  /** Signal engine: post-hoc module enrichment (confidence > 0.5 signals mapped to modules) */
+  signalEnrichedModules?: string[];
 }
 
 /**

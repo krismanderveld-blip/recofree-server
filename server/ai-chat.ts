@@ -171,6 +171,8 @@ interface ChatRequestInput {
     triggerRelevance: number;
     projectionRelevance: number;
   } | null;
+  // SignalEngine module enrichment (post-hoc, non-blocking)
+  signalEnrichedModules?: string[] | null;
 }
 
 // ─── Server-side Session Cache ───────────────────────────────────
@@ -387,6 +389,7 @@ export const chatInputSchema = z.object({
     triggerRelevance: z.number(),
     projectionRelevance: z.number(),
   }).nullable().optional(),
+  signalEnrichedModules: z.array(z.string()).nullable().optional(),
 });
 
 // ─── Relationship Map Extractor ──────────────────────────────────
@@ -789,8 +792,9 @@ VIOLATION OF THIS PROTOCOL IS UNACCEPTABLE.`;
   }
 
   const dominantModule = input.dominantModule || (input.activeModules.length > 0 ? input.activeModules[0] : '');
+  const enrichedModules = (input.signalEnrichedModules ?? []).filter(m => m !== dominantModule);
   const moduleInstructions = dominantModule
-    ? `Dominant therapeutic module: ${dominantModule}. Focus your response on this approach.`
+    ? `Dominant therapeutic module: ${dominantModule}. Focus your response on this approach.${enrichedModules.length > 0 ? `\nSupplementary modules (signal-enriched): ${enrichedModules.join(', ')}. Draw from these as secondary context when relevant.` : ''}`
     : "";
 
   const stance = input.therapeuticStance

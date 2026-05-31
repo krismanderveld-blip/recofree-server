@@ -729,3 +729,21 @@
 - [x] Elias: isCrisis=false, riskScore=0, vspLevel=GROEN, hasBackpackContent=true → gpt-4o
 - [x] Kim: isKimCrisis=false, riskScore=0, eigenRegie=50, hasBackpackContent=true → gpt-4o
 - [x] 0 TS errors, 418 tests green (2 new)
+
+## Round 43 — SignalEngine post-hoc module enrichment
+
+- [x] Report variable availability to user (candidateSignals at Step 5c, after analyzeState at Step 4)
+- [x] Chose Optie 2: post-hoc enrichment (non-blocking, dominantModule unchanged)
+- [x] Add signalEnrichedModules to ChatContext type (lib/ai/types.ts)
+- [x] Compute signalEnrichedModules in pipeline.ts after Step 5c:
+  - fears confidence > 0.5 → E02, E03 (Elias) / K03 (Kim)
+  - hopes confidence > 0.5 → E06 (Elias) / K06 (Kim)
+  - goals confidence > 0.5 → E06, E08 (Elias) / K06 (Kim)
+  - triggers confidence > 0.5 → existing trigger→module mapping
+- [x] Add signalEnrichedModules to GPTPayload + PayloadBuilderInput (gpt-payload-builder.ts)
+- [x] Wire through openai-provider.ts (SESSION_INIT + LIVE_MESSAGE)
+- [x] Add to server/ai-chat.ts ChatRequestInput + Zod schema
+- [x] Inject as supplementary modules in moduleInstructions prompt block
+- [x] Add to engine-trace.ts moduleSelection type + formatter (signalEnrichment: +E06, +E03)
+- [x] Add debug trace step 5c-enrichment to pipeline steps
+- [x] 0 TS errors, 418 tests green

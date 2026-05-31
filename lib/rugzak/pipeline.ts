@@ -70,9 +70,9 @@ import { createKimDecision, type KimDecision } from '../engine/kim/decision-laye
 import { routeEngineDirective, type EngineDirective } from '../engine/orchestration';
 import type { CrisisAssessment } from '../crisis/detector';
 import { kimDistressScore, kimResilienceScore } from '../engine/kim/slider-interpretation';
-import { KIM_DEFAULT_MODULE } from '../engine/kim/module-catalog';
+import { KIM_DEFAULT_MODULE, kimTriggerToModule } from '../engine/kim/module-catalog';
 import { eliasDistressScore, eliasResilienceScore, ELIAS_DEFAULT_MOOD } from '../engine/elias/slider-interpretation';
-import { ELIAS_DEFAULT_MODULE } from '../engine/elias/module-catalog';
+import { ELIAS_DEFAULT_MODULE, eliasTriggerToModule } from '../engine/elias/module-catalog';
 import { ELIAS_DEFAULT_STAGE } from '../engine/elias/stage-of-change';
 import {
   evaluateInterventionContinuity,
@@ -652,6 +652,45 @@ export async function processMessage(
     console.log(`[Pipeline] SignalEngine error (non-blocking): ${(e as Error).message}`);
   }
 
+  // ── Step 5c-enrichment: Post-hoc module enrichment from candidateSignals ──
+  // Maps signals with confidence > 0.5 to supplementary modules.
+  // dominantModule is NOT changed — only additive enrichment.
+  let signalEnrichedModules: string[] = [];
+  if (candidateSignals) {
+    const enriched = new Set<string>();
+    const isElias = backpack.userType === 'elias';
+
+    // fears confidence > 0.5 → E02, E03 (Elias) or K03 (Kim)
+    if (candidateSignals.fears.some(s => s.confidence > 0.5)) {
+      if (isElias) { enriched.add('E02'); enriched.add('E03'); }
+      else { enriched.add('K03'); }
+    }
+    // hopes confidence > 0.5 → E06 (Elias) or K06 (Kim)
+    if (candidateSignals.hopes.some(s => s.confidence > 0.5)) {
+      if (isElias) { enriched.add('E06'); }
+      else { enriched.add('K06'); }
+    }
+    // goals confidence > 0.5 → E06, E08 (Elias) or K06 (Kim)
+    if (candidateSignals.goals.some(s => s.confidence > 0.5)) {
+      if (isElias) { enriched.add('E06'); enriched.add('E08'); }
+      else { enriched.add('K06'); }
+    }
+    // triggers confidence > 0.5 → use existing trigger→module mapping
+    for (const t of candidateSignals.triggers) {
+      if (t.confidence > 0.5) {
+        const mapped = isElias
+          ? eliasTriggerToModule(t.keyword)
+          : kimTriggerToModule(t.keyword);
+        enriched.add(mapped);
+      }
+    }
+
+    signalEnrichedModules = [...enriched];
+    if (signalEnrichedModules.length > 0) {
+      console.log(`[Pipeline] SignalEngine enrichment: +${signalEnrichedModules.join(', +')}`);
+    }
+  }
+
   const sessionStart = currentUserDat.lastSessionDate ? new Date(currentUserDat.lastSessionDate) : new Date();
   const sessionMinutes = Math.floor((Date.now() - sessionStart.getTime()) / 60000);
 
@@ -693,6 +732,7 @@ export async function processMessage(
     projectionDeepening: projectionResult.deepeningDirective ?? undefined,
     candidateSignals,
     relevanceScores,
+    signalEnrichedModules: signalEnrichedModules.length > 0 ? signalEnrichedModules : undefined,
   };
 
   let response: string;
@@ -889,6 +929,7 @@ export async function processMessage(
       { step: '5a. Buffer snapshot', status: 'passed', reason: `triggers=${relevance.triggers.length}` },
       { step: '5b. Regulation', status: regulationResult.wasSkipped ? 'skipped' : 'passed', reason: `action=${regulationResult.action}, depth=${regulationResult.effectiveDepth}` },
       { step: '5c. SignalEngine', status: signalEngineReady ? 'passed' : 'skipped', reason: signalEngineReady ? `fears=${candidateSignals?.fears.length ?? 0} hopes=${candidateSignals?.hopes.length ?? 0} goals=${candidateSignals?.goals.length ?? 0} triggers=${candidateSignals?.triggers.length ?? 0}` : 'engine not ready' },
+      { step: '5c-enrichment. SignalEngine enrichment', status: signalEnrichedModules.length > 0 ? 'passed' : 'skipped', reason: signalEnrichedModules.length > 0 ? `+${signalEnrichedModules.join(', +')}` : 'no enrichment' },
       { step: '5d. Projection', status: projectionResult.injectionBlock ? 'passed' : 'skipped', reason: projectionResult.injectionBlock ? 'block injected' : 'no signal' },
       { step: '6a. Zone decision', status: elisDecision ? 'passed' : 'skipped', reason: elisDecision ? `zone=${elisDecision.zone.computed.label}` : 'kim user' },
       { step: '6b. Engine directive', status: engineDirective ? 'passed' : 'skipped', reason: engineDirective ? `engine=${engineDirective.engine}` : 'none' },
@@ -933,6 +974,7 @@ export async function processMessage(
       dominantModule: preGPTDominantState.dominantModule,
       reason: preGPTDominantState.selectionReason,
       activeModules: [preGPTDominantState.dominantModule],
+      signalEnrichedModules: signalEnrichedModules.length > 0 ? signalEnrichedModules : undefined,
     },
     modelRouting: {
       selectedModel: selectedModel ?? 'unknown',

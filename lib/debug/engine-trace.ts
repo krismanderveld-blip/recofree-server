@@ -55,6 +55,7 @@ export interface EngineTraceInput {
     dominantModule: string;
     reason: string;
     activeModules: string[];
+    signalEnrichedModules?: string[];
   };
 
   // Model routing
@@ -199,6 +200,11 @@ export function buildTraceBlock(input: EngineTraceInput): string {
   lines.push(`  dominantModule: ${ms.dominantModule}`);
   lines.push(`  reden: ${ms.reason}`);
   lines.push(`  activeModules: [${ms.activeModules.join(', ')}]`);
+  if (ms.signalEnrichedModules && ms.signalEnrichedModules.length > 0) {
+    lines.push(`  signalEnrichment: +${ms.signalEnrichedModules.join(', +')}`);
+  } else {
+    lines.push(`  signalEnrichment: no enrichment`);
+  }
   lines.push('');
 
   // Model routing

@@ -114,6 +114,9 @@ export interface GPTPayload {
     projectionRelevance: number;
   };
 
+  // ── SignalEngine module enrichment (post-hoc, non-blocking) ──
+  signalEnrichedModules?: string[];
+
   // ── Buffer snapshot (from pipeline, per message) ──
   bufferSnapshot?: {
     zoneScore: number;
@@ -221,6 +224,8 @@ export interface PayloadBuilderInput {
     triggerRelevance: number;
     projectionRelevance: number;
   };
+  /** SignalEngine: post-hoc module enrichment (confidence > 0.5 signals mapped to modules) */
+  signalEnrichedModules?: string[];
 }
 
 // ─── Conversation History Optimisation (Patch N Step 5) ──────
@@ -478,6 +483,9 @@ export function buildGPTPayload(input: PayloadBuilderInput): GPTPayload {
   }
   if (input.relevanceScores) {
     payload.relevanceScores = input.relevanceScores;
+  }
+  if (input.signalEnrichedModules && input.signalEnrichedModules.length > 0) {
+    payload.signalEnrichedModules = input.signalEnrichedModules;
   }
 
   // ── Buffer snapshot (from pipeline, per message) ──
