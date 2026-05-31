@@ -369,6 +369,7 @@ export async function processMessage(
           Object.entries(currentUserDat.currentMood).filter(([_, v]) => typeof v === 'number')
         ) as Record<string, number>
       : {},
+    userType: backpack.userType,
   };
   const engine = getEngine();
   const engineType = engine.constructor.name; // 'GptSignalEngine' or 'NullSignalEngine'

@@ -51,6 +51,7 @@ export interface SignalContext {
   zone: string;            // current zone color (GREEN, YELLOW, ORANGE, RED, PURPLE)
   vspOrEigenRegie: string; // VSP level (Elias) or eigenRegie score (Kim)
   keySliders: Record<string, number>; // key slider values (e.g. despondency, craving, stress)
+  userType?: 'elias' | 'kim'; // user type for prompt routing (Elias = addiction, Kim = caregiver)
 }
 
 export interface RelevanceContext {

@@ -781,3 +781,12 @@
 - [x] Rewrote SIGNAL_DETECTION_PROMPT with recovery-focused context (fears/hopes/goals/triggers explained)
 - [x] Increased max_tokens from 150 to 400 in server/signal-engine.ts
 - [x] 0 TS errors, 420 tests green
+
+## Round 47 — Timeout + Kim-specific SignalEngine prompt
+
+- [x] Taak 1: Add 3-second timeout to callGptMini() in gpt-signal-engine.ts (AbortController + 3000ms)
+- [x] Taak 1: On timeout → return empty signals, pipeline continues
+- [x] Taak 2: Create SIGNAL_DETECTION_PROMPT_KIM with caregiver framing
+- [x] Taak 2: Route to correct prompt based on userType (Elias vs Kim)
+- [x] Taak 2: Pass userType through detectSignals call chain (SignalContext.userType → pipeline → engine)
+- [x] 0 TS errors, all 420 tests green
