@@ -629,6 +629,7 @@ export async function processMessage(
   // Calls GptSignalEngine for signal detection + relevance scoring.
   // Fault-tolerant: if engine not ready or call fails, empty/neutral results.
   const engine = getEngine();
+  const engineType = engine.constructor.name; // GptSignalEngine or NullSignalEngine
   let candidateSignals: ChatContext['candidateSignals'] = undefined;
   let relevanceScores: ChatContext['relevanceScores'] = undefined;
   let signalEngineReady = false;
@@ -928,7 +929,7 @@ export async function processMessage(
       { step: '4. Dominant state', status: 'passed', reason: `module=${preGPTDominantState.dominantModule}, source=${preGPTDominantState.sourceLayer}` },
       { step: '5a. Buffer snapshot', status: 'passed', reason: `triggers=${relevance.triggers.length}` },
       { step: '5b. Regulation', status: regulationResult.wasSkipped ? 'skipped' : 'passed', reason: `action=${regulationResult.action}, depth=${regulationResult.effectiveDepth}` },
-      { step: '5c. SignalEngine', status: signalEngineReady ? 'passed' : 'skipped', reason: signalEngineReady ? `fears=${candidateSignals?.fears.length ?? 0} hopes=${candidateSignals?.hopes.length ?? 0} goals=${candidateSignals?.goals.length ?? 0} triggers=${candidateSignals?.triggers.length ?? 0}` : 'engine not ready' },
+      { step: '5c. SignalEngine', status: signalEngineReady ? 'passed' : 'skipped', reason: signalEngineReady ? `[${engineType}] fears=${candidateSignals?.fears.length ?? 0} hopes=${candidateSignals?.hopes.length ?? 0} goals=${candidateSignals?.goals.length ?? 0} triggers=${candidateSignals?.triggers.length ?? 0}` : `not ready (${engineType})` },
       { step: '5c-enrichment. SignalEngine enrichment', status: signalEnrichedModules.length > 0 ? 'passed' : 'skipped', reason: signalEnrichedModules.length > 0 ? `+${signalEnrichedModules.join(', +')}` : 'no enrichment' },
       { step: '5d. Projection', status: projectionResult.injectionBlock ? 'passed' : 'skipped', reason: projectionResult.injectionBlock ? 'block injected' : 'no signal' },
       { step: '6a. Zone decision', status: elisDecision ? 'passed' : 'skipped', reason: elisDecision ? `zone=${elisDecision.zone.computed.label}` : 'kim user' },

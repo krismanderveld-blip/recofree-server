@@ -747,3 +747,12 @@
 - [x] Add to engine-trace.ts moduleSelection type + formatter (signalEnrichment: +E06, +E03)
 - [x] Add debug trace step 5c-enrichment to pipeline steps
 - [x] 0 TS errors, 418 tests green
+
+## Round 44 — SignalEngine initialization fix
+
+- [x] Diagnosed: initGptSignalEngine() was never called → NullSignalEngine always active
+- [x] Added initGptSignalEngine(getApiBaseUrl()) in app/_layout.tsx useEffect at startup
+- [x] Production URL verified: https://recobase-vhsxu5ua.manus.space (from constants/oauth.ts)
+- [x] Added engineType (constructor.name) to Step 5c debug trace: [GptSignalEngine] or (NullSignalEngine)
+- [x] Console log at init: [SignalEngine] Initialized with apiBaseUrl: ...
+- [x] 0 TS errors, 418 tests green
