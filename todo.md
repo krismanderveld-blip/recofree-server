@@ -680,3 +680,11 @@
 - [x] Added pnpm-workspace.yaml with dangerouslyAllowAllBuilds: true (definitive build fix)
 - [x] Created docs/fase4-local-llm-archive.md
 - [x] 0 TS errors, 401 tests green, pnpm run build succeeds
+
+## Round 39 — pnpm 11.5.0 lockfile regeneration (definitive build fix)
+- [x] Installed pnpm 11.5.0 via corepack (matching build server exactly)
+- [x] Regenerated lockfile (lockfileVersion: '9.0') with pnpm 11.5.0
+- [x] packageManager field added by corepack: "pnpm@11.5.0+sha512..."
+- [x] Removed obsolete pnpm.onlyBuiltDependencies from package.json (pnpm 11 ignores it)
+- [x] pnpm-workspace.yaml with dangerouslyAllowAllBuilds: true handles build scripts
+- [x] 0 TS errors, 401 tests green, pnpm run build succeeds
