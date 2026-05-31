@@ -1,2 +1,3 @@
 dangerouslyAllowAllBuilds: true
 nodeLinker: hoisted
+verifyDepsBeforeRun: false

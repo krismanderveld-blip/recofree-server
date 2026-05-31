@@ -688,3 +688,10 @@
 - [x] Removed obsolete pnpm.onlyBuiltDependencies from package.json (pnpm 11 ignores it)
 - [x] pnpm-workspace.yaml with dangerouslyAllowAllBuilds: true handles build scripts
 - [x] 0 TS errors, 401 tests green, pnpm run build succeeds
+
+## Round 40 — verifyDepsBeforeRun fix + Taak 1 & 2
+- [x] Added verifyDepsBeforeRun: false to pnpm-workspace.yaml (fixes build server crash from pnpm 11 runDepsStatusCheck)
+- [ ] Taak 1: Wire SignalEngine results (candidateSignals + relevanceScores) into GPT payload in gpt-payload-builder.ts (confidence > 0.3 filter)
+- [ ] Taak 2a: Fix NL/EN mixed markers in projection-layer.ts (full English)
+- [ ] Taak 2b: Add single-user comment above sessionCache in ai-chat.ts
+- [ ] Taak 2c: Translate buildSystemPrompt() to English in ai-chat.ts
