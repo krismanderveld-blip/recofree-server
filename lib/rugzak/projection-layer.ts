@@ -68,7 +68,7 @@ function shouldActivateDeepening(
   if (userType === 'elias') {
     return ELIAS_DEEPENING_MODULES.includes(dominantModule);
   } else {
-    // Kim: activate when Self-Governance score > 50 (stable enough to look forward)
+    // Kim: activate when Eigen Regie > 50 (stable enough to look forward)
     return eigenRegieScore !== null && eigenRegieScore > 50;
   }
 }

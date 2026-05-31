@@ -14,10 +14,10 @@
  *
  * CANON SOURCES:
  *   - elias.dat V19 / kim.dat V1
- *   - ELIAS_IDENTITY_COMPLETE_V2025.txt
- *   - Module 033 (Quality Control / anti-fabrication)
- *   - Module 091 (Schema Integration)
- *   - Module 012 (Pre-analysis / Failsafe)
+ *   - ELIAS_IDENTITEIT_COMPLETE_V2025.txt
+ *   - Module 033 (Kwaliteitscontrole / anti-fabricatie)
+ *   - Module 091 (Schema Integratie)
+ *   - Module 012 (Vooranalyse / Failsafe)
  *   - Master Engine Spec V2
  */
 
@@ -147,8 +147,6 @@ interface ChatRequestInput {
     zoneLevel: string;
     zoneLabel: string;
     impact: Record<string, string>;
-    recommendedModel?: 'gpt-4o' | 'gpt-4o-mini';
-    recommendedModelReason?: string;
   } | null;
 
   // Intervention continuity (Elias only, zone-linked therapeutic memory)
@@ -158,21 +156,15 @@ interface ChatRequestInput {
   projectionContext?: string | null;
   projectionDeepening?: string | null;
 
-  // SignalEngine preprocessing (GPT-4o-mini, non-blocking)
-  candidateSignals?: {
-    fears: Array<{ keyword: string; confidence: number }>;
-    hopes: Array<{ keyword: string; confidence: number }>;
-    goals: Array<{ keyword: string; confidence: number }>;
-    triggers: Array<{ keyword: string; confidence: number }>;
-  } | null;
+  // Signal engine: relevance scores for context gating (LIVE_MESSAGE only)
   relevanceScores?: {
     backpackRelevance: number;
     diaryRelevance: number;
     triggerRelevance: number;
     projectionRelevance: number;
   } | null;
-  // SignalEngine module enrichment (post-hoc, non-blocking)
-  signalEnrichedModules?: string[] | null;
+  // Signal engine: compressed context summary (replaces full lifeStorySummary in LIVE_MESSAGE)
+  contextSummary?: string | null;
 }
 
 // ─── Server-side Session Cache ───────────────────────────────────
@@ -366,8 +358,6 @@ export const chatInputSchema = z.object({
     zoneLevel: z.string(),
     zoneLabel: z.string(),
     impact: z.record(z.string(), z.string()),
-    recommendedModel: z.enum(['gpt-4o', 'gpt-4o-mini']).optional(),
-    recommendedModelReason: z.string().optional(),
   }).nullable().optional(),
 
   // Intervention continuity (Elias only, zone-linked therapeutic memory)
@@ -376,20 +366,15 @@ export const chatInputSchema = z.object({
   projectionContext: z.string().nullable().optional(),
   projectionDeepening: z.string().nullable().optional(),
 
-  // SignalEngine preprocessing (GPT-4o-mini, non-blocking)
-  candidateSignals: z.object({
-    fears: z.array(z.object({ keyword: z.string(), confidence: z.number() })),
-    hopes: z.array(z.object({ keyword: z.string(), confidence: z.number() })),
-    goals: z.array(z.object({ keyword: z.string(), confidence: z.number() })),
-    triggers: z.array(z.object({ keyword: z.string(), confidence: z.number() })),
-  }).nullable().optional(),
+  // Signal engine: relevance scores for context gating (LIVE_MESSAGE only)
   relevanceScores: z.object({
     backpackRelevance: z.number(),
     diaryRelevance: z.number(),
     triggerRelevance: z.number(),
     projectionRelevance: z.number(),
   }).nullable().optional(),
-  signalEnrichedModules: z.array(z.string()).nullable().optional(),
+  // Signal engine: compressed context summary (replaces full lifeStorySummary in LIVE_MESSAGE)
+  contextSummary: z.string().nullable().optional(),
 });
 
 // ─── Relationship Map Extractor ──────────────────────────────────
@@ -792,9 +777,8 @@ VIOLATION OF THIS PROTOCOL IS UNACCEPTABLE.`;
   }
 
   const dominantModule = input.dominantModule || (input.activeModules.length > 0 ? input.activeModules[0] : '');
-  const enrichedModules = (input.signalEnrichedModules ?? []).filter(m => m !== dominantModule);
   const moduleInstructions = dominantModule
-    ? `Dominant therapeutic module: ${dominantModule}. Focus your response on this approach.${enrichedModules.length > 0 ? `\nSupplementary modules (signal-enriched): ${enrichedModules.join(', ')}. Draw from these as secondary context when relevant.` : ''}`
+    ? `Dominant therapeutic module: ${dominantModule}. Focus your response on this approach.`
     : "";
 
   const stance = input.therapeuticStance
@@ -842,28 +826,6 @@ VIOLATION OF THIS PROTOCOL IS UNACCEPTABLE.`;
   }
 
   console.log(`[AI Chat] Guidance depth: user=${userDepth}, stateAllowed=${stateAllowedDepth}, effective=${effectiveDepth} (crisis=${input.crisisLevel}, risk=${riskScore}, maxDistress=${maxDistress})`);
-
-  // ── SignalEngine Context Injection ──
-  // Injects detected signals (fears, hopes, goals, triggers) from GPT-4o-mini preprocessing.
-  // Only signals with confidence > 0.3 are included (filtered client-side).
-  // Placed BEFORE regulation instruction so GPT has signal awareness when applying regulation.
-  let signalEngineBlock = '';
-  if (input.candidateSignals) {
-    const cs = input.candidateSignals;
-    const lines: string[] = [];
-    if (cs.fears.length > 0) lines.push(`  Fears: ${cs.fears.map(s => `${s.keyword}(${s.confidence.toFixed(2)})`).join(', ')}`);
-    if (cs.hopes.length > 0) lines.push(`  Hopes: ${cs.hopes.map(s => `${s.keyword}(${s.confidence.toFixed(2)})`).join(', ')}`);
-    if (cs.goals.length > 0) lines.push(`  Goals: ${cs.goals.map(s => `${s.keyword}(${s.confidence.toFixed(2)})`).join(', ')}`);
-    if (cs.triggers.length > 0) lines.push(`  Triggers: ${cs.triggers.map(s => `${s.keyword}(${s.confidence.toFixed(2)})`).join(', ')}`);
-    if (lines.length > 0) {
-      signalEngineBlock = `\n═══ DETECTED SIGNALS (preprocessing) ═══\n${lines.join('\n')}\nUse these signals to attune your response. Do NOT repeat them literally to the user.\n═══ END SIGNALS ═══`;
-      console.log(`[AI Chat] SignalEngine block injected: fears=${cs.fears.length} hopes=${cs.hopes.length} goals=${cs.goals.length} triggers=${cs.triggers.length}`);
-    }
-  }
-  if (input.relevanceScores) {
-    const rs = input.relevanceScores;
-    signalEngineBlock += `\nContext relevance: backpack=${rs.backpackRelevance.toFixed(2)}, diary=${rs.diaryRelevance.toFixed(2)}, triggers=${rs.triggerRelevance.toFixed(2)}, projection=${rs.projectionRelevance.toFixed(2)}`;
-  }
 
   // ── Regulation Layer Injection ──
   // If the regulation layer determined an action (non-reflect), inject its GPT instruction.
@@ -953,8 +915,24 @@ Keep it short (3-5 sentences max). Do NOT ask new questions.`;
     if (conditional.relationshipMap) included.push('relationMap');
     console.log(`[AI Chat] Follow-up selective injection: [${included.join(', ') || 'none'}]`);
 
-    // Always include life story summary in follow-ups so GPT knows names/relationships
-    const lifeStoryContext = sessionCache?.lifeStorySummary ?? '';
+    // Taak 1: Gate context injection using relevanceScores (threshold 0.3)
+    // If contextSummary is available (from SignalEngine), use it instead of full lifeStorySummary.
+    // If backpackRelevance < 0.3, skip lifeStorySummary entirely (saves tokens).
+    const scores = input.relevanceScores;
+    let lifeStoryContext = '';
+    if (input.contextSummary) {
+      // Taak 2: Use compressed context summary from SignalEngine
+      lifeStoryContext = `\n─── CONTEXT SUMMARY (live-compressed) ───\n${input.contextSummary}\n─── END CONTEXT SUMMARY ───`;
+    } else if (!scores || scores.backpackRelevance >= 0.3) {
+      // No scores available OR backpack is relevant → include full summary
+      lifeStoryContext = sessionCache?.lifeStorySummary ?? '';
+    }
+    // else: backpackRelevance < 0.3 → skip lifeStorySummary (token savings)
+
+    // Taak 1: Gate diary injection using diaryRelevance threshold
+    if (scores && scores.diaryRelevance < 0.3) {
+      conditional.recentDiary = [];
+    }
 
     return `${identity}
 
@@ -969,7 +947,6 @@ ${selectiveRelevance}
 === MANDATORY BEHAVIORAL INSTRUCTIONS ===
 ${stance}
 ${guidanceInstruction}
-${signalEngineBlock}
 ${regulationInstruction}
 ${engineDirectiveBlock}
 ${interventionContinuityBlock}
@@ -1158,7 +1135,6 @@ ${relevanceContext}
 === MANDATORY BEHAVIORAL INSTRUCTIONS ===
 ${stance}
 ${guidanceInstruction}
-${signalEngineBlock}
 ${regulationInstruction}
 ${engineDirectiveBlock}
 ${interventionContinuityBlock}
@@ -1257,19 +1233,12 @@ export async function generateAIResponse(
   let routingReason = 'default (low complexity)';
 
   if (input.isSessionStart) {
-    // Use engine-recommended model for SESSION_INIT (engine decides based on crisis/risk/backpack)
-    const engineRecommendation = input.engineDirective?.recommendedModel;
-    if (engineRecommendation) {
-      selectedModel = engineRecommendation;
-      routingReason = `SESSION_INIT via engine (${input.engineDirective?.recommendedModelReason ?? 'engine decision'})`;
-    } else {
-      selectedModel = 'gpt-4o';
-      routingReason = 'SESSION_INIT (no engine recommendation, fallback to gpt-4o)';
-    }
+    selectedModel = 'gpt-4o';
+    routingReason = 'SESSION_INIT (first impression)';
   } else if (crisisLevel > 0 || riskScore >= 7 || input.isCrisis === true) {
     selectedModel = 'gpt-4o';
     routingReason = `crisis/risk (crisis=${crisisLevel}, risk=${riskScore}, isCrisis=${input.isCrisis ?? false})`;
-  } else if (urgencyForRouting === 'high') {
+  } else if (urgencyForRouting === 'high' || urgencyForRouting === 'hoog') {
     selectedModel = 'gpt-4o';
     routingReason = `high urgency (${input.urgency})`;
   } else if (HIGH_COMPLEXITY_MODULES.some(m => dominantModuleForRouting.includes(m))) {

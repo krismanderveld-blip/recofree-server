@@ -561,8 +561,8 @@ export interface ChatContext {
     triggerRelevance: number;
     projectionRelevance: number;
   };
-  /** Signal engine: post-hoc module enrichment (confidence > 0.5 signals mapped to modules) */
-  signalEnrichedModules?: string[];
+  /** Signal engine: compressed context summary for LIVE_MESSAGE (replaces full lifeStorySummary) */
+  contextSummary?: string;
 }
 
 /**

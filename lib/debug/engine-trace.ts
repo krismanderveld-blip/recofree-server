@@ -55,7 +55,6 @@ export interface EngineTraceInput {
     dominantModule: string;
     reason: string;
     activeModules: string[];
-    signalEnrichedModules?: string[];
   };
 
   // Model routing
@@ -63,8 +62,6 @@ export interface EngineTraceInput {
     selectedModel: string;
     riskScore: number;
     crisisLevel: number;
-    sessionInitModel?: string;
-    sessionInitReason?: string;
   };
 
   // Intervention continuity (Elias only)
@@ -200,11 +197,6 @@ export function buildTraceBlock(input: EngineTraceInput): string {
   lines.push(`  dominantModule: ${ms.dominantModule}`);
   lines.push(`  reden: ${ms.reason}`);
   lines.push(`  activeModules: [${ms.activeModules.join(', ')}]`);
-  if (ms.signalEnrichedModules && ms.signalEnrichedModules.length > 0) {
-    lines.push(`  signalEnrichment: +${ms.signalEnrichedModules.join(', +')}`);
-  } else {
-    lines.push(`  signalEnrichment: no enrichment`);
-  }
   lines.push('');
 
   // Model routing
@@ -213,9 +205,6 @@ export function buildTraceBlock(input: EngineTraceInput): string {
   lines.push(`  selectedModel: ${mr.selectedModel}`);
   lines.push(`  riskScore: ${mr.riskScore}`);
   lines.push(`  crisisLevel: ${mr.crisisLevel}`);
-  if (mr.sessionInitModel) {
-    lines.push(`  sessionInit: ${mr.sessionInitModel} (${mr.sessionInitReason ?? 'unknown'})`);
-  }
   lines.push('');
 
   // Intervention continuity

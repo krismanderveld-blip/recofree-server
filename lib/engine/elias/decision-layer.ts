@@ -53,8 +53,6 @@ export interface EliasDecisionInput {
    * When null: resolvedZone.isBlocked = true → pipeline HARD STOP.
    */
   readonly vspInput: VspLevel | null;
-  /** Whether the backpack has at least one section with content. */
-  readonly hasBackpackContent: boolean;
 }
 
 // ─── Output ─────────────────────────────────────────────────
@@ -78,10 +76,6 @@ export interface EliasDecision {
   readonly challengeLevel: number;
   /** Whether chat is blocked (VSP not submitted). Pipeline HARD STOP. */
   readonly isBlocked: boolean;
-  /** Engine-recommended model for this message. */
-  readonly recommendedModel: 'gpt-4o' | 'gpt-4o-mini';
-  /** Reason for the model recommendation. */
-  readonly recommendedModelReason: string;
 }
 
 // ─── Aggregation ────────────────────────────────────────────
@@ -120,30 +114,6 @@ export function createEliasDecision(input: EliasDecisionInput): EliasDecision {
     ? null
     : computeEliasImpact(resolvedZone);
 
-  // ── Model recommendation logic ──
-  // gpt-4o when: isCrisis OR riskScore >= 7 OR vspLevel >= ORANJE (always, regardless of other conditions) OR backpack has content
-  const isCrisis = resolvedZone.isCrisis;
-  const riskScore = input.dominantState.riskScore;
-  const vspLevel = input.vspInput;
-  const vspIsHighRisk = vspLevel === 'ORANJE' || vspLevel === 'ROOD' || vspLevel === 'PAARS';
-
-  let recommendedModel: 'gpt-4o' | 'gpt-4o-mini' = 'gpt-4o-mini';
-  let recommendedModelReason = 'default (low complexity)';
-
-  if (isCrisis) {
-    recommendedModel = 'gpt-4o';
-    recommendedModelReason = 'isCrisis=true';
-  } else if (riskScore >= 7) {
-    recommendedModel = 'gpt-4o';
-    recommendedModelReason = `riskScore=${riskScore} (>=7)`;
-  } else if (vspIsHighRisk) {
-    recommendedModel = 'gpt-4o';
-    recommendedModelReason = `vspLevel=${vspLevel} (>=ORANJE)`;
-  } else if (input.hasBackpackContent) {
-    recommendedModel = 'gpt-4o';
-    recommendedModelReason = 'backpack has content';
-  }
-
   return Object.freeze({
     // From DominantState
     dominantModule: input.dominantState.dominantModule,
@@ -171,9 +141,5 @@ export function createEliasDecision(input: EliasDecisionInput): EliasDecision {
 
     // Blocked state propagated from resolution layer
     isBlocked: resolvedZone.isBlocked,
-
-    // Engine-recommended model
-    recommendedModel,
-    recommendedModelReason,
   });
 }

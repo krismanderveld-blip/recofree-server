@@ -89,8 +89,6 @@ export interface GPTPayload {
     zoneLevel: string;
     zoneLabel: string;
     impact: Record<string, string>;
-    recommendedModel: 'gpt-4o' | 'gpt-4o-mini';
-    recommendedModelReason: string;
   };
 
   // ── Intervention continuity (Elias only, zone-linked therapeutic memory) ──
@@ -99,23 +97,6 @@ export interface GPTPayload {
   // ── Projection layer (future-facing fears/hopes/goals) ──
   projectionContext?: string;
   projectionDeepening?: string;
-
-  // ── SignalEngine preprocessing (GPT-4o-mini, non-blocking) ──
-  candidateSignals?: {
-    fears: Array<{ keyword: string; confidence: number }>;
-    hopes: Array<{ keyword: string; confidence: number }>;
-    goals: Array<{ keyword: string; confidence: number }>;
-    triggers: Array<{ keyword: string; confidence: number }>;
-  };
-  relevanceScores?: {
-    backpackRelevance: number;
-    diaryRelevance: number;
-    triggerRelevance: number;
-    projectionRelevance: number;
-  };
-
-  // ── SignalEngine module enrichment (post-hoc, non-blocking) ──
-  signalEnrichedModules?: string[];
 
   // ── Buffer snapshot (from pipeline, per message) ──
   bufferSnapshot?: {
@@ -210,22 +191,6 @@ export interface PayloadBuilderInput {
   projectionContext?: string;
   /** Projection deepening directive (instruction for GPT to explore projections) */
   projectionDeepening?: string;
-  /** SignalEngine: detected signals from current message (confidence > 0.3 filtered before injection) */
-  candidateSignals?: {
-    fears: Array<{ keyword: string; confidence: number }>;
-    hopes: Array<{ keyword: string; confidence: number }>;
-    goals: Array<{ keyword: string; confidence: number }>;
-    triggers: Array<{ keyword: string; confidence: number }>;
-  };
-  /** SignalEngine: relevance scores for context blocks */
-  relevanceScores?: {
-    backpackRelevance: number;
-    diaryRelevance: number;
-    triggerRelevance: number;
-    projectionRelevance: number;
-  };
-  /** SignalEngine: post-hoc module enrichment (confidence > 0.5 signals mapped to modules) */
-  signalEnrichedModules?: string[];
 }
 
 // ─── Conversation History Optimisation (Patch N Step 5) ──────
@@ -447,8 +412,6 @@ export function buildGPTPayload(input: PayloadBuilderInput): GPTPayload {
       zoneLevel: input.engineDirective.zoneLevel,
       zoneLabel: input.engineDirective.zoneLabel,
       impact: { ...input.engineDirective.impact } as Record<string, string>,
-      recommendedModel: input.engineDirective.recommendedModel,
-      recommendedModelReason: input.engineDirective.recommendedModelReason,
     };
   }
 
@@ -463,29 +426,6 @@ export function buildGPTPayload(input: PayloadBuilderInput): GPTPayload {
   }
   if (input.projectionDeepening) {
     payload.projectionDeepening = input.projectionDeepening;
-  }
-
-  // ── SignalEngine results (confidence > 0.3 filter) ──
-  if (input.candidateSignals) {
-    const filter = (arr: Array<{ keyword: string; confidence: number }>) =>
-      arr.filter(s => s.confidence > 0.3);
-    const filtered = {
-      fears: filter(input.candidateSignals.fears),
-      hopes: filter(input.candidateSignals.hopes),
-      goals: filter(input.candidateSignals.goals),
-      triggers: filter(input.candidateSignals.triggers),
-    };
-    // Only include if at least one signal passes the threshold
-    const hasSignals = filtered.fears.length + filtered.hopes.length + filtered.goals.length + filtered.triggers.length > 0;
-    if (hasSignals) {
-      payload.candidateSignals = filtered;
-    }
-  }
-  if (input.relevanceScores) {
-    payload.relevanceScores = input.relevanceScores;
-  }
-  if (input.signalEnrichedModules && input.signalEnrichedModules.length > 0) {
-    payload.signalEnrichedModules = input.signalEnrichedModules;
   }
 
   // ── Buffer snapshot (from pipeline, per message) ──

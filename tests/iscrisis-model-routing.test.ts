@@ -22,8 +22,6 @@ interface ModelRoutingInput {
   urgency: string;
   dominantModule: string;
   activeModules: string[];
-  engineRecommendedModel?: 'gpt-4o' | 'gpt-4o-mini';
-  engineRecommendedModelReason?: string;
 }
 
 function selectModel(input: ModelRoutingInput): { model: 'gpt-4o' | 'gpt-4o-mini'; reason: string } {
@@ -41,15 +39,8 @@ function selectModel(input: ModelRoutingInput): { model: 'gpt-4o' | 'gpt-4o-mini
   let routingReason = 'default (low complexity)';
 
   if (input.isSessionStart) {
-    // Engine-driven SESSION_INIT routing
-    const engineRecommendation = input.engineRecommendedModel;
-    if (engineRecommendation) {
-      selectedModel = engineRecommendation;
-      routingReason = `SESSION_INIT via engine (${input.engineRecommendedModelReason ?? 'engine decision'})`;
-    } else {
-      selectedModel = 'gpt-4o';
-      routingReason = 'SESSION_INIT (no engine recommendation, fallback to gpt-4o)';
-    }
+    selectedModel = 'gpt-4o';
+    routingReason = 'SESSION_INIT (first impression)';
   } else if (crisisLevel > 0 || riskScore >= 7 || input.isCrisis === true) {
     selectedModel = 'gpt-4o';
     routingReason = `crisis/risk (crisis=${crisisLevel}, risk=${riskScore}, isCrisis=${input.isCrisis ?? false})`;

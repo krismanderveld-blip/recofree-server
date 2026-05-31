@@ -46,14 +46,6 @@ export interface ContextSummary {
 
 // ─── Context Input Types ────────────────────────────────────────
 
-/** Optional emotional context passed to detectSignals for richer signal detection */
-export interface SignalContext {
-  zone: string;            // current zone color (GREEN, YELLOW, ORANGE, RED, PURPLE)
-  vspOrEigenRegie: string; // VSP level (Elias) or eigenRegie score (Kim)
-  keySliders: Record<string, number>; // key slider values (e.g. despondency, craving, stress)
-  userType?: 'elias' | 'kim'; // user type for prompt routing (Elias = addiction, Kim = caregiver)
-}
-
 export interface RelevanceContext {
   backpackSummary: string;
   diarySummary: string;
@@ -72,7 +64,7 @@ export interface LocalSignalEngine {
   isReady(): boolean;
 
   /** Detect signals (fears, hopes, goals, triggers) in a single message */
-  detectSignals(message: string, context?: SignalContext): Promise<SignalDetectionResult>;
+  detectSignals(message: string): Promise<SignalDetectionResult>;
 
   /** Score relevance of context blocks for the current message */
   scoreRelevance(message: string, context: RelevanceContext): Promise<RelevanceScores>;

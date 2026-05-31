@@ -51,8 +51,6 @@ export interface KimDecisionInput {
    * If not yet submitted today, pass null.
    */
   readonly eigenRegieInput: number | null;
-  /** Whether the backpack has at least one section with content. */
-  readonly hasBackpackContent: boolean;
 }
 
 // ─── Output ─────────────────────────────────────────────────
@@ -80,10 +78,6 @@ export interface KimDecision {
    * Equivalent of Elias isCrisis (PAARS). Triggers gpt-4o + ground regulation.
    */
   readonly isKimCrisis: boolean;
-  /** Engine-recommended model for this message. */
-  readonly recommendedModel: 'gpt-4o' | 'gpt-4o-mini';
-  /** Reason for the model recommendation. */
-  readonly recommendedModelReason: string;
 }
 
 // ─── Aggregation ────────────────────────────────────────────
@@ -109,29 +103,6 @@ export function createKimDecision(input: KimDecisionInput): KimDecision {
 
   // Compute Kim engine zone from Eigen Regie result
   const engineZone = computeKimZone(eigenRegie);
-
-  // ── Model recommendation logic ──
-  // gpt-4o when: isKimCrisis OR riskScore >= 7 OR eigenRegie <= 30 OR backpack has content
-  const isKimCrisis = eigenRegie !== null && eigenRegie.userInput < 10;
-  const riskScore = input.dominantState.riskScore;
-  const eigenRegieScore = eigenRegie?.userInput ?? null;
-
-  let recommendedModel: 'gpt-4o' | 'gpt-4o-mini' = 'gpt-4o-mini';
-  let recommendedModelReason = 'default (low complexity)';
-
-  if (isKimCrisis) {
-    recommendedModel = 'gpt-4o';
-    recommendedModelReason = 'isKimCrisis=true';
-  } else if (riskScore >= 7) {
-    recommendedModel = 'gpt-4o';
-    recommendedModelReason = `riskScore=${riskScore} (>=7)`;
-  } else if (eigenRegieScore !== null && eigenRegieScore <= 30) {
-    recommendedModel = 'gpt-4o';
-    recommendedModelReason = `eigenRegie=${eigenRegieScore} (<=30)`;
-  } else if (input.hasBackpackContent) {
-    recommendedModel = 'gpt-4o';
-    recommendedModelReason = 'backpack has content';
-  }
 
   return Object.freeze({
     // From DominantState
@@ -160,11 +131,7 @@ export function createKimDecision(input: KimDecisionInput): KimDecision {
     eigenRegie,
 
     // Kim crisis: eigenRegie userInput < 10 (user reports almost no self-regulation)
-    isKimCrisis,
-
-    // Engine-recommended model
-    recommendedModel,
-    recommendedModelReason,
+    isKimCrisis: eigenRegie !== null && eigenRegie.userInput < 10,
   });
 }
 

@@ -1,14 +1,40 @@
 /**
+ * ══════════════════════════════════════════════════════════════════════════
+ * ARCHITECTURE — TWO-LAYER DECISION MODEL (Phase 4 Canon)
+ * ══════════════════════════════════════════════════════════════════════════
+ *
+ * LAYER 1 — ENGINE (this pipeline + local modules):
+ *   Deterministic:
+ *     - Zone detection, crisis handling, regulation
+ *     - Module routing (Elias/Kim module catalogs)
+ *     - Buffer management, decay, dominant state selection
+ *   SignalEngine (GPT-4o-mini, 3s timeout):
+ *     - Semantic signal detection → candidateSignals (fears/hopes/goals/triggers)
+ *     - Relevance scoring → backpackRelevance, diaryRelevance (threshold 0.3)
+ *     - Context summarization → contextSummary (LIVE_MESSAGE only)
+ *   Together: ONE decision layer. Never calls GPT directly for decisions.
+ *
+ * LAYER 2 — GPT-4o/mini (server/ai-chat.ts):
+ *   - Receives engine decisions as INSTRUCTIONS (not suggestions)
+ *   - Formulates therapeutic language — nothing else
+ *   - Cannot override module selection, zone, or regulation
+ *
+ * FLOW PER MESSAGE:
+ *   Engine decides → GPT formulates → Pipeline stores
+ *
+ * ══════════════════════════════════════════════════════════════════════════
+ *
  * Message Processing Pipeline — DUAL-PROCESSING FLOW
  *
  * INTERNAL DUAL-PROCESSING (per message):
  *
- *   PRE-GPT (local, deterministic):
+ *   PRE-GPT (local, deterministic + SignalEngine):
  *     1. Apply trigger decay to PREVIOUS buffer state (before new message merges)
  *     2. Update ShortTermMemoryBuffer with new message
  *     3. Apply RegulationDecayEngine zone decay
  *     4. Select DominantState (pre-GPT decision variable)
  *     5. Build stable BufferSnapshot for GPT payload
+ *     5c. SignalEngine: detectSignals + scoreRelevance + summarizeContext (non-blocking, 3s timeout)
  *     6. Feed dominant state + buffer snapshot into ChatContext → ONE GPT call
  *
  *   POST-GPT (local, no second GPT call):
@@ -20,11 +46,13 @@
  *     10. Ranked promotion evaluation (by score, not FCFS), apply top 5
  *
  * RULES:
- *   - ZERO second GPT calls per message
+ *   - ZERO second GPT calls per message (SignalEngine is pre-GPT, non-blocking)
  *   - Buffer is primary source; user.dat influences weighting only
  *   - Full buffer NEVER goes to GPT — only BufferSnapshot
  *   - Backpack + userDat NEVER sent per follow-up message
  *   - AI generates language ONLY. System makes decisions.
+ *   - relevanceScores gate context injection: < 0.3 → skip (saves tokens)
+ *   - contextSummary replaces full lifeStorySummary for LIVE_MESSAGE calls
  *
  * DUAL-STORE RULES:
  *   - backpack.json → stable identity, NEVER modified by the pipeline
@@ -70,9 +98,9 @@ import { createKimDecision, type KimDecision } from '../engine/kim/decision-laye
 import { routeEngineDirective, type EngineDirective } from '../engine/orchestration';
 import type { CrisisAssessment } from '../crisis/detector';
 import { kimDistressScore, kimResilienceScore } from '../engine/kim/slider-interpretation';
-import { KIM_DEFAULT_MODULE, kimTriggerToModule } from '../engine/kim/module-catalog';
+import { KIM_DEFAULT_MODULE } from '../engine/kim/module-catalog';
 import { eliasDistressScore, eliasResilienceScore, ELIAS_DEFAULT_MOOD } from '../engine/elias/slider-interpretation';
-import { ELIAS_DEFAULT_MODULE, eliasTriggerToModule } from '../engine/elias/module-catalog';
+import { ELIAS_DEFAULT_MODULE } from '../engine/elias/module-catalog';
 import { ELIAS_DEFAULT_STAGE } from '../engine/elias/stage-of-change';
 import {
   evaluateInterventionContinuity,
@@ -101,7 +129,6 @@ import {
 import { sanitizeSliders } from '../engine/shared/slider-sanitize';
 import { buildTraceBlock, type EngineTraceInput, type PipelineStepStatus } from '../debug/engine-trace';
 import { getEngine } from '../engine/local-llm/engine-provider';
-import type { SignalContext, SignalDetectionResult } from '../engine/local-llm/signal-engine';
 
 // ─── Pattern Marking (post-GPT local state) ─────────────────
 
@@ -357,38 +384,8 @@ export async function processMessage(
     sessionBuffer = applyDecayToBuffer(sessionBuffer, zoneDecayResult);
   }
 
-  // ── PRE-GPT STEP 3.5: SignalEngine (semantic signal detection — runs before module selection) ──
-  // Moved before Step 4 so candidateSignals can influence module selection in analyzeState().
-  const signalContext: SignalContext = {
-    zone: sessionBuffer.currentZoneColor,
-    vspOrEigenRegie: backpack.userType === 'elias'
-      ? (currentUserDat.currentMood as import('../ai/types').EliasMoodSliders)?.vsp ?? 'unknown'
-      : String((currentUserDat.currentMood as import('../ai/types').KimMoodSliders)?.eigenRegie ?? 'unknown'),
-    keySliders: currentUserDat.currentMood
-      ? Object.fromEntries(
-          Object.entries(currentUserDat.currentMood).filter(([_, v]) => typeof v === 'number')
-        ) as Record<string, number>
-      : {},
-    userType: backpack.userType,
-  };
-  const engine = getEngine();
-  const engineType = engine.constructor.name; // 'GptSignalEngine' or 'NullSignalEngine'
-  let signalEngineReady = false;
-  let candidateSignals: ChatContext['candidateSignals'] = undefined;
-  let relevanceScores: ChatContext['relevanceScores'] = undefined;
-
-  try {
-    if (engine.isReady()) {
-      signalEngineReady = true;
-      candidateSignals = await engine.detectSignals(userMessage, signalContext);
-    }
-  } catch (e) {
-    // Non-blocking: engine failure does not stop the pipeline
-    console.log(`[Pipeline] SignalEngine pre-Step4 error (non-blocking): ${(e as Error).message}`);
-  }
-
   // ── PRE-GPT STEP 4: Analyze state + Select DominantState ──
-  const analysis = analyzeState(rugzak, userMessage, candidateSignals as SignalDetectionResult | undefined);
+  const analysis = analyzeState(rugzak, userMessage);
 
   // Run backpack relevance with the ACTUAL new message (after decay was pre-advanced)
   const relevance = analyzeBackpackRelevance(
@@ -534,7 +531,6 @@ export async function processMessage(
       currentZoneColor: sessionBuffer.currentZoneColor as ZoneColor,
       currentZoneScore: sessionBuffer.currentZoneScore,
       vspInput: ('vsp' in currentUserDat.currentMood) ? (currentUserDat.currentMood as import('../ai/types').EliasMoodSliders).vsp : null,
-      hasBackpackContent: (backpack.sections || []).some(s => s.content.trim().length > 0),
     });
   } else {
     kimDecision = createKimDecision({
@@ -545,7 +541,6 @@ export async function processMessage(
       currentZoneColor: sessionBuffer.currentZoneColor as ZoneColor,
       currentZoneScore: sessionBuffer.currentZoneScore,
       eigenRegieInput: ('eigenRegie' in currentUserDat.currentMood) ? (currentUserDat.currentMood as import('../ai/types').KimMoodSliders).eigenRegie : null,
-      hasBackpackContent: (backpack.sections || []).some(s => s.content.trim().length > 0),
     });
   }
 
@@ -626,22 +621,10 @@ export async function processMessage(
   const engineDirective: EngineDirective | null = routeEngineDirective({
     userType: backpack.userType,
     eliasZone: (elisDecision?.zone.impact)
-      ? {
-          level: elisDecision.zone.computed.level,
-          label: elisDecision.zone.computed.label,
-          impact: elisDecision.zone.impact,
-          recommendedModel: elisDecision.recommendedModel,
-          recommendedModelReason: elisDecision.recommendedModelReason,
-        }
+      ? { level: elisDecision.zone.computed.level, label: elisDecision.zone.computed.label, impact: elisDecision.zone.impact }
       : null,
     kimZone: kimDecision?.zone.engine
-      ? {
-          level: kimDecision.zone.engine.level,
-          label: kimDecision.zone.engine.label,
-          impact: kimDecision.zone.engine.impact,
-          recommendedModel: kimDecision.recommendedModel,
-          recommendedModelReason: kimDecision.recommendedModelReason,
-        }
+      ? { level: kimDecision.zone.engine.level, label: kimDecision.zone.engine.label, impact: kimDecision.zone.engine.impact }
       : null,
   });
 
@@ -656,60 +639,51 @@ export async function processMessage(
     );
   }
 
-  // ── PRE-GPT STEP 5c: SignalEngine relevance scoring (post-module-selection) ──
-  // detectSignals() already ran in Step 3.5 (pre-Step 4). Here we only run scoreRelevance()
-  // which needs backpack relevance data computed after Step 4.
+  // ── PRE-GPT STEP 5c: SignalEngine (non-blocking) ──
+  // Calls GptSignalEngine for signal detection + relevance scoring + context summarization.
+  // Fault-tolerant: if engine not ready or call fails, empty/neutral results.
+  const engine = getEngine();
+  let candidateSignals: ChatContext['candidateSignals'] = undefined;
+  let relevanceScores: ChatContext['relevanceScores'] = undefined;
+  let contextSummary: string | undefined = undefined;
+  let signalEngineReady = false;
+
   try {
-    if (signalEngineReady) {
-      const scores = await engine.scoreRelevance(userMessage, {
-        backpackSummary: backpack.sections?.map(s => s.content).filter(Boolean).join('; ').slice(0, 200) ?? '',
-        diarySummary: (options?.diaryEntries ?? []).slice(0, 3).map(d => d.content || '').join('; '),
-        triggerList: relevance.triggers.map(t => t.trigger),
-      });
+    if (engine.isReady()) {
+      signalEngineReady = true;
+      const backpackSummary = backpack.sections?.map(s => s.content).filter(Boolean).join('; ').slice(0, 200) ?? '';
+      const diarySummary = (options?.diaryEntries ?? []).slice(0, 3).map(d => d.content || '').join('; ');
+      const [signals, scores] = await Promise.all([
+        engine.detectSignals(userMessage),
+        engine.scoreRelevance(userMessage, {
+          backpackSummary,
+          diarySummary,
+          triggerList: relevance.triggers.map(t => t.trigger),
+        }),
+      ]);
+      candidateSignals = signals;
       relevanceScores = scores;
+
+      // Taak 2: For LIVE_MESSAGE calls, summarize context as replacement for full lifeStorySummary.
+      // SESSION_INIT still sends the full backpack — no summarization needed.
+      if (!isSessionStart && backpackSummary.length > 0) {
+        const recentThemes = (currentUserDat.chatHistory || []).slice(-4)
+          .filter(m => m.role === 'user')
+          .map(m => m.content)
+          .join('; ')
+          .slice(0, 200);
+        const summary = await engine.summarizeContext({
+          backpackSections: backpackSummary,
+          recentSessionThemes: recentThemes,
+        });
+        if (summary.text.length > 0) {
+          contextSummary = summary.text;
+        }
+      }
     }
   } catch (e) {
     // Non-blocking: engine failure does not stop the pipeline
-    console.log(`[Pipeline] SignalEngine relevance scoring error (non-blocking): ${(e as Error).message}`);
-  }
-
-  // ── Step 5c-enrichment: Post-hoc module enrichment from candidateSignals ──
-  // Maps signals with confidence > 0.5 to supplementary modules.
-  // dominantModule is NOT changed — only additive enrichment.
-  let signalEnrichedModules: string[] = [];
-  if (candidateSignals) {
-    const enriched = new Set<string>();
-    const isElias = backpack.userType === 'elias';
-
-    // fears confidence > 0.5 → E02, E03 (Elias) or K03 (Kim)
-    if (candidateSignals.fears.some(s => s.confidence > 0.5)) {
-      if (isElias) { enriched.add('E02'); enriched.add('E03'); }
-      else { enriched.add('K03'); }
-    }
-    // hopes confidence > 0.5 → E06 (Elias) or K06 (Kim)
-    if (candidateSignals.hopes.some(s => s.confidence > 0.5)) {
-      if (isElias) { enriched.add('E06'); }
-      else { enriched.add('K06'); }
-    }
-    // goals confidence > 0.5 → E06, E08 (Elias) or K06 (Kim)
-    if (candidateSignals.goals.some(s => s.confidence > 0.5)) {
-      if (isElias) { enriched.add('E06'); enriched.add('E08'); }
-      else { enriched.add('K06'); }
-    }
-    // triggers confidence > 0.5 → use existing trigger→module mapping
-    for (const t of candidateSignals.triggers) {
-      if (t.confidence > 0.5) {
-        const mapped = isElias
-          ? eliasTriggerToModule(t.keyword)
-          : kimTriggerToModule(t.keyword);
-        enriched.add(mapped);
-      }
-    }
-
-    signalEnrichedModules = [...enriched];
-    if (signalEnrichedModules.length > 0) {
-      console.log(`[Pipeline] SignalEngine enrichment: +${signalEnrichedModules.join(', +')}`);
-    }
+    console.log(`[Pipeline] SignalEngine error (non-blocking): ${(e as Error).message}`);
   }
 
   const sessionStart = currentUserDat.lastSessionDate ? new Date(currentUserDat.lastSessionDate) : new Date();
@@ -753,7 +727,7 @@ export async function processMessage(
     projectionDeepening: projectionResult.deepeningDirective ?? undefined,
     candidateSignals,
     relevanceScores,
-    signalEnrichedModules: signalEnrichedModules.length > 0 ? signalEnrichedModules : undefined,
+    contextSummary,
   };
 
   let response: string;
@@ -949,8 +923,7 @@ export async function processMessage(
       { step: '4. Dominant state', status: 'passed', reason: `module=${preGPTDominantState.dominantModule}, source=${preGPTDominantState.sourceLayer}` },
       { step: '5a. Buffer snapshot', status: 'passed', reason: `triggers=${relevance.triggers.length}` },
       { step: '5b. Regulation', status: regulationResult.wasSkipped ? 'skipped' : 'passed', reason: `action=${regulationResult.action}, depth=${regulationResult.effectiveDepth}` },
-      { step: '3.5. SignalEngine (pre-module-selection)', status: signalEngineReady ? 'passed' : 'skipped', reason: signalEngineReady ? `[${engineType}] fears=${candidateSignals?.fears.length ?? 0} hopes=${candidateSignals?.hopes.length ?? 0} goals=${candidateSignals?.goals.length ?? 0} triggers=${candidateSignals?.triggers.length ?? 0}` : `not ready (${engineType})` },
-      { step: '5c-enrichment. SignalEngine enrichment', status: signalEnrichedModules.length > 0 ? 'passed' : 'skipped', reason: signalEnrichedModules.length > 0 ? `+${signalEnrichedModules.join(', +')}` : 'no enrichment' },
+      { step: '5c. SignalEngine', status: signalEngineReady ? 'passed' : 'skipped', reason: signalEngineReady ? `fears=${candidateSignals?.fears.length ?? 0} hopes=${candidateSignals?.hopes.length ?? 0} goals=${candidateSignals?.goals.length ?? 0} triggers=${candidateSignals?.triggers.length ?? 0}` : 'engine not ready' },
       { step: '5d. Projection', status: projectionResult.injectionBlock ? 'passed' : 'skipped', reason: projectionResult.injectionBlock ? 'block injected' : 'no signal' },
       { step: '6a. Zone decision', status: elisDecision ? 'passed' : 'skipped', reason: elisDecision ? `zone=${elisDecision.zone.computed.label}` : 'kim user' },
       { step: '6b. Engine directive', status: engineDirective ? 'passed' : 'skipped', reason: engineDirective ? `engine=${engineDirective.engine}` : 'none' },
@@ -995,18 +968,11 @@ export async function processMessage(
       dominantModule: preGPTDominantState.dominantModule,
       reason: preGPTDominantState.selectionReason,
       activeModules: [preGPTDominantState.dominantModule],
-      signalEnrichedModules: signalEnrichedModules.length > 0 ? signalEnrichedModules : undefined,
     },
     modelRouting: {
       selectedModel: selectedModel ?? 'unknown',
       riskScore: preGPTDominantState.riskScore,
       crisisLevel,
-      sessionInitModel: isSessionStart
-        ? (engineDirective?.recommendedModel ?? 'gpt-4o')
-        : undefined,
-      sessionInitReason: isSessionStart
-        ? (engineDirective?.recommendedModelReason ?? 'no engine recommendation, fallback')
-        : undefined,
     },
     interventionContinuity: interventionContinuity ? {
       interventionType: interventionContinuity.lastInterventionType,

@@ -38,16 +38,12 @@ const ELIAS_ZONE = {
   level: 'GEEL' as ZoneLevel,
   label: 'Geel — Neutraal / Licht Gespannen',
   impact: ELIAS_IMPACT,
-  recommendedModel: 'gpt-4o-mini' as const,
-  recommendedModelReason: 'default (low complexity)',
 };
 
 const KIM_ZONE = {
   level: 'GEEL' as ZoneLevel,
   label: 'Geel — Neutraal / Licht Gespannen',
   impact: KIM_IMPACT,
-  recommendedModel: 'gpt-4o-mini' as const,
-  recommendedModelReason: 'default (low complexity)',
 };
 
 // ─── routeEngineDirective ────────────────────────────────────
@@ -158,7 +154,7 @@ describe('routeEngineDirective — all zone levels', () => {
     it(`elias user routes ${level} correctly`, () => {
       const input: RoutingInput = {
         userType: 'elias',
-        eliasZone: { level, label: `label-${level}`, impact: ELIAS_IMPACT, recommendedModel: 'gpt-4o-mini' as const, recommendedModelReason: 'test' },
+        eliasZone: { level, label: `label-${level}`, impact: ELIAS_IMPACT },
         kimZone: null,
       };
       const result = routeEngineDirective(input);
@@ -171,7 +167,7 @@ describe('routeEngineDirective — all zone levels', () => {
       const input: RoutingInput = {
         userType: 'kim',
         eliasZone: null,
-        kimZone: { level, label: `label-${level}`, impact: KIM_IMPACT, recommendedModel: 'gpt-4o-mini' as const, recommendedModelReason: 'test' },
+        kimZone: { level, label: `label-${level}`, impact: KIM_IMPACT },
       };
       const result = routeEngineDirective(input);
       expect(result).not.toBeNull();
