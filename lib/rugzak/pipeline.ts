@@ -150,6 +150,13 @@ import {
 } from '../engine/shared/act-router';
 import type { ACTEngineResult, ACTProgress } from '../engine/shared/act-types';
 import { createDefaultACTProgress } from '../engine/shared/act-types';
+import {
+  routeCBTEngine,
+  resetCBTSessionState,
+  getSessionCBTProcessesUsed,
+} from '../engine/shared/cgt-router';
+import type { CBTEngineResult, CBTProgress } from '../engine/shared/cgt-types';
+import { createDefaultCBTProgress } from '../engine/shared/cgt-types';
 
 // ─── Pattern Marking (post-GPT local state) ─────────────────
 
@@ -215,6 +222,7 @@ export function resetSessionState(): void {
   resetStoaSessionState();
   resetSchemaModeSessionState();
   resetACTSessionState();
+  resetCBTSessionState();
 }
 
 // ─── Pipeline Result ────────────────────────────────────────────
@@ -645,6 +653,51 @@ export async function processMessage(
     }
   }
 
+  // ── PRE-GPT STEP 5h: CBT/CGT Engine (deterministic, both user types) ──
+  let cbtResult: CBTEngineResult = {
+    decision: {
+      acceptedCBTCandidates: [],
+      rejectedCBTCandidates: [],
+      dominantProcess: null,
+      dominantSignal: null,
+      dominantDistortion: null,
+      safeToUseCBT: false,
+      reason: 'not_run',
+      promptSummary: '',
+    },
+    promptBlock: '',
+    activated: false,
+  };
+  {
+    const cbtCrisisLevel = analysis.riskLevel === 'critical' || analysis.riskLevel === 'high' ? 2 : analysis.riskLevel === 'moderate' ? 1 : 0;
+    const cbtProgress: CBTProgress = (currentUserDat.cgtProgress as unknown as CBTProgress) ?? createDefaultCBTProgress();
+
+    cbtResult = routeCBTEngine({
+      userMessage,
+      userType: backpack.userType,
+      vspLevel: vspLevel ?? 'GROEN',
+      eigenRegieScore: backpack.userType === 'kim' ? (currentUserDat.currentMood as any)?.eigenRegie ?? null : null,
+      crisisLevel: cbtCrisisLevel,
+      resolvedZone: sessionBuffer.currentZoneColor.toUpperCase(),
+      distressScore: distressScore ?? 0,
+      activeMode: schemaModeResult.modeDecision.dominantMode,
+      activeSchema: schemaModeResult.schemaDecision.dominantSchema,
+      activeACTProcess: actResult.decision.dominantProcess,
+      activeProjections: (() => {
+        try {
+          const ps = getProjectionState();
+          return ps.entries.filter((e: ProjectionEntry) => e.isActive).map((e: ProjectionEntry) => e.content);
+        } catch { return []; }
+      })(),
+      stageOfChange: currentUserDat.stageOfChange ?? 'CONTEMPLATION',
+      guidanceDepth: (typeof currentUserDat.guidanceDepth === 'number' ? currentUserDat.guidanceDepth : 2) as number,
+    }, cbtProgress);
+
+    if (cbtResult.activated) {
+      console.log(`[Pipeline] CBT: process=${cbtResult.decision.dominantProcess} | signal=${cbtResult.decision.dominantSignal} | distortion=${cbtResult.decision.dominantDistortion} | reason=${cbtResult.decision.reason}`);
+    }
+  }
+
   // ── PRE-GPT STEP 6: Build ChatContext + ONE GPT call ──
   let crisisLevel = 0;
   let showEmergency = false;
@@ -906,6 +959,7 @@ export async function processMessage(
     stoaContext: stoaResult.injectionBlock ?? undefined,
     schemaModeContext: schemaModeResult.promptInjection || undefined,
     actContext: actResult.promptBlock || undefined,
+    cgtContext: cbtResult.promptBlock || undefined,
   };
 
   let response: string;
@@ -1107,6 +1161,7 @@ export async function processMessage(
       { step: '5e2. STOA', status: stoaResult.activated ? 'passed' : 'skipped', reason: stoaResult.reason },
       { step: '5f. SchemaMode', status: schemaModeResult.activated ? 'passed' : 'skipped', reason: schemaModeResult.modeDecision.reason },
       { step: '5g. ACT', status: actResult.activated ? 'passed' : 'skipped', reason: actResult.decision.reason },
+      { step: '5h. CBT', status: cbtResult.activated ? 'passed' : 'skipped', reason: cbtResult.decision.reason },
       { step: '6a. Zone decision', status: elisDecision ? 'passed' : 'skipped', reason: elisDecision ? `zone=${elisDecision.zone.computed.label}` : 'kim user' },
       { step: '6b. Engine directive', status: engineDirective ? 'passed' : 'skipped', reason: engineDirective ? `engine=${engineDirective.engine}` : 'none' },
       { step: '6c. Intervention', status: interventionContinuity ? 'passed' : 'skipped', reason: interventionContinuity ? `type=${interventionContinuity.lastInterventionType}` : 'not active' },
@@ -1758,6 +1813,20 @@ export async function endSession(
       updatedProgress.lastACTSessionDate = actNow;
       updatedUserDat = { ...updatedUserDat, actProgress: updatedProgress };
       console.log(`[Pipeline] ACT persistence: processes_used=${actProcessesUsed.length}, last=${updatedProgress.lastACTProcessUsed}`);
+    }
+  }
+
+  // ── STEP 4e: CBT/CGT progress persistence ──
+  {
+    const cbtProcessesUsed = getSessionCBTProcessesUsed();
+    if (cbtProcessesUsed.length > 0) {
+      const cbtNow = new Date().toISOString();
+      const existingCBTProgress = updatedUserDat.cgtProgress ?? createDefaultCBTProgress();
+      const updatedCBTProgress = { ...existingCBTProgress };
+      updatedCBTProgress.lastCBTProcessUsed = cbtProcessesUsed[cbtProcessesUsed.length - 1];
+      updatedCBTProgress.lastCBTSessionDate = cbtNow;
+      updatedUserDat = { ...updatedUserDat, cgtProgress: updatedCBTProgress };
+      console.log(`[Pipeline] CBT persistence: processes_used=${cbtProcessesUsed.length}, last=${updatedCBTProgress.lastCBTProcessUsed}`);
     }
   }
 

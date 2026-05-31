@@ -104,6 +104,7 @@ export interface GPTPayload {
   // ── Schema/Mode engine (deterministic intervention context) ──
   schemaModeContext?: string;
   actContext?: string;
+  cgtContext?: string;
 
   // ── Buffer snapshot (from pipeline, per message) ──
   bufferSnapshot?: {
@@ -203,6 +204,7 @@ export interface PayloadBuilderInput {
   /** Schema/Mode engine: compact intervention context from deterministic detection */
   schemaModeContext?: string;
   actContext?: string;
+  cgtContext?: string;
 }
 
 // ─── Conversation History Optimisation (Patch N Step 5) ──────
@@ -451,6 +453,9 @@ export function buildGPTPayload(input: PayloadBuilderInput): GPTPayload {
   }
   if (input.actContext) {
     payload.actContext = input.actContext;
+  }
+  if (input.cgtContext) {
+    payload.cgtContext = input.cgtContext;
   }
 
   // ── Buffer snapshot (from pipeline, per message) ──

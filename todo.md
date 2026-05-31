@@ -749,3 +749,13 @@
 - [x] Stap 5: Wire through gpt-payload-builder.ts + openai-provider.ts + server/ai-chat.ts
 - [x] Stap 6: Add ACT progress to user.dat (values, preferred tools, fusion patterns, all 3 persistence paths)
 - [x] Stap 7: 0 TS errors, 409 tests green (22 passed, 1 skipped)
+
+## Round 54 — Fase 5: CGT (Cognitive Behavioral Therapy) Engine
+
+- [x] Stap 1: Create lib/engine/shared/cgt-types.ts (27 DistortionIds, 13 CBTProcessIds, 16 CBTSignalIds, CBTCandidate, CBTDecision, CBTProgress, signal→process/hint/distortion maps)
+- [x] Stap 2: Create lib/engine/shared/cgt-detector.ts (deterministic marker detection for 16 signals, confidence scoring, priority boost)
+- [x] Stap 3: Create lib/engine/shared/cgt-router.ts (safety gating, VSP depth levels, EigenRegie gating, CBT×ACT integration, CBT×Schema/Mode integration, anti-repeat, prompt builder)
+- [x] Stap 4: Wire into pipeline.ts as Step 5h after ACT, add cgtContext to ChatContext
+- [x] Stap 5: Wire through gpt-payload-builder.ts + openai-provider.ts + server/ai-chat.ts (both prompt paths)
+- [x] Stap 6: Add CBT progress to user.dat (recurring distortions, preferred tools, reframes/experiments counts, all 3 persistence paths in user-context.tsx)
+- [x] Stap 7: 0 TS errors, 409 tests green (22 passed, 1 skipped)

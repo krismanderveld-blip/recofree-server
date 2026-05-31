@@ -336,6 +336,18 @@ export interface UserDat {
     lastACTProcessUsed: string | null;
     lastACTSessionDate: string | null;
   };
+  /** CBT/CGT: progress tracking (recurring distortions, preferred tools, success counts) */
+  cgtProgress?: {
+    recurringDistortions: string[];
+    preferredTools: string[];
+    successfulReframes: number;
+    successfulExperiments: number;
+    relapsePatternCount: number;
+    safetyBehaviorsIdentified: string[];
+    avoidanceLoopsIdentified: string[];
+    lastCBTProcessUsed: string | null;
+    lastCBTSessionDate: string | null;
+  };
 }
 
 /** A record of a completed session's analysis */
@@ -491,6 +503,17 @@ export function createNewUserDat(
       lastACTProcessUsed: null,
       lastACTSessionDate: null,
     },
+    cgtProgress: {
+      recurringDistortions: [],
+      preferredTools: [],
+      successfulReframes: 0,
+      successfulExperiments: 0,
+      relapsePatternCount: 0,
+      safetyBehaviorsIdentified: [],
+      avoidanceLoopsIdentified: [],
+      lastCBTProcessUsed: null,
+      lastCBTSessionDate: null,
+    },
   };
 }
 
@@ -602,6 +625,8 @@ export interface ChatContext {
   /** Schema/Mode engine: compact intervention context from deterministic mode/schema detection */
   schemaModeContext?: string;
   actContext?: string;
+  /** CBT/CGT engine: compact intervention context from deterministic distortion/signal detection */
+  cgtContext?: string;
 }
 
 /**

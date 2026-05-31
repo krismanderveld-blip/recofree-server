@@ -327,8 +327,9 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
             stageOfChange: raw.stageOfChange ?? 'contemplation' as const,
             stoaSessionsUsed: [],
             modeTendencies: [],
-            schemaTendencies: [],
-            actProgress: undefined,
+             schemaTendencies: [],
+             actProgress: undefined,
+             cgtProgress: undefined,
           };
 
           // Persist both new stores
@@ -570,6 +571,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       modeTendencies: state.userDat?.modeTendencies ?? [],
       schemaTendencies: state.userDat?.schemaTendencies ?? [],
       actProgress: state.userDat?.actProgress ?? undefined,
+      cgtProgress: state.userDat?.cgtProgress ?? undefined,
     };
     dispatch({ type: 'END_SESSION', payload: updatedUserDat });
     await persistUserDat(updatedUserDat);
@@ -732,5 +734,6 @@ function migrateUserDat(raw: any, userType: UserType): UserDat {
     modeTendencies: raw.modeTendencies ?? [],
     schemaTendencies: raw.schemaTendencies ?? [],
     actProgress: raw.actProgress ?? undefined,
+    cgtProgress: raw.cgtProgress ?? undefined,
   };
 }
