@@ -6,8 +6,9 @@
  *
  * Design:
  * - Model: gpt-4o-mini always (never gpt-4o for these calls)
- * - Max tokens: 150 per call
+ * - Max tokens: 400 per call
  * - Temperature: 0 (deterministic)
+ * - Timeout: 3 seconds (returns empty/neutral on timeout)
  * - Fault-tolerant: on parse error → return empty/neutral values
  * - isReady() always returns true (server is always available when online)
  */
@@ -19,15 +20,57 @@ import type {
   RelevanceContext,
   ContextSummary,
   SummarizationContext,
+  SignalContext,
 } from './signal-engine';
 
 // ─── Prompts ────────────────────────────────────────────────────
 
-const SIGNAL_DETECTION_PROMPT = (message: string) =>
-  `Analyze this message and return JSON only:
-Message: "${message}"
-Return: {"fears": [{"keyword": "...", "confidence": 0.0-1.0}], "hopes": [{"keyword": "...", "confidence": 0.0-1.0}], "goals": [{"keyword": "...", "confidence": 0.0-1.0}], "triggers": [{"keyword": "...", "confidence": 0.0-1.0}]}
-Max 3 items per category. Only what is clearly present. If nothing detected, use empty arrays.`;
+const SIGNAL_DETECTION_PROMPT_ELIAS = (message: string, context?: SignalContext) => {
+  const contextBlock = context
+    ? `\nCurrent emotional state:\n- Zone: ${context.zone}\n- VSP/Eigen Regie: ${context.vspOrEigenRegie ?? 'unknown'}\n- Key sliders: ${formatSliders(context.keySliders)}${context.activeProjections && context.activeProjections.length > 0 ? `\n- Active projections: ${context.activeProjections.map(p => `${p.category}:${p.content}`).join('; ')}` : ''}\n`
+    : '';
+
+  return `You are analyzing a message from someone in addiction recovery.
+
+Detect emotional signals relevant to recovery:
+- fears: fear of relapse, loss of control, shame, isolation
+- hopes: motivation to stay clean, desire for change, positive goals
+- goals: concrete intentions, recovery milestones, behavioral changes
+- triggers: situations/emotions that risk relapse (stress, loneliness, conflict)
+${contextBlock}
+User message: "${message}"
+
+Return JSON only:
+{"fears": [{"keyword": "...", "confidence": 0.0-1.0}], "hopes": [{"keyword": "...", "confidence": 0.0-1.0}], "goals": [{"keyword": "...", "confidence": 0.0-1.0}], "triggers": [{"keyword": "...", "confidence": 0.0-1.0}]}
+Max 3 items per category. Empty array if nothing detected.`;
+};
+
+const SIGNAL_DETECTION_PROMPT_KIM = (message: string, context?: SignalContext) => {
+  const contextBlock = context
+    ? `\nCurrent emotional state:\n- Zone: ${context.zone}\n- Eigen Regie: ${context.vspOrEigenRegie ?? 'unknown'}\n- Key sliders: ${formatSliders(context.keySliders)}${context.activeProjections && context.activeProjections.length > 0 ? `\n- Active projections: ${context.activeProjections.map(p => `${p.category}:${p.content}`).join('; ')}` : ''}\n`
+    : '';
+
+  return `You are analyzing a message from someone supporting a loved one with addiction.
+
+Detect emotional signals relevant to caregiver experience:
+- fears: fear of enabling, fear of losing loved one, fear of burnout
+- hopes: hope for loved one's recovery, hope for own boundaries, desire for change
+- goals: setting boundaries, self-care intentions, communication goals
+- triggers: situations that cause enabling behavior, guilt, exhaustion, conflict
+${contextBlock}
+User message: "${message}"
+
+Return JSON only:
+{"fears": [{"keyword": "...", "confidence": 0.0-1.0}], "hopes": [{"keyword": "...", "confidence": 0.0-1.0}], "goals": [{"keyword": "...", "confidence": 0.0-1.0}], "triggers": [{"keyword": "...", "confidence": 0.0-1.0}]}
+Max 3 items per category. Empty array if nothing detected.`;
+};
+
+function formatSliders(sliders: Record<string, unknown>): string {
+  return Object.entries(sliders)
+    .filter(([, v]) => typeof v === 'number' && Number.isFinite(v))
+    .map(([k, v]) => `${k}=${v}`)
+    .join(', ') || 'none';
+}
 
 const RELEVANCE_SCORING_PROMPT = (message: string, context: RelevanceContext) =>
   `Score relevance of these context blocks for this message (0.0-1.0):
@@ -71,9 +114,13 @@ export class GptSignalEngine implements LocalSignalEngine {
     return true;
   }
 
-  async detectSignals(message: string): Promise<SignalDetectionResult> {
+  async detectSignals(message: string, context?: SignalContext): Promise<SignalDetectionResult> {
     try {
-      const response = await this.callGptMini(SIGNAL_DETECTION_PROMPT(message));
+      const prompt = context?.userType === 'kim'
+        ? SIGNAL_DETECTION_PROMPT_KIM(message, context)
+        : SIGNAL_DETECTION_PROMPT_ELIAS(message, context);
+
+      const response = await this.callGptMini(prompt);
       const parsed = JSON.parse(response);
 
       // Validate structure
@@ -118,18 +165,26 @@ export class GptSignalEngine implements LocalSignalEngine {
   // ─── Private helpers ────────────────────────────────────────────
 
   private async callGptMini(prompt: string): Promise<string> {
-    const response = await fetch(`${this.apiBaseUrl}/api/signal-engine`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ prompt }),
-    });
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3000);
 
-    if (!response.ok) {
-      throw new Error(`Signal engine API error: ${response.status}`);
+    try {
+      const response = await fetch(`${this.apiBaseUrl}/api/signal-engine`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt }),
+        signal: controller.signal,
+      });
+
+      if (!response.ok) {
+        throw new Error(`Signal engine API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      return data.result ?? '';
+    } finally {
+      clearTimeout(timeoutId);
     }
-
-    const data = await response.json();
-    return data.result ?? '';
   }
 
   private validateSignalArray(arr: unknown): Array<{ keyword: string; confidence: number }> {

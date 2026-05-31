@@ -690,3 +690,13 @@
 - [x] Taak 2: Server uses contextSummary when available, falls back to lifeStorySummary
 - [x] Taak 3: Add architecture comment block at top of pipeline.ts (Two-Layer Decision Model)
 - [x] 0 TS errors, 401 tests green (1 skipped = baseline)
+
+## Round 49 — VSP=ROOD routing + detectSignals full context
+
+- [x] Fix 1: Add VSP=ROOD/RED routing condition to gpt-4o in server/ai-chat.ts
+- [x] Fix 1: vspLevel added to ChatContext, openai-provider payloads, server ChatRequestInput + Zod schema
+- [x] Fix 2: Add activeProjections field to SignalContext type in signal-engine.ts
+- [x] Fix 2: Wire full SignalContext (zoneColor, vspOrEigenRegie, keySliders, userType, activeProjections) in pipeline.ts detectSignals call
+- [x] Fix 2: GptSignalEngine.detectSignals() uses context in prompt (Kim/Elias routing, 3s timeout)
+- [x] Tests updated: 3 new VSP routing tests, ROOD assertion corrected
+- [x] 0 TS errors, 404 tests green, build succeeds

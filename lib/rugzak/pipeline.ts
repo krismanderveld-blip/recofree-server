@@ -654,7 +654,22 @@ export async function processMessage(
       const backpackSummary = backpack.sections?.map(s => s.content).filter(Boolean).join('; ').slice(0, 200) ?? '';
       const diarySummary = (options?.diaryEntries ?? []).slice(0, 3).map(d => d.content || '').join('; ');
       const [signals, scores] = await Promise.all([
-        engine.detectSignals(userMessage),
+        engine.detectSignals(userMessage, {
+          zone: bufferSnapshot?.zoneColor ?? 'unknown',
+          vspOrEigenRegie: vspLevel ?? eigenRegieScore,
+          keySliders: currentMood as unknown as Record<string, unknown>,
+          userType: backpack.userType as 'elias' | 'kim',
+          activeProjections: (() => {
+            try {
+              const ps = getProjectionState();
+              return ps.entries.filter((e: ProjectionEntry) => e.isActive).map((e: ProjectionEntry) => ({
+                category: e.category,
+                content: e.content,
+                strength: e.strength,
+              }));
+            } catch { return []; }
+          })(),
+        }),
         engine.scoreRelevance(userMessage, {
           backpackSummary,
           diarySummary,
@@ -703,6 +718,7 @@ export async function processMessage(
     activeModules: [activeDecision ? activeDecision.dominantModule : preGPTDominantState.dominantModule],
     crisisLevel: activeDecision ? activeDecision.crisisLevel : crisisLevel,
     isCrisis: (elisDecision?.zone.resolved?.isCrisis ?? false) || (kimDecision?.isKimCrisis ?? false),
+    vspLevel,
     engineDirective: engineDirective ?? undefined,
     detectedEmotion: analysis.emotionalState,
     therapeuticStance: buildTherapeuticStance(analysis),

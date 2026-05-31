@@ -19,6 +19,7 @@ interface ModelRoutingInput {
   crisisLevel: number;
   riskScore: number;
   isCrisis?: boolean;
+  vspLevel?: string | null;
   urgency: string;
   dominantModule: string;
   activeModules: string[];
@@ -47,6 +48,9 @@ function selectModel(input: ModelRoutingInput): { model: 'gpt-4o' | 'gpt-4o-mini
   } else if (urgencyForRouting === 'high' || urgencyForRouting === 'hoog') {
     selectedModel = 'gpt-4o';
     routingReason = `high urgency (${input.urgency})`;
+  } else if (input.vspLevel === 'ROOD' || input.vspLevel === 'RED') {
+    selectedModel = 'gpt-4o';
+    routingReason = 'VSP ROOD (high relapse risk)';
   } else if (HIGH_COMPLEXITY_MODULES.some(m => dominantModuleForRouting.includes(m))) {
     selectedModel = 'gpt-4o';
     routingReason = `complex module (${dominantModuleForRouting})`;
@@ -121,6 +125,50 @@ describe('isCrisis model routing', () => {
       activeModules: ['emotional-awareness'],
     });
     expect(result.model).toBe('gpt-4o');
+  });
+
+  it('VSP=ROOD selects gpt-4o even when crisisLevel=0 and riskScore<7', () => {
+    const result = selectModel({
+      isSessionStart: false,
+      crisisLevel: 0,
+      riskScore: 4,
+      isCrisis: false,
+      vspLevel: 'ROOD',
+      urgency: 'midden',
+      dominantModule: 'emotional-awareness',
+      activeModules: ['emotional-awareness'],
+    });
+    expect(result.model).toBe('gpt-4o');
+    expect(result.reason).toContain('VSP ROOD');
+  });
+
+  it('VSP=RED (English) also selects gpt-4o', () => {
+    const result = selectModel({
+      isSessionStart: false,
+      crisisLevel: 0,
+      riskScore: 3,
+      isCrisis: false,
+      vspLevel: 'RED',
+      urgency: 'laag',
+      dominantModule: 'craving-management',
+      activeModules: ['craving-management'],
+    });
+    expect(result.model).toBe('gpt-4o');
+    expect(result.reason).toContain('VSP ROOD');
+  });
+
+  it('VSP=ORANJE stays on gpt-4o-mini (only ROOD/RED triggers upgrade)', () => {
+    const result = selectModel({
+      isSessionStart: false,
+      crisisLevel: 0,
+      riskScore: 3,
+      isCrisis: false,
+      vspLevel: 'ORANJE',
+      urgency: 'midden',
+      dominantModule: 'emotional-awareness',
+      activeModules: ['emotional-awareness'],
+    });
+    expect(result.model).toBe('gpt-4o-mini');
   });
 
   it('VSP=PAARS scenario: isCrisis=true with crisisLevel=0 → gpt-4o', () => {

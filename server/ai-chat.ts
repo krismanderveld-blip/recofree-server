@@ -113,6 +113,7 @@ interface ChatRequestInput {
   activeModules: string[];
   crisisLevel: number;
   isCrisis?: boolean;
+  vspLevel?: string | null;
   detectedEmotion: string;
   therapeuticStance: string;
   sessionDurationMinutes: number;
@@ -248,6 +249,7 @@ export const chatInputSchema = z.object({
   ).optional(),
   riskScore: z.number().optional(),
   dominantModule: z.string().optional(),
+  vspLevel: z.string().nullable().optional(),
 
   // Static context (SESSION_INIT only)
   coreWound: z.string().nullable().optional(),
@@ -1241,6 +1243,9 @@ export async function generateAIResponse(
   } else if (urgencyForRouting === 'high' || urgencyForRouting === 'hoog') {
     selectedModel = 'gpt-4o';
     routingReason = `high urgency (${input.urgency})`;
+  } else if (input.vspLevel === 'ROOD' || input.vspLevel === 'RED') {
+    selectedModel = 'gpt-4o';
+    routingReason = 'VSP ROOD (high relapse risk)';
   } else if (HIGH_COMPLEXITY_MODULES.some(m => dominantModuleForRouting.includes(m))) {
     selectedModel = 'gpt-4o';
     routingReason = `complex module (${dominantModuleForRouting})`;

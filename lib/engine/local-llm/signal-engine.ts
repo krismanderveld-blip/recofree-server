@@ -57,6 +57,15 @@ export interface SummarizationContext {
   recentSessionThemes: string;
 }
 
+/** Context passed to detectSignals for recovery-aware signal detection */
+export interface SignalContext {
+  zone: string;
+  vspOrEigenRegie: string | number | null;
+  keySliders: Record<string, unknown>;
+  userType: 'elias' | 'kim';
+  activeProjections?: Array<{ category: string; content: string; strength: string }>;
+}
+
 // ─── Interface ──────────────────────────────────────────────────
 
 export interface LocalSignalEngine {
@@ -64,7 +73,7 @@ export interface LocalSignalEngine {
   isReady(): boolean;
 
   /** Detect signals (fears, hopes, goals, triggers) in a single message */
-  detectSignals(message: string): Promise<SignalDetectionResult>;
+  detectSignals(message: string, context?: SignalContext): Promise<SignalDetectionResult>;
 
   /** Score relevance of context blocks for the current message */
   scoreRelevance(message: string, context: RelevanceContext): Promise<RelevanceScores>;

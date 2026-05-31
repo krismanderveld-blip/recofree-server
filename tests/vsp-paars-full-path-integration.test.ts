@@ -30,9 +30,11 @@ function selectModel(input: {
   crisisLevel: number;
   riskScore: number;
   isCrisis?: boolean;
+  vspLevel?: string | null;
 }): string {
   if (input.isSessionStart) return 'gpt-4o';
   if (input.crisisLevel > 0 || input.riskScore >= 7 || input.isCrisis === true) return 'gpt-4o';
+  if (input.vspLevel === 'ROOD' || input.vspLevel === 'RED') return 'gpt-4o';
   return 'gpt-4o-mini';
 }
 
@@ -105,13 +107,14 @@ describe('vsp-paars-full-path-integration', () => {
     const regulation = applyRegulation(zoneColor, 'normal');
     expect(regulation.action).toBe('stabilize');
 
-    // Without isCrisis, crisisLevel=0, riskScore=4 → gpt-4o-mini
+    // VSP=ROOD now always routes to gpt-4o (Fix 1 Round 49)
     const model = selectModel({
       isSessionStart: false,
       crisisLevel: 0,
       riskScore: 4,
       isCrisis: false,
+      vspLevel: 'ROOD',
     });
-    expect(model).toBe('gpt-4o-mini');
+    expect(model).toBe('gpt-4o');
   });
 });

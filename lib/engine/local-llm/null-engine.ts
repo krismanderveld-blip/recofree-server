@@ -12,6 +12,7 @@ import type {
   RelevanceContext,
   ContextSummary,
   SummarizationContext,
+  SignalContext,
 } from './signal-engine';
 
 export class NullSignalEngine implements LocalSignalEngine {
@@ -19,7 +20,7 @@ export class NullSignalEngine implements LocalSignalEngine {
     return true;
   }
 
-  async detectSignals(_message: string): Promise<SignalDetectionResult> {
+  async detectSignals(_message: string, _context?: SignalContext): Promise<SignalDetectionResult> {
     return { fears: [], hopes: [], goals: [], triggers: [] };
   }
 

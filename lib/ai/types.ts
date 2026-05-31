@@ -520,6 +520,8 @@ export interface ChatContext {
   crisisLevel: number;
   /** Whether the resolved zone is a crisis state (PAARS / severity 5). From ResolvedEliasZone.isCrisis. */
   isCrisis?: boolean;
+  /** VSP level for Elias users (GROEN/GEEL/ORANJE/ROOD/PAARS) — used for model routing */
+  vspLevel?: string | null;
   detectedEmotion: string;
   therapeuticStance: string;
   sessionDurationMinutes: number;
