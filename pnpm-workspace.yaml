@@ -1,2 +1,4 @@
-dangerouslyAllowAllBuilds: true
 nodeLinker: hoisted
+onlyBuiltDependencies:
+  - esbuild
+  - unrs-resolver
