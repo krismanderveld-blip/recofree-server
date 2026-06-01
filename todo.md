@@ -795,3 +795,11 @@
 - [x] Add ko1Context to payload chain (gpt-payload-builder, openai-provider, server/ai-chat)
 - [x] Add ko1Progress to user.dat persistence (types.ts, user-context.tsx)
 - [x] 0 TS errors, 409 tests green
+
+## Round 58 — K05 Communication Skills (Kim-only)
+
+- [x] Create lib/engine/kim/k05-communication.ts with types, detector, router, prompt builder
+- [x] Wire K05 into pipeline.ts as Kim-specific step after KO1 (Step 5l)
+- [x] Add k05Context to payload chain (gpt-payload-builder, openai-provider, server/ai-chat)
+- [x] Add k05Progress to user.dat persistence (types.ts, user-context.tsx)
+- [x] 0 TS errors, 409 tests green

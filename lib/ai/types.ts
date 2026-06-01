@@ -380,6 +380,15 @@ export interface UserDat {
     burnoutSignalCount: number;
     reassuranceLoopCount: number;
   };
+  /** K05 Communication Skills: Kim-only communication tracking */
+  k05Progress?: {
+    communicationTriggersDetected: string[];
+    repairPatternsUsed: string[];
+    escalationPatternsDetected: number;
+    lastCommunicationMode: string | null;
+    lastSessionDate: string | null;
+    timingViolationCount: number;
+  };
 }
 
 /** A record of a completed session's analysis */
@@ -575,6 +584,14 @@ export function createNewUserDat(
       burnoutSignalCount: 0,
       reassuranceLoopCount: 0,
     },
+    k05Progress: {
+      communicationTriggersDetected: [],
+      repairPatternsUsed: [],
+      escalationPatternsDetected: 0,
+      lastCommunicationMode: null,
+      lastSessionDate: null,
+      timingViolationCount: 0,
+    },
   };
 }
 
@@ -694,6 +711,8 @@ export interface ChatContext {
   mbtContext?: string;
   /** KO1 Recognition & Validation engine: Kim-only pattern detection + validation levels */
   ko1Context?: string;
+  /** K05 Communication Skills engine: Kim-only communication context + timing + framework */
+  k05Context?: string;
 }
 
 /**

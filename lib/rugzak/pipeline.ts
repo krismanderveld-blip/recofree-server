@@ -178,6 +178,13 @@ import {
   createDefaultKO1Progress,
 } from '../engine/kim/ko1-recognition';
 import type { KO1EngineResult, KO1Progress } from '../engine/kim/ko1-recognition';
+import {
+  routeK05Engine,
+  resetK05SessionState,
+  getSessionK05ModesUsed,
+  createDefaultK05Progress,
+} from '../engine/kim/k05-communication';
+import type { K05EngineResult, K05Progress } from '../engine/kim/k05-communication';
 
 // ─── Pattern Marking (post-GPT local state) ─────────────────
 
@@ -247,6 +254,7 @@ export function resetSessionState(): void {
   resetDGTSessionState();
   resetMBTSessionState();
   resetKO1SessionState();
+  resetK05SessionState();
 }
 
 // ─── Pipeline Result ────────────────────────────────────────────
@@ -809,6 +817,19 @@ export async function processMessage(
   }
 
   // ── PRE-GPT STEP 5k: KO1 Recognition & Validation (Kim only) ──
+  let k05Result: K05EngineResult = {
+    activated: false,
+    decision: {
+      activated: false,
+      communicationMode: 'FRAMEWORK_GUIDE',
+      dominantContext: null,
+      timingAssessment: 'NEUTRAL',
+      reason: 'not_run',
+      intoxicationBlock: false,
+      frameworkSuggested: false,
+    },
+    promptBlock: null,
+  };
   let ko1Result: KO1EngineResult = {
     activated: false,
     decision: {
@@ -840,6 +861,23 @@ export async function processMessage(
 
     if (ko1Result.activated) {
       console.log(`[Pipeline] KO1: pattern=${ko1Result.decision.dominantPattern} | level=${ko1Result.decision.validationLevel} | mode=${ko1Result.decision.responseMode} | jules=${ko1Result.decision.julesRuleActive} | boundary=${ko1Result.decision.boundaryOverride}`);
+    }
+
+    // ── STEP 5l: K05 Communication Skills (Kim only) ──
+    const k05Progress: K05Progress = (currentUserDat as any).k05Progress ?? createDefaultK05Progress();
+
+    k05Result = routeK05Engine({
+      message: userMessage,
+      userType: backpack.userType,
+      vspLevel: sessionBuffer.currentZoneColor.toUpperCase(),
+      crisisLevel: analysis.riskLevel === 'critical' || analysis.riskLevel === 'high' ? 2 : analysis.riskLevel === 'moderate' ? 1 : 0,
+      frustrationScore,
+      eigenRegieScore: (currentUserDat.currentMood as any)?.eigenRegie ?? null,
+      sessionMessageCount: sessionMessageCount,
+    }, k05Progress);
+
+    if (k05Result.activated) {
+      console.log(`[Pipeline] K05: context=${k05Result.decision.dominantContext} | mode=${k05Result.decision.communicationMode} | timing=${k05Result.decision.timingAssessment} | intoxBlock=${k05Result.decision.intoxicationBlock}`);
     }
   }
 
@@ -1108,6 +1146,7 @@ export async function processMessage(
     dgtContext: dgtResult.promptBlock || undefined,
     mbtContext: mbtResult.promptBlock || undefined,
     ko1Context: ko1Result.promptBlock || undefined,
+    k05Context: k05Result.promptBlock || undefined,
   };
 
   let response: string;
@@ -1313,6 +1352,7 @@ export async function processMessage(
       { step: '5i. DGT', status: dgtResult.activated ? 'passed' : 'skipped', reason: dgtResult.decision.reason },
       { step: '5j. MBT', status: mbtResult.activated ? 'passed' : 'skipped', reason: mbtResult.decision.reason },
       { step: '5k. KO1', status: ko1Result.activated ? 'passed' : 'skipped', reason: ko1Result.decision.reason },
+      { step: '5l. K05', status: k05Result.activated ? 'passed' : 'skipped', reason: k05Result.decision.reason },
       { step: '6a. Zone decision', status: elisDecision ? 'passed' : 'skipped', reason: elisDecision ? `zone=${elisDecision.zone.computed.label}` : 'kim user' },
       { step: '6b. Engine directive', status: engineDirective ? 'passed' : 'skipped', reason: engineDirective ? `engine=${engineDirective.engine}` : 'none' },
       { step: '6c. Intervention', status: interventionContinuity ? 'passed' : 'skipped', reason: interventionContinuity ? `type=${interventionContinuity.lastInterventionType}` : 'not active' },
@@ -2026,6 +2066,23 @@ export async function endSession(
       }
       updatedUserDat = { ...updatedUserDat, ko1Progress: updatedKO1Progress } as any;
       console.log(`[Pipeline] KO1 persistence: patterns_used=${ko1PatternsUsed.length}, last=${updatedKO1Progress.lastPatternDetected}`);
+    }
+  }
+
+  // ── STEP 4i: K05 Communication Skills progress persistence ──
+  if (backpack.userType === 'kim') {
+    const k05ModesUsed = getSessionK05ModesUsed();
+    if (k05ModesUsed.length > 0) {
+      const k05Now = new Date().toISOString();
+      const existingK05Progress = (updatedUserDat as any).k05Progress ?? createDefaultK05Progress();
+      const updatedK05Progress = { ...existingK05Progress };
+      updatedK05Progress.lastCommunicationMode = k05ModesUsed[k05ModesUsed.length - 1];
+      updatedK05Progress.lastSessionDate = k05Now;
+      if (k05ModesUsed.includes('PAUSE_CONVERSATION') || k05ModesUsed.includes('DE_ESCALATE')) {
+        updatedK05Progress.escalationPatternsDetected = (updatedK05Progress.escalationPatternsDetected ?? 0) + 1;
+      }
+      updatedUserDat = { ...updatedUserDat, k05Progress: updatedK05Progress } as any;
+      console.log(`[Pipeline] K05 persistence: modes_used=${k05ModesUsed.length}, last=${updatedK05Progress.lastCommunicationMode}`);
     }
   }
 
