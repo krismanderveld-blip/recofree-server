@@ -185,6 +185,14 @@ import {
   createDefaultK05Progress,
 } from '../engine/kim/k05-communication';
 import type { K05EngineResult, K05Progress } from '../engine/kim/k05-communication';
+import {
+  routeK02Engine,
+  resetK02SessionState,
+  getSessionK02FlagsUsed,
+  getSessionK02InterventionStates,
+  createDefaultK02Progress,
+} from '../engine/kim/k02-enabling-awareness';
+import type { K02EngineResult, K02Progress } from '../engine/kim/k02-enabling-awareness';
 
 // ─── Pattern Marking (post-GPT local state) ─────────────────
 
@@ -255,6 +263,7 @@ export function resetSessionState(): void {
   resetMBTSessionState();
   resetKO1SessionState();
   resetK05SessionState();
+  resetK02SessionState();
 }
 
 // ─── Pipeline Result ────────────────────────────────────────────
@@ -843,6 +852,19 @@ export async function processMessage(
     },
     promptBlock: null,
   };
+  let k02Result: K02EngineResult = {
+    activated: false,
+    decision: {
+      activated: false,
+      interventionState: 'SOFT_AWARENESS',
+      dominantFlag: null,
+      awarenessLevel: 'none',
+      boundaryReadiness: 'none',
+      routeRecommendation: 'stay_k02',
+      reason: 'not_run',
+    },
+    promptBlock: null,
+  };
   if (backpack.userType === 'kim') {
     const ko1Progress: KO1Progress = (currentUserDat as any).ko1Progress ?? createDefaultKO1Progress();
     const frustrationScore = (currentUserDat.currentMood as any)?.frustration ?? 3;
@@ -878,6 +900,24 @@ export async function processMessage(
 
     if (k05Result.activated) {
       console.log(`[Pipeline] K05: context=${k05Result.decision.dominantContext} | mode=${k05Result.decision.communicationMode} | timing=${k05Result.decision.timingAssessment} | intoxBlock=${k05Result.decision.intoxicationBlock}`);
+    }
+
+    // ── STEP 5m: K02 Enabling Awareness (Kim only) ──
+    const k02Progress: K02Progress = (currentUserDat as any).k02Progress ?? createDefaultK02Progress();
+
+    k02Result = routeK02Engine({
+      message: userMessage,
+      userType: backpack.userType,
+      eigenRegieScore: (currentUserDat.currentMood as any)?.eigenRegie ?? null,
+      crisisLevel: analysis.riskLevel === 'critical' || analysis.riskLevel === 'high' ? 2 : analysis.riskLevel === 'moderate' ? 1 : 0,
+      stressScore: frustrationScore,
+      boundaryFatigueScore: Math.min(10, frustrationScore + (sessionMessageCount > 10 ? 2 : 0)),
+      emotionalBurdenScore: Math.min(10, frustrationScore + (analysis.riskLevel === 'moderate' ? 2 : analysis.riskLevel === 'high' ? 4 : 0)),
+      sessionMessageCount: sessionMessageCount,
+    }, k02Progress);
+
+    if (k02Result.activated) {
+      console.log(`[Pipeline] K02: flag=${k02Result.decision.dominantFlag} | state=${k02Result.decision.interventionState} | route=${k02Result.decision.routeRecommendation}`);
     }
   }
 
@@ -1147,6 +1187,7 @@ export async function processMessage(
     mbtContext: mbtResult.promptBlock || undefined,
     ko1Context: ko1Result.promptBlock || undefined,
     k05Context: k05Result.promptBlock || undefined,
+    k02Context: k02Result.promptBlock || undefined,
   };
 
   let response: string;
@@ -1353,6 +1394,7 @@ export async function processMessage(
       { step: '5j. MBT', status: mbtResult.activated ? 'passed' : 'skipped', reason: mbtResult.decision.reason },
       { step: '5k. KO1', status: ko1Result.activated ? 'passed' : 'skipped', reason: ko1Result.decision.reason },
       { step: '5l. K05', status: k05Result.activated ? 'passed' : 'skipped', reason: k05Result.decision.reason },
+      { step: '5m. K02', status: k02Result.activated ? 'passed' : 'skipped', reason: k02Result.decision.reason },
       { step: '6a. Zone decision', status: elisDecision ? 'passed' : 'skipped', reason: elisDecision ? `zone=${elisDecision.zone.computed.label}` : 'kim user' },
       { step: '6b. Engine directive', status: engineDirective ? 'passed' : 'skipped', reason: engineDirective ? `engine=${engineDirective.engine}` : 'none' },
       { step: '6c. Intervention', status: interventionContinuity ? 'passed' : 'skipped', reason: interventionContinuity ? `type=${interventionContinuity.lastInterventionType}` : 'not active' },
@@ -2083,6 +2125,31 @@ export async function endSession(
       }
       updatedUserDat = { ...updatedUserDat, k05Progress: updatedK05Progress } as any;
       console.log(`[Pipeline] K05 persistence: modes_used=${k05ModesUsed.length}, last=${updatedK05Progress.lastCommunicationMode}`);
+    }
+  }
+
+  // ── STEP 4j: K02 Enabling Awareness progress persistence ──
+  if (backpack.userType === 'kim') {
+    const k02FlagsUsed = getSessionK02FlagsUsed();
+    const k02StatesUsed = getSessionK02InterventionStates();
+    if (k02FlagsUsed.length > 0) {
+      const k02Now = new Date().toISOString();
+      const existingK02Progress = (updatedUserDat as any).k02Progress ?? createDefaultK02Progress();
+      const updatedK02Progress = { ...existingK02Progress };
+      updatedK02Progress.lastSessionDate = k02Now;
+      updatedK02Progress.sessionCount = (updatedK02Progress.sessionCount ?? 0) + 1;
+      // Track dominant flags
+      const uniqueFlags = [...new Set(k02FlagsUsed)];
+      updatedK02Progress.dominantFlags = uniqueFlags;
+      // Update awareness level based on session count
+      if (updatedK02Progress.sessionCount >= 3) updatedK02Progress.awarenessLevel = 'clear';
+      else if (updatedK02Progress.sessionCount >= 1) updatedK02Progress.awarenessLevel = 'emerging';
+      // Track microboundary if boundary warning was used
+      if (k02StatesUsed.includes('BOUNDARY_WARNING') || k02StatesUsed.includes('CLEAR_REALITY_CHECK')) {
+        updatedK02Progress.microboundaryAttempted = true;
+      }
+      updatedUserDat = { ...updatedUserDat, k02Progress: updatedK02Progress } as any;
+      console.log(`[Pipeline] K02 persistence: flags_used=${k02FlagsUsed.length}, awareness=${updatedK02Progress.awarenessLevel}`);
     }
   }
 

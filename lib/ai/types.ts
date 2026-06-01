@@ -389,6 +389,15 @@ export interface UserDat {
     lastSessionDate: string | null;
     timingViolationCount: number;
   };
+  k02Progress?: {
+    awarenessLevel: string;
+    dominantFlags: string[];
+    guiltIntensity: string;
+    selfLossLevel: string;
+    microboundaryAttempted: boolean;
+    lastSessionDate: string | null;
+    sessionCount: number;
+  };
 }
 
 /** A record of a completed session's analysis */
@@ -592,6 +601,15 @@ export function createNewUserDat(
       lastSessionDate: null,
       timingViolationCount: 0,
     },
+    k02Progress: {
+      awarenessLevel: 'none',
+      dominantFlags: [],
+      guiltIntensity: 'low',
+      selfLossLevel: 'low',
+      microboundaryAttempted: false,
+      lastSessionDate: null,
+      sessionCount: 0,
+    },
   };
 }
 
@@ -713,6 +731,7 @@ export interface ChatContext {
   ko1Context?: string;
   /** K05 Communication Skills engine: Kim-only communication context + timing + framework */
   k05Context?: string;
+  k02Context?: string;
 }
 
 /**

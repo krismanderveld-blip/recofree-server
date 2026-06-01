@@ -803,3 +803,13 @@
 - [x] Add k05Context to payload chain (gpt-payload-builder, openai-provider, server/ai-chat)
 - [x] Add k05Progress to user.dat persistence (types.ts, user-context.tsx)
 - [x] 0 TS errors, 409 tests green
+
+## Round 59 — K02 Enabling Awareness (Kim-only)
+
+- [x] Create lib/engine/kim/k02-enabling-awareness.ts with enums, state variables, boundary flags, detector, router, prompt builder
+- [x] Detector: 6 boundary flags (self-loss, guilt, rescuing, control-as-care, hypervigilance, abandonment fear) with NL+EN markers
+- [x] Router: 5 intervention states, K03/K04 routing, awareness tracking, prompt builder
+- [x] Wire K02 into pipeline.ts as Kim-specific step after K05 (Step 5m)
+- [x] Add k02Context to payload chain (gpt-payload-builder, openai-provider, server/ai-chat)
+- [x] Add k02Progress to user.dat persistence (types.ts, user-context.tsx)
+- [x] 0 TS errors, 409 tests green
