@@ -348,6 +348,18 @@ export interface UserDat {
     lastCBTProcessUsed: string | null;
     lastCBTSessionDate: string | null;
   };
+  /** DGT/DBT: progress tracking (successful skills, grounding preferences, trigger patterns) */
+  dgtProgress?: {
+    successfulSkills: string[];
+    groundingPreference: string[];
+    triggerPatterns: string[];
+    relapseInterruptionPatterns: string[];
+    effectiveValidationDepth: string | null;
+    boundarySkillSuccess: string[];
+    caregiverOverloadPatterns: string[];
+    lastDGTProcessUsed: string | null;
+    lastDGTSessionDate: string | null;
+  };
 }
 
 /** A record of a completed session's analysis */
@@ -514,6 +526,17 @@ export function createNewUserDat(
       lastCBTProcessUsed: null,
       lastCBTSessionDate: null,
     },
+    dgtProgress: {
+      successfulSkills: [],
+      groundingPreference: [],
+      triggerPatterns: [],
+      relapseInterruptionPatterns: [],
+      effectiveValidationDepth: null,
+      boundarySkillSuccess: [],
+      caregiverOverloadPatterns: [],
+      lastDGTProcessUsed: null,
+      lastDGTSessionDate: null,
+    },
   };
 }
 
@@ -627,6 +650,8 @@ export interface ChatContext {
   actContext?: string;
   /** CBT/CGT engine: compact intervention context from deterministic distortion/signal detection */
   cgtContext?: string;
+  /** DGT/DBT engine: compact intervention context from deterministic emotional/behavioral signal detection */
+  dgtContext?: string;
 }
 
 /**

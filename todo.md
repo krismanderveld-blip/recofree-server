@@ -759,3 +759,13 @@
 - [x] Stap 5: Wire through gpt-payload-builder.ts + openai-provider.ts + server/ai-chat.ts (both prompt paths)
 - [x] Stap 6: Add CBT progress to user.dat (recurring distortions, preferred tools, reframes/experiments counts, all 3 persistence paths in user-context.tsx)
 - [x] Stap 7: 0 TS errors, 409 tests green (22 passed, 1 skipped)
+
+## Round 55 — Fase 5: DGT (Dialectical Behavior Therapy) Engine
+
+- [x] Stap 1: Create lib/engine/shared/dbt-types.ts (16 DGTProcessIds, 18 DGTSignalIds, 22 DGTSkillIds, 6 ValidationLevelIds, 5 EscalationStages, EKTPhases, KimStateRisks, AbandonmentPanicSubtypes, ShameSpiralStages, RelapseRiskStages, DGTCandidate/DGTDecision/DGTProgress contracts, signal→process/skill/hint maps, VSP→validation/escalation→validation maps)
+- [x] Stap 2: Create lib/engine/shared/dbt-detector.ts (deterministic marker detection for 18 signals, priority-weighted confidence scoring per Section 22)
+- [x] Stap 3: Create lib/engine/shared/dbt-router.ts (validation L1-L6 engine, skill selection hidden, safety gating, VSP depth levels, escalation stage scoring, Kim boundary-first routing, DGT→EKT routing, DGT×ACT×CBT×Schema arbitration, prompt builder 4-line context budget)
+- [x] Stap 4: Wire into pipeline.ts as Step 5i after CBT, add dgtContext to ChatContext, resetDGTSessionState
+- [x] Stap 5: Wire through gpt-payload-builder.ts + openai-provider.ts (3 locations) + server/ai-chat.ts (interface + Zod + prompt block + 2 prompt templates)
+- [x] Stap 6: Add DGT progress to user.dat (successful skills, grounding preference, trigger patterns, relapse interruption, validation depth, boundary skills, caregiver overload, all 3 persistence paths in user-context.tsx)
+- [x] Stap 7: 0 TS errors, 409 tests green (22 passed, 1 skipped)

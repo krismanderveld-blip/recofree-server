@@ -105,6 +105,7 @@ export interface GPTPayload {
   schemaModeContext?: string;
   actContext?: string;
   cgtContext?: string;
+  dgtContext?: string;
 
   // ── Buffer snapshot (from pipeline, per message) ──
   bufferSnapshot?: {
@@ -205,6 +206,7 @@ export interface PayloadBuilderInput {
   schemaModeContext?: string;
   actContext?: string;
   cgtContext?: string;
+  dgtContext?: string;
 }
 
 // ─── Conversation History Optimisation (Patch N Step 5) ──────
@@ -456,6 +458,9 @@ export function buildGPTPayload(input: PayloadBuilderInput): GPTPayload {
   }
   if (input.cgtContext) {
     payload.cgtContext = input.cgtContext;
+  }
+  if (input.dgtContext) {
+    payload.dgtContext = input.dgtContext;
   }
 
   // ── Buffer snapshot (from pipeline, per message) ──

@@ -201,6 +201,7 @@ export class OpenAIProvider implements AIProvider {
         schemaModeContext: context.schemaModeContext,
         actContext: context.actContext,
         cgtContext: context.cgtContext,
+        dgtContext: context.dgtContext,
       });
 
       // ── STEP 3: Build server payload based on SESSION_INIT / LIVE_MESSAGE split ──
@@ -269,6 +270,8 @@ export class OpenAIProvider implements AIProvider {
           actContext: gptPayload.actContext ?? null,
           // CBT/CGT engine (cognitive distortion intervention context)
           cgtContext: gptPayload.cgtContext ?? null,
+          // DGT/DBT engine (emotional/behavioral signal intervention context)
+          dgtContext: gptPayload.dgtContext ?? null,
 
           // Full data (SESSION_INIT only)
           backpack: gptPayload.backpack,
@@ -345,6 +348,8 @@ export class OpenAIProvider implements AIProvider {
           actContext: gptPayload.actContext ?? null,
           // CBT/CGT engine (cognitive distortion intervention context)
           cgtContext: gptPayload.cgtContext ?? null,
+          // DGT/DBT engine (emotional/behavioral signal intervention context)
+          dgtContext: gptPayload.dgtContext ?? null,
 
           // Signal engine: relevance scores for context gating (threshold 0.3)
           relevanceScores: context.relevanceScores ?? null,

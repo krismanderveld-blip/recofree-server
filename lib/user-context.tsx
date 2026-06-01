@@ -329,8 +329,9 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
             modeTendencies: [],
              schemaTendencies: [],
              actProgress: undefined,
-             cgtProgress: undefined,
-          };
+              cgtProgress: undefined,
+              dgtProgress: undefined,
+           };
 
           // Persist both new stores
           await Promise.all([
@@ -572,6 +573,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       schemaTendencies: state.userDat?.schemaTendencies ?? [],
       actProgress: state.userDat?.actProgress ?? undefined,
       cgtProgress: state.userDat?.cgtProgress ?? undefined,
+      dgtProgress: state.userDat?.dgtProgress ?? undefined,
     };
     dispatch({ type: 'END_SESSION', payload: updatedUserDat });
     await persistUserDat(updatedUserDat);
@@ -735,5 +737,6 @@ function migrateUserDat(raw: any, userType: UserType): UserDat {
     schemaTendencies: raw.schemaTendencies ?? [],
     actProgress: raw.actProgress ?? undefined,
     cgtProgress: raw.cgtProgress ?? undefined,
+    dgtProgress: raw.dgtProgress ?? undefined,
   };
 }

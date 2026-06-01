@@ -157,6 +157,13 @@ import {
 } from '../engine/shared/cgt-router';
 import type { CBTEngineResult, CBTProgress } from '../engine/shared/cgt-types';
 import { createDefaultCBTProgress } from '../engine/shared/cgt-types';
+import {
+  routeDGTEngine,
+  resetDGTSessionState,
+  getSessionDGTProcessesUsed,
+} from '../engine/shared/dbt-router';
+import type { DGTEngineResult, DGTProgress } from '../engine/shared/dbt-types';
+import { createDefaultDGTProgress } from '../engine/shared/dbt-types';
 
 // ─── Pattern Marking (post-GPT local state) ─────────────────
 
@@ -223,6 +230,7 @@ export function resetSessionState(): void {
   resetSchemaModeSessionState();
   resetACTSessionState();
   resetCBTSessionState();
+  resetDGTSessionState();
 }
 
 // ─── Pipeline Result ────────────────────────────────────────────
@@ -698,6 +706,50 @@ export async function processMessage(
     }
   }
 
+  // ── PRE-GPT STEP 5i: DGT/DBT Engine (deterministic, both user types) ──
+  let dgtResult: DGTEngineResult = {
+    decision: {
+      acceptedDGTCandidates: [],
+      rejectedDGTCandidates: [],
+      dominantProcess: null,
+      dominantSignal: null,
+      selectedSkill: null,
+      validationLevel: 'L5_NORMALIZATION',
+      escalationStage: 'CALM',
+      safeToUseDGT: false,
+      ektPhase: null,
+      reason: 'not_run',
+      promptSummary: '',
+    },
+    promptBlock: '',
+    activated: false,
+  };
+  {
+    const dgtCrisisLevel = analysis.riskLevel === 'critical' || analysis.riskLevel === 'high' ? 2 : analysis.riskLevel === 'moderate' ? 1 : 0;
+    const dgtProgress: DGTProgress = (currentUserDat.dgtProgress as unknown as DGTProgress) ?? createDefaultDGTProgress();
+
+    dgtResult = routeDGTEngine({
+      userMessage,
+      userType: backpack.userType as 'elias' | 'kim',
+      vspLevel: sessionBuffer.currentZoneColor.toUpperCase(),
+      eigenRegieScore: backpack.userType === 'kim' ? (currentUserDat.currentMood as any)?.eigenRegie ?? null : null,
+      crisisLevel: dgtCrisisLevel,
+      resolvedZone: sessionBuffer.currentZoneColor.toUpperCase(),
+      distressScore: (currentUserDat.currentMood as any)?.distress ?? 5,
+      activeMode: schemaModeResult.modeDecision.dominantMode,
+      activeSchema: schemaModeResult.schemaDecision.dominantSchema,
+      activeACTProcess: actResult.decision.dominantProcess,
+      activeCBTProcess: cbtResult.decision.dominantProcess,
+      activeProjections: [],
+      stageOfChange: (currentUserDat as any).stageOfChange ?? 'contemplation',
+      guidanceDepth: (typeof currentUserDat.guidanceDepth === 'number' ? currentUserDat.guidanceDepth : 2) as number,
+    }, dgtProgress);
+
+    if (dgtResult.activated) {
+      console.log(`[Pipeline] DGT: process=${dgtResult.decision.dominantProcess} | signal=${dgtResult.decision.dominantSignal} | skill=${dgtResult.decision.selectedSkill} | validation=${dgtResult.decision.validationLevel} | escalation=${dgtResult.decision.escalationStage} | reason=${dgtResult.decision.reason}`);
+    }
+  }
+
   // ── PRE-GPT STEP 6: Build ChatContext + ONE GPT call ──
   let crisisLevel = 0;
   let showEmergency = false;
@@ -960,6 +1012,7 @@ export async function processMessage(
     schemaModeContext: schemaModeResult.promptInjection || undefined,
     actContext: actResult.promptBlock || undefined,
     cgtContext: cbtResult.promptBlock || undefined,
+    dgtContext: dgtResult.promptBlock || undefined,
   };
 
   let response: string;
@@ -1162,6 +1215,7 @@ export async function processMessage(
       { step: '5f. SchemaMode', status: schemaModeResult.activated ? 'passed' : 'skipped', reason: schemaModeResult.modeDecision.reason },
       { step: '5g. ACT', status: actResult.activated ? 'passed' : 'skipped', reason: actResult.decision.reason },
       { step: '5h. CBT', status: cbtResult.activated ? 'passed' : 'skipped', reason: cbtResult.decision.reason },
+      { step: '5i. DGT', status: dgtResult.activated ? 'passed' : 'skipped', reason: dgtResult.decision.reason },
       { step: '6a. Zone decision', status: elisDecision ? 'passed' : 'skipped', reason: elisDecision ? `zone=${elisDecision.zone.computed.label}` : 'kim user' },
       { step: '6b. Engine directive', status: engineDirective ? 'passed' : 'skipped', reason: engineDirective ? `engine=${engineDirective.engine}` : 'none' },
       { step: '6c. Intervention', status: interventionContinuity ? 'passed' : 'skipped', reason: interventionContinuity ? `type=${interventionContinuity.lastInterventionType}` : 'not active' },
@@ -1827,6 +1881,20 @@ export async function endSession(
       updatedCBTProgress.lastCBTSessionDate = cbtNow;
       updatedUserDat = { ...updatedUserDat, cgtProgress: updatedCBTProgress };
       console.log(`[Pipeline] CBT persistence: processes_used=${cbtProcessesUsed.length}, last=${updatedCBTProgress.lastCBTProcessUsed}`);
+    }
+  }
+
+  // ── STEP 4f: DGT/DBT progress persistence ──
+  {
+    const dgtProcessesUsed = getSessionDGTProcessesUsed();
+    if (dgtProcessesUsed.length > 0) {
+      const dgtNow = new Date().toISOString();
+      const existingDGTProgress = updatedUserDat.dgtProgress ?? createDefaultDGTProgress();
+      const updatedDGTProgress = { ...existingDGTProgress };
+      updatedDGTProgress.lastDGTProcessUsed = dgtProcessesUsed[dgtProcessesUsed.length - 1];
+      updatedDGTProgress.lastDGTSessionDate = dgtNow;
+      updatedUserDat = { ...updatedUserDat, dgtProgress: updatedDGTProgress };
+      console.log(`[Pipeline] DGT persistence: processes_used=${dgtProcessesUsed.length}, last=${updatedDGTProgress.lastDGTProcessUsed}`);
     }
   }
 
