@@ -779,3 +779,9 @@
 - [x] Stap 5: Wire through gpt-payload-builder.ts + openai-provider.ts (3 locations) + server/ai-chat.ts (interface + Zod + prompt block + 2 prompt templates)
 - [x] Stap 6: Add MBT progress to user.dat (dominantMentalizingPattern, recurringCollapsePatterns, successfulRepairs, successfulRegulations, boundaryProtectionsUsed, preferredResponseModes, lastMBTProcessUsed, lastMBTSessionDate) + all 3 persistence paths in user-context.tsx
 - [x] Stap 7: 0 TS errors, 409 tests green (22 passed, 1 skipped)
+
+## Bugfix — Projection layer fears not activating
+
+- [x] Fix missing `await` on loadAndRestoreEliasProjection/Kim in chat.tsx (projection state was empty at first pipeline run)
+- [x] Add persistence after detection in projection-layer.ts (saveEliasProjection/saveKimProjection fire-and-forget after new entries or reinforcements)
+- [x] 0 TS errors, 409 tests green

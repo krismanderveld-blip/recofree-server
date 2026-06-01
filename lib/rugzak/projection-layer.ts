@@ -12,6 +12,8 @@
 import {
   detectProjectionSignals,
   buildProjectionContext,
+  getProjectionState,
+  saveEliasProjection,
   type ProjectionSignalInput,
   type ProjectionSignalResult,
 } from '../engine/elias/projection';
@@ -19,6 +21,8 @@ import {
 import {
   detectKimProjectionSignals,
   buildKimProjectionContext,
+  getKimProjectionState,
+  saveKimProjection,
   type KimProjectionSignalInput,
   type KimProjectionSignalResult,
 } from '../engine/kim/projection';
@@ -140,6 +144,16 @@ export function runProjectionLayer(input: ProjectionLayerInput): ProjectionResul
       count: signalResult.reinforcedEntryIds.length,
       ids: signalResult.reinforcedEntryIds,
     });
+  }
+
+  // ── Persist projection state after detection (fire-and-forget) ──
+  // Ensures new entries and reinforcements survive app restarts mid-session
+  if (signalResult.newEntries.length > 0 || signalResult.reinforcedEntryIds.length > 0) {
+    if (input.userType === 'elias') {
+      saveEliasProjection(getProjectionState()).catch(() => {});
+    } else {
+      saveKimProjection(getKimProjectionState()).catch(() => {});
+    }
   }
 
   // Deepening module

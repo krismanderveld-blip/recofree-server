@@ -181,17 +181,20 @@ function ChatScreenInner() {
         if (!hasContent) return;
         greetingSent.current = true;
         startSession();
-        // Restore projection state from AsyncStorage (local within-device memory)
-        try {
-          if (state.userType === 'elias') {
-            loadAndRestoreEliasProjection();
-          } else {
-            loadAndRestoreKimProjection();
+        // Restore projection state from AsyncStorage BEFORE sending greeting
+        // Must await so projection entries are loaded before first pipeline run
+        (async () => {
+          try {
+            if (state.userType === 'elias') {
+              await loadAndRestoreEliasProjection();
+            } else {
+              await loadAndRestoreKimProjection();
+            }
+          } catch (e) {
+            console.error('[Chat] Failed to restore projection state, continuing with empty projection:', e);
           }
-        } catch (e) {
-          console.error('[Chat] Failed to restore projection state, continuing with empty projection:', e);
-        }
-        sendGreetingViaP();
+          sendGreetingViaP();
+        })();
       }
     }, [state.intakeCompleted, state.backpack, state.userDat, preChatDone])
   );
