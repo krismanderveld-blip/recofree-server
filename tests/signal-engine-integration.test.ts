@@ -355,12 +355,17 @@ describe('SignalEngine Integration — Full Pipeline', () => {
     });
     const prompt2 = calls2.length > 0 ? JSON.parse(calls2[0][1]?.body || '{}').prompt : '';
 
-    // Key assertion: the prompt WITH projections includes "Active projections" context
+    // Key assertion: the prompt WITH projections includes the seeded "Fear of relapse" entry
     expect(prompt2).toContain('Active projections');
     expect(prompt2).toContain('Fear of relapse');
 
-    // The prompt WITHOUT projections should NOT contain "Active projections"
-    expect(prompt1).not.toContain('Active projections');
+    // Run 1 may also have 'Active projections' because NL markers in FEAR_MESSAGE
+    // trigger detection, but it should NOT contain the specific seeded entry "Fear of relapse"
+    // (it would contain a dynamically created entry like "Fear related to: bang")
+    if (prompt1.includes('Active projections')) {
+      // If chat-signal detection created an entry, it won't be the seeded one
+      expect(prompt1).not.toContain('Fear of relapse');
+    }
 
     // The mock returns higher confidence when projections are present (0.92 vs 0.75)
     // This proves the pipeline correctly passes projection context to the engine,

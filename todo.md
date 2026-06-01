@@ -785,3 +785,5 @@
 - [x] Fix missing `await` on loadAndRestoreEliasProjection/Kim in chat.tsx (projection state was empty at first pipeline run)
 - [x] Add persistence after detection in projection-layer.ts (saveEliasProjection/saveKimProjection fire-and-forget after new entries or reinforcements)
 - [x] 0 TS errors, 409 tests green
+- [x] Add Dutch FEAR_MARKERS, HOPE_MARKERS, GOAL_MARKERS to projection engine (bang, angst, zorgen, hoop, droom, doel, etc.)
+- [x] Fix test assertion for NL marker detection (signal-engine-integration test 5)

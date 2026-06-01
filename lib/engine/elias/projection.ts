@@ -79,20 +79,31 @@ export const PROJECTION_PROMOTION_THRESHOLD = 2;
 // ─── Keyword Maps ───────────────────────────────────────────────
 
 export const FEAR_MARKERS = [
+  // English
   'afraid', 'anxiety', 'fear', 'suppose that', 'what if', 'scared',
-  'afraid', 'terrified', 'worried', 'fear', 'dread',
-  'never better', 'goes wrong', 'fails',
+  'terrified', 'worried', 'dread', 'never better', 'goes wrong', 'fails',
+  // Dutch
+  'bang', 'angst', 'angstig', 'zorgen', 'bezorgd', 'vrees', 'paniek',
+  'stel dat', 'wat als', 'doodsbang', 'schrik', 'ongerust',
+  'gaat fout', 'mislukt', 'nooit meer goed',
 ];
 
 export const HOPE_MARKERS = [
+  // English
   'hope', 'would like', 'dream', 'if it works', 'someday',
-  'get better', 'hope', 'wish', 'dream', 'someday',
-  'maybe one day', 'if things change',
+  'get better', 'wish', 'maybe one day', 'if things change',
+  // Dutch
+  'hoop', 'zou willen', 'droom', 'als het lukt', 'ooit',
+  'beter worden', 'wens', 'misschien op een dag', 'als het verandert',
 ];
 
 export const GOAL_MARKERS = [
+  // English
   'want to', 'going to', 'plan', 'will try', 'goal',
   'target', 'aim', 'intend', 'commit', 'decide',
+  // Dutch
+  'wil ik', 'ga ik', 'plan', 'ga proberen', 'doel',
+  'voornemen', 'van plan', 'besluit', 'neem me voor',
 ];
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
