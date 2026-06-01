@@ -171,6 +171,13 @@ import {
 } from '../engine/shared/mbt-router';
 import type { MBTEngineResult, MBTProgress } from '../engine/shared/mbt-types';
 import { createDefaultMBTProgress } from '../engine/shared/mbt-types';
+import {
+  routeKO1Engine,
+  resetKO1SessionState,
+  getSessionKO1PatternsUsed,
+  createDefaultKO1Progress,
+} from '../engine/kim/ko1-recognition';
+import type { KO1EngineResult, KO1Progress } from '../engine/kim/ko1-recognition';
 
 // ─── Pattern Marking (post-GPT local state) ─────────────────
 
@@ -239,6 +246,7 @@ export function resetSessionState(): void {
   resetCBTSessionState();
   resetDGTSessionState();
   resetMBTSessionState();
+  resetKO1SessionState();
 }
 
 // ─── Pipeline Result ────────────────────────────────────────────
@@ -800,6 +808,41 @@ export async function processMessage(
     }
   }
 
+  // ── PRE-GPT STEP 5k: KO1 Recognition & Validation (Kim only) ──
+  let ko1Result: KO1EngineResult = {
+    activated: false,
+    decision: {
+      activated: false,
+      validationLevel: 'L1_PRESENCE',
+      responseMode: 'RECOGNITION_FIRST',
+      dominantPattern: null,
+      reason: 'not_run',
+      julesRuleActive: false,
+      boundaryOverride: false,
+    },
+    promptBlock: null,
+  };
+  if (backpack.userType === 'kim') {
+    const ko1Progress: KO1Progress = (currentUserDat as any).ko1Progress ?? createDefaultKO1Progress();
+    const frustrationScore = (currentUserDat.currentMood as any)?.frustration ?? 3;
+    const hasChildren = !!(currentUserDat as any).hasChildren;
+
+    ko1Result = routeKO1Engine({
+      message: userMessage,
+      userType: backpack.userType,
+      vspLevel: sessionBuffer.currentZoneColor.toUpperCase(),
+      crisisLevel: analysis.riskLevel === 'critical' || analysis.riskLevel === 'high' ? 2 : analysis.riskLevel === 'moderate' ? 1 : 0,
+      frustrationScore,
+      eigenRegieScore: (currentUserDat.currentMood as any)?.eigenRegie ?? null,
+      hasChildren,
+      sessionMessageCount: sessionMessageCount,
+    }, ko1Progress);
+
+    if (ko1Result.activated) {
+      console.log(`[Pipeline] KO1: pattern=${ko1Result.decision.dominantPattern} | level=${ko1Result.decision.validationLevel} | mode=${ko1Result.decision.responseMode} | jules=${ko1Result.decision.julesRuleActive} | boundary=${ko1Result.decision.boundaryOverride}`);
+    }
+  }
+
   // ── PRE-GPT STEP 6: Build ChatContext + ONE GPT call ──
   let crisisLevel = 0;
   let showEmergency = false;
@@ -1064,6 +1107,7 @@ export async function processMessage(
     cgtContext: cbtResult.promptBlock || undefined,
     dgtContext: dgtResult.promptBlock || undefined,
     mbtContext: mbtResult.promptBlock || undefined,
+    ko1Context: ko1Result.promptBlock || undefined,
   };
 
   let response: string;
@@ -1268,6 +1312,7 @@ export async function processMessage(
       { step: '5h. CBT', status: cbtResult.activated ? 'passed' : 'skipped', reason: cbtResult.decision.reason },
       { step: '5i. DGT', status: dgtResult.activated ? 'passed' : 'skipped', reason: dgtResult.decision.reason },
       { step: '5j. MBT', status: mbtResult.activated ? 'passed' : 'skipped', reason: mbtResult.decision.reason },
+      { step: '5k. KO1', status: ko1Result.activated ? 'passed' : 'skipped', reason: ko1Result.decision.reason },
       { step: '6a. Zone decision', status: elisDecision ? 'passed' : 'skipped', reason: elisDecision ? `zone=${elisDecision.zone.computed.label}` : 'kim user' },
       { step: '6b. Engine directive', status: engineDirective ? 'passed' : 'skipped', reason: engineDirective ? `engine=${engineDirective.engine}` : 'none' },
       { step: '6c. Intervention', status: interventionContinuity ? 'passed' : 'skipped', reason: interventionContinuity ? `type=${interventionContinuity.lastInterventionType}` : 'not active' },
@@ -1961,6 +2006,26 @@ export async function endSession(
       updatedMBTProgress.lastMBTSessionDate = mbtNow;
       updatedUserDat = { ...updatedUserDat, mbtProgress: updatedMBTProgress };
       console.log(`[Pipeline] MBT persistence: processes_used=${mbtProcessesUsed.length}, last=${updatedMBTProgress.lastMBTProcessUsed}`);
+    }
+  }
+
+  // ── STEP 4h: KO1 Recognition & Validation progress persistence ──
+  if (backpack.userType === 'kim') {
+    const ko1PatternsUsed = getSessionKO1PatternsUsed();
+    if (ko1PatternsUsed.length > 0) {
+      const ko1Now = new Date().toISOString();
+      const existingKO1Progress = (updatedUserDat as any).ko1Progress ?? createDefaultKO1Progress();
+      const updatedKO1Progress = { ...existingKO1Progress };
+      updatedKO1Progress.lastPatternDetected = ko1PatternsUsed[ko1PatternsUsed.length - 1];
+      updatedKO1Progress.lastSessionDate = ko1Now;
+      if (ko1PatternsUsed.includes('BURNOUT_RED_STATE')) {
+        updatedKO1Progress.burnoutSignalCount = (updatedKO1Progress.burnoutSignalCount ?? 0) + 1;
+      }
+      if (ko1PatternsUsed.includes('REASSURANCE_ADDICTION')) {
+        updatedKO1Progress.reassuranceLoopCount = (updatedKO1Progress.reassuranceLoopCount ?? 0) + 1;
+      }
+      updatedUserDat = { ...updatedUserDat, ko1Progress: updatedKO1Progress } as any;
+      console.log(`[Pipeline] KO1 persistence: patterns_used=${ko1PatternsUsed.length}, last=${updatedKO1Progress.lastPatternDetected}`);
     }
   }
 

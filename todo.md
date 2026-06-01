@@ -787,3 +787,11 @@
 - [x] 0 TS errors, 409 tests green
 - [x] Add Dutch FEAR_MARKERS, HOPE_MARKERS, GOAL_MARKERS to projection engine (bang, angst, zorgen, hoop, droom, doel, etc.)
 - [x] Fix test assertion for NL marker detection (signal-engine-integration test 5)
+
+## Round 57 — KO1 Recognition & Validation (Kim-only)
+
+- [x] Create lib/engine/kim/ko1-recognition.ts with types, detector, router, prompt builder
+- [x] Wire KO1 into pipeline.ts as Kim-specific step after MBT (Step 5k)
+- [x] Add ko1Context to payload chain (gpt-payload-builder, openai-provider, server/ai-chat)
+- [x] Add ko1Progress to user.dat persistence (types.ts, user-context.tsx)
+- [x] 0 TS errors, 409 tests green

@@ -203,6 +203,7 @@ export class OpenAIProvider implements AIProvider {
         cgtContext: context.cgtContext,
         dgtContext: context.dgtContext,
         mbtContext: context.mbtContext,
+        ko1Context: context.ko1Context,
       });
 
       // ── STEP 3: Build server payload based on SESSION_INIT / LIVE_MESSAGE split ──
@@ -275,6 +276,8 @@ export class OpenAIProvider implements AIProvider {
           dgtContext: gptPayload.dgtContext ?? null,
           // MBT++ engine (mentalizing state + response mode)
           mbtContext: gptPayload.mbtContext ?? null,
+          // KO1 Recognition & Validation (Kim only)
+          ko1Context: gptPayload.ko1Context ?? null,
 
           // Full data (SESSION_INIT only)
           backpack: gptPayload.backpack,
@@ -355,6 +358,8 @@ export class OpenAIProvider implements AIProvider {
           dgtContext: gptPayload.dgtContext ?? null,
           // MBT++ engine (mentalizing state + response mode)
           mbtContext: gptPayload.mbtContext ?? null,
+          // KO1 Recognition & Validation (Kim only)
+          ko1Context: gptPayload.ko1Context ?? null,
 
           // Signal engine: relevance scores for context gating (threshold 0.3)
           relevanceScores: context.relevanceScores ?? null,

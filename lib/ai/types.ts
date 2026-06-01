@@ -371,6 +371,15 @@ export interface UserDat {
     lastMBTProcessUsed: string | null;
     lastMBTSessionDate: string | null;
   };
+  /** KO1 Recognition & Validation: Kim-only pattern tracking */
+  ko1Progress?: {
+    lastPatternDetected: string | null;
+    lastSessionDate: string | null;
+    validationPreferences: string[];
+    repairPatterns: string[];
+    burnoutSignalCount: number;
+    reassuranceLoopCount: number;
+  };
 }
 
 /** A record of a completed session's analysis */
@@ -558,6 +567,14 @@ export function createNewUserDat(
       lastMBTProcessUsed: null,
       lastMBTSessionDate: null,
     },
+    ko1Progress: {
+      lastPatternDetected: null,
+      lastSessionDate: null,
+      validationPreferences: [],
+      repairPatterns: [],
+      burnoutSignalCount: 0,
+      reassuranceLoopCount: 0,
+    },
   };
 }
 
@@ -675,6 +692,8 @@ export interface ChatContext {
   dgtContext?: string;
   /** MBT++ engine: mentalizing state detection + response mode routing */
   mbtContext?: string;
+  /** KO1 Recognition & Validation engine: Kim-only pattern detection + validation levels */
+  ko1Context?: string;
 }
 
 /**

@@ -166,6 +166,7 @@ interface ChatRequestInput {
   cgtContext?: string | null;
   dgtContext?: string | null;
   mbtContext?: string | null;
+  ko1Context?: string | null;
 
   // Signal engine: relevance scores for context gating (LIVE_MESSAGE only)
   relevanceScores?: {
@@ -387,6 +388,7 @@ export const chatInputSchema = z.object({
   cgtContext: z.string().nullable().optional(),
   dgtContext: z.string().nullable().optional(),
   mbtContext: z.string().nullable().optional(),
+  ko1Context: z.string().nullable().optional(),
 
   // Signal engine: relevance scores for context gating (LIVE_MESSAGE only)
   relevanceScores: z.object({
@@ -926,6 +928,12 @@ VIOLATION OF THIS PROTOCOL IS UNACCEPTABLE.`;
     console.log(`[AI Chat] MBT++ context injected`);
   }
 
+  let ko1Block = '';
+  if (input.ko1Context) {
+    ko1Block = `\n${input.ko1Context}`;
+    console.log(`[AI Chat] KO1 Recognition & Validation context injected`);
+  }
+
   let sessionEndInstructions = "";
   if (input.message === "__SESSION_END__") {
     sessionEndInstructions = `\nThe user is ending this session. Generate a warm farewell that:
@@ -1015,6 +1023,7 @@ ${actBlock}
 ${cgtBlock}
 ${dgtBlock}
 ${mbtBlock}
+${ko1Block}
 
 These behavioral instructions are ABSOLUTE. They override your default conversational style.
 The sliders tell you exactly how the user feels — USE them in your response.
@@ -1207,6 +1216,7 @@ ${actBlock}
 ${cgtBlock}
 ${dgtBlock}
 ${mbtBlock}
+${ko1Block}
 
 These behavioral instructions are ABSOLUTE. They override your default conversational style.
 The sliders tell you exactly how the user feels — USE them in your response.
