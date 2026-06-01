@@ -360,6 +360,17 @@ export interface UserDat {
     lastDGTProcessUsed: string | null;
     lastDGTSessionDate: string | null;
   };
+  /** MBT++: mentalizing progress tracking */
+  mbtProgress?: {
+    dominantMentalizingPattern: string | null;
+    recurringCollapsePatterns: string[];
+    successfulRepairs: number;
+    successfulRegulations: number;
+    boundaryProtectionsUsed: number;
+    preferredResponseModes: string[];
+    lastMBTProcessUsed: string | null;
+    lastMBTSessionDate: string | null;
+  };
 }
 
 /** A record of a completed session's analysis */
@@ -537,6 +548,16 @@ export function createNewUserDat(
       lastDGTProcessUsed: null,
       lastDGTSessionDate: null,
     },
+    mbtProgress: {
+      dominantMentalizingPattern: null,
+      recurringCollapsePatterns: [],
+      successfulRepairs: 0,
+      successfulRegulations: 0,
+      boundaryProtectionsUsed: 0,
+      preferredResponseModes: [],
+      lastMBTProcessUsed: null,
+      lastMBTSessionDate: null,
+    },
   };
 }
 
@@ -652,6 +673,8 @@ export interface ChatContext {
   cgtContext?: string;
   /** DGT/DBT engine: compact intervention context from deterministic emotional/behavioral signal detection */
   dgtContext?: string;
+  /** MBT++ engine: mentalizing state detection + response mode routing */
+  mbtContext?: string;
 }
 
 /**

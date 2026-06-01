@@ -164,6 +164,13 @@ import {
 } from '../engine/shared/dbt-router';
 import type { DGTEngineResult, DGTProgress } from '../engine/shared/dbt-types';
 import { createDefaultDGTProgress } from '../engine/shared/dbt-types';
+import {
+  routeMBTEngine,
+  resetMBTSessionState,
+  getSessionMBTProcessesUsed,
+} from '../engine/shared/mbt-router';
+import type { MBTEngineResult, MBTProgress } from '../engine/shared/mbt-types';
+import { createDefaultMBTProgress } from '../engine/shared/mbt-types';
 
 // ─── Pattern Marking (post-GPT local state) ─────────────────
 
@@ -231,6 +238,7 @@ export function resetSessionState(): void {
   resetACTSessionState();
   resetCBTSessionState();
   resetDGTSessionState();
+  resetMBTSessionState();
 }
 
 // ─── Pipeline Result ────────────────────────────────────────────
@@ -750,6 +758,48 @@ export async function processMessage(
     }
   }
 
+  // ── PRE-GPT STEP 5j: MBT++ Engine (deterministic, both user types) ──
+  let mbtResult: MBTEngineResult = {
+    decision: {
+      acceptedMBTCandidates: [],
+      rejectedMBTCandidates: [],
+      dominantProcess: null,
+      dominantSignal: null,
+      detectedState: 'M0_STABLE_MENTALIZING',
+      responseMode: 'REFLECT',
+      safeToUseMBT: false,
+      reason: 'not_run',
+      promptSummary: '',
+    },
+    promptBlock: '',
+    activated: false,
+  };
+  {
+    const mbtCrisisLevel = analysis.riskLevel === 'critical' || analysis.riskLevel === 'high' ? 2 : analysis.riskLevel === 'moderate' ? 1 : 0;
+    const mbtProgress: MBTProgress = (currentUserDat.mbtProgress as unknown as MBTProgress) ?? createDefaultMBTProgress();
+
+    mbtResult = routeMBTEngine({
+      userMessage,
+      userType: backpack.userType as 'elias' | 'kim',
+      vspLevel: sessionBuffer.currentZoneColor.toUpperCase(),
+      eigenRegieScore: backpack.userType === 'kim' ? (currentUserDat.currentMood as any)?.eigenRegie ?? null : null,
+      crisisLevel: mbtCrisisLevel,
+      resolvedZone: sessionBuffer.currentZoneColor.toUpperCase(),
+      distressScore: (currentUserDat.currentMood as any)?.distress ?? 5,
+      activeMode: schemaModeResult.modeDecision.dominantMode,
+      activeSchema: schemaModeResult.schemaDecision.dominantSchema,
+      activeACTProcess: actResult.decision.dominantProcess,
+      activeCBTProcess: cbtResult.decision.dominantProcess,
+      activeDGTProcess: dgtResult.decision.dominantProcess,
+      stageOfChange: (currentUserDat as any).stageOfChange ?? 'contemplation',
+      guidanceDepth: (typeof currentUserDat.guidanceDepth === 'number' ? currentUserDat.guidanceDepth : 2) as number,
+    }, mbtProgress);
+
+    if (mbtResult.activated) {
+      console.log(`[Pipeline] MBT: state=${mbtResult.decision.detectedState} | mode=${mbtResult.decision.responseMode} | process=${mbtResult.decision.dominantProcess} | signal=${mbtResult.decision.dominantSignal} | reason=${mbtResult.decision.reason}`);
+    }
+  }
+
   // ── PRE-GPT STEP 6: Build ChatContext + ONE GPT call ──
   let crisisLevel = 0;
   let showEmergency = false;
@@ -1013,6 +1063,7 @@ export async function processMessage(
     actContext: actResult.promptBlock || undefined,
     cgtContext: cbtResult.promptBlock || undefined,
     dgtContext: dgtResult.promptBlock || undefined,
+    mbtContext: mbtResult.promptBlock || undefined,
   };
 
   let response: string;
@@ -1216,6 +1267,7 @@ export async function processMessage(
       { step: '5g. ACT', status: actResult.activated ? 'passed' : 'skipped', reason: actResult.decision.reason },
       { step: '5h. CBT', status: cbtResult.activated ? 'passed' : 'skipped', reason: cbtResult.decision.reason },
       { step: '5i. DGT', status: dgtResult.activated ? 'passed' : 'skipped', reason: dgtResult.decision.reason },
+      { step: '5j. MBT', status: mbtResult.activated ? 'passed' : 'skipped', reason: mbtResult.decision.reason },
       { step: '6a. Zone decision', status: elisDecision ? 'passed' : 'skipped', reason: elisDecision ? `zone=${elisDecision.zone.computed.label}` : 'kim user' },
       { step: '6b. Engine directive', status: engineDirective ? 'passed' : 'skipped', reason: engineDirective ? `engine=${engineDirective.engine}` : 'none' },
       { step: '6c. Intervention', status: interventionContinuity ? 'passed' : 'skipped', reason: interventionContinuity ? `type=${interventionContinuity.lastInterventionType}` : 'not active' },
@@ -1895,6 +1947,20 @@ export async function endSession(
       updatedDGTProgress.lastDGTSessionDate = dgtNow;
       updatedUserDat = { ...updatedUserDat, dgtProgress: updatedDGTProgress };
       console.log(`[Pipeline] DGT persistence: processes_used=${dgtProcessesUsed.length}, last=${updatedDGTProgress.lastDGTProcessUsed}`);
+    }
+  }
+
+  // ── STEP 4g: MBT++ progress persistence ──
+  {
+    const mbtProcessesUsed = getSessionMBTProcessesUsed();
+    if (mbtProcessesUsed.length > 0) {
+      const mbtNow = new Date().toISOString();
+      const existingMBTProgress = updatedUserDat.mbtProgress ?? createDefaultMBTProgress();
+      const updatedMBTProgress = { ...existingMBTProgress };
+      updatedMBTProgress.lastMBTProcessUsed = mbtProcessesUsed[mbtProcessesUsed.length - 1];
+      updatedMBTProgress.lastMBTSessionDate = mbtNow;
+      updatedUserDat = { ...updatedUserDat, mbtProgress: updatedMBTProgress };
+      console.log(`[Pipeline] MBT persistence: processes_used=${mbtProcessesUsed.length}, last=${updatedMBTProgress.lastMBTProcessUsed}`);
     }
   }
 
