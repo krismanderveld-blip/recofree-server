@@ -258,11 +258,24 @@ export function recordModuleUsage(
   moduleId: string,
   context: string
 ): Rugzak {
+  const existing = (rugzak.moduleUsage || []).find(m => m.moduleId === moduleId);
+  if (existing) {
+    // Aggregate: increment count, update timestamp and context
+    return {
+      ...rugzak,
+      moduleUsage: (rugzak.moduleUsage || []).map(m =>
+        m.moduleId === moduleId
+          ? { ...m, count: (m.count || 1) + 1, usedAt: new Date().toISOString(), context }
+          : m
+      ),
+    };
+  }
+  // New module entry with count = 1
   return {
     ...rugzak,
     moduleUsage: [
       ...(rugzak.moduleUsage || []),
-      { moduleId, usedAt: new Date().toISOString(), context },
+      { moduleId, usedAt: new Date().toISOString(), context, count: 1 },
     ],
   };
 }

@@ -1587,7 +1587,7 @@ export async function processMessage(
     memory: {
       totalSessions: currentUserDat.totalSessions ?? 0,
       triggerPatterns: (currentUserDat.triggerPatterns || []).map(t => ({ trigger: t.trigger, count: t.count, weight: t.weight })),
-      moduleUsage: (currentUserDat.moduleUsage || []).map((m) => ({ moduleId: m.moduleId, count: 1 })),
+      moduleUsage: (currentUserDat.moduleUsage || []).map((m) => ({ moduleId: m.moduleId, count: m.count || 1 })),
       changedUserDatFields: [],
       sliders: (currentUserDat.currentMood || {}) as unknown as Record<string, string | number>,
       changedStateFields: [],

@@ -847,3 +847,11 @@
 - [x] Add k01Progress to user.dat persistence (types.ts, user-context.tsx)
 - [x] Fix TS errors: replace undeclared sessionMessageCount/recentMessages with sessionBuffer equivalents
 - [x] 0 TS errors, 409 tests green
+
+## Round 63b — moduleUsage aggregatie fix
+
+- [x] Fix recordModuleUsage: aggregate count instead of pushing duplicate entries
+- [x] Add count field to ModuleUsageRecord interface
+- [x] Fix diagnostics to use actual count from record instead of hardcoded 1
+- [x] Legacy entries auto-migrate via (m.count || 1) fallback
+- [x] 0 TS errors, 409 tests green

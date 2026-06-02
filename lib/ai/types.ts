@@ -192,6 +192,8 @@ export interface ModuleUsageRecord {
   moduleId: string;
   usedAt: string;
   context: string;
+  /** Aggregated usage count across sessions */
+  count: number;
 }
 
 /** A single Eigen Regie daily reflection entry (Kim users only) */
