@@ -398,6 +398,16 @@ export interface UserDat {
     lastSessionDate: string | null;
     sessionCount: number;
   };
+  k04Progress?: {
+    sessionsWithOverwhelm: number;
+    sessionsWithAnger: number;
+    sessionsWithGuilt: number;
+    sessionsWithFear: number;
+    sessionsWithNumbness: number;
+    burnoutIndicatorCount: number;
+    lastMicrotoolUsed: string | null;
+    emotionalStabilityTrend: string;
+  };
 }
 
 /** A record of a completed session's analysis */
@@ -610,6 +620,16 @@ export function createNewUserDat(
       lastSessionDate: null,
       sessionCount: 0,
     },
+    k04Progress: {
+      sessionsWithOverwhelm: 0,
+      sessionsWithAnger: 0,
+      sessionsWithGuilt: 0,
+      sessionsWithFear: 0,
+      sessionsWithNumbness: 0,
+      burnoutIndicatorCount: 0,
+      lastMicrotoolUsed: null,
+      emotionalStabilityTrend: 'unknown',
+    },
   };
 }
 
@@ -732,6 +752,7 @@ export interface ChatContext {
   /** K05 Communication Skills engine: Kim-only communication context + timing + framework */
   k05Context?: string;
   k02Context?: string;
+  k04Context?: string;
 }
 
 /**

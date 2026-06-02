@@ -169,6 +169,7 @@ interface ChatRequestInput {
   ko1Context?: string | null;
   k05Context?: string | null;
   k02Context?: string | null;
+  k04Context?: string | null;
 
   // Signal engine: relevance scores for context gating (LIVE_MESSAGE only)
   relevanceScores?: {
@@ -393,6 +394,7 @@ export const chatInputSchema = z.object({
   ko1Context: z.string().nullable().optional(),
   k05Context: z.string().nullable().optional(),
   k02Context: z.string().nullable().optional(),
+  k04Context: z.string().nullable().optional(),
 
   // Signal engine: relevance scores for context gating (LIVE_MESSAGE only)
   relevanceScores: z.object({
@@ -948,6 +950,11 @@ VIOLATION OF THIS PROTOCOL IS UNACCEPTABLE.`;
     k02Block = `\n${input.k02Context}`;
     console.log(`[AI Chat] K02 Enabling Awareness context injected`);
   }
+  let k04Block = '';
+  if (input.k04Context) {
+    k04Block = `\n${input.k04Context}`;
+    console.log(`[AI Chat] K04 Emotional Regulation context injected`);
+  }
 
   let sessionEndInstructions = "";
   if (input.message === "__SESSION_END__") {
@@ -1041,6 +1048,7 @@ ${mbtBlock}
 ${ko1Block}
 ${k05Block}
 ${k02Block}
+${k04Block}
 
 These behavioral instructions are ABSOLUTE. They override your default conversational style.
 The sliders tell you exactly how the user feels — USE them in your response.
@@ -1236,6 +1244,7 @@ ${mbtBlock}
 ${ko1Block}
 ${k05Block}
 ${k02Block}
+${k04Block}
 
 These behavioral instructions are ABSOLUTE. They override your default conversational style.
 The sliders tell you exactly how the user feels — USE them in your response.

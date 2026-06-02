@@ -193,6 +193,13 @@ import {
   createDefaultK02Progress,
 } from '../engine/kim/k02-enabling-awareness';
 import type { K02EngineResult, K02Progress } from '../engine/kim/k02-enabling-awareness';
+import {
+  detectK04EmotionalState,
+  routeK04Engine,
+  resetK04SessionState,
+  updateK04Progress,
+} from '../engine/kim/k04-emotional-regulation';
+import type { K04RoutingResult, K04Progress } from '../engine/kim/k04-emotional-regulation';
 
 // ─── Pattern Marking (post-GPT local state) ─────────────────
 
@@ -264,6 +271,7 @@ export function resetSessionState(): void {
   resetKO1SessionState();
   resetK05SessionState();
   resetK02SessionState();
+  resetK04SessionState();
 }
 
 // ─── Pipeline Result ────────────────────────────────────────────
@@ -865,6 +873,16 @@ export async function processMessage(
     },
     promptBlock: null,
   };
+  let k04Result: K04RoutingResult = {
+    activated: false,
+    responseMode: 'none',
+    selectedMicrotool: null,
+    primaryState: 'none',
+    severity: 'mild',
+    failsafeActive: false,
+    doNots: [],
+    promptBlock: null,
+  };
   if (backpack.userType === 'kim') {
     const ko1Progress: KO1Progress = (currentUserDat as any).ko1Progress ?? createDefaultKO1Progress();
     const frustrationScore = (currentUserDat.currentMood as any)?.frustration ?? 3;
@@ -918,6 +936,15 @@ export async function processMessage(
 
     if (k02Result.activated) {
       console.log(`[Pipeline] K02: flag=${k02Result.decision.dominantFlag} | state=${k02Result.decision.interventionState} | route=${k02Result.decision.routeRecommendation}`);
+    }
+
+    // ── Step 5n: K04 Emotional Regulation for Caregivers (Kim only) ──
+    const k04Detection = detectK04EmotionalState(userMessage, recentMessages.slice(-3));
+    const k04Progress: K04Progress | undefined = (currentUserDat as any).k04Progress;
+    k04Result = routeK04Engine(k04Detection, k04Progress);
+
+    if (k04Result.activated) {
+      console.log(`[Pipeline] K04: state=${k04Result.primaryState} | severity=${k04Result.severity} | mode=${k04Result.responseMode} | microtool=${k04Result.selectedMicrotool}`);
     }
   }
 
@@ -1188,6 +1215,7 @@ export async function processMessage(
     ko1Context: ko1Result.promptBlock || undefined,
     k05Context: k05Result.promptBlock || undefined,
     k02Context: k02Result.promptBlock || undefined,
+    k04Context: k04Result.promptBlock || undefined,
   };
 
   let response: string;
@@ -1395,6 +1423,7 @@ export async function processMessage(
       { step: '5k. KO1', status: ko1Result.activated ? 'passed' : 'skipped', reason: ko1Result.decision.reason },
       { step: '5l. K05', status: k05Result.activated ? 'passed' : 'skipped', reason: k05Result.decision.reason },
       { step: '5m. K02', status: k02Result.activated ? 'passed' : 'skipped', reason: k02Result.decision.reason },
+      { step: '5n. K04', status: k04Result.activated ? 'passed' : 'skipped', reason: k04Result.activated ? `state=${k04Result.primaryState}|severity=${k04Result.severity}` : 'no emotional state detected' },
       { step: '6a. Zone decision', status: elisDecision ? 'passed' : 'skipped', reason: elisDecision ? `zone=${elisDecision.zone.computed.label}` : 'kim user' },
       { step: '6b. Engine directive', status: engineDirective ? 'passed' : 'skipped', reason: engineDirective ? `engine=${engineDirective.engine}` : 'none' },
       { step: '6c. Intervention', status: interventionContinuity ? 'passed' : 'skipped', reason: interventionContinuity ? `type=${interventionContinuity.lastInterventionType}` : 'not active' },
@@ -2150,6 +2179,16 @@ export async function endSession(
       }
       updatedUserDat = { ...updatedUserDat, k02Progress: updatedK02Progress } as any;
       console.log(`[Pipeline] K02 persistence: flags_used=${k02FlagsUsed.length}, awareness=${updatedK02Progress.awarenessLevel}`);
+    }
+
+    // K04 Emotional Regulation persistence — re-detect from full session text
+    const k04SessionDetection = detectK04EmotionalState(allUserText, userMessages.map(m => m.content).slice(-3));
+    if (k04SessionDetection.activated) {
+      const existingK04Progress = (updatedUserDat as any).k04Progress;
+      const k04SessionResult = routeK04Engine(k04SessionDetection, existingK04Progress);
+      const updatedK04Progress = updateK04Progress(existingK04Progress, k04SessionDetection, k04SessionResult.selectedMicrotool);
+      updatedUserDat = { ...updatedUserDat, k04Progress: updatedK04Progress } as any;
+      console.log(`[Pipeline] K04 persistence: state=${k04SessionDetection.primaryState}, severity=${k04SessionDetection.severity}, trend=${updatedK04Progress.emotionalStabilityTrend}`);
     }
   }
 

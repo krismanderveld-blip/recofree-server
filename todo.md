@@ -813,3 +813,12 @@
 - [x] Add k02Context to payload chain (gpt-payload-builder, openai-provider, server/ai-chat)
 - [x] Add k02Progress to user.dat persistence (types.ts, user-context.tsx)
 - [x] 0 TS errors, 409 tests green
+
+## Round 60 — K04 Emotional Regulation for Caregivers (Kim-only)
+
+- [x] Create lib/engine/kim/k04-emotional-regulation.ts with types, detector (NL+EN markers), router, prompt builder
+- [x] Wire K04 into pipeline.ts as Kim-specific step after K02 (Step 5n)
+- [x] Add k04Context to payload chain (gpt-payload-builder, openai-provider, server/ai-chat)
+- [x] Add k04Progress to user.dat persistence (types.ts, user-context.tsx)
+- [ ] Fix deployment pnpm approve-builds error (deferred)
+- [x] 0 TS errors, 409 tests green
