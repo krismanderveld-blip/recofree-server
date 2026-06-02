@@ -200,6 +200,13 @@ import {
   updateK04Progress,
 } from '../engine/kim/k04-emotional-regulation';
 import type { K04RoutingResult, K04Progress } from '../engine/kim/k04-emotional-regulation';
+import {
+  detectK04S4State,
+  routeK04S4Engine,
+  resetK04S4SessionState,
+  updateK04S4Progress,
+} from '../engine/kim/k04-betrayal-trust';
+import type { K04S4RoutingResult, K04S4Progress } from '../engine/kim/k04-betrayal-trust';
 
 // ─── Pattern Marking (post-GPT local state) ─────────────────
 
@@ -272,6 +279,7 @@ export function resetSessionState(): void {
   resetK05SessionState();
   resetK02SessionState();
   resetK04SessionState();
+  resetK04S4SessionState();
 }
 
 // ─── Pipeline Result ────────────────────────────────────────────
@@ -883,6 +891,15 @@ export async function processMessage(
     doNots: [],
     promptBlock: null,
   };
+  let k04s4Result: K04S4RoutingResult = {
+    activated: false,
+    responseMode: 'none',
+    primaryState: 'none',
+    severity: 'mild',
+    failsafeActive: false,
+    doNots: [],
+    promptBlock: null,
+  };
   if (backpack.userType === 'kim') {
     const ko1Progress: KO1Progress = (currentUserDat as any).ko1Progress ?? createDefaultKO1Progress();
     const frustrationScore = (currentUserDat.currentMood as any)?.frustration ?? 3;
@@ -945,6 +962,15 @@ export async function processMessage(
 
     if (k04Result.activated) {
       console.log(`[Pipeline] K04: state=${k04Result.primaryState} | severity=${k04Result.severity} | mode=${k04Result.responseMode} | microtool=${k04Result.selectedMicrotool}`);
+    }
+
+    // ── Step 5o: K04-S4 Betrayal, Trust, Hope & Self-Protection (Kim only) ──
+    const k04s4Detection = detectK04S4State(userMessage, recentMessages.slice(-3));
+    const k04s4Progress: K04S4Progress | undefined = (currentUserDat as any).k04s4Progress;
+    k04s4Result = routeK04S4Engine(k04s4Detection, k04s4Progress);
+
+    if (k04s4Result.activated) {
+      console.log(`[Pipeline] K04-S4: state=${k04s4Result.primaryState} | severity=${k04s4Result.severity} | mode=${k04s4Result.responseMode}`);
     }
   }
 
@@ -1216,6 +1242,7 @@ export async function processMessage(
     k05Context: k05Result.promptBlock || undefined,
     k02Context: k02Result.promptBlock || undefined,
     k04Context: k04Result.promptBlock || undefined,
+    k04s4Context: k04s4Result.promptBlock || undefined,
   };
 
   let response: string;
@@ -1424,6 +1451,7 @@ export async function processMessage(
       { step: '5l. K05', status: k05Result.activated ? 'passed' : 'skipped', reason: k05Result.decision.reason },
       { step: '5m. K02', status: k02Result.activated ? 'passed' : 'skipped', reason: k02Result.decision.reason },
       { step: '5n. K04', status: k04Result.activated ? 'passed' : 'skipped', reason: k04Result.activated ? `state=${k04Result.primaryState}|severity=${k04Result.severity}` : 'no emotional state detected' },
+      { step: '5o. K04-S4', status: k04s4Result.activated ? 'passed' : 'skipped', reason: k04s4Result.activated ? `state=${k04s4Result.primaryState}|severity=${k04s4Result.severity}` : 'no betrayal/trust state detected' },
       { step: '6a. Zone decision', status: elisDecision ? 'passed' : 'skipped', reason: elisDecision ? `zone=${elisDecision.zone.computed.label}` : 'kim user' },
       { step: '6b. Engine directive', status: engineDirective ? 'passed' : 'skipped', reason: engineDirective ? `engine=${engineDirective.engine}` : 'none' },
       { step: '6c. Intervention', status: interventionContinuity ? 'passed' : 'skipped', reason: interventionContinuity ? `type=${interventionContinuity.lastInterventionType}` : 'not active' },
@@ -2189,6 +2217,16 @@ export async function endSession(
       const updatedK04Progress = updateK04Progress(existingK04Progress, k04SessionDetection, k04SessionResult.selectedMicrotool);
       updatedUserDat = { ...updatedUserDat, k04Progress: updatedK04Progress } as any;
       console.log(`[Pipeline] K04 persistence: state=${k04SessionDetection.primaryState}, severity=${k04SessionDetection.severity}, trend=${updatedK04Progress.emotionalStabilityTrend}`);
+    }
+
+    // K04-S4 Betrayal/Trust/Hope persistence — re-detect from full session text
+    const k04s4SessionDetection = detectK04S4State(allUserText, userMessages.map(m => m.content).slice(-3));
+    if (k04s4SessionDetection.activated) {
+      const existingK04S4Progress = (updatedUserDat as any).k04s4Progress;
+      const k04s4SessionResult = routeK04S4Engine(k04s4SessionDetection, existingK04S4Progress);
+      const updatedK04S4Progress = updateK04S4Progress(existingK04S4Progress, k04s4SessionDetection, k04s4SessionResult.responseMode);
+      updatedUserDat = { ...updatedUserDat, k04s4Progress: updatedK04S4Progress } as any;
+      console.log(`[Pipeline] K04-S4 persistence: state=${k04s4SessionDetection.primaryState}, severity=${k04s4SessionDetection.severity}, trend=${updatedK04S4Progress.trustRecoveryTrend}`);
     }
   }
 

@@ -822,3 +822,11 @@
 - [x] Add k04Progress to user.dat persistence (types.ts, user-context.tsx)
 - [ ] Fix deployment pnpm approve-builds error (deferred)
 - [x] 0 TS errors, 409 tests green
+
+## Round 61 — K04-S4 Betrayal, Trust, Hope & Self-Protection (Kim-only)
+
+- [x] Create lib/engine/kim/k04-betrayal-trust.ts with types, detector, router, prompt builder
+- [x] Wire K04-S4 into pipeline.ts as Kim-specific step after K04 (Step 5o)
+- [x] Add k04s4Context to payload chain (gpt-payload-builder, openai-provider, server/ai-chat)
+- [x] Add k04s4Progress to user.dat persistence (types.ts, user-context.tsx)
+- [x] 0 TS errors, 409 tests green
