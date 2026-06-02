@@ -419,6 +419,22 @@ export interface UserDat {
     trustRecoveryTrend: string;
     lastResponseMode: string;
   };
+  k06Progress?: {
+    sessionsInControlMode: number;
+    sessionsInExhaustion: number;
+    sessionsInCollapse: number;
+    sessionsWithGuiltLoop: number;
+    sessionsWithRelapseStress: number;
+    sessionsWithSelfLoss: number;
+    sessionsWithHypervigilance: number;
+    sessionsInRecovery: number;
+    sessionsInRebuild: number;
+    blindSpotsReflected: string[];
+    lastState: string;
+    lastResponseMode: string;
+    sustainabilityTrend: string;
+    consecutiveCollapseRisk: number;
+  };
 }
 
 /** A record of a completed session's analysis */
@@ -652,6 +668,22 @@ export function createNewUserDat(
       trustRecoveryTrend: 'unknown',
       lastResponseMode: 'none',
     },
+    k06Progress: {
+      sessionsInControlMode: 0,
+      sessionsInExhaustion: 0,
+      sessionsInCollapse: 0,
+      sessionsWithGuiltLoop: 0,
+      sessionsWithRelapseStress: 0,
+      sessionsWithSelfLoss: 0,
+      sessionsWithHypervigilance: 0,
+      sessionsInRecovery: 0,
+      sessionsInRebuild: 0,
+      blindSpotsReflected: [],
+      lastState: 'none',
+      lastResponseMode: 'none',
+      sustainabilityTrend: 'unknown',
+      consecutiveCollapseRisk: 0,
+    },
   };
 }
 
@@ -776,6 +808,7 @@ export interface ChatContext {
   k02Context?: string;
   k04Context?: string;
   k04s4Context?: string;
+  k06Context?: string;
 }
 
 /**

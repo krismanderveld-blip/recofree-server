@@ -207,6 +207,13 @@ import {
   updateK04S4Progress,
 } from '../engine/kim/k04-betrayal-trust';
 import type { K04S4RoutingResult, K04S4Progress } from '../engine/kim/k04-betrayal-trust';
+import {
+  detectK06State,
+  routeK06Engine,
+  resetK06SessionState,
+  updateK06Progress,
+} from '../engine/kim/k06-self-care';
+import type { K06RoutingResult, K06Progress } from '../engine/kim/k06-self-care';
 
 // ─── Pattern Marking (post-GPT local state) ─────────────────
 
@@ -280,6 +287,7 @@ export function resetSessionState(): void {
   resetK02SessionState();
   resetK04SessionState();
   resetK04S4SessionState();
+  resetK06SessionState();
 }
 
 // ─── Pipeline Result ────────────────────────────────────────────
@@ -900,6 +908,17 @@ export async function processMessage(
     doNots: [],
     promptBlock: null,
   };
+  let k06Result: K06RoutingResult = {
+    activated: false,
+    responseMode: 'none',
+    primaryState: 'none',
+    guiltType: 'none',
+    severity: 'mild',
+    sustainabilityLevel: 'sustainable',
+    failsafeActive: false,
+    doNots: [],
+    promptBlock: null,
+  };
   if (backpack.userType === 'kim') {
     const ko1Progress: KO1Progress = (currentUserDat as any).ko1Progress ?? createDefaultKO1Progress();
     const frustrationScore = (currentUserDat.currentMood as any)?.frustration ?? 3;
@@ -971,6 +990,15 @@ export async function processMessage(
 
     if (k04s4Result.activated) {
       console.log(`[Pipeline] K04-S4: state=${k04s4Result.primaryState} | severity=${k04s4Result.severity} | mode=${k04s4Result.responseMode}`);
+    }
+
+    // ── Step 5p: K06 Self-Care & Sustainable Support (Kim only) ──
+    const k06Detection = detectK06State(userMessage, recentMessages.slice(-3));
+    const k06Progress: K06Progress | undefined = (currentUserDat as any).k06Progress;
+    k06Result = routeK06Engine(k06Detection, k06Progress);
+
+    if (k06Result.activated) {
+      console.log(`[Pipeline] K06: state=${k06Result.primaryState} | severity=${k06Result.severity} | mode=${k06Result.responseMode} | sustainability=${k06Result.sustainabilityLevel}`);
     }
   }
 
@@ -1243,6 +1271,7 @@ export async function processMessage(
     k02Context: k02Result.promptBlock || undefined,
     k04Context: k04Result.promptBlock || undefined,
     k04s4Context: k04s4Result.promptBlock || undefined,
+    k06Context: k06Result.promptBlock || undefined,
   };
 
   let response: string;
@@ -1452,6 +1481,7 @@ export async function processMessage(
       { step: '5m. K02', status: k02Result.activated ? 'passed' : 'skipped', reason: k02Result.decision.reason },
       { step: '5n. K04', status: k04Result.activated ? 'passed' : 'skipped', reason: k04Result.activated ? `state=${k04Result.primaryState}|severity=${k04Result.severity}` : 'no emotional state detected' },
       { step: '5o. K04-S4', status: k04s4Result.activated ? 'passed' : 'skipped', reason: k04s4Result.activated ? `state=${k04s4Result.primaryState}|severity=${k04s4Result.severity}` : 'no betrayal/trust state detected' },
+      { step: '5p. K06', status: k06Result.activated ? 'passed' : 'skipped', reason: k06Result.activated ? `state=${k06Result.primaryState}|severity=${k06Result.severity}|sustainability=${k06Result.sustainabilityLevel}` : 'no self-care state detected' },
       { step: '6a. Zone decision', status: elisDecision ? 'passed' : 'skipped', reason: elisDecision ? `zone=${elisDecision.zone.computed.label}` : 'kim user' },
       { step: '6b. Engine directive', status: engineDirective ? 'passed' : 'skipped', reason: engineDirective ? `engine=${engineDirective.engine}` : 'none' },
       { step: '6c. Intervention', status: interventionContinuity ? 'passed' : 'skipped', reason: interventionContinuity ? `type=${interventionContinuity.lastInterventionType}` : 'not active' },
@@ -2227,6 +2257,16 @@ export async function endSession(
       const updatedK04S4Progress = updateK04S4Progress(existingK04S4Progress, k04s4SessionDetection, k04s4SessionResult.responseMode);
       updatedUserDat = { ...updatedUserDat, k04s4Progress: updatedK04S4Progress } as any;
       console.log(`[Pipeline] K04-S4 persistence: state=${k04s4SessionDetection.primaryState}, severity=${k04s4SessionDetection.severity}, trend=${updatedK04S4Progress.trustRecoveryTrend}`);
+    }
+
+    // K06 Self-Care & Sustainable Support persistence — re-detect from full session text
+    const k06SessionDetection = detectK06State(allUserText, userMessages.map(m => m.content).slice(-3));
+    if (k06SessionDetection.activated) {
+      const existingK06Progress = (updatedUserDat as any).k06Progress;
+      const k06SessionResult = routeK06Engine(k06SessionDetection, existingK06Progress);
+      const updatedK06Progress = updateK06Progress(existingK06Progress, k06SessionDetection, k06SessionResult.responseMode);
+      updatedUserDat = { ...updatedUserDat, k06Progress: updatedK06Progress } as any;
+      console.log(`[Pipeline] K06 persistence: state=${k06SessionDetection.primaryState}, severity=${k06SessionDetection.severity}, sustainability=${k06SessionDetection.sustainabilityLevel}`);
     }
   }
 

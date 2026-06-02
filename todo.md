@@ -830,3 +830,11 @@
 - [x] Add k04s4Context to payload chain (gpt-payload-builder, openai-provider, server/ai-chat)
 - [x] Add k04s4Progress to user.dat persistence (types.ts, user-context.tsx)
 - [x] 0 TS errors, 409 tests green
+
+## Round 62 — K06 Self-Care & Sustainable Support (Kim-only)
+
+- [x] Create lib/engine/kim/k06-self-care.ts with types, detector, router, prompt builder
+- [x] Wire K06 into pipeline.ts as Kim-specific step after K04-S4 (Step 5p)
+- [x] Add k06Context to payload chain (gpt-payload-builder, openai-provider, server/ai-chat)
+- [x] Add k06Progress to user.dat persistence (types.ts, user-context.tsx)
+- [x] 0 TS errors, 409 tests green
