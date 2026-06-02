@@ -214,6 +214,14 @@ import {
   updateK06Progress,
 } from '../engine/kim/k06-self-care';
 import type { K06RoutingResult, K06Progress } from '../engine/kim/k06-self-care';
+import {
+  detectK01BoundaryState,
+  routeK01Engine,
+  resetK01SessionState,
+  updateK01Progress,
+  createDefaultK01Progress,
+} from '../engine/kim/k01-boundary-setting';
+import type { K01RoutingResult, K01Progress } from '../engine/kim/k01-boundary-setting';
 
 // ─── Pattern Marking (post-GPT local state) ─────────────────
 
@@ -288,6 +296,7 @@ export function resetSessionState(): void {
   resetK04SessionState();
   resetK04S4SessionState();
   resetK06SessionState();
+  resetK01SessionState();
 }
 
 // ─── Pipeline Result ────────────────────────────────────────────
@@ -919,6 +928,16 @@ export async function processMessage(
     doNots: [],
     promptBlock: null,
   };
+  let k01Result: K01RoutingResult = {
+    activated: false,
+    interventionType: 'boundary_education',
+    primaryState: 'none',
+    severity: 'mild',
+    collapseRisk: false,
+    boundaryStatement: null,
+    doNots: [],
+    promptBlock: null,
+  };
   if (backpack.userType === 'kim') {
     const ko1Progress: KO1Progress = (currentUserDat as any).ko1Progress ?? createDefaultKO1Progress();
     const frustrationScore = (currentUserDat.currentMood as any)?.frustration ?? 3;
@@ -932,7 +951,7 @@ export async function processMessage(
       frustrationScore,
       eigenRegieScore: (currentUserDat.currentMood as any)?.eigenRegie ?? null,
       hasChildren,
-      sessionMessageCount: sessionMessageCount,
+      sessionMessageCount: sessionBuffer.messageCount,
     }, ko1Progress);
 
     if (ko1Result.activated) {
@@ -949,7 +968,7 @@ export async function processMessage(
       crisisLevel: analysis.riskLevel === 'critical' || analysis.riskLevel === 'high' ? 2 : analysis.riskLevel === 'moderate' ? 1 : 0,
       frustrationScore,
       eigenRegieScore: (currentUserDat.currentMood as any)?.eigenRegie ?? null,
-      sessionMessageCount: sessionMessageCount,
+      sessionMessageCount: sessionBuffer.messageCount,
     }, k05Progress);
 
     if (k05Result.activated) {
@@ -965,9 +984,9 @@ export async function processMessage(
       eigenRegieScore: (currentUserDat.currentMood as any)?.eigenRegie ?? null,
       crisisLevel: analysis.riskLevel === 'critical' || analysis.riskLevel === 'high' ? 2 : analysis.riskLevel === 'moderate' ? 1 : 0,
       stressScore: frustrationScore,
-      boundaryFatigueScore: Math.min(10, frustrationScore + (sessionMessageCount > 10 ? 2 : 0)),
+      boundaryFatigueScore: Math.min(10, frustrationScore + (sessionBuffer.messageCount > 10 ? 2 : 0)),
       emotionalBurdenScore: Math.min(10, frustrationScore + (analysis.riskLevel === 'moderate' ? 2 : analysis.riskLevel === 'high' ? 4 : 0)),
-      sessionMessageCount: sessionMessageCount,
+      sessionMessageCount: sessionBuffer.messageCount,
     }, k02Progress);
 
     if (k02Result.activated) {
@@ -975,7 +994,7 @@ export async function processMessage(
     }
 
     // ── Step 5n: K04 Emotional Regulation for Caregivers (Kim only) ──
-    const k04Detection = detectK04EmotionalState(userMessage, recentMessages.slice(-3));
+    const k04Detection = detectK04EmotionalState(userMessage, sessionBuffer.recentMessages.slice(-3).map(m => m.content));
     const k04Progress: K04Progress | undefined = (currentUserDat as any).k04Progress;
     k04Result = routeK04Engine(k04Detection, k04Progress);
 
@@ -984,7 +1003,7 @@ export async function processMessage(
     }
 
     // ── Step 5o: K04-S4 Betrayal, Trust, Hope & Self-Protection (Kim only) ──
-    const k04s4Detection = detectK04S4State(userMessage, recentMessages.slice(-3));
+    const k04s4Detection = detectK04S4State(userMessage, sessionBuffer.recentMessages.slice(-3).map(m => m.content));
     const k04s4Progress: K04S4Progress | undefined = (currentUserDat as any).k04s4Progress;
     k04s4Result = routeK04S4Engine(k04s4Detection, k04s4Progress);
 
@@ -993,12 +1012,22 @@ export async function processMessage(
     }
 
     // ── Step 5p: K06 Self-Care & Sustainable Support (Kim only) ──
-    const k06Detection = detectK06State(userMessage, recentMessages.slice(-3));
+    const k06Detection = detectK06State(userMessage, sessionBuffer.recentMessages.slice(-3).map(m => m.content));
     const k06Progress: K06Progress | undefined = (currentUserDat as any).k06Progress;
     k06Result = routeK06Engine(k06Detection, k06Progress);
 
     if (k06Result.activated) {
       console.log(`[Pipeline] K06: state=${k06Result.primaryState} | severity=${k06Result.severity} | mode=${k06Result.responseMode} | sustainability=${k06Result.sustainabilityLevel}`);
+    }
+
+    // ── Step 5q: K01 Boundary Setting (Kim only, default module) ──
+    const k01Detection = detectK01BoundaryState(userMessage, sessionBuffer.recentMessages.slice(-3).map(m => m.content));
+    const k01Progress: K01Progress | undefined = (currentUserDat as any).k01Progress;
+    const boundaryFatigueSlider = (currentUserDat.currentMood as any)?.boundaryFatigue ?? 3;
+    k01Result = routeK01Engine(k01Detection, boundaryFatigueSlider, k01Progress);
+
+    if (k01Result.activated) {
+      console.log(`[Pipeline] K01: state=${k01Result.primaryState} | severity=${k01Result.severity} | intervention=${k01Result.interventionType} | collapse=${k01Result.collapseRisk}`);
     }
   }
 
@@ -1272,6 +1301,7 @@ export async function processMessage(
     k04Context: k04Result.promptBlock || undefined,
     k04s4Context: k04s4Result.promptBlock || undefined,
     k06Context: k06Result.promptBlock || undefined,
+    k01Context: k01Result.promptBlock || undefined,
   };
 
   let response: string;
@@ -1482,6 +1512,7 @@ export async function processMessage(
       { step: '5n. K04', status: k04Result.activated ? 'passed' : 'skipped', reason: k04Result.activated ? `state=${k04Result.primaryState}|severity=${k04Result.severity}` : 'no emotional state detected' },
       { step: '5o. K04-S4', status: k04s4Result.activated ? 'passed' : 'skipped', reason: k04s4Result.activated ? `state=${k04s4Result.primaryState}|severity=${k04s4Result.severity}` : 'no betrayal/trust state detected' },
       { step: '5p. K06', status: k06Result.activated ? 'passed' : 'skipped', reason: k06Result.activated ? `state=${k06Result.primaryState}|severity=${k06Result.severity}|sustainability=${k06Result.sustainabilityLevel}` : 'no self-care state detected' },
+      { step: '5q. K01', status: k01Result.activated ? 'passed' : 'skipped', reason: k01Result.activated ? `state=${k01Result.primaryState}|severity=${k01Result.severity}|intervention=${k01Result.interventionType}|collapse=${k01Result.collapseRisk}` : 'no boundary state detected' },
       { step: '6a. Zone decision', status: elisDecision ? 'passed' : 'skipped', reason: elisDecision ? `zone=${elisDecision.zone.computed.label}` : 'kim user' },
       { step: '6b. Engine directive', status: engineDirective ? 'passed' : 'skipped', reason: engineDirective ? `engine=${engineDirective.engine}` : 'none' },
       { step: '6c. Intervention', status: interventionContinuity ? 'passed' : 'skipped', reason: interventionContinuity ? `type=${interventionContinuity.lastInterventionType}` : 'not active' },
@@ -2267,6 +2298,17 @@ export async function endSession(
       const updatedK06Progress = updateK06Progress(existingK06Progress, k06SessionDetection, k06SessionResult.responseMode);
       updatedUserDat = { ...updatedUserDat, k06Progress: updatedK06Progress } as any;
       console.log(`[Pipeline] K06 persistence: state=${k06SessionDetection.primaryState}, severity=${k06SessionDetection.severity}, sustainability=${k06SessionDetection.sustainabilityLevel}`);
+    }
+
+    // K01 Boundary Setting persistence — re-detect from full session text
+    const k01SessionDetection = detectK01BoundaryState(allUserText, userMessages.map(m => m.content).slice(-3));
+    if (k01SessionDetection.activated) {
+      const existingK01Progress = (updatedUserDat as any).k01Progress;
+      const k01BoundarySlider = (updatedUserDat.currentMood as any)?.boundaryFatigue ?? 3;
+      const k01SessionResult = routeK01Engine(k01SessionDetection, k01BoundarySlider, existingK01Progress);
+      const updatedK01Progress = updateK01Progress(existingK01Progress, k01SessionDetection, k01SessionResult.interventionType);
+      updatedUserDat = { ...updatedUserDat, k01Progress: updatedK01Progress } as any;
+      console.log(`[Pipeline] K01 persistence: state=${k01SessionDetection.primaryState}, severity=${k01SessionDetection.severity}, trend=${updatedK01Progress.boundaryStabilityTrend}`);
     }
   }
 

@@ -113,6 +113,7 @@ export interface GPTPayload {
   k04Context?: string;
   k04s4Context?: string;
   k06Context?: string;
+  k01Context?: string;
 
   // ── Buffer snapshot (from pipeline, per message) ──
   bufferSnapshot?: {
@@ -221,6 +222,7 @@ export interface PayloadBuilderInput {
   k04Context?: string;
   k04s4Context?: string;
   k06Context?: string;
+  k01Context?: string;
 }
 
 // ─── Conversation History Optimisation (Patch N Step 5) ──────
@@ -496,6 +498,9 @@ export function buildGPTPayload(input: PayloadBuilderInput): GPTPayload {
   }
   if (input.k06Context) {
     payload.k06Context = input.k06Context;
+  }
+  if (input.k01Context) {
+    payload.k01Context = input.k01Context;
   }
 
   // ── Buffer snapshot (from pipeline, per message) ──

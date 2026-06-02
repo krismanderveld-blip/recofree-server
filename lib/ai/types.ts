@@ -435,6 +435,17 @@ export interface UserDat {
     sustainabilityTrend: string;
     consecutiveCollapseRisk: number;
   };
+  k01Progress?: {
+    sessionsWithBoundaryFatigue: number;
+    sessionsWithGuiltAfterBoundary: number;
+    sessionsWithCollapse: number;
+    sessionsWithAbandonmentFear: number;
+    boundaryRepairAttempts: number;
+    boundaryPracticeCount: number;
+    lastInterventionType: string | null;
+    lastSessionDate: string | null;
+    boundaryStabilityTrend: string;
+  };
 }
 
 /** A record of a completed session's analysis */
@@ -684,6 +695,17 @@ export function createNewUserDat(
       sustainabilityTrend: 'unknown',
       consecutiveCollapseRisk: 0,
     },
+    k01Progress: {
+      sessionsWithBoundaryFatigue: 0,
+      sessionsWithGuiltAfterBoundary: 0,
+      sessionsWithCollapse: 0,
+      sessionsWithAbandonmentFear: 0,
+      boundaryRepairAttempts: 0,
+      boundaryPracticeCount: 0,
+      lastInterventionType: null,
+      lastSessionDate: null,
+      boundaryStabilityTrend: 'unknown',
+    },
   };
 }
 
@@ -809,6 +831,7 @@ export interface ChatContext {
   k04Context?: string;
   k04s4Context?: string;
   k06Context?: string;
+  k01Context?: string;
 }
 
 /**

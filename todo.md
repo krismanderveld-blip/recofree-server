@@ -838,3 +838,12 @@
 - [x] Add k06Context to payload chain (gpt-payload-builder, openai-provider, server/ai-chat)
 - [x] Add k06Progress to user.dat persistence (types.ts, user-context.tsx)
 - [x] 0 TS errors, 409 tests green
+
+## Round 63 — K01 Boundary Setting (Kim default module)
+
+- [x] Create lib/engine/kim/k01-boundary-setting.ts with types, detector, directive logic, prompt builder
+- [x] Wire K01 into pipeline.ts as Step 5q (Kim only, default module)
+- [x] Add k01Context to transport chain (gpt-payload-builder, openai-provider, server/ai-chat)
+- [x] Add k01Progress to user.dat persistence (types.ts, user-context.tsx)
+- [x] Fix TS errors: replace undeclared sessionMessageCount/recentMessages with sessionBuffer equivalents
+- [x] 0 TS errors, 409 tests green

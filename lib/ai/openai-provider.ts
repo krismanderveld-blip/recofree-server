@@ -209,6 +209,7 @@ export class OpenAIProvider implements AIProvider {
         k04Context: context.k04Context,
         k04s4Context: context.k04s4Context,
         k06Context: context.k06Context,
+        k01Context: context.k01Context,
       });
 
       // ── STEP 3: Build server payload based on SESSION_INIT / LIVE_MESSAGE split ──
@@ -289,6 +290,8 @@ export class OpenAIProvider implements AIProvider {
           k04Context: gptPayload.k04Context ?? null,
           k04s4Context: gptPayload.k04s4Context ?? null,
           k06Context: gptPayload.k06Context ?? null,
+          // K01 Boundary Setting (Kim only)
+          k01Context: gptPayload.k01Context ?? null,
 
           // Full data (SESSION_INIT only)
           backpack: gptPayload.backpack,
@@ -377,6 +380,8 @@ export class OpenAIProvider implements AIProvider {
           k04Context: gptPayload.k04Context ?? null,
           k04s4Context: gptPayload.k04s4Context ?? null,
           k06Context: gptPayload.k06Context ?? null,
+          // K01 Boundary Setting (Kim only)
+          k01Context: gptPayload.k01Context ?? null,
 
           // Signal engine: relevance scores for context gating (threshold 0.3)
           relevanceScores: context.relevanceScores ?? null,
