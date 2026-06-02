@@ -38,7 +38,7 @@ export type K02SelfLossLevel = 'low' | 'medium' | 'high' | 'severe';
 
 export type K02BoundaryReadiness = 'none' | 'microboundary' | 'restoration_ready' | 'overwhelmed';
 
-export type K02RouteRecommendation = 'stay_k02' | 'route_k03_boundary_restoration' | 'route_k04_emotional_regulation' | 'safety_override';
+export type K02RouteRecommendation = 'stay_k02' | 'route_k01_boundary_setting' | 'route_k04_emotional_regulation' | 'safety_override';
 
 export type K02BoundaryFlagId =
   | 'SELF_LOSS'
@@ -352,9 +352,9 @@ function resolveRouteRecommendation(
   // Escalate to K04
   if (interventionState === 'ESCALATE_K04') return 'route_k04_emotional_regulation';
 
-  // Route to K03 if boundary restoration ready and awareness is clear
+  // Route to K01 if boundary setting needed and awareness is clear
   if (interventionState === 'BOUNDARY_WARNING' && detection.selfLossLevel === 'severe') {
-    return 'route_k03_boundary_restoration';
+    return 'route_k01_boundary_setting';
   }
 
   // Stay in K02
@@ -520,7 +520,7 @@ function getInterventionGuidance(state: K02InterventionState): string | null {
 function formatRoute(route: K02RouteRecommendation): string {
   const map: Record<K02RouteRecommendation, string> = {
     'stay_k02': 'Stay in K02',
-    'route_k03_boundary_restoration': 'Route to K03 Boundary Restoration (boundaries need structural work)',
+    'route_k01_boundary_setting': 'Route to K01 Boundary Setting (boundaries need structural work)',
     'route_k04_emotional_regulation': 'Route to K04 Emotional Regulation (regulate before insight)',
     'safety_override': 'SAFETY OVERRIDE: Stop insight work, prioritize immediate safety',
   };
