@@ -855,3 +855,10 @@
 - [x] Fix diagnostics to use actual count from record instead of hardcoded 1
 - [x] Legacy entries auto-migrate via (m.count || 1) fallback
 - [x] 0 TS errors, 409 tests green
+
+## Maintenance Round 4
+
+- [x] Fix 1: projection-layer.ts NL→EN markers (already English, no changes needed)
+- [x] Fix 2: Add single-user cache comment above sessionCache in server/ai-chat.ts
+- [x] Fix 3: Translate all Dutch strings/comments in server/ai-chat.ts buildSystemPrompt to English (Taak→Task, Kwaliteitscontrole→Quality Control, Vooranalyse→Pre-Analysis, Schema Integratie→Schema Integration, VSP ROOD→VSP RED)
+- [x] 0 TS errors, 409 tests green

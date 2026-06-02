@@ -15,9 +15,9 @@
  * CANON SOURCES:
  *   - elias.dat V19 / kim.dat V1
  *   - ELIAS_IDENTITEIT_COMPLETE_V2025.txt
- *   - Module 033 (Kwaliteitscontrole / anti-fabricatie)
- *   - Module 091 (Schema Integratie)
- *   - Module 012 (Vooranalyse / Failsafe)
+ *   - Module 033 (Quality Control / Anti-Fabrication)
+ *   - Module 091 (Schema Integration)
+ *   - Module 012 (Pre-Analysis / Failsafe)
  *   - Master Engine Spec V2
  */
 
@@ -208,7 +208,7 @@ interface SessionCache {
   guidanceDepth: 'light' | 'normal' | 'deep';
 }
 
-// SINGLE-USER ONLY — this module-scoped cache assumes one active session at a time.
+// Single-user cache: one active session per server instance (not multi-user safe)
 // Must be replaced with a session-keyed map before any multi-user deployment.
 let sessionCache: SessionCache | null = null;
 
@@ -1024,13 +1024,13 @@ Keep it short (3-5 sentences max). Do NOT ask new questions.`;
     if (conditional.relationshipMap) included.push('relationMap');
     console.log(`[AI Chat] Follow-up selective injection: [${included.join(', ') || 'none'}]`);
 
-    // Taak 1: Gate context injection using relevanceScores (threshold 0.3)
+    // Task 1: Gate context injection using relevanceScores (threshold 0.3)
     // If contextSummary is available (from SignalEngine), use it instead of full lifeStorySummary.
     // If backpackRelevance < 0.3, skip lifeStorySummary entirely (saves tokens).
     const scores = input.relevanceScores;
     let lifeStoryContext = '';
     if (input.contextSummary) {
-      // Taak 2: Use compressed context summary from SignalEngine
+      // Task 2: Use compressed context summary from SignalEngine
       lifeStoryContext = `\n─── CONTEXT SUMMARY (live-compressed) ───\n${input.contextSummary}\n─── END CONTEXT SUMMARY ───`;
     } else if (!scores || scores.backpackRelevance >= 0.3) {
       // No scores available OR backpack is relevant → include full summary
@@ -1038,7 +1038,7 @@ Keep it short (3-5 sentences max). Do NOT ask new questions.`;
     }
     // else: backpackRelevance < 0.3 → skip lifeStorySummary (token savings)
 
-    // Taak 1: Gate diary injection using diaryRelevance threshold
+    // Task 1: Gate diary injection using diaryRelevance threshold
     if (scores && scores.diaryRelevance < 0.3) {
       conditional.recentDiary = [];
     }
@@ -1376,7 +1376,7 @@ export async function generateAIResponse(
     routingReason = `high urgency (${input.urgency})`;
   } else if (input.vspLevel === 'ROOD' || input.vspLevel === 'RED') {
     selectedModel = 'gpt-4o';
-    routingReason = 'VSP ROOD (high relapse risk)';
+    routingReason = 'VSP RED (high relapse risk)';
   } else if (HIGH_COMPLEXITY_MODULES.some(m => dominantModuleForRouting.includes(m))) {
     selectedModel = 'gpt-4o';
     routingReason = `complex module (${dominantModuleForRouting})`;
