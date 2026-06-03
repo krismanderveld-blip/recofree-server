@@ -938,3 +938,4 @@
 - [x] Sober counter: counter display on Elias home/profile (Elias only, optional)
 - [x] Sober counter compact display on Elias home screen (tap → profile)
 - [x] Milestone notifications: lastMilestoneShown in UserDat, modal on milestone days (1,7,30,90,180,365)
+- [x] Fix pnpm ERR_PNPM_IGNORED_BUILDS: wildcard onlyBuiltDependencies + packageManager pinned to 9.12.0
