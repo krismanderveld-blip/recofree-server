@@ -14,6 +14,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ScreenContainer } from '@/components/screen-container';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useColors } from '@/hooks/use-colors';
+import { useUser } from '@/lib/user-context';
 import * as Haptics from 'expo-haptics';
 
 interface GratitudeData {
@@ -41,8 +42,30 @@ const GRATITUDE_EXPLANATION =
   'experience fewer cravings, better sleep, and stronger relationships. ' +
   'You do not have to feel grateful. You just have to look.';
 
+function GratitudeStreakBadge({ streak, onPress }: { streak: number; onPress: () => void }) {
+  if (streak === 0) return null;
+
+  let label: string;
+  if (streak === 1) label = '1 day of gratitude';
+  else if (streak === 2) label = '2 days in a row';
+  else label = `\uD83D\uDD25 ${streak} days in a row`;
+
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}
+    >
+      <View className="bg-success/10 rounded-full px-3 py-1.5 flex-row items-center self-start mb-3">
+        <Text className="text-xs font-medium text-success">{label}</Text>
+      </View>
+    </Pressable>
+  );
+}
+
 export default function DiaryScreen() {
   const colors = useColors();
+  const { state } = useUser();
+  const gratitudeStreak = state.userDat?.gratitudeStreak ?? 0;
   const [entries, setEntries] = useState<DiaryEntry[]>([]);
   const [showEditor, setShowEditor] = useState(false);
   const [editorText, setEditorText] = useState('');
@@ -175,6 +198,9 @@ export default function DiaryScreen() {
           </View>
         </Pressable>
       </View>
+
+      {/* Gratitude Streak Badge */}
+      <GratitudeStreakBadge streak={gratitudeStreak} onPress={() => setShowEditor(true)} />
 
       {/* Entry List */}
       <FlatList

@@ -82,7 +82,7 @@ export const KIM_THERAPEUTIC_MODULES: readonly KimTherapeuticModule[] = Object.f
     id: 'K03', name: 'Self-Care', category: 'Core',
     description: 'Prioritizing your own well-being',
     triggers: [
-      { type: 'slider', condition: 'selfCare', direction: 'below', threshold: 2 },
+      { type: 'slider', condition: 'selfCare', direction: 'below', threshold: 3 },
       { type: 'keyword', condition: 'exhausted|tired|burned out|can\'t cope|drained' },
     ],
     userType: 'kim',

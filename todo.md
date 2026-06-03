@@ -928,3 +928,5 @@
 - [x] Replace ELIAS_IDENTITY_PROMPT with new persona (direct, recognition-first, no wellness-app tone)
 - [x] Replace KIM_IDENTITY_PROMPT with new persona (chosen side, pattern-naming, first-5-minutes rule)
 - [x] 0 TS errors, 409 tests green
+- [x] Gratitude streak badge UI in diary header (shows at streak >= 1, fire emoji at >= 3, tap opens editor)
+- [x] Fix module-catalog.ts K03 threshold from 2 to 3 (spec alignment)
