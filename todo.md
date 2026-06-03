@@ -949,3 +949,4 @@
 - [x] Verify: pnpm install --frozen-lockfile + pnpm run build + expo export --platform android all pass
 - [x] Add AppErrorBoundary to _layout.tsx (catches and displays crashes instead of silent close on Android)
 - [x] 417 tests green, 0 project-specific TS errors
+- [x] Fix Android crash: "Rendered more hooks than during previous render" — moved useCallback above early return in HomeScreen

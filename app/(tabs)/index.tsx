@@ -17,6 +17,13 @@ export default function HomeScreen() {
   const userDat = getUserDat();
   const [milestoneMessage, setMilestoneMessage] = useState<string | null>(null);
 
+  const handleDismissMilestone = useCallback(() => {
+    setMilestoneMessage(null);
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+  }, []);
+
   useEffect(() => {
     if (!state.isLoading && !state.intakeCompleted) {
       router.replace('/intake' as Href);
@@ -76,13 +83,6 @@ export default function HomeScreen() {
     if (sobrietyDays < 100) return `\u{1F525} ${sobrietyDays} days clean`;
     return `\u{1F499} ${sobrietyDays} days clean`;
   })();
-
-  const handleDismissMilestone = useCallback(() => {
-    setMilestoneMessage(null);
-    if (Platform.OS !== 'web') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
-  }, []);
 
   const handleStartChat = () => {
     startSession();
