@@ -78,12 +78,6 @@ export default function HomeScreen() {
     );
   })();
 
-  const soberLabel = (() => {
-    if (sobrietyDays === null) return null;
-    if (sobrietyDays < 100) return `\u{1F525} ${sobrietyDays} days clean`;
-    return `\u{1F499} ${sobrietyDays} days clean`;
-  })();
-
   const handleStartChat = () => {
     startSession();
     router.push('/(tabs)/chat' as Href);
@@ -93,7 +87,7 @@ export default function HomeScreen() {
     <ScreenContainer className="px-5 pt-2">
       <ScrollView contentContainerStyle={{ flexGrow: 1, paddingBottom: 24 }} showsVerticalScrollIndicator={false}>
         {/* Header */}
-        <View className="mb-6">
+        <View className="mb-4">
           <Text className="text-sm text-muted mb-1">
             {getTimeGreeting()}, {userName}
           </Text>
@@ -102,18 +96,47 @@ export default function HomeScreen() {
           </Text>
         </View>
 
-        {/* Compact Sober Counter (Elias only) */}
-        {soberLabel && (
+        {/* Prominent Sober Counter (Elias only) */}
+        {isElias && sobrietyDays !== null && (
+          <View
+            className="rounded-3xl mb-6 items-center py-8 px-6"
+            style={{
+              backgroundColor: colors.primary + '12',
+              borderWidth: 1.5,
+              borderColor: colors.primary + '30',
+            }}
+          >
+            <Text style={{ fontSize: 52, fontWeight: '800', color: colors.primary, letterSpacing: -1 }}>
+              {sobrietyDays}
+            </Text>
+            <Text style={{ fontSize: 16, fontWeight: '600', color: colors.primary, marginTop: 2, opacity: 0.85 }}>
+              {sobrietyDays === 1 ? 'day clean' : 'days clean'}
+            </Text>
+            <Text style={{ fontSize: 13, color: colors.muted, marginTop: 10, textAlign: 'center', lineHeight: 18 }}>
+              {getSoberMessage(sobrietyDays)}
+            </Text>
+          </View>
+        )}
+
+        {/* Prompt to set sobriety date (Elias only, no date set yet) */}
+        {isElias && sobrietyDays === null && (
           <Pressable
             onPress={() => router.push('/(tabs)/profile' as Href)}
-            style={({ pressed }) => [{ opacity: pressed ? 0.8 : 1 }]}
+            style={({ pressed }) => [{ opacity: pressed ? 0.85 : 1 }]}
           >
             <View
-              className="rounded-xl px-4 py-2.5 mb-5 flex-row items-center"
-              style={{ backgroundColor: colors.primary + '10', borderWidth: 1, borderColor: colors.primary + '20' }}
+              className="rounded-2xl mb-6 items-center py-5 px-5"
+              style={{
+                backgroundColor: colors.surface,
+                borderWidth: 1,
+                borderColor: colors.border,
+              }}
             >
-              <Text className="text-sm font-semibold" style={{ color: colors.primary }}>
-                {soberLabel}
+              <Text style={{ fontSize: 15, color: colors.muted, textAlign: 'center', lineHeight: 21 }}>
+                Set your sobriety date to start tracking your progress
+              </Text>
+              <Text style={{ fontSize: 13, color: colors.primary, fontWeight: '600', marginTop: 8 }}>
+                Go to Profile →
               </Text>
             </View>
           </Pressable>
@@ -249,6 +272,19 @@ export default function HomeScreen() {
       )}
     </ScreenContainer>
   );
+}
+
+function getSoberMessage(days: number): string {
+  if (days === 0) return 'Today is day zero. Tomorrow is day one.';
+  if (days === 1) return 'The hardest day. You showed up.';
+  if (days < 7) return 'Every single day counts. Keep going.';
+  if (days < 14) return 'One week behind you. You chose yourself.';
+  if (days < 30) return 'Building momentum. This is you, doing the work.';
+  if (days < 60) return 'A month of choosing yourself, every single day.';
+  if (days < 90) return 'Two months. The fog is lifting.';
+  if (days < 180) return 'This is real. You rebuilt something.';
+  if (days < 365) return 'Half a year of showing up. Look how far you came.';
+  return 'One year and beyond. Remember who you were. Look who you are now.';
 }
 
 function MoodMini({ label, value, max = 7, invert = false }: { label: string; value: number; max?: number; invert?: boolean }) {

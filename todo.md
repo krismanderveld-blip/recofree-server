@@ -950,3 +950,5 @@
 - [x] Add AppErrorBoundary to _layout.tsx (catches and displays crashes instead of silent close on Android)
 - [x] 417 tests green, 0 project-specific TS errors
 - [x] Fix Android crash: "Rendered more hooks than during previous render" — moved useCallback above early return in HomeScreen
+- [x] Sober counter: redesign home screen version as prominent, emotional primary element (big, top of screen)
+- [x] Sober counter: keep date picker in profile only
