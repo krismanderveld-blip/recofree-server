@@ -952,3 +952,4 @@
 - [x] Fix Android crash: "Rendered more hooks than during previous render" — moved useCallback above early return in HomeScreen
 - [x] Sober counter: redesign home screen version as prominent, emotional primary element (big, top of screen)
 - [x] Sober counter: keep date picker in profile only
+- [x] Fix backend deploy: add verifyDepsBeforeRun: install to pnpm-workspace.yaml (pnpm 11 default check fails across Docker RUN layers)

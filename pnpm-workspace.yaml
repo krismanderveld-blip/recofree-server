@@ -4,3 +4,4 @@ packages:
 nodeLinker: hoisted
 shamefullyHoist: true
 dangerouslyAllowAllBuilds: true
+verifyDepsBeforeRun: install
