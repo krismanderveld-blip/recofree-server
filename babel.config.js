@@ -2,7 +2,7 @@ module.exports = function (api) {
   api.cache(true);
   let plugins = [];
 
-  plugins.push("react-native-worklets/plugin");
+  // react-native-reanimated/plugin includes worklets support in Reanimated 4.x
   // MUST be last plugin — required for Android production builds
   plugins.push("react-native-reanimated/plugin");
 
