@@ -1,8 +1,17 @@
 packages:
   - '.'
 
-# Allow all dependency build scripts (esbuild, unrs-resolver, etc.)
-# Works across pnpm 9.x, 10.x, and 11.x
-onlyBuiltDependencies:
-  - '*'
+# pnpm 11: allow all dependency build scripts
 dangerouslyAllowAllBuilds: true
+
+# pnpm 11: explicit allowBuilds map (fallback if dangerouslyAllowAllBuilds not recognized)
+allowBuilds:
+  esbuild: true
+  unrs-resolver: true
+  '@esbuild/linux-x64': true
+  '@esbuild/linux-arm64': true
+  '@esbuild/darwin-x64': true
+  '@esbuild/darwin-arm64': true
+  '@esbuild/win32-x64': true
+  '@esbuild/android-arm64': true
+  '@esbuild/android-arm': true
