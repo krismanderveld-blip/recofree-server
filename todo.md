@@ -907,3 +907,11 @@
 - [x] Safety guard: high-severity zones (ROOD/PAARS) cannot progress past regulation
 - [x] Reset turnsActive to 0 on time-based re-eval (zone-shift keeps incrementing)
 - [x] 0 project-specific TS errors, 409 tests green
+
+## Round 66 — K03 Self-Care With Shadow Layer (Elias + Kim)
+
+- [x] Create lib/engine/kim/k03-self-care.ts with types, shadow detector, response level router, prompt builder, session state
+- [x] Wire K03 into pipeline.ts as Step 5r (both Elias + Kim, trigger: selfCare <= 3)
+- [x] Add k03Context to transport chain (gpt-payload-builder, openai-provider, server/ai-chat)
+- [x] Add k03Progress to user.dat persistence (types.ts, user-context.tsx)
+- [x] 0 TS errors, 409 tests green

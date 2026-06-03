@@ -456,6 +456,17 @@ export interface UserDat {
     lastActiveLoop: string | null;
     lastInterventionMode: string | null;
   };
+  k03Progress?: {
+    sessionsActivated: number;
+    sessionsWithShadow: number;
+    sessionsAtLevel3: number;
+    shadowPartsDetected: string[];
+    lastShadowPart: string;
+    lastResponseLevel: string;
+    lastInterventionMode: string;
+    k06ReferralsMade: number;
+    consecutiveLowCare: number;
+  };
   /** Consecutive days with all 3 gratitude entries filled. Resets to 0 on skip. */
   gratitudeStreak: number;
   /** ISO date of last gratitude entry (for streak calculation) */
@@ -728,6 +739,17 @@ export function createNewUserDat(
       lastActiveLoop: null,
       lastInterventionMode: null,
     },
+    k03Progress: {
+      sessionsActivated: 0,
+      sessionsWithShadow: 0,
+      sessionsAtLevel3: 0,
+      shadowPartsDetected: [],
+      lastShadowPart: 'none',
+      lastResponseLevel: 'level_1',
+      lastInterventionMode: 'none',
+      k06ReferralsMade: 0,
+      consecutiveLowCare: 0,
+    },
     gratitudeStreak: 0,
     lastGratitudeDate: null,
   };
@@ -862,6 +884,7 @@ export interface ChatContext {
   k04s4Context?: string;
   k06Context?: string;
   k01Context?: string;
+  k03Context?: string;
   sw01Context?: string;
 }
 

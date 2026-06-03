@@ -114,6 +114,7 @@ export interface GPTPayload {
   k04s4Context?: string;
   k06Context?: string;
   k01Context?: string;
+  k03Context?: string;
   sw01Context?: string;
 
   // ── Buffer snapshot (from pipeline, per message) ──
@@ -224,6 +225,7 @@ export interface PayloadBuilderInput {
   k04s4Context?: string;
   k06Context?: string;
   k01Context?: string;
+  k03Context?: string;
   sw01Context?: string;
 }
 
@@ -502,6 +504,9 @@ export function buildGPTPayload(input: PayloadBuilderInput): GPTPayload {
   }
   if (input.k01Context) {
     payload.k01Context = input.k01Context;
+  }
+  if (input.k03Context) {
+    payload.k03Context = input.k03Context;
   }
   if (input.sw01Context) {
     payload.sw01Context = input.sw01Context;

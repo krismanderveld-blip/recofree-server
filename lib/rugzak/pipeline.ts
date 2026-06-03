@@ -223,6 +223,14 @@ import {
 } from '../engine/kim/k01-boundary-setting';
 import type { K01RoutingResult, K01Progress } from '../engine/kim/k01-boundary-setting';
 import {
+  detectK03State,
+  routeK03Engine,
+  resetK03SessionState,
+  updateK03Progress,
+  createDefaultK03Progress,
+} from '../engine/kim/k03-self-care';
+import type { K03RoutingResult, K03Progress } from '../engine/kim/k03-self-care';
+import {
   detectShadowSignals,
   buildShadowSignal,
   hasShadowMarkers,
@@ -309,6 +317,7 @@ export function resetSessionState(): void {
   resetK04S4SessionState();
   resetK06SessionState();
   resetK01SessionState();
+  resetK03SessionState();
   resetSW01SessionState();
 }
 
@@ -1046,6 +1055,36 @@ export async function processMessage(
     }
   }
 
+  // ── Step 5r: K03 Self-Care With Shadow Layer (Elias + Kim) ──
+  let k03Result: K03RoutingResult = {
+    activated: false,
+    interventionMode: 'none',
+    responseLevel: 'level_1',
+    severity: 'low',
+    ektPhase: 'none',
+    primaryShadowPart: 'none',
+    doNots: [],
+    promptBlock: null,
+  };
+  const selfCareSlider = (currentUserDat.currentMood as any)?.selfCare ?? 5;
+  if (selfCareSlider <= 3) {
+    const cravingValue = (currentUserDat.currentMood as any)?.craving ?? 0;
+    const moodValue = (currentUserDat.currentMood as any)?.mood ?? 5;
+    const k03Detection = detectK03State(
+      userMessage,
+      selfCareSlider,
+      cravingValue,
+      moodValue,
+      sessionBuffer.recentMessages.slice(-3).map(m => m.content),
+    );
+    const k03Progress: K03Progress | undefined = (currentUserDat as any).k03Progress;
+    k03Result = routeK03Engine(k03Detection, k03Progress, backpack.userType as 'elias' | 'kim');
+
+    if (k03Result.activated) {
+      console.log(`[Pipeline] K03: mode=${k03Result.interventionMode} | level=${k03Result.responseLevel} | severity=${k03Result.severity} | shadow=${k03Result.primaryShadowPart} | ekt=${k03Result.ektPhase}`);
+    }
+  }
+
   // ── Step 5e3: SW01 Shadow Work (Elias only) ──
   let sw01Result: SW01EngineResult = {
     active: false,
@@ -1350,6 +1389,7 @@ export async function processMessage(
     k04s4Context: k04s4Result.promptBlock || undefined,
     k06Context: k06Result.promptBlock || undefined,
     k01Context: k01Result.promptBlock || undefined,
+    k03Context: k03Result.promptBlock || undefined,
     sw01Context: sw01Result.promptBlock || undefined,
   };
 
@@ -1562,6 +1602,7 @@ export async function processMessage(
       { step: '5o. K04-S4', status: k04s4Result.activated ? 'passed' : 'skipped', reason: k04s4Result.activated ? `state=${k04s4Result.primaryState}|severity=${k04s4Result.severity}` : 'no betrayal/trust state detected' },
       { step: '5p. K06', status: k06Result.activated ? 'passed' : 'skipped', reason: k06Result.activated ? `state=${k06Result.primaryState}|severity=${k06Result.severity}|sustainability=${k06Result.sustainabilityLevel}` : 'no self-care state detected' },
       { step: '5q. K01', status: k01Result.activated ? 'passed' : 'skipped', reason: k01Result.activated ? `state=${k01Result.primaryState}|severity=${k01Result.severity}|intervention=${k01Result.interventionType}|collapse=${k01Result.collapseRisk}` : 'no boundary state detected' },
+      { step: '5r. K03', status: k03Result.activated ? 'passed' : 'skipped', reason: k03Result.activated ? `mode=${k03Result.interventionMode}|level=${k03Result.responseLevel}|severity=${k03Result.severity}|shadow=${k03Result.primaryShadowPart}|ekt=${k03Result.ektPhase}` : 'selfCare > 3 or not activated' },
       { step: '5e3. SW01', status: sw01Result.active ? 'passed' : 'skipped', reason: sw01Result.active ? `mode=${sw01Result.interventionMode}|confidence=${sw01Result.confidence.toFixed(2)}|loop=${sw01Result.activeLoop?.loop_id ?? 'none'}|projection=${sw01Result.projectionActive}` : 'no shadow signals detected' },
       { step: '6a. Zone decision', status: elisDecision ? 'passed' : 'skipped', reason: elisDecision ? `zone=${elisDecision.zone.computed.label}` : 'kim user' },
       { step: '6b. Engine directive', status: engineDirective ? 'passed' : 'skipped', reason: engineDirective ? `engine=${engineDirective.engine}` : 'none' },
@@ -2363,6 +2404,21 @@ export async function endSession(
       const updatedK01Progress = updateK01Progress(existingK01Progress, k01SessionDetection, k01SessionResult.interventionType);
       updatedUserDat = { ...updatedUserDat, k01Progress: updatedK01Progress } as any;
       console.log(`[Pipeline] K01 persistence: state=${k01SessionDetection.primaryState}, severity=${k01SessionDetection.severity}, trend=${updatedK01Progress.boundaryStabilityTrend}`);
+    }
+  }
+
+  // ── K03 Self-Care persistence (Elias + Kim) ──
+  {
+    const k03SelfCareSlider = (updatedUserDat.currentMood as any)?.selfCare ?? 5;
+    if (k03SelfCareSlider <= 3) {
+      const k03CravingVal = (updatedUserDat.currentMood as any)?.craving ?? 0;
+      const k03MoodVal = (updatedUserDat.currentMood as any)?.mood ?? 5;
+      const k03SessionDetection = detectK03State(allUserText, k03SelfCareSlider, k03CravingVal, k03MoodVal, userMessages.map(m => m.content).slice(-3));
+      const existingK03Progress: K03Progress = (updatedUserDat as any).k03Progress ?? createDefaultK03Progress();
+      const k03SessionResult = routeK03Engine(k03SessionDetection, existingK03Progress, backpack.userType as 'elias' | 'kim');
+      const updatedK03Progress = updateK03Progress(existingK03Progress, k03SessionDetection, k03SessionResult);
+      updatedUserDat = { ...updatedUserDat, k03Progress: updatedK03Progress } as any;
+      console.log(`[Pipeline] K03 persistence: sessions=${updatedK03Progress.sessionsActivated}, shadow=${updatedK03Progress.sessionsWithShadow}, consecutive=${updatedK03Progress.consecutiveLowCare}`);
     }
   }
 

@@ -210,6 +210,7 @@ export class OpenAIProvider implements AIProvider {
         k04s4Context: context.k04s4Context,
         k06Context: context.k06Context,
         k01Context: context.k01Context,
+        k03Context: context.k03Context,
         sw01Context: context.sw01Context,
       });
 
@@ -293,6 +294,8 @@ export class OpenAIProvider implements AIProvider {
           k06Context: gptPayload.k06Context ?? null,
           // K01 Boundary Setting (Kim only)
           k01Context: gptPayload.k01Context ?? null,
+          // K03 Self-Care With Shadow Layer (Elias + Kim)
+          k03Context: gptPayload.k03Context ?? null,
           // SW01 Shadow Work (Elias only)
           sw01Context: gptPayload.sw01Context ?? null,
 
@@ -385,6 +388,8 @@ export class OpenAIProvider implements AIProvider {
           k06Context: gptPayload.k06Context ?? null,
           // K01 Boundary Setting (Kim only)
           k01Context: gptPayload.k01Context ?? null,
+          // K03 Self-Care With Shadow Layer (Elias + Kim)
+          k03Context: gptPayload.k03Context ?? null,
           // SW01 Shadow Work (Elias only)
           sw01Context: gptPayload.sw01Context ?? null,
 

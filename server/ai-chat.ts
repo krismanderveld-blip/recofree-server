@@ -173,6 +173,7 @@ interface ChatRequestInput {
   k04s4Context?: string | null;
   k06Context?: string | null;
   k01Context?: string | null;
+  k03Context?: string | null;
   sw01Context?: string | null;
 
   // Signal engine: relevance scores for context gating (LIVE_MESSAGE only)
@@ -402,6 +403,7 @@ export const chatInputSchema = z.object({
   k04s4Context: z.string().nullable().optional(),
   k06Context: z.string().nullable().optional(),
   k01Context: z.string().nullable().optional(),
+  k03Context: z.string().nullable().optional(),
   sw01Context: z.string().nullable().optional(),
 
   // Signal engine: relevance scores for context gating (LIVE_MESSAGE only)
@@ -978,6 +980,11 @@ VIOLATION OF THIS PROTOCOL IS UNACCEPTABLE.`;
     k01Block = `\n${input.k01Context}`;
     console.log(`[AI Chat] K01 Boundary Setting context injected`);
   }
+  let k03Block = '';
+  if (input.k03Context) {
+    k03Block = `\n${input.k03Context}`;
+    console.log(`[AI Chat] K03 Self-Care With Shadow Layer context injected`);
+  }
   let sw01Block = '';
   if (input.sw01Context) {
     sw01Block = `\n${input.sw01Context}`;
@@ -1080,6 +1087,7 @@ ${k04Block}
 ${k04s4Block}
 ${k06Block}
 ${k01Block}
+${k03Block}
 ${sw01Block}
 
 These behavioral instructions are ABSOLUTE. They override your default conversational style.
@@ -1280,6 +1288,7 @@ ${k04Block}
 ${k04s4Block}
 ${k06Block}
 ${k01Block}
+${k03Block}
 ${sw01Block}
 
 These behavioral instructions are ABSOLUTE. They override your default conversational style.
