@@ -936,3 +936,5 @@
 - [x] Sober counter: add sobrietyDate to UserDat + createNewUserDat + hydration
 - [x] Sober counter: date picker on Elias profile screen
 - [x] Sober counter: counter display on Elias home/profile (Elias only, optional)
+- [x] Sober counter compact display on Elias home screen (tap → profile)
+- [x] Milestone notifications: lastMilestoneShown in UserDat, modal on milestone days (1,7,30,90,180,365)

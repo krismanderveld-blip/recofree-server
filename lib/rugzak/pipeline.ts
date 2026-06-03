@@ -438,6 +438,7 @@ export async function processMessage(
       gratitudeStreak: 0,
       lastGratitudeDate: null,
       sobrietyDate: null,
+      lastMilestoneShown: null,
     };
   }
 
@@ -1841,6 +1842,7 @@ export async function generateGreeting(
       gratitudeStreak: 0,
       lastGratitudeDate: null,
       sobrietyDate: null,
+      lastMilestoneShown: null,
     };
   }
 
@@ -2009,6 +2011,7 @@ export async function endSession(
       gratitudeStreak: 0,
       lastGratitudeDate: null,
       sobrietyDate: null,
+      lastMilestoneShown: null,
     };
   }
 

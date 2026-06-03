@@ -473,6 +473,8 @@ export interface UserDat {
   lastGratitudeDate: string | null;
   /** ISO date string (YYYY-MM-DD) of sobriety start. User-set. Elias only. */
   sobrietyDate: string | null;
+  /** ISO date (YYYY-MM-DD) of last milestone notification shown. Prevents repeat on same day. */
+  lastMilestoneShown: string | null;
 }
 
 /** A record of a completed session's analysis */
@@ -755,6 +757,7 @@ export function createNewUserDat(
     gratitudeStreak: 0,
     lastGratitudeDate: null,
     sobrietyDate: null,
+    lastMilestoneShown: null,
   };
 }
 

@@ -1,25 +1,54 @@
-import { useEffect } from 'react';
-import { ScrollView, Text, View, Pressable } from 'react-native';
+import { useEffect, useState, useCallback } from 'react';
+import { ScrollView, Text, View, Pressable, Modal, Platform } from 'react-native';
 import { useRouter, type Href } from 'expo-router';
 import { ScreenContainer } from '@/components/screen-container';
 import { useUser } from '@/lib/user-context';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useColors } from '@/hooks/use-colors';
 import { getSliderConfig } from '@/lib/ai/types';
+import * as Haptics from 'expo-haptics';
 
 export default function HomeScreen() {
   const router = useRouter();
-  const { state, startSession, getUserName, getMood } = useUser();
+  const { state, startSession, getUserName, getMood, getUserDat, updateMilestoneShown } = useUser();
   const colors = useColors();
-
   const userName = getUserName();
   const mood = getMood();
+  const userDat = getUserDat();
+  const [milestoneMessage, setMilestoneMessage] = useState<string | null>(null);
 
   useEffect(() => {
     if (!state.isLoading && !state.intakeCompleted) {
       router.replace('/intake' as Href);
     }
   }, [state.isLoading, state.intakeCompleted]);
+
+  // Milestone check (Elias only)
+  useEffect(() => {
+    if (state.isLoading || !state.intakeCompleted) return;
+    if (state.userType !== 'elias') return;
+    const sobrietyDate = userDat?.sobrietyDate;
+    if (!sobrietyDate) return;
+
+    const days = Math.floor(
+      (Date.now() - new Date(sobrietyDate).getTime()) / 86400000
+    );
+    const MILESTONES: Record<number, string> = {
+      1: 'Day 1. The hardest one. You showed up.',
+      7: '7 days. One week of choosing yourself.',
+      30: '30 days. A month of showing up every day.',
+      90: '90 days. \u{1F499} This is real.',
+      180: 'Half a year. You rebuilt something.',
+      365: 'One year. \u{1F525} Remember who you were. Look who you are now.',
+    };
+
+    const today = new Date().toISOString().slice(0, 10);
+    const lastShown = userDat?.lastMilestoneShown ?? null;
+    if (MILESTONES[days] && lastShown !== today) {
+      setMilestoneMessage(MILESTONES[days]);
+      updateMilestoneShown(today);
+    }
+  }, [state.isLoading, state.intakeCompleted, state.userType, userDat?.sobrietyDate, userDat?.lastMilestoneShown]);
 
   if (state.isLoading || !state.intakeCompleted) {
     return (
@@ -33,6 +62,27 @@ export default function HomeScreen() {
   const companionName = isElias ? 'Elias' : 'Kim';
   const greeting = getGreeting(userName, companionName, isElias);
   const sliderConfig = getSliderConfig(state.userType ?? 'elias');
+
+  // Sober counter (Elias only, when sobrietyDate is set)
+  const sobrietyDays = (() => {
+    if (!isElias || !userDat?.sobrietyDate) return null;
+    return Math.floor(
+      (Date.now() - new Date(userDat.sobrietyDate).getTime()) / 86400000
+    );
+  })();
+
+  const soberLabel = (() => {
+    if (sobrietyDays === null) return null;
+    if (sobrietyDays < 100) return `\u{1F525} ${sobrietyDays} days clean`;
+    return `\u{1F499} ${sobrietyDays} days clean`;
+  })();
+
+  const handleDismissMilestone = useCallback(() => {
+    setMilestoneMessage(null);
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+  }, []);
 
   const handleStartChat = () => {
     startSession();
@@ -51,6 +101,23 @@ export default function HomeScreen() {
             {companionName} is here for you
           </Text>
         </View>
+
+        {/* Compact Sober Counter (Elias only) */}
+        {soberLabel && (
+          <Pressable
+            onPress={() => router.push('/(tabs)/profile' as Href)}
+            style={({ pressed }) => [{ opacity: pressed ? 0.8 : 1 }]}
+          >
+            <View
+              className="rounded-xl px-4 py-2.5 mb-5 flex-row items-center"
+              style={{ backgroundColor: colors.primary + '10', borderWidth: 1, borderColor: colors.primary + '20' }}
+            >
+              <Text className="text-sm font-semibold" style={{ color: colors.primary }}>
+                {soberLabel}
+              </Text>
+            </View>
+          </Pressable>
+        )}
 
         {/* Greeting Card */}
         <View className="bg-surface rounded-2xl p-5 mb-5 border border-border">
@@ -136,6 +203,50 @@ export default function HomeScreen() {
           </Text>
         </View>
       </ScrollView>
+
+      {/* Milestone Modal (Elias only) */}
+      {milestoneMessage && (
+        <Modal visible transparent animationType="fade" onRequestClose={handleDismissMilestone}>
+          <Pressable
+            onPress={handleDismissMilestone}
+            style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' }}
+          >
+            <View
+              style={{
+                backgroundColor: colors.background,
+                borderRadius: 20,
+                padding: 32,
+                width: '85%',
+                maxWidth: 320,
+                alignItems: 'center',
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 8 },
+                shadowOpacity: 0.2,
+                shadowRadius: 16,
+                elevation: 10,
+              }}
+            >
+              <Text style={{ fontSize: 40, marginBottom: 16 }}>{"\u{1F389}"}</Text>
+              <Text style={{ fontSize: 17, fontWeight: '700', color: colors.foreground, textAlign: 'center', lineHeight: 24 }}>
+                {milestoneMessage}
+              </Text>
+              <Pressable
+                onPress={handleDismissMilestone}
+                style={({ pressed }) => [{
+                  marginTop: 24,
+                  backgroundColor: colors.primary,
+                  borderRadius: 12,
+                  paddingVertical: 12,
+                  paddingHorizontal: 32,
+                  opacity: pressed ? 0.85 : 1,
+                }]}
+              >
+                <Text style={{ color: '#fff', fontWeight: '700', fontSize: 15 }}>Thank you</Text>
+              </Pressable>
+            </View>
+          </Pressable>
+        </Modal>
+      )}
     </ScreenContainer>
   );
 }

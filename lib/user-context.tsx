@@ -101,6 +101,8 @@ interface UserContextValue {
   getEigenRegieHistory: () => import('./ai/types').EigenRegieEntry[];
   /** Update sobriety date (Elias users only). */
   updateSobrietyDate: (date: string | null) => Promise<void>;
+  /** Update last milestone shown date. */
+  updateMilestoneShown: (date: string) => Promise<void>;
   /** Update VSP level (Elias users only). Must be called before pipeline start. */
   updateVsp: (level: import('./engine/elias/vsp').VspLevel) => Promise<void>;
   /** Get current VSP level (null if not yet submitted this session) */
@@ -346,6 +348,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
                 gratitudeStreak: 0,
                 lastGratitudeDate: null,
                 sobrietyDate: null,
+                lastMilestoneShown: null,
             };
 
           // Persist both new stores
@@ -538,6 +541,13 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     await persistUserDat(updatedUserDat);
   }, [state.userDat]);
 
+  const updateMilestoneShown = useCallback(async (date: string) => {
+    if (!state.userDat) return;
+    const updatedUserDat: UserDat = { ...state.userDat, lastMilestoneShown: date };
+    dispatch({ type: 'UPDATE_USERDAT', payload: updatedUserDat });
+    await persistUserDat(updatedUserDat);
+  }, [state.userDat]);
+
   const getGuidanceDepth = useCallback((): GuidanceDepth => {
     return state.userDat?.guidanceDepth ?? 'normal';
   }, [state.userDat]);
@@ -609,6 +619,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       gratitudeStreak: state.userDat?.gratitudeStreak ?? 0,
       lastGratitudeDate: state.userDat?.lastGratitudeDate ?? null,
       sobrietyDate: state.userDat?.sobrietyDate ?? null,
+      lastMilestoneShown: state.userDat?.lastMilestoneShown ?? null,
     };
     dispatch({ type: 'END_SESSION', payload: updatedUserDat });
     await persistUserDat(updatedUserDat);
@@ -702,6 +713,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         updateEigenRegie,
         getEigenRegieHistory,
         updateSobrietyDate,
+        updateMilestoneShown,
         updateVsp,
         getVsp,
       }}
@@ -787,5 +799,6 @@ function migrateUserDat(raw: any, userType: UserType): UserDat {
     gratitudeStreak: raw.gratitudeStreak ?? 0,
     lastGratitudeDate: raw.lastGratitudeDate ?? null,
     sobrietyDate: raw.sobrietyDate ?? null,
+    lastMilestoneShown: raw.lastMilestoneShown ?? null,
   };
 }
