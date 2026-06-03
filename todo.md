@@ -930,3 +930,4 @@
 - [x] 0 TS errors, 409 tests green
 - [x] Gratitude streak badge UI in diary header (shows at streak >= 1, fire emoji at >= 3, tap opens editor)
 - [x] Fix module-catalog.ts K03 threshold from 2 to 3 (spec alignment)
+- [x] SW01 Shadow Work unit tests (8 tests: confidence scoring, zucht routing, Elias-only guard)
