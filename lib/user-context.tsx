@@ -99,6 +99,8 @@ interface UserContextValue {
   updateEigenRegie: (userInput: number) => Promise<void>;
   /** Get Eigen Regie history */
   getEigenRegieHistory: () => import('./ai/types').EigenRegieEntry[];
+  /** Update sobriety date (Elias users only). */
+  updateSobrietyDate: (date: string | null) => Promise<void>;
   /** Update VSP level (Elias users only). Must be called before pipeline start. */
   updateVsp: (level: import('./engine/elias/vsp').VspLevel) => Promise<void>;
   /** Get current VSP level (null if not yet submitted this session) */
@@ -343,6 +345,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
                 sw01Progress: undefined,
                 gratitudeStreak: 0,
                 lastGratitudeDate: null,
+                sobrietyDate: null,
             };
 
           // Persist both new stores
@@ -528,6 +531,13 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     await persistUserDat(updatedUserDat);
   }, [state.userDat]);
 
+  const updateSobrietyDate = useCallback(async (date: string | null) => {
+    if (!state.userDat) return;
+    const updatedUserDat: UserDat = { ...state.userDat, sobrietyDate: date };
+    dispatch({ type: 'UPDATE_USERDAT', payload: updatedUserDat });
+    await persistUserDat(updatedUserDat);
+  }, [state.userDat]);
+
   const getGuidanceDepth = useCallback((): GuidanceDepth => {
     return state.userDat?.guidanceDepth ?? 'normal';
   }, [state.userDat]);
@@ -598,6 +608,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       sw01Progress: state.userDat?.sw01Progress ?? undefined,
       gratitudeStreak: state.userDat?.gratitudeStreak ?? 0,
       lastGratitudeDate: state.userDat?.lastGratitudeDate ?? null,
+      sobrietyDate: state.userDat?.sobrietyDate ?? null,
     };
     dispatch({ type: 'END_SESSION', payload: updatedUserDat });
     await persistUserDat(updatedUserDat);
@@ -690,6 +701,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         getUserDat,
         updateEigenRegie,
         getEigenRegieHistory,
+        updateSobrietyDate,
         updateVsp,
         getVsp,
       }}
@@ -774,5 +786,6 @@ function migrateUserDat(raw: any, userType: UserType): UserDat {
     sw01Progress: raw.sw01Progress ?? undefined,
     gratitudeStreak: raw.gratitudeStreak ?? 0,
     lastGratitudeDate: raw.lastGratitudeDate ?? null,
+    sobrietyDate: raw.sobrietyDate ?? null,
   };
 }

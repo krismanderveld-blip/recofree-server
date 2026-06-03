@@ -471,6 +471,8 @@ export interface UserDat {
   gratitudeStreak: number;
   /** ISO date of last gratitude entry (for streak calculation) */
   lastGratitudeDate: string | null;
+  /** ISO date string (YYYY-MM-DD) of sobriety start. User-set. Elias only. */
+  sobrietyDate: string | null;
 }
 
 /** A record of a completed session's analysis */
@@ -752,6 +754,7 @@ export function createNewUserDat(
     },
     gratitudeStreak: 0,
     lastGratitudeDate: null,
+    sobrietyDate: null,
   };
 }
 

@@ -437,6 +437,7 @@ export async function processMessage(
       stageOfChange: ELIAS_DEFAULT_STAGE,
       gratitudeStreak: 0,
       lastGratitudeDate: null,
+      sobrietyDate: null,
     };
   }
 
@@ -1839,6 +1840,7 @@ export async function generateGreeting(
       stageOfChange: ELIAS_DEFAULT_STAGE,
       gratitudeStreak: 0,
       lastGratitudeDate: null,
+      sobrietyDate: null,
     };
   }
 
@@ -2006,6 +2008,7 @@ export async function endSession(
       stageOfChange: ELIAS_DEFAULT_STAGE,
       gratitudeStreak: 0,
       lastGratitudeDate: null,
+      sobrietyDate: null,
     };
   }
 

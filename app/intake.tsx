@@ -170,7 +170,7 @@ export default function IntakeScreen() {
                         I have an addiction myself
                       </Text>
                       <Text className="text-sm text-muted leading-relaxed">
-                        You'll be supported by Elias — a warm, empathetic companion for your recovery.
+                        You'll be supported by Elias — direct, honest support for your recovery — from someone who gets it.
                       </Text>
                     </View>
                   </Pressable>

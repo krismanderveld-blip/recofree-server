@@ -932,3 +932,7 @@
 - [x] Fix module-catalog.ts K03 threshold from 2 to 3 (spec alignment)
 - [x] SW01 Shadow Work unit tests (8 tests: confidence scoring, zucht routing, Elias-only guard)
 - [x] Fix SW01 circular dependency: replaced require() with top-level import in sw01_prompt_injector.ts
+- [x] Onboarding tekst fix: Elias description → "direct, honest support for your recovery — from someone who gets it."
+- [x] Sober counter: add sobrietyDate to UserDat + createNewUserDat + hydration
+- [x] Sober counter: date picker on Elias profile screen
+- [x] Sober counter: counter display on Elias home/profile (Elias only, optional)

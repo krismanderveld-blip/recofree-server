@@ -9,6 +9,7 @@ import { GUIDANCE_DEPTH_OPTIONS } from '@/lib/ai/types';
 import type { GuidanceDepth } from '@/lib/ai/types';
 import * as Haptics from 'expo-haptics';
 import Constants from 'expo-constants';
+import { SoberCounter } from '@/components/sober-counter';
 
 const STAGE_LABELS: Record<string, string> = {
   precontemplation: 'Precontemplation',
@@ -125,6 +126,13 @@ export default function ProfileScreen() {
             </View>
           </View>
         </View>
+
+        {/* ─── Sober Counter (Elias only) ─── */}
+        {isElias && (
+          <View className="mb-4">
+            <SoberCounter />
+          </View>
+        )}
 
         {/* ─── Guidance Depth ─── */}
         <View className="bg-surface rounded-2xl p-5 mb-4 border border-border">
