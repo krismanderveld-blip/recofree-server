@@ -749,6 +749,31 @@ export async function processMessage(
     if (actResult.activated) {
       console.log(`[Pipeline] ACT: process=${actResult.decision.dominantProcess} | signal=${actResult.decision.dominantSignal} | reason=${actResult.decision.reason}`);
     }
+
+    // Self-compassion micro-layer: always active at crisisLevel >= 2, even if ACT is suppressed
+    if (actCrisisLevel >= 2 && !actResult.activated) {
+      const selfCompassionFallback = [
+        '\n═══ SELF-COMPASSION MICRO-LAYER (crisis fallback) ═══',
+        'ACT is suppressed due to crisis level, but self-compassion remains active.',
+        'Apply ONE of these in your response:',
+        '- Acknowledge suffering without judgment ("This is a moment of suffering")',
+        '- Normalize the experience ("Anyone in this situation would struggle")',
+        '- Offer gentle presence ("You don\'t have to fix this right now")',
+        'Keep it to ONE sentence. No analysis. No questions.',
+        '═══ END SELF-COMPASSION MICRO-LAYER ═══',
+      ].join('\n');
+      actResult = {
+        ...actResult,
+        promptBlock: selfCompassionFallback,
+        activated: true,
+        decision: {
+          ...actResult.decision,
+          dominantProcess: 'SELF_AS_CONTEXT' as any,
+          reason: 'crisis_fallback_self_compassion',
+        },
+      };
+      console.log(`[Pipeline] ACT: self-compassion micro-layer injected (crisis fallback)`);
+    }
   }
 
   // ── PRE-GPT STEP 5h: CBT/CGT Engine (deterministic, both user types) ──

@@ -867,6 +867,58 @@ VIOLATION OF THIS PROTOCOL IS UNACCEPTABLE.`;
 
   console.log(`[AI Chat] Guidance depth: user=${userDepth}, stateAllowed=${stateAllowedDepth}, effective=${effectiveDepth} (crisis=${input.crisisLevel}, risk=${riskScore}, maxDistress=${maxDistress})`);
 
+  // ── INVALID RESPONSE FILTER + THERAPY SELECTION MATRIX ──
+  // Always injected — prevents generic-only responses and enforces therapeutic micro-layers
+  const invalidResponseFilter = `
+═══ THERAPEUTIC RESPONSE RULE — MANDATORY ═══
+
+When the user input contains emotional, relational, addiction-related, shame-related,
+avoidance, self-neglect, or distress signals, your response is INVALID if it:
+- only gives breathing instructions
+- only gives grounding exercises
+- only gives water/food/rest advice
+- only reassures without therapeutic content
+- does not reflect the user's inner state
+- does not contain at least one therapeutic interpretation
+
+A valid emotionally relevant response must contain:
+1. One empathic recognition of what is happening
+2. One therapeutic interpretation (not a diagnosis — a human reading)
+3. One micro-intervention from: DGT distress tolerance, ACT defusion,
+   self-compassion, MBT mentalisation, or relapse-prevention logic
+4. One concrete next step (small, doable)
+5. One autonomy-preserving close ("you choose the pace")
+
+In RED zone: keep it short and human.
+Maximum 3 sentences. No analysis. No questions.
+But those 3 sentences must carry therapeutic weight — not just instructions.
+═══ END THERAPEUTIC RESPONSE RULE ═══`;
+
+  const therapySelectionMatrix = `
+═══ THERAPY SELECTION — ACTIVE RULES ═══
+
+IF craving signals detected:
+  Use: DGT distress tolerance + relapse-prevention logic
+
+IF shame signals detected:
+  Use: self-compassion + ACT defusion
+
+IF user is collapsing / RED zone:
+  Use: DGT distress tolerance + self-compassion
+  Do NOT use: MBT, schema therapy, confrontation
+
+IF user is angry:
+  Use: MBT mentalisation + DGT emotion regulation
+
+IF user is avoidant:
+  Use: ACT values-based micro-action
+
+IF user is ruminating:
+  Use: CBT thought loop + ACT defusion
+
+These are not suggestions. These are minimum requirements.
+═══ END THERAPY SELECTION ═══`;
+
   // ── Regulation Layer Injection ──
   // If the regulation layer determined an action (non-reflect), inject its GPT instruction.
   // This runs BEFORE the system prompt is assembled, so it's available for both follow-up and session-start.
@@ -1071,6 +1123,8 @@ ${selectiveRelevance}
 ${stance}
 ${guidanceInstruction}
 ${regulationInstruction}
+${invalidResponseFilter}
+${therapySelectionMatrix}
 ${engineDirectiveBlock}
 ${interventionContinuityBlock}
 ${projectionBlock}
@@ -1272,6 +1326,8 @@ ${relevanceContext}
 ${stance}
 ${guidanceInstruction}
 ${regulationInstruction}
+${invalidResponseFilter}
+${therapySelectionMatrix}
 ${engineDirectiveBlock}
 ${interventionContinuityBlock}
 ${projectionBlock}

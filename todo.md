@@ -915,3 +915,10 @@
 - [x] Add k03Context to transport chain (gpt-payload-builder, openai-provider, server/ai-chat)
 - [x] Add k03Progress to user.dat persistence (types.ts, user-context.tsx)
 - [x] 0 TS errors, 409 tests green
+
+## Round 67 — Therapeutic Engine Patch (Hybride Fix)
+
+- [x] Fix 1: Self-compassion micro-layer always active at crisisLevel >= 2 (pipeline.ts) — DGT was already never suppressed
+- [x] Fix 2: INVALID_RESPONSE_FILTER added to buildSystemPrompt (both follow-up and session-start templates)
+- [x] Fix 3: THERAPY_SELECTION_MATRIX added to buildSystemPrompt (both follow-up and session-start templates)
+- [x] 0 project-specific TS errors, 409 tests green
