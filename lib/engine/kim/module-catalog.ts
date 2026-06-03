@@ -30,9 +30,11 @@ export const KIM_MODULE_CATALOG: readonly KimModuleDefinition[] = Object.freeze(
   { id: 'K01', name: 'Boundary Setting', category: 'Core', description: 'Learning to set and maintain healthy boundaries' },
   { id: 'K02', name: 'Enabling Awareness', category: 'Core', description: 'Recognizing and stopping enabling behaviors' },
   { id: 'K03', name: 'Self-Care', category: 'Core', description: 'Prioritizing your own well-being' },
-  { id: 'K04', name: 'Stress Management', category: 'Core', description: 'Managing stress and emotional overload' },
+  { id: 'K04', name: 'Emotional Regulation', category: 'Core', description: 'Managing emotional overload, betrayal, trust, and hope' },
   { id: 'K05', name: 'Communication Skills', category: 'Practical', description: 'Effective communication with someone in addiction' },
-  { id: 'K06', name: 'Detachment with Love', category: 'Growth', description: 'Learning to love without losing yourself' },
+  { id: 'K06', name: 'Self-Care & Sustainable Support', category: 'Growth', description: 'Sustainable caregiving without self-destruction' },
+  // KO1 (Recognition & Validation) is a separate engine file, not in this catalog
+  // K04-S4 (Betrayal/Trust/Hope) is a sub-module of K04
 ]);
 
 // ─── Kim TherapeuticModule definitions (from module-system.ts KIM_MODULES) ───
@@ -86,11 +88,11 @@ export const KIM_THERAPEUTIC_MODULES: readonly KimTherapeuticModule[] = Object.f
     userType: 'kim',
   },
   {
-    id: 'K04', name: 'Stress Management', category: 'Core',
-    description: 'Managing stress and emotional overload',
+    id: 'K04', name: 'Emotional Regulation', category: 'Core',
+    description: 'Managing emotional overload, betrayal, trust, and hope',
     triggers: [
       { type: 'slider', condition: 'stress', direction: 'above', threshold: 4 },
-      { type: 'keyword', condition: 'stressed|overwhelmed|too much|breaking down' },
+      { type: 'keyword', condition: 'stressed|overwhelmed|too much|breaking down|betrayed|trust|hope' },
     ],
     userType: 'kim',
   },
@@ -101,10 +103,10 @@ export const KIM_THERAPEUTIC_MODULES: readonly KimTherapeuticModule[] = Object.f
     userType: 'kim',
   },
   {
-    id: 'K06', name: 'Detachment with Love', category: 'Growth',
-    description: 'Learning to love without losing yourself',
+    id: 'K06', name: 'Self-Care & Sustainable Support', category: 'Growth',
+    description: 'Sustainable caregiving without self-destruction',
     triggers: [
-      { type: 'keyword', condition: 'let go|detach|step back|distance|space' },
+      { type: 'keyword', condition: 'let go|detach|step back|distance|space|burnout|exhausted|can\'t anymore' },
       { type: 'slider', condition: 'emotionalBurden', direction: 'above', threshold: 5 },
     ],
     userType: 'kim',
@@ -130,17 +132,17 @@ export function selectKimPriorityModules(
   const emotionalBurden = getSlider(mood, 'emotionalBurden');
   const selfCare = getSlider(mood, 'selfCare');
 
-  // High stress → K04 (Stress Management)
+  // High stress → K04 (Emotional Regulation)
   if (stress >= 6) modules.push('K04');
   // Boundary fatigue → K01 (Boundary Setting)
   if (boundaryFatigue >= 6) modules.push('K01');
-  // Emotional burden / hopelessness → K03 (Self-Care)
+  // Emotional burden / hopelessness → K03 (Self-Care) or K06 (Sustainable Support)
   if (emotionalBurden >= 6 || signals.hopelessness) modules.push('K03');
   // Low self-care → K03
   if (selfCare <= 3) modules.push('K03');
   // Enabling patterns detected → K02
   if (activeTriggers.includes('enabling')) modules.push('K02');
-  // Isolation → K05 (Support Network)
+  // Isolation → K05 (Communication Skills)
   if (signals.isolationSignal) modules.push('K05');
 
   if (modules.length === 0) modules.push('K01');

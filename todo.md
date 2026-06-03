@@ -878,3 +878,13 @@
 - [x] Add sw01Progress to user.dat persistence (types.ts, user-context.tsx)
 - [x] Fix TS error: replace sessionBuffer.currentZucht with currentZoneScore/10 mapping
 - [x] 0 SW01-specific TS errors, 409 tests green
+
+## Round 64b — Module-catalog.ts cleanup
+
+- [x] Update K04 name: "Stress Management" → "Emotional Regulation" (matches k04-emotional-regulation.ts)
+- [x] Update K06 name: "Detachment with Love" → "Self-Care & Sustainable Support" (matches k06-self-care.ts)
+- [x] Add K06 trigger keywords: burnout, exhausted, can't anymore
+- [x] Add K04 trigger keywords: betrayed, trust, hope (matches K04-S4 sub-module)
+- [x] Add comments noting KO1 (Recognition) and K04-S4 (Betrayal/Trust) as separate engine files
+- [x] Update all selection function comments to use correct module names
+- [x] 0 TS errors, 409 tests green
