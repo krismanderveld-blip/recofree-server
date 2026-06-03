@@ -17,6 +17,7 @@ import type {
 import { requiresContainment, requiresInterruption, allowsDeepExploration, getDepthDescription } from './sw01_zucht_router';
 import { detectProjectionIntensity } from './sw01_projection_mapper';
 import { getSingleJournalPrompt } from './sw01_journaling_prompts';
+import { matchRelapseLoop } from './sw01_relapse_loops';
 
 // ─── Canonical Prompt Block (section 20) ─────────────────────────────────────
 
@@ -212,8 +213,6 @@ export function computeSW01Directive(
   const projectionIntensity = detectProjectionIntensity(userText);
   const projectionActive = projectionIntensity >= 0.3;
 
-  // Import matchRelapseLoop inline to avoid circular deps
-  const { matchRelapseLoop } = require('./sw01_relapse_loops');
   const activeLoop: ShadowLoop | null = signals.length > 0
     ? matchRelapseLoop(signals[0].emotional_layer, signals[0].suspected_shadow)
     : null;
