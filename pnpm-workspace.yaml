@@ -1,3 +1,5 @@
+packages:
+  - '.'
 nodeLinker: hoisted
 onlyBuiltDependencies:
   - esbuild
