@@ -922,3 +922,9 @@
 - [x] Fix 2: INVALID_RESPONSE_FILTER added to buildSystemPrompt (both follow-up and session-start templates)
 - [x] Fix 3: THERAPY_SELECTION_MATRIX added to buildSystemPrompt (both follow-up and session-start templates)
 - [x] 0 project-specific TS errors, 409 tests green
+
+## Round 68 — Persona Rewrite (Elias + Kim)
+
+- [x] Replace ELIAS_IDENTITY_PROMPT with new persona (direct, recognition-first, no wellness-app tone)
+- [x] Replace KIM_IDENTITY_PROMPT with new persona (chosen side, pattern-naming, first-5-minutes rule)
+- [x] 0 TS errors, 409 tests green
