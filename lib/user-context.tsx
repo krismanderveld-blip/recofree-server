@@ -340,6 +340,8 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
                 k06Progress: undefined,
                 k01Progress: undefined,
                 sw01Progress: undefined,
+                gratitudeStreak: 0,
+                lastGratitudeDate: null,
             };
 
           // Persist both new stores
@@ -592,6 +594,8 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       k06Progress: state.userDat?.k06Progress ?? undefined,
       k01Progress: state.userDat?.k01Progress ?? undefined,
       sw01Progress: state.userDat?.sw01Progress ?? undefined,
+      gratitudeStreak: state.userDat?.gratitudeStreak ?? 0,
+      lastGratitudeDate: state.userDat?.lastGratitudeDate ?? null,
     };
     dispatch({ type: 'END_SESSION', payload: updatedUserDat });
     await persistUserDat(updatedUserDat);
@@ -765,5 +769,7 @@ function migrateUserDat(raw: any, userType: UserType): UserDat {
     k06Progress: raw.k06Progress ?? undefined,
     k01Progress: raw.k01Progress ?? undefined,
     sw01Progress: raw.sw01Progress ?? undefined,
+    gratitudeStreak: raw.gratitudeStreak ?? 0,
+    lastGratitudeDate: raw.lastGratitudeDate ?? null,
   };
 }

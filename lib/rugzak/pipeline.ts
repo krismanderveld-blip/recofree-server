@@ -426,6 +426,8 @@ export async function processMessage(
       lastSessionDate: rugzak.lastSessionDate,
       sessionAnalyses: [],
       stageOfChange: ELIAS_DEFAULT_STAGE,
+      gratitudeStreak: 0,
+      lastGratitudeDate: null,
     };
   }
 
@@ -1769,6 +1771,8 @@ export async function generateGreeting(
       lastSessionDate: rugzak.lastSessionDate,
       sessionAnalyses: [],
       stageOfChange: ELIAS_DEFAULT_STAGE,
+      gratitudeStreak: 0,
+      lastGratitudeDate: null,
     };
   }
 
@@ -1934,6 +1938,8 @@ export async function endSession(
       lastSessionDate: rugzak.lastSessionDate,
       sessionAnalyses: [],
       stageOfChange: ELIAS_DEFAULT_STAGE,
+      gratitudeStreak: 0,
+      lastGratitudeDate: null,
     };
   }
 
@@ -2366,6 +2372,39 @@ export async function endSession(
     const updatedSW01Progress = updateSW01Progress(existingSW01Progress);
     updatedUserDat = { ...updatedUserDat, sw01Progress: updatedSW01Progress } as any;
     console.log(`[Pipeline] SW01 persistence: sessions=${updatedSW01Progress.sessionsWithShadowWork}, loops=${updatedSW01Progress.loopsIdentified.length}, projections=${updatedSW01Progress.projectionsProcessed}`);
+  }
+
+  // ── STEP 5c: Gratitude streak update (both Elias and Kim) ──
+  {
+    // Check today's diary entries for completed gratitude (all 3 fields filled)
+    // The streak is updated based on lastGratitudeDate vs today
+    const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+    const lastDate = (updatedUserDat as any).lastGratitudeDate as string | null;
+    const currentStreak = (updatedUserDat as any).gratitudeStreak ?? 0;
+
+    // Diary entries are loaded from AsyncStorage in chat.tsx at session start;
+    // here we check if the most recent entry (today) has all 3 gratitude fields filled
+    const diaryEntries: Array<{ timestamp: string; gratitude?: { entry1: string; entry2: string; entry3: string } }> =
+      (updatedUserDat as any)._sessionDiaryEntries ?? [];
+
+    // Find today's entry with complete gratitude
+    const todayGratitude = diaryEntries.find((e) => {
+      const entryDate = e.timestamp?.slice(0, 10);
+      return entryDate === today && e.gratitude?.entry1 && e.gratitude?.entry2 && e.gratitude?.entry3;
+    });
+
+    if (todayGratitude) {
+      // Check if streak is consecutive (yesterday or today already counted)
+      const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+      const isConsecutive = lastDate === yesterday || lastDate === today;
+      const newStreak = isConsecutive ? currentStreak + 1 : 1;
+      updatedUserDat = { ...updatedUserDat, gratitudeStreak: newStreak, lastGratitudeDate: today } as any;
+      console.log(`[Pipeline] Gratitude streak: ${newStreak} (consecutive: ${isConsecutive})`);
+    } else if (lastDate && lastDate < new Date(Date.now() - 86400000).toISOString().slice(0, 10)) {
+      // Missed a day — reset streak
+      updatedUserDat = { ...updatedUserDat, gratitudeStreak: 0 } as any;
+      console.log(`[Pipeline] Gratitude streak reset (last: ${lastDate}, today: ${today})`);
+    }
   }
 
   // ── STEP 5b: Archive old chat history to prevent unbounded growth ──

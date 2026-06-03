@@ -456,6 +456,10 @@ export interface UserDat {
     lastActiveLoop: string | null;
     lastInterventionMode: string | null;
   };
+  /** Consecutive days with all 3 gratitude entries filled. Resets to 0 on skip. */
+  gratitudeStreak: number;
+  /** ISO date of last gratitude entry (for streak calculation) */
+  lastGratitudeDate: string | null;
 }
 
 /** A record of a completed session's analysis */
@@ -724,6 +728,8 @@ export function createNewUserDat(
       lastActiveLoop: null,
       lastInterventionMode: null,
     },
+    gratitudeStreak: 0,
+    lastGratitudeDate: null,
   };
 }
 
@@ -760,6 +766,12 @@ export interface DiaryEntry {
   content: string;
   moodTag: string;
   timestamp: string;
+  /** Optional gratitude entries — 3 things the user is grateful for */
+  gratitude?: {
+    entry1: string;
+    entry2: string;
+    entry3: string;
+  };
 }
 
 // ─── Context Types ─────────────────────────────────────────────

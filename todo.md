@@ -888,3 +888,14 @@
 - [x] Add comments noting KO1 (Recognition) and K04-S4 (Betrayal/Trust) as separate engine files
 - [x] Update all selection function comments to use correct module names
 - [x] 0 TS errors, 409 tests green
+
+## Round 65 — Gratitude Dagboek Sectie + Deploy Fix
+
+- [x] Fix pnpm ERR_PNPM_IGNORED_BUILDS deploy error (add pnpm.onlyBuiltDependencies to package.json)
+- [x] Add gratitude field (entry1/entry2/entry3) to DiaryEntry interface
+- [x] Add gratitudeStreak + lastGratitudeDate to UserDat + createNewUserDat + user-context.tsx
+- [x] Update diary.tsx UI with 3 gratitude text fields + explanation text + gratitude badge on entries
+- [x] Wire gratitude streak logic into pipeline.ts endSession (Step 5c)
+- [x] Pass diary entries from chat.tsx to endSession via _sessionDiaryEntries
+- [x] Fix 3 fallback UserDat constructions missing gratitudeStreak/lastGratitudeDate
+- [x] 0 project-specific TS errors, 409 tests green

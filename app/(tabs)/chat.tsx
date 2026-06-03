@@ -350,7 +350,14 @@ function ChatScreenInner() {
       const currentUserDat: UserDat = userDatJson ? JSON.parse(userDatJson) : state.userDat!;
       const backpack = state.backpack!;
       const provider = getAIProvider();
-      const result = await endSession(backpack, provider, currentUserDat);
+      // Attach diary entries for gratitude streak calculation
+      let diaryForSession: DiaryEntry[] = [];
+      try {
+        const diaryJson = await AsyncStorage.getItem(DIARY_KEY);
+        if (diaryJson) diaryForSession = JSON.parse(diaryJson);
+      } catch (_e) { /* ignore */ }
+      const userDatWithDiary = { ...currentUserDat, _sessionDiaryEntries: diaryForSession } as any;
+      const result = await endSession(backpack, provider, userDatWithDiary);
       // Only persist userDat (backpack is NEVER modified)
       await AsyncStorage.setItem(USERDAT_KEY, JSON.stringify(result.updatedUserDat));
       await endSessionWithUserDat(result.updatedUserDat);

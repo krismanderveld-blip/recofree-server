@@ -8,6 +8,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Modal,
+  ScrollView,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ScreenContainer } from '@/components/screen-container';
@@ -15,16 +16,30 @@ import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useColors } from '@/hooks/use-colors';
 import * as Haptics from 'expo-haptics';
 
+interface GratitudeData {
+  entry1: string;
+  entry2: string;
+  entry3: string;
+}
+
 interface DiaryEntry {
   id: string;
   content: string;
   moodTag: string;
   timestamp: string;
+  gratitude?: GratitudeData;
 }
 
 const MOOD_TAGS = ['Calm', 'Sad', 'Anxious', 'Angry', 'Hopeful', 'Exhausted', 'Grateful', 'Neutral'];
 
 const STORAGE_KEY = '@recofree_diary';
+
+const GRATITUDE_EXPLANATION =
+  'Taking a moment to notice what is good does not mean ignoring what is hard. ' +
+  'It means training your mind to hold both. ' +
+  'Research shows that people in recovery who practice gratitude regularly ' +
+  'experience fewer cravings, better sleep, and stronger relationships. ' +
+  'You do not have to feel grateful. You just have to look.';
 
 export default function DiaryScreen() {
   const colors = useColors();
@@ -32,6 +47,9 @@ export default function DiaryScreen() {
   const [showEditor, setShowEditor] = useState(false);
   const [editorText, setEditorText] = useState('');
   const [editorMood, setEditorMood] = useState('');
+  const [gratitude1, setGratitude1] = useState('');
+  const [gratitude2, setGratitude2] = useState('');
+  const [gratitude3, setGratitude3] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
   // Load entries on mount
@@ -46,16 +64,33 @@ export default function DiaryScreen() {
     })();
   }, []);
 
+  const resetEditor = useCallback(() => {
+    setEditorText('');
+    setEditorMood('');
+    setGratitude1('');
+    setGratitude2('');
+    setGratitude3('');
+    setShowEditor(false);
+  }, []);
+
   const saveEntry = useCallback(async () => {
     const text = editorText.trim();
     if (!text || isSaving) return;
     setIsSaving(true);
+
+    const g1 = gratitude1.trim();
+    const g2 = gratitude2.trim();
+    const g3 = gratitude3.trim();
+    const hasGratitude = g1 || g2 || g3;
 
     const newEntry: DiaryEntry = {
       id: `diary_${Date.now()}`,
       content: text,
       moodTag: editorMood || 'Neutral',
       timestamp: new Date().toISOString(),
+      ...(hasGratitude
+        ? { gratitude: { entry1: g1, entry2: g2, entry3: g3 } }
+        : {}),
     };
 
     const updated = [newEntry, ...entries];
@@ -70,11 +105,9 @@ export default function DiaryScreen() {
       console.error('Failed to save diary entry:', error);
     }
 
-    setEditorText('');
-    setEditorMood('');
-    setShowEditor(false);
+    resetEditor();
     setIsSaving(false);
-  }, [editorText, editorMood, entries, isSaving]);
+  }, [editorText, editorMood, gratitude1, gratitude2, gratitude3, entries, isSaving, resetEditor]);
 
   const renderEntry = useCallback(({ item }: { item: DiaryEntry }) => {
     const date = new Date(item.timestamp);
@@ -84,18 +117,39 @@ export default function DiaryScreen() {
       day: 'numeric',
     });
     const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const hasGratitude = item.gratitude && (item.gratitude.entry1 || item.gratitude.entry2 || item.gratitude.entry3);
 
     return (
       <View className="bg-surface rounded-2xl p-5 mb-3 border border-border">
         <View className="flex-row justify-between items-center mb-2">
           <Text className="text-xs text-muted">{dateStr} at {timeStr}</Text>
-          <View className="bg-primary/10 rounded-full px-3 py-1">
-            <Text className="text-xs font-medium text-primary">{item.moodTag}</Text>
+          <View className="flex-row items-center gap-2">
+            {hasGratitude && (
+              <View className="bg-success/10 rounded-full px-2 py-1">
+                <Text className="text-xs text-success">Gratitude</Text>
+              </View>
+            )}
+            <View className="bg-primary/10 rounded-full px-3 py-1">
+              <Text className="text-xs font-medium text-primary">{item.moodTag}</Text>
+            </View>
           </View>
         </View>
         <Text className="text-base text-foreground leading-relaxed" numberOfLines={4}>
           {item.content}
         </Text>
+        {hasGratitude && (
+          <View className="mt-3 pt-3 border-t border-border">
+            {item.gratitude!.entry1 ? (
+              <Text className="text-sm text-muted mb-1">1. {item.gratitude!.entry1}</Text>
+            ) : null}
+            {item.gratitude!.entry2 ? (
+              <Text className="text-sm text-muted mb-1">2. {item.gratitude!.entry2}</Text>
+            ) : null}
+            {item.gratitude!.entry3 ? (
+              <Text className="text-sm text-muted">3. {item.gratitude!.entry3}</Text>
+            ) : null}
+          </View>
+        )}
       </View>
     );
   }, []);
@@ -148,8 +202,8 @@ export default function DiaryScreen() {
             className="flex-1"
           >
             {/* Modal Header */}
-            <View className="flex-row justify-between items-center mb-6">
-              <Pressable onPress={() => { setShowEditor(false); setEditorText(''); setEditorMood(''); }}>
+            <View className="flex-row justify-between items-center mb-4">
+              <Pressable onPress={resetEditor}>
                 <Text className="text-base text-muted">Cancel</Text>
               </Pressable>
               <Text className="text-lg font-bold text-foreground">New Entry</Text>
@@ -166,54 +220,101 @@ export default function DiaryScreen() {
               </Pressable>
             </View>
 
-            {/* Mood Tag Selection */}
-            <View className="mb-4">
-              <Text className="text-sm font-semibold text-muted mb-2 uppercase tracking-wide">
-                How are you feeling?
-              </Text>
-              <View className="flex-row flex-wrap gap-2">
-                {MOOD_TAGS.map((tag) => (
-                  <Pressable
-                    key={tag}
-                    onPress={() => setEditorMood(tag)}
-                    style={({ pressed }) => [
-                      { opacity: pressed ? 0.85 : 1 },
-                    ]}
-                  >
-                    <View
-                      className={`rounded-full px-3 py-2 border ${
-                        editorMood === tag
-                          ? 'border-primary bg-primary/10'
-                          : 'border-border bg-surface'
-                      }`}
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 24 }}>
+              {/* Mood Tag Selection */}
+              <View className="mb-4">
+                <Text className="text-sm font-semibold text-muted mb-2 uppercase tracking-wide">
+                  How are you feeling?
+                </Text>
+                <View className="flex-row flex-wrap gap-2">
+                  {MOOD_TAGS.map((tag) => (
+                    <Pressable
+                      key={tag}
+                      onPress={() => setEditorMood(tag)}
+                      style={({ pressed }) => [
+                        { opacity: pressed ? 0.85 : 1 },
+                      ]}
                     >
-                      <Text
-                        className={`text-sm ${
-                          editorMood === tag ? 'text-primary font-medium' : 'text-foreground'
+                      <View
+                        className={`rounded-full px-3 py-2 border ${
+                          editorMood === tag
+                            ? 'border-primary bg-primary/10'
+                            : 'border-border bg-surface'
                         }`}
                       >
-                        {tag}
-                      </Text>
-                    </View>
-                  </Pressable>
-                ))}
+                        <Text
+                          className={`text-sm ${
+                            editorMood === tag ? 'text-primary font-medium' : 'text-foreground'
+                          }`}
+                        >
+                          {tag}
+                        </Text>
+                      </View>
+                    </Pressable>
+                  ))}
+                </View>
               </View>
-            </View>
 
-            {/* Text Input */}
-            <TextInput
-              className="flex-1 bg-surface border border-border rounded-2xl px-4 py-4 text-base text-foreground"
-              placeholder="Write whatever comes to mind..."
-              placeholderTextColor="#9E9E9E"
-              value={editorText}
-              onChangeText={setEditorText}
-              multiline
-              textAlignVertical="top"
-              autoFocus
-            />
-            <Text className="text-xs text-muted mt-2 text-right mb-4">
-              {editorText.length} characters
-            </Text>
+              {/* Section 1: Journal Text Input */}
+              <View className="mb-6">
+                <Text className="text-sm font-semibold text-muted mb-2 uppercase tracking-wide">
+                  Journal
+                </Text>
+                <TextInput
+                  className="bg-surface border border-border rounded-2xl px-4 py-4 text-base text-foreground"
+                  placeholder="Write whatever comes to mind..."
+                  placeholderTextColor="#9E9E9E"
+                  value={editorText}
+                  onChangeText={setEditorText}
+                  multiline
+                  textAlignVertical="top"
+                  autoFocus
+                  style={{ minHeight: 120 }}
+                />
+                <Text className="text-xs text-muted mt-1 text-right">
+                  {editorText.length} characters
+                </Text>
+              </View>
+
+              {/* Section 2: Gratitude */}
+              <View className="mb-4">
+                <Text className="text-sm font-semibold text-muted mb-2 uppercase tracking-wide">
+                  Gratitude
+                </Text>
+                <Text className="text-sm text-muted leading-relaxed mb-4">
+                  {GRATITUDE_EXPLANATION}
+                </Text>
+                <View className="gap-3">
+                  <TextInput
+                    className="bg-surface border border-border rounded-xl px-4 py-3 text-base text-foreground"
+                    placeholder="Something I am grateful for today..."
+                    placeholderTextColor="#9E9E9E"
+                    value={gratitude1}
+                    onChangeText={setGratitude1}
+                    returnKeyType="next"
+                  />
+                  <TextInput
+                    className="bg-surface border border-border rounded-xl px-4 py-3 text-base text-foreground"
+                    placeholder="Something I am grateful for today..."
+                    placeholderTextColor="#9E9E9E"
+                    value={gratitude2}
+                    onChangeText={setGratitude2}
+                    returnKeyType="next"
+                  />
+                  <TextInput
+                    className="bg-surface border border-border rounded-xl px-4 py-3 text-base text-foreground"
+                    placeholder="Something I am grateful for today..."
+                    placeholderTextColor="#9E9E9E"
+                    value={gratitude3}
+                    onChangeText={setGratitude3}
+                    returnKeyType="done"
+                  />
+                </View>
+                <Text className="text-xs text-muted mt-2 italic">
+                  Optional — fill in as many or as few as you like.
+                </Text>
+              </View>
+            </ScrollView>
           </KeyboardAvoidingView>
         </ScreenContainer>
       </Modal>
