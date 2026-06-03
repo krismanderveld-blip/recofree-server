@@ -862,3 +862,19 @@
 - [x] Fix 2: Add single-user cache comment above sessionCache in server/ai-chat.ts
 - [x] Fix 3: Translate all Dutch strings/comments in server/ai-chat.ts buildSystemPrompt to English (Taak→Task, Kwaliteitscontrole→Quality Control, Vooranalyse→Pre-Analysis, Schema Integratie→Schema Integration, VSP ROOD→VSP RED)
 - [x] 0 TS errors, 409 tests green
+
+## Round 64 — SW01 Shadow Work (Elias only, final closing module)
+
+- [x] Create lib/engine/elias/shadow/sw01_shadow_types.ts
+- [x] Create lib/engine/elias/shadow/sw01_trigger_detector.ts
+- [x] Create lib/engine/elias/shadow/sw01_zucht_router.ts
+- [x] Create lib/engine/elias/shadow/sw01_relapse_loops.ts
+- [x] Create lib/engine/elias/shadow/sw01_projection_mapper.ts
+- [x] Create lib/engine/elias/shadow/sw01_journaling_prompts.ts
+- [x] Create lib/engine/elias/shadow/sw01_prompt_injector.ts
+- [x] Create lib/engine/elias/shadow/sw01_storage_contract.ts + index.ts barrel
+- [x] Wire SW01 into pipeline.ts as Step 5e3 (Elias only)
+- [x] Add sw01Context to transport chain (gpt-payload-builder, openai-provider, server/ai-chat)
+- [x] Add sw01Progress to user.dat persistence (types.ts, user-context.tsx)
+- [x] Fix TS error: replace sessionBuffer.currentZucht with currentZoneScore/10 mapping
+- [x] 0 SW01-specific TS errors, 409 tests green

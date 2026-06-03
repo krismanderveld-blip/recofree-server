@@ -339,6 +339,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
                 k04s4Progress: undefined,
                 k06Progress: undefined,
                 k01Progress: undefined,
+                sw01Progress: undefined,
             };
 
           // Persist both new stores
@@ -590,6 +591,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       k04s4Progress: state.userDat?.k04s4Progress ?? undefined,
       k06Progress: state.userDat?.k06Progress ?? undefined,
       k01Progress: state.userDat?.k01Progress ?? undefined,
+      sw01Progress: state.userDat?.sw01Progress ?? undefined,
     };
     dispatch({ type: 'END_SESSION', payload: updatedUserDat });
     await persistUserDat(updatedUserDat);
@@ -762,5 +764,6 @@ function migrateUserDat(raw: any, userType: UserType): UserDat {
     k04s4Progress: raw.k04s4Progress ?? undefined,
     k06Progress: raw.k06Progress ?? undefined,
     k01Progress: raw.k01Progress ?? undefined,
+    sw01Progress: raw.sw01Progress ?? undefined,
   };
 }

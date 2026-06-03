@@ -448,6 +448,14 @@ export interface UserDat {
     lastSessionDate: string | null;
     boundaryStabilityTrend: string;
   };
+  sw01Progress?: {
+    sessionsWithShadowWork: number;
+    loopsIdentified: string[];
+    projectionsProcessed: number;
+    journalPromptsGiven: number;
+    lastActiveLoop: string | null;
+    lastInterventionMode: string | null;
+  };
 }
 
 /** A record of a completed session's analysis */
@@ -708,6 +716,14 @@ export function createNewUserDat(
       lastSessionDate: null,
       boundaryStabilityTrend: 'unknown',
     },
+    sw01Progress: {
+      sessionsWithShadowWork: 0,
+      loopsIdentified: [],
+      projectionsProcessed: 0,
+      journalPromptsGiven: 0,
+      lastActiveLoop: null,
+      lastInterventionMode: null,
+    },
   };
 }
 
@@ -834,6 +850,7 @@ export interface ChatContext {
   k04s4Context?: string;
   k06Context?: string;
   k01Context?: string;
+  sw01Context?: string;
 }
 
 /**

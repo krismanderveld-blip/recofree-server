@@ -222,6 +222,18 @@ import {
   createDefaultK01Progress,
 } from '../engine/kim/k01-boundary-setting';
 import type { K01RoutingResult, K01Progress } from '../engine/kim/k01-boundary-setting';
+import {
+  detectShadowSignals,
+  buildShadowSignal,
+  hasShadowMarkers,
+  routeZuchtShadow,
+  computeSW01Directive,
+  resetSW01SessionState,
+  updateSW01SessionState,
+  updateSW01Progress,
+} from '../engine/elias/shadow';
+import type { SW01EngineResult, SW01Progress } from '../engine/elias/shadow';
+import { createDefaultSW01Progress } from '../engine/elias/shadow';
 
 // ─── Pattern Marking (post-GPT local state) ─────────────────
 
@@ -297,6 +309,7 @@ export function resetSessionState(): void {
   resetK04S4SessionState();
   resetK06SessionState();
   resetK01SessionState();
+  resetSW01SessionState();
 }
 
 // ─── Pipeline Result ────────────────────────────────────────────
@@ -1031,6 +1044,39 @@ export async function processMessage(
     }
   }
 
+  // ── Step 5e3: SW01 Shadow Work (Elias only) ──
+  let sw01Result: SW01EngineResult = {
+    active: false,
+    confidence: 0,
+    signals: [],
+    zuchtState: { zucht_value: 0, zucht_color: 'green', allowed_depth: 'reflection', intervention_style: 'warm_direct' },
+    interventionMode: 'journal_prompt',
+    activeLoop: null,
+    projectionActive: false,
+    promptBlock: '',
+    journalPrompt: '',
+  };
+  if (backpack.userType === 'elias' && hasShadowMarkers(userMessage)) {
+    // Map zone score (0-100) to zucht value (0-10): higher zone = higher zucht
+    const zuchtValue = Math.round(sessionBuffer.currentZoneScore / 10);
+    const zuchtState = routeZuchtShadow(zuchtValue);
+    const detection = detectShadowSignals(
+      userMessage,
+      'chat',
+      zuchtValue >= 8,
+      [] // behavioural flags from future detection
+    );
+    const signal = buildShadowSignal(detection, 'chat', zuchtValue);
+    const signals = signal ? [signal] : [];
+    const hasRelapsed = (currentUserDat as any).relapseActive === true;
+
+    if (detection.confidence >= 0.4) {
+      sw01Result = computeSW01Directive(signals, zuchtState, userMessage, hasRelapsed);
+      updateSW01SessionState(sw01Result);
+      console.log(`[Pipeline] SW01: mode=${sw01Result.interventionMode} | confidence=${sw01Result.confidence.toFixed(2)} | loop=${sw01Result.activeLoop?.loop_id ?? 'none'} | projection=${sw01Result.projectionActive}`);
+    }
+  }
+
   // ── PRE-GPT STEP 6: Build ChatContext + ONE GPT call ──
   let crisisLevel = 0;
   let showEmergency = false;
@@ -1302,6 +1348,7 @@ export async function processMessage(
     k04s4Context: k04s4Result.promptBlock || undefined,
     k06Context: k06Result.promptBlock || undefined,
     k01Context: k01Result.promptBlock || undefined,
+    sw01Context: sw01Result.promptBlock || undefined,
   };
 
   let response: string;
@@ -1513,6 +1560,7 @@ export async function processMessage(
       { step: '5o. K04-S4', status: k04s4Result.activated ? 'passed' : 'skipped', reason: k04s4Result.activated ? `state=${k04s4Result.primaryState}|severity=${k04s4Result.severity}` : 'no betrayal/trust state detected' },
       { step: '5p. K06', status: k06Result.activated ? 'passed' : 'skipped', reason: k06Result.activated ? `state=${k06Result.primaryState}|severity=${k06Result.severity}|sustainability=${k06Result.sustainabilityLevel}` : 'no self-care state detected' },
       { step: '5q. K01', status: k01Result.activated ? 'passed' : 'skipped', reason: k01Result.activated ? `state=${k01Result.primaryState}|severity=${k01Result.severity}|intervention=${k01Result.interventionType}|collapse=${k01Result.collapseRisk}` : 'no boundary state detected' },
+      { step: '5e3. SW01', status: sw01Result.active ? 'passed' : 'skipped', reason: sw01Result.active ? `mode=${sw01Result.interventionMode}|confidence=${sw01Result.confidence.toFixed(2)}|loop=${sw01Result.activeLoop?.loop_id ?? 'none'}|projection=${sw01Result.projectionActive}` : 'no shadow signals detected' },
       { step: '6a. Zone decision', status: elisDecision ? 'passed' : 'skipped', reason: elisDecision ? `zone=${elisDecision.zone.computed.label}` : 'kim user' },
       { step: '6b. Engine directive', status: engineDirective ? 'passed' : 'skipped', reason: engineDirective ? `engine=${engineDirective.engine}` : 'none' },
       { step: '6c. Intervention', status: interventionContinuity ? 'passed' : 'skipped', reason: interventionContinuity ? `type=${interventionContinuity.lastInterventionType}` : 'not active' },
@@ -2310,6 +2358,14 @@ export async function endSession(
       updatedUserDat = { ...updatedUserDat, k01Progress: updatedK01Progress } as any;
       console.log(`[Pipeline] K01 persistence: state=${k01SessionDetection.primaryState}, severity=${k01SessionDetection.severity}, trend=${updatedK01Progress.boundaryStabilityTrend}`);
     }
+  }
+
+  // ── SW01 Shadow Work persistence (Elias only) ──
+  if (backpack.userType === 'elias') {
+    const existingSW01Progress: SW01Progress = (updatedUserDat as any).sw01Progress ?? createDefaultSW01Progress();
+    const updatedSW01Progress = updateSW01Progress(existingSW01Progress);
+    updatedUserDat = { ...updatedUserDat, sw01Progress: updatedSW01Progress } as any;
+    console.log(`[Pipeline] SW01 persistence: sessions=${updatedSW01Progress.sessionsWithShadowWork}, loops=${updatedSW01Progress.loopsIdentified.length}, projections=${updatedSW01Progress.projectionsProcessed}`);
   }
 
   // ── STEP 5b: Archive old chat history to prevent unbounded growth ──
