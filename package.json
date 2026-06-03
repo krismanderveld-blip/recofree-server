@@ -75,7 +75,7 @@
 
   "packageManager": "pnpm@9.12.0",
   "pnpm": {
-    "onlyBuiltDependencies": ["*"]
+    "onlyBuiltDependencies": ["esbuild", "unrs-resolver", "@esbuild/linux-x64", "@esbuild/linux-arm64", "@esbuild/darwin-x64", "@esbuild/darwin-arm64", "@esbuild/win32-x64", "@esbuild/android-arm64", "@esbuild/android-arm"]
   },
   "devDependencies": {
     "@expo/ngrok": "^4.1.3",
