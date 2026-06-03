@@ -172,8 +172,59 @@ const EXPECTED_SHIFTS: Readonly<Record<InterventionType, number>> = Object.freez
   confrontation: 0,    // GROEN→GROEN (maintain, may temporarily increase)
   none: 0,
 });
+// ─── Upgraded Goal Selection (time-based re-evaluation) ──────────
 
-// ─── Severity Mapping ────────────────────────────────────────
+/**
+ * When an intervention has been active for MAX_TURNS_WITHOUT_REEVALUATION turns
+ * with good effectiveness, select a deeper therapeutic goal.
+ *
+ * Progression ladder:
+ *   stabilization → regulation → deceleration → reflection
+ *   grounding → regulation → reflection
+ *
+ * If already at deepest level for the zone, return current goal.
+ */
+function selectUpgradedGoal(
+  currentZone: FinalZoneLabel,
+  currentIntervention: InterventionType,
+  turnsActive: number,
+): string {
+  // Progression ladder: each intervention type can upgrade to a deeper phase
+  const PROGRESSION: Partial<Record<InterventionType, InterventionType>> = {
+    stabilization: 'regulation',
+    grounding: 'regulation',
+    regulation: 'deceleration',
+    deceleration: 'reflection',
+    reflection: 'confrontation',
+  };
+
+  // Safety guard: high-severity zones (ROOD/PAARS) cannot progress past regulation
+  const severity = ZONE_SEVERITY[currentZone];
+  const maxDepthForSeverity: InterventionType =
+    severity >= 4 ? 'regulation' :    // ROOD/PAARS: max regulation
+    severity === 3 ? 'deceleration' :  // ORANJE: max deceleration
+    'confrontation';                    // GEEL/GROEN: full progression
+
+  const nextIntervention = PROGRESSION[currentIntervention];
+
+  // If no progression available or would exceed severity cap, stay at current goal
+  if (!nextIntervention) {
+    return INTERVENTION_GOALS[currentIntervention];
+  }
+
+  // Check if the next intervention exceeds the severity cap
+  const depthOrder: InterventionType[] = ['stabilization', 'grounding', 'regulation', 'deceleration', 'reflection', 'confrontation'];
+  const nextDepth = depthOrder.indexOf(nextIntervention);
+  const maxDepth = depthOrder.indexOf(maxDepthForSeverity);
+
+  if (nextDepth > maxDepth) {
+    return INTERVENTION_GOALS[currentIntervention];
+  }
+
+  return INTERVENTION_GOALS[nextIntervention];
+}
+
+// ─── Severity Mapping ────────────────────────────────────────────
 
 const ZONE_SEVERITY: Readonly<Record<FinalZoneLabel, number>> = Object.freeze({
   GROEN: 1,
@@ -420,14 +471,26 @@ export function evaluateInterventionContinuity(
   // Compute effectiveness based on full evolution
   const effectivenessScore = computeEffectiveness(updatedEvolution);
 
-  // DECISION: zone shifted → re-evaluate, zone stable → continue
-  if (zoneShift.direction !== 'stable') {
-    // Zone shifted — re-evaluate intervention
-    // New intervention type will be determined POST-GPT based on what Elias actually does
-    // For now, update linkedZone to current zone
+  // DECISION: re-evaluate if zone shifted OR if stuck too long on same intervention
+  const MAX_TURNS_WITHOUT_REEVALUATION = 5;
+  const needsReevaluation =
+    zoneShift.direction !== 'stable' ||
+    (currentInterventionState.turnsActive >= MAX_TURNS_WITHOUT_REEVALUATION &&
+     effectivenessScore >= 70);
+
+  if (needsReevaluation) {
+    // Re-evaluate intervention — either zone shifted or intervention has been effective long enough
+    // to warrant progression to a deeper therapeutic phase
+    // Determine upgraded intervention goal based on current zone + turns active
+    const upgradedGoal = selectUpgradedGoal(
+      currentZoneLabel,
+      currentInterventionState.lastInterventionType,
+      currentInterventionState.turnsActive,
+    );
+
     currentInterventionState = Object.freeze({
       lastInterventionType: currentInterventionState.lastInterventionType,
-      interventionGoal: currentInterventionState.interventionGoal,
+      interventionGoal: upgradedGoal,
       linkedZone: currentZoneLabel,
       linkedSeverity: currentSeverity,
       expectedShift: {
@@ -435,13 +498,15 @@ export function evaluateInterventionContinuity(
         to: getExpectedTargetZone(currentZoneLabel, currentInterventionState.lastInterventionType),
       },
       effectivenessScore,
-      turnsActive: currentInterventionState.turnsActive + 1,
+      turnsActive: zoneShift.direction !== 'stable'
+        ? currentInterventionState.turnsActive + 1
+        : 0, // Reset turnsActive on time-based re-eval to start fresh count
       lastUserResponse: userResponse,
       zoneEvolution: updatedEvolution,
       wasReEvaluated: true,
     });
   } else {
-    // Zone stable — continue same therapeutic line
+    // Zone stable and not yet due for re-evaluation — continue same therapeutic line
     currentInterventionState = Object.freeze({
       ...currentInterventionState,
       effectivenessScore,

@@ -899,3 +899,11 @@
 - [x] Pass diary entries from chat.tsx to endSession via _sessionDiaryEntries
 - [x] Fix 3 fallback UserDat constructions missing gratitudeStreak/lastGratitudeDate
 - [x] 0 project-specific TS errors, 409 tests green
+
+## Round 65b — Intervention Continuity re-evaluatie fix
+
+- [x] Add time-based re-evaluation trigger (turnsActive >= 5 && effectivenessScore >= 70)
+- [x] Add selectUpgradedGoal() with progression ladder (stabilization→regulation→deceleration→reflection→confrontation)
+- [x] Safety guard: high-severity zones (ROOD/PAARS) cannot progress past regulation
+- [x] Reset turnsActive to 0 on time-based re-eval (zone-shift keeps incrementing)
+- [x] 0 project-specific TS errors, 409 tests green
