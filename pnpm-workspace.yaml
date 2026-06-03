@@ -1,13 +1,8 @@
 packages:
   - '.'
-nodeLinker: hoisted
+
+# Allow all dependency build scripts (esbuild, unrs-resolver, etc.)
+# Works across pnpm 9.x, 10.x, and 11.x
 onlyBuiltDependencies:
-  - esbuild
-  - unrs-resolver
-  - '@esbuild/linux-x64'
-  - '@esbuild/linux-arm64'
-  - '@esbuild/darwin-x64'
-  - '@esbuild/darwin-arm64'
-  - '@esbuild/win32-x64'
-  - '@esbuild/android-arm64'
-  - '@esbuild/android-arm'
+  - '*'
+dangerouslyAllowAllBuilds: true
