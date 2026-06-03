@@ -939,3 +939,13 @@
 - [x] Sober counter compact display on Elias home screen (tap → profile)
 - [x] Milestone notifications: lastMilestoneShown in UserDat, modal on milestone days (1,7,30,90,180,365)
 - [x] Fix pnpm ERR_PNPM_IGNORED_BUILDS: wildcard onlyBuiltDependencies + packageManager pinned to 9.12.0
+
+## Deployment Fix — pnpm 11 compatibility
+
+- [x] Fix backend deploy: pnpm 11.5.1 requires nodeLinker in pnpm-workspace.yaml (not .npmrc)
+- [x] Add packageManager: "pnpm@11.5.1" to package.json (matches Docker Corepack version)
+- [x] Regenerate pnpm-lock.yaml with pnpm 11.5.1 (lockfileVersion 9.0 compatible)
+- [x] Add nodeLinker: hoisted to pnpm-workspace.yaml (pnpm 11 ignores .npmrc for non-auth settings)
+- [x] Verify: pnpm install --frozen-lockfile + pnpm run build + expo export --platform android all pass
+- [x] Add AppErrorBoundary to _layout.tsx (catches and displays crashes instead of silent close on Android)
+- [x] 417 tests green, 0 project-specific TS errors

@@ -2,10 +2,10 @@ import "@/global.css";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { Component, useCallback, useEffect, useMemo, useState } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import "react-native-reanimated";
-import { Platform } from "react-native";
+import { Platform, Text, View, ScrollView, TouchableOpacity } from "react-native";
 import "@/lib/_core/nativewind-pressable";
 import { ThemeProvider } from "@/lib/theme-provider";
 import {
@@ -20,12 +20,61 @@ import { trpc, createTRPCClient } from "@/lib/trpc";
 import { initManusRuntime, subscribeSafeAreaInsets } from "@/lib/_core/manus-runtime";
 import { UserProvider } from "@/lib/user-context";
 
+import type { ReactNode } from "react";
+
 const DEFAULT_WEB_INSETS: EdgeInsets = { top: 0, right: 0, bottom: 0, left: 0 };
 const DEFAULT_WEB_FRAME: Rect = { x: 0, y: 0, width: 0, height: 0 };
 
 export const unstable_settings = {
   anchor: "(tabs)",
 };
+
+// Error boundary to catch and display crashes instead of silently closing
+interface ErrorBoundaryState {
+  hasError: boolean;
+  error: Error | null;
+}
+
+class AppErrorBoundary extends Component<{ children: ReactNode }, ErrorBoundaryState> {
+  state: ErrorBoundaryState = { hasError: false, error: null };
+
+  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, info: { componentStack?: string | null }) {
+    console.error("[AppErrorBoundary]", error.message, info.componentStack);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      const errorMessage = this.state.error?.message ?? "Unknown error";
+      const errorStack = this.state.error?.stack ?? "";
+      return (
+        <View style={{ flex: 1, backgroundColor: "#1a1a2e", justifyContent: "center", padding: 24 }}>
+          <Text style={{ color: "#e94560", fontSize: 22, fontWeight: "bold", marginBottom: 12 }}>
+            Something went wrong
+          </Text>
+          <Text style={{ color: "#ffffff", fontSize: 15, marginBottom: 16, lineHeight: 22 }}>
+            {errorMessage}
+          </Text>
+          <ScrollView style={{ maxHeight: 200, backgroundColor: "#0f0f1a", borderRadius: 8, padding: 12, marginBottom: 20 }}>
+            <Text style={{ color: "#9ba1a6", fontSize: 11, fontFamily: Platform.OS === "ios" ? "Menlo" : "monospace" }}>
+              {errorStack}
+            </Text>
+          </ScrollView>
+          <TouchableOpacity
+            onPress={() => this.setState({ hasError: false, error: null })}
+            style={{ backgroundColor: "#e94560", paddingVertical: 14, borderRadius: 10, alignItems: "center" }}
+          >
+            <Text style={{ color: "#ffffff", fontSize: 16, fontWeight: "600" }}>Try Again</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 export default function RootLayout() {
   const initialInsets = initialWindowMetrics?.insets ?? DEFAULT_WEB_INSETS;
@@ -99,21 +148,25 @@ export default function RootLayout() {
 
   if (shouldOverrideSafeArea) {
     return (
-      <ThemeProvider>
-        <SafeAreaProvider initialMetrics={providerInitialMetrics}>
-          <SafeAreaFrameContext.Provider value={frame}>
-            <SafeAreaInsetsContext.Provider value={insets}>
-              {content}
-            </SafeAreaInsetsContext.Provider>
-          </SafeAreaFrameContext.Provider>
-        </SafeAreaProvider>
-      </ThemeProvider>
+      <AppErrorBoundary>
+        <ThemeProvider>
+          <SafeAreaProvider initialMetrics={providerInitialMetrics}>
+            <SafeAreaFrameContext.Provider value={frame}>
+              <SafeAreaInsetsContext.Provider value={insets}>
+                {content}
+              </SafeAreaInsetsContext.Provider>
+            </SafeAreaFrameContext.Provider>
+          </SafeAreaProvider>
+        </ThemeProvider>
+      </AppErrorBoundary>
     );
   }
 
   return (
-    <ThemeProvider>
-      <SafeAreaProvider initialMetrics={providerInitialMetrics}>{content}</SafeAreaProvider>
-    </ThemeProvider>
+    <AppErrorBoundary>
+      <ThemeProvider>
+        <SafeAreaProvider initialMetrics={providerInitialMetrics}>{content}</SafeAreaProvider>
+      </ThemeProvider>
+    </AppErrorBoundary>
   );
 }
