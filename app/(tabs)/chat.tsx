@@ -160,11 +160,9 @@ function ChatScreenInner() {
     return () => subscription.remove();
   }, [sessionPhase, messages]);
 
-  // Load messages from Rugzak on mount
-  useEffect(() => {
-    const history = getChatHistory();
-    setMessages(history);
-  }, []);
+  // NOTE: We do NOT load old chatHistory on mount.
+  // Each session starts visually fresh (greeting only).
+  // The pipeline still sends full history to GPT for context continuity.
 
   // Start session and send greeting ONLY when Chat tab gains focus.
   // This prevents the greeting from firing during intake/backpack fill
@@ -181,6 +179,8 @@ function ChatScreenInner() {
         );
         if (!hasContent) return;
         greetingSent.current = true;
+        // Clear messages for a fresh session view (pipeline still sends full history to GPT)
+        setMessages([]);
         startSession();
         // Restore projection state from AsyncStorage BEFORE sending greeting
         // Must await so projection entries are loaded before first pipeline run
@@ -238,7 +238,9 @@ function ChatScreenInner() {
       const result = await generateGreeting(backpack, provider, userDat, diaryEntries);
       // Only persist userDat (backpack is NEVER modified by the system)
       await AsyncStorage.setItem(USERDAT_KEY, JSON.stringify(result.updatedUserDat));
-      setMessages(result.updatedUserDat.chatHistory);
+      // Only show the greeting message (last item in chatHistory), not old session messages
+      const greeting = result.updatedUserDat.chatHistory.slice(-1);
+      setMessages(greeting);
       // Debug: log session start
       logDebugEvent('session_start', {
         userType: state.userType ?? 'unknown',
@@ -296,7 +298,13 @@ function ChatScreenInner() {
       await AsyncStorage.setItem(USERDAT_KEY, JSON.stringify(result.updatedUserDat));
       if (result.crisisLevel > 0) setCrisisLevel(result.crisisLevel);
       if (result.showEmergency) setShowEmergency(true);
-      setMessages(result.updatedUserDat.chatHistory);
+      // Show only current session messages: append the new user+assistant pair to existing messages
+      // The pipeline returns full chatHistory (including old sessions), but UI only shows current session
+      const fullHistory = result.updatedUserDat.chatHistory;
+      // Current session = messages after the last greeting (first assistant msg in this session)
+      // Simpler: just append the AI response to current messages (user msg already added optimistically)
+      const aiResponse = fullHistory[fullHistory.length - 1];
+      setMessages((prev) => [...prev, aiResponse]);
       // Debug logging (only in __DEV__)
       if (result.messageLog) {
         logDebugEvent('message_processed', {
@@ -739,7 +747,7 @@ function ClinicalTag({ annotation }: { annotation: string }) {
         style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}
       >
         <Text style={{ fontSize: 11, fontWeight: '600', color: colors.warning }}>
-          {expanded ? '[clinical] ▼' : '[clinical] ▶'}
+          {expanded ? '⚕ clinical ▼' : '⚕ clinical ▶'}
         </Text>
       </Pressable>
       {expanded && (

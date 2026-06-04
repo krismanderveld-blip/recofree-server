@@ -10,7 +10,7 @@ import * as Haptics from 'expo-haptics';
 
 export default function HomeScreen() {
   const router = useRouter();
-  const { state, startSession, getUserName, getMood, getUserDat, updateMilestoneShown, toggleClinicalMode } = useUser();
+  const { state, getUserName, getMood, getUserDat, updateMilestoneShown, toggleClinicalMode } = useUser();
   const colors = useColors();
   const userName = getUserName();
   const mood = getMood();
@@ -115,7 +115,6 @@ export default function HomeScreen() {
   })();
 
   const handleStartChat = () => {
-    startSession();
     router.push('/(tabs)/chat' as Href);
   };
 

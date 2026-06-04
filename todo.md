@@ -958,3 +958,5 @@
 - [x] Clinical Mode: easter egg activation on home screen (5x tap on avatar/name)
 - [x] Clinical Mode: inject clinical annotation instruction into system prompt when active
 - [x] Clinical Mode: parse and render collapsible clinical tag in chat bubble UI
+- [x] Bug fix: Chat duplicate — session now starts fresh (old history not shown, pipeline still sends full context to GPT)
+- [x] Bug fix: Clinical tag — added clinicalModeActive to Zod schema (was being stripped during validation), updated label to ⚕ clinical

@@ -418,6 +418,9 @@ export const chatInputSchema = z.object({
   }).nullable().optional(),
   // Signal engine: compressed context summary (replaces full lifeStorySummary in LIVE_MESSAGE)
   contextSummary: z.string().nullable().optional(),
+
+  // Clinical Mode (easter egg — therapeutic annotations)
+  clinicalModeActive: z.boolean().optional(),
 });
 
 // ─── Relationship Map Extractor ──────────────────────────────────
