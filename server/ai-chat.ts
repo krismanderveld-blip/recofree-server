@@ -66,6 +66,13 @@ interface ChatRequestInput {
       ageRange: string;
       content: string;
     }>;
+    kimBackpack?: {
+      my_story: string;
+      the_relationship: string;
+      the_impact: string;
+      my_boundaries: string;
+      my_strength: string;
+    };
     intakeContext: {
       startEmotion: string;
       urgency: string;
@@ -231,7 +238,7 @@ function cacheSessionInit(input: ChatRequestInput): void {
       ? extractRelationshipMap(input.backpack.lifeStory, input.backpack.intakeContext.initialContext)
       : "",
     lifeStorySummary: input.backpack
-      ? buildCompactLifeStorySummary(input.backpack.lifeStory, input.backpack.intakeContext.initialContext, input.userName)
+      ? buildCompactLifeStorySummary(input.backpack.lifeStory, input.backpack.intakeContext.initialContext, input.userName, input.backpack.kimBackpack)
       : "",
     totalSessions: input.userDat?.totalSessions ?? 0,
     triggerPatterns: (input.userDat?.triggerPatterns ?? []).map(tp => ({
@@ -303,6 +310,13 @@ export const chatInputSchema = z.object({
         content: z.string(),
       })
     ),
+    kimBackpack: z.object({
+      my_story: z.string(),
+      the_relationship: z.string(),
+      the_impact: z.string(),
+      my_boundaries: z.string(),
+      my_strength: z.string(),
+    }).optional(),
     intakeContext: z.object({
       startEmotion: z.string(),
       urgency: z.string(),
@@ -462,12 +476,30 @@ function buildCompactLifeStorySummary(
   lifeStory: Array<{ label: string; content: string }>,
   intakeContext: string,
   userName: string,
+  kimBackpack?: { my_story: string; the_relationship: string; the_impact: string; my_boundaries: string; my_strength: string },
 ): string {
   const sections = lifeStory
     .filter(s => s.content.trim().length > 0)
     .map(s => `[${s.label}]: ${s.content.trim()}`);
 
-  if (sections.length === 0 && (!intakeContext || intakeContext.trim().length < 10)) {
+  // Kim backpack sections
+  const kimSections: string[] = [];
+  if (kimBackpack) {
+    const mapping: Array<[string, string]> = [
+      ['My Story', kimBackpack.my_story],
+      ['The Relationship', kimBackpack.the_relationship],
+      ['The Impact', kimBackpack.the_impact],
+      ['My Boundaries', kimBackpack.my_boundaries],
+      ['My Strength', kimBackpack.my_strength],
+    ];
+    for (const [title, content] of mapping) {
+      if (content && content.trim().length > 0) {
+        kimSections.push(`[${title}]: ${content.trim()}`);
+      }
+    }
+  }
+
+  if (sections.length === 0 && kimSections.length === 0 && (!intakeContext || intakeContext.trim().length < 10)) {
     return "";
   }
 
@@ -477,6 +509,12 @@ function buildCompactLifeStorySummary(
   }
   for (const section of sections) {
     summary += `\n${section}`;
+  }
+  if (kimSections.length > 0) {
+    summary += `\n\n─── KIM BACKPACK (loved one perspective) ───`;
+    for (const section of kimSections) {
+      summary += `\n${section}`;
+    }
   }
   summary += `\n─── END PERSONAL MEMORY ───`;
   summary += `\nYou KNOW this story. If ${userName} mentions a person, place, or event listed above, you recognize it IMMEDIATELY.`;
@@ -1310,6 +1348,27 @@ Rules:
       identityMemory += `\nBUT: if something is NOT in this story, do NOT fabricate it. Ask about it instead.`;
     } else {
       identityMemory += `\n${name} has not yet shared a life story. You may gently invite them to share when appropriate, but never insist.`;
+    }
+
+    // ── KIM BACKPACK (Kim users only) ──
+    if (backpack.kimBackpack) {
+      const kb = backpack.kimBackpack;
+      const kimSections = [
+        { title: 'My Story', content: kb.my_story },
+        { title: 'The Relationship', content: kb.the_relationship },
+        { title: 'The Impact', content: kb.the_impact },
+        { title: 'My Boundaries', content: kb.my_boundaries },
+        { title: 'My Strength', content: kb.my_strength },
+      ].filter(s => s.content.trim().length > 0);
+      if (kimSections.length > 0) {
+        identityMemory += `\n\n─── KIM BACKPACK OF ${name.toUpperCase()} (written by ${name}) ───`;
+        for (const section of kimSections) {
+          identityMemory += `\n\n[${section.title}]:\n${section.content}`;
+        }
+        identityMemory += `\n─── END KIM BACKPACK ───`;
+        identityMemory += `\n\nThis is ${name}'s personal reflection as a loved one. Use it to understand their perspective, boundaries, and strengths.`;
+        identityMemory += `\nNEVER modify, summarize, or reduce this content. It is their anchor of identity.`;
+      }
     }
   } else {
     identityMemory = `\n(No backpack available for this message.)`;

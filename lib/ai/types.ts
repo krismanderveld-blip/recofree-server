@@ -173,6 +173,20 @@ export interface MoodSnapshot {
 /** Life-phase section IDs for the Backpack narrative document */
 export type LifePhaseId = 'childhood' | 'adolescence' | 'adulthood' | 'family' | 'themes';
 
+/** Kim-specific backpack section IDs */
+export type KimBackpackSectionId = 'my_story' | 'the_relationship' | 'the_impact' | 'my_boundaries' | 'my_strength';
+
+/** A single Kim backpack section */
+export interface KimBackpackSection {
+  id: KimBackpackSectionId;
+  title: string;
+  subtitle: string;
+  emoji: string;
+  color: string;
+  content: string;
+  lastUpdated: string | null;
+}
+
 /**
  * A single life-phase section in the Backpack.
  * Each section is a free-text narrative field where the user
@@ -265,8 +279,16 @@ export interface Backpack {
   naam: string;
   /** User type — IMMUTABLE after intake */
   userType: UserType;
-  /** Life story narrative sections — user-written, user-edited */
+  /** Life story narrative sections — user-written, user-edited (Elias) */
   sections: LifePhaseSection[];
+  /** Kim-specific backpack sections — user-written, user-edited (Kim only) */
+  kimBackpack?: {
+    my_story: string;
+    the_relationship: string;
+    the_impact: string;
+    my_boundaries: string;
+    my_strength: string;
+  };
   /** Intake context — captured once at onboarding */
   intakeContext: {
     /** Stage of Change — Elias only */
@@ -576,12 +598,73 @@ export const DEFAULT_BACKPACK_SECTIONS: LifePhaseSection[] = [
 // Keep old name as alias for backward compatibility in tests
 export const DEFAULT_RUGZAK_SECTIONS = DEFAULT_BACKPACK_SECTIONS;
 
+/** Default Kim backpack sections */
+export const DEFAULT_KIM_BACKPACK_SECTIONS: KimBackpackSection[] = [
+  {
+    id: 'my_story',
+    title: 'My Story',
+    subtitle: 'Who am I outside of this relationship?',
+    emoji: '👤',
+    color: '#E57373',
+    content: '',
+    lastUpdated: null,
+  },
+  {
+    id: 'the_relationship',
+    title: 'The Relationship',
+    subtitle: 'How did it evolve? When did it change?',
+    emoji: '🔗',
+    color: '#81C784',
+    content: '',
+    lastUpdated: null,
+  },
+  {
+    id: 'the_impact',
+    title: 'The Impact',
+    subtitle: 'What has addiction done to my life, family, work?',
+    emoji: '🌊',
+    color: '#4DD0E1',
+    content: '',
+    lastUpdated: null,
+  },
+  {
+    id: 'my_boundaries',
+    title: 'My Boundaries',
+    subtitle: 'What can I carry? What have I already tried?',
+    emoji: '🛡️',
+    color: '#FFD54F',
+    content: '',
+    lastUpdated: null,
+  },
+  {
+    id: 'my_strength',
+    title: 'My Strength',
+    subtitle: 'Where do I find strength? What do I want for myself?',
+    emoji: '💪',
+    color: '#CE93D8',
+    content: '',
+    lastUpdated: null,
+  },
+];
+
+/** Create default kimBackpack data from sections */
+export function createDefaultKimBackpack(): Backpack['kimBackpack'] {
+  return {
+    my_story: '',
+    the_relationship: '',
+    the_impact: '',
+    my_boundaries: '',
+    my_strength: '',
+  };
+}
+
 /** Create a new Backpack from intake data */
 export function createNewBackpack(intake: IntakeData): Backpack {
   return {
     naam: intake.userName,
     userType: intake.userType,
     sections: DEFAULT_BACKPACK_SECTIONS.map((s) => ({ ...s })),
+    ...(intake.userType === 'kim' ? { kimBackpack: createDefaultKimBackpack() } : {}),
     intakeContext: {
       ...(intake.stageOfChange != null ? { stageOfChange: intake.stageOfChange } : {}),
       ...(intake.eigenRegieLevel != null ? { eigenRegieLevel: intake.eigenRegieLevel } : {}),

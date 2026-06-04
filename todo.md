@@ -961,3 +961,8 @@
 - [x] Bug fix: Chat duplicate — session now starts fresh (old history not shown, pipeline still sends full context to GPT)
 - [x] Bug fix: Clinical tag — added clinicalModeActive to Zod schema (was being stripped during validation), updated label to ⚕ clinical
 - [x] Clinical Mode: fix GPT compliance — moved annotation instruction to absolute end of system prompt (both paths), strengthened enforcement language, added server-side fallback that appends default <clinical> tag if GPT omits it
+- [x] Kim Backpack: add kimBackpack data structure to Backpack type with 5 sections
+- [x] Kim Backpack: add persistence (AsyncStorage) for Kim sections
+- [x] Kim Backpack: update backpack.tsx UI to show Kim sections when userType === 'kim'
+- [x] Kim Backpack: integrate Kim backpack into GPT session start context
+- [x] Kim Backpack: 0 TS errors, all tests green

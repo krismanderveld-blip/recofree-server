@@ -143,6 +143,13 @@ export interface GPTPayload {
     naam: string;
     userType: 'elias' | 'kim';
     lifeStory: Array<{ id: string; label: string; ageRange: string; content: string }>;
+    kimBackpack?: {
+      my_story: string;
+      the_relationship: string;
+      the_impact: string;
+      my_boundaries: string;
+      my_strength: string;
+    };
     intakeContext: { stageOfChange: string; startEmotion: string; urgency: string; initialContext: string; intakeDate: string };
     createdAt: string;
   };
@@ -542,6 +549,7 @@ export function buildGPTPayload(input: PayloadBuilderInput): GPTPayload {
         ageRange: s.ageRange,
         content: s.content,
       })),
+      ...(backpack.kimBackpack ? { kimBackpack: backpack.kimBackpack } : {}),
       intakeContext: {
         stageOfChange: backpack.intakeContext?.stageOfChange || ELIAS_DEFAULT_STAGE,
         startEmotion: backpack.intakeContext?.startEmotion || '',

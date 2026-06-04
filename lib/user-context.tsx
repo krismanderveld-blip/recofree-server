@@ -79,6 +79,8 @@ interface UserContextValue {
   updateRugzakSection: (sectionId: LifePhaseId, content: string) => Promise<void>;
   /** Alias for updateRugzakSection (preferred name for dual-store architecture) */
   updateBackpackSection: (sectionId: LifePhaseId, content: string) => Promise<void>;
+  /** Update a Kim backpack section (Kim users only) */
+  updateKimBackpackSection: (sectionId: import('./ai/types').KimBackpackSectionId, content: string) => Promise<void>;
   /** Recompute Rugzak influence (call on every message) */
   recomputeInfluence: () => void;
   setCrisisLevel: (level: number) => void;
@@ -463,6 +465,28 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     await persistBackpack(updatedBackpack);
   }, [state.backpack]);
 
+  // ── Kim Backpack Section — USER ACTION ONLY ──
+
+  const updateKimBackpackSection = useCallback(async (sectionId: import('./ai/types').KimBackpackSectionId, content: string) => {
+    if (!state.backpack) return;
+    const currentKim = state.backpack.kimBackpack ?? {
+      my_story: '',
+      the_relationship: '',
+      the_impact: '',
+      my_boundaries: '',
+      my_strength: '',
+    };
+    const updatedBackpack: Backpack = {
+      ...state.backpack,
+      kimBackpack: {
+        ...currentKim,
+        [sectionId]: content,
+      },
+    };
+    dispatch({ type: 'UPDATE_BACKPACK', payload: updatedBackpack });
+    await persistBackpack(updatedBackpack);
+  }, [state.backpack]);
+
   // ── Stage of Change (user-editable in Backpack screen) ──
 
   const updateStageOfChange = useCallback(async (stage: import('./ai/types').StageOfChange) => {
@@ -702,6 +726,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         updateTriggers,
         updateRugzakSection,
         updateBackpackSection: updateRugzakSection,
+        updateKimBackpackSection,
         updateStageOfChange,
         updateGuidanceDepth,
         getGuidanceDepth,
