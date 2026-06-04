@@ -31,16 +31,20 @@ interface DiaryEntry {
   gratitude?: GratitudeData;
 }
 
+type DiaryTab = 'journal' | 'gratitude';
+
 const MOOD_TAGS = ['Calm', 'Sad', 'Anxious', 'Angry', 'Hopeful', 'Exhausted', 'Grateful', 'Neutral'];
 
 const STORAGE_KEY = '@recofree_diary';
 
+const STOIC_QUOTE =
+  '"You have power over your mind, not outside events. Realize this, and you will find strength."';
+const STOIC_AUTHOR = '— Marcus Aurelius';
+const JOURNAL_EXPLANATION =
+  'Writing like the Stoics — what could you control today, what not? What happened, and how did you respond?';
+
 const GRATITUDE_EXPLANATION =
-  'Taking a moment to notice what is good does not mean ignoring what is hard. ' +
-  'It means training your mind to hold both. ' +
-  'Research shows that people in recovery who practice gratitude regularly ' +
-  'experience fewer cravings, better sleep, and stronger relationships. ' +
-  'You do not have to feel grateful. You just have to look.';
+  'Your brain automatically looks for danger and problems. Writing three things that were good trains your mind to notice what is good too. Not because everything is fine — but because both exist.';
 
 function GratitudeStreakBadge({ streak, onPress }: { streak: number; onPress: () => void }) {
   if (streak === 0) return null;
@@ -62,6 +66,49 @@ function GratitudeStreakBadge({ streak, onPress }: { streak: number; onPress: ()
   );
 }
 
+function TabSelector({ activeTab, onTabChange }: { activeTab: DiaryTab; onTabChange: (tab: DiaryTab) => void }) {
+  return (
+    <View className="flex-row bg-surface rounded-xl p-1 mb-4 border border-border">
+      <Pressable
+        onPress={() => onTabChange('journal')}
+        style={({ pressed }) => [{ flex: 1, opacity: pressed ? 0.8 : 1 }]}
+      >
+        <View
+          className={`py-2.5 rounded-lg items-center ${
+            activeTab === 'journal' ? 'bg-primary' : ''
+          }`}
+        >
+          <Text
+            className={`text-sm font-semibold ${
+              activeTab === 'journal' ? 'text-background' : 'text-muted'
+            }`}
+          >
+            Journal
+          </Text>
+        </View>
+      </Pressable>
+      <Pressable
+        onPress={() => onTabChange('gratitude')}
+        style={({ pressed }) => [{ flex: 1, opacity: pressed ? 0.8 : 1 }]}
+      >
+        <View
+          className={`py-2.5 rounded-lg items-center ${
+            activeTab === 'gratitude' ? 'bg-primary' : ''
+          }`}
+        >
+          <Text
+            className={`text-sm font-semibold ${
+              activeTab === 'gratitude' ? 'text-background' : 'text-muted'
+            }`}
+          >
+            Gratitude
+          </Text>
+        </View>
+      </Pressable>
+    </View>
+  );
+}
+
 export default function DiaryScreen() {
   const colors = useColors();
   const { state } = useUser();
@@ -74,6 +121,8 @@ export default function DiaryScreen() {
   const [gratitude2, setGratitude2] = useState('');
   const [gratitude3, setGratitude3] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [activeTab, setActiveTab] = useState<DiaryTab>('journal');
+  const [editorTab, setEditorTab] = useState<DiaryTab>('journal');
 
   // Load entries on mount
   useEffect(() => {
@@ -94,17 +143,20 @@ export default function DiaryScreen() {
     setGratitude2('');
     setGratitude3('');
     setShowEditor(false);
+    setEditorTab('journal');
   }, []);
 
   const saveEntry = useCallback(async () => {
     const text = editorText.trim();
-    if (!text || isSaving) return;
-    setIsSaving(true);
-
     const g1 = gratitude1.trim();
     const g2 = gratitude2.trim();
     const g3 = gratitude3.trim();
     const hasGratitude = g1 || g2 || g3;
+    const hasJournal = text.length > 0;
+
+    if (!hasJournal && !hasGratitude) return;
+    if (isSaving) return;
+    setIsSaving(true);
 
     const newEntry: DiaryEntry = {
       id: `diary_${Date.now()}`,
@@ -132,6 +184,14 @@ export default function DiaryScreen() {
     setIsSaving(false);
   }, [editorText, editorMood, gratitude1, gratitude2, gratitude3, entries, isSaving, resetEditor]);
 
+  // Filter entries based on active tab
+  const filteredEntries = entries.filter((entry) => {
+    if (activeTab === 'gratitude') {
+      return entry.gratitude && (entry.gratitude.entry1 || entry.gratitude.entry2 || entry.gratitude.entry3);
+    }
+    return entry.content.trim().length > 0;
+  });
+
   const renderEntry = useCallback(({ item }: { item: DiaryEntry }) => {
     const date = new Date(item.timestamp);
     const dateStr = date.toLocaleDateString(undefined, {
@@ -157,10 +217,25 @@ export default function DiaryScreen() {
             </View>
           </View>
         </View>
-        <Text className="text-base text-foreground leading-relaxed" numberOfLines={4}>
-          {item.content}
-        </Text>
-        {hasGratitude && (
+        {activeTab === 'journal' && item.content.trim() ? (
+          <Text className="text-base text-foreground leading-relaxed" numberOfLines={4}>
+            {item.content}
+          </Text>
+        ) : null}
+        {activeTab === 'gratitude' && hasGratitude ? (
+          <View className="mt-1">
+            {item.gratitude!.entry1 ? (
+              <Text className="text-sm text-foreground mb-1">1. {item.gratitude!.entry1}</Text>
+            ) : null}
+            {item.gratitude!.entry2 ? (
+              <Text className="text-sm text-foreground mb-1">2. {item.gratitude!.entry2}</Text>
+            ) : null}
+            {item.gratitude!.entry3 ? (
+              <Text className="text-sm text-foreground">3. {item.gratitude!.entry3}</Text>
+            ) : null}
+          </View>
+        ) : null}
+        {activeTab === 'journal' && hasGratitude ? (
           <View className="mt-3 pt-3 border-t border-border">
             {item.gratitude!.entry1 ? (
               <Text className="text-sm text-muted mb-1">1. {item.gratitude!.entry1}</Text>
@@ -172,10 +247,10 @@ export default function DiaryScreen() {
               <Text className="text-sm text-muted">3. {item.gratitude!.entry3}</Text>
             ) : null}
           </View>
-        )}
+        ) : null}
       </View>
     );
-  }, []);
+  }, [activeTab]);
 
   return (
     <ScreenContainer className="px-5 pt-2">
@@ -184,11 +259,14 @@ export default function DiaryScreen() {
         <View>
           <Text className="text-2xl font-bold text-foreground">Diary</Text>
           <Text className="text-sm text-muted">
-            {entries.length} {entries.length === 1 ? 'entry' : 'entries'}
+            {filteredEntries.length} {filteredEntries.length === 1 ? 'entry' : 'entries'}
           </Text>
         </View>
         <Pressable
-          onPress={() => setShowEditor(true)}
+          onPress={() => {
+            setEditorTab(activeTab);
+            setShowEditor(true);
+          }}
           style={({ pressed }) => [
             { opacity: pressed ? 0.7 : 1, transform: [{ scale: pressed ? 0.9 : 1 }] },
           ]}
@@ -199,22 +277,31 @@ export default function DiaryScreen() {
         </Pressable>
       </View>
 
-      {/* Gratitude Streak Badge */}
-      <GratitudeStreakBadge streak={gratitudeStreak} onPress={() => setShowEditor(true)} />
+      {/* Tab Selector */}
+      <TabSelector activeTab={activeTab} onTabChange={setActiveTab} />
+
+      {/* Gratitude Streak Badge (only on gratitude tab) */}
+      {activeTab === 'gratitude' && (
+        <GratitudeStreakBadge streak={gratitudeStreak} onPress={() => { setEditorTab('gratitude'); setShowEditor(true); }} />
+      )}
 
       {/* Entry List */}
       <FlatList
-        data={entries}
+        data={filteredEntries}
         renderItem={renderEntry}
         keyExtractor={(item) => item.id}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 24, flexGrow: 1 }}
         ListEmptyComponent={
           <View className="flex-1 items-center justify-center py-20">
-            <Text className="text-4xl mb-4">📝</Text>
-            <Text className="text-lg font-semibold text-foreground mb-1">No entries yet</Text>
+            <Text className="text-4xl mb-4">{activeTab === 'journal' ? '📝' : '🙏'}</Text>
+            <Text className="text-lg font-semibold text-foreground mb-1">
+              {activeTab === 'journal' ? 'No journal entries yet' : 'No gratitude entries yet'}
+            </Text>
             <Text className="text-sm text-muted text-center">
-              Tap the + button to write your first diary entry.
+              {activeTab === 'journal'
+                ? 'Tap the + button to write your first journal entry.'
+                : 'Tap the + button to record what you are grateful for.'}
             </Text>
           </View>
         }
@@ -236,9 +323,9 @@ export default function DiaryScreen() {
               <Text className="text-lg font-bold text-foreground">New Entry</Text>
               <Pressable
                 onPress={saveEntry}
-                disabled={!editorText.trim() || isSaving}
+                disabled={(!editorText.trim() && !gratitude1.trim() && !gratitude2.trim() && !gratitude3.trim()) || isSaving}
                 style={({ pressed }) => [
-                  { opacity: !editorText.trim() ? 0.4 : pressed ? 0.7 : 1 },
+                  { opacity: (!editorText.trim() && !gratitude1.trim() && !gratitude2.trim() && !gratitude3.trim()) ? 0.4 : pressed ? 0.7 : 1 },
                 ]}
               >
                 <Text className="text-base font-bold text-primary">
@@ -247,66 +334,90 @@ export default function DiaryScreen() {
               </Pressable>
             </View>
 
+            {/* Editor Tab Selector */}
+            <TabSelector activeTab={editorTab} onTabChange={setEditorTab} />
+
             <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 40 }}>
+              {editorTab === 'journal' ? (
+                <View>
+                  {/* Stoic Quote */}
+                  <View className="bg-surface rounded-2xl p-4 mb-4 border border-border">
+                    <Text className="text-sm text-foreground italic leading-relaxed">
+                      {STOIC_QUOTE}
+                    </Text>
+                    <Text className="text-xs text-muted mt-2">{STOIC_AUTHOR}</Text>
+                  </View>
 
-              {/* Section 1: Gratitude */}
-              <View className="mb-6">
-                <Text className="text-sm font-semibold text-muted mb-2 uppercase tracking-wide">
-                  Gratitude
-                </Text>
-                <Text className="text-sm text-muted leading-relaxed mb-4">
-                  {GRATITUDE_EXPLANATION}
-                </Text>
-                <View className="gap-3">
+                  {/* Journal Explanation */}
+                  <Text className="text-sm text-muted leading-relaxed mb-4">
+                    {JOURNAL_EXPLANATION}
+                  </Text>
+
+                  {/* Journal Text Input */}
                   <TextInput
-                    className="bg-surface border border-border rounded-xl px-4 py-3 text-base text-foreground"
-                    placeholder="Something I am grateful for today..."
+                    className="bg-surface border border-border rounded-2xl px-4 py-4 text-base text-foreground"
+                    placeholder="Write whatever comes to mind..."
                     placeholderTextColor="#9E9E9E"
-                    value={gratitude1}
-                    onChangeText={setGratitude1}
-                    returnKeyType="next"
+                    value={editorText}
+                    onChangeText={setEditorText}
+                    multiline
+                    textAlignVertical="top"
+                    style={{ minHeight: 180 }}
                   />
-                  <TextInput
-                    className="bg-surface border border-border rounded-xl px-4 py-3 text-base text-foreground"
-                    placeholder="Something I am grateful for today..."
-                    placeholderTextColor="#9E9E9E"
-                    value={gratitude2}
-                    onChangeText={setGratitude2}
-                    returnKeyType="next"
-                  />
-                  <TextInput
-                    className="bg-surface border border-border rounded-xl px-4 py-3 text-base text-foreground"
-                    placeholder="Something I am grateful for today..."
-                    placeholderTextColor="#9E9E9E"
-                    value={gratitude3}
-                    onChangeText={setGratitude3}
-                    returnKeyType="next"
-                  />
+                  <Text className="text-xs text-muted mt-1 text-right">
+                    {editorText.length} characters
+                  </Text>
                 </View>
-                <Text className="text-xs text-muted mt-2 italic">
-                  Optional — fill in as many or as few as you like.
-                </Text>
-              </View>
+              ) : (
+                <View>
+                  {/* Gratitude Explanation */}
+                  <View className="bg-surface rounded-2xl p-4 mb-4 border border-border">
+                    <Text className="text-sm text-foreground leading-relaxed">
+                      {GRATITUDE_EXPLANATION}
+                    </Text>
+                  </View>
 
-              {/* Section 2: Journal Text Input */}
-              <View className="mb-4">
-                <Text className="text-sm font-semibold text-muted mb-2 uppercase tracking-wide">
-                  Journal
-                </Text>
-                <TextInput
-                  className="bg-surface border border-border rounded-2xl px-4 py-4 text-base text-foreground"
-                  placeholder="Write whatever comes to mind..."
-                  placeholderTextColor="#9E9E9E"
-                  value={editorText}
-                  onChangeText={setEditorText}
-                  multiline
-                  textAlignVertical="top"
-                  style={{ minHeight: 120 }}
-                />
-                <Text className="text-xs text-muted mt-1 text-right">
-                  {editorText.length} characters
-                </Text>
-              </View>
+                  {/* Gratitude Fields */}
+                  <View className="gap-3">
+                    <View>
+                      <Text className="text-xs text-muted mb-1.5 font-medium">1.</Text>
+                      <TextInput
+                        className="bg-surface border border-border rounded-xl px-4 py-3 text-base text-foreground"
+                        placeholder="Something I am grateful for today..."
+                        placeholderTextColor="#9E9E9E"
+                        value={gratitude1}
+                        onChangeText={setGratitude1}
+                        returnKeyType="next"
+                      />
+                    </View>
+                    <View>
+                      <Text className="text-xs text-muted mb-1.5 font-medium">2.</Text>
+                      <TextInput
+                        className="bg-surface border border-border rounded-xl px-4 py-3 text-base text-foreground"
+                        placeholder="Something I am grateful for today..."
+                        placeholderTextColor="#9E9E9E"
+                        value={gratitude2}
+                        onChangeText={setGratitude2}
+                        returnKeyType="next"
+                      />
+                    </View>
+                    <View>
+                      <Text className="text-xs text-muted mb-1.5 font-medium">3.</Text>
+                      <TextInput
+                        className="bg-surface border border-border rounded-xl px-4 py-3 text-base text-foreground"
+                        placeholder="Something I am grateful for today..."
+                        placeholderTextColor="#9E9E9E"
+                        value={gratitude3}
+                        onChangeText={setGratitude3}
+                        returnKeyType="done"
+                      />
+                    </View>
+                  </View>
+                  <Text className="text-xs text-muted mt-3 italic">
+                    Optional — fill in as many or as few as you like.
+                  </Text>
+                </View>
+              )}
             </ScrollView>
           </KeyboardAvoidingView>
         </ScreenContainer>

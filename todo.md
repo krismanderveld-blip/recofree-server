@@ -966,3 +966,7 @@
 - [x] Kim Backpack: update backpack.tsx UI to show Kim sections when userType === 'kim'
 - [x] Kim Backpack: integrate Kim backpack into GPT session start context
 - [x] Kim Backpack: 0 TS errors, all tests green
+- [x] Diary: split into Journal and Gratitude tabs at top of screen
+- [x] Diary: Journal tab with stoic quote and explanation
+- [x] Diary: Gratitude tab with explanation and 3 fields
+- [x] Diary: 0 TS errors, all tests green
