@@ -248,39 +248,6 @@ export default function DiaryScreen() {
             </View>
 
             <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 40 }}>
-              {/* Mood Tag Selection */}
-              <View className="mb-4">
-                <Text className="text-sm font-semibold text-muted mb-2 uppercase tracking-wide">
-                  How are you feeling?
-                </Text>
-                <View className="flex-row flex-wrap gap-2">
-                  {MOOD_TAGS.map((tag) => (
-                    <Pressable
-                      key={tag}
-                      onPress={() => setEditorMood(tag)}
-                      style={({ pressed }) => [
-                        { opacity: pressed ? 0.85 : 1 },
-                      ]}
-                    >
-                      <View
-                        className={`rounded-full px-3 py-2 border ${
-                          editorMood === tag
-                            ? 'border-primary bg-primary/10'
-                            : 'border-border bg-surface'
-                        }`}
-                      >
-                        <Text
-                          className={`text-sm ${
-                            editorMood === tag ? 'text-primary font-medium' : 'text-foreground'
-                          }`}
-                        >
-                          {tag}
-                        </Text>
-                      </View>
-                    </Pressable>
-                  ))}
-                </View>
-              </View>
 
               {/* Section 1: Gratitude */}
               <View className="mb-6">
