@@ -960,3 +960,4 @@
 - [x] Clinical Mode: parse and render collapsible clinical tag in chat bubble UI
 - [x] Bug fix: Chat duplicate — session now starts fresh (old history not shown, pipeline still sends full context to GPT)
 - [x] Bug fix: Clinical tag — added clinicalModeActive to Zod schema (was being stripped during validation), updated label to ⚕ clinical
+- [x] Clinical Mode: fix GPT compliance — moved annotation instruction to absolute end of system prompt (both paths), strengthened enforcement language, added server-side fallback that appends default <clinical> tag if GPT omits it

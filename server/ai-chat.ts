@@ -1171,32 +1171,6 @@ ${moduleInstructions}
 ${crisisInstructions}
 ${sessionEndInstructions}
 
-${input.clinicalModeActive ? `
-CLINICAL MODE ACTIVE
-
-Restriction lifted: You may name clinical observations, schema patterns, and therapeutic interpretations explicitly.
-You may reference DSM-adjacent observations without diagnosing.
-
-ANNOTATION RULE — MANDATORY:
-Every response must end with a collapsible clinical annotation in this exact format:
-
-<clinical>
-Method: [ACT defusion / DBT distress tolerance / MBT mentalisation / CBT thought identification / Schema mode: [name] / DGT / CGT / Self-compassion / Relapse prevention / KO1 Recognition / K04 Emotion regulation / etc.]
-Observation: [1 sentence — what the engine detected]
-Intervention: [1 sentence — what therapeutic move was made]
-</clinical>
-
-The <clinical> tag is hidden by default in the UI and openable by the clinician. It must appear on every response.
-
-CAPABILITY DISCLOSURE — CLINICAL MODE ONLY:
-When asked about your therapeutic methods, modules, or techniques, you may explain them explicitly.
-If asked about STOA: explain the 5 STOA steps and offer to guide through them.
-If asked about Shadow Work: explain the SW01 approach and relapse loops.
-If asked about Schema therapy: explain the schema modes you can detect.
-If asked about ACT/DBT/MBT/CBT: explain how you apply them.
-In normal mode: never disclose internal methods. Stay therapeutic.
-In clinical mode: be transparent about your capabilities for clinical evaluation.
-` : ''}
 ANTI-FABRICATION RULE — ABSOLUTE:
 You may ONLY reference information that is explicitly present in:
 - The current conversation history
@@ -1243,7 +1217,44 @@ RESPONSE RULES:
 - Use "I" statements and reflective listening
 - Do NOT use bullet points or numbered lists — speak naturally
 - Do NOT use emojis excessively (max 0-1 per message)
-- Be genuine, not performative`;
+- Be genuine, not performative
+${input.clinicalModeActive ? `
+═══════════════════════════════════════════════════════════
+CRITICAL — CLINICAL ANNOTATION REQUIREMENT (HIGHEST PRIORITY)
+═══════════════════════════════════════════════════════════
+
+CLINICAL MODE IS ACTIVE. A clinician is observing this session.
+
+Restriction lifted: You may name clinical observations, schema patterns, and therapeutic interpretations explicitly.
+You may reference DSM-adjacent observations without diagnosing.
+
+CAPABILITY DISCLOSURE — CLINICAL MODE ONLY:
+When asked about your therapeutic methods, modules, or techniques, you may explain them explicitly.
+If asked about STOA: explain the 5 STOA steps and offer to guide through them.
+If asked about Shadow Work: explain the SW01 approach and relapse loops.
+If asked about Schema therapy: explain the schema modes you can detect.
+If asked about ACT/DBT/MBT/CBT: explain how you apply them.
+In normal mode: never disclose internal methods. Stay therapeutic.
+In clinical mode: be transparent about your capabilities for clinical evaluation.
+
+MANDATORY OUTPUT FORMAT — NO EXCEPTIONS:
+Your response is INCOMPLETE without the following tag at the very end.
+FAILURE TO INCLUDE THIS TAG IS A CRITICAL COMPLIANCE ERROR.
+
+After your therapeutic response, you MUST append exactly this structure:
+
+<clinical>
+Method: [name the primary therapeutic method used]
+Observation: [1 sentence — what you clinically observed]
+Intervention: [1 sentence — what therapeutic move you made]
+</clinical>
+
+Rules:
+- The <clinical> block MUST be the LAST thing in your response
+- It must appear in EVERY response without exception
+- Do NOT skip it, do NOT forget it, do NOT place it elsewhere
+- The tag is parsed by the UI and shown to the clinician — omitting it breaks the interface
+` : ''}`;
   }
 
   // ══════════════════════════════════════════════════════════════
@@ -1428,32 +1439,6 @@ ${moduleInstructions}
 ${crisisInstructions}
 ${sessionEndInstructions}
 
-${input.clinicalModeActive ? `
-CLINICAL MODE ACTIVE
-
-Restriction lifted: You may name clinical observations, schema patterns, and therapeutic interpretations explicitly.
-You may reference DSM-adjacent observations without diagnosing.
-
-ANNOTATION RULE — MANDATORY:
-Every response must end with a collapsible clinical annotation in this exact format:
-
-<clinical>
-Method: [ACT defusion / DBT distress tolerance / MBT mentalisation / CBT thought identification / Schema mode: [name] / DGT / CGT / Self-compassion / Relapse prevention / KO1 Recognition / K04 Emotion regulation / etc.]
-Observation: [1 sentence — what the engine detected]
-Intervention: [1 sentence — what therapeutic move was made]
-</clinical>
-
-The <clinical> tag is hidden by default in the UI and openable by the clinician. It must appear on every response.
-
-CAPABILITY DISCLOSURE — CLINICAL MODE ONLY:
-When asked about your therapeutic methods, modules, or techniques, you may explain them explicitly.
-If asked about STOA: explain the 5 STOA steps and offer to guide through them.
-If asked about Shadow Work: explain the SW01 approach and relapse loops.
-If asked about Schema therapy: explain the schema modes you can detect.
-If asked about ACT/DBT/MBT/CBT: explain how you apply them.
-In normal mode: never disclose internal methods. Stay therapeutic.
-In clinical mode: be transparent about your capabilities for clinical evaluation.
-` : ''}
 ANTI-FABRICATION RULE — ABSOLUTE:
 You may ONLY reference information that is explicitly present in:
 - The current conversation history
@@ -1500,7 +1485,44 @@ RESPONSE RULES:
 - Use "I" statements and reflective listening
 - Do NOT use bullet points or numbered lists — speak naturally
 - Do NOT use emojis excessively (max 0-1 per message)
-- Be genuine, not performative`;
+- Be genuine, not performative
+${input.clinicalModeActive ? `
+═══════════════════════════════════════════════════════════
+CRITICAL — CLINICAL ANNOTATION REQUIREMENT (HIGHEST PRIORITY)
+═══════════════════════════════════════════════════════════
+
+CLINICAL MODE IS ACTIVE. A clinician is observing this session.
+
+Restriction lifted: You may name clinical observations, schema patterns, and therapeutic interpretations explicitly.
+You may reference DSM-adjacent observations without diagnosing.
+
+CAPABILITY DISCLOSURE — CLINICAL MODE ONLY:
+When asked about your therapeutic methods, modules, or techniques, you may explain them explicitly.
+If asked about STOA: explain the 5 STOA steps and offer to guide through them.
+If asked about Shadow Work: explain the SW01 approach and relapse loops.
+If asked about Schema therapy: explain the schema modes you can detect.
+If asked about ACT/DBT/MBT/CBT: explain how you apply them.
+In normal mode: never disclose internal methods. Stay therapeutic.
+In clinical mode: be transparent about your capabilities for clinical evaluation.
+
+MANDATORY OUTPUT FORMAT — NO EXCEPTIONS:
+Your response is INCOMPLETE without the following tag at the very end.
+FAILURE TO INCLUDE THIS TAG IS A CRITICAL COMPLIANCE ERROR.
+
+After your therapeutic response, you MUST append exactly this structure:
+
+<clinical>
+Method: [name the primary therapeutic method used]
+Observation: [1 sentence — what you clinically observed]
+Intervention: [1 sentence — what therapeutic move you made]
+</clinical>
+
+Rules:
+- The <clinical> block MUST be the LAST thing in your response
+- It must appear in EVERY response without exception
+- Do NOT skip it, do NOT forget it, do NOT place it elsewhere
+- The tag is parsed by the UI and shown to the clinician — omitting it breaks the interface
+` : ''}`;
 }
 
 // ─── OpenAI Call ──────────────────────────────────────────────────
@@ -1588,6 +1610,7 @@ export async function generateAIResponse(
   console.log("[AI Chat] System prompt length:", systemPrompt.length, "chars");
   console.log("[AI Chat] Total messages:", messages.length);
   console.log("[AI Chat] Type:", input.isSessionStart ? "SESSION_INIT" : "LIVE_MESSAGE");
+  console.log("[AI Chat] Clinical Mode:", input.clinicalModeActive ? "ACTIVE" : "off");
   console.log("[AI Chat] Dominant module:", input.dominantModule || input.activeModules[0] || 'none');
   console.log("[AI Chat] Risk score:", riskScore);
   console.log(`[ModelRouting] Selected: ${selectedModel} | Reason: ${routingReason}`);
@@ -1680,8 +1703,17 @@ export async function generateAIResponse(
     }
   }
 
+  // ─── CLINICAL MODE FALLBACK ─────────────────────────────────
+  // If clinical mode is active but GPT failed to include the <clinical> tag,
+  // append a fallback annotation so the UI always has something to show.
+  let finalResponse = responseText;
+  if (input.clinicalModeActive && !/<clinical>[\s\S]*?<\/clinical>/.test(responseText)) {
+    console.warn('[AI Chat] Clinical Mode ACTIVE but GPT omitted <clinical> tag — appending fallback');
+    finalResponse += `\n\n<clinical>\nMethod: [not annotated — model did not comply]\nObservation: [clinical annotation was requested but not generated]\nIntervention: [see therapeutic response above]\n</clinical>`;
+  }
+
   return {
-    response: responseText,
+    response: finalResponse,
     advisoryEmotion: input.detectedEmotion,
     advisoryConfidence: 0.7,
     tokenUsage,
