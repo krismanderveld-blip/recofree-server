@@ -55,6 +55,7 @@ const config: ExpoConfig = {
       }
   },
   android: {
+    allowBackup: false,
     adaptiveIcon: {
       backgroundColor: "#E3F2FD",
       foregroundImage: "./assets/images/android-icon-foreground.png",
