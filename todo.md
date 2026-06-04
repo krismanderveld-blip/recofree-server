@@ -972,3 +972,6 @@
 - [x] Diary: 0 TS errors, all tests green
 - [x] Diary: rotating stoic quotes (10-15 quotes, daily rotation) in Journal tab
 - [x] Diary: mood tag chip selector in editor modal
+- [x] Onboarding: remove step 3 (emotion choice) from intake flow
+- [x] Onboarding: remove step 5 (free text "What's on your mind?") from intake flow
+- [x] Onboarding: 0 TS errors, all tests green

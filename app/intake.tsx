@@ -14,18 +14,7 @@ import { useUser } from '@/lib/user-context';
 import type { UserType, UrgencyLevel, StageOfChange, EigenRegieLevel } from '@/lib/ai/types';
 import { STAGE_OF_CHANGE_OPTIONS, EIGEN_REGIE_INTAKE_OPTIONS } from '@/lib/ai/types';
 
-type IntakeStep = 1 | 2 | 3 | 4 | 5;
-
-const EMOTIONS = [
-  { label: 'Calm', value: 'calm' },
-  { label: 'Sad', value: 'sad' },
-  { label: 'Anxious', value: 'anxious' },
-  { label: 'Angry', value: 'angry' },
-  { label: 'Confused', value: 'confused' },
-  { label: 'Hopeful', value: 'hopeful' },
-  { label: 'Exhausted', value: 'exhausted' },
-  { label: 'Overwhelmed', value: 'overwhelmed' },
-];
+type IntakeStep = 1 | 2 | 3;
 
 const URGENCY_LEVELS: { label: string; value: UrgencyLevel; description: string }[] = [
   { label: 'Low', value: 'laag', description: 'I want to explore at my own pace' },
@@ -53,20 +42,16 @@ export default function IntakeScreen() {
   const [stageOfChange, setStageOfChange] = useState<StageOfChange | null>(null);
   // Kim only
   const [eigenRegieLevel, setEigenRegieLevel] = useState<EigenRegieLevel | null>(null);
-  const [startEmotion, setStartEmotion] = useState('');
   const [urgency, setUrgency] = useState<UrgencyLevel | null>(null);
-  const [initialContext, setInitialContext] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const isKim = selectedType === 'kim';
   const canProceedStep1 = name.trim().length >= 2 && selectedType !== null;
   const canProceedStep2 = isKim ? eigenRegieLevel !== null : stageOfChange !== null;
-  const canProceedStep3 = startEmotion !== '';
-  const canProceedStep4 = urgency !== null;
-  const canSubmit = initialContext.trim().length >= 3;
+  const canSubmit = urgency !== null;
 
   const handleNext = () => {
-    if (step < 5) setStep((step + 1) as IntakeStep);
+    if (step < 3) setStep((step + 1) as IntakeStep);
   };
 
   const handleBack = () => {
@@ -84,9 +69,9 @@ export default function IntakeScreen() {
         userType: selectedType,
         stageOfChange: isKim ? null : stageOfChange,
         eigenRegieLevel: isKim ? eigenRegieLevel : null,
-        startEmotion,
+        startEmotion: '',
         urgency,
-        initialContext: initialContext.trim(),
+        initialContext: '',
       });
       router.replace('/(tabs)');
     } catch (error) {
@@ -109,7 +94,7 @@ export default function IntakeScreen() {
           <View className="flex-1 px-6 pt-12 pb-8">
             {/* Progress Indicator */}
             <View className="flex-row mb-8 gap-2">
-              {[1, 2, 3, 4, 5].map((s) => (
+              {[1, 2, 3].map((s) => (
                 <View
                   key={s}
                   className={`flex-1 h-1 rounded-full ${
@@ -332,70 +317,8 @@ export default function IntakeScreen() {
               </View>
             )}
 
-            {/* Step 3: Start Emotion */}
+            {/* Step 3: Urgency (final step — submit) */}
             {step === 3 && (
-              <View className="flex-1">
-                <Text className="text-2xl font-bold text-foreground mb-2">
-                  How are you feeling right now?
-                </Text>
-                <Text className="text-base text-muted mb-6 leading-relaxed">
-                  Choose what's closest to how you feel at this moment.
-                </Text>
-
-                <View className="flex-row flex-wrap gap-3 mb-8">
-                  {EMOTIONS.map((emotion) => (
-                    <Pressable
-                      key={emotion.value}
-                      onPress={() => setStartEmotion(emotion.value)}
-                      style={({ pressed }) => [
-                        { opacity: pressed ? 0.85 : 1, transform: [{ scale: pressed ? 0.97 : 1 }] },
-                      ]}
-                    >
-                      <View
-                        className={`rounded-xl px-4 py-3 border-2 ${
-                          startEmotion === emotion.value
-                            ? 'border-primary bg-primary/5'
-                            : 'border-border bg-surface'
-                        }`}
-                      >
-                        <Text
-                          className={`text-base font-medium ${
-                            startEmotion === emotion.value ? 'text-primary' : 'text-foreground'
-                          }`}
-                        >
-                          {emotion.label}
-                        </Text>
-                      </View>
-                    </Pressable>
-                  ))}
-                </View>
-
-                <View className="mt-auto gap-3">
-                  <Pressable
-                    onPress={handleNext}
-                    disabled={!canProceedStep3}
-                    style={({ pressed }) => [
-                      {
-                        opacity: !canProceedStep3 ? 0.4 : pressed ? 0.85 : 1,
-                        transform: [{ scale: pressed && canProceedStep3 ? 0.97 : 1 }],
-                      },
-                    ]}
-                  >
-                    <View className="bg-primary rounded-2xl py-4 items-center">
-                      <Text className="text-white text-lg font-bold">Next</Text>
-                    </View>
-                  </Pressable>
-                  <Pressable onPress={handleBack}>
-                    <View className="py-3 items-center">
-                      <Text className="text-muted text-base">Back</Text>
-                    </View>
-                  </Pressable>
-                </View>
-              </View>
-            )}
-
-            {/* Step 4: Urgency */}
-            {step === 4 && (
               <View className="flex-1">
                 <Text className="text-2xl font-bold text-foreground mb-2">
                   How urgent does it feel?
@@ -428,55 +351,6 @@ export default function IntakeScreen() {
                     </Pressable>
                   ))}
                 </View>
-
-                <View className="mt-auto gap-3">
-                  <Pressable
-                    onPress={handleNext}
-                    disabled={!canProceedStep4}
-                    style={({ pressed }) => [
-                      {
-                        opacity: !canProceedStep4 ? 0.4 : pressed ? 0.85 : 1,
-                        transform: [{ scale: pressed && canProceedStep4 ? 0.97 : 1 }],
-                      },
-                    ]}
-                  >
-                    <View className="bg-primary rounded-2xl py-4 items-center">
-                      <Text className="text-white text-lg font-bold">Next</Text>
-                    </View>
-                  </Pressable>
-                  <Pressable onPress={handleBack}>
-                    <View className="py-3 items-center">
-                      <Text className="text-muted text-base">Back</Text>
-                    </View>
-                  </Pressable>
-                </View>
-              </View>
-            )}
-
-            {/* Step 5: Initial Context */}
-            {step === 5 && (
-              <View className="flex-1">
-                <Text className="text-2xl font-bold text-foreground mb-2">
-                  What's on your mind?
-                </Text>
-                <Text className="text-base text-muted mb-6 leading-relaxed">
-                  Share in your own words what's going on. This helps{' '}
-                  {isKim ? 'Kim' : 'Elias'} understand you better.
-                </Text>
-
-                <TextInput
-                  className="bg-surface border border-border rounded-2xl px-4 py-4 text-base text-foreground min-h-[140px]"
-                  placeholder="Write whatever you'd like to share..."
-                  placeholderTextColor="#9E9E9E"
-                  value={initialContext}
-                  onChangeText={setInitialContext}
-                  multiline
-                  textAlignVertical="top"
-                  maxLength={500}
-                />
-                <Text className="text-xs text-muted mt-2 text-right">
-                  {initialContext.length}/500
-                </Text>
 
                 <View className="mt-auto gap-3">
                   <Pressable
