@@ -224,8 +224,9 @@ export default function DiaryScreen() {
       <Modal visible={showEditor} animationType="slide" presentationStyle="pageSheet">
         <ScreenContainer edges={['top', 'bottom', 'left', 'right']} className="px-5 pt-4">
           <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            behavior="padding"
             className="flex-1"
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 24}
           >
             {/* Modal Header */}
             <View className="flex-row justify-between items-center mb-4">
@@ -246,7 +247,7 @@ export default function DiaryScreen() {
               </Pressable>
             </View>
 
-            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 24 }}>
+            <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 40 }}>
               {/* Mood Tag Selection */}
               <View className="mb-4">
                 <Text className="text-sm font-semibold text-muted mb-2 uppercase tracking-wide">
@@ -294,7 +295,6 @@ export default function DiaryScreen() {
                   onChangeText={setEditorText}
                   multiline
                   textAlignVertical="top"
-                  autoFocus
                   style={{ minHeight: 120 }}
                 />
                 <Text className="text-xs text-muted mt-1 text-right">

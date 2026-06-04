@@ -953,3 +953,4 @@
 - [x] Sober counter: redesign home screen version as prominent, emotional primary element (big, top of screen)
 - [x] Sober counter: keep date picker in profile only
 - [x] Fix backend deploy: add verifyDepsBeforeRun: install to pnpm-workspace.yaml (pnpm 11 default check fails across Docker RUN layers)
+- [x] Fix diary New Entry: gratitude fields unreachable with keyboard open on Android — changed behavior to "padding", added keyboardShouldPersistTaps, removed autoFocus
