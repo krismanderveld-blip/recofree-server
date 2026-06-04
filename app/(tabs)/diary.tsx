@@ -282,28 +282,8 @@ export default function DiaryScreen() {
                 </View>
               </View>
 
-              {/* Section 1: Journal Text Input */}
+              {/* Section 1: Gratitude */}
               <View className="mb-6">
-                <Text className="text-sm font-semibold text-muted mb-2 uppercase tracking-wide">
-                  Journal
-                </Text>
-                <TextInput
-                  className="bg-surface border border-border rounded-2xl px-4 py-4 text-base text-foreground"
-                  placeholder="Write whatever comes to mind..."
-                  placeholderTextColor="#9E9E9E"
-                  value={editorText}
-                  onChangeText={setEditorText}
-                  multiline
-                  textAlignVertical="top"
-                  style={{ minHeight: 120 }}
-                />
-                <Text className="text-xs text-muted mt-1 text-right">
-                  {editorText.length} characters
-                </Text>
-              </View>
-
-              {/* Section 2: Gratitude */}
-              <View className="mb-4">
                 <Text className="text-sm font-semibold text-muted mb-2 uppercase tracking-wide">
                   Gratitude
                 </Text>
@@ -333,11 +313,31 @@ export default function DiaryScreen() {
                     placeholderTextColor="#9E9E9E"
                     value={gratitude3}
                     onChangeText={setGratitude3}
-                    returnKeyType="done"
+                    returnKeyType="next"
                   />
                 </View>
                 <Text className="text-xs text-muted mt-2 italic">
                   Optional — fill in as many or as few as you like.
+                </Text>
+              </View>
+
+              {/* Section 2: Journal Text Input */}
+              <View className="mb-4">
+                <Text className="text-sm font-semibold text-muted mb-2 uppercase tracking-wide">
+                  Journal
+                </Text>
+                <TextInput
+                  className="bg-surface border border-border rounded-2xl px-4 py-4 text-base text-foreground"
+                  placeholder="Write whatever comes to mind..."
+                  placeholderTextColor="#9E9E9E"
+                  value={editorText}
+                  onChangeText={setEditorText}
+                  multiline
+                  textAlignVertical="top"
+                  style={{ minHeight: 120 }}
+                />
+                <Text className="text-xs text-muted mt-1 text-right">
+                  {editorText.length} characters
                 </Text>
               </View>
             </ScrollView>
