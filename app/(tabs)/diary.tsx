@@ -37,9 +37,30 @@ const MOOD_TAGS = ['Calm', 'Sad', 'Anxious', 'Angry', 'Hopeful', 'Exhausted', 'G
 
 const STORAGE_KEY = '@recofree_diary';
 
-const STOIC_QUOTE =
-  '"You have power over your mind, not outside events. Realize this, and you will find strength."';
-const STOIC_AUTHOR = '— Marcus Aurelius';
+const STOIC_QUOTES = [
+  { text: '"You have power over your mind, not outside events. Realize this, and you will find strength."', author: 'Marcus Aurelius' },
+  { text: '"We suffer more often in imagination than in reality."', author: 'Seneca' },
+  { text: '"The happiness of your life depends upon the quality of your thoughts."', author: 'Marcus Aurelius' },
+  { text: '"It is not what happens to you, but how you react to it that matters."', author: 'Epictetus' },
+  { text: '"No man is free who is not master of himself."', author: 'Epictetus' },
+  { text: '"Begin at once to live, and count each separate day as a separate life."', author: 'Seneca' },
+  { text: '"The best revenge is not to be like your enemy."', author: 'Marcus Aurelius' },
+  { text: '"Waste no more time arguing about what a good man should be. Be one."', author: 'Marcus Aurelius' },
+  { text: '"He who fears death will never do anything worthy of a living man."', author: 'Seneca' },
+  { text: '"First say to yourself what you would be; and then do what you have to do."', author: 'Epictetus' },
+  { text: '"The soul becomes dyed with the colour of its thoughts."', author: 'Marcus Aurelius' },
+  { text: '"Difficulties strengthen the mind, as labor does the body."', author: 'Seneca' },
+  { text: '"Man is not worried by real problems so much as by his imagined anxieties about real problems."', author: 'Epictetus' },
+  { text: '"Very little is needed to make a happy life; it is all within yourself, in your way of thinking."', author: 'Marcus Aurelius' },
+  { text: '"If it is not right, do not do it. If it is not true, do not say it."', author: 'Marcus Aurelius' },
+];
+
+function getDailyQuote(): { text: string; author: string } {
+  const now = new Date();
+  const dayIndex = Math.floor(now.getTime() / (1000 * 60 * 60 * 24)) % STOIC_QUOTES.length;
+  return STOIC_QUOTES[dayIndex];
+}
+
 const JOURNAL_EXPLANATION =
   'Writing like the Stoics — what could you control today, what not? What happened, and how did you respond?';
 
@@ -340,12 +361,12 @@ export default function DiaryScreen() {
             <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 40 }}>
               {editorTab === 'journal' ? (
                 <View>
-                  {/* Stoic Quote */}
+                  {/* Stoic Quote (rotates daily) */}
                   <View className="bg-surface rounded-2xl p-4 mb-4 border border-border">
                     <Text className="text-sm text-foreground italic leading-relaxed">
-                      {STOIC_QUOTE}
+                      {getDailyQuote().text}
                     </Text>
-                    <Text className="text-xs text-muted mt-2">{STOIC_AUTHOR}</Text>
+                    <Text className="text-xs text-muted mt-2">— {getDailyQuote().author}</Text>
                   </View>
 
                   {/* Journal Explanation */}
@@ -367,6 +388,41 @@ export default function DiaryScreen() {
                   <Text className="text-xs text-muted mt-1 text-right">
                     {editorText.length} characters
                   </Text>
+
+                  {/* Mood Tag Selector */}
+                  <View className="mt-4">
+                    <Text className="text-xs text-muted mb-2 font-medium uppercase tracking-wide">How are you feeling?</Text>
+                    <View className="flex-row flex-wrap gap-2">
+                      {MOOD_TAGS.map((tag) => (
+                        <Pressable
+                          key={tag}
+                          onPress={() => {
+                            setEditorMood(editorMood === tag ? '' : tag);
+                            if (Platform.OS !== 'web') {
+                              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                            }
+                          }}
+                          style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}
+                        >
+                          <View
+                            className={`px-3 py-1.5 rounded-full border ${
+                              editorMood === tag
+                                ? 'bg-primary border-primary'
+                                : 'bg-surface border-border'
+                            }`}
+                          >
+                            <Text
+                              className={`text-sm ${
+                                editorMood === tag ? 'text-background font-semibold' : 'text-foreground'
+                              }`}
+                            >
+                              {tag}
+                            </Text>
+                          </View>
+                        </Pressable>
+                      ))}
+                    </View>
+                  </View>
                 </View>
               ) : (
                 <View>

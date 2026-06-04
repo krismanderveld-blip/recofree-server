@@ -970,3 +970,5 @@
 - [x] Diary: Journal tab with stoic quote and explanation
 - [x] Diary: Gratitude tab with explanation and 3 fields
 - [x] Diary: 0 TS errors, all tests green
+- [x] Diary: rotating stoic quotes (10-15 quotes, daily rotation) in Journal tab
+- [x] Diary: mood tag chip selector in editor modal
