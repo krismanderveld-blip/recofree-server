@@ -185,6 +185,9 @@ interface ChatRequestInput {
   } | null;
   // Signal engine: compressed context summary (replaces full lifeStorySummary in LIVE_MESSAGE)
   contextSummary?: string | null;
+
+  // Clinical Mode (easter egg — therapeutic annotations)
+  clinicalModeActive?: boolean;
 }
 
 // ─── Server-side Session Cache ───────────────────────────────────
@@ -1165,6 +1168,23 @@ ${moduleInstructions}
 ${crisisInstructions}
 ${sessionEndInstructions}
 
+${input.clinicalModeActive ? `
+CLINICAL MODE ACTIVE
+
+Restriction lifted: You may name clinical observations, schema patterns, and therapeutic interpretations explicitly.
+You may reference DSM-adjacent observations without diagnosing.
+
+ANNOTATION RULE — MANDATORY:
+Every response must end with a collapsible clinical annotation in this exact format:
+
+<clinical>
+Method: [ACT defusion / DBT distress tolerance / MBT mentalisation / CBT thought identification / Schema mode: [name] / DGT / CGT / Self-compassion / Relapse prevention / KO1 Recognition / K04 Emotion regulation / etc.]
+Observation: [1 sentence — what the engine detected]
+Intervention: [1 sentence — what therapeutic move was made]
+</clinical>
+
+The <clinical> tag is hidden by default in the UI and openable by the clinician. It must appear on every response.
+` : ''}
 RESPONSE RULES:
 - You KNOW ${name}. Use the context above to inform your response.
 - BUT: refer ONLY to what you ACTUALLY know. Fabricate NOTHING. When in doubt: ASK.
@@ -1361,6 +1381,23 @@ ${moduleInstructions}
 ${crisisInstructions}
 ${sessionEndInstructions}
 
+${input.clinicalModeActive ? `
+CLINICAL MODE ACTIVE
+
+Restriction lifted: You may name clinical observations, schema patterns, and therapeutic interpretations explicitly.
+You may reference DSM-adjacent observations without diagnosing.
+
+ANNOTATION RULE — MANDATORY:
+Every response must end with a collapsible clinical annotation in this exact format:
+
+<clinical>
+Method: [ACT defusion / DBT distress tolerance / MBT mentalisation / CBT thought identification / Schema mode: [name] / DGT / CGT / Self-compassion / Relapse prevention / KO1 Recognition / K04 Emotion regulation / etc.]
+Observation: [1 sentence — what the engine detected]
+Intervention: [1 sentence — what therapeutic move was made]
+</clinical>
+
+The <clinical> tag is hidden by default in the UI and openable by the clinician. It must appear on every response.
+` : ''}
 RESPONSE RULES:
 - You KNOW ${name}. Use your personal memory naturally.
 - BUT: refer ONLY to what you ACTUALLY know from the backpack. Fabricate NOTHING. When in doubt: ASK.

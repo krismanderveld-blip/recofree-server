@@ -103,6 +103,8 @@ interface UserContextValue {
   updateSobrietyDate: (date: string | null) => Promise<void>;
   /** Update last milestone shown date. */
   updateMilestoneShown: (date: string) => Promise<void>;
+  /** Toggle Clinical Mode (easter egg). */
+  toggleClinicalMode: (active: boolean) => Promise<void>;
   /** Update VSP level (Elias users only). Must be called before pipeline start. */
   updateVsp: (level: import('./engine/elias/vsp').VspLevel) => Promise<void>;
   /** Get current VSP level (null if not yet submitted this session) */
@@ -548,6 +550,13 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     await persistUserDat(updatedUserDat);
   }, [state.userDat]);
 
+  const toggleClinicalMode = useCallback(async (active: boolean) => {
+    if (!state.userDat) return;
+    const updatedUserDat: UserDat = { ...state.userDat, clinicalModeActive: active };
+    dispatch({ type: 'UPDATE_USERDAT', payload: updatedUserDat });
+    await persistUserDat(updatedUserDat);
+  }, [state.userDat]);
+
   const getGuidanceDepth = useCallback((): GuidanceDepth => {
     return state.userDat?.guidanceDepth ?? 'normal';
   }, [state.userDat]);
@@ -714,6 +723,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         getEigenRegieHistory,
         updateSobrietyDate,
         updateMilestoneShown,
+        toggleClinicalMode,
         updateVsp,
         getVsp,
       }}

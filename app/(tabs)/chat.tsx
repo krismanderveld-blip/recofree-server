@@ -13,6 +13,7 @@ import {
   KeyboardAvoidingView,
   type AppStateStatus,
 } from 'react-native';
+
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter, useFocusEffect } from 'expo-router';
@@ -394,6 +395,9 @@ function ChatScreenInner() {
 
   const renderMessage = useCallback(({ item }: { item: ChatMessage }) => {
     const isUser = item.role === 'user';
+    // Parse clinical tag from assistant messages
+    const { visibleContent, clinicalAnnotation } = parseClinicalTag(item.content, isUser);
+
     return (
       <View className={`mb-3 max-w-[85%] ${isUser ? 'self-end' : 'self-start'}`}>
         {!isUser && (
@@ -411,8 +415,11 @@ function ChatScreenInner() {
               isUser ? 'text-white' : 'text-foreground'
             }`}
           >
-            {item.content}
+            {visibleContent}
           </Text>
+          {clinicalAnnotation && (
+            <ClinicalTag annotation={clinicalAnnotation} />
+          )}
         </View>
         <Text className={`text-xs text-muted mt-1 ${isUser ? 'text-right mr-1' : 'ml-1'}`}>
           {formatTime(item.timestamp)}
@@ -709,4 +716,39 @@ function ChatScreenInner() {
 function formatTime(timestamp: string): string {
   const date = new Date(timestamp);
   return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
+// ─── Clinical Mode: parse <clinical>...</clinical> from response ───
+
+function parseClinicalTag(content: string, isUser: boolean): { visibleContent: string; clinicalAnnotation: string | null } {
+  if (isUser) return { visibleContent: content, clinicalAnnotation: null };
+  const match = content.match(/<clinical>([\s\S]*?)<\/clinical>/);
+  if (!match) return { visibleContent: content, clinicalAnnotation: null };
+  const visibleContent = content.replace(/<clinical>[\s\S]*?<\/clinical>/, '').trim();
+  return { visibleContent, clinicalAnnotation: match[1].trim() };
+}
+
+function ClinicalTag({ annotation }: { annotation: string }) {
+  const [expanded, setExpanded] = useState(false);
+  const colors = useColors();
+
+  return (
+    <View style={{ marginTop: 8, borderTopWidth: 0.5, borderTopColor: colors.border, paddingTop: 6 }}>
+      <Pressable
+        onPress={() => setExpanded(!expanded)}
+        style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}
+      >
+        <Text style={{ fontSize: 11, fontWeight: '600', color: colors.warning }}>
+          {expanded ? '[clinical] ▼' : '[clinical] ▶'}
+        </Text>
+      </Pressable>
+      {expanded && (
+        <View style={{ marginTop: 6, backgroundColor: colors.background, borderRadius: 8, padding: 10 }}>
+          <Text style={{ fontSize: 12, color: colors.muted, lineHeight: 17, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace' }}>
+            {annotation}
+          </Text>
+        </View>
+      )}
+    </View>
+  );
 }

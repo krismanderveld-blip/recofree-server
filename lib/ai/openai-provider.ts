@@ -299,6 +299,9 @@ export class OpenAIProvider implements AIProvider {
           // SW01 Shadow Work (Elias only)
           sw01Context: gptPayload.sw01Context ?? null,
 
+          // Clinical Mode (easter egg)
+          clinicalModeActive: context.userDat?.clinicalModeActive ?? false,
+
           // Full data (SESSION_INIT only)
           backpack: gptPayload.backpack,
           userDat: gptPayload.userDat,
@@ -397,6 +400,9 @@ export class OpenAIProvider implements AIProvider {
           relevanceScores: context.relevanceScores ?? null,
           // Signal engine: compressed context summary (replaces full lifeStorySummary)
           contextSummary: context.contextSummary ?? null,
+
+          // Clinical Mode (easter egg)
+          clinicalModeActive: context.userDat?.clinicalModeActive ?? false,
           // NO backpack, NO userDat, NO diaryEntries, NO coreWound,
           // NO contextLine, NO relationshipAnchor, NO relationalPattern
           // These were sent at SESSION_INIT and cached server-side.

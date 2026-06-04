@@ -475,6 +475,8 @@ export interface UserDat {
   sobrietyDate: string | null;
   /** ISO date (YYYY-MM-DD) of last milestone notification shown. Prevents repeat on same day. */
   lastMilestoneShown: string | null;
+  /** Clinical Mode — enables therapeutic annotations in AI responses. Default: false. */
+  clinicalModeActive: boolean;
 }
 
 /** A record of a completed session's analysis */
@@ -758,6 +760,7 @@ export function createNewUserDat(
     lastGratitudeDate: null,
     sobrietyDate: null,
     lastMilestoneShown: null,
+    clinicalModeActive: false,
   };
 }
 

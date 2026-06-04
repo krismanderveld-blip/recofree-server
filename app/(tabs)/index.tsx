@@ -1,5 +1,5 @@
-import { useEffect, useState, useCallback } from 'react';
-import { ScrollView, Text, View, Pressable, Modal, Platform } from 'react-native';
+import { useEffect, useState, useCallback, useRef } from 'react';
+import { ScrollView, Text, View, Pressable, Modal, Platform, Alert } from 'react-native';
 import { useRouter, type Href } from 'expo-router';
 import { ScreenContainer } from '@/components/screen-container';
 import { useUser } from '@/lib/user-context';
@@ -10,12 +10,47 @@ import * as Haptics from 'expo-haptics';
 
 export default function HomeScreen() {
   const router = useRouter();
-  const { state, startSession, getUserName, getMood, getUserDat, updateMilestoneShown } = useUser();
+  const { state, startSession, getUserName, getMood, getUserDat, updateMilestoneShown, toggleClinicalMode } = useUser();
   const colors = useColors();
   const userName = getUserName();
   const mood = getMood();
   const userDat = getUserDat();
   const [milestoneMessage, setMilestoneMessage] = useState<string | null>(null);
+  const [showClinicalModal, setShowClinicalModal] = useState(false);
+
+  // Easter egg: 5x tap on companion name
+  const tapCountRef = useRef(0);
+  const tapTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleCompanionNameTap = useCallback(() => {
+    tapCountRef.current += 1;
+    if (tapTimerRef.current) clearTimeout(tapTimerRef.current);
+    tapTimerRef.current = setTimeout(() => {
+      tapCountRef.current = 0;
+    }, 2000);
+
+    if (tapCountRef.current >= 5) {
+      tapCountRef.current = 0;
+      if (tapTimerRef.current) clearTimeout(tapTimerRef.current);
+      if (Platform.OS !== 'web') {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      }
+      setShowClinicalModal(true);
+    }
+  }, []);
+
+  const handleEnableClinical = useCallback(async () => {
+    await toggleClinicalMode(true);
+    setShowClinicalModal(false);
+    if (Platform.OS !== 'web') {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    }
+  }, [toggleClinicalMode]);
+
+  const handleDisableClinical = useCallback(async () => {
+    await toggleClinicalMode(false);
+    setShowClinicalModal(false);
+  }, [toggleClinicalMode]);
 
   const handleDismissMilestone = useCallback(() => {
     setMilestoneMessage(null);
@@ -69,6 +104,7 @@ export default function HomeScreen() {
   const companionName = isElias ? 'Elias' : 'Kim';
   const greeting = getGreeting(userName, companionName, isElias);
   const sliderConfig = getSliderConfig(state.userType ?? 'elias');
+  const isClinicalActive = userDat?.clinicalModeActive ?? false;
 
   // Sober counter (Elias only, when sobrietyDate is set)
   const sobrietyDays = (() => {
@@ -86,14 +122,23 @@ export default function HomeScreen() {
   return (
     <ScreenContainer className="px-5 pt-2">
       <ScrollView contentContainerStyle={{ flexGrow: 1, paddingBottom: 24 }} showsVerticalScrollIndicator={false}>
-        {/* Header */}
+        {/* Header — tap companion name 5x for clinical mode */}
         <View className="mb-4">
           <Text className="text-sm text-muted mb-1">
             {getTimeGreeting()}, {userName}
           </Text>
-          <Text className="text-2xl font-bold text-foreground">
-            {companionName} is here for you
-          </Text>
+          <Pressable onPress={handleCompanionNameTap}>
+            <Text className="text-2xl font-bold text-foreground">
+              {companionName} is here for you
+            </Text>
+          </Pressable>
+          {isClinicalActive && (
+            <Pressable onPress={() => setShowClinicalModal(true)}>
+              <Text style={{ fontSize: 11, color: colors.warning, fontWeight: '600', marginTop: 4 }}>
+                CLINICAL MODE
+              </Text>
+            </Pressable>
+          )}
         </View>
 
         {/* Prominent Sober Counter (Elias only) */}
@@ -270,6 +315,71 @@ export default function HomeScreen() {
           </Pressable>
         </Modal>
       )}
+
+      {/* Clinical Mode Activation Modal */}
+      <Modal visible={showClinicalModal} transparent animationType="fade" onRequestClose={() => setShowClinicalModal(false)}>
+        <Pressable
+          onPress={() => setShowClinicalModal(false)}
+          style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center' }}
+        >
+          <Pressable
+            onPress={(e) => e.stopPropagation()}
+            style={{
+              backgroundColor: colors.background,
+              borderRadius: 20,
+              padding: 28,
+              width: '88%',
+              maxWidth: 340,
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 8 },
+              shadowOpacity: 0.25,
+              shadowRadius: 16,
+              elevation: 12,
+            }}
+          >
+            <Text style={{ fontSize: 18, fontWeight: '700', color: colors.foreground, marginBottom: 14 }}>
+              {isClinicalActive ? 'Disable Clinical Mode?' : 'Enable Clinical Mode?'}
+            </Text>
+            <Text style={{ fontSize: 14, color: colors.muted, lineHeight: 20, marginBottom: 24 }}>
+              {isClinicalActive
+                ? 'Clinical annotations will be hidden and standard restrictions will be restored.'
+                : 'This mode is intended for clinical demonstration only. Elias and Kim will provide therapeutic annotations and operate without standard restrictions.'}
+            </Text>
+            <View style={{ flexDirection: 'row', gap: 12 }}>
+              <Pressable
+                onPress={() => setShowClinicalModal(false)}
+                style={({ pressed }) => [{
+                  flex: 1,
+                  paddingVertical: 12,
+                  borderRadius: 12,
+                  alignItems: 'center',
+                  backgroundColor: colors.surface,
+                  borderWidth: 1,
+                  borderColor: colors.border,
+                  opacity: pressed ? 0.8 : 1,
+                }]}
+              >
+                <Text style={{ fontWeight: '600', color: colors.foreground, fontSize: 14 }}>Cancel</Text>
+              </Pressable>
+              <Pressable
+                onPress={isClinicalActive ? handleDisableClinical : handleEnableClinical}
+                style={({ pressed }) => [{
+                  flex: 1,
+                  paddingVertical: 12,
+                  borderRadius: 12,
+                  alignItems: 'center',
+                  backgroundColor: isClinicalActive ? colors.error : colors.primary,
+                  opacity: pressed ? 0.8 : 1,
+                }]}
+              >
+                <Text style={{ fontWeight: '700', color: '#fff', fontSize: 14 }}>
+                  {isClinicalActive ? 'Disable' : 'Enable'}
+                </Text>
+              </Pressable>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </ScreenContainer>
   );
 }

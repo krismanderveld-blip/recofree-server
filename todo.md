@@ -954,3 +954,7 @@
 - [x] Sober counter: keep date picker in profile only
 - [x] Fix backend deploy: add verifyDepsBeforeRun: install to pnpm-workspace.yaml (pnpm 11 default check fails across Docker RUN layers)
 - [x] Fix diary New Entry: gratitude fields unreachable with keyboard open on Android — changed behavior to "padding", added keyboardShouldPersistTaps, removed autoFocus
+- [x] Clinical Mode: add clinicalModeActive to UserDat (default false)
+- [x] Clinical Mode: easter egg activation on home screen (5x tap on avatar/name)
+- [x] Clinical Mode: inject clinical annotation instruction into system prompt when active
+- [x] Clinical Mode: parse and render collapsible clinical tag in chat bubble UI

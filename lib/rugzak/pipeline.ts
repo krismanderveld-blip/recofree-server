@@ -439,6 +439,7 @@ export async function processMessage(
       lastGratitudeDate: null,
       sobrietyDate: null,
       lastMilestoneShown: null,
+      clinicalModeActive: false,
     };
   }
 
@@ -1843,6 +1844,7 @@ export async function generateGreeting(
       lastGratitudeDate: null,
       sobrietyDate: null,
       lastMilestoneShown: null,
+      clinicalModeActive: false,
     };
   }
 
@@ -2012,6 +2014,7 @@ export async function endSession(
       lastGratitudeDate: null,
       sobrietyDate: null,
       lastMilestoneShown: null,
+      clinicalModeActive: false,
     };
   }
 
