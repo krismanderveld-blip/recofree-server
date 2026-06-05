@@ -203,15 +203,8 @@ function ChatScreenInner() {
     useCallback(() => {
       if (!preChatDone) return; // Pre-chat gate: required input not yet submitted
       if (state.intakeCompleted && state.backpack && state.userDat && !greetingSent.current) {
-        // For Elias: don't fire greeting if backpack sections are all empty
-        // (happens right after intake, before user fills life story sections)
-        // For Kim: ALWAYS allow greeting — backpack is optional
-        if (state.backpack.userType !== 'kim') {
-          const hasEliasContent = state.backpack.sections?.some(
-            (s: any) => s.content && s.content.trim().length > 0
-          );
-          if (!hasEliasContent) return;
-        }
+        // Greeting is always allowed regardless of backpack content.
+        // Backpack is optional — users should not be blocked from chatting.
         greetingSent.current = true;
         // Clear messages for a fresh session view (pipeline still sends full history to GPT)
         setMessages([]);
