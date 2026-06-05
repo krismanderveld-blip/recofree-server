@@ -980,3 +980,4 @@
 - [x] FIX: migrateBackpack must include kimBackpack field on restore
 - [x] FEAT: Chat UI shows previous session messages (collapsed/separator)
 - [x] FEAT: Refresh chatHistory at session end — keep only current + previous session
+- [x] FIX: Kim users always get greeting regardless of backpack content (greeting gate bypass)
