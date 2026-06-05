@@ -42,13 +42,6 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="chat"
-        options={{
-          title: "Chat",
-          tabBarIcon: ({ color }) => <IconSymbol size={24} name="bubble.left.fill" color={color} />,
-        }}
-      />
-      <Tabs.Screen
         name="mood"
         options={{
           title: "Mood",
@@ -67,6 +60,13 @@ export default function TabLayout() {
         options={{
           title: "Backpack",
           tabBarIcon: ({ color }) => <IconSymbol size={24} name="backpack.fill" color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="chat"
+        options={{
+          title: "Chat",
+          tabBarIcon: ({ color }) => <IconSymbol size={24} name="bubble.left.fill" color={color} />,
         }}
       />
       <Tabs.Screen
