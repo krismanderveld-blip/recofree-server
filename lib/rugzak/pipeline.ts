@@ -242,6 +242,18 @@ import {
 } from '../engine/elias/shadow';
 import type { SW01EngineResult, SW01Progress } from '../engine/elias/shadow';
 import { createDefaultSW01Progress } from '../engine/elias/shadow';
+import {
+  hasSTO01Markers,
+  detectSTO01TriggerMarkers,
+  detectSTO01SafetyFlags,
+  evaluateSTO01,
+  resetSTO01SessionState,
+  updateSTO01SessionState,
+  getSTO01SessionState,
+  updateSTO01Progress,
+  createDefaultSTO01Progress,
+} from '../engine/elias/stoicism';
+import type { STO01Output, STO01Progress } from '../engine/elias/stoicism';
 
 // ─── Pattern Marking (post-GPT local state) ─────────────────
 
@@ -319,6 +331,7 @@ export function resetSessionState(): void {
   resetK01SessionState();
   resetK03SessionState();
   resetSW01SessionState();
+  resetSTO01SessionState();
 }
 
 // ─── Pipeline Result ────────────────────────────────────────────
@@ -1146,6 +1159,63 @@ export async function processMessage(
     }
   }
 
+  // ── Step 5e4: STO01 Stoicism Integration (Elias only, after SW01) ──
+  let sto01Result: STO01Output = {
+    routingDecision: { activate: false, reason: 'Not evaluated' },
+    generatedInstruction: {
+      moduleId: 'STO01',
+      active: false,
+      selectedPrinciples: [],
+      selectedIntervention: null,
+      gptPromptBlock: '',
+      forbiddenOutputs: [],
+      requiredResponsePattern: [],
+      safetyOverride: false,
+    },
+    pipelineContinue: true,
+    nextPipelineStep: 'GENERAL_RESPONSE_SYNTHESIS',
+  };
+  if (backpack.userType === 'elias' && hasSTO01Markers(userMessage)) {
+    const triggerMarkers = detectSTO01TriggerMarkers(userMessage);
+    const safetyFlags = detectSTO01SafetyFlags(userMessage);
+    const hasRelapsed = (currentUserDat as any).relapseActive === true;
+
+    const sto01Input = {
+      moduleId: 'STO01' as const,
+      pipelinePosition: '5e4' as const,
+      userInput: userMessage,
+      language: backpack.intakeContext?.language ?? 'en',
+      triggerMarkers,
+      safety: safetyFlags,
+      recoveryContext: {
+        userRole: 'person_in_recovery' as const,
+        recentRelapse: hasRelapsed,
+        externalConflictPresent: triggerMarkers.externalCauseFixation,
+        caregiverImpactPresent: false,
+      },
+      shadowWorkContext: {
+        sw01Executed: sw01Result.active,
+        projectionDetected: sw01Result.projectionActive,
+        avoidanceDetected: false,
+        intellectualizationDetected: false,
+        shameCoreActivated: false,
+        shadowWorkRecommendedButNotPrimary: sw01Result.active && sw01Result.confidence < 0.6,
+      },
+    };
+
+    sto01Result = evaluateSTO01(sto01Input);
+
+    if (sto01Result.generatedInstruction.active) {
+      const decision = sto01Result.routingDecision;
+      updateSTO01SessionState(
+        decision.primaryPrinciple!,
+        decision.interventionType!,
+        decision.activationStrength!,
+      );
+      console.log(`[Pipeline] STO01: principle=${decision.primaryPrinciple} | intervention=${decision.interventionType} | strength=${decision.activationStrength}`);
+    }
+  }
+
   // ── PRE-GPT STEP 6: Build ChatContext + ONE GPT call ──
   let crisisLevel = 0;
   let showEmergency = false;
@@ -1419,6 +1489,7 @@ export async function processMessage(
     k01Context: k01Result.promptBlock || undefined,
     k03Context: k03Result.promptBlock || undefined,
     sw01Context: sw01Result.promptBlock || undefined,
+    sto01Context: sto01Result.generatedInstruction.gptPromptBlock || undefined,
   };
 
   let response: string;
@@ -1632,6 +1703,7 @@ export async function processMessage(
       { step: '5q. K01', status: k01Result.activated ? 'passed' : 'skipped', reason: k01Result.activated ? `state=${k01Result.primaryState}|severity=${k01Result.severity}|intervention=${k01Result.interventionType}|collapse=${k01Result.collapseRisk}` : 'no boundary state detected' },
       { step: '5r. K03', status: k03Result.activated ? 'passed' : 'skipped', reason: k03Result.activated ? `mode=${k03Result.interventionMode}|level=${k03Result.responseLevel}|severity=${k03Result.severity}|shadow=${k03Result.primaryShadowPart}|ekt=${k03Result.ektPhase}` : 'selfCare > 3 or not activated' },
       { step: '5e3. SW01', status: sw01Result.active ? 'passed' : 'skipped', reason: sw01Result.active ? `mode=${sw01Result.interventionMode}|confidence=${sw01Result.confidence.toFixed(2)}|loop=${sw01Result.activeLoop?.loop_id ?? 'none'}|projection=${sw01Result.projectionActive}` : 'no shadow signals detected' },
+      { step: '5e4. STO01', status: sto01Result.generatedInstruction.active ? 'passed' : 'skipped', reason: sto01Result.generatedInstruction.active ? `principle=${sto01Result.routingDecision.primaryPrinciple}|intervention=${sto01Result.routingDecision.interventionType}|strength=${sto01Result.routingDecision.activationStrength}` : (sto01Result.routingDecision.reason ?? 'no stoic markers detected') },
       { step: '6a. Zone decision', status: elisDecision ? 'passed' : 'skipped', reason: elisDecision ? `zone=${elisDecision.zone.computed.label}` : 'kim user' },
       { step: '6b. Engine directive', status: engineDirective ? 'passed' : 'skipped', reason: engineDirective ? `engine=${engineDirective.engine}` : 'none' },
       { step: '6c. Intervention', status: interventionContinuity ? 'passed' : 'skipped', reason: interventionContinuity ? `type=${interventionContinuity.lastInterventionType}` : 'not active' },
@@ -2462,6 +2534,15 @@ export async function endSession(
     const updatedSW01Progress = updateSW01Progress(existingSW01Progress);
     updatedUserDat = { ...updatedUserDat, sw01Progress: updatedSW01Progress } as any;
     console.log(`[Pipeline] SW01 persistence: sessions=${updatedSW01Progress.sessionsWithShadowWork}, loops=${updatedSW01Progress.loopsIdentified.length}, projections=${updatedSW01Progress.projectionsProcessed}`);
+  }
+
+  // ── STO01 Stoicism persistence (Elias only) ──
+  if (backpack.userType === 'elias') {
+    const existingSTO01Progress: STO01Progress = (updatedUserDat as any).sto01Progress ?? createDefaultSTO01Progress();
+    const sto01SessionSnapshot = getSTO01SessionState();
+    const updatedSTO01Progress = updateSTO01Progress(existingSTO01Progress, sto01SessionSnapshot);
+    updatedUserDat = { ...updatedUserDat, sto01Progress: updatedSTO01Progress } as any;
+    console.log(`[Pipeline] STO01 persistence: sessions=${updatedSTO01Progress.sessionsWithStoicism}, activations=${updatedSTO01Progress.totalActivations}, principles=${updatedSTO01Progress.principlesUsedAllTime.length}`);
   }
 
   // ── STEP 5c: Gratitude streak update (both Elias and Kim) ──

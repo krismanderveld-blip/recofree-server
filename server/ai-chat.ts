@@ -182,6 +182,7 @@ interface ChatRequestInput {
   k01Context?: string | null;
   k03Context?: string | null;
   sw01Context?: string | null;
+  sto01Context?: string | null;
 
   // Signal engine: relevance scores for context gating (LIVE_MESSAGE only)
   relevanceScores?: {
@@ -422,6 +423,7 @@ export const chatInputSchema = z.object({
   k01Context: z.string().nullable().optional(),
   k03Context: z.string().nullable().optional(),
   sw01Context: z.string().nullable().optional(),
+  sto01Context: z.string().nullable().optional(),
 
   // Signal engine: relevance scores for context gating (LIVE_MESSAGE only)
   relevanceScores: z.object({
@@ -1086,6 +1088,11 @@ These are not suggestions. These are minimum requirements.
     sw01Block = `\n${input.sw01Context}`;
     console.log(`[AI Chat] SW01 Shadow Work context injected`);
   }
+  let sto01Block = '';
+  if (input.sto01Context) {
+    sto01Block = `\n${input.sto01Context}`;
+    console.log(`[AI Chat] STO01 Stoicism context injected`);
+  }
 
   let sessionEndInstructions = "";
   if (input.message === "__SESSION_END__") {
@@ -1187,6 +1194,7 @@ ${k06Block}
 ${k01Block}
 ${k03Block}
 ${sw01Block}
+${sto01Block}
 
 These behavioral instructions are ABSOLUTE. They override your default conversational style.
 The sliders tell you exactly how the user feels — USE them in your response.
@@ -1483,6 +1491,7 @@ ${k06Block}
 ${k01Block}
 ${k03Block}
 ${sw01Block}
+${sto01Block}
 
 These behavioral instructions are ABSOLUTE. They override your default conversational style.
 The sliders tell you exactly how the user feels — USE them in your response.

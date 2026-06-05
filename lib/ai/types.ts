@@ -978,6 +978,7 @@ export interface ChatContext {
   k01Context?: string;
   k03Context?: string;
   sw01Context?: string;
+  sto01Context?: string;
 }
 
 /**

@@ -981,3 +981,15 @@
 - [x] FEAT: Chat UI shows previous session messages (collapsed/separator)
 - [x] FEAT: Refresh chatHistory at session end — keep only current + previous session
 - [x] FIX: Kim users always get greeting regardless of backpack content (greeting gate bypass)
+- [x] STO01: Create types file (sto01_types.ts) with all interfaces
+- [x] STO01: Create trigger detector (sto01_trigger_detector.ts) with EN/NL markers
+- [x] STO01: Create routing function (sto01_routing.ts) with evaluateSTO01 + selectSTO01Intervention
+- [x] STO01: Create prompt builder (sto01_prompt_builder.ts) with SW01-aware modifiers
+- [x] STO01: Create forbidden outputs (sto01_forbidden_outputs.ts)
+- [x] STO01: Create storage contract (sto01_storage_contract.ts) with session state + progress
+- [x] STO01: Create barrel export (index.ts)
+- [x] STO01: Integrate into pipeline.ts as step 5e4 after SW01
+- [x] STO01: Add sto01Context to ChatContext, GPTPayload, BuildPayloadInput, OpenAIProvider
+- [x] STO01: Add sto01Context to server ai-chat.ts (interface, Zod schema, prompt injection)
+- [x] STO01: Write 9 test cases (6 spec + 3 extra) — all passing
+- [x] STO01: 0 TS errors, all 427 tests green

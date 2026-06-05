@@ -212,6 +212,7 @@ export class OpenAIProvider implements AIProvider {
         k01Context: context.k01Context,
         k03Context: context.k03Context,
         sw01Context: context.sw01Context,
+        sto01Context: context.sto01Context,
       });
 
       // ── STEP 3: Build server payload based on SESSION_INIT / LIVE_MESSAGE split ──
@@ -298,6 +299,8 @@ export class OpenAIProvider implements AIProvider {
           k03Context: gptPayload.k03Context ?? null,
           // SW01 Shadow Work (Elias only)
           sw01Context: gptPayload.sw01Context ?? null,
+          // STO01 Stoicism Integration (Elias only)
+          sto01Context: gptPayload.sto01Context ?? null,
 
           // Clinical Mode (easter egg)
           clinicalModeActive: context.userDat?.clinicalModeActive ?? false,
@@ -395,6 +398,8 @@ export class OpenAIProvider implements AIProvider {
           k03Context: gptPayload.k03Context ?? null,
           // SW01 Shadow Work (Elias only)
           sw01Context: gptPayload.sw01Context ?? null,
+          // STO01 Stoicism Integration (Elias only)
+          sto01Context: gptPayload.sto01Context ?? null,
 
           // Signal engine: relevance scores for context gating (threshold 0.3)
           relevanceScores: context.relevanceScores ?? null,
