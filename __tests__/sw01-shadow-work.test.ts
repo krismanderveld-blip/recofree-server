@@ -120,7 +120,7 @@ describe('SW01 Shadow Work — Elias Only Guard', () => {
 
     // But for Kim, the pipeline never calls computeSW01Directive.
     // We verify the guard logic: userType !== 'elias' → skip
-    const userType = 'kim';
+    const userType: string = 'kim';
     const shouldActivateSW01 = userType === 'elias' && hasShadowMarkers(kimText);
     expect(shouldActivateSW01).toBe(false);
 

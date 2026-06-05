@@ -996,3 +996,4 @@
 - [x] Model routing: riskScore threshold 7→30, add PAARS/PURPLE + ORANJE/ORANGE VSP levels, GROEN+GEEL→gpt-4o-mini
 - [x] FIX: Elias greeting gate removed — both Elias and Kim always get greeting regardless of backpack content
 - [x] FEAT: Greeting tone adaptation when backpack is empty — warm invite to talk or fill backpack
+- [x] FEAT: Export server as standalone Node.js package for Railway deploy (Dockerfile, railway.json, .env.example)

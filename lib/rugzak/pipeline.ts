@@ -1184,7 +1184,7 @@ export async function processMessage(
       moduleId: 'STO01' as const,
       pipelinePosition: '5e4' as const,
       userInput: userMessage,
-      language: backpack.intakeContext?.language ?? 'en',
+      language: 'en',
       triggerMarkers,
       safety: safetyFlags,
       recoveryContext: {

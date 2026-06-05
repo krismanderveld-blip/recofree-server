@@ -353,6 +353,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
                 lastGratitudeDate: null,
                 sobrietyDate: null,
                 lastMilestoneShown: null,
+                clinicalModeActive: false,
             };
 
           // Persist both new stores
@@ -653,6 +654,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       lastGratitudeDate: state.userDat?.lastGratitudeDate ?? null,
       sobrietyDate: state.userDat?.sobrietyDate ?? null,
       lastMilestoneShown: state.userDat?.lastMilestoneShown ?? null,
+      clinicalModeActive: state.userDat?.clinicalModeActive ?? false,
     };
     dispatch({ type: 'END_SESSION', payload: updatedUserDat });
     await persistUserDat(updatedUserDat);
