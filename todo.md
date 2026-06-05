@@ -999,3 +999,15 @@
 - [x] FEAT: Export server as standalone Node.js package for Railway deploy (Dockerfile, railway.json, .env.example)
 - [x] Update EXPO_PUBLIC_API_BASE_URL to Railway production URL (https://railwayappdashboard-production.up.railway.app)
 - [x] Remove all Manus sandbox URL references
+
+## V2 Design Overhaul (Mockup Implementation)
+- [x] Update theme config: white/light-grey background, blue (#2196F3) accent
+- [x] Restructure tab bar: Home → Chat → Mood → Diary → Backpack → Profile (6 tabs)
+- [x] Redesign Home screen: greeting, sober counter card, mood summary row, CTA button
+- [x] Redesign Mood screen: slider cards with colored dots, value display, Save Check-in button
+- [x] Redesign Diary screen: Journal/Gratitude toggle tabs, Stoic quote, mood tags
+- [x] Redesign Backpack screen: progress bar, Stage of Change cards
+- [x] Redesign Profile screen: user card with stats, guidance depth radio, reset button
+- [x] Build VSP Check-in screen: tension levels list with red Relapse option
+- [x] Consistent light styling across all screens
+- [x] 0 TS errors, all tests green after V2 redesign

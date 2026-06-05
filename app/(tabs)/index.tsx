@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { ScrollView, Text, View, Pressable, Modal, Platform, Alert } from 'react-native';
+import { ScrollView, Text, View, Pressable, Modal, Platform } from 'react-native';
 import { useRouter, type Href } from 'expo-router';
 import { ScreenContainer } from '@/components/screen-container';
 import { useUser } from '@/lib/user-context';
@@ -79,9 +79,9 @@ export default function HomeScreen() {
       1: 'Day 1. The hardest one. You showed up.',
       7: '7 days. One week of choosing yourself.',
       30: '30 days. A month of showing up every day.',
-      90: '90 days. \u{1F499} This is real.',
+      90: '90 days. This is real.',
       180: 'Half a year. You rebuilt something.',
-      365: 'One year. \u{1F525} Remember who you were. Look who you are now.',
+      365: 'One year. Remember who you were. Look who you are now.',
     };
 
     const today = new Date().toISOString().slice(0, 10);
@@ -102,7 +102,6 @@ export default function HomeScreen() {
 
   const isElias = state.userType === 'elias';
   const companionName = isElias ? 'Elias' : 'Kim';
-  const greeting = getGreeting(userName, companionName, isElias);
   const sliderConfig = getSliderConfig(state.userType ?? 'elias');
   const isClinicalActive = userDat?.clinicalModeActive ?? false;
 
@@ -121,42 +120,47 @@ export default function HomeScreen() {
   return (
     <ScreenContainer className="px-5 pt-2">
       <ScrollView contentContainerStyle={{ flexGrow: 1, paddingBottom: 24 }} showsVerticalScrollIndicator={false}>
-        {/* Header — tap companion name 5x for clinical mode */}
-        <View className="mb-4">
-          <Text className="text-sm text-muted mb-1">
+        {/* Header */}
+        <View className="mb-5">
+          <Text style={{ fontSize: 14, color: colors.muted, marginBottom: 4 }}>
             {getTimeGreeting()}, {userName}
           </Text>
           <Pressable onPress={handleCompanionNameTap}>
-            <Text className="text-2xl font-bold text-foreground">
+            <Text style={{ fontSize: 24, fontWeight: '700', color: colors.foreground }}>
               {companionName} is here for you
             </Text>
           </Pressable>
           {isClinicalActive && (
             <Pressable onPress={() => setShowClinicalModal(true)}>
-              <Text style={{ fontSize: 11, color: colors.warning, fontWeight: '600', marginTop: 4 }}>
-                CLINICAL MODE
-              </Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 6 }}>
+                <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#10B981', marginRight: 6 }} />
+                <Text style={{ fontSize: 11, color: '#10B981', fontWeight: '700', letterSpacing: 0.5 }}>
+                  CLINICAL MODE
+                </Text>
+              </View>
             </Pressable>
           )}
         </View>
 
-        {/* Prominent Sober Counter (Elias only) */}
+        {/* Sober Counter Card (Elias only) */}
         {isElias && sobrietyDays !== null && (
           <View
-            className="rounded-3xl mb-6 items-center py-8 px-6"
             style={{
-              backgroundColor: colors.primary + '12',
-              borderWidth: 1.5,
-              borderColor: colors.primary + '30',
+              borderRadius: 24,
+              marginBottom: 20,
+              alignItems: 'center',
+              paddingVertical: 32,
+              paddingHorizontal: 24,
+              backgroundColor: '#E3F2FD',
             }}
           >
-            <Text style={{ fontSize: 52, fontWeight: '800', color: colors.primary, letterSpacing: -1 }}>
+            <Text style={{ fontSize: 56, fontWeight: '800', color: colors.primary, letterSpacing: -2 }}>
               {sobrietyDays}
             </Text>
-            <Text style={{ fontSize: 16, fontWeight: '600', color: colors.primary, marginTop: 2, opacity: 0.85 }}>
+            <Text style={{ fontSize: 16, fontWeight: '600', color: colors.primary, marginTop: 2 }}>
               {sobrietyDays === 1 ? 'day clean' : 'days clean'}
             </Text>
-            <Text style={{ fontSize: 13, color: colors.muted, marginTop: 10, textAlign: 'center', lineHeight: 18 }}>
+            <Text style={{ fontSize: 13, color: colors.muted, marginTop: 12, textAlign: 'center', lineHeight: 18 }}>
               {getSoberMessage(sobrietyDays)}
             </Text>
           </View>
@@ -169,14 +173,18 @@ export default function HomeScreen() {
             style={({ pressed }) => [{ opacity: pressed ? 0.85 : 1 }]}
           >
             <View
-              className="rounded-2xl mb-6 items-center py-5 px-5"
               style={{
+                borderRadius: 20,
+                marginBottom: 20,
+                alignItems: 'center',
+                paddingVertical: 24,
+                paddingHorizontal: 20,
                 backgroundColor: colors.surface,
                 borderWidth: 1,
                 borderColor: colors.border,
               }}
             >
-              <Text style={{ fontSize: 15, color: colors.muted, textAlign: 'center', lineHeight: 21 }}>
+              <Text style={{ fontSize: 14, color: colors.muted, textAlign: 'center', lineHeight: 20 }}>
                 Set your sobriety date to start tracking your progress
               </Text>
               <Text style={{ fontSize: 13, color: colors.primary, fontWeight: '600', marginTop: 8 }}>
@@ -186,19 +194,24 @@ export default function HomeScreen() {
           </Pressable>
         )}
 
-        {/* Greeting Card */}
-        <View className="bg-surface rounded-2xl p-5 mb-5 border border-border">
-          <Text className="text-base text-foreground leading-relaxed">
-            {greeting}
-          </Text>
+        {/* Greeting Bubble */}
+        <View style={{ flexDirection: 'row', alignItems: 'flex-start', marginBottom: 20 }}>
+          <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center', marginRight: 12, marginTop: 2 }}>
+            <IconSymbol name="heart.fill" size={16} color="#fff" />
+          </View>
+          <View style={{ flex: 1, backgroundColor: colors.surface, borderRadius: 16, padding: 14, borderWidth: 1, borderColor: colors.border }}>
+            <Text style={{ fontSize: 14, color: colors.foreground, lineHeight: 20 }}>
+              {getGreeting(userName, companionName, isElias)}
+            </Text>
+          </View>
         </View>
 
-        {/* Mood Summary — dynamic based on userType */}
-        <View className="bg-surface rounded-2xl p-5 mb-5 border border-border">
-          <Text className="text-sm font-semibold text-muted mb-3 uppercase tracking-wide">
-            Your mood
+        {/* Mood Summary Row */}
+        <View style={{ marginBottom: 20 }}>
+          <Text style={{ fontSize: 12, fontWeight: '600', color: colors.muted, marginBottom: 12, letterSpacing: 0.5 }}>
+            YOUR MOOD
           </Text>
-          <View className="flex-row justify-between">
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
             {sliderConfig.map((slider) => {
               const value = (mood as any)[slider.key] ?? 0;
               return (
@@ -208,91 +221,53 @@ export default function HomeScreen() {
                   value={value}
                   max={slider.max}
                   invert={slider.key !== 'focus' && slider.key !== 'selfCare'}
+                  primaryColor={colors.primary}
                 />
               );
             })}
           </View>
         </View>
 
-        {/* Quick Actions */}
-        <View className="gap-3">
-          <Pressable
-            onPress={handleStartChat}
-            style={({ pressed }) => [
-              { opacity: pressed ? 0.85 : 1, transform: [{ scale: pressed ? 0.97 : 1 }] },
-            ]}
-          >
-            <View className="bg-primary rounded-2xl p-4 items-center">
-              <Text className="text-background font-bold text-base">
-                Start conversation with {companionName}
-              </Text>
-            </View>
-          </Pressable>
-
-          <View className="flex-row gap-3">
-            <Pressable
-              onPress={() => router.push('/(tabs)/mood' as Href)}
-              className="flex-1"
-              style={({ pressed }) => [
-                { opacity: pressed ? 0.85 : 1, transform: [{ scale: pressed ? 0.98 : 1 }] },
-              ]}
-            >
-              <View className="bg-surface rounded-2xl p-4 border border-border items-center">
-                <IconSymbol name="chart.bar.fill" size={28} color={colors.primary} />
-                <Text className="text-foreground font-semibold mt-2 text-sm">Mood</Text>
-              </View>
-            </Pressable>
-
-            <Pressable
-              onPress={() => router.push('/(tabs)/diary' as Href)}
-              className="flex-1"
-              style={({ pressed }) => [
-                { opacity: pressed ? 0.85 : 1, transform: [{ scale: pressed ? 0.98 : 1 }] },
-              ]}
-            >
-              <View className="bg-surface rounded-2xl p-4 border border-border items-center">
-                <IconSymbol name="book.fill" size={28} color={colors.primary} />
-                <Text className="text-foreground font-semibold mt-2 text-sm">Diary</Text>
-              </View>
-            </Pressable>
+        {/* Start Conversation CTA */}
+        <Pressable
+          onPress={handleStartChat}
+          style={({ pressed }) => [{
+            opacity: pressed ? 0.9 : 1,
+            transform: [{ scale: pressed ? 0.97 : 1 }],
+          }]}
+        >
+          <View style={{
+            backgroundColor: colors.primary,
+            borderRadius: 16,
+            paddingVertical: 16,
+            paddingHorizontal: 20,
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}>
+            <IconSymbol name="bubble.left.fill" size={18} color="#fff" style={{ marginRight: 8 }} />
+            <Text style={{ color: '#fff', fontWeight: '700', fontSize: 15 }}>
+              Start conversation with {companionName}
+            </Text>
           </View>
-        </View>
-
-        {/* Daily Insight */}
-        <View className="bg-surface rounded-2xl p-5 mt-5 border border-border">
-          <Text className="text-sm font-semibold text-muted mb-2 uppercase tracking-wide">
-            Today's insight
-          </Text>
-          <Text className="text-base text-foreground leading-relaxed italic">
-            {isElias
-              ? '"Recovery is not a straight line. Every step counts, even the small ones."'
-              : '"Taking care of yourself is not selfish. It\'s necessary."'}
-          </Text>
-        </View>
+        </Pressable>
       </ScrollView>
 
-      {/* Milestone Modal (Elias only) */}
+      {/* Milestone Modal */}
       {milestoneMessage && (
         <Modal visible transparent animationType="fade" onRequestClose={handleDismissMilestone}>
           <Pressable
             onPress={handleDismissMilestone}
             style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' }}
           >
-            <View
-              style={{
-                backgroundColor: colors.background,
-                borderRadius: 20,
-                padding: 32,
-                width: '85%',
-                maxWidth: 320,
-                alignItems: 'center',
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 8 },
-                shadowOpacity: 0.2,
-                shadowRadius: 16,
-                elevation: 10,
-              }}
-            >
+            <View style={{
+              backgroundColor: colors.background,
+              borderRadius: 20,
+              padding: 32,
+              width: '85%',
+              maxWidth: 320,
+              alignItems: 'center',
+            }}>
               <Text style={{ fontSize: 40, marginBottom: 16 }}>{"\u{1F389}"}</Text>
               <Text style={{ fontSize: 17, fontWeight: '700', color: colors.foreground, textAlign: 'center', lineHeight: 24 }}>
                 {milestoneMessage}
@@ -315,7 +290,7 @@ export default function HomeScreen() {
         </Modal>
       )}
 
-      {/* Clinical Mode Activation Modal */}
+      {/* Clinical Mode Modal */}
       <Modal visible={showClinicalModal} transparent animationType="fade" onRequestClose={() => setShowClinicalModal(false)}>
         <Pressable
           onPress={() => setShowClinicalModal(false)}
@@ -329,11 +304,6 @@ export default function HomeScreen() {
               padding: 28,
               width: '88%',
               maxWidth: 340,
-              shadowColor: '#000',
-              shadowOffset: { width: 0, height: 8 },
-              shadowOpacity: 0.25,
-              shadowRadius: 16,
-              elevation: 12,
             }}
           >
             <Text style={{ fontSize: 18, fontWeight: '700', color: colors.foreground, marginBottom: 14 }}>
@@ -351,7 +321,7 @@ export default function HomeScreen() {
                   flex: 1,
                   paddingVertical: 12,
                   borderRadius: 12,
-                  alignItems: 'center',
+                  alignItems: 'center' as const,
                   backgroundColor: colors.surface,
                   borderWidth: 1,
                   borderColor: colors.border,
@@ -366,7 +336,7 @@ export default function HomeScreen() {
                   flex: 1,
                   paddingVertical: 12,
                   borderRadius: 12,
-                  alignItems: 'center',
+                  alignItems: 'center' as const,
                   backgroundColor: isClinicalActive ? colors.error : colors.primary,
                   opacity: pressed ? 0.8 : 1,
                 }]}
@@ -388,7 +358,7 @@ function getSoberMessage(days: number): string {
   if (days === 1) return 'The hardest day. You showed up.';
   if (days < 7) return 'Every single day counts. Keep going.';
   if (days < 14) return 'One week behind you. You chose yourself.';
-  if (days < 30) return 'Building momentum. This is you, doing the work.';
+  if (days < 30) return 'Building momentum.\nThis is you, doing the work.';
   if (days < 60) return 'A month of choosing yourself, every single day.';
   if (days < 90) return 'Two months. The fog is lifting.';
   if (days < 180) return 'This is real. You rebuilt something.';
@@ -396,18 +366,21 @@ function getSoberMessage(days: number): string {
   return 'One year and beyond. Remember who you were. Look who you are now.';
 }
 
-function MoodMini({ label, value, max = 7, invert = false }: { label: string; value: number; max?: number; invert?: boolean }) {
+function MoodMini({ label, value, max = 10, invert = false, primaryColor }: { label: string; value: number; max?: number; invert?: boolean; primaryColor: string }) {
   const displayValue = Math.round(value);
   const normalized = invert ? max - value : value;
   const ratio = normalized / max;
-  const color = ratio >= 0.7 ? '#10B981' : ratio >= 0.4 ? '#F59E0B' : '#EF4444';
+  const dotColor = ratio >= 0.7 ? '#10B981' : ratio >= 0.4 ? '#F59E0B' : '#EF4444';
 
   return (
-    <View className="items-center flex-1">
-      <Text className="text-2xl font-bold" style={{ color }}>
-        {displayValue}
-      </Text>
-      <Text className="text-xs text-muted mt-1 text-center">{label}</Text>
+    <View style={{ alignItems: 'center', flex: 1 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
+        <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: dotColor, marginRight: 4 }} />
+        <Text style={{ fontSize: 18, fontWeight: '700', color: primaryColor }}>
+          {displayValue}
+        </Text>
+      </View>
+      <Text style={{ fontSize: 10, color: '#6B7280', textAlign: 'center' }}>{label}</Text>
     </View>
   );
 }
@@ -423,9 +396,9 @@ function getTimeGreeting(): string {
 function getGreeting(userName: string, companion: string, isElias: boolean): string {
   const greetings = isElias
     ? [
+        `${userName}, good that you stopped by. I'm here whenever you need me.`,
         `Hey ${userName}, glad you're here. How are you feeling today?`,
         `Welcome back, ${userName}. Take a moment to just be with yourself.`,
-        `${userName}, good that you stopped by. I'm here whenever you need me.`,
       ]
     : [
         `Hello ${userName}, good that you're taking some time for yourself.`,

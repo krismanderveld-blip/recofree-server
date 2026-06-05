@@ -35,6 +35,17 @@ type DiaryTab = 'journal' | 'gratitude';
 
 const MOOD_TAGS = ['Calm', 'Sad', 'Anxious', 'Angry', 'Hopeful', 'Exhausted', 'Grateful', 'Neutral'];
 
+const MOOD_TAG_COLORS: Record<string, string> = {
+  Calm: '#3B82F6',
+  Sad: '#8B5CF6',
+  Anxious: '#F59E0B',
+  Angry: '#EF4444',
+  Hopeful: '#10B981',
+  Exhausted: '#F97316',
+  Grateful: '#22C55E',
+  Neutral: '#6B7280',
+};
+
 const STORAGE_KEY = '@recofree_diary';
 
 const STOIC_QUOTES = [
@@ -62,48 +73,29 @@ function getDailyQuote(): { text: string; author: string } {
 }
 
 const JOURNAL_EXPLANATION =
-  'Writing like the Stoics — what could you control today, what not? What happened, and how did you respond?';
+  'Writing like the Stoics \u2014 what could you control today, what not? What happened, and how did you respond?';
 
 const GRATITUDE_EXPLANATION =
-  'Your brain automatically looks for danger and problems. Writing three things that were good trains your mind to notice what is good too. Not because everything is fine — but because both exist.';
+  'Your brain automatically looks for danger and problems. Writing three things that were good trains your mind to notice what is good too. Not because everything is fine \u2014 but because both exist.';
 
-function GratitudeStreakBadge({ streak, onPress }: { streak: number; onPress: () => void }) {
-  if (streak === 0) return null;
-
-  let label: string;
-  if (streak === 1) label = '1 day of gratitude';
-  else if (streak === 2) label = '2 days in a row';
-  else label = `\uD83D\uDD25 ${streak} days in a row`;
-
+function TabSelector({ activeTab, onTabChange, colors }: { activeTab: DiaryTab; onTabChange: (tab: DiaryTab) => void; colors: any }) {
   return (
-    <Pressable
-      onPress={onPress}
-      style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}
-    >
-      <View className="bg-success/10 rounded-full px-3 py-1.5 flex-row items-center self-start mb-3">
-        <Text className="text-xs font-medium text-success">{label}</Text>
-      </View>
-    </Pressable>
-  );
-}
-
-function TabSelector({ activeTab, onTabChange }: { activeTab: DiaryTab; onTabChange: (tab: DiaryTab) => void }) {
-  return (
-    <View className="flex-row bg-surface rounded-xl p-1 mb-4 border border-border">
+    <View style={{ flexDirection: 'row', backgroundColor: colors.surface, borderRadius: 12, padding: 4, marginBottom: 16, borderWidth: 1, borderColor: colors.border }}>
       <Pressable
         onPress={() => onTabChange('journal')}
         style={({ pressed }) => [{ flex: 1, opacity: pressed ? 0.8 : 1 }]}
       >
-        <View
-          className={`py-2.5 rounded-lg items-center ${
-            activeTab === 'journal' ? 'bg-primary' : ''
-          }`}
-        >
-          <Text
-            className={`text-sm font-semibold ${
-              activeTab === 'journal' ? 'text-background' : 'text-muted'
-            }`}
-          >
+        <View style={{
+          paddingVertical: 10,
+          borderRadius: 10,
+          alignItems: 'center',
+          backgroundColor: activeTab === 'journal' ? colors.primary : 'transparent',
+        }}>
+          <Text style={{
+            fontSize: 14,
+            fontWeight: '600',
+            color: activeTab === 'journal' ? '#fff' : colors.muted,
+          }}>
             Journal
           </Text>
         </View>
@@ -112,16 +104,17 @@ function TabSelector({ activeTab, onTabChange }: { activeTab: DiaryTab; onTabCha
         onPress={() => onTabChange('gratitude')}
         style={({ pressed }) => [{ flex: 1, opacity: pressed ? 0.8 : 1 }]}
       >
-        <View
-          className={`py-2.5 rounded-lg items-center ${
-            activeTab === 'gratitude' ? 'bg-primary' : ''
-          }`}
-        >
-          <Text
-            className={`text-sm font-semibold ${
-              activeTab === 'gratitude' ? 'text-background' : 'text-muted'
-            }`}
-          >
+        <View style={{
+          paddingVertical: 10,
+          borderRadius: 10,
+          alignItems: 'center',
+          backgroundColor: activeTab === 'gratitude' ? colors.primary : 'transparent',
+        }}>
+          <Text style={{
+            fontSize: 14,
+            fontWeight: '600',
+            color: activeTab === 'gratitude' ? '#fff' : colors.muted,
+          }}>
             Gratitude
           </Text>
         </View>
@@ -145,7 +138,6 @@ export default function DiaryScreen() {
   const [activeTab, setActiveTab] = useState<DiaryTab>('journal');
   const [editorTab, setEditorTab] = useState<DiaryTab>('journal');
 
-  // Load entries on mount
   useEffect(() => {
     (async () => {
       try {
@@ -184,9 +176,7 @@ export default function DiaryScreen() {
       content: text,
       moodTag: editorMood || 'Neutral',
       timestamp: new Date().toISOString(),
-      ...(hasGratitude
-        ? { gratitude: { entry1: g1, entry2: g2, entry3: g3 } }
-        : {}),
+      ...(hasGratitude ? { gratitude: { entry1: g1, entry2: g2, entry3: g3 } } : {}),
     };
 
     const updated = [newEntry, ...entries];
@@ -205,7 +195,6 @@ export default function DiaryScreen() {
     setIsSaving(false);
   }, [editorText, editorMood, gratitude1, gratitude2, gratitude3, entries, isSaving, resetEditor]);
 
-  // Filter entries based on active tab
   const filteredEntries = entries.filter((entry) => {
     if (activeTab === 'gratitude') {
       return entry.gratitude && (entry.gratitude.entry1 || entry.gratitude.entry2 || entry.gratitude.entry3);
@@ -215,95 +204,105 @@ export default function DiaryScreen() {
 
   const renderEntry = useCallback(({ item }: { item: DiaryEntry }) => {
     const date = new Date(item.timestamp);
-    const dateStr = date.toLocaleDateString(undefined, {
-      weekday: 'short',
-      month: 'short',
-      day: 'numeric',
-    });
+    const dateStr = date.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
     const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     const hasGratitude = item.gratitude && (item.gratitude.entry1 || item.gratitude.entry2 || item.gratitude.entry3);
 
     return (
-      <View className="bg-surface rounded-2xl p-5 mb-3 border border-border">
-        <View className="flex-row justify-between items-center mb-2">
-          <Text className="text-xs text-muted">{dateStr} at {timeStr}</Text>
-          <View className="flex-row items-center gap-2">
+      <View style={{ backgroundColor: '#fff', borderRadius: 16, padding: 20, marginBottom: 12, borderWidth: 1, borderColor: colors.border }}>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+          <Text style={{ fontSize: 12, color: colors.muted }}>{dateStr} at {timeStr}</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
             {hasGratitude && (
-              <View className="bg-success/10 rounded-full px-2 py-1">
-                <Text className="text-xs text-success">Gratitude</Text>
+              <View style={{ backgroundColor: '#DCFCE7', borderRadius: 12, paddingHorizontal: 8, paddingVertical: 3 }}>
+                <Text style={{ fontSize: 11, color: '#16A34A', fontWeight: '500' }}>Gratitude</Text>
               </View>
             )}
-            <View className="bg-primary/10 rounded-full px-3 py-1">
-              <Text className="text-xs font-medium text-primary">{item.moodTag}</Text>
+            <View style={{ backgroundColor: (MOOD_TAG_COLORS[item.moodTag] || '#6B7280') + '15', borderRadius: 12, paddingHorizontal: 8, paddingVertical: 3 }}>
+              <Text style={{ fontSize: 11, color: MOOD_TAG_COLORS[item.moodTag] || '#6B7280', fontWeight: '500' }}>{item.moodTag}</Text>
             </View>
           </View>
         </View>
         {activeTab === 'journal' && item.content.trim() ? (
-          <Text className="text-base text-foreground leading-relaxed" numberOfLines={4}>
+          <Text style={{ fontSize: 14, color: colors.foreground, lineHeight: 20 }} numberOfLines={4}>
             {item.content}
           </Text>
         ) : null}
         {activeTab === 'gratitude' && hasGratitude ? (
-          <View className="mt-1">
-            {item.gratitude!.entry1 ? (
-              <Text className="text-sm text-foreground mb-1">1. {item.gratitude!.entry1}</Text>
-            ) : null}
-            {item.gratitude!.entry2 ? (
-              <Text className="text-sm text-foreground mb-1">2. {item.gratitude!.entry2}</Text>
-            ) : null}
-            {item.gratitude!.entry3 ? (
-              <Text className="text-sm text-foreground">3. {item.gratitude!.entry3}</Text>
-            ) : null}
-          </View>
-        ) : null}
-        {activeTab === 'journal' && hasGratitude ? (
-          <View className="mt-3 pt-3 border-t border-border">
-            {item.gratitude!.entry1 ? (
-              <Text className="text-sm text-muted mb-1">1. {item.gratitude!.entry1}</Text>
-            ) : null}
-            {item.gratitude!.entry2 ? (
-              <Text className="text-sm text-muted mb-1">2. {item.gratitude!.entry2}</Text>
-            ) : null}
-            {item.gratitude!.entry3 ? (
-              <Text className="text-sm text-muted">3. {item.gratitude!.entry3}</Text>
-            ) : null}
+          <View style={{ marginTop: 4 }}>
+            {item.gratitude!.entry1 ? <Text style={{ fontSize: 14, color: colors.foreground, marginBottom: 4 }}>1. {item.gratitude!.entry1}</Text> : null}
+            {item.gratitude!.entry2 ? <Text style={{ fontSize: 14, color: colors.foreground, marginBottom: 4 }}>2. {item.gratitude!.entry2}</Text> : null}
+            {item.gratitude!.entry3 ? <Text style={{ fontSize: 14, color: colors.foreground }}>3. {item.gratitude!.entry3}</Text> : null}
           </View>
         ) : null}
       </View>
     );
-  }, [activeTab]);
+  }, [activeTab, colors]);
 
   return (
     <ScreenContainer className="px-5 pt-2">
-      {/* Header */}
-      <View className="flex-row justify-between items-center mb-4">
-        <View>
-          <Text className="text-2xl font-bold text-foreground">Diary</Text>
-          <Text className="text-sm text-muted">
-            {filteredEntries.length} {filteredEntries.length === 1 ? 'entry' : 'entries'}
-          </Text>
+      {/* Tab Selector */}
+      <TabSelector activeTab={activeTab} onTabChange={setActiveTab} colors={colors} />
+
+      {/* Daily Quote (Journal tab only) */}
+      {activeTab === 'journal' && (
+        <View style={{ flexDirection: 'row', marginBottom: 16, paddingLeft: 4 }}>
+          <Text style={{ fontSize: 28, color: colors.primary, marginRight: 10, marginTop: -4 }}>{"\u201C"}</Text>
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontSize: 13, color: colors.foreground, fontStyle: 'italic', lineHeight: 18 }}>
+              {getDailyQuote().text}
+            </Text>
+            <Text style={{ fontSize: 12, color: colors.muted, marginTop: 4 }}>\u2014 {getDailyQuote().author}</Text>
+          </View>
         </View>
+      )}
+
+      {/* Gratitude Streak (Gratitude tab only) */}
+      {activeTab === 'gratitude' && gratitudeStreak > 0 && (
         <Pressable
-          onPress={() => {
-            setEditorTab(activeTab);
-            setShowEditor(true);
-          }}
-          style={({ pressed }) => [
-            { opacity: pressed ? 0.7 : 1, transform: [{ scale: pressed ? 0.9 : 1 }] },
-          ]}
+          onPress={() => { setEditorTab('gratitude'); setShowEditor(true); }}
+          style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}
         >
-          <View className="bg-primary w-12 h-12 rounded-full items-center justify-center">
-            <IconSymbol name="plus.circle.fill" size={28} color="#FFFFFF" />
+          <View style={{ backgroundColor: '#DCFCE7', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6, alignSelf: 'flex-start', marginBottom: 12 }}>
+            <Text style={{ fontSize: 12, fontWeight: '500', color: '#16A34A' }}>
+              {gratitudeStreak === 1 ? '1 day of gratitude' : gratitudeStreak === 2 ? '2 days in a row' : `${gratitudeStreak} days in a row`}
+            </Text>
           </View>
         </Pressable>
-      </View>
+      )}
 
-      {/* Tab Selector */}
-      <TabSelector activeTab={activeTab} onTabChange={setActiveTab} />
+      {/* Journal Writing Prompt (Journal tab, inline) */}
+      {activeTab === 'journal' && (
+        <View style={{ marginBottom: 16 }}>
+          <Text style={{ fontSize: 14, color: colors.foreground, lineHeight: 20, marginBottom: 12 }}>
+            {JOURNAL_EXPLANATION}
+          </Text>
+          <Pressable
+            onPress={() => { setEditorTab('journal'); setShowEditor(true); }}
+            style={({ pressed }) => [{ opacity: pressed ? 0.9 : 1 }]}
+          >
+            <View style={{ backgroundColor: '#fff', borderRadius: 12, padding: 14, borderWidth: 1, borderColor: colors.border }}>
+              <Text style={{ fontSize: 14, color: '#9CA3AF' }}>Write whatever comes to mind...</Text>
+            </View>
+          </Pressable>
+          <Text style={{ fontSize: 11, color: colors.muted, marginTop: 6, textAlign: 'right' }}>0 characters</Text>
+        </View>
+      )}
 
-      {/* Gratitude Streak Badge (only on gratitude tab) */}
-      {activeTab === 'gratitude' && (
-        <GratitudeStreakBadge streak={gratitudeStreak} onPress={() => { setEditorTab('gratitude'); setShowEditor(true); }} />
+      {/* Mood Tags (Journal tab) */}
+      {activeTab === 'journal' && (
+        <View style={{ marginBottom: 16 }}>
+          <Text style={{ fontSize: 12, fontWeight: '600', color: colors.muted, marginBottom: 10, letterSpacing: 0.5 }}>
+            HOW ARE YOU FEELING?
+          </Text>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+            {MOOD_TAGS.map((tag) => (
+              <View key={tag} style={{ borderRadius: 20, borderWidth: 1, borderColor: MOOD_TAG_COLORS[tag] || colors.border, paddingHorizontal: 12, paddingVertical: 6 }}>
+                <Text style={{ fontSize: 13, color: MOOD_TAG_COLORS[tag] || colors.foreground, fontWeight: '500' }}>{tag}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
       )}
 
       {/* Entry List */}
@@ -314,19 +313,37 @@ export default function DiaryScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 24, flexGrow: 1 }}
         ListEmptyComponent={
-          <View className="flex-1 items-center justify-center py-20">
-            <Text className="text-4xl mb-4">{activeTab === 'journal' ? '📝' : '🙏'}</Text>
-            <Text className="text-lg font-semibold text-foreground mb-1">
+          <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 40 }}>
+            <Text style={{ fontSize: 32, marginBottom: 12 }}>{activeTab === 'journal' ? '\u{1F4DD}' : '\u{1F64F}'}</Text>
+            <Text style={{ fontSize: 16, fontWeight: '600', color: colors.foreground, marginBottom: 4 }}>
               {activeTab === 'journal' ? 'No journal entries yet' : 'No gratitude entries yet'}
             </Text>
-            <Text className="text-sm text-muted text-center">
+            <Text style={{ fontSize: 13, color: colors.muted, textAlign: 'center' }}>
               {activeTab === 'journal'
-                ? 'Tap the + button to write your first journal entry.'
+                ? 'Tap the writing area above to write your first entry.'
                 : 'Tap the + button to record what you are grateful for.'}
             </Text>
           </View>
         }
       />
+
+      {/* Floating Add Button (Gratitude tab) */}
+      {activeTab === 'gratitude' && (
+        <Pressable
+          onPress={() => { setEditorTab('gratitude'); setShowEditor(true); }}
+          style={({ pressed }) => [{
+            position: 'absolute',
+            bottom: 24,
+            right: 20,
+            opacity: pressed ? 0.8 : 1,
+            transform: [{ scale: pressed ? 0.9 : 1 }],
+          }]}
+        >
+          <View style={{ width: 52, height: 52, borderRadius: 26, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.15, shadowRadius: 8, elevation: 6 }}>
+            <IconSymbol name="plus.circle.fill" size={28} color="#fff" />
+          </View>
+        </Pressable>
+      )}
 
       {/* Editor Modal */}
       <Modal visible={showEditor} animationType="slide" presentationStyle="pageSheet">
@@ -337,62 +354,69 @@ export default function DiaryScreen() {
             keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 24}
           >
             {/* Modal Header */}
-            <View className="flex-row justify-between items-center mb-4">
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
               <Pressable onPress={resetEditor}>
-                <Text className="text-base text-muted">Cancel</Text>
+                <Text style={{ fontSize: 15, color: colors.muted }}>Cancel</Text>
               </Pressable>
-              <Text className="text-lg font-bold text-foreground">New Entry</Text>
+              <Text style={{ fontSize: 17, fontWeight: '700', color: colors.foreground }}>New Entry</Text>
               <Pressable
                 onPress={saveEntry}
                 disabled={(!editorText.trim() && !gratitude1.trim() && !gratitude2.trim() && !gratitude3.trim()) || isSaving}
-                style={({ pressed }) => [
-                  { opacity: (!editorText.trim() && !gratitude1.trim() && !gratitude2.trim() && !gratitude3.trim()) ? 0.4 : pressed ? 0.7 : 1 },
-                ]}
+                style={({ pressed }) => [{
+                  opacity: (!editorText.trim() && !gratitude1.trim() && !gratitude2.trim() && !gratitude3.trim()) ? 0.4 : pressed ? 0.7 : 1,
+                }]}
               >
-                <Text className="text-base font-bold text-primary">
+                <Text style={{ fontSize: 15, fontWeight: '700', color: colors.primary }}>
                   {isSaving ? 'Saving...' : 'Save'}
                 </Text>
               </Pressable>
             </View>
 
             {/* Editor Tab Selector */}
-            <TabSelector activeTab={editorTab} onTabChange={setEditorTab} />
+            <TabSelector activeTab={editorTab} onTabChange={setEditorTab} colors={colors} />
 
             <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 40 }}>
               {editorTab === 'journal' ? (
                 <View>
-                  {/* Stoic Quote (rotates daily) */}
-                  <View className="bg-surface rounded-2xl p-4 mb-4 border border-border">
-                    <Text className="text-sm text-foreground italic leading-relaxed">
+                  {/* Stoic Quote */}
+                  <View style={{ backgroundColor: colors.surface, borderRadius: 16, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: colors.border }}>
+                    <Text style={{ fontSize: 13, color: colors.foreground, fontStyle: 'italic', lineHeight: 18 }}>
                       {getDailyQuote().text}
                     </Text>
-                    <Text className="text-xs text-muted mt-2">— {getDailyQuote().author}</Text>
+                    <Text style={{ fontSize: 12, color: colors.muted, marginTop: 8 }}>\u2014 {getDailyQuote().author}</Text>
                   </View>
 
-                  {/* Journal Explanation */}
-                  <Text className="text-sm text-muted leading-relaxed mb-4">
+                  <Text style={{ fontSize: 13, color: colors.muted, lineHeight: 18, marginBottom: 16 }}>
                     {JOURNAL_EXPLANATION}
                   </Text>
 
-                  {/* Journal Text Input */}
                   <TextInput
-                    className="bg-surface border border-border rounded-2xl px-4 py-4 text-base text-foreground"
+                    style={{
+                      backgroundColor: colors.surface,
+                      borderWidth: 1,
+                      borderColor: colors.border,
+                      borderRadius: 16,
+                      paddingHorizontal: 16,
+                      paddingVertical: 16,
+                      fontSize: 15,
+                      color: colors.foreground,
+                      minHeight: 180,
+                      textAlignVertical: 'top',
+                    }}
                     placeholder="Write whatever comes to mind..."
-                    placeholderTextColor="#9E9E9E"
+                    placeholderTextColor="#9CA3AF"
                     value={editorText}
                     onChangeText={setEditorText}
                     multiline
-                    textAlignVertical="top"
-                    style={{ minHeight: 180 }}
                   />
-                  <Text className="text-xs text-muted mt-1 text-right">
+                  <Text style={{ fontSize: 11, color: colors.muted, marginTop: 6, textAlign: 'right' }}>
                     {editorText.length} characters
                   </Text>
 
-                  {/* Mood Tag Selector */}
-                  <View className="mt-4">
-                    <Text className="text-xs text-muted mb-2 font-medium uppercase tracking-wide">How are you feeling?</Text>
-                    <View className="flex-row flex-wrap gap-2">
+                  {/* Mood Tags */}
+                  <View style={{ marginTop: 16 }}>
+                    <Text style={{ fontSize: 11, fontWeight: '600', color: colors.muted, marginBottom: 10, letterSpacing: 0.5 }}>HOW ARE YOU FEELING?</Text>
+                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
                       {MOOD_TAGS.map((tag) => (
                         <Pressable
                           key={tag}
@@ -404,18 +428,19 @@ export default function DiaryScreen() {
                           }}
                           style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}
                         >
-                          <View
-                            className={`px-3 py-1.5 rounded-full border ${
-                              editorMood === tag
-                                ? 'bg-primary border-primary'
-                                : 'bg-surface border-border'
-                            }`}
-                          >
-                            <Text
-                              className={`text-sm ${
-                                editorMood === tag ? 'text-background font-semibold' : 'text-foreground'
-                              }`}
-                            >
+                          <View style={{
+                            paddingHorizontal: 12,
+                            paddingVertical: 6,
+                            borderRadius: 20,
+                            borderWidth: 1,
+                            borderColor: editorMood === tag ? colors.primary : (MOOD_TAG_COLORS[tag] || colors.border),
+                            backgroundColor: editorMood === tag ? colors.primary : 'transparent',
+                          }}>
+                            <Text style={{
+                              fontSize: 13,
+                              fontWeight: '500',
+                              color: editorMood === tag ? '#fff' : (MOOD_TAG_COLORS[tag] || colors.foreground),
+                            }}>
                               {tag}
                             </Text>
                           </View>
@@ -426,51 +451,38 @@ export default function DiaryScreen() {
                 </View>
               ) : (
                 <View>
-                  {/* Gratitude Explanation */}
-                  <View className="bg-surface rounded-2xl p-4 mb-4 border border-border">
-                    <Text className="text-sm text-foreground leading-relaxed">
+                  <View style={{ backgroundColor: colors.surface, borderRadius: 16, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: colors.border }}>
+                    <Text style={{ fontSize: 13, color: colors.foreground, lineHeight: 18 }}>
                       {GRATITUDE_EXPLANATION}
                     </Text>
                   </View>
 
-                  {/* Gratitude Fields */}
-                  <View className="gap-3">
-                    <View>
-                      <Text className="text-xs text-muted mb-1.5 font-medium">1.</Text>
-                      <TextInput
-                        className="bg-surface border border-border rounded-xl px-4 py-3 text-base text-foreground"
-                        placeholder="Something I am grateful for today..."
-                        placeholderTextColor="#9E9E9E"
-                        value={gratitude1}
-                        onChangeText={setGratitude1}
-                        returnKeyType="next"
-                      />
-                    </View>
-                    <View>
-                      <Text className="text-xs text-muted mb-1.5 font-medium">2.</Text>
-                      <TextInput
-                        className="bg-surface border border-border rounded-xl px-4 py-3 text-base text-foreground"
-                        placeholder="Something I am grateful for today..."
-                        placeholderTextColor="#9E9E9E"
-                        value={gratitude2}
-                        onChangeText={setGratitude2}
-                        returnKeyType="next"
-                      />
-                    </View>
-                    <View>
-                      <Text className="text-xs text-muted mb-1.5 font-medium">3.</Text>
-                      <TextInput
-                        className="bg-surface border border-border rounded-xl px-4 py-3 text-base text-foreground"
-                        placeholder="Something I am grateful for today..."
-                        placeholderTextColor="#9E9E9E"
-                        value={gratitude3}
-                        onChangeText={setGratitude3}
-                        returnKeyType="done"
-                      />
-                    </View>
+                  <View style={{ gap: 12 }}>
+                    {[{ val: gratitude1, set: setGratitude1, n: '1' }, { val: gratitude2, set: setGratitude2, n: '2' }, { val: gratitude3, set: setGratitude3, n: '3' }].map((item) => (
+                      <View key={item.n}>
+                        <Text style={{ fontSize: 12, color: colors.muted, marginBottom: 6, fontWeight: '500' }}>{item.n}.</Text>
+                        <TextInput
+                          style={{
+                            backgroundColor: colors.surface,
+                            borderWidth: 1,
+                            borderColor: colors.border,
+                            borderRadius: 12,
+                            paddingHorizontal: 14,
+                            paddingVertical: 12,
+                            fontSize: 15,
+                            color: colors.foreground,
+                          }}
+                          placeholder="Something I am grateful for today..."
+                          placeholderTextColor="#9CA3AF"
+                          value={item.val}
+                          onChangeText={item.set}
+                          returnKeyType={item.n === '3' ? 'done' : 'next'}
+                        />
+                      </View>
+                    ))}
                   </View>
-                  <Text className="text-xs text-muted mt-3 italic">
-                    Optional — fill in as many or as few as you like.
+                  <Text style={{ fontSize: 12, color: colors.muted, marginTop: 12, fontStyle: 'italic' }}>
+                    Optional \u2014 fill in as many or as few as you like.
                   </Text>
                 </View>
               )}

@@ -14,6 +14,7 @@ import type { LifePhaseId, LifePhaseSection, StageOfChange, KimBackpackSectionId
 import { STAGE_OF_CHANGE_OPTIONS, DEFAULT_KIM_BACKPACK_SECTIONS } from '@/lib/ai/types';
 import type { KimBackpackSection } from '@/lib/ai/types';
 import { useColors } from '@/hooks/use-colors';
+import { IconSymbol } from '@/components/ui/icon-symbol';
 
 const SECTION_COLORS: Record<LifePhaseId, string> = {
   childhood: '#FF6B6B',
@@ -50,7 +51,6 @@ export default function BackpackScreen() {
   const sections = state.backpack?.sections ?? [];
   const kimData = state.backpack?.kimBackpack;
 
-  // Progress calculation
   const filledCount = isKim
     ? DEFAULT_KIM_BACKPACK_SECTIONS.filter((s) => (kimData?.[s.id] ?? '').trim().length > 0).length
     : sections.filter((s) => s.content.trim().length > 0).length;
@@ -102,7 +102,6 @@ export default function BackpackScreen() {
     }
   }, [updateStageOfChange]);
 
-  // ── Elias Section Renderer ──
   const renderEliasSection = (section: LifePhaseSection) => {
     const isExpanded = expandedSection === section.id;
     const isEditing = editingSection === section.id;
@@ -111,112 +110,87 @@ export default function BackpackScreen() {
     const icon = SECTION_ICONS[section.id];
 
     return (
-      <View key={section.id} className="mb-4">
+      <View key={section.id} style={{ marginBottom: 12 }}>
         <Pressable
           onPress={() => handleExpand(section.id)}
-          style={({ pressed }) => [
-            { opacity: pressed ? 0.8 : 1, transform: [{ scale: pressed ? 0.98 : 1 }] },
-          ]}
+          style={({ pressed }) => [{ opacity: pressed ? 0.8 : 1 }]}
         >
-          <View
-            className="bg-surface border border-border rounded-2xl p-4"
-            style={{ borderLeftWidth: 4, borderLeftColor: color }}
-          >
-            <View className="flex-row items-center justify-between">
-              <View className="flex-row items-center flex-1 gap-3">
-                <Text className="text-2xl">{icon}</Text>
-                <View className="flex-1">
-                  <Text className="text-base font-semibold text-foreground">
-                    {section.label}
-                  </Text>
-                  <Text className="text-xs text-muted mt-0.5">{section.ageRange}</Text>
+          <View style={{
+            backgroundColor: '#fff',
+            borderRadius: 16,
+            padding: 16,
+            borderWidth: 1,
+            borderColor: colors.border,
+            borderLeftWidth: 4,
+            borderLeftColor: color,
+          }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, gap: 12 }}>
+                <Text style={{ fontSize: 22 }}>{icon}</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: 15, fontWeight: '600', color: colors.foreground }}>{section.label}</Text>
+                  <Text style={{ fontSize: 12, color: colors.muted, marginTop: 2 }}>{section.ageRange}</Text>
                 </View>
               </View>
-              <View className="flex-row items-center gap-2">
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                 {hasContent && (
-                  <View style={{ backgroundColor: `${color}22` }} className="rounded-full px-2 py-0.5">
-                    <Text style={{ color }} className="text-xs font-medium">Written</Text>
+                  <View style={{ backgroundColor: color + '20', borderRadius: 10, paddingHorizontal: 8, paddingVertical: 2 }}>
+                    <Text style={{ fontSize: 11, color, fontWeight: '500' }}>Written</Text>
                   </View>
                 )}
-                <Text className="text-muted text-lg">{isExpanded ? '\u25B2' : '\u25BC'}</Text>
+                <Text style={{ color: colors.muted }}>{isExpanded ? '\u25B2' : '\u25BC'}</Text>
               </View>
             </View>
           </View>
         </Pressable>
 
         {isExpanded && (
-          <View className="bg-surface/50 border border-border border-t-0 rounded-b-2xl px-4 py-4 -mt-2">
-            <View className="bg-background rounded-xl p-3 mb-3 border border-border">
-              <Text className="text-sm text-muted italic leading-relaxed">
-                {section.prompt}
-              </Text>
+          <View style={{ backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderTopWidth: 0, borderBottomLeftRadius: 16, borderBottomRightRadius: 16, padding: 16, marginTop: -4 }}>
+            <View style={{ backgroundColor: '#fff', borderRadius: 12, padding: 12, marginBottom: 12, borderWidth: 1, borderColor: colors.border }}>
+              <Text style={{ fontSize: 13, color: colors.muted, fontStyle: 'italic', lineHeight: 18 }}>{section.prompt}</Text>
             </View>
 
             {isEditing ? (
               <View>
                 <TextInput
-                  className="bg-background border border-border rounded-xl p-4 text-base text-foreground min-h-[160px]"
+                  style={{ backgroundColor: '#fff', borderWidth: 1, borderColor: colors.border, borderRadius: 12, padding: 16, fontSize: 15, color: colors.foreground, minHeight: 160, textAlignVertical: 'top', lineHeight: 24 }}
                   placeholder="Write your story here... Take your time."
-                  placeholderTextColor="#9E9E9E"
+                  placeholderTextColor="#9CA3AF"
                   value={editText}
                   onChangeText={setEditText}
                   multiline
-                  textAlignVertical="top"
-                  style={{ lineHeight: 24 }}
                 />
-                <View className="flex-row gap-3 mt-3">
-                  <Pressable
-                    onPress={handleCancel}
-                    style={({ pressed }) => [
-                      { opacity: pressed ? 0.7 : 1, flex: 1 },
-                    ]}
-                  >
-                    <View className="bg-surface border border-border rounded-xl py-3 items-center">
-                      <Text className="text-foreground font-medium">Cancel</Text>
+                <View style={{ flexDirection: 'row', gap: 12, marginTop: 12 }}>
+                  <Pressable onPress={handleCancel} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1, flex: 1 }]}>
+                    <View style={{ backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: 12, paddingVertical: 12, alignItems: 'center' }}>
+                      <Text style={{ color: colors.foreground, fontWeight: '500' }}>Cancel</Text>
                     </View>
                   </Pressable>
-                  <Pressable
-                    onPress={() => handleSave(section.id)}
-                    style={({ pressed }) => [
-                      { opacity: pressed ? 0.7 : 1, flex: 1 },
-                    ]}
-                  >
-                    <View className="bg-primary rounded-xl py-3 items-center">
-                      <Text className="text-white font-semibold">Save</Text>
+                  <Pressable onPress={() => handleSave(section.id)} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1, flex: 1 }]}>
+                    <View style={{ backgroundColor: colors.primary, borderRadius: 12, paddingVertical: 12, alignItems: 'center' }}>
+                      <Text style={{ color: '#fff', fontWeight: '600' }}>Save</Text>
                     </View>
                   </Pressable>
                 </View>
               </View>
             ) : hasContent ? (
               <View>
-                <Text className="text-base text-foreground leading-relaxed">
-                  {section.content}
-                </Text>
+                <Text style={{ fontSize: 14, color: colors.foreground, lineHeight: 22 }}>{section.content}</Text>
                 {section.lastUpdated && (
-                  <Text className="text-xs text-muted mt-2">
-                    Last updated: {new Date(section.lastUpdated).toLocaleDateString()}
-                  </Text>
+                  <Text style={{ fontSize: 11, color: colors.muted, marginTop: 8 }}>Last updated: {new Date(section.lastUpdated).toLocaleDateString()}</Text>
                 )}
-                <Pressable
-                  onPress={() => handleStartEditElias(section)}
-                  style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1, marginTop: 12 }]}
-                >
-                  <View className="bg-surface border border-border rounded-xl py-2.5 items-center">
-                    <Text className="text-primary font-medium">Edit</Text>
+                <Pressable onPress={() => handleStartEditElias(section)} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1, marginTop: 12 }]}>
+                  <View style={{ backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: 12, paddingVertical: 10, alignItems: 'center' }}>
+                    <Text style={{ color: colors.primary, fontWeight: '500' }}>Edit</Text>
                   </View>
                 </Pressable>
               </View>
             ) : (
-              <View className="items-center py-4">
-                <Text className="text-muted text-sm mb-3">
-                  No story written yet for this phase.
-                </Text>
-                <Pressable
-                  onPress={() => handleStartEditElias(section)}
-                  style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}
-                >
-                  <View className="bg-primary rounded-xl px-6 py-3">
-                    <Text className="text-white font-semibold">Start Writing</Text>
+              <View style={{ alignItems: 'center', paddingVertical: 16 }}>
+                <Text style={{ color: colors.muted, fontSize: 13, marginBottom: 12 }}>No story written yet for this phase.</Text>
+                <Pressable onPress={() => handleStartEditElias(section)} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}>
+                  <View style={{ backgroundColor: colors.primary, borderRadius: 12, paddingHorizontal: 24, paddingVertical: 12 }}>
+                    <Text style={{ color: '#fff', fontWeight: '600' }}>Start Writing</Text>
                   </View>
                 </Pressable>
               </View>
@@ -227,7 +201,6 @@ export default function BackpackScreen() {
     );
   };
 
-  // ── Kim Section Renderer ──
   const renderKimSection = (section: KimBackpackSection) => {
     const isExpanded = expandedSection === section.id;
     const isEditing = editingSection === section.id;
@@ -235,107 +208,84 @@ export default function BackpackScreen() {
     const hasContent = content.trim().length > 0;
 
     return (
-      <View key={section.id} className="mb-4">
+      <View key={section.id} style={{ marginBottom: 12 }}>
         <Pressable
           onPress={() => handleExpand(section.id)}
-          style={({ pressed }) => [
-            { opacity: pressed ? 0.8 : 1, transform: [{ scale: pressed ? 0.98 : 1 }] },
-          ]}
+          style={({ pressed }) => [{ opacity: pressed ? 0.8 : 1 }]}
         >
-          <View
-            className="bg-surface border border-border rounded-2xl p-4"
-            style={{ borderLeftWidth: 4, borderLeftColor: section.color }}
-          >
-            <View className="flex-row items-center justify-between">
-              <View className="flex-row items-center flex-1 gap-3">
-                <Text className="text-2xl">{section.emoji}</Text>
-                <View className="flex-1">
-                  <Text className="text-base font-semibold text-foreground">
-                    {section.title}
-                  </Text>
-                  <Text className="text-xs text-muted mt-0.5">{section.subtitle}</Text>
+          <View style={{
+            backgroundColor: '#fff',
+            borderRadius: 16,
+            padding: 16,
+            borderWidth: 1,
+            borderColor: colors.border,
+            borderLeftWidth: 4,
+            borderLeftColor: section.color,
+          }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, gap: 12 }}>
+                <Text style={{ fontSize: 22 }}>{section.emoji}</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: 15, fontWeight: '600', color: colors.foreground }}>{section.title}</Text>
+                  <Text style={{ fontSize: 12, color: colors.muted, marginTop: 2 }}>{section.subtitle}</Text>
                 </View>
               </View>
-              <View className="flex-row items-center gap-2">
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                 {hasContent && (
-                  <View style={{ backgroundColor: `${section.color}22` }} className="rounded-full px-2 py-0.5">
-                    <Text style={{ color: section.color }} className="text-xs font-medium">Written</Text>
+                  <View style={{ backgroundColor: section.color + '20', borderRadius: 10, paddingHorizontal: 8, paddingVertical: 2 }}>
+                    <Text style={{ fontSize: 11, color: section.color, fontWeight: '500' }}>Written</Text>
                   </View>
                 )}
-                <Text className="text-muted text-lg">{isExpanded ? '\u25B2' : '\u25BC'}</Text>
+                <Text style={{ color: colors.muted }}>{isExpanded ? '\u25B2' : '\u25BC'}</Text>
               </View>
             </View>
           </View>
         </Pressable>
 
         {isExpanded && (
-          <View className="bg-surface/50 border border-border border-t-0 rounded-b-2xl px-4 py-4 -mt-2">
-            <View className="bg-background rounded-xl p-3 mb-3 border border-border">
-              <Text className="text-sm text-muted italic leading-relaxed">
-                {section.subtitle}
-              </Text>
+          <View style={{ backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderTopWidth: 0, borderBottomLeftRadius: 16, borderBottomRightRadius: 16, padding: 16, marginTop: -4 }}>
+            <View style={{ backgroundColor: '#fff', borderRadius: 12, padding: 12, marginBottom: 12, borderWidth: 1, borderColor: colors.border }}>
+              <Text style={{ fontSize: 13, color: colors.muted, fontStyle: 'italic', lineHeight: 18 }}>{section.subtitle}</Text>
             </View>
 
             {isEditing ? (
               <View>
                 <TextInput
-                  className="bg-background border border-border rounded-xl p-4 text-base text-foreground min-h-[160px]"
+                  style={{ backgroundColor: '#fff', borderWidth: 1, borderColor: colors.border, borderRadius: 12, padding: 16, fontSize: 15, color: colors.foreground, minHeight: 160, textAlignVertical: 'top', lineHeight: 24 }}
                   placeholder="Write your story here... Take your time."
-                  placeholderTextColor="#9E9E9E"
+                  placeholderTextColor="#9CA3AF"
                   value={editText}
                   onChangeText={setEditText}
                   multiline
-                  textAlignVertical="top"
-                  style={{ lineHeight: 24 }}
                 />
-                <View className="flex-row gap-3 mt-3">
-                  <Pressable
-                    onPress={handleCancel}
-                    style={({ pressed }) => [
-                      { opacity: pressed ? 0.7 : 1, flex: 1 },
-                    ]}
-                  >
-                    <View className="bg-surface border border-border rounded-xl py-3 items-center">
-                      <Text className="text-foreground font-medium">Cancel</Text>
+                <View style={{ flexDirection: 'row', gap: 12, marginTop: 12 }}>
+                  <Pressable onPress={handleCancel} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1, flex: 1 }]}>
+                    <View style={{ backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: 12, paddingVertical: 12, alignItems: 'center' }}>
+                      <Text style={{ color: colors.foreground, fontWeight: '500' }}>Cancel</Text>
                     </View>
                   </Pressable>
-                  <Pressable
-                    onPress={() => handleSave(section.id)}
-                    style={({ pressed }) => [
-                      { opacity: pressed ? 0.7 : 1, flex: 1 },
-                    ]}
-                  >
-                    <View className="bg-primary rounded-xl py-3 items-center">
-                      <Text className="text-white font-semibold">Save</Text>
+                  <Pressable onPress={() => handleSave(section.id)} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1, flex: 1 }]}>
+                    <View style={{ backgroundColor: colors.primary, borderRadius: 12, paddingVertical: 12, alignItems: 'center' }}>
+                      <Text style={{ color: '#fff', fontWeight: '600' }}>Save</Text>
                     </View>
                   </Pressable>
                 </View>
               </View>
             ) : hasContent ? (
               <View>
-                <Text className="text-base text-foreground leading-relaxed">
-                  {content}
-                </Text>
-                <Pressable
-                  onPress={() => handleStartEditKim(section.id)}
-                  style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1, marginTop: 12 }]}
-                >
-                  <View className="bg-surface border border-border rounded-xl py-2.5 items-center">
-                    <Text className="text-primary font-medium">Edit</Text>
+                <Text style={{ fontSize: 14, color: colors.foreground, lineHeight: 22 }}>{content}</Text>
+                <Pressable onPress={() => handleStartEditKim(section.id)} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1, marginTop: 12 }]}>
+                  <View style={{ backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: 12, paddingVertical: 10, alignItems: 'center' }}>
+                    <Text style={{ color: colors.primary, fontWeight: '500' }}>Edit</Text>
                   </View>
                 </Pressable>
               </View>
             ) : (
-              <View className="items-center py-4">
-                <Text className="text-muted text-sm mb-3">
-                  No story written yet for this section.
-                </Text>
-                <Pressable
-                  onPress={() => handleStartEditKim(section.id)}
-                  style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}
-                >
-                  <View className="bg-primary rounded-xl px-6 py-3">
-                    <Text className="text-white font-semibold">Start Writing</Text>
+              <View style={{ alignItems: 'center', paddingVertical: 16 }}>
+                <Text style={{ color: colors.muted, fontSize: 13, marginBottom: 12 }}>No story written yet for this section.</Text>
+                <Pressable onPress={() => handleStartEditKim(section.id)} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}>
+                  <View style={{ backgroundColor: colors.primary, borderRadius: 12, paddingHorizontal: 24, paddingVertical: 12 }}>
+                    <Text style={{ color: '#fff', fontWeight: '600' }}>Start Writing</Text>
                   </View>
                 </Pressable>
               </View>
@@ -349,117 +299,112 @@ export default function BackpackScreen() {
   return (
     <ScreenContainer className="px-5 pt-4">
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
-        {/* Header */}
-        <View className="mb-6">
-          <Text className="text-2xl font-bold text-foreground">My Backpack</Text>
-          <Text className="text-sm text-muted mt-1 leading-relaxed">
-            {isKim
-              ? 'Your personal story as a loved one \u2014 it helps Kim truly understand your situation. Write at your own pace. Everything stays on your device and is NEVER modified by the system.'
-              : 'Your life story is your identity anchor \u2014 it helps your companion truly know you. Write at your own pace. Everything stays on your device and is NEVER modified by the system.'}
-          </Text>
+        {/* Description Card */}
+        <View style={{ backgroundColor: '#fff', borderRadius: 16, padding: 16, marginBottom: 20, borderWidth: 1, borderColor: colors.border, flexDirection: 'row', alignItems: 'flex-start', gap: 12 }}>
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontSize: 13, color: colors.foreground, lineHeight: 18 }}>
+              {isKim
+                ? 'Your personal story as a loved one \u2014 it helps Kim truly understand your situation. Write at your own pace. Everything stays on your device and is NEVER modified by the system.'
+                : 'Your life story is your identity anchor \u2014 it helps your companion truly know you. Write at your own pace. Everything stays on your device and is NEVER modified by the system.'}
+            </Text>
+          </View>
+          <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: colors.primary + '15', alignItems: 'center', justifyContent: 'center' }}>
+            <IconSymbol name="backpack.fill" size={18} color={colors.primary} />
+          </View>
         </View>
 
         {/* Progress */}
-        <View className="bg-surface border border-border rounded-2xl p-4 mb-6">
-          <View className="flex-row items-center justify-between mb-2">
-            <Text className="text-sm font-medium text-foreground">Progress</Text>
-            <Text className="text-sm text-muted">{filledCount} of {totalCount} sections</Text>
+        <View style={{ marginBottom: 24 }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+            <Text style={{ fontSize: 15, fontWeight: '600', color: colors.foreground }}>Progress</Text>
+            <Text style={{ fontSize: 13, color: colors.muted }}>{filledCount} of {totalCount} sections</Text>
           </View>
-          <View className="flex-row gap-1.5">
+          <View style={{ flexDirection: 'row', gap: 4 }}>
             {isKim
               ? DEFAULT_KIM_BACKPACK_SECTIONS.map((s) => (
                   <View
                     key={s.id}
-                    className="flex-1 h-2 rounded-full"
                     style={{
-                      backgroundColor: (kimData?.[s.id] ?? '').trim().length > 0
-                        ? s.color
-                        : colors.border,
+                      flex: 1,
+                      height: 6,
+                      borderRadius: 3,
+                      backgroundColor: (kimData?.[s.id] ?? '').trim().length > 0 ? colors.primary : colors.border,
                     }}
                   />
                 ))
               : sections.map((s) => (
                   <View
                     key={s.id}
-                    className="flex-1 h-2 rounded-full"
                     style={{
-                      backgroundColor: s.content.trim().length > 0
-                        ? SECTION_COLORS[s.id]
-                        : colors.border,
+                      flex: 1,
+                      height: 6,
+                      borderRadius: 3,
+                      backgroundColor: s.content.trim().length > 0 ? colors.primary : colors.border,
                     }}
                   />
                 ))}
           </View>
         </View>
 
-        {/* Stage of Change — Elias only */}
+        {/* Stage of Change */}
         {!isKim && state.backpack?.userType === 'elias' && (
-        <View className="bg-surface border border-border rounded-2xl p-4 mb-6">
-          <Text className="text-base font-semibold text-foreground mb-1">Stage of Change</Text>
-          <Text className="text-xs text-muted mb-3 leading-relaxed">
-            Where are you in your journey? This helps your companion adjust their approach.
-          </Text>
-          {STAGE_OF_CHANGE_OPTIONS.map((option) => {
-            const isSelected = currentStage === option.value;
-            const stageColor = STAGE_COLORS[option.value];
-            return (
-              <Pressable
-                key={option.value}
-                onPress={() => handleStageChange(option.value)}
-                style={({ pressed }) => [
-                  { opacity: pressed ? 0.8 : 1, marginBottom: 8 },
-                ]}
-              >
-                <View
-                  className="rounded-xl p-3 border"
-                  style={{
-                    borderColor: isSelected ? stageColor : colors.border,
-                    backgroundColor: isSelected ? `${stageColor}15` : 'transparent',
-                    borderWidth: isSelected ? 2 : 1,
-                  }}
+          <View style={{ marginBottom: 24 }}>
+            <Text style={{ fontSize: 16, fontWeight: '700', color: colors.foreground, marginBottom: 4 }}>Stage of Change</Text>
+            <Text style={{ fontSize: 13, color: colors.muted, marginBottom: 16, lineHeight: 18 }}>
+              Where are you in your journey? This helps your companion adjust their approach.
+            </Text>
+            {STAGE_OF_CHANGE_OPTIONS.map((option) => {
+              const isSelected = currentStage === option.value;
+              const stageColor = STAGE_COLORS[option.value];
+              return (
+                <Pressable
+                  key={option.value}
+                  onPress={() => handleStageChange(option.value)}
+                  style={({ pressed }) => [{ opacity: pressed ? 0.8 : 1, marginBottom: 8 }]}
                 >
-                  <View className="flex-row items-center gap-3">
-                    <View
-                      className="w-5 h-5 rounded-full items-center justify-center"
-                      style={{
-                        backgroundColor: isSelected ? stageColor : 'transparent',
-                        borderWidth: isSelected ? 0 : 2,
-                        borderColor: colors.border,
-                      }}
-                    >
-                      {isSelected && (
-                        <Text className="text-white text-xs font-bold">{'\u2713'}</Text>
-                      )}
+                  <View style={{
+                    borderRadius: 14,
+                    padding: 14,
+                    borderWidth: isSelected ? 2 : 1,
+                    borderColor: isSelected ? stageColor : colors.border,
+                    backgroundColor: isSelected ? stageColor + '12' : '#fff',
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: 12,
+                  }}>
+                    <View style={{
+                      width: 22,
+                      height: 22,
+                      borderRadius: 11,
+                      backgroundColor: isSelected ? stageColor : 'transparent',
+                      borderWidth: isSelected ? 0 : 2,
+                      borderColor: colors.border,
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}>
+                      {isSelected && <Text style={{ color: '#fff', fontSize: 12, fontWeight: '700' }}>{'\u2713'}</Text>}
                     </View>
-                    <View className="flex-1">
-                      <Text
-                        className="text-sm font-semibold"
-                        style={{ color: isSelected ? stageColor : colors.foreground }}
-                      >
-                        {option.label}
-                      </Text>
-                      <Text className="text-xs text-muted mt-0.5">{option.description}</Text>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ fontSize: 14, fontWeight: '600', color: isSelected ? stageColor : colors.foreground }}>{option.label}</Text>
+                      <Text style={{ fontSize: 12, color: colors.muted, marginTop: 2 }}>{option.description}</Text>
                     </View>
                   </View>
-                </View>
-              </Pressable>
-            );
-          })}
-        </View>
+                </Pressable>
+              );
+            })}
+          </View>
         )}
 
-        {/* Sections — Kim or Elias */}
+        {/* Sections */}
         {isKim
           ? DEFAULT_KIM_BACKPACK_SECTIONS.map(renderKimSection)
           : sections.map(renderEliasSection)}
 
         {/* Tip */}
-        <View className="bg-surface border border-border rounded-2xl p-4 mt-2">
-          <Text className="text-sm text-muted leading-relaxed">
-            <Text className="font-semibold text-foreground">Tip: </Text>
-            You can always come back to add or edit your story. Your backpack is
-            sent in full to your companion at the start of each conversation —
-            it is never summarized or reduced. Only you can change it.
+        <View style={{ backgroundColor: '#fff', borderRadius: 16, padding: 16, marginTop: 8, borderWidth: 1, borderColor: colors.border }}>
+          <Text style={{ fontSize: 13, color: colors.muted, lineHeight: 18 }}>
+            <Text style={{ fontWeight: '600', color: colors.foreground }}>Tip: </Text>
+            You can always come back to add or edit your story. Your backpack is sent in full to your companion at the start of each conversation \u2014 it is never summarized or reduced. Only you can change it.
           </Text>
         </View>
       </ScrollView>

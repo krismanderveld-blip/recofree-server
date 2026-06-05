@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useRef } from 'react';
 import { Text, View, ScrollView, Pressable, Alert, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
@@ -10,6 +10,7 @@ import type { GuidanceDepth } from '@/lib/ai/types';
 import * as Haptics from 'expo-haptics';
 import Constants from 'expo-constants';
 import { SoberCounter } from '@/components/sober-counter';
+import { IconSymbol } from '@/components/ui/icon-symbol';
 
 const STAGE_LABELS: Record<string, string> = {
   precontemplation: 'Precontemplation',
@@ -19,7 +20,6 @@ const STAGE_LABELS: Record<string, string> = {
   maintenance: 'Maintenance',
 };
 
-// Use the version from app.config.ts (via expo-constants) for consistency with publish page
 const APP_VERSION = Constants.expoConfig?.version ?? '1.0.0';
 
 export default function ProfileScreen() {
@@ -38,7 +38,6 @@ export default function ProfileScreen() {
   const totalSessions = userDat?.totalSessions ?? 0;
   const moodCheckIns = userDat?.moodHistory?.length ?? 0;
 
-  // 5-tap activation for debug screen
   const tapCountRef = useRef(0);
   const lastTapRef = useRef(0);
 
@@ -99,51 +98,59 @@ export default function ProfileScreen() {
   }, []);
 
   return (
-    <ScreenContainer className="px-5 pt-2">
+    <ScreenContainer className="px-5 pt-4">
       <ScrollView contentContainerStyle={{ paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
-        {/* Header */}
-        <View className="mb-6">
-          <Text className="text-2xl font-bold text-foreground">Profile</Text>
-        </View>
-
         {/* User Card */}
-        <View className="bg-surface rounded-2xl p-5 mb-4 border border-border">
-          <View className="flex-row items-center gap-4">
-            <View
-              className="w-14 h-14 rounded-full items-center justify-center"
-              style={{ backgroundColor: colors.primary + '20' }}
-            >
-              <Text className="text-2xl font-bold" style={{ color: colors.primary }}>
-                {userName ? userName.charAt(0).toUpperCase() : '?'}
-              </Text>
-            </View>
-            <View className="flex-1">
-              <Text className="text-xl font-bold text-foreground">{userName || 'User'}</Text>
-              <Text className="text-sm text-muted mt-0.5">{userTypeLabel}</Text>
-              <Text className="text-xs text-muted mt-0.5">
-                {companionName}{isElias ? ` · ${STAGE_LABELS[stageOfChange] ?? stageOfChange}` : ''} · {totalSessions} session{totalSessions !== 1 ? 's' : ''} · {moodCheckIns} check-in{moodCheckIns !== 1 ? 's' : ''}
-              </Text>
-            </View>
+        <View style={{
+          backgroundColor: '#fff',
+          borderRadius: 16,
+          padding: 20,
+          marginBottom: 20,
+          borderWidth: 1,
+          borderColor: colors.border,
+          flexDirection: 'row',
+          alignItems: 'center',
+        }}>
+          <View style={{
+            width: 52,
+            height: 52,
+            borderRadius: 26,
+            backgroundColor: colors.primary + '18',
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginRight: 14,
+          }}>
+            <Text style={{ fontSize: 22, fontWeight: '700', color: colors.primary }}>
+              {userName ? userName.charAt(0).toUpperCase() : '?'}
+            </Text>
           </View>
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontSize: 18, fontWeight: '700', color: colors.foreground }}>{userName || 'User'}</Text>
+            <Text style={{ fontSize: 13, color: colors.muted, marginTop: 2 }}>{userTypeLabel}</Text>
+            <Text style={{ fontSize: 12, color: colors.muted, marginTop: 2 }}>
+              {companionName}{isElias ? ` \u00B7 ${STAGE_LABELS[stageOfChange] ?? stageOfChange}` : ''} \u00B7 {totalSessions} session{totalSessions !== 1 ? 's' : ''} \u00B7 {moodCheckIns} check-in{moodCheckIns !== 1 ? 's' : ''}
+            </Text>
+          </View>
+          <IconSymbol name="chevron.right" size={18} color={colors.muted} />
         </View>
 
-        {/* ─── Sober Counter (Elias only) ─── */}
+        {/* Sober Counter (Elias only) */}
         {isElias && (
-          <View className="mb-4">
+          <View style={{ marginBottom: 20 }}>
             <SoberCounter />
           </View>
         )}
 
-        {/* ─── Guidance Depth ─── */}
-        <View className="bg-surface rounded-2xl p-5 mb-4 border border-border">
-          <Text className="text-sm font-semibold text-muted mb-1 uppercase tracking-wide">
-            Guidance Depth
+        {/* Guidance Depth */}
+        <View style={{ marginBottom: 24 }}>
+          <Text style={{ fontSize: 12, fontWeight: '700', color: colors.muted, marginBottom: 4, letterSpacing: 0.5 }}>
+            GUIDANCE DEPTH
           </Text>
-          <Text className="text-xs text-muted mb-4">
+          <Text style={{ fontSize: 13, color: colors.muted, marginBottom: 16, lineHeight: 18 }}>
             Choose how intensely the conversation goes. You can change this anytime.
           </Text>
 
-          <View className="gap-2">
+          <View style={{ gap: 8 }}>
             {GUIDANCE_DEPTH_OPTIONS.map((option) => {
               const isActive = option.value === currentDepth;
               return (
@@ -152,34 +159,37 @@ export default function ProfileScreen() {
                   onPress={() => handleDepthChange(option.value)}
                   style={({ pressed }) => [{ opacity: pressed ? 0.8 : 1 }]}
                 >
-                  <View
-                    className="rounded-xl p-4 flex-row items-center gap-3"
-                    style={{
-                      backgroundColor: isActive ? colors.primary + '12' : 'transparent',
-                      borderWidth: 1,
-                      borderColor: isActive ? colors.primary + '40' : colors.border,
-                    }}
-                  >
-                    <View
-                      className="w-5 h-5 rounded-full items-center justify-center"
-                      style={{
-                        borderWidth: 2,
-                        borderColor: isActive ? colors.primary : colors.border,
-                        backgroundColor: isActive ? colors.primary : 'transparent',
-                      }}
-                    >
-                      {isActive && (
-                        <View className="w-2 h-2 rounded-full bg-white" />
-                      )}
+                  <View style={{
+                    borderRadius: 14,
+                    padding: 16,
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: 12,
+                    backgroundColor: isActive ? colors.primary + '08' : '#fff',
+                    borderWidth: isActive ? 2 : 1,
+                    borderColor: isActive ? colors.primary : colors.border,
+                  }}>
+                    <View style={{
+                      width: 22,
+                      height: 22,
+                      borderRadius: 11,
+                      borderWidth: 2,
+                      borderColor: isActive ? colors.primary : colors.border,
+                      backgroundColor: isActive ? colors.primary : 'transparent',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}>
+                      {isActive && <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#fff' }} />}
                     </View>
-                    <View className="flex-1">
-                      <Text
-                        className="text-sm font-semibold"
-                        style={{ color: isActive ? colors.primary : colors.foreground }}
-                      >
+                    <View style={{ flex: 1 }}>
+                      <Text style={{
+                        fontSize: 14,
+                        fontWeight: '600',
+                        color: isActive ? colors.primary : colors.foreground,
+                      }}>
                         {option.label}
                       </Text>
-                      <Text className="text-xs text-muted mt-0.5">{option.description}</Text>
+                      <Text style={{ fontSize: 12, color: colors.muted, marginTop: 2 }}>{option.description}</Text>
                     </View>
                   </View>
                 </Pressable>
@@ -188,31 +198,37 @@ export default function ProfileScreen() {
           </View>
         </View>
 
-        {/* Danger Zone */}
-        <View className="mt-8">
+        {/* Reset All Data */}
+        <View style={{ marginTop: 16 }}>
           <Pressable
             onPress={handleResetData}
-            style={({ pressed }) => [
-              { opacity: pressed ? 0.85 : 1, transform: [{ scale: pressed ? 0.97 : 1 }] },
-            ]}
+            style={({ pressed }) => [{ opacity: pressed ? 0.85 : 1, transform: [{ scale: pressed ? 0.97 : 1 }] }]}
           >
-            <View
-              className="rounded-2xl py-4 items-center"
-              style={{ backgroundColor: colors.error + '10', borderWidth: 1, borderColor: colors.error + '30' }}
-            >
-              <Text className="font-semibold text-sm" style={{ color: colors.error }}>
-                Reset All Data
-              </Text>
+            <View style={{
+              borderRadius: 14,
+              paddingVertical: 16,
+              paddingHorizontal: 20,
+              backgroundColor: colors.error + '08',
+              borderWidth: 1,
+              borderColor: colors.error + '25',
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 12,
+            }}>
+              <View style={{ width: 32, height: 32, borderRadius: 8, backgroundColor: colors.error + '15', alignItems: 'center', justifyContent: 'center' }}>
+                <Text style={{ fontSize: 16 }}>{'\u{1F5D1}'}</Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: 14, fontWeight: '600', color: colors.error }}>Reset All Data</Text>
+                <Text style={{ fontSize: 12, color: colors.muted, marginTop: 2 }}>Permanently deletes all data and restarts the intake process.</Text>
+              </View>
             </View>
           </Pressable>
-          <Text className="text-xs text-muted text-center mt-2">
-            Permanently deletes all data and restarts the intake process.
-          </Text>
         </View>
 
-        {/* Version number — tap 5x to open debug screen */}
+        {/* Version */}
         <Pressable onPress={handleVersionTap} hitSlop={{ top: 20, bottom: 20, left: 40, right: 40 }} style={{ marginTop: 24, alignItems: 'center' }}>
-          <Text className="text-xs text-muted">v{APP_VERSION}</Text>
+          <Text style={{ fontSize: 11, color: colors.muted }}>v{APP_VERSION}</Text>
         </Pressable>
       </ScrollView>
     </ScreenContainer>
