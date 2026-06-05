@@ -1942,6 +1942,11 @@ export async function generateGreeting(
   const sessionStartDate = currentUserDat.lastSessionDate ? new Date(currentUserDat.lastSessionDate) : new Date();
   const sessionMinutes = Math.floor((Date.now() - sessionStartDate.getTime()) / 60000);
 
+  // Determine if backpack is empty (no sections filled)
+  const isBackpackEmpty = backpack.userType === 'kim'
+    ? !(backpack.kimBackpack && Object.values(backpack.kimBackpack).some((v: any) => v && typeof v === 'string' && v.trim().length > 0))
+    : !(backpack.sections && backpack.sections.some((s) => s.content && s.content.trim().length > 0));
+
   const context: ChatContext = {
     userType: backpack.userType,
     userName: backpack.naam,
@@ -1961,6 +1966,7 @@ export async function generateGreeting(
     urgency: backpack.intakeContext?.urgency ?? 'midden',
     startEmotion: backpack.intakeContext?.startEmotion ?? '',
     guidanceDepth: currentUserDat.guidanceDepth ?? 'normal',
+    backpackEmpty: isBackpackEmpty,
   };
 
   let response: string;

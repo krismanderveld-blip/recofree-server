@@ -305,6 +305,9 @@ export class OpenAIProvider implements AIProvider {
           // Clinical Mode (easter egg)
           clinicalModeActive: context.userDat?.clinicalModeActive ?? false,
 
+          // Backpack empty flag (for greeting tone adaptation)
+          backpackEmpty: context.backpackEmpty ?? false,
+
           // Full data (SESSION_INIT only)
           backpack: gptPayload.backpack,
           userDat: gptPayload.userDat,

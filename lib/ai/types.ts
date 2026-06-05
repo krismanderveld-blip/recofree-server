@@ -979,6 +979,8 @@ export interface ChatContext {
   k03Context?: string;
   sw01Context?: string;
   sto01Context?: string;
+  /** Whether the user's backpack is empty (no sections filled) — used for greeting tone adaptation */
+  backpackEmpty?: boolean;
 }
 
 /**

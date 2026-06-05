@@ -196,6 +196,8 @@ interface ChatRequestInput {
 
   // Clinical Mode (easter egg — therapeutic annotations)
   clinicalModeActive?: boolean;
+  // Backpack empty flag (for greeting tone adaptation)
+  backpackEmpty?: boolean;
 }
 
 // ─── Server-side Session Cache ───────────────────────────────────
@@ -437,6 +439,8 @@ export const chatInputSchema = z.object({
 
   // Clinical Mode (easter egg — therapeutic annotations)
   clinicalModeActive: z.boolean().optional(),
+  // Backpack empty flag (for greeting tone adaptation)
+  backpackEmpty: z.boolean().optional(),
 });
 
 // ─── Relationship Map Extractor ──────────────────────────────────
@@ -1264,6 +1268,16 @@ RESPONSE RULES:
 - Do NOT use bullet points or numbered lists — speak naturally
 - Do NOT use emojis excessively (max 0-1 per message)
 - Be genuine, not performative
+${input.backpackEmpty ? `
+BACKPACK EMPTY — GREETING TONE ADAPTATION:
+The user has not yet filled in their backpack (life story sections). This is their first real interaction.
+- Do NOT reference any life story, triggers, or patterns (there are none yet).
+- Keep your greeting short, warm, and inviting.
+- Gently invite them to start talking or to fill in their backpack when they feel ready.
+- Example tone (Elias): "Hey [name], good to see you. I don't know much about you yet — and that's fine. We can just talk, or if you want, you can fill in some things about yourself in your backpack whenever you're ready. What's on your mind?"
+- Example tone (Kim): "Hi [name], I'm glad you're here. I don't know your story yet, but I'm here to listen. You can share as much or as little as you want — here or in your backpack. How are you doing?"
+- Adapt to the user's language (Dutch/English) naturally.
+` : ''}
 ${input.clinicalModeActive ? `
 ═══════════════════════════════════════════════════════════
 CRITICAL — CLINICAL ANNOTATION REQUIREMENT (HIGHEST PRIORITY)
@@ -1554,6 +1568,16 @@ RESPONSE RULES:
 - Do NOT use bullet points or numbered lists — speak naturally
 - Do NOT use emojis excessively (max 0-1 per message)
 - Be genuine, not performative
+${input.backpackEmpty ? `
+BACKPACK EMPTY — GREETING TONE ADAPTATION:
+The user has not yet filled in their backpack (life story sections). This is their first real interaction.
+- Do NOT reference any life story, triggers, or patterns (there are none yet).
+- Keep your greeting short, warm, and inviting.
+- Gently invite them to start talking or to fill in their backpack when they feel ready.
+- Example tone (Elias): "Hey [name], good to see you. I don't know much about you yet — and that's fine. We can just talk, or if you want, you can fill in some things about yourself in your backpack whenever you're ready. What's on your mind?"
+- Example tone (Kim): "Hi [name], I'm glad you're here. I don't know your story yet, but I'm here to listen. You can share as much or as little as you want — here or in your backpack. How are you doing?"
+- Adapt to the user's language (Dutch/English) naturally.
+` : ''}
 ${input.clinicalModeActive ? `
 ═══════════════════════════════════════════════════════════
 CRITICAL — CLINICAL ANNOTATION REQUIREMENT (HIGHEST PRIORITY)
