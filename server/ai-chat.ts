@@ -1660,19 +1660,21 @@ export async function generateAIResponse(
   if (input.isSessionStart) {
     selectedModel = 'gpt-4o';
     routingReason = 'SESSION_INIT (first impression)';
-  } else if (crisisLevel > 0 || riskScore >= 7 || input.isCrisis === true) {
+  } else if (crisisLevel > 0 || riskScore >= 30 || input.isCrisis === true) {
     selectedModel = 'gpt-4o';
     routingReason = `crisis/risk (crisis=${crisisLevel}, risk=${riskScore}, isCrisis=${input.isCrisis ?? false})`;
-  } else if (urgencyForRouting === 'high' || urgencyForRouting === 'hoog') {
+  } else if (input.vspLevel === 'ROOD' || input.vspLevel === 'RED' ||
+             input.vspLevel === 'PAARS' || input.vspLevel === 'PURPLE') {
     selectedModel = 'gpt-4o';
-    routingReason = `high urgency (${input.urgency})`;
-  } else if (input.vspLevel === 'ROOD' || input.vspLevel === 'RED') {
+    routingReason = `VSP ${input.vspLevel} (high relapse risk)`;
+  } else if (input.vspLevel === 'ORANJE' || input.vspLevel === 'ORANGE') {
     selectedModel = 'gpt-4o';
-    routingReason = 'VSP RED (high relapse risk)';
+    routingReason = `VSP ${input.vspLevel} (elevated risk)`;
   } else if (HIGH_COMPLEXITY_MODULES.some(m => dominantModuleForRouting.includes(m))) {
     selectedModel = 'gpt-4o';
     routingReason = `complex module (${dominantModuleForRouting})`;
   }
+  // GROEN + GEEL without escalation → gpt-4o-mini (default)
 
   // ─── LOGGING (Patch N Step 6) ──────────────────────────────
   console.log("[AI Chat] System prompt length:", systemPrompt.length, "chars");

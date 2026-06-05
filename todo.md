@@ -993,3 +993,4 @@
 - [x] STO01: Add sto01Context to server ai-chat.ts (interface, Zod schema, prompt injection)
 - [x] STO01: Write 9 test cases (6 spec + 3 extra) — all passing
 - [x] STO01: 0 TS errors, all 427 tests green
+- [x] Model routing: riskScore threshold 7→30, add PAARS/PURPLE + ORANJE/ORANGE VSP levels, GROEN+GEEL→gpt-4o-mini
