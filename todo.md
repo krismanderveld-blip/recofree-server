@@ -997,3 +997,5 @@
 - [x] FIX: Elias greeting gate removed — both Elias and Kim always get greeting regardless of backpack content
 - [x] FEAT: Greeting tone adaptation when backpack is empty — warm invite to talk or fill backpack
 - [x] FEAT: Export server as standalone Node.js package for Railway deploy (Dockerfile, railway.json, .env.example)
+- [x] Update EXPO_PUBLIC_API_BASE_URL to Railway production URL (https://railwayappdashboard-production.up.railway.app)
+- [x] Remove all Manus sandbox URL references

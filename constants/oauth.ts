@@ -7,10 +7,10 @@ const bundleId = "space.manus.recofree.app.t20260405113127";
 const timestamp = bundleId.split(".").pop()?.replace(/^t/, "") ?? "";
 const schemeFromBundleId = `manus${timestamp}`;
 
-// HARDCODED PRODUCTION URL — This is the deployed server.
+// HARDCODED PRODUCTION URL — This is the deployed Railway server.
 // This ensures the app ALWAYS reaches the correct server,
 // even if EXPO_PUBLIC_API_BASE_URL is not properly baked into the APK.
-const PRODUCTION_API_URL = "https://recobase-vhsxu5ua.manus.space";
+const PRODUCTION_API_URL = "https://railwayappdashboard-production.up.railway.app";
 
 const env = {
   portal: process.env.EXPO_PUBLIC_OAUTH_PORTAL_URL ?? "",
