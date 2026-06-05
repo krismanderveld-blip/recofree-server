@@ -160,9 +160,40 @@ function ChatScreenInner() {
     return () => subscription.remove();
   }, [sessionPhase, messages]);
 
-  // NOTE: We do NOT load old chatHistory on mount.
-  // Each session starts visually fresh (greeting only).
-  // The pipeline still sends full history to GPT for context continuity.
+  // Load previous session messages on mount (collapsed, for continuity)
+  // Only the PREVIOUS session is shown — older sessions are archived.
+  const [previousSessionMessages, setPreviousSessionMessages] = useState<ChatMessage[]>([]);
+  const [showPreviousSession, setShowPreviousSession] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const udJson = await AsyncStorage.getItem(USERDAT_KEY);
+        if (udJson) {
+          const ud = JSON.parse(udJson);
+          const history: ChatMessage[] = ud.chatHistory ?? [];
+          if (history.length > 0) {
+            // Find the session boundary: the last greeting (first assistant message after a gap)
+            // Simple heuristic: find the last assistant message that looks like a greeting
+            // Better: use lastSessionDate to split
+            const lastSessionDate = ud.lastSessionDate;
+            if (lastSessionDate) {
+              // Previous session = messages from the last completed session
+              // These are messages that occurred before today's session start
+              const prevMsgs = history.filter((m: ChatMessage) => {
+                const msgDate = m.timestamp?.slice(0, 10);
+                return msgDate && msgDate <= lastSessionDate;
+              });
+              // Keep only the last 30 messages from previous session to limit memory
+              setPreviousSessionMessages(prevMsgs.slice(-30));
+            }
+          }
+        }
+      } catch (e) {
+        console.warn('[Chat] Could not load previous session:', e);
+      }
+    })();
+  }, []);
 
   // Start session and send greeting ONLY when Chat tab gains focus.
   // This prevents the greeting from firing during intake/backpack fill
@@ -174,10 +205,14 @@ function ChatScreenInner() {
       if (state.intakeCompleted && state.backpack && state.userDat && !greetingSent.current) {
         // Don't fire greeting if backpack sections are all empty
         // (happens right after intake, before user fills life story sections)
-        const hasContent = state.backpack.sections?.some(
+        // Check Elias sections OR Kim backpack for content
+        const hasEliasContent = state.backpack.sections?.some(
           (s: any) => s.content && s.content.trim().length > 0
         );
-        if (!hasContent) return;
+        const hasKimContent = state.backpack.kimBackpack && Object.values(state.backpack.kimBackpack).some(
+          (v: any) => v && typeof v === 'string' && v.trim().length > 0
+        );
+        if (!hasEliasContent && !hasKimContent) return;
         greetingSent.current = true;
         // Clear messages for a fresh session view (pipeline still sends full history to GPT)
         setMessages([]);
@@ -558,13 +593,62 @@ function ChatScreenInner() {
           showsVerticalScrollIndicator={false}
           automaticallyAdjustKeyboardInsets={isIOS}
           ListHeaderComponent={
-            showEmergency ? (
-              <EmergencyCard
-                visible={showEmergency}
-                onDismiss={() => setShowEmergency(false)}
-                lastUserMessage={messages.filter(m => m.role === 'user').pop()?.content ?? null}
-              />
-            ) : null
+            <>
+              {previousSessionMessages.length > 0 && (
+                <View style={{ marginBottom: 16 }}>
+                  <Pressable
+                    onPress={() => setShowPreviousSession(!showPreviousSession)}
+                    style={({ pressed }) => [{
+                      opacity: pressed ? 0.7 : 1,
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      paddingVertical: 8,
+                      gap: 6,
+                    }]}
+                  >
+                    <Text style={{ fontSize: 12, color: colors.muted, fontWeight: '500' }}>
+                      {showPreviousSession ? 'Hide previous session ▲' : `Previous session (${previousSessionMessages.length} messages) ▼`}
+                    </Text>
+                  </Pressable>
+                  {showPreviousSession && (
+                    <View style={{ opacity: 0.6, borderLeftWidth: 2, borderLeftColor: colors.border, paddingLeft: 12, marginTop: 8 }}>
+                      {previousSessionMessages.map((msg) => (
+                        <View key={msg.id} style={{ marginBottom: 8, maxWidth: '85%', alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start' }}>
+                          <View
+                            style={{
+                              borderRadius: 12,
+                              paddingHorizontal: 12,
+                              paddingVertical: 8,
+                              backgroundColor: msg.role === 'user' ? colors.primary : colors.surface,
+                              borderWidth: msg.role === 'user' ? 0 : 1,
+                              borderColor: colors.border,
+                            }}
+                          >
+                            <Text
+                              style={{ fontSize: 13, color: msg.role === 'user' ? '#FFFFFF' : colors.foreground }}
+                              numberOfLines={3}
+                            >
+                              {msg.content.replace(/<clinical>[\s\S]*?<\/clinical>/g, '').trim()}
+                            </Text>
+                          </View>
+                        </View>
+                      ))}
+                      <View style={{ alignItems: 'center', paddingVertical: 8, borderTopWidth: 0.5, borderTopColor: colors.border, marginTop: 4 }}>
+                        <Text style={{ fontSize: 11, color: colors.muted }}>— End of previous session —</Text>
+                      </View>
+                    </View>
+                  )}
+                </View>
+              )}
+              {showEmergency && (
+                <EmergencyCard
+                  visible={showEmergency}
+                  onDismiss={() => setShowEmergency(false)}
+                  lastUserMessage={messages.filter(m => m.role === 'user').pop()?.content ?? null}
+                />
+              )}
+            </>
           }
           ListEmptyComponent={
             !isTyping ? (

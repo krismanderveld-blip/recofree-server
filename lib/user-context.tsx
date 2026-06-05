@@ -783,6 +783,7 @@ function migrateBackpack(raw: any): Backpack {
       intakeDate: raw.intakeContext?.intakeDate ?? new Date().toISOString(),
     },
     createdAt: raw.createdAt ?? new Date().toISOString(),
+    kimBackpack: raw.kimBackpack ?? undefined,
   };
 }
 
@@ -835,5 +836,7 @@ function migrateUserDat(raw: any, userType: UserType): UserDat {
     lastGratitudeDate: raw.lastGratitudeDate ?? null,
     sobrietyDate: raw.sobrietyDate ?? null,
     lastMilestoneShown: raw.lastMilestoneShown ?? null,
+    clinicalModeActive: raw.clinicalModeActive ?? false,
+    guidanceDepth: raw.guidanceDepth ?? 'normal',
   };
 }

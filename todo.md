@@ -975,3 +975,8 @@
 - [x] Onboarding: remove step 3 (emotion choice) from intake flow
 - [x] Onboarding: remove step 5 (free text "What's on your mind?") from intake flow
 - [x] Onboarding: 0 TS errors, all tests green
+- [x] BUG: Backpack data lost on app restart (AsyncStorage persistence failure)
+- [x] BUG: Chat history not retained between sessions (data not persisted or overwritten)
+- [x] FIX: migrateBackpack must include kimBackpack field on restore
+- [x] FEAT: Chat UI shows previous session messages (collapsed/separator)
+- [x] FEAT: Refresh chatHistory at session end — keep only current + previous session

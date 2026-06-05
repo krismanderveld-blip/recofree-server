@@ -19,8 +19,9 @@ import type { ChatMessage } from '../ai/types';
 
 // ─── Configuration ──────────────────────────────────────────────
 
-const MAX_ACTIVE_MESSAGES = 100;
-const MAX_ARCHIVED_SESSIONS = 20;
+/** Keep only current + previous session messages (max 60 messages total) */
+const MAX_ACTIVE_MESSAGES = 60;
+const MAX_ARCHIVED_SESSIONS = 10;
 
 // ─── Types ──────────────────────────────────────────────────────
 
