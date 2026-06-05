@@ -128,7 +128,7 @@ export default function ProfileScreen() {
             <Text style={{ fontSize: 18, fontWeight: '700', color: colors.foreground }}>{userName || 'User'}</Text>
             <Text style={{ fontSize: 13, color: colors.muted, marginTop: 2 }}>{userTypeLabel}</Text>
             <Text style={{ fontSize: 12, color: colors.muted, marginTop: 2 }}>
-              {companionName}{isElias ? ` \u00B7 ${STAGE_LABELS[stageOfChange] ?? stageOfChange}` : ''} \u00B7 {totalSessions} session{totalSessions !== 1 ? 's' : ''} \u00B7 {moodCheckIns} check-in{moodCheckIns !== 1 ? 's' : ''}
+              {companionName}{isElias ? ` · ${STAGE_LABELS[stageOfChange] ?? stageOfChange}` : ''} · {totalSessions} session{totalSessions !== 1 ? 's' : ''} · {moodCheckIns} check-in{moodCheckIns !== 1 ? 's' : ''}
             </Text>
           </View>
           <IconSymbol name="chevron.right" size={18} color={colors.muted} />

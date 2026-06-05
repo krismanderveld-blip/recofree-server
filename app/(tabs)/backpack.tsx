@@ -304,8 +304,8 @@ export default function BackpackScreen() {
           <View style={{ flex: 1 }}>
             <Text style={{ fontSize: 13, color: colors.foreground, lineHeight: 18 }}>
               {isKim
-                ? 'Your personal story as a loved one \u2014 it helps Kim truly understand your situation. Write at your own pace. Everything stays on your device and is NEVER modified by the system.'
-                : 'Your life story is your identity anchor \u2014 it helps your companion truly know you. Write at your own pace. Everything stays on your device and is NEVER modified by the system.'}
+                ? 'Your personal story as a loved one — it helps Kim truly understand your situation. Write at your own pace. Everything stays on your device and is NEVER modified by the system.'
+                : 'Your life story is your identity anchor — it helps your companion truly know you. Write at your own pace. Everything stays on your device and is NEVER modified by the system.'}
             </Text>
           </View>
           <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: colors.primary + '15', alignItems: 'center', justifyContent: 'center' }}>
@@ -404,7 +404,7 @@ export default function BackpackScreen() {
         <View style={{ backgroundColor: '#fff', borderRadius: 16, padding: 16, marginTop: 8, borderWidth: 1, borderColor: colors.border }}>
           <Text style={{ fontSize: 13, color: colors.muted, lineHeight: 18 }}>
             <Text style={{ fontWeight: '600', color: colors.foreground }}>Tip: </Text>
-            You can always come back to add or edit your story. Your backpack is sent in full to your companion at the start of each conversation \u2014 it is never summarized or reduced. Only you can change it.
+            You can always come back to add or edit your story. Your backpack is sent in full to your companion at the start of each conversation — it is never summarized or reduced. Only you can change it.
           </Text>
         </View>
       </ScrollView>

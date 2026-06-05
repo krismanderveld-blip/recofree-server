@@ -175,7 +175,7 @@ export function buildTraceBlock(input: EngineTraceInput): string {
       lines.push(`  eigenRegie.userInput: ${zd.eigenRegieUserInput ?? 'null'}`);
     }
   } else {
-    lines.push('  (geen Elias zone beslissing \u2014 Kim user)');
+    lines.push('  (geen Elias zone beslissing — Kim user)');
   }
   lines.push('');
 

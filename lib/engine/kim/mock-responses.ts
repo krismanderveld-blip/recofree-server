@@ -14,7 +14,7 @@
  */
 export const KIM_MOCK_RESPONSES: Readonly<Record<string, readonly string[]>> = Object.freeze({
   greeting: [
-    "Hello, glad you're here. How are you doing \u2014 not the other person, but you?",
+    "Hello, glad you're here. How are you doing — not the other person, but you?",
     "Welcome. I'd like to know how you're really doing.",
     "Good that you're taking some time for yourself. What's on your mind?",
   ],
@@ -25,7 +25,7 @@ export const KIM_MOCK_RESPONSES: Readonly<Record<string, readonly string[]>> = O
   ],
   boundary: [
     "Setting boundaries might feel like rejection, but it's actually self-protection. What could be a first step?",
-    "You can't save someone who doesn't want to save themselves. That's not giving up \u2014 it's accepting reality.",
+    "You can't save someone who doesn't want to save themselves. That's not giving up — it's accepting reality.",
     "It's okay to say: 'I can't carry this anymore.' That's not weakness, that's honesty.",
   ],
   enabling: [

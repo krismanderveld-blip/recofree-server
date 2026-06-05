@@ -248,7 +248,7 @@ export const ELIAS_MOCK_RESPONSES: Record<string, string[]> = {
     "I hear you. It doesn't have to get better right away. Let's look at what's here right now.",
   ],
   highCraving: [
-    "I see the craving is strong. That's not failure \u2014 it's a signal. Can you name where it's coming from?",
+    "I see the craving is strong. That's not failure — it's a signal. Can you name where it's coming from?",
     "The urge is there. That's okay to feel. Let's look at what's underneath it.",
     "Craving feels like a wave. It rises, it peaks, but it also passes. What do you need right now?",
   ],

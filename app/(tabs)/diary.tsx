@@ -73,10 +73,10 @@ function getDailyQuote(): { text: string; author: string } {
 }
 
 const JOURNAL_EXPLANATION =
-  'Writing like the Stoics \u2014 what could you control today, what not? What happened, and how did you respond?';
+  'Writing like the Stoics — what could you control today, what not? What happened, and how did you respond?';
 
 const GRATITUDE_EXPLANATION =
-  'Your brain automatically looks for danger and problems. Writing three things that were good trains your mind to notice what is good too. Not because everything is fine \u2014 but because both exist.';
+  'Your brain automatically looks for danger and problems. Writing three things that were good trains your mind to notice what is good too. Not because everything is fine — but because both exist.';
 
 function TabSelector({ activeTab, onTabChange, colors }: { activeTab: DiaryTab; onTabChange: (tab: DiaryTab) => void; colors: any }) {
   return (
@@ -252,7 +252,7 @@ export default function DiaryScreen() {
             <Text style={{ fontSize: 13, color: colors.foreground, fontStyle: 'italic', lineHeight: 18 }}>
               {getDailyQuote().text}
             </Text>
-            <Text style={{ fontSize: 12, color: colors.muted, marginTop: 4 }}>\u2014 {getDailyQuote().author}</Text>
+            <Text style={{ fontSize: 12, color: colors.muted, marginTop: 4 }}>— {getDailyQuote().author}</Text>
           </View>
         </View>
       )}
@@ -383,7 +383,7 @@ export default function DiaryScreen() {
                     <Text style={{ fontSize: 13, color: colors.foreground, fontStyle: 'italic', lineHeight: 18 }}>
                       {getDailyQuote().text}
                     </Text>
-                    <Text style={{ fontSize: 12, color: colors.muted, marginTop: 8 }}>\u2014 {getDailyQuote().author}</Text>
+                    <Text style={{ fontSize: 12, color: colors.muted, marginTop: 8 }}>— {getDailyQuote().author}</Text>
                   </View>
 
                   <Text style={{ fontSize: 13, color: colors.muted, lineHeight: 18, marginBottom: 16 }}>
@@ -482,7 +482,7 @@ export default function DiaryScreen() {
                     ))}
                   </View>
                   <Text style={{ fontSize: 12, color: colors.muted, marginTop: 12, fontStyle: 'italic' }}>
-                    Optional \u2014 fill in as many or as few as you like.
+                    Optional — fill in as many or as few as you like.
                   </Text>
                 </View>
               )}

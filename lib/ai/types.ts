@@ -556,7 +556,7 @@ export const DEFAULT_BACKPACK_SECTIONS: LifePhaseSection[] = [
   {
     id: 'childhood',
     label: 'Childhood',
-    ageRange: '6\u201312 years',
+    ageRange: '6–12 years',
     prompt: 'Where did you grow up during this period? Describe the atmosphere at home, your school years, friendships, and events that made an impression on you.',
     content: '',
     lastUpdated: null,
@@ -564,7 +564,7 @@ export const DEFAULT_BACKPACK_SECTIONS: LifePhaseSection[] = [
   {
     id: 'adolescence',
     label: 'Adolescence',
-    ageRange: '12\u201318 years',
+    ageRange: '12–18 years',
     prompt: 'How was your teenage years? How were things at home, at school, and with peers? Did you have struggles or moments of growth?',
     content: '',
     lastUpdated: null,
@@ -572,7 +572,7 @@ export const DEFAULT_BACKPACK_SECTIONS: LifePhaseSection[] = [
   {
     id: 'adulthood',
     label: 'Adulthood',
-    ageRange: '18\u201350 years',
+    ageRange: '18–50 years',
     prompt: 'What are important choices or events in your adult life? Think about work, relationships, children, addiction, loss, growth, or meaning.',
     content: '',
     lastUpdated: null,
