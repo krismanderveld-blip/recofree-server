@@ -396,6 +396,9 @@ export class OpenAIProvider implements AIProvider {
           // STO01 Stoicism Integration (Elias only)
           sto01Context: gptPayload.sto01Context ?? null,
 
+          // LOOPBLOCKER: cross-session repeating pattern directive
+          loopDetected: gptPayload.loopDetected ?? null,
+
           // Clinical Mode (easter egg)
           clinicalModeActive: context.userDat?.clinicalModeActive ?? false,
 
@@ -505,6 +508,9 @@ export class OpenAIProvider implements AIProvider {
           relevanceScores: context.relevanceScores ?? null,
           // Signal engine: compressed context summary (replaces full lifeStorySummary)
           contextSummary: context.contextSummary ?? null,
+
+          // LOOPBLOCKER: cross-session repeating pattern directive
+          loopDetected: gptPayload.loopDetected ?? null,
 
           // Clinical Mode (easter egg)
           clinicalModeActive: context.userDat?.clinicalModeActive ?? false,

@@ -79,6 +79,8 @@ export interface BufferState {
   previousZoneScore: number;
   /** Emotional intensity trajectory within session: rising, stable, falling */
   intensityTrajectory: 'rising' | 'stable' | 'falling';
+  /** Modules already used in this session (loopblocker: prevents same module twice) */
+  usedModules: string[];
 }
 
 // ─── Constants ────────────────────────────────────────────────
@@ -113,6 +115,7 @@ export function createBuffer(): BufferState {
     messageCount: 0,
     previousZoneScore: 20,
     intensityTrajectory: 'stable',
+    usedModules: [],
   };
 }
 

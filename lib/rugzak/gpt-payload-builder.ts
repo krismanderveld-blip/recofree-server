@@ -118,6 +118,14 @@ export interface GPTPayload {
   sw01Context?: string;
   sto01Context?: string;
 
+  // ── Loopblocker: cross-session repeating pattern directive ──
+  loopDetected?: {
+    active: true;
+    theme: string;
+    sessionCount: number;
+    instruction: string;
+  };
+
   // ── Buffer snapshot (from pipeline, per message) ──
   bufferSnapshot?: {
     zoneScore: number;
@@ -218,6 +226,13 @@ export interface PayloadBuilderInput {
   projectionContext?: string;
   /** Projection deepening directive (instruction for GPT to explore projections) */
   projectionDeepening?: string;
+  /** LOOPBLOCKER: cross-session repeating pattern directive for GPT */
+  loopDetected?: {
+    active: true;
+    theme: string;
+    sessionCount: number;
+    instruction: string;
+  };
   /** STOA engine injection block (Elias only, Stoic session) */
   stoaContext?: string;
   /** Schema/Mode engine: compact intervention context from deterministic detection */
@@ -443,6 +458,11 @@ export function buildGPTPayload(input: PayloadBuilderInput): GPTPayload {
 
   // ── Guidance depth (user-controlled) ──
   payload.guidanceDepth = input.guidanceDepth ?? 'normal';
+
+  // ── LOOPBLOCKER: Inject cross-session repeating pattern directive ──
+  if (input.loopDetected) {
+    payload.loopDetected = input.loopDetected;
+  }
 
   // ── Regulation result (from regulation layer) ──
   if (input.regulationResult) {

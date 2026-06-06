@@ -543,7 +543,7 @@ export async function processMessage(
   );
 
   // Select dominant state (pre-GPT decision variable — NOT reselected after GPT)
-  const preGPTDominantState = selectDominantState(
+  let preGPTDominantState = selectDominantState(
     sessionBuffer,
     analysis,
     currentUserDat.currentMood || (ELIAS_DEFAULT_MOOD as any),
@@ -551,6 +551,35 @@ export async function processMessage(
     currentUserDat.triggerPatterns || [],
     analysis.priorityModules,
   );
+
+  // ── LOOPBLOCKER: Per-session module repetition detection ──
+  // If the selected module was already used in this session (and it's not a crisis),
+  // try to select the next available module from the priority list.
+  const usedModules = sessionBuffer.usedModules ?? [];
+  if (
+    usedModules.includes(preGPTDominantState.dominantModule) &&
+    preGPTDominantState.sourceLayer !== 'crisis'
+  ) {
+    const allModules = backpack.userType === 'elias'
+      ? ['E01', 'E02', 'E03', 'E04', 'E05', 'E06', 'E07', 'E08']
+      : ['K01', 'K02', 'K03', 'K04', 'K05', 'K06'];
+    const availableFromPriority = analysis.priorityModules.filter(
+      (m) => !usedModules.includes(m)
+    );
+    const fallback = allModules.find(
+      (m) => !usedModules.includes(m)
+    );
+    const alternativeModule = availableFromPriority[0] || fallback || preGPTDominantState.dominantModule;
+    if (alternativeModule !== preGPTDominantState.dominantModule) {
+      console.log(`[Pipeline] LOOPBLOCKER: Module "${preGPTDominantState.dominantModule}" already used in session. Switching to "${alternativeModule}"`);
+      preGPTDominantState = {
+        ...preGPTDominantState,
+        dominantModule: alternativeModule,
+        selectionReason: `Loopblocker: "${preGPTDominantState.dominantModule}" already used → fallback to "${alternativeModule}"`,
+      };
+    }
+  }
+
   sessionDominantState = preGPTDominantState;
 
   // Track module changes for promotion evaluation
@@ -1490,6 +1519,20 @@ export async function processMessage(
     k03Context: k03Result.promptBlock || undefined,
     sw01Context: sw01Result.promptBlock || undefined,
     sto01Context: sto01Result.generatedInstruction.gptPromptBlock || undefined,
+    // LOOPBLOCKER: inject cross-session loop directive if active
+    loopDetected: (() => {
+      const patterns: import('../ai/types').RepeatingPattern[] = (currentUserDat as any).repeatingPatterns ?? [];
+      const activeLoop = patterns.find((p) => p.sessionCount >= 3 && !p.progressionDetected);
+      if (activeLoop) {
+        return {
+          active: true as const,
+          theme: activeLoop.theme,
+          sessionCount: activeLoop.sessionCount,
+          instruction: `LOOP_DETECTED: true\nLOOP_THEME: "${activeLoop.theme}"\nLOOP_COUNT: ${activeLoop.sessionCount}\n\u2192 Benoem het patroon direct, vraag of de gebruiker dit herkent. Wees eerlijk en compassievol over de herhaling.`,
+        };
+      }
+      return undefined;
+    })(),
   };
 
   let response: string;
@@ -1562,7 +1605,7 @@ export async function processMessage(
     };
   }
 
-  // 7d. Record module usage
+  // 7d. Record module usage + update usedModules in buffer (loopblocker)
   let tempRugzak = composeRugzak(backpack, updatedUserDat);
   for (const moduleId of [preGPTDominantState.dominantModule]) {
     tempRugzak = recordModuleUsage(tempRugzak, moduleId, userMessage.slice(0, 50));
@@ -1571,6 +1614,13 @@ export async function processMessage(
     ...updatedUserDat,
     moduleUsage: tempRugzak.moduleUsage,
   };
+  // Loopblocker: track this module as used in the session buffer
+  if (!sessionBuffer.usedModules) {
+    sessionBuffer.usedModules = [];
+  }
+  if (!sessionBuffer.usedModules.includes(preGPTDominantState.dominantModule)) {
+    sessionBuffer.usedModules.push(preGPTDominantState.dominantModule);
+  }
 
   // ── POST-GPT STEP 8: Concrete pattern marking ──
   // Mark pattern signals in session-level state.
@@ -2582,6 +2632,59 @@ export async function endSession(
       updatedUserDat = { ...updatedUserDat, gratitudeStreak: 0 } as any;
       console.log(`[Pipeline] Gratitude streak reset (last: ${lastDate}, today: ${today})`);
     }
+  }
+
+  // ── STEP 5d: LOOPBLOCKER — Cross-session repeating pattern detection ──
+  // If the same themes appear 3+ sessions without progression (mood improvement),
+  // mark them as repeatingPatterns in user.dat for GPT loop-naming directive.
+  {
+    const existingPatterns: import('../ai/types').RepeatingPattern[] = (updatedUserDat as any).repeatingPatterns ?? [];
+    const sessionThemes = sessionSummary.themes;
+    const hasProgression = sessionSummary.moodDelta.distressChange < -1 || sessionSummary.moodDelta.resilienceChange > 1;
+    const now = new Date().toISOString();
+
+    let updatedPatterns = [...existingPatterns];
+
+    for (const theme of sessionThemes) {
+      const existing = updatedPatterns.find((p) => p.theme === theme);
+      if (existing) {
+        existing.sessionCount += 1;
+        existing.lastSeenSession = now;
+        if (hasProgression) {
+          existing.progressionDetected = true;
+        }
+      } else {
+        updatedPatterns.push({
+          theme,
+          sessionCount: 1,
+          progressionDetected: hasProgression,
+          firstSeenSession: now,
+          lastSeenSession: now,
+          loopNamed: false,
+        });
+      }
+    }
+
+    // Decay: themes NOT seen this session lose 0.5 count (min 0, prune at 0)
+    updatedPatterns = updatedPatterns
+      .map((p) => {
+        if (!sessionThemes.includes(p.theme)) {
+          return { ...p, sessionCount: p.sessionCount - 0.5 };
+        }
+        return p;
+      })
+      .filter((p) => p.sessionCount > 0);
+
+    // Log detected loops
+    const activeLoops = updatedPatterns.filter((p) => p.sessionCount >= 3 && !p.progressionDetected);
+    if (activeLoops.length > 0) {
+      console.log(`[Pipeline] LOOPBLOCKER: ${activeLoops.length} repeating pattern(s) detected without progression:`);
+      for (const loop of activeLoops) {
+        console.log(`[Pipeline]   LOOP: "${loop.theme}" (${loop.sessionCount} sessions, named=${loop.loopNamed})`);
+      }
+    }
+
+    updatedUserDat = { ...updatedUserDat, repeatingPatterns: updatedPatterns } as any;
   }
 
   // ── STEP 5b: Archive old chat history to prevent unbounded growth ──

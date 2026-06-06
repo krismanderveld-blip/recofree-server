@@ -228,6 +228,26 @@ export interface TriggerPattern {
   lastSeen: string;
 }
 
+/**
+ * Cross-session repeating pattern (loopblocker).
+ * Tracks themes/signals that recur across 3+ sessions without progression.
+ * When threshold is reached, triggers explicit loop-naming GPT directive.
+ */
+export interface RepeatingPattern {
+  /** The theme/signal identifier (e.g., 'verlatingsangst', 'craving') */
+  theme: string;
+  /** Number of sessions where this theme appeared */
+  sessionCount: number;
+  /** Whether progression was detected (user showed insight/change) */
+  progressionDetected: boolean;
+  /** First session where this theme appeared */
+  firstSeenSession: string;
+  /** Last session where this theme appeared */
+  lastSeenSession: string;
+  /** Whether the loop has been explicitly named to the user */
+  loopNamed: boolean;
+}
+
 /** Chat message in conversation history */
 export interface ChatMessage {
   id: string;
@@ -326,6 +346,8 @@ export interface UserDat {
   moduleUsage: ModuleUsageRecord[];
   /** Detected recurring trigger patterns */
   triggerPatterns: TriggerPattern[];
+  /** Cross-session repeating patterns without progression (loopblocker) */
+  repeatingPatterns?: RepeatingPattern[];
   /** Total number of completed sessions */
   totalSessions: number;
   /** Last session date */
@@ -695,6 +717,7 @@ export function createNewUserDat(
     chatHistory: [],
     moduleUsage: [],
     triggerPatterns: [],
+    repeatingPatterns: [],
     totalSessions: 0,
     lastSessionDate: null,
     sessionAnalyses: [],
@@ -981,6 +1004,13 @@ export interface ChatContext {
   sto01Context?: string;
   /** Whether the user's backpack is empty (no sections filled) — used for greeting tone adaptation */
   backpackEmpty?: boolean;
+  /** LOOPBLOCKER: cross-session repeating pattern directive for GPT (injected by pipeline) */
+  loopDetected?: {
+    active: true;
+    theme: string;
+    sessionCount: number;
+    instruction: string;
+  };
 }
 
 /**

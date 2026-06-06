@@ -1015,3 +1015,9 @@
 - [x] Add Elias avatar (elias_avatar.jpg) to assets/images
 - [x] Add Kim avatar (kim_avatar.png) to assets/images
 - [x] Display companion avatar on Home screen (Elias for addiction users, Kim for loved ones)
+- [x] Loopblocker Function 1: Per-session module repetition detection (usedModules[] in buffer)
+- [x] Loopblocker Function 2: Cross-session pattern recognition (repeatingPatterns[] in user.dat)
+- [x] Wire loopDetected directive into GPT payload (SESSION_INIT + LIVE_MESSAGE)
+- [x] Add loopDetected to ChatContext, GPTPayload, PayloadBuilderInput interfaces
+- [x] Inject loop directive in pipeline processMessage (reads from user.dat repeatingPatterns)
+- [x] Session-end: detect repeating themes, update repeatingPatterns with decay
