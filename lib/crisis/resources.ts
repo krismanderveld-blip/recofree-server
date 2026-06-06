@@ -27,36 +27,46 @@ export interface CrisisContent {
 const RESOURCES_NL: CrisisResource[] = [
   {
     name: 'Zelfmoordlijn',
-    number: '1813',
-    description: 'Bel 1813, 24/7 gratis anoniem',
+    number: '0800 32 123',
+    description: 'Bel 0800 32 123, 24/7 gratis anoniem',
   },
   {
-    name: 'Tele-Onthaal',
-    number: '106',
-    description: 'Bel 106, 24/7 gratis voor iedereen',
+    name: 'Centrum Geestelijke Gezondheidszorg',
+    number: '107',
+    description: 'Bel 107, 24/7 gratis voor iedereen',
   },
   {
     name: 'Noodnummer',
     number: '112',
     description: 'Bel 112, bij onmiddellijk gevaar',
   },
+  {
+    name: 'Huiselijk geweld',
+    number: '1712',
+    description: 'Bel 1712, gratis en anoniem',
+  },
 ];
 
 const RESOURCES_EN: CrisisResource[] = [
   {
-    name: 'Suicide Prevention',
-    number: '1813',
-    description: 'Call 1813, 24/7 free anonymous',
+    name: 'Suicide Prevention Line',
+    number: '0800 32 123',
+    description: 'Call 0800 32 123, 24/7 free anonymous',
   },
   {
-    name: 'Support Line',
-    number: '106',
-    description: 'Call 106, 24/7 free for everyone',
+    name: 'Mental Health Centre',
+    number: '107',
+    description: 'Call 107, 24/7 free for everyone',
   },
   {
     name: 'Emergency',
     number: '112',
     description: 'Call 112, immediate danger',
+  },
+  {
+    name: 'Domestic Violence',
+    number: '1712',
+    description: 'Call 1712, free and anonymous',
   },
 ];
 
@@ -64,9 +74,9 @@ const CONTENT_NL: CrisisContent = {
   title: 'Je staat er niet alleen voor',
   intro: 'Het klinkt alsof je het nu heel zwaar hebt. Neem contact op met één van deze hulplijnen — ze zijn er voor jou, dag en nacht.',
   dismissText: 'Het gaat nu even',
-  callButtonText: 'Bel 1813',
-  smsButtonText: 'SMS 1813',
-  callConfirmTitle: 'Wil je 1813 bellen?',
+  callButtonText: 'Bel 0800 32 123',
+  smsButtonText: 'Chat via zelfmoord1813.be',
+  callConfirmTitle: 'Wil je 0800 32 123 bellen?',
   callConfirmMessage: 'Je wordt doorverbonden met de Zelfmoordlijn (24/7, gratis, anoniem).',
   confirmButton: 'Bevestig',
   cancelButton: 'Annuleer',
@@ -77,9 +87,9 @@ const CONTENT_EN: CrisisContent = {
   title: "You're not alone",
   intro: "It sounds like you're going through something really difficult. Please reach out to one of these helplines — they're here for you, day and night.",
   dismissText: "I'm okay for now",
-  callButtonText: 'Call 1813',
-  smsButtonText: 'Text 1813',
-  callConfirmTitle: 'Do you want to call 1813?',
+  callButtonText: 'Call 0800 32 123',
+  smsButtonText: 'Chat via zelfmoord1813.be',
+  callConfirmTitle: 'Do you want to call 0800 32 123?',
   callConfirmMessage: 'You will be connected to the Suicide Prevention Line (24/7, free, anonymous).',
   confirmButton: 'Confirm',
   cancelButton: 'Cancel',

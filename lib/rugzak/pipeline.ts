@@ -2846,7 +2846,7 @@ function buildTherapeuticStance(analysis: StateAnalysis): string {
 
   switch (analysis.tone) {
     case 'crisis':
-      parts.push('TONE: CRISIS. Be calm, present, and direct. Do not ask exploratory questions. Acknowledge pain immediately. Offer safety resources.');
+      parts.push('TONE: CRISIS. Follow CRISIS RESPONSE PROTOCOL: (1) Presence first — "Ik ben hier." (2) Safety check — "Ben je nu veilig?" (3) Only then: crisis numbers. NEVER lead with numbers. NEVER skip presence or safety check.');
       break;
     case 'grounding':
       parts.push('TONE: GROUNDING + DIRECTIVE. Be direct and structured. Name what you observe from the sliders. Do NOT ask open-ended questions like "what\'s on your mind?" — instead, reflect what the data shows and offer a concrete grounding technique or coping step. Keep it short and actionable.');

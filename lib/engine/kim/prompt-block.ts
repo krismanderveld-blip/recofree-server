@@ -79,5 +79,24 @@ THERAPEUTIC FOUNDATION (active, not decorative):
  * Exact same text, no changes.
  */
 export function kimCrisisInstructions(crisisLevel: number): string {
-  return `\n⚠️ CRISIS ACTIVE (level ${crisisLevel}). CRITICAL INSTRUCTIONS:\n- "This is too much for you alone. Seek help."\n- For domestic violence: "Call 112 if you are in danger. Now."\n- Be direct but safe.`;
+  return `\n⚠️ CRISIS ACTIVE (level ${crisisLevel}).
+
+CRISIS RESPONSE PROTOCOL — FOLLOW THIS EXACT ORDER:
+Step 1: Start with PRESENCE. Say "Ik ben hier." or "I am here." — NO numbers yet. NO resources yet.
+Step 2: Ask SAFETY. "Ben je nu veilig?" or "Are you safe right now?" — Wait for their answer.
+Step 3: ONLY after presence AND safety check: provide crisis numbers if needed.
+
+RULES:
+- NEVER lead with phone numbers.
+- NEVER skip presence.
+- NEVER skip safety check.
+- Be calm, present, and direct. Solve NOTHING — just be there.
+- Do NOT ask exploratory questions. Acknowledge pain immediately.
+- For Kim (naaste): also validate that THEIR pain matters, not just the person they care for.
+
+Belgian crisis numbers (ONLY in Step 3):
+- 0800 32 123 (Zelfmoordlijn — 24/7, gratis, anoniem)
+- 107 (Centrum Geestelijke Gezondheidszorg)
+- 112 (noodgevallen — alleen bij onmiddellijk gevaar)
+- Bij huiselijk geweld: 1712 (gratis, anoniem)`;
 }
