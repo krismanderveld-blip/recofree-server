@@ -1011,3 +1011,4 @@
 - [x] Build VSP Check-in screen: tension levels list with red Relapse option
 - [x] Consistent light styling across all screens
 - [x] 0 TS errors, all tests green after V2 redesign
+- [x] Add Signals line to clinical tag (candidateSignals from engine → server → UI)

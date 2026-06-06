@@ -198,6 +198,13 @@ interface ChatRequestInput {
   clinicalModeActive?: boolean;
   // Backpack empty flag (for greeting tone adaptation)
   backpackEmpty?: boolean;
+
+  // Signal engine: active signals for clinical annotation
+  activeSignals?: Array<{
+    label: string;
+    score: number;
+    memory: string;
+  }>;
 }
 
 // ─── Server-side Session Cache ───────────────────────────────────
@@ -441,6 +448,12 @@ export const chatInputSchema = z.object({
   clinicalModeActive: z.boolean().optional(),
   // Backpack empty flag (for greeting tone adaptation)
   backpackEmpty: z.boolean().optional(),
+  // Signal engine: active signals for clinical annotation
+  activeSignals: z.array(z.object({
+    label: z.string(),
+    score: z.number(),
+    memory: z.string(),
+  })).optional(),
 });
 
 // ─── Relationship Map Extractor ──────────────────────────────────
@@ -1298,6 +1311,12 @@ After your therapeutic response, you MUST append exactly this structure:
 Method: [name the primary therapeutic method used]
 Observation: [1 sentence — what you clinically observed]
 Intervention: [1 sentence — what therapeutic move you made]
+Signals: [comma-separated list of active signals with score and memory layer, e.g. "verlatingsangst +1 (projections.dat), hopeloosheid +2 (state.dat)"]${input.activeSignals && input.activeSignals.length > 0 ? `
+
+ACTIVE SIGNALS FOR THIS MESSAGE (use these for the Signals line):
+${input.activeSignals.map(s => `- ${s.label} ${s.score >= 0 ? '+' : ''}${s.score} (${s.memory})`).join('\n')}` : `
+
+No active signals detected for this message. Write "Signals: none" in the clinical tag.`}
 </clinical>
 
 Rules:
@@ -1593,6 +1612,12 @@ After your therapeutic response, you MUST append exactly this structure:
 Method: [name the primary therapeutic method used]
 Observation: [1 sentence — what you clinically observed]
 Intervention: [1 sentence — what therapeutic move you made]
+Signals: [comma-separated list of active signals with score and memory layer, e.g. "verlatingsangst +1 (projections.dat), hopeloosheid +2 (state.dat)"]${input.activeSignals && input.activeSignals.length > 0 ? `
+
+ACTIVE SIGNALS FOR THIS MESSAGE (use these for the Signals line):
+${input.activeSignals.map(s => `- ${s.label} ${s.score >= 0 ? '+' : ''}${s.score} (${s.memory})`).join('\n')}` : `
+
+No active signals detected for this message. Write "Signals: none" in the clinical tag.`}
 </clinical>
 
 Rules:
@@ -1789,7 +1814,7 @@ export async function generateAIResponse(
   let finalResponse = responseText;
   if (input.clinicalModeActive && !/<clinical>[\s\S]*?<\/clinical>/.test(responseText)) {
     console.warn('[AI Chat] Clinical Mode ACTIVE but GPT omitted <clinical> tag — appending fallback');
-    finalResponse += `\n\n<clinical>\nMethod: [not annotated — model did not comply]\nObservation: [clinical annotation was requested but not generated]\nIntervention: [see therapeutic response above]\n</clinical>`;
+    finalResponse += `\n\n<clinical>\nMethod: [not annotated — model did not comply]\nObservation: [clinical annotation was requested but not generated]\nIntervention: [see therapeutic response above]\nSignals: none\n</clinical>`;
   }
 
   return {

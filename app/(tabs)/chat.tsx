@@ -818,6 +818,12 @@ function ClinicalTag({ annotation }: { annotation: string }) {
   const [expanded, setExpanded] = useState(false);
   const colors = useColors();
 
+  // Parse Signals line from annotation
+  const lines = annotation.split('\n');
+  const signalsLine = lines.find(l => l.startsWith('Signals:'));
+  const otherLines = lines.filter(l => !l.startsWith('Signals:')).join('\n');
+  const signalsValue = signalsLine ? signalsLine.replace('Signals:', '').trim() : null;
+
   return (
     <View style={{ marginTop: 8, borderTopWidth: 0.5, borderTopColor: colors.border, paddingTop: 6 }}>
       <Pressable
@@ -831,8 +837,22 @@ function ClinicalTag({ annotation }: { annotation: string }) {
       {expanded && (
         <View style={{ marginTop: 6, backgroundColor: colors.background, borderRadius: 8, padding: 10 }}>
           <Text style={{ fontSize: 12, color: colors.muted, lineHeight: 17, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace' }}>
-            {annotation}
+            {otherLines}
           </Text>
+          {signalsValue && signalsValue !== 'none' && (
+            <View style={{ marginTop: 6, paddingTop: 6, borderTopWidth: 0.5, borderTopColor: colors.border }}>
+              <Text style={{ fontSize: 11, fontWeight: '700', color: '#E65100' }}>
+                Signals: <Text style={{ fontWeight: '400', color: colors.foreground }}>{signalsValue}</Text>
+              </Text>
+            </View>
+          )}
+          {signalsValue === 'none' && (
+            <View style={{ marginTop: 6, paddingTop: 6, borderTopWidth: 0.5, borderTopColor: colors.border }}>
+              <Text style={{ fontSize: 11, color: colors.muted, fontStyle: 'italic' }}>
+                Signals: none
+              </Text>
+            </View>
+          )}
         </View>
       )}
     </View>

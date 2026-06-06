@@ -115,6 +115,43 @@ async function ensureServerAwake(apiBaseUrl: string): Promise<void> {
   }
 }
 
+/**
+ * Build activeSignals array for clinical annotation.
+ * Combines candidateSignals (from GptSignalEngine) with source/memory info.
+ * Each signal gets: label (keyword), score (confidence mapped to 0-3), memory (source layer).
+ */
+function buildActiveSignals(context: ChatContext): Array<{ label: string; score: number; memory: string }> {
+  const signals: Array<{ label: string; score: number; memory: string }> = [];
+  const cs = context.candidateSignals;
+  if (!cs) return signals;
+
+  // Map confidence (0-1) to score (0-3): <0.3 = +1, <0.7 = +2, >=0.7 = +3
+  const toScore = (confidence: number): number => {
+    if (confidence >= 0.7) return 3;
+    if (confidence >= 0.3) return 2;
+    return 1;
+  };
+
+  // Fears → memory: projections.dat (these are future-facing anxieties)
+  for (const f of cs.fears) {
+    signals.push({ label: f.keyword, score: toScore(f.confidence), memory: 'projections.dat' });
+  }
+  // Hopes → memory: projections.dat (future-facing aspirations)
+  for (const h of cs.hopes) {
+    signals.push({ label: h.keyword, score: toScore(h.confidence), memory: 'projections.dat' });
+  }
+  // Goals → memory: user.dat (behavioral intentions tracked across sessions)
+  for (const g of cs.goals) {
+    signals.push({ label: g.keyword, score: toScore(g.confidence), memory: 'user.dat' });
+  }
+  // Triggers → memory: state.dat (emotional triggers from session state)
+  for (const t of cs.triggers) {
+    signals.push({ label: t.keyword, score: toScore(t.confidence), memory: 'state.dat' });
+  }
+
+  return signals;
+}
+
 export class OpenAIProvider implements AIProvider {
   async generateResponse(context: ChatContext): Promise<AIResult> {
     try {
@@ -308,6 +345,9 @@ export class OpenAIProvider implements AIProvider {
           // Backpack empty flag (for greeting tone adaptation)
           backpackEmpty: context.backpackEmpty ?? false,
 
+          // Active signals for clinical annotation
+          activeSignals: buildActiveSignals(context),
+
           // Full data (SESSION_INIT only)
           backpack: gptPayload.backpack,
           userDat: gptPayload.userDat,
@@ -411,6 +451,10 @@ export class OpenAIProvider implements AIProvider {
 
           // Clinical Mode (easter egg)
           clinicalModeActive: context.userDat?.clinicalModeActive ?? false,
+
+          // Active signals for clinical annotation
+          activeSignals: buildActiveSignals(context),
+
           // NO backpack, NO userDat, NO diaryEntries, NO coreWound,
           // NO contextLine, NO relationshipAnchor, NO relationalPattern
           // These were sent at SESSION_INIT and cached server-side.
