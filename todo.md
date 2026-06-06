@@ -1027,3 +1027,11 @@
 - [x] Apply -0.5 decay to matching projection entry when recovery detected
 - [x] Inject LANGUAGE_RECOVERY_DETECTED directive into GPT payload for subtle acknowledgment
 - [x] Wire languageRecovery through ChatContext → GPTPayload → PayloadBuilder → OpenAI provider
+- [x] Kim Module KST01: Stoicism for Caregivers (types, detector, router, prompt, storage, tests)
+- [x] Kim Module KDL01: Detachment With Love (types, detector, router, prompt, storage, tests)
+- [x] Kim Module KBR01: Boundary Restoration (types, detector, router, prompt, storage, tests)
+- [x] Kim Module KSC01: Self-Compassion Caregiver (types, detector, router, prompt, storage, tests)
+- [x] Pipeline integration: KST01→KDL01/KBR01/KSC01 conditional routing after K06 (step 5p2)
+- [x] Server-side: KST01/KDL01/KBR01/KSC01 context fields in Zod schema + system prompt injection
+- [x] KimModuleRouteTarget enum with all routing targets
+- [x] Kim advanced modules integration layer (lib/engine/kim/kim-advanced-modules.ts)

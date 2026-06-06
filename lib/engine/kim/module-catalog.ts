@@ -35,6 +35,10 @@ export const KIM_MODULE_CATALOG: readonly KimModuleDefinition[] = Object.freeze(
   { id: 'K06', name: 'Self-Care & Sustainable Support', category: 'Growth', description: 'Sustainable caregiving without self-destruction' },
   // KO1 (Recognition & Validation) is a separate engine file, not in this catalog
   // K04-S4 (Betrayal/Trust/Hope) is a sub-module of K04
+  { id: 'KST01', name: 'Stoicism for Caregivers', category: 'Advanced', description: 'Stoic principles adapted for caregivers: control separation, steadiness, values-based action' },
+  { id: 'KDL01', name: 'Detachment with Love', category: 'Advanced', description: 'Loving detachment without abandonment or self-erasure' },
+  { id: 'KBR01', name: 'Boundary Restoration', category: 'Advanced', description: 'Clear, humane, enforceable boundary creation and repair' },
+  { id: 'KSC01', name: 'Self-Compassion for Caregivers', category: 'Advanced', description: 'Grounded self-compassion without removing responsibility' },
 ]);
 
 // ─── Kim TherapeuticModule definitions (from module-system.ts KIM_MODULES) ───
@@ -280,4 +284,17 @@ export const KIM_MODULE_ALIGNMENTS: Readonly<Record<string, readonly string[]>> 
 export const KIM_HIGH_COMPLEXITY_MODULES: readonly string[] = [
   'k_relational_reflection', 'k02', 'relational_reflection',
   'k_boundary_pressure', 'k01', 'boundary_pressure',
+  'kst01', 'kdl01', 'kbr01', 'ksc01',
 ];
+
+// ─── Kim Advanced Module Route Target Enum ───────────────────────
+
+export type KimModuleRouteTarget =
+  | 'K06_CAREGIVER_CANON'
+  | 'KST01_STOICISM_FOR_CAREGIVERS'
+  | 'KDL01_DETACHMENT_WITH_LOVE'
+  | 'KBR01_BOUNDARY_RESTORATION'
+  | 'KSC01_SELF_COMPASSION_CAREGIVER'
+  | 'K06_STABILIZATION'
+  | 'K06_SAFETY'
+  | 'NO_MODULE';

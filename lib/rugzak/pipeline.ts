@@ -231,6 +231,8 @@ import {
   createDefaultK03Progress,
 } from '../engine/kim/k03-self-care';
 import type { K03RoutingResult, K03Progress } from '../engine/kim/k03-self-care';
+import { runKimAdvancedModules } from '../engine/kim/kim-advanced-modules';
+import type { KimAdvancedModulesResult } from '../engine/kim/kim-advanced-modules';
 import {
   detectShadowSignals,
   buildShadowSignal,
@@ -1041,6 +1043,11 @@ export async function processMessage(
     doNots: [],
     promptBlock: null,
   };
+  let kimAdvancedResult: KimAdvancedModulesResult = {
+    kst01Active: false, kdl01Active: false, kbr01Active: false, ksc01Active: false,
+    kst01PromptBlock: null, kdl01PromptBlock: null, kbr01PromptBlock: null, ksc01PromptBlock: null,
+    routeTarget: 'NO_MODULE', kst01StoragePatch: {}, kdl01StoragePatch: {}, kbr01StoragePatch: {}, ksc01StoragePatch: {},
+  };
   if (backpack.userType === 'kim') {
     const ko1Progress: KO1Progress = (currentUserDat as any).ko1Progress ?? createDefaultKO1Progress();
     const frustrationScore = (currentUserDat.currentMood as any)?.frustration ?? 3;
@@ -1121,6 +1128,30 @@ export async function processMessage(
 
     if (k06Result.activated) {
       console.log(`[Pipeline] K06: state=${k06Result.primaryState} | severity=${k06Result.severity} | mode=${k06Result.responseMode} | sustainability=${k06Result.sustainabilityLevel}`);
+    }
+
+    // ── Step 5p2: Kim Advanced Modules (KST01 → KDL01/KBR01/KSC01) ──
+    kimAdvancedResult = runKimAdvancedModules({
+      userType: backpack.userType as 'elias' | 'kim',
+      latestUserMessage: userMessage,
+      recentMessages: sessionBuffer.recentMessages.slice(-3).map(m => m.content),
+      crisisLevel: analysis.riskLevel === 'critical' || analysis.riskLevel === 'high' ? 2 : analysis.riskLevel === 'moderate' ? 1 : 0,
+      k06SafetyGate: k06Result.activated ? 'cleared' : 'not_run',
+      stabilizationStatus: k06Result.activated ? 'stable' : 'unknown',
+      caregiverShameLevel: (currentUserDat.currentMood as any)?.caregiverShame ?? 0,
+      guiltLevel: (currentUserDat.currentMood as any)?.guilt ?? 0,
+      boundaryReadinessLevel: (currentUserDat.currentMood as any)?.boundaryReadiness ?? 0,
+      selfLossLevel: (currentUserDat.currentMood as any)?.selfLoss ?? 0,
+      angerShameLevel: (currentUserDat.currentMood as any)?.angerShame ?? 0,
+      restGuiltLevel: (currentUserDat.currentMood as any)?.restGuilt ?? 0,
+      kst01Storage: (currentUserDat as any).kst01Storage,
+      kdl01Storage: (currentUserDat as any).kdl01Storage,
+      kbr01Storage: (currentUserDat as any).kbr01Storage,
+      ksc01Storage: (currentUserDat as any).ksc01Storage,
+    });
+
+    if (kimAdvancedResult.kst01Active || kimAdvancedResult.kdl01Active || kimAdvancedResult.kbr01Active || kimAdvancedResult.ksc01Active) {
+      console.log(`[Pipeline] KimAdvanced: KST01=${kimAdvancedResult.kst01Active} | KDL01=${kimAdvancedResult.kdl01Active} | KBR01=${kimAdvancedResult.kbr01Active} | KSC01=${kimAdvancedResult.ksc01Active} | route=${kimAdvancedResult.routeTarget}`);
     }
 
     // ── Step 5q: K01 Boundary Setting (Kim only, default module) ──
@@ -1528,6 +1559,10 @@ export async function processMessage(
     k03Context: k03Result.promptBlock || undefined,
     sw01Context: sw01Result.promptBlock || undefined,
     sto01Context: sto01Result.generatedInstruction.gptPromptBlock || undefined,
+    kst01Context: kimAdvancedResult.kst01PromptBlock || undefined,
+    kdl01Context: kimAdvancedResult.kdl01PromptBlock || undefined,
+    kbr01Context: kimAdvancedResult.kbr01PromptBlock || undefined,
+    ksc01Context: kimAdvancedResult.ksc01PromptBlock || undefined,
     // LANGUAGE_RECOVERY: inject recovery directive if detected
     languageRecovery: languageRecoveryResult.detected ? {
       detected: true,
@@ -1766,6 +1801,7 @@ export async function processMessage(
       { step: '5n. K04', status: k04Result.activated ? 'passed' : 'skipped', reason: k04Result.activated ? `state=${k04Result.primaryState}|severity=${k04Result.severity}` : 'no emotional state detected' },
       { step: '5o. K04-S4', status: k04s4Result.activated ? 'passed' : 'skipped', reason: k04s4Result.activated ? `state=${k04s4Result.primaryState}|severity=${k04s4Result.severity}` : 'no betrayal/trust state detected' },
       { step: '5p. K06', status: k06Result.activated ? 'passed' : 'skipped', reason: k06Result.activated ? `state=${k06Result.primaryState}|severity=${k06Result.severity}|sustainability=${k06Result.sustainabilityLevel}` : 'no self-care state detected' },
+      { step: '5p2. KimAdvanced', status: (kimAdvancedResult.kst01Active || kimAdvancedResult.kdl01Active || kimAdvancedResult.kbr01Active || kimAdvancedResult.ksc01Active) ? 'passed' : 'skipped', reason: `KST01=${kimAdvancedResult.kst01Active}|KDL01=${kimAdvancedResult.kdl01Active}|KBR01=${kimAdvancedResult.kbr01Active}|KSC01=${kimAdvancedResult.ksc01Active}|route=${kimAdvancedResult.routeTarget}` },
       { step: '5q. K01', status: k01Result.activated ? 'passed' : 'skipped', reason: k01Result.activated ? `state=${k01Result.primaryState}|severity=${k01Result.severity}|intervention=${k01Result.interventionType}|collapse=${k01Result.collapseRisk}` : 'no boundary state detected' },
       { step: '5r. K03', status: k03Result.activated ? 'passed' : 'skipped', reason: k03Result.activated ? `mode=${k03Result.interventionMode}|level=${k03Result.responseLevel}|severity=${k03Result.severity}|shadow=${k03Result.primaryShadowPart}|ekt=${k03Result.ektPhase}` : 'selfCare > 3 or not activated' },
       { step: '5e3. SW01', status: sw01Result.active ? 'passed' : 'skipped', reason: sw01Result.active ? `mode=${sw01Result.interventionMode}|confidence=${sw01Result.confidence.toFixed(2)}|loop=${sw01Result.activeLoop?.loop_id ?? 'none'}|projection=${sw01Result.projectionActive}` : 'no shadow signals detected' },
