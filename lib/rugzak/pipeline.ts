@@ -2619,6 +2619,54 @@ export async function endSession(
       updatedUserDat = { ...updatedUserDat, k01Progress: updatedK01Progress } as any;
       console.log(`[Pipeline] K01 persistence: state=${k01SessionDetection.primaryState}, severity=${k01SessionDetection.severity}, trend=${updatedK01Progress.boundaryStabilityTrend}`);
     }
+
+    // ── KST01/KDL01/KBR01/KSC01 Kim Advanced Modules persistence ──
+    {
+      const kimAdvSessionInput = {
+        userType: backpack.userType as 'elias' | 'kim',
+        latestUserMessage: allUserText,
+        recentMessages: userMessages.map(m => m.content).slice(-5),
+        crisisLevel: sessionSummary.endRiskLevel === 'high' ? 2 : sessionSummary.endRiskLevel === 'elevated' ? 1 : 0,
+        k06SafetyGate: 'cleared' as const,
+        stabilizationStatus: 'stable' as const,
+        caregiverShameLevel: (updatedUserDat.currentMood as any)?.emotionalBurden ?? 3,
+        selfLossLevel: (updatedUserDat.currentMood as any)?.boundaryFatigue ?? 3,
+        kst01Storage: (updatedUserDat as any).kst01Progress,
+        kdl01Storage: (updatedUserDat as any).kdl01Progress,
+        kbr01Storage: (updatedUserDat as any).kbr01Progress,
+        ksc01Storage: (updatedUserDat as any).ksc01Progress,
+      };
+      const kimAdvResult = runKimAdvancedModules(kimAdvSessionInput);
+
+      // Merge storage patches into user.dat
+      if (kimAdvResult.kst01Active || Object.keys(kimAdvResult.kst01StoragePatch).length > 0) {
+        const existingKST01 = (updatedUserDat as any).kst01Progress;
+        const mergedKST01 = { ...(existingKST01 || {}), ...kimAdvResult.kst01StoragePatch };
+        updatedUserDat = { ...updatedUserDat, kst01Progress: mergedKST01 } as any;
+        console.log(`[Pipeline] KST01 persistence: activated=${kimAdvResult.kst01Active}, count=${mergedKST01.activationCount ?? 0}`);
+      }
+      if (kimAdvResult.kdl01Active || Object.keys(kimAdvResult.kdl01StoragePatch).length > 0) {
+        const existingKDL01 = (updatedUserDat as any).kdl01Progress;
+        const mergedKDL01 = { ...(existingKDL01 || {}), ...kimAdvResult.kdl01StoragePatch };
+        updatedUserDat = { ...updatedUserDat, kdl01Progress: mergedKDL01 } as any;
+        console.log(`[Pipeline] KDL01 persistence: activated=${kimAdvResult.kdl01Active}, count=${mergedKDL01.activationCount ?? 0}`);
+      }
+      if (kimAdvResult.kbr01Active || Object.keys(kimAdvResult.kbr01StoragePatch).length > 0) {
+        const existingKBR01 = (updatedUserDat as any).kbr01Progress;
+        const mergedKBR01 = { ...(existingKBR01 || {}), ...kimAdvResult.kbr01StoragePatch };
+        updatedUserDat = { ...updatedUserDat, kbr01Progress: mergedKBR01 } as any;
+        console.log(`[Pipeline] KBR01 persistence: activated=${kimAdvResult.kbr01Active}, count=${mergedKBR01.activationCount ?? 0}`);
+      }
+      if (kimAdvResult.ksc01Active || Object.keys(kimAdvResult.ksc01StoragePatch).length > 0) {
+        const existingKSC01 = (updatedUserDat as any).ksc01Progress;
+        const mergedKSC01 = { ...(existingKSC01 || {}), ...kimAdvResult.ksc01StoragePatch };
+        updatedUserDat = { ...updatedUserDat, ksc01Progress: mergedKSC01 } as any;
+        console.log(`[Pipeline] KSC01 persistence: activated=${kimAdvResult.ksc01Active}, count=${mergedKSC01.activationCount ?? 0}`);
+      }
+      if (kimAdvResult.kst01Active || kimAdvResult.kdl01Active || kimAdvResult.kbr01Active || kimAdvResult.ksc01Active) {
+        console.log(`[Pipeline] Kim Advanced Modules session-end persistence complete. Route: ${kimAdvResult.routeTarget}`);
+      }
+    }
   }
 
   // ── K03 Self-Care persistence (Elias + Kim) ──

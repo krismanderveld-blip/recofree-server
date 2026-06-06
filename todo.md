@@ -1035,3 +1035,5 @@
 - [x] Server-side: KST01/KDL01/KBR01/KSC01 context fields in Zod schema + system prompt injection
 - [x] KimModuleRouteTarget enum with all routing targets
 - [x] Kim advanced modules integration layer (lib/engine/kim/kim-advanced-modules.ts)
+- [x] Kim Advanced Modules storage persistence at session-end (KST01/KDL01/KBR01/KSC01 → user.dat)
+- [x] Crisis escalation (crisisLevel >= 2) confirmed in all Kim advanced module detectors + final safety override
