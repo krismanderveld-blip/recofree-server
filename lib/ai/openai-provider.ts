@@ -206,6 +206,23 @@ function buildActiveSignals(context: ChatContext): Array<{ label: string; score:
     }
   }
 
+  // ═══ Crisis markers — direct language detection for suicidal ideation ═══
+  const latestMessage = context.currentMessage || '';
+  const crisisMarkers = [
+    "niet meer zijn", "wil er niet meer zijn", "wil niet meer leven",
+    "wil dood", "heeft geen zin meer", "ik geef het op",
+    "geen uitweg", "beter af zonder mij", "wil stoppen met leven",
+    "maak er een einde aan", "wil niet meer wakker worden"
+  ];
+
+  if (crisisMarkers.some(marker => latestMessage.toLowerCase().includes(marker))) {
+    signals.push({
+      label: 'suïcidale ideatie',
+      score: 3,
+      memory: 'buffer'
+    });
+  }
+
   return signals;
 }
 

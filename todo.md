@@ -1037,3 +1037,6 @@
 - [x] Kim advanced modules integration layer (lib/engine/kim/kim-advanced-modules.ts)
 - [x] Kim Advanced Modules storage persistence at session-end (KST01/KDL01/KBR01/KSC01 → user.dat)
 - [x] Crisis escalation (crisisLevel >= 2) confirmed in all Kim advanced module detectors + final safety override
+- [x] Clinical tag hidden when annotation contains '[not annotated' or 'model did not comply'
+- [x] Crisis markers: suicidal ideation language detection in buildActiveSignals (score +3, buffer)
+- [x] Crisis Response Protocol: presence → safety → numbers (Belgian: 112, 0800 32 123, 107, 1712)

@@ -818,6 +818,14 @@ function ClinicalTag({ annotation }: { annotation: string }) {
   const [expanded, setExpanded] = useState(false);
   const colors = useColors();
 
+  // Hide clinical tag when not annotated or during crisis
+  if (
+    annotation.includes('[not annotated') ||
+    annotation.includes('model did not comply')
+  ) {
+    return null;
+  }
+
   // Parse Signals line from annotation
   const lines = annotation.split('\n');
   const signalsLine = lines.find(l => l.startsWith('Signals:'));
