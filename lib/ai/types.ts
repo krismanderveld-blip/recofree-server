@@ -1011,6 +1011,13 @@ export interface ChatContext {
     sessionCount: number;
     instruction: string;
   };
+  /** LANGUAGE_RECOVERY: diminishing negative intensity detected in user language */
+  languageRecovery?: {
+    detected: true;
+    theme: string;
+    delta: number;
+    instruction: string;
+  };
 }
 
 /**

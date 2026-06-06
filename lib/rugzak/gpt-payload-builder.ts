@@ -126,6 +126,14 @@ export interface GPTPayload {
     instruction: string;
   };
 
+  // ── Language Recovery: diminishing negative intensity ──
+  languageRecovery?: {
+    detected: true;
+    theme: string;
+    delta: number;
+    instruction: string;
+  };
+
   // ── Buffer snapshot (from pipeline, per message) ──
   bufferSnapshot?: {
     zoneScore: number;
@@ -231,6 +239,13 @@ export interface PayloadBuilderInput {
     active: true;
     theme: string;
     sessionCount: number;
+    instruction: string;
+  };
+  /** LANGUAGE_RECOVERY: diminishing negative intensity detected in user language */
+  languageRecovery?: {
+    detected: true;
+    theme: string;
+    delta: number;
     instruction: string;
   };
   /** STOA engine injection block (Elias only, Stoic session) */
@@ -462,6 +477,11 @@ export function buildGPTPayload(input: PayloadBuilderInput): GPTPayload {
   // ── LOOPBLOCKER: Inject cross-session repeating pattern directive ──
   if (input.loopDetected) {
     payload.loopDetected = input.loopDetected;
+  }
+
+  // ── LANGUAGE_RECOVERY: Inject diminishing negative intensity directive ──
+  if (input.languageRecovery) {
+    payload.languageRecovery = input.languageRecovery;
   }
 
   // ── Regulation result (from regulation layer) ──

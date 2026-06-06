@@ -399,6 +399,9 @@ export class OpenAIProvider implements AIProvider {
           // LOOPBLOCKER: cross-session repeating pattern directive
           loopDetected: gptPayload.loopDetected ?? null,
 
+          // LANGUAGE_RECOVERY: diminishing negative intensity directive
+          languageRecovery: gptPayload.languageRecovery ?? null,
+
           // Clinical Mode (easter egg)
           clinicalModeActive: context.userDat?.clinicalModeActive ?? false,
 
@@ -511,6 +514,9 @@ export class OpenAIProvider implements AIProvider {
 
           // LOOPBLOCKER: cross-session repeating pattern directive
           loopDetected: gptPayload.loopDetected ?? null,
+
+          // LANGUAGE_RECOVERY: diminishing negative intensity directive
+          languageRecovery: gptPayload.languageRecovery ?? null,
 
           // Clinical Mode (easter egg)
           clinicalModeActive: context.userDat?.clinicalModeActive ?? false,

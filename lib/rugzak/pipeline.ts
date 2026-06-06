@@ -112,6 +112,7 @@ import {
 import {
   resetProjectionState,
   getProjectionState,
+  loadProjectionState,
   resetSessionTracking as resetProjectionSessionTracking,
   applyProjectionDecay,
   type ProjectionEntry,
@@ -528,6 +529,14 @@ export async function processMessage(
   const zoneDecayResult: DecayResult = applyDecay(sessionBuffer);
   if (zoneDecayResult.decayApplied !== 0) {
     sessionBuffer = applyDecayToBuffer(sessionBuffer, zoneDecayResult);
+  }
+
+  // ── PRE-GPT STEP 3b: Language Recovery Analysis ──
+  // Detects diminishing negative intensity in user language (NOT positive statements).
+  // If detected, reduces the corresponding projection signal score by 0.5.
+  const languageRecoveryResult = analyzeLanguageRecovery(userMessage, backpack.userType);
+  if (languageRecoveryResult.detected) {
+    console.log(`[Pipeline] LANGUAGE_RECOVERY: theme="${languageRecoveryResult.theme}", delta=${languageRecoveryResult.delta}`);
   }
 
   // ── PRE-GPT STEP 4: Analyze state + Select DominantState ──
@@ -1519,6 +1528,13 @@ export async function processMessage(
     k03Context: k03Result.promptBlock || undefined,
     sw01Context: sw01Result.promptBlock || undefined,
     sto01Context: sto01Result.generatedInstruction.gptPromptBlock || undefined,
+    // LANGUAGE_RECOVERY: inject recovery directive if detected
+    languageRecovery: languageRecoveryResult.detected ? {
+      detected: true,
+      theme: languageRecoveryResult.theme,
+      delta: languageRecoveryResult.delta,
+      instruction: `LANGUAGE_RECOVERY_DETECTED: true\nTHEME: "${languageRecoveryResult.theme}"\n\u2192 Erken de vooruitgang subtiel, zonder overdrijven.\n\u2192 Bevestig wat de gebruiker zelf al voelt.`,
+    } : undefined,
     // LOOPBLOCKER: inject cross-session loop directive if active
     loopDetected: (() => {
       const patterns: import('../ai/types').RepeatingPattern[] = (currentUserDat as any).repeatingPatterns ?? [];
@@ -2790,4 +2806,119 @@ function buildTherapeuticStance(analysis: StateAnalysis): string {
   parts.push(`[STATE: ${analysis.stateSummary}]`);
 
   return parts.join(' | ');
+}
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+// LANGUAGE RECOVERY ANALYZER
+// Detects diminishing negative intensity in user language.
+// NOT positive statements — only reduction of negative feelings.
+// Runs after decay engine (step 3b), does NOT modify the decay engine.
+// ═══════════════════════════════════════════════════════════════════════════
+
+export interface LanguageRecoveryResult {
+  detected: boolean;
+  theme: string;
+  delta: number;
+  matchedIndicator: string | null;
+}
+
+/**
+ * Recovery indicators: Dutch phrases that signal diminishing negative intensity.
+ * These are NOT positive statements — they indicate the user experiences
+ * LESS negativity than before, without claiming things are good.
+ */
+const RECOVERY_INDICATORS = [
+  'minder erg',
+  'niet meer zo',
+  'wat rustiger',
+  'gaat iets beter',
+  'minder zwaar',
+  'niet meer elke dag',
+  'af en toe nog',
+  'minder vaak',
+  'begin te wennen',
+  'het trekt wat weg',
+  'minder last',
+  'niet meer zo sterk',
+  'wat minder',
+  'iets afgenomen',
+  'minder intens',
+  'draaglijker',
+  'begint te zakken',
+  'niet meer constant',
+  'wat afgevlakt',
+  'minder overweldigend',
+];
+
+/**
+ * Map recovery indicators to likely projection themes.
+ * If the user says "minder erg" near a fear keyword, we link it to that fear.
+ */
+const THEME_KEYWORD_MAP: Record<string, string[]> = {
+  verlatingsangst: ['verlaten', 'alleen', 'achterlaten', 'verlating', 'eenzaam', 'in de steek'],
+  terugval: ['terugval', 'hervallen', 'opnieuw', 'weer beginnen', 'terug bij af'],
+  schaamte: ['schaamte', 'schamen', 'schuld', 'schuldig'],
+  hopeloosheid: ['hopeloos', 'zinloos', 'geen zin', 'opgeven', 'nutteloos'],
+  angst: ['angst', 'bang', 'paniek', 'angstig', 'bezorgd', 'zorgen'],
+  woede: ['woede', 'boos', 'kwaad', 'frustratie', 'geïrriteerd'],
+  verdriet: ['verdriet', 'verdrietig', 'huilen', 'rouw', 'gemis'],
+  craving: ['craving', 'trek', 'verlangen', 'zucht', 'drang', 'zin in'],
+};
+
+/**
+ * Analyze user message for language recovery indicators.
+ * Does NOT modify the decay engine — only produces a result for GPT injection.
+ * If detected, applies a -0.5 score reduction to the matching projection entry.
+ */
+function analyzeLanguageRecovery(
+  message: string,
+  userType: 'elias' | 'kim'
+): LanguageRecoveryResult {
+  const lowerMessage = message.toLowerCase();
+  const NO_RECOVERY: LanguageRecoveryResult = { detected: false, theme: '', delta: 0, matchedIndicator: null };
+
+  // Step 1: Check for any recovery indicator in the message
+  const matchedIndicator = RECOVERY_INDICATORS.find(indicator => lowerMessage.includes(indicator));
+  if (!matchedIndicator) {
+    return NO_RECOVERY;
+  }
+
+  // Step 2: Determine which theme the recovery relates to
+  let detectedTheme = 'general';
+  for (const [theme, keywords] of Object.entries(THEME_KEYWORD_MAP)) {
+    if (keywords.some(kw => lowerMessage.includes(kw))) {
+      detectedTheme = theme;
+      break;
+    }
+  }
+
+  // Step 3: Apply -0.5 decay to matching projection entry (if exists)
+  const RECOVERY_DELTA = -0.5;
+  try {
+    const projectionState = getProjectionState();
+    const matchingEntry = projectionState.entries.find(
+      (e) => e.isActive && e.content.toLowerCase().includes(detectedTheme)
+    );
+    if (matchingEntry) {
+      // Reduce decayScore by 5 points (equivalent to 0.5 on a 0-10 scale mapped to 0-100)
+      const { entries, ...rest } = projectionState;
+      const updatedEntries = entries.map((e) =>
+        e.id === matchingEntry.id
+          ? { ...e, decayScore: Math.max(0, e.decayScore - 5) }
+          : e
+      );
+      // Update projection state with reduced score
+      loadProjectionState({ ...rest, entries: updatedEntries });
+    }
+  } catch {
+    // Projection state not available — skip score reduction, still report detection
+  }
+
+  return {
+    detected: true,
+    theme: detectedTheme,
+    delta: RECOVERY_DELTA,
+    matchedIndicator,
+  };
 }

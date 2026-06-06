@@ -1021,3 +1021,9 @@
 - [x] Add loopDetected to ChatContext, GPTPayload, PayloadBuilderInput interfaces
 - [x] Inject loop directive in pipeline processMessage (reads from user.dat repeatingPatterns)
 - [x] Session-end: detect repeating themes, update repeatingPatterns with decay
+- [x] Language Recovery Analyzer: detect diminishing negative intensity in user language (pipeline step 3b)
+- [x] Recovery indicators: 20 Dutch phrases signaling reduced negativity (not positive statements)
+- [x] Theme keyword mapping: link recovery to projection themes (verlatingsangst, terugval, schaamte, etc.)
+- [x] Apply -0.5 decay to matching projection entry when recovery detected
+- [x] Inject LANGUAGE_RECOVERY_DETECTED directive into GPT payload for subtle acknowledgment
+- [x] Wire languageRecovery through ChatContext → GPTPayload → PayloadBuilder → OpenAI provider
