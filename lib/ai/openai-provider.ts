@@ -123,7 +123,6 @@ async function ensureServerAwake(apiBaseUrl: string): Promise<void> {
 function buildActiveSignals(context: ChatContext): Array<{ label: string; score: number; memory: string }> {
   const signals: Array<{ label: string; score: number; memory: string }> = [];
   const cs = context.candidateSignals;
-  if (!cs) return signals;
 
   // Map confidence (0-1) to score (0-3): <0.3 = +1, <0.7 = +2, >=0.7 = +3
   const toScore = (confidence: number): number => {
@@ -132,21 +131,79 @@ function buildActiveSignals(context: ChatContext): Array<{ label: string; score:
     return 1;
   };
 
-  // Fears → projections.dat (future-facing anxieties)
-  for (const f of cs.fears) {
-    signals.push({ label: f.keyword, score: toScore(f.confidence), memory: 'projections.dat' });
+  // ═══ projections.dat — future-facing signals from GptSignalEngine ═══
+  if (cs) {
+    for (const f of cs.fears) {
+      signals.push({ label: f.keyword, score: toScore(f.confidence), memory: 'projections.dat' });
+    }
+    for (const h of cs.hopes) {
+      signals.push({ label: h.keyword, score: toScore(h.confidence), memory: 'projections.dat' });
+    }
+    for (const g of cs.goals) {
+      signals.push({ label: g.keyword, score: toScore(g.confidence), memory: 'projections.dat' });
+    }
   }
-  // Hopes → projections.dat (future-facing aspirations)
-  for (const h of cs.hopes) {
-    signals.push({ label: h.keyword, score: toScore(h.confidence), memory: 'projections.dat' });
+
+  // ═══ user.dat — persistent trigger patterns across sessions ═══
+  if (cs) {
+    for (const t of cs.triggers) {
+      signals.push({ label: t.keyword, score: toScore(t.confidence), memory: 'user.dat' });
+    }
   }
-  // Goals → projections.dat (behavioral intentions / projected outcomes)
-  for (const g of cs.goals) {
-    signals.push({ label: g.keyword, score: toScore(g.confidence), memory: 'projections.dat' });
+
+  // ═══ state.dat — current mood-based signals from sliders ═══
+  // Only emit signals for elevated slider values (threshold: ≥4 out of 10)
+  const sliders = context.moodSliders;
+  if (sliders && 'craving' in sliders) {
+    // Elias sliders: craving, frustration, despondency (high = bad), focus (high = good)
+    const elias = sliders as { craving: number; frustration: number; despondency: number; focus: number };
+    if (elias.craving >= 4) {
+      signals.push({ label: 'craving', score: Math.min(3, Math.ceil(elias.craving / 3)), memory: 'state.dat' });
+    }
+    if (elias.frustration >= 4) {
+      signals.push({ label: 'frustration', score: Math.min(3, Math.ceil(elias.frustration / 3)), memory: 'state.dat' });
+    }
+    if (elias.despondency >= 4) {
+      signals.push({ label: 'despondency', score: Math.min(3, Math.ceil(elias.despondency / 3)), memory: 'state.dat' });
+    }
+    // Low focus is a signal (inverted: focus ≤ 3 out of 10)
+    if (elias.focus <= 3) {
+      signals.push({ label: 'low-focus', score: Math.min(3, Math.ceil((10 - elias.focus) / 3)), memory: 'state.dat' });
+    }
+  } else if (sliders && 'stress' in sliders) {
+    // Kim sliders: stress, boundaryFatigue, emotionalBurden (high = bad)
+    const kim = sliders as { stress: number; boundaryFatigue: number; emotionalBurden: number };
+    if (kim.stress >= 4) {
+      signals.push({ label: 'stress', score: Math.min(3, Math.ceil(kim.stress / 3)), memory: 'state.dat' });
+    }
+    if (kim.boundaryFatigue >= 4) {
+      signals.push({ label: 'boundary-fatigue', score: Math.min(3, Math.ceil(kim.boundaryFatigue / 3)), memory: 'state.dat' });
+    }
+    if (kim.emotionalBurden >= 4) {
+      signals.push({ label: 'emotional-burden', score: Math.min(3, Math.ceil(kim.emotionalBurden / 3)), memory: 'state.dat' });
+    }
   }
-  // Triggers → user.dat (persistent trigger patterns across sessions)
-  for (const t of cs.triggers) {
-    signals.push({ label: t.keyword, score: toScore(t.confidence), memory: 'user.dat' });
+
+  // ═══ buffer — volatile per-message signals (not persisted) ═══
+  const buf = context.bufferSnapshot;
+  if (buf) {
+    // Zone escalation as a buffer signal
+    if (buf.zoneColor === 'ORANGE' || buf.zoneColor === 'RED' || buf.zoneColor === 'PURPLE') {
+      const zoneScore = buf.zoneColor === 'PURPLE' ? 3 : buf.zoneColor === 'RED' ? 2 : 1;
+      signals.push({ label: `zone-${buf.zoneColor.toLowerCase()}`, score: zoneScore, memory: 'buffer' });
+    }
+    // Rising intensity trajectory
+    if (buf.intensityTrajectory === 'rising') {
+      signals.push({ label: 'intensity-rising', score: 2, memory: 'buffer' });
+    }
+    // Live intent signals (only actionable intents)
+    if (buf.liveIntent && buf.liveIntent !== 'neutral') {
+      signals.push({ label: `intent-${buf.liveIntent}`, score: 1, memory: 'buffer' });
+    }
+    // Detected emotion as buffer signal (only strong emotions)
+    if (buf.currentEmotion && buf.currentEmotion !== 'neutral' && buf.currentEmotion !== 'unknown' && buf.currentEmotion !== '') {
+      signals.push({ label: buf.currentEmotion, score: 1, memory: 'buffer' });
+    }
   }
 
   return signals;
