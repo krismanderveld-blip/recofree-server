@@ -132,21 +132,21 @@ function buildActiveSignals(context: ChatContext): Array<{ label: string; score:
     return 1;
   };
 
-  // Fears → memory: projections.dat (these are future-facing anxieties)
+  // Fears → projections.dat (future-facing anxieties)
   for (const f of cs.fears) {
     signals.push({ label: f.keyword, score: toScore(f.confidence), memory: 'projections.dat' });
   }
-  // Hopes → memory: projections.dat (future-facing aspirations)
+  // Hopes → projections.dat (future-facing aspirations)
   for (const h of cs.hopes) {
     signals.push({ label: h.keyword, score: toScore(h.confidence), memory: 'projections.dat' });
   }
-  // Goals → memory: user.dat (behavioral intentions tracked across sessions)
+  // Goals → projections.dat (behavioral intentions / projected outcomes)
   for (const g of cs.goals) {
-    signals.push({ label: g.keyword, score: toScore(g.confidence), memory: 'user.dat' });
+    signals.push({ label: g.keyword, score: toScore(g.confidence), memory: 'projections.dat' });
   }
-  // Triggers → memory: state.dat (emotional triggers from session state)
+  // Triggers → user.dat (persistent trigger patterns across sessions)
   for (const t of cs.triggers) {
-    signals.push({ label: t.keyword, score: toScore(t.confidence), memory: 'state.dat' });
+    signals.push({ label: t.keyword, score: toScore(t.confidence), memory: 'user.dat' });
   }
 
   return signals;
