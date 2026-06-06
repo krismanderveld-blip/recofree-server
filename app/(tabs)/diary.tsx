@@ -15,6 +15,7 @@ import { ScreenContainer } from '@/components/screen-container';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useColors } from '@/hooks/use-colors';
 import { useUser } from '@/lib/user-context';
+import { fixUnicode } from '@/lib/utils';
 import * as Haptics from 'expo-haptics';
 
 interface GratitudeData {
@@ -225,14 +226,14 @@ export default function DiaryScreen() {
         </View>
         {activeTab === 'journal' && item.content.trim() ? (
           <Text style={{ fontSize: 14, color: colors.foreground, lineHeight: 20 }} numberOfLines={4}>
-            {item.content}
+            {fixUnicode(item.content)}
           </Text>
         ) : null}
         {activeTab === 'gratitude' && hasGratitude ? (
           <View style={{ marginTop: 4 }}>
-            {item.gratitude!.entry1 ? <Text style={{ fontSize: 14, color: colors.foreground, marginBottom: 4 }}>1. {item.gratitude!.entry1}</Text> : null}
-            {item.gratitude!.entry2 ? <Text style={{ fontSize: 14, color: colors.foreground, marginBottom: 4 }}>2. {item.gratitude!.entry2}</Text> : null}
-            {item.gratitude!.entry3 ? <Text style={{ fontSize: 14, color: colors.foreground }}>3. {item.gratitude!.entry3}</Text> : null}
+            {item.gratitude!.entry1 ? <Text style={{ fontSize: 14, color: colors.foreground, marginBottom: 4 }}>1. {fixUnicode(item.gratitude!.entry1)}</Text> : null}
+            {item.gratitude!.entry2 ? <Text style={{ fontSize: 14, color: colors.foreground, marginBottom: 4 }}>2. {fixUnicode(item.gratitude!.entry2)}</Text> : null}
+            {item.gratitude!.entry3 ? <Text style={{ fontSize: 14, color: colors.foreground }}>3. {fixUnicode(item.gratitude!.entry3)}</Text> : null}
           </View>
         ) : null}
       </View>

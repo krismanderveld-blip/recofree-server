@@ -4,6 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import { ScreenContainer } from '@/components/screen-container';
 import { useUser } from '@/lib/user-context';
+import { fixUnicode } from '@/lib/utils';
 import { useColors } from '@/hooks/use-colors';
 import { GUIDANCE_DEPTH_OPTIONS } from '@/lib/ai/types';
 import type { GuidanceDepth } from '@/lib/ai/types';
@@ -125,7 +126,7 @@ export default function ProfileScreen() {
             </Text>
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={{ fontSize: 18, fontWeight: '700', color: colors.foreground }}>{userName || 'User'}</Text>
+            <Text style={{ fontSize: 18, fontWeight: '700', color: colors.foreground }}>{fixUnicode(userName) || 'User'}</Text>
             <Text style={{ fontSize: 13, color: colors.muted, marginTop: 2 }}>{userTypeLabel}</Text>
             <Text style={{ fontSize: 12, color: colors.muted, marginTop: 2 }}>
               {companionName}{isElias ? ` · ${STAGE_LABELS[stageOfChange] ?? stageOfChange}` : ''} · {totalSessions} session{totalSessions !== 1 ? 's' : ''} · {moodCheckIns} check-in{moodCheckIns !== 1 ? 's' : ''}

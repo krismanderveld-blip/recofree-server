@@ -18,6 +18,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useUser } from '@/lib/user-context';
+import { fixUnicode } from '@/lib/utils';
 import { getAIProvider } from '@/lib/ai';
 import { preprocessInput } from '@/lib/ai/preprocessor';
 import { processMessage, generateGreeting, endSession } from '@/lib/rugzak/pipeline';
@@ -805,10 +806,11 @@ function formatTime(timestamp: string): string {
 // ─── Clinical Mode: parse <clinical>...</clinical> from response ───
 
 function parseClinicalTag(content: string, isUser: boolean): { visibleContent: string; clinicalAnnotation: string | null } {
-  if (isUser) return { visibleContent: content, clinicalAnnotation: null };
-  const match = content.match(/<clinical>([\s\S]*?)<\/clinical>/);
-  if (!match) return { visibleContent: content, clinicalAnnotation: null };
-  const visibleContent = content.replace(/<clinical>[\s\S]*?<\/clinical>/, '').trim();
+  const fixed = fixUnicode(content);
+  if (isUser) return { visibleContent: fixed, clinicalAnnotation: null };
+  const match = fixed.match(/<clinical>([\s\S]*?)<\/clinical>/);
+  if (!match) return { visibleContent: fixed, clinicalAnnotation: null };
+  const visibleContent = fixed.replace(/<clinical>[\s\S]*?<\/clinical>/, '').trim();
   return { visibleContent, clinicalAnnotation: match[1].trim() };
 }
 

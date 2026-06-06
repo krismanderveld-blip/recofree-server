@@ -9,6 +9,7 @@ import {
   Platform,
 } from 'react-native';
 import { ScreenContainer } from '@/components/screen-container';
+import { fixUnicode } from '@/lib/utils';
 import { useUser } from '@/lib/user-context';
 import type { LifePhaseId, LifePhaseSection, StageOfChange, KimBackpackSectionId } from '@/lib/ai/types';
 import { STAGE_OF_CHANGE_OPTIONS, DEFAULT_KIM_BACKPACK_SECTIONS } from '@/lib/ai/types';
@@ -175,7 +176,7 @@ export default function BackpackScreen() {
               </View>
             ) : hasContent ? (
               <View>
-                <Text style={{ fontSize: 14, color: colors.foreground, lineHeight: 22 }}>{section.content}</Text>
+                <Text style={{ fontSize: 14, color: colors.foreground, lineHeight: 22 }}>{fixUnicode(section.content)}</Text>
                 {section.lastUpdated && (
                   <Text style={{ fontSize: 11, color: colors.muted, marginTop: 8 }}>Last updated: {new Date(section.lastUpdated).toLocaleDateString()}</Text>
                 )}
@@ -273,7 +274,7 @@ export default function BackpackScreen() {
               </View>
             ) : hasContent ? (
               <View>
-                <Text style={{ fontSize: 14, color: colors.foreground, lineHeight: 22 }}>{content}</Text>
+                <Text style={{ fontSize: 14, color: colors.foreground, lineHeight: 22 }}>{fixUnicode(content)}</Text>
                 <Pressable onPress={() => handleStartEditKim(section.id)} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1, marginTop: 12 }]}>
                   <View style={{ backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: 12, paddingVertical: 10, alignItems: 'center' }}>
                     <Text style={{ color: colors.primary, fontWeight: '500' }}>Edit</Text>

@@ -3,6 +3,7 @@ import { ScrollView, Text, View, Pressable, Modal, Platform } from 'react-native
 import { useRouter, type Href } from 'expo-router';
 import { ScreenContainer } from '@/components/screen-container';
 import { useUser } from '@/lib/user-context';
+import { fixUnicode } from '@/lib/utils';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useColors } from '@/hooks/use-colors';
 import { getSliderConfig } from '@/lib/ai/types';
@@ -123,7 +124,7 @@ export default function HomeScreen() {
         {/* Header */}
         <View className="mb-5">
           <Text style={{ fontSize: 14, color: colors.muted, marginBottom: 4 }}>
-            {getTimeGreeting()}, {userName}
+            {getTimeGreeting()}, {fixUnicode(userName)}
           </Text>
           <Pressable onPress={handleCompanionNameTap}>
             <Text style={{ fontSize: 24, fontWeight: '700', color: colors.foreground }}>
