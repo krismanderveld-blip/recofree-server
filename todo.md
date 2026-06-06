@@ -1012,3 +1012,6 @@
 - [x] Consistent light styling across all screens
 - [x] 0 TS errors, all tests green after V2 redesign
 - [x] Add Signals line to clinical tag (candidateSignals from engine → server → UI)
+- [x] Add Elias avatar (elias_avatar.jpg) to assets/images
+- [x] Add Kim avatar (kim_avatar.png) to assets/images
+- [x] Display companion avatar on Home screen (Elias for addiction users, Kim for loved ones)

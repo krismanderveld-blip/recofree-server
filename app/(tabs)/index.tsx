@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { ScrollView, Text, View, Pressable, Modal, Platform } from 'react-native';
+import { ScrollView, Text, View, Pressable, Modal, Platform, Image } from 'react-native';
 import { useRouter, type Href } from 'expo-router';
 import { ScreenContainer } from '@/components/screen-container';
 import { useUser } from '@/lib/user-context';
@@ -195,16 +195,22 @@ export default function HomeScreen() {
           </Pressable>
         )}
 
+        {/* Companion Avatar */}
+        <View style={{ alignItems: 'center', marginBottom: 20 }}>
+          <Image
+            source={isElias
+              ? require('../../assets/images/elias_avatar.jpg')
+              : require('../../assets/images/kim_avatar.jpg')
+            }
+            style={{ width: 180, height: 180, borderRadius: 90 }}
+          />
+        </View>
+
         {/* Greeting Bubble */}
-        <View style={{ flexDirection: 'row', alignItems: 'flex-start', marginBottom: 20 }}>
-          <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center', marginRight: 12, marginTop: 2 }}>
-            <IconSymbol name="heart.fill" size={16} color="#fff" />
-          </View>
-          <View style={{ flex: 1, backgroundColor: colors.surface, borderRadius: 16, padding: 14, borderWidth: 1, borderColor: colors.border }}>
-            <Text style={{ fontSize: 14, color: colors.foreground, lineHeight: 20 }}>
-              {getGreeting(userName, companionName, isElias)}
-            </Text>
-          </View>
+        <View style={{ backgroundColor: colors.surface, borderRadius: 16, padding: 14, borderWidth: 1, borderColor: colors.border, marginBottom: 20 }}>
+          <Text style={{ fontSize: 14, color: colors.foreground, lineHeight: 20, textAlign: 'center' }}>
+            {getGreeting(userName, companionName, isElias)}
+          </Text>
         </View>
 
         {/* Mood Summary Row */}
