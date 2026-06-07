@@ -446,6 +446,21 @@ function ChatScreenInner() {
         console.log('[Chat] Module 98 triggered: consecutiveSessionsWithoutEngagement =', userDat.consecutiveSessionsWithoutEngagement);
       }
 
+      // ── Module 93: Reactivatie na stilstand ─────────────────────
+      // When user returns after 3+ days of inactivity, flag for warm welcome back
+      let triggerModule93 = false;
+      if (userDat.lastSessionDate && userDat.totalSessions > 0) {
+        const lastDate = new Date(userDat.lastSessionDate).getTime();
+        const now = Date.now();
+        const daysSinceLastSession = (now - lastDate) / (1000 * 60 * 60 * 24);
+        if (daysSinceLastSession >= 3) {
+          triggerModule93 = true;
+        }
+      }
+      if (triggerModule93) {
+        console.log('[Chat] Module 93 triggered: user returned after 3+ days of inactivity');
+      }
+
       const provider = getAIProvider();
       // SESSION START: send full backpack + userDat + diary entries
       const result = await generateGreeting(backpack, provider, userDat, diaryEntries);
