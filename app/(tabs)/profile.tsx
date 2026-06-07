@@ -267,7 +267,7 @@ export default function ProfileScreen() {
                 }}
                 style={({ pressed }) => [{ opacity: pressed ? 0.5 : 1, padding: 8 }]}
               >
-                <Text style={{ fontSize: 18, color: colors.error }}>\u00D7</Text>
+                <Text style={{ fontSize: 18, color: colors.error }}>×</Text>
               </Pressable>
             </View>
           ))}
