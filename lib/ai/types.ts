@@ -527,6 +527,8 @@ export interface UserDat {
   gdprAcceptedAt?: string;
   /** Version of GDPR terms accepted */
   gdprVersion?: string;
+  /** Whether the first-chat disclaimer modal has been seen */
+  firstChatSeen?: boolean;
 }
 
 /** A record of a completed session's analysis */

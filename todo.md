@@ -1048,3 +1048,5 @@
 - [x] GDPR: Write 14 compliance tests (store=false, no tools, no raw data, post-check)
 - [x] GDPR: Add compliance note in codebase
 - [x] GDPR consent screen: mandatory, not skipable, shown after intake and for returning users without gdprAccepted
+- [x] First-chat disclaimer modal: one-time, not skipable, saves firstChatSeen to user.dat
+- [x] Fixed crisis disclaimer at bottom of chat screen (always visible)

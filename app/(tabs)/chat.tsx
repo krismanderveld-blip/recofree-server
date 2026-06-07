@@ -11,6 +11,9 @@ import {
   AppState,
   Keyboard,
   KeyboardAvoidingView,
+  Modal,
+  TouchableOpacity,
+  ScrollView as RNScrollView,
   type AppStateStatus,
 } from 'react-native';
 
@@ -81,6 +84,21 @@ function ChatScreenInner() {
 
   const userName = getUserName();
   const companionName = state.userType === 'elias' ? 'Elias' : 'Kim';
+
+  // ── First-chat disclaimer modal (one-time, not skipable) ──
+  const [firstChatSeen, setFirstChatSeen] = useState<boolean>(true); // default true to avoid flash
+  useEffect(() => {
+    (async () => {
+      const ud = await getUserDat();
+      if (!ud?.firstChatSeen) setFirstChatSeen(false);
+    })();
+  }, []);
+  const dismissFirstChatDisclaimer = useCallback(async () => {
+    setFirstChatSeen(true);
+    const ud = await getUserDat();
+    const updated = { ...ud, firstChatSeen: true } as UserDat;
+    await AsyncStorage.setItem(USERDAT_KEY, JSON.stringify(updated));
+  }, [getUserDat]);
 
   // ── Pre-chat gate: VSP/Eigen Regie ALWAYS shown at every chat start ──
   // The thermometer is both engine-input and a self-reflection mirror for the user.
@@ -775,7 +793,49 @@ function ChatScreenInner() {
             </View>
           </View>
         )}
+
+        {/* Fixed crisis disclaimer at bottom */}
+        <Text style={{ fontSize: 11, color: '#999', textAlign: 'center', paddingVertical: 4 }}>
+          RecoFree is not a substitute for professional help.{"\n"}
+          Crisis? Call 0800 32 123 (24/7) or 107.
+        </Text>
       </View>
+
+      {/* First-chat disclaimer modal — not skipable */}
+      <Modal visible={!firstChatSeen} transparent animationType="fade">
+        <View style={{ flex: 1, justifyContent: 'center', padding: 24, backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <View style={{ backgroundColor: colors.surface, borderRadius: 16, padding: 24, maxHeight: '80%' }}>
+            <Text style={{ fontWeight: 'bold', fontSize: 18, marginBottom: 16, color: colors.foreground }}>
+              Before we begin
+            </Text>
+            <RNScrollView style={{ maxHeight: 300 }}>
+              <Text style={{ color: colors.foreground, lineHeight: 22 }}>
+                {companionName} is an AI companion, not a therapist or doctor.
+                {'\n\n'}
+                {'\u2022'} RecoFree does not replace professional mental health care.
+                {'\n'}
+                {'\u2022'} RecoFree never provides diagnoses or medical advice.
+                {'\n'}
+                {'\u2022'} RecoFree is not a replacement for a psychologist or psychiatrist.
+                {'\n'}
+                {'\u2022'} Sometimes professional help is the better choice — and that is okay.
+                {'\n'}
+                {'\u2022'} In case of crisis, always contact a professional or call 0800 32 123.
+                {'\n'}
+                {'\u2022'} Your conversations are private and stay on your device.
+              </Text>
+            </RNScrollView>
+            <TouchableOpacity
+              onPress={dismissFirstChatDisclaimer}
+              style={{ marginTop: 24, backgroundColor: colors.primary, borderRadius: 12, paddingVertical: 14, alignItems: 'center' }}
+            >
+              <Text style={{ color: '#FFFFFF', fontWeight: 'bold', fontSize: 16 }}>
+                I understand
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 
