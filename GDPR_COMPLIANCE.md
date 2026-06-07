@@ -17,3 +17,14 @@
 ## Audit
 - Clinical Mode toont therapeutische redenering transparant
 - Engine beslist, GPT formuleert taal
+
+## Right to Erasure
+- "Reset All Data" in Profile permanently deletes all local data
+- No server-side data to delete
+
+## Data Retention
+- Data stored until user deletes it via Reset All Data
+- No automatic retention or expiry
+
+## Data Portability
+- All data is local — user owns it fully

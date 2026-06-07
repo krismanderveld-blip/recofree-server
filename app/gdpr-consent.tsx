@@ -51,6 +51,18 @@ export default function GdprConsentScreen() {
               <Text style={[styles.bullet, { color: colors.foreground }]}>
                 {'\u2022'} OpenAI has signed a Data Processing Agreement (GDPR-compliant).
               </Text>
+              <Text style={[styles.bullet, { color: colors.foreground }]}>
+                {'\u2022'} All your data is stored locally on your device only.
+              </Text>
+              <Text style={[styles.bullet, { color: colors.foreground }]}>
+                {'\u2022'} RecoFree does not use your data for training or analytics.
+              </Text>
+              <Text style={[styles.bullet, { color: colors.foreground }]}>
+                {'\u2022'} You can permanently delete all your data at any time via Settings → Reset All Data.
+              </Text>
+              <Text style={[styles.bullet, { color: colors.foreground }]}>
+                {'\u2022'} Your journal, backpack, and conversation history never leave your device.
+              </Text>
             </View>
 
             <Text style={[styles.body, { color: colors.foreground, marginTop: 16 }]}>
