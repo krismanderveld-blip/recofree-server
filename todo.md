@@ -1055,3 +1055,4 @@
 - [x] Kim Stilte Detectie: 20s silence timer, random soft invitation, max 1x per silence, reset on interaction
 - [x] Stilte Detectie rewrite: both Elias + Kim, 20s normal silence, persona-specific responses
 - [x] Module 58: post-onthulling 90s silence detection with disclosure keywords + specific response
+- [x] Fix: VSP PAARS always showing red border/bg even when not selected — now only highlights when actively selected

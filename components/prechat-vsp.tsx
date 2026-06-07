@@ -79,6 +79,25 @@ export function PreChatVsp({ onSubmit, userName }: PreChatVspProps) {
             const isSelected = selected === option.value;
             const isRelapse = option.value === 'PAARS';
 
+            // Border and background logic:
+            // - Default (not selected): neutral border, white bg
+            // - Selected: colored border + tinted bg
+            // - PAARS only gets red styling when SELECTED
+            let borderWidth = 1;
+            let borderColor = colors.border;
+            let backgroundColor = '#fff';
+
+            if (isSelected) {
+              borderWidth = 2;
+              if (isRelapse) {
+                borderColor = '#DC2626';
+                backgroundColor = '#FEF2F2';
+              } else {
+                borderColor = option.color;
+                backgroundColor = `${option.color}10`;
+              }
+            }
+
             return (
               <Pressable
                 key={option.value}
@@ -94,20 +113,16 @@ export function PreChatVsp({ onSubmit, userName }: PreChatVspProps) {
                   paddingVertical: 16,
                   paddingHorizontal: 16,
                   borderRadius: 14,
-                  borderWidth: isRelapse ? 2 : isSelected ? 2 : 1,
-                  borderColor: isRelapse
-                    ? (isSelected ? '#DC2626' : '#FCA5A5')
-                    : (isSelected ? option.color : colors.border),
-                  backgroundColor: isRelapse
-                    ? (isSelected ? '#FEF2F2' : '#FFF5F5')
-                    : (isSelected ? `${option.color}10` : '#fff'),
+                  borderWidth,
+                  borderColor,
+                  backgroundColor,
                 }}>
                   {/* Icon */}
                   <View style={{
                     width: 36,
                     height: 36,
                     borderRadius: 18,
-                    backgroundColor: isRelapse ? '#FEE2E2' : `${option.color}20`,
+                    backgroundColor: `${option.color}20`,
                     alignItems: 'center',
                     justifyContent: 'center',
                     marginRight: 12,
@@ -120,13 +135,13 @@ export function PreChatVsp({ onSubmit, userName }: PreChatVspProps) {
                     <Text style={{
                       fontSize: 15,
                       fontWeight: '600',
-                      color: isRelapse ? '#DC2626' : colors.foreground,
+                      color: isRelapse && isSelected ? '#DC2626' : colors.foreground,
                     }}>
                       {option.label}
                     </Text>
                     <Text style={{
                       fontSize: 12,
-                      color: isRelapse ? '#B91C1C' : colors.muted,
+                      color: isRelapse && isSelected ? '#B91C1C' : colors.muted,
                       marginTop: 2,
                     }}>
                       {VSP_DESCRIPTIONS[option.value]}
@@ -134,7 +149,7 @@ export function PreChatVsp({ onSubmit, userName }: PreChatVspProps) {
                   </View>
 
                   {/* Chevron */}
-                  <IconSymbol name="chevron.right" size={16} color={isRelapse ? '#DC2626' : colors.muted} />
+                  <IconSymbol name="chevron.right" size={16} color={isRelapse && isSelected ? '#DC2626' : colors.muted} />
                 </View>
               </Pressable>
             );
