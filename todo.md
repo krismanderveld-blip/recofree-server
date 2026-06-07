@@ -1040,3 +1040,10 @@
 - [x] Clinical tag hidden when annotation contains '[not annotated' or 'model did not comply'
 - [x] Crisis markers: suicidal ideation language detection in buildActiveSignals (score +3, buffer)
 - [x] Crisis Response Protocol: presence → safety → numbers (Belgian: 112, 0800 32 123, 107, 1712)
+- [x] GDPR: Create privacy constants config (store=false, all tools disabled)
+- [x] GDPR: Implement prompt minimization layer (no raw journal/rugzak/crisis history to OpenAI)
+- [x] GDPR: Refactor OpenAI provider as language-rendering-only wrapper
+- [x] GDPR: Implement local response post-check layer (reject diagnosis/advice/escalation)
+- [x] GDPR: Add fallback when post-check fails (discard OpenAI output, show local text)
+- [x] GDPR: Write 14 compliance tests (store=false, no tools, no raw data, post-check)
+- [x] GDPR: Add compliance note in codebase
