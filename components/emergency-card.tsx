@@ -1,4 +1,6 @@
+import { useState, useEffect } from 'react';
 import { Text, View, Pressable, Linking, Platform, Alert } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getCrisisContentForMessage, type CrisisContent } from '@/lib/crisis/resources';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import * as Haptics from 'expo-haptics';
@@ -11,6 +13,15 @@ interface EmergencyCardProps {
 }
 
 export function EmergencyCard({ visible, onDismiss, lastUserMessage }: EmergencyCardProps) {
+  const [personalContacts, setPersonalContacts] = useState<{ name: string; number: string }[]>([]);
+
+  useEffect(() => {
+    if (!visible) return;
+    AsyncStorage.getItem('emergencyContacts').then((data) => {
+      if (data) setPersonalContacts(JSON.parse(data));
+    });
+  }, [visible]);
+
   if (!visible) return null;
 
   const content: CrisisContent = getCrisisContentForMessage(lastUserMessage);
@@ -104,6 +115,41 @@ export function EmergencyCard({ visible, onDismiss, lastUserMessage }: Emergency
           {content.smsButtonText}
         </Text>
       </Pressable>
+
+      {/* Personal emergency contacts */}
+      {personalContacts.length > 0 && (
+        <View style={{ marginBottom: 12 }}>
+          <Text style={{ fontSize: 11, fontWeight: '700', color: '#999', marginBottom: 8, letterSpacing: 0.5 }}>
+            YOUR CONTACTS
+          </Text>
+          {personalContacts.map((contact, idx) => (
+            <Pressable
+              key={idx}
+              onPress={() => handleCall(contact.number)}
+              style={({ pressed }) => [
+                {
+                  backgroundColor: pressed ? '#E3F2FD' : '#F5F9FF',
+                  borderRadius: 12,
+                  paddingVertical: 14,
+                  paddingHorizontal: 16,
+                  marginBottom: 8,
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  borderWidth: 1,
+                  borderColor: '#0a7ea430',
+                  transform: [{ scale: pressed ? 0.97 : 1 }],
+                },
+              ]}
+            >
+              <IconSymbol name="phone.fill" size={18} color="#0a7ea4" />
+              <View style={{ marginLeft: 12, flex: 1 }}>
+                <Text style={{ fontSize: 14, fontWeight: '600', color: '#11181C' }}>{contact.name}</Text>
+                <Text style={{ fontSize: 15, fontWeight: '700', color: '#0a7ea4', marginTop: 2 }}>{contact.number}</Text>
+              </View>
+            </Pressable>
+          ))}
+        </View>
+      )}
 
       {/* Other resources */}
       {content.resources.filter(r => r.number !== '0800 32 123' && r.number !== '107').map((resource) => (
