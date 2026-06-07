@@ -1051,3 +1051,5 @@
 - [x] First-chat disclaimer modal: one-time, not skipable, saves firstChatSeen to user.dat
 - [x] Fixed crisis disclaimer at bottom of chat screen (always visible)
 - [x] Personal emergency contacts (max 2): add name + number in Settings, shown in EmergencyCard as tappable call buttons
+- [x] Server: THERAPY DISCLOSURE in CLINICAL MODE + moduleRegistry.getActiveModules(userType)
+- [x] Kim Stilte Detectie: 20s silence timer, random soft invitation, max 1x per silence, reset on interaction

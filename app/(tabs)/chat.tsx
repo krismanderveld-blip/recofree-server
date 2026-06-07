@@ -44,6 +44,16 @@ const USERDAT_KEY = '@recofree_userdat';
 const PENDING_CLOSE_KEY = '@recofree_pending_close';
 const DIARY_KEY = '@recofree_diary';
 
+// ─── Kim Silence Detection ────────────────────────────────────────
+const KIM_SILENCE_TIMEOUT_MS = 20_000; // 20 seconds
+const STILTE_RESPONSES = [
+  "Ik ben hier, ook als jij even stil bent. Je hoeft niets te forceren.",
+  "Soms zijn woorden moeilijk. Weet dat ik met je meewandel, ook in stilte.",
+  "Ik blijf bij je, ook als je even niet weet wat te zeggen.",
+  "Er mag stilte zijn. Als je weer wil praten, ben ik er.",
+  "Je bent niet alleen. Wanneer jij klaar bent, gaan we samen verder.",
+];
+
 type SessionPhase = 'active' | 'ending' | 'completed';
 
 export default function ChatScreenWithBoundary() {
@@ -85,6 +95,81 @@ function ChatScreenInner() {
 
   const userName = getUserName();
   const companionName = state.userType === 'elias' ? 'Elias' : 'Kim';
+
+  // ── Kim Silence Detection ──────────────────────────────────────
+  const silenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const silenceFiredRef = useRef(false);
+  const isKimUser = state.userType === 'kim';
+
+  /** Reset the silence timer — called on every user interaction */
+  const resetSilenceTimer = useCallback(() => {
+    if (!isKimUser) return;
+    // Clear existing timer
+    if (silenceTimerRef.current) {
+      clearTimeout(silenceTimerRef.current);
+      silenceTimerRef.current = null;
+    }
+    // Don't restart if already fired this silence moment
+    if (silenceFiredRef.current) return;
+    // Don't start if AI is typing or session not active
+    // (checked inside the timeout callback for freshness)
+    silenceTimerRef.current = setTimeout(() => {
+      // Guard: only fire if session is active, not typing, and not already fired
+      if (silenceFiredRef.current) return;
+      silenceFiredRef.current = true;
+      // Pick a random response, optionally personalize with name
+      let response = STILTE_RESPONSES[Math.floor(Math.random() * STILTE_RESPONSES.length)];
+      if (userName) {
+        // Insert name after first sentence start for personalization
+        // e.g. "Ik ben hier, [naam], ook als jij even stil bent."
+        response = response.replace(/^([^,\.]+)/, `$1, ${userName}`);
+      }
+      const silenceMsg: ChatMessage = {
+        id: `msg_silence_${Date.now()}`,
+        role: 'assistant',
+        content: response,
+        timestamp: new Date().toISOString(),
+      };
+      setMessages((prev) => [...prev, silenceMsg]);
+    }, KIM_SILENCE_TIMEOUT_MS);
+  }, [isKimUser, userName]);
+
+  // Start/reset silence timer when session becomes active and greeting is sent
+  useEffect(() => {
+    if (!isKimUser || sessionPhase !== 'active') return;
+    // Only start after greeting is sent (messages > 0)
+    if (messages.length === 0) return;
+    // If AI is typing, don't start timer
+    if (isTyping) {
+      if (silenceTimerRef.current) {
+        clearTimeout(silenceTimerRef.current);
+        silenceTimerRef.current = null;
+      }
+      return;
+    }
+    // Reset silence fired flag when user sends a new message
+    // (detected by last message being from user)
+    const lastMsg = messages[messages.length - 1];
+    if (lastMsg?.role === 'assistant' && !lastMsg.id.startsWith('msg_silence_')) {
+      // AI just responded — reset silence state for next silence moment
+      silenceFiredRef.current = false;
+      resetSilenceTimer();
+    }
+    return () => {
+      if (silenceTimerRef.current) {
+        clearTimeout(silenceTimerRef.current);
+        silenceTimerRef.current = null;
+      }
+    };
+  }, [isKimUser, sessionPhase, messages.length, isTyping, resetSilenceTimer]);
+
+  // Reset silence timer on text input change (user is typing)
+  useEffect(() => {
+    if (!isKimUser || !inputText) return;
+    // User is actively typing — reset timer and silence state
+    silenceFiredRef.current = false;
+    resetSilenceTimer();
+  }, [inputText, isKimUser, resetSilenceTimer]);
 
   // ── First-chat disclaimer modal (one-time, not skipable) ──
   const [firstChatSeen, setFirstChatSeen] = useState<boolean>(true); // default true to avoid flash
@@ -311,6 +396,15 @@ function ChatScreenInner() {
   const handleSend = useCallback(async () => {
     const rawText = inputText.trim();
     if (!rawText || isTyping || !state.backpack || !state.userDat || sessionPhase !== 'active') return;
+
+    // Reset Kim silence detection on user send
+    if (isKimUser) {
+      silenceFiredRef.current = false;
+      if (silenceTimerRef.current) {
+        clearTimeout(silenceTimerRef.current);
+        silenceTimerRef.current = null;
+      }
+    }
 
     setInputText('');
     Keyboard.dismiss();
