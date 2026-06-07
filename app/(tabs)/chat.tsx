@@ -14,6 +14,7 @@ import {
   Modal,
   TouchableOpacity,
   ScrollView as RNScrollView,
+  Linking,
   type AppStateStatus,
 } from 'react-native';
 
@@ -796,8 +797,20 @@ function ChatScreenInner() {
 
         {/* Fixed crisis disclaimer at bottom */}
         <Text style={{ fontSize: 11, color: '#999', textAlign: 'center', paddingVertical: 4 }}>
-          RecoFree is not a substitute for professional help.{"\n"}
-          Crisis? Call 0800 32 123 (24/7) or 107.
+          RecoFree is not a substitute for professional help.{' '}
+          <Text
+            style={{ color: '#E53935', textDecorationLine: 'underline' }}
+            onPress={() => Linking.openURL('tel:080032123')}
+          >
+            Crisis? Call 0800 32 123
+          </Text>
+          {' '}(24/7) or{' '}
+          <Text
+            style={{ color: '#E53935', textDecorationLine: 'underline' }}
+            onPress={() => Linking.openURL('tel:107')}
+          >
+            107
+          </Text>
         </Text>
       </View>
 
