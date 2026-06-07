@@ -63,8 +63,10 @@ export default function HomeScreen() {
   useEffect(() => {
     if (!state.isLoading && !state.intakeCompleted) {
       router.replace('/intake' as Href);
+    } else if (!state.isLoading && state.intakeCompleted && state.userDat && !state.userDat.gdprAccepted) {
+      router.replace('/gdpr-consent' as Href);
     }
-  }, [state.isLoading, state.intakeCompleted]);
+  }, [state.isLoading, state.intakeCompleted, state.userDat?.gdprAccepted]);
 
   // Milestone check (Elias only)
   useEffect(() => {

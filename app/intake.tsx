@@ -73,7 +73,7 @@ export default function IntakeScreen() {
         urgency,
         initialContext: '',
       });
-      router.replace('/(tabs)');
+      router.replace('/gdpr-consent');
     } catch (error) {
       console.error('Intake error:', error);
       setIsSubmitting(false);

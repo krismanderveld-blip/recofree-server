@@ -134,6 +134,7 @@ export default function RootLayout() {
             <Stack screenOptions={{ headerShown: false }}>
               <Stack.Screen name="(tabs)" />
               <Stack.Screen name="intake" options={{ gestureEnabled: false }} />
+              <Stack.Screen name="gdpr-consent" options={{ gestureEnabled: false }} />
               <Stack.Screen name="oauth/callback" />
               <Stack.Screen name="dev/debug-log" options={{ presentation: 'modal' }} />
             </Stack>

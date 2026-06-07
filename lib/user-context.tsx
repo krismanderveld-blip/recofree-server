@@ -105,6 +105,8 @@ interface UserContextValue {
   updateSobrietyDate: (date: string | null) => Promise<void>;
   /** Update last milestone shown date. */
   updateMilestoneShown: (date: string) => Promise<void>;
+  /** Accept GDPR consent — stores acceptance in userDat */
+  acceptGdpr: () => Promise<void>;
   /** Toggle Clinical Mode (easter egg). */
   toggleClinicalMode: (active: boolean) => Promise<void>;
   /** Update VSP level (Elias users only). Must be called before pipeline start. */
@@ -582,6 +584,18 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     await persistUserDat(updatedUserDat);
   }, [state.userDat]);
 
+  const acceptGdpr = useCallback(async () => {
+    if (!state.userDat) return;
+    const updatedUserDat: UserDat = {
+      ...state.userDat,
+      gdprAccepted: true,
+      gdprAcceptedAt: new Date().toISOString(),
+      gdprVersion: '1.0',
+    };
+    dispatch({ type: 'UPDATE_USERDAT', payload: updatedUserDat });
+    await persistUserDat(updatedUserDat);
+  }, [state.userDat]);
+
   const getGuidanceDepth = useCallback((): GuidanceDepth => {
     return state.userDat?.guidanceDepth ?? 'normal';
   }, [state.userDat]);
@@ -750,6 +764,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         getEigenRegieHistory,
         updateSobrietyDate,
         updateMilestoneShown,
+        acceptGdpr,
         toggleClinicalMode,
         updateVsp,
         getVsp,

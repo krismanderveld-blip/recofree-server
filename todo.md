@@ -1047,3 +1047,4 @@
 - [x] GDPR: Add fallback when post-check fails (discard OpenAI output, show local text)
 - [x] GDPR: Write 14 compliance tests (store=false, no tools, no raw data, post-check)
 - [x] GDPR: Add compliance note in codebase
+- [x] GDPR consent screen: mandatory, not skipable, shown after intake and for returning users without gdprAccepted

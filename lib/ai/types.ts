@@ -521,6 +521,12 @@ export interface UserDat {
   lastMilestoneShown: string | null;
   /** Clinical Mode — enables therapeutic annotations in AI responses. Default: false. */
   clinicalModeActive: boolean;
+  /** GDPR consent accepted by user */
+  gdprAccepted?: boolean;
+  /** ISO timestamp when GDPR consent was accepted */
+  gdprAcceptedAt?: string;
+  /** Version of GDPR terms accepted */
+  gdprVersion?: string;
 }
 
 /** A record of a completed session's analysis */
