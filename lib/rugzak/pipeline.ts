@@ -456,6 +456,7 @@ export async function processMessage(
       sobrietyDate: null,
       lastMilestoneShown: null,
       clinicalModeActive: false,
+      consecutiveSessionsWithoutEngagement: 0,
     };
   }
 
@@ -2019,6 +2020,7 @@ export async function generateGreeting(
       sobrietyDate: null,
       lastMilestoneShown: null,
       clinicalModeActive: false,
+      consecutiveSessionsWithoutEngagement: 0,
     };
   }
 
@@ -2195,6 +2197,7 @@ export async function endSession(
       sobrietyDate: null,
       lastMilestoneShown: null,
       clinicalModeActive: false,
+      consecutiveSessionsWithoutEngagement: 0,
     };
   }
 

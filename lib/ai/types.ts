@@ -529,6 +529,8 @@ export interface UserDat {
   gdprVersion?: string;
   /** Whether the first-chat disclaimer modal has been seen */
   firstChatSeen?: boolean;
+  /** Module 98: consecutive sessions without diary, slider, or backpack engagement */
+  consecutiveSessionsWithoutEngagement: number;
 }
 
 /** A record of a completed session's analysis */
@@ -875,6 +877,7 @@ export function createNewUserDat(
     sobrietyDate: null,
     lastMilestoneShown: null,
     clinicalModeActive: false,
+    consecutiveSessionsWithoutEngagement: 0,
   };
 }
 

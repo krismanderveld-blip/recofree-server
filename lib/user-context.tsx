@@ -356,6 +356,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
                 sobrietyDate: null,
                 lastMilestoneShown: null,
                 clinicalModeActive: false,
+                consecutiveSessionsWithoutEngagement: 0,
             };
 
           // Persist both new stores
@@ -669,6 +670,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       sobrietyDate: state.userDat?.sobrietyDate ?? null,
       lastMilestoneShown: state.userDat?.lastMilestoneShown ?? null,
       clinicalModeActive: state.userDat?.clinicalModeActive ?? false,
+      consecutiveSessionsWithoutEngagement: state.userDat?.consecutiveSessionsWithoutEngagement ?? 0,
     };
     dispatch({ type: 'END_SESSION', payload: updatedUserDat });
     await persistUserDat(updatedUserDat);
@@ -855,5 +857,6 @@ function migrateUserDat(raw: any, userType: UserType): UserDat {
     lastMilestoneShown: raw.lastMilestoneShown ?? null,
     clinicalModeActive: raw.clinicalModeActive ?? false,
     guidanceDepth: raw.guidanceDepth ?? 'normal',
+    consecutiveSessionsWithoutEngagement: raw.consecutiveSessionsWithoutEngagement ?? 0,
   };
 }

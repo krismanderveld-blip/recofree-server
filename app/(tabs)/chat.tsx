@@ -413,6 +413,39 @@ function ChatScreenInner() {
         console.warn('Could not load diary for AI context:', e);
       }
 
+      // ── Module 98: Verwaarlozing Detectie ──────────────────────────
+      // Track engagement: check if user had diary entries, slider changes, or backpack additions
+      // since last session. If not, increment counter; if yes, reset to 0.
+      const lastSession = userDat.lastSessionDate;
+      const hasDiaryEngagement = diaryEntries.length > 0 && lastSession
+        ? diaryEntries.some((e) => e.timestamp && e.timestamp > lastSession)
+        : false;
+      const hasSliderEngagement = userDat.moodHistory.length > 0 && lastSession
+        ? userDat.moodHistory.some((s: any) => s.timestamp && s.timestamp > lastSession)
+        : false;
+      const hasBackpackEngagement = backpack.sections.some(
+        (s) => s.lastUpdated && lastSession && s.lastUpdated > lastSession
+      );
+      const hadEngagement = hasDiaryEngagement || hasSliderEngagement || hasBackpackEngagement;
+      if (hadEngagement) {
+        userDat.consecutiveSessionsWithoutEngagement = 0;
+      } else if (userDat.totalSessions > 0) {
+        // Only increment if this is not the very first session
+        userDat.consecutiveSessionsWithoutEngagement = (userDat.consecutiveSessionsWithoutEngagement ?? 0) + 1;
+      }
+
+      // Check trigger condition: 3+ sessions without engagement AND total sessions > 4
+      let triggerModule98 = false;
+      if (
+        userDat.totalSessions > 4 &&
+        userDat.consecutiveSessionsWithoutEngagement >= 3
+      ) {
+        triggerModule98 = true;
+      }
+      if (triggerModule98) {
+        console.log('[Chat] Module 98 triggered: consecutiveSessionsWithoutEngagement =', userDat.consecutiveSessionsWithoutEngagement);
+      }
+
       const provider = getAIProvider();
       // SESSION START: send full backpack + userDat + diary entries
       const result = await generateGreeting(backpack, provider, userDat, diaryEntries);
