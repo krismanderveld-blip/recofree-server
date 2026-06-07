@@ -34,7 +34,7 @@ export function EmergencyCard({ visible, onDismiss, lastUserMessage }: Emergency
       content.callConfirmMessage,
       [
         { text: content.cancelButton, style: 'cancel' },
-        { text: content.confirmButton, style: 'default', onPress: () => Linking.openURL('tel:1813') },
+        { text: content.confirmButton, style: 'default', onPress: () => Linking.openURL('tel:080032123') },
       ]
     );
   };
@@ -43,7 +43,7 @@ export function EmergencyCard({ visible, onDismiss, lastUserMessage }: Emergency
     if (Platform.OS !== 'web') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
-    Linking.openURL('sms:1813');
+    Linking.openURL('tel:107');
   };
 
   return (
@@ -57,7 +57,7 @@ export function EmergencyCard({ visible, onDismiss, lastUserMessage }: Emergency
         {content.intro}
       </Text>
 
-      {/* Primary call button — always 1813 */}
+      {/* Primary call button — 0800 32 123 (Zelfmoordlijn) */}
       <Pressable
         onPress={handlePrimaryCall}
         style={({ pressed }) => [
@@ -80,7 +80,7 @@ export function EmergencyCard({ visible, onDismiss, lastUserMessage }: Emergency
         </Text>
       </Pressable>
 
-      {/* SMS button — lower threshold alternative */}
+      {/* Secondary call button — 107 (CGG) */}
       <Pressable
         onPress={handleSms}
         style={({ pressed }) => [
@@ -106,7 +106,7 @@ export function EmergencyCard({ visible, onDismiss, lastUserMessage }: Emergency
       </Pressable>
 
       {/* Other resources */}
-      {content.resources.filter(r => r.number !== '1813').map((resource) => (
+      {content.resources.filter(r => r.number !== '0800 32 123' && r.number !== '107').map((resource) => (
         <Pressable
           key={resource.name}
           onPress={() => handleCall(resource.number)}
