@@ -1053,3 +1053,5 @@
 - [x] Personal emergency contacts (max 2): add name + number in Settings, shown in EmergencyCard as tappable call buttons
 - [x] Server: THERAPY DISCLOSURE in CLINICAL MODE + moduleRegistry.getActiveModules(userType)
 - [x] Kim Stilte Detectie: 20s silence timer, random soft invitation, max 1x per silence, reset on interaction
+- [x] Stilte Detectie rewrite: both Elias + Kim, 20s normal silence, persona-specific responses
+- [x] Module 58: post-onthulling 90s silence detection with disclosure keywords + specific response

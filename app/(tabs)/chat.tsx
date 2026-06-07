@@ -44,14 +44,36 @@ const USERDAT_KEY = '@recofree_userdat';
 const PENDING_CLOSE_KEY = '@recofree_pending_close';
 const DIARY_KEY = '@recofree_diary';
 
-// ─── Kim Silence Detection ────────────────────────────────────────
-const KIM_SILENCE_TIMEOUT_MS = 20_000; // 20 seconds
-const STILTE_RESPONSES = [
-  "Ik ben hier, ook als jij even stil bent. Je hoeft niets te forceren.",
-  "Soms zijn woorden moeilijk. Weet dat ik met je meewandel, ook in stilte.",
-  "Ik blijf bij je, ook als je even niet weet wat te zeggen.",
+// ─── Silence Detection (both personas) ───────────────────────────────
+const SILENCE_TIMEOUT_MS = 20_000; // 20 seconds
+const POST_DISCLOSURE_TIMEOUT_MS = 90_000; // 90 seconds (Module 58)
+
+const STILTE_RESPONSES_ELIAS = [
+  "Ik ben hier, ook als je even niks zegt.",
+  "Soms zijn woorden moeilijk. Ik blijf.",
+  "Je hoeft niets te forceren. Ik wacht.",
+];
+
+const STILTE_RESPONSES_KIM = [
+  "Ik ben hier, ook als jij even stil bent.",
+  "Soms zijn woorden moeilijk. Ik blijf bij je.",
   "Er mag stilte zijn. Als je weer wil praten, ben ik er.",
-  "Je bent niet alleen. Wanneer jij klaar bent, gaan we samen verder.",
+];
+
+const POST_ONTHULLING_RESPONSE_ELIAS =
+  "Wat je net deelde getuigt van moed. Het is oké om even stil te vallen. Ik ben er nog.";
+
+const POST_ONTHULLING_RESPONSE_KIM =
+  "Je hoeft niet meteen verder. Alles wat je hier deelt, blijft hier.";
+
+// Keywords that indicate a deep disclosure (Module 58)
+const DISCLOSURE_KEYWORDS = [
+  'ik schaam me', 'ik schaam mij',
+  'ik heb iets slechts gedaan', 'ik heb iets ergs gedaan',
+  'ik ben bang dat je me verafschuwt', 'je zal me haten',
+  'ik durf het niet te zeggen', 'ik heb iets vreselijks gedaan',
+  'niemand mag dit weten', 'ik voel me vies',
+  'ik walg van mezelf', 'ik ben een slecht mens',
 ];
 
 type SessionPhase = 'active' | 'ending' | 'completed';
@@ -96,14 +118,20 @@ function ChatScreenInner() {
   const userName = getUserName();
   const companionName = state.userType === 'elias' ? 'Elias' : 'Kim';
 
-  // ── Kim Silence Detection ──────────────────────────────────────
+  // ── Silence Detection (both personas) ──────────────────────────────
   const silenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const silenceFiredRef = useRef(false);
-  const isKimUser = state.userType === 'kim';
+  const disclosureDetectedRef = useRef(false);
+  const isElias = state.userType === 'elias';
+
+  /** Check if the last user message contains disclosure keywords (Module 58) */
+  const checkForDisclosure = useCallback((text: string): boolean => {
+    const lower = text.toLowerCase();
+    return DISCLOSURE_KEYWORDS.some((kw) => lower.includes(kw));
+  }, []);
 
   /** Reset the silence timer — called on every user interaction */
   const resetSilenceTimer = useCallback(() => {
-    if (!isKimUser) return;
     // Clear existing timer
     if (silenceTimerRef.current) {
       clearTimeout(silenceTimerRef.current);
@@ -111,19 +139,36 @@ function ChatScreenInner() {
     }
     // Don't restart if already fired this silence moment
     if (silenceFiredRef.current) return;
-    // Don't start if AI is typing or session not active
-    // (checked inside the timeout callback for freshness)
+    // Don't start if crisis level >= 2
+    if (state.crisisLevel >= 2) return;
+
+    // Determine timeout: 90s if disclosure detected, else 20s
+    const timeout = disclosureDetectedRef.current
+      ? POST_DISCLOSURE_TIMEOUT_MS
+      : SILENCE_TIMEOUT_MS;
+
     silenceTimerRef.current = setTimeout(() => {
-      // Guard: only fire if session is active, not typing, and not already fired
+      // Guard: only fire if not already fired
       if (silenceFiredRef.current) return;
+      // Guard: crisis check at fire time
+      if (state.crisisLevel >= 2) return;
       silenceFiredRef.current = true;
-      // Pick a random response, optionally personalize with name
-      let response = STILTE_RESPONSES[Math.floor(Math.random() * STILTE_RESPONSES.length)];
+
+      let response: string;
+      if (disclosureDetectedRef.current) {
+        // Module 58: post-disclosure response
+        response = isElias ? POST_ONTHULLING_RESPONSE_ELIAS : POST_ONTHULLING_RESPONSE_KIM;
+      } else {
+        // Normal silence: pick random from persona-specific list
+        const list = isElias ? STILTE_RESPONSES_ELIAS : STILTE_RESPONSES_KIM;
+        response = list[Math.floor(Math.random() * list.length)];
+      }
+
+      // Personalize with name if known
       if (userName) {
-        // Insert name after first sentence start for personalization
-        // e.g. "Ik ben hier, [naam], ook als jij even stil bent."
         response = response.replace(/^([^,\.]+)/, `$1, ${userName}`);
       }
+
       const silenceMsg: ChatMessage = {
         id: `msg_silence_${Date.now()}`,
         role: 'assistant',
@@ -131,12 +176,12 @@ function ChatScreenInner() {
         timestamp: new Date().toISOString(),
       };
       setMessages((prev) => [...prev, silenceMsg]);
-    }, KIM_SILENCE_TIMEOUT_MS);
-  }, [isKimUser, userName]);
+    }, timeout);
+  }, [isElias, userName, state.crisisLevel]);
 
   // Start/reset silence timer when session becomes active and greeting is sent
   useEffect(() => {
-    if (!isKimUser || sessionPhase !== 'active') return;
+    if (sessionPhase !== 'active') return;
     // Only start after greeting is sent (messages > 0)
     if (messages.length === 0) return;
     // If AI is typing, don't start timer
@@ -147,12 +192,14 @@ function ChatScreenInner() {
       }
       return;
     }
-    // Reset silence fired flag when user sends a new message
-    // (detected by last message being from user)
+    // Check last message context
     const lastMsg = messages[messages.length - 1];
     if (lastMsg?.role === 'assistant' && !lastMsg.id.startsWith('msg_silence_')) {
       // AI just responded — reset silence state for next silence moment
       silenceFiredRef.current = false;
+      // Check if the last USER message before this AI response was a disclosure
+      const lastUserMsg = [...messages].reverse().find((m) => m.role === 'user');
+      disclosureDetectedRef.current = lastUserMsg ? checkForDisclosure(lastUserMsg.content) : false;
       resetSilenceTimer();
     }
     return () => {
@@ -161,15 +208,16 @@ function ChatScreenInner() {
         silenceTimerRef.current = null;
       }
     };
-  }, [isKimUser, sessionPhase, messages.length, isTyping, resetSilenceTimer]);
+  }, [sessionPhase, messages.length, isTyping, resetSilenceTimer, checkForDisclosure]);
 
   // Reset silence timer on text input change (user is typing)
   useEffect(() => {
-    if (!isKimUser || !inputText) return;
+    if (!inputText) return;
     // User is actively typing — reset timer and silence state
     silenceFiredRef.current = false;
+    disclosureDetectedRef.current = false;
     resetSilenceTimer();
-  }, [inputText, isKimUser, resetSilenceTimer]);
+  }, [inputText, resetSilenceTimer]);
 
   // ── First-chat disclaimer modal (one-time, not skipable) ──
   const [firstChatSeen, setFirstChatSeen] = useState<boolean>(true); // default true to avoid flash
@@ -397,13 +445,12 @@ function ChatScreenInner() {
     const rawText = inputText.trim();
     if (!rawText || isTyping || !state.backpack || !state.userDat || sessionPhase !== 'active') return;
 
-    // Reset Kim silence detection on user send
-    if (isKimUser) {
-      silenceFiredRef.current = false;
-      if (silenceTimerRef.current) {
-        clearTimeout(silenceTimerRef.current);
-        silenceTimerRef.current = null;
-      }
+    // Reset silence detection on user send
+    silenceFiredRef.current = false;
+    disclosureDetectedRef.current = checkForDisclosure(rawText);
+    if (silenceTimerRef.current) {
+      clearTimeout(silenceTimerRef.current);
+      silenceTimerRef.current = null;
     }
 
     setInputText('');
