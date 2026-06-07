@@ -1056,3 +1056,6 @@
 - [x] Stilte Detectie rewrite: both Elias + Kim, 20s normal silence, persona-specific responses
 - [x] Module 58: post-onthulling 90s silence detection with disclosure keywords + specific response
 - [x] Fix: VSP PAARS always showing red border/bg even when not selected — now only highlights when actively selected
+- [x] Clinical tag: change color from warning/orange to green (#2E7D32 / colors.success)
+- [x] Clinical tag: show fallback "[not annotated]" instead of hiding it
+- [x] Server: clinical mode now always routes to gpt-4o (mini unreliable for tag compliance)

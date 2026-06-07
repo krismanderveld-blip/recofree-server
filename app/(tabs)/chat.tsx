@@ -1032,13 +1032,8 @@ function ClinicalTag({ annotation }: { annotation: string }) {
   const [expanded, setExpanded] = useState(false);
   const colors = useColors();
 
-  // Hide clinical tag when not annotated or during crisis
-  if (
-    annotation.includes('[not annotated') ||
-    annotation.includes('model did not comply')
-  ) {
-    return null;
-  }
+  // Show fallback annotation when model did not comply (visible to clinician)
+  const isFallback = annotation.includes('[not annotated') || annotation.includes('model did not comply');
 
   // Parse Signals line from annotation
   const lines = annotation.split('\n');
@@ -1052,8 +1047,8 @@ function ClinicalTag({ annotation }: { annotation: string }) {
         onPress={() => setExpanded(!expanded)}
         style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}
       >
-        <Text style={{ fontSize: 11, fontWeight: '600', color: colors.warning }}>
-          {expanded ? '⚕ clinical ▼' : '⚕ clinical ▶'}
+        <Text style={{ fontSize: 11, fontWeight: '600', color: isFallback ? '#B71C1C' : '#2E7D32' }}>
+          {expanded ? '⚕ clinical ▼' : '⚕ clinical ▶'}{isFallback ? ' ⚠' : ''}
         </Text>
       </Pressable>
       {expanded && (
