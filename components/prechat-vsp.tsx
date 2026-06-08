@@ -9,6 +9,10 @@
  * - No auto-submit. User must tap confirm.
  * - Only user-keuze fills VSP. No system defaults.
  * - After submission: chat screen proceeds to greeting/pipeline.
+ *
+ * LAYOUT FIX: The confirm button is placed INSIDE the ScrollView (not absolute positioned)
+ * so it is always visible and reachable, even on small screens. The ScrollView fills
+ * the available space with flex: 1 and the button sits at the bottom of the content.
  */
 
 import { useState } from 'react';
@@ -63,7 +67,7 @@ export function PreChatVsp({ onSubmit, userName }: PreChatVspProps) {
   return (
     <View style={{ flex: 1, paddingHorizontal: 20, paddingTop: 20 }}>
       {/* Header */}
-      <View style={{ marginBottom: 24, alignItems: 'center' }}>
+      <View style={{ marginBottom: 20, alignItems: 'center' }}>
         <Text style={{ fontSize: 24, fontWeight: '700', color: colors.foreground, textAlign: 'center', marginBottom: 8 }}>
           Hoe voel je je nu, {userName}?
         </Text>
@@ -72,17 +76,18 @@ export function PreChatVsp({ onSubmit, userName }: PreChatVspProps) {
         </Text>
       </View>
 
-      {/* VSP Options */}
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
+      {/* Scrollable content: VSP Options + Confirm Button */}
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ flexGrow: 1, paddingBottom: 32 }}
+        keyboardShouldPersistTaps="handled"
+      >
+        {/* VSP Options */}
         <View style={{ gap: 10 }}>
           {VSP_OPTIONS.map((option) => {
             const isSelected = selected === option.value;
             const isRelapse = option.value === 'PAARS';
 
-            // Border and background logic:
-            // - Default (not selected): neutral border, white bg
-            // - Selected: colored border + tinted bg
-            // - PAARS only gets red styling when SELECTED
             let borderWidth = 1;
             let borderColor = colors.border;
             let backgroundColor = '#fff';
@@ -110,7 +115,7 @@ export function PreChatVsp({ onSubmit, userName }: PreChatVspProps) {
                 <View style={{
                   flexDirection: 'row',
                   alignItems: 'center',
-                  paddingVertical: 16,
+                  paddingVertical: 14,
                   paddingHorizontal: 16,
                   borderRadius: 14,
                   borderWidth,
@@ -155,33 +160,33 @@ export function PreChatVsp({ onSubmit, userName }: PreChatVspProps) {
             );
           })}
         </View>
-      </ScrollView>
 
-      {/* Confirm button - fixed at bottom */}
-      {selected && (
-        <View style={{ position: 'absolute', bottom: 32, left: 20, right: 20 }}>
-          <Pressable
-            onPress={handleConfirm}
-            style={({ pressed }) => [{
-              backgroundColor: selected === 'PAARS' ? '#DC2626' : colors.primary,
-              paddingVertical: 16,
-              borderRadius: 14,
-              alignItems: 'center',
-              opacity: pressed ? 0.85 : 1,
-              transform: [{ scale: pressed ? 0.97 : 1 }],
-              shadowColor: '#000',
-              shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: 0.1,
-              shadowRadius: 8,
-              elevation: 4,
-            }]}
-          >
-            <Text style={{ color: '#fff', fontSize: 16, fontWeight: '600' }}>
-              Bevestigen
-            </Text>
-          </Pressable>
-        </View>
-      )}
+        {/* Confirm button - inside ScrollView so always reachable */}
+        {selected && (
+          <View style={{ marginTop: 24 }}>
+            <Pressable
+              onPress={handleConfirm}
+              style={({ pressed }) => [{
+                backgroundColor: selected === 'PAARS' ? '#DC2626' : colors.primary,
+                paddingVertical: 16,
+                borderRadius: 14,
+                alignItems: 'center',
+                opacity: pressed ? 0.85 : 1,
+                transform: [{ scale: pressed ? 0.97 : 1 }],
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.1,
+                shadowRadius: 8,
+                elevation: 4,
+              }]}
+            >
+              <Text style={{ color: '#fff', fontSize: 16, fontWeight: '600' }}>
+                Bevestigen
+              </Text>
+            </Pressable>
+          </View>
+        )}
+      </ScrollView>
     </View>
   );
 }
