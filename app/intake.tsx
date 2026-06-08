@@ -39,6 +39,24 @@ const EIGEN_REGIE_ZONE_COLORS: Record<string, string> = {
   'DONKER GROEN': '#22C55E',
 };
 
+/** Animated progress bar segment with width transition */
+function AnimatedProgressBar({ active }: { active: boolean }) {
+  const width = useSharedValue(active ? 1 : 0);
+
+  useEffect(() => {
+    width.value = withTiming(active ? 1 : 0, {
+      duration: 300,
+      easing: Easing.out(Easing.cubic),
+    });
+  }, [active, width]);
+
+  const fillStyle = useAnimatedStyle(() => ({
+    width: `${width.value * 100}%` as any,
+  }));
+
+  return <Animated.View style={[styles.progressBarFill, fillStyle]} />;
+}
+
 export default function IntakeScreen() {
   const router = useRouter();
   const { completeIntake } = useUser();
@@ -132,13 +150,9 @@ export default function IntakeScreen() {
             {/* Progress Indicator */}
             <View style={styles.progressRow}>
               {[1, 2, 3].map((s) => (
-                <View
-                  key={s}
-                  style={[
-                    styles.progressBar,
-                    { backgroundColor: s <= step ? dc.primary : dc.borderSoft },
-                  ]}
-                />
+                <View key={s} style={styles.progressBarTrack}>
+                  <AnimatedProgressBar active={s <= step} />
+                </View>
               ))}
             </View>
 
@@ -400,10 +414,17 @@ const styles = StyleSheet.create({
     gap: 8,
     marginBottom: 32,
   },
-  progressBar: {
+  progressBarTrack: {
     flex: 1,
     height: 4,
     borderRadius: radius.pill,
+    backgroundColor: dc.borderSoft,
+    overflow: 'hidden' as const,
+  },
+  progressBarFill: {
+    height: 4,
+    borderRadius: radius.pill,
+    backgroundColor: dc.primary,
   },
   heroSection: {
     alignItems: 'center',
