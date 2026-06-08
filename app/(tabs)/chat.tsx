@@ -111,6 +111,8 @@ function ChatScreenInner() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [sessionPhase, setSessionPhase] = useState<SessionPhase>('active');
   const flatListRef = useRef<FlatList>(null);
+  const isUserScrolledUp = useRef(false);
+  const prevMessagesLength = useRef(0);
   const greetingSent = useRef(false);
   const appStateRef = useRef<AppStateStatus>(AppState.currentState);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
@@ -256,7 +258,9 @@ function ChatScreenInner() {
     const showListener = Keyboard.addListener(showEvent, () => {
       setKeyboardVisible(true);
       setTimeout(() => {
-        flatListRef.current?.scrollToEnd({ animated: true });
+        if (!isUserScrolledUp.current) {
+          flatListRef.current?.scrollToEnd({ animated: true });
+        }
       }, 100);
     });
     const hideListener = Keyboard.addListener(hideEvent, () => {
@@ -673,9 +677,31 @@ function ChatScreenInner() {
   }, [companionName]);
 
   const scrollToEnd = useCallback(() => {
+    if (isUserScrolledUp.current) return;
     setTimeout(() => {
       flatListRef.current?.scrollToEnd({ animated: true });
     }, 100);
+  }, []);
+
+  // Auto-scroll only when new messages arrive
+  useEffect(() => {
+    if (messages.length > prevMessagesLength.current) {
+      scrollToEnd();
+    }
+    prevMessagesLength.current = messages.length;
+  }, [messages.length, scrollToEnd]);
+
+  const handleScrollBeginDrag = useCallback(() => {
+    isUserScrolledUp.current = true;
+  }, []);
+
+  const handleScroll = useCallback((event: any) => {
+    const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
+    const distanceFromBottom = contentSize.height - layoutMeasurement.height - contentOffset.y;
+    // If user scrolls back to within 50px of bottom, re-enable auto-scroll
+    if (distanceFromBottom < 50) {
+      isUserScrolledUp.current = false;
+    }
   }, []);
 
   // Tab bar height calculation
@@ -787,8 +813,11 @@ function ChatScreenInner() {
             flexGrow: 1,
             justifyContent: 'flex-end',
           }}
-          onContentSizeChange={scrollToEnd}
+          onContentSizeChange={() => { /* auto-scroll handled by messages.length effect */ }}
           onLayout={() => flatListRef.current?.scrollToEnd({ animated: false })}
+          onScrollBeginDrag={handleScrollBeginDrag}
+          onScroll={handleScroll}
+          scrollEventThrottle={100}
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="interactive"
           showsVerticalScrollIndicator={false}
@@ -955,7 +984,7 @@ function ChatScreenInner() {
                 multiline
                 returnKeyType="default"
                 editable={!isTyping}
-                onFocus={scrollToEnd}
+                onFocus={() => { if (!isUserScrolledUp.current) scrollToEnd(); }}
               />
               <Pressable
                 onPress={handleSend}
