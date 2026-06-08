@@ -1071,3 +1071,5 @@
 - [x] Design refresh: Mood screen sliders and cards redesign
 - [x] Design refresh: Tab bar floating style
 - [x] Design refresh: Diary, Backpack, Profile screens update
+- [x] Animated tab bar: scale/opacity animation on tab icons via react-native-reanimated
+- [x] Onboarding/intake screen refresh: warm backgrounds, new typography, card styles consistent with design system

@@ -7,12 +7,14 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  StyleSheet,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ScreenContainer } from '@/components/screen-container';
 import { useUser } from '@/lib/user-context';
 import type { UserType, UrgencyLevel, StageOfChange, EigenRegieLevel } from '@/lib/ai/types';
 import { STAGE_OF_CHANGE_OPTIONS, EIGEN_REGIE_INTAKE_OPTIONS } from '@/lib/ai/types';
+import { colors as dc, radius, shadows, spacing, typography } from '@/constants/design';
 
 type IntakeStep = 1 | 2 | 3;
 
@@ -38,9 +40,7 @@ export default function IntakeScreen() {
   const [step, setStep] = useState<IntakeStep>(1);
   const [name, setName] = useState('');
   const [selectedType, setSelectedType] = useState<UserType | null>(null);
-  // Elias only
   const [stageOfChange, setStageOfChange] = useState<StageOfChange | null>(null);
-  // Kim only
   const [eigenRegieLevel, setEigenRegieLevel] = useState<EigenRegieLevel | null>(null);
   const [urgency, setUrgency] = useState<UrgencyLevel | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -81,50 +81,50 @@ export default function IntakeScreen() {
   };
 
   return (
-    <ScreenContainer edges={['top', 'bottom', 'left', 'right']}>
+    <ScreenContainer
+      edges={['top', 'bottom', 'left', 'right']}
+      containerClassName="bg-background"
+    >
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        className="flex-1"
+        style={styles.flex1}
       >
         <ScrollView
-          contentContainerStyle={{ flexGrow: 1 }}
+          contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          <View className="flex-1 px-6 pt-12 pb-8">
+          <View style={styles.container}>
             {/* Progress Indicator */}
-            <View className="flex-row mb-8 gap-2">
+            <View style={styles.progressRow}>
               {[1, 2, 3].map((s) => (
                 <View
                   key={s}
-                  className={`flex-1 h-1 rounded-full ${
-                    s <= step ? 'bg-primary' : 'bg-border'
-                  }`}
+                  style={[
+                    styles.progressBar,
+                    { backgroundColor: s <= step ? dc.primary : dc.borderSoft },
+                  ]}
                 />
               ))}
             </View>
 
             {/* Step 1: Name + User Type */}
             {step === 1 && (
-              <View className="flex-1">
-                <View className="items-center mb-8">
-                  <Text className="text-5xl mb-3">💙</Text>
-                  <Text className="text-2xl font-bold text-foreground text-center">
-                    Welcome to RecoFree
-                  </Text>
-                  <Text className="text-base text-muted text-center mt-2 leading-relaxed">
+              <View style={styles.flex1}>
+                <View style={styles.heroSection}>
+                  <Text style={styles.heroEmoji}>💙</Text>
+                  <Text style={styles.heroTitle}>Welcome to RecoFree</Text>
+                  <Text style={styles.heroSubtitle}>
                     A safe space for recovery and growth
                   </Text>
                 </View>
 
-                <View className="mb-6">
-                  <Text className="text-sm font-semibold text-muted mb-2 uppercase tracking-wide">
-                    What should I call you?
-                  </Text>
+                <View style={styles.fieldGroup}>
+                  <Text style={styles.fieldLabel}>What should I call you?</Text>
                   <TextInput
-                    className="bg-surface border border-border rounded-2xl px-4 py-4 text-base text-foreground"
+                    style={styles.textInput}
                     placeholder="Your first name"
-                    placeholderTextColor="#9E9E9E"
+                    placeholderTextColor={dc.textMuted}
                     value={name}
                     onChangeText={setName}
                     autoCapitalize="words"
@@ -133,10 +133,8 @@ export default function IntakeScreen() {
                   />
                 </View>
 
-                <View className="mb-6">
-                  <Text className="text-sm font-semibold text-muted mb-3 uppercase tracking-wide">
-                    Which describes you best?
-                  </Text>
+                <View style={styles.fieldGroup}>
+                  <Text style={styles.fieldLabel}>Which describes you best?</Text>
 
                   <Pressable
                     onPress={() => setSelectedType('elias')}
@@ -145,16 +143,13 @@ export default function IntakeScreen() {
                     ]}
                   >
                     <View
-                      className={`rounded-2xl p-5 mb-3 border-2 ${
-                        selectedType === 'elias'
-                          ? 'border-primary bg-primary/5'
-                          : 'border-border bg-surface'
-                      }`}
+                      style={[
+                        styles.optionCard,
+                        selectedType === 'elias' && styles.optionCardSelectedElias,
+                      ]}
                     >
-                      <Text className="text-lg font-bold text-foreground mb-1">
-                        I have an addiction myself
-                      </Text>
-                      <Text className="text-sm text-muted leading-relaxed">
+                      <Text style={styles.optionTitle}>I have an addiction myself</Text>
+                      <Text style={styles.optionDescription}>
                         You'll be supported by Elias — direct, honest support for your recovery — from someone who gets it.
                       </Text>
                     </View>
@@ -167,36 +162,30 @@ export default function IntakeScreen() {
                     ]}
                   >
                     <View
-                      className={`rounded-2xl p-5 border-2 ${
-                        selectedType === 'kim'
-                          ? 'border-primary bg-primary/5'
-                          : 'border-border bg-surface'
-                      }`}
+                      style={[
+                        styles.optionCard,
+                        selectedType === 'kim' && styles.optionCardSelectedKim,
+                      ]}
                     >
-                      <Text className="text-lg font-bold text-foreground mb-1">
-                        I'm a loved one of someone
-                      </Text>
-                      <Text className="text-sm text-muted leading-relaxed">
+                      <Text style={styles.optionTitle}>I'm a loved one of someone</Text>
+                      <Text style={styles.optionDescription}>
                         You'll be supported by Kim — a direct, honest companion for your well-being.
                       </Text>
                     </View>
                   </Pressable>
                 </View>
 
-                <View className="mt-auto">
+                <View style={styles.bottomActions}>
                   <Pressable
                     onPress={handleNext}
                     disabled={!canProceedStep1}
                     style={({ pressed }) => [
-                      {
-                        opacity: !canProceedStep1 ? 0.4 : pressed ? 0.85 : 1,
-                        transform: [{ scale: pressed && canProceedStep1 ? 0.97 : 1 }],
-                      },
+                      styles.primaryButton,
+                      { opacity: !canProceedStep1 ? 0.4 : pressed ? 0.85 : 1 },
+                      pressed && canProceedStep1 && { transform: [{ scale: 0.97 }] },
                     ]}
                   >
-                    <View className="bg-primary rounded-2xl py-4 items-center">
-                      <Text className="text-white text-lg font-bold">Next</Text>
-                    </View>
+                    <Text style={styles.primaryButtonText}>Next</Text>
                   </Pressable>
                 </View>
               </View>
@@ -204,20 +193,19 @@ export default function IntakeScreen() {
 
             {/* Step 2: Stage of Change (Elias) OR Eigen Regie (Kim) */}
             {step === 2 && (
-              <View className="flex-1">
+              <View style={styles.flex1}>
                 {isKim ? (
                   <>
-                    {/* Kim: Eigen Regie */}
-                    <Text className="text-2xl font-bold text-foreground mb-2">
+                    <Text style={styles.stepTitle}>
                       In hoeverre wordt jouw leven momenteel bepaald door de ander?
                     </Text>
-                    <Text className="text-base text-muted mb-6 leading-relaxed">
+                    <Text style={styles.stepSubtitle}>
                       Dit helpt Kim begrijpen hoe je er nu voor staat.
                     </Text>
 
-                    <View className="gap-3 mb-8">
+                    <View style={styles.optionsGroup}>
                       {EIGEN_REGIE_INTAKE_OPTIONS.map((option) => {
-                        const zoneColor = EIGEN_REGIE_ZONE_COLORS[option.zone] ?? '#9BA1A6';
+                        const zoneColor = EIGEN_REGIE_ZONE_COLORS[option.zone] ?? dc.textMuted;
                         const isSelected = eigenRegieLevel === option.value;
                         return (
                           <Pressable
@@ -228,28 +216,21 @@ export default function IntakeScreen() {
                             ]}
                           >
                             <View
-                              className="rounded-2xl p-5"
-                              style={{
-                                borderWidth: 2,
-                                borderColor: isSelected ? zoneColor : '#E5E7EB',
-                                backgroundColor: isSelected ? zoneColor + '10' : undefined,
-                              }}
+                              style={[
+                                styles.optionCard,
+                                {
+                                  borderColor: isSelected ? zoneColor : dc.borderSoft,
+                                  backgroundColor: isSelected ? zoneColor + '10' : dc.surface,
+                                },
+                              ]}
                             >
-                              <View className="flex-row items-center gap-3 mb-1">
-                                <View
-                                  className="w-3 h-3 rounded-full"
-                                  style={{ backgroundColor: zoneColor }}
-                                />
-                                <Text
-                                  className="text-xs font-bold uppercase tracking-wide"
-                                  style={{ color: zoneColor }}
-                                >
+                              <View style={styles.zoneRow}>
+                                <View style={[styles.zoneDot, { backgroundColor: zoneColor }]} />
+                                <Text style={[styles.zoneLabel, { color: zoneColor }]}>
                                   {option.zone}
                                 </Text>
                               </View>
-                              <Text className="text-base text-foreground leading-relaxed">
-                                {option.label}
-                              </Text>
+                              <Text style={styles.optionDescription}>{option.label}</Text>
                             </View>
                           </Pressable>
                         );
@@ -258,15 +239,12 @@ export default function IntakeScreen() {
                   </>
                 ) : (
                   <>
-                    {/* Elias: Stage of Change */}
-                    <Text className="text-2xl font-bold text-foreground mb-2">
-                      Where are you in your journey?
-                    </Text>
-                    <Text className="text-base text-muted mb-6 leading-relaxed">
+                    <Text style={styles.stepTitle}>Where are you in your journey?</Text>
+                    <Text style={styles.stepSubtitle}>
                       This helps Elias understand how to best support you.
                     </Text>
 
-                    <View className="gap-3 mb-8">
+                    <View style={styles.optionsGroup}>
                       {STAGE_OF_CHANGE_OPTIONS.map((option) => (
                         <Pressable
                           key={option.value}
@@ -276,16 +254,13 @@ export default function IntakeScreen() {
                           ]}
                         >
                           <View
-                            className={`rounded-2xl p-5 border-2 ${
-                              stageOfChange === option.value
-                                ? 'border-primary bg-primary/5'
-                                : 'border-border bg-surface'
-                            }`}
+                            style={[
+                              styles.optionCard,
+                              stageOfChange === option.value && styles.optionCardSelectedElias,
+                            ]}
                           >
-                            <Text className="text-lg font-bold text-foreground mb-1">
-                              {option.label}
-                            </Text>
-                            <Text className="text-sm text-muted">{option.description}</Text>
+                            <Text style={styles.optionTitle}>{option.label}</Text>
+                            <Text style={styles.optionDescription}>{option.description}</Text>
                           </View>
                         </Pressable>
                       ))}
@@ -293,25 +268,20 @@ export default function IntakeScreen() {
                   </>
                 )}
 
-                <View className="mt-auto gap-3">
+                <View style={styles.bottomActions}>
                   <Pressable
                     onPress={handleNext}
                     disabled={!canProceedStep2}
                     style={({ pressed }) => [
-                      {
-                        opacity: !canProceedStep2 ? 0.4 : pressed ? 0.85 : 1,
-                        transform: [{ scale: pressed && canProceedStep2 ? 0.97 : 1 }],
-                      },
+                      styles.primaryButton,
+                      { opacity: !canProceedStep2 ? 0.4 : pressed ? 0.85 : 1 },
+                      pressed && canProceedStep2 && { transform: [{ scale: 0.97 }] },
                     ]}
                   >
-                    <View className="bg-primary rounded-2xl py-4 items-center">
-                      <Text className="text-white text-lg font-bold">Next</Text>
-                    </View>
+                    <Text style={styles.primaryButtonText}>Next</Text>
                   </Pressable>
-                  <Pressable onPress={handleBack}>
-                    <View className="py-3 items-center">
-                      <Text className="text-muted text-base">Back</Text>
-                    </View>
+                  <Pressable onPress={handleBack} style={styles.ghostButton}>
+                    <Text style={styles.ghostButtonText}>Back</Text>
                   </Pressable>
                 </View>
               </View>
@@ -319,15 +289,13 @@ export default function IntakeScreen() {
 
             {/* Step 3: Urgency (final step — submit) */}
             {step === 3 && (
-              <View className="flex-1">
-                <Text className="text-2xl font-bold text-foreground mb-2">
-                  How urgent does it feel?
-                </Text>
-                <Text className="text-base text-muted mb-6 leading-relaxed">
+              <View style={styles.flex1}>
+                <Text style={styles.stepTitle}>How urgent does it feel?</Text>
+                <Text style={styles.stepSubtitle}>
                   This helps us set the right tone and pace for you.
                 </Text>
 
-                <View className="gap-3 mb-8">
+                <View style={styles.optionsGroup}>
                   {URGENCY_LEVELS.map((level) => (
                     <Pressable
                       key={level.value}
@@ -337,46 +305,38 @@ export default function IntakeScreen() {
                       ]}
                     >
                       <View
-                        className={`rounded-2xl p-5 border-2 ${
-                          urgency === level.value
-                            ? 'border-primary bg-primary/5'
-                            : 'border-border bg-surface'
-                        }`}
+                        style={[
+                          styles.optionCard,
+                          urgency === level.value && styles.optionCardSelectedElias,
+                        ]}
                       >
-                        <Text className="text-lg font-bold text-foreground mb-1">
-                          {level.label}
-                        </Text>
-                        <Text className="text-sm text-muted">{level.description}</Text>
+                        <Text style={styles.optionTitle}>{level.label}</Text>
+                        <Text style={styles.optionDescription}>{level.description}</Text>
                       </View>
                     </Pressable>
                   ))}
                 </View>
 
-                <View className="mt-auto gap-3">
+                <View style={styles.bottomActions}>
                   <Pressable
                     onPress={handleSubmit}
                     disabled={!canSubmit || isSubmitting}
                     style={({ pressed }) => [
-                      {
-                        opacity: !canSubmit ? 0.4 : pressed ? 0.85 : 1,
-                        transform: [{ scale: pressed && canSubmit ? 0.97 : 1 }],
-                      },
+                      styles.primaryButton,
+                      { opacity: !canSubmit ? 0.4 : pressed ? 0.85 : 1 },
+                      pressed && canSubmit && { transform: [{ scale: 0.97 }] },
                     ]}
                   >
-                    <View className="bg-primary rounded-2xl py-4 items-center">
-                      <Text className="text-white text-lg font-bold">
-                        {isSubmitting ? 'One moment...' : 'Get Started'}
-                      </Text>
-                    </View>
+                    <Text style={styles.primaryButtonText}>
+                      {isSubmitting ? 'One moment...' : 'Get Started'}
+                    </Text>
                   </Pressable>
-                  <Pressable onPress={handleBack}>
-                    <View className="py-3 items-center">
-                      <Text className="text-muted text-base">Back</Text>
-                    </View>
+                  <Pressable onPress={handleBack} style={styles.ghostButton}>
+                    <Text style={styles.ghostButtonText}>Back</Text>
                   </Pressable>
                 </View>
 
-                <Text className="text-xs text-muted text-center mt-4 leading-relaxed">
+                <Text style={styles.privacyNote}>
                   Your data stays on your phone. Nothing is shared without your consent.
                 </Text>
               </View>
@@ -387,3 +347,169 @@ export default function IntakeScreen() {
     </ScreenContainer>
   );
 }
+
+const styles = StyleSheet.create({
+  flex1: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+  },
+  container: {
+    flex: 1,
+    paddingHorizontal: spacing.screenHorizontal,
+    paddingTop: 48,
+    paddingBottom: spacing.screenBottom,
+  },
+  progressRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 32,
+  },
+  progressBar: {
+    flex: 1,
+    height: 4,
+    borderRadius: radius.pill,
+  },
+  heroSection: {
+    alignItems: 'center',
+    marginBottom: 32,
+  },
+  heroEmoji: {
+    fontSize: 48,
+    marginBottom: 12,
+  },
+  heroTitle: {
+    fontSize: typography.titleLarge.fontSize,
+    fontWeight: typography.titleLarge.fontWeight as any,
+    color: dc.textPrimary,
+    textAlign: 'center',
+    letterSpacing: -0.3,
+  },
+  heroSubtitle: {
+    fontSize: typography.bodyMedium.fontSize,
+    fontWeight: typography.bodyMedium.fontWeight as any,
+    color: dc.textSecondary,
+    textAlign: 'center',
+    marginTop: 8,
+    lineHeight: 22,
+  },
+  fieldGroup: {
+    marginBottom: 24,
+  },
+  fieldLabel: {
+    fontSize: typography.caption.fontSize,
+    fontWeight: '600',
+    color: dc.textTertiary,
+    marginBottom: 10,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+  },
+  textInput: {
+    backgroundColor: dc.surface,
+    borderWidth: 1.5,
+    borderColor: dc.border,
+    borderRadius: radius.lg,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    fontSize: typography.bodyMedium.fontSize,
+    color: dc.textPrimary,
+  },
+  optionCard: {
+    borderRadius: radius.xl,
+    padding: spacing.cardPadding,
+    marginBottom: 12,
+    borderWidth: 2,
+    borderColor: dc.borderSoft,
+    backgroundColor: dc.surface,
+    ...shadows.soft,
+  },
+  optionCardSelectedElias: {
+    borderColor: dc.eliasAccent,
+    backgroundColor: dc.eliasAccentSoft,
+  },
+  optionCardSelectedKim: {
+    borderColor: dc.kimAccent,
+    backgroundColor: dc.kimAccentSoft,
+  },
+  optionTitle: {
+    fontSize: typography.titleSmall.fontSize,
+    fontWeight: typography.titleSmall.fontWeight as any,
+    color: dc.textPrimary,
+    marginBottom: 4,
+  },
+  optionDescription: {
+    fontSize: typography.bodySmall.fontSize,
+    fontWeight: typography.bodySmall.fontWeight as any,
+    color: dc.textSecondary,
+    lineHeight: 20,
+  },
+  zoneRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 6,
+  },
+  zoneDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+  },
+  zoneLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+  },
+  optionsGroup: {
+    marginBottom: 24,
+  },
+  stepTitle: {
+    fontSize: typography.titleMedium.fontSize,
+    fontWeight: typography.titleMedium.fontWeight as any,
+    color: dc.textPrimary,
+    marginBottom: 8,
+    letterSpacing: -0.2,
+  },
+  stepSubtitle: {
+    fontSize: typography.bodyMedium.fontSize,
+    fontWeight: typography.bodyMedium.fontWeight as any,
+    color: dc.textSecondary,
+    marginBottom: 24,
+    lineHeight: 22,
+  },
+  bottomActions: {
+    marginTop: 'auto' as any,
+    gap: 12,
+  },
+  primaryButton: {
+    backgroundColor: dc.primary,
+    borderRadius: radius.lg,
+    paddingVertical: 16,
+    alignItems: 'center',
+    ...shadows.soft,
+    shadowColor: dc.primary,
+    shadowOpacity: 0.15,
+  },
+  primaryButtonText: {
+    color: dc.textInverse,
+    fontSize: typography.button.fontSize,
+    fontWeight: '700',
+  },
+  ghostButton: {
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  ghostButtonText: {
+    color: dc.textTertiary,
+    fontSize: typography.bodyMedium.fontSize,
+    fontWeight: '500',
+  },
+  privacyNote: {
+    fontSize: typography.caption.fontSize,
+    color: dc.textMuted,
+    textAlign: 'center',
+    marginTop: 16,
+    lineHeight: 18,
+  },
+});
