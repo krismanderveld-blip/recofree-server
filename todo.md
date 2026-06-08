@@ -1084,3 +1084,4 @@
 - [x] Confirmation haptic + success toast after Reset All Data before navigating to intake
 - [x] Chat history reset: verify chat messages in memory (useRef/state) are cleared on reset/navigation to intake
 - [x] PreChatEigenRegie (Kim) scroll-fix: move confirm button inside ScrollView like PreChatVsp
+- [x] Fix: Crisis disclaimer overlapping tab bar and Back to Home button — added paddingBottom: insets.bottom + 60
