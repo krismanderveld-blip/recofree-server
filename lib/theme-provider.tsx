@@ -12,7 +12,7 @@ type ThemeContextValue = {
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  // Force light mode — V2 design uses white cards and is designed for light backgrounds
+  // Force light mode — V2 design uses warm white cards and is designed for light backgrounds
   const [colorScheme, setColorSchemeState] = useState<ColorScheme>("light");
 
   const applyScheme = useCallback((scheme: ColorScheme) => {
@@ -38,20 +38,15 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     applyScheme(colorScheme);
   }, [applyScheme, colorScheme]);
 
+  const palette = SchemeColors[colorScheme];
   const themeVariables = useMemo(
     () =>
-      vars({
-        "color-primary": SchemeColors[colorScheme].primary,
-        "color-background": SchemeColors[colorScheme].background,
-        "color-surface": SchemeColors[colorScheme].surface,
-        "color-foreground": SchemeColors[colorScheme].foreground,
-        "color-muted": SchemeColors[colorScheme].muted,
-        "color-border": SchemeColors[colorScheme].border,
-        "color-success": SchemeColors[colorScheme].success,
-        "color-warning": SchemeColors[colorScheme].warning,
-        "color-error": SchemeColors[colorScheme].error,
-      }),
-    [colorScheme],
+      vars(
+        Object.fromEntries(
+          Object.entries(palette).map(([token, value]) => [`color-${token}`, value])
+        ) as Record<string, string>,
+      ),
+    [palette],
   );
 
   const value = useMemo(

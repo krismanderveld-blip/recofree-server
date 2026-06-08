@@ -4,33 +4,42 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { HapticTab } from "@/components/haptic-tab";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Platform } from "react-native";
-import { useColors } from "@/hooks/use-colors";
+import { colors as dc, radius, shadows } from "@/constants/design";
 
 export default function TabLayout() {
-  const colors = useColors();
   const insets = useSafeAreaInsets();
   const bottomPadding = Platform.OS === "web" ? 12 : Math.max(insets.bottom, 8);
-  const tabBarHeight = 56 + bottomPadding;
+  const tabBarHeight = 68 + bottomPadding;
 
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.muted,
+        tabBarActiveTintColor: dc.primary,
+        tabBarInactiveTintColor: dc.textTertiary,
         headerShown: false,
         tabBarButton: HapticTab,
         tabBarHideOnKeyboard: true,
         tabBarStyle: {
-          paddingTop: 8,
-          paddingBottom: bottomPadding,
-          height: tabBarHeight,
-          backgroundColor: colors.background,
-          borderTopColor: colors.border,
-          borderTopWidth: 0.5,
+          position: "absolute",
+          left: 16,
+          right: 16,
+          bottom: Platform.OS === "web" ? 12 : Math.max(insets.bottom, 12),
+          height: 68,
+          backgroundColor: dc.surface,
+          borderRadius: radius.xl,
+          borderWidth: 1,
+          borderColor: dc.borderSoft,
+          borderTopWidth: 1,
+          borderTopColor: dc.borderSoft,
+          paddingHorizontal: 8,
+          paddingTop: 10,
+          paddingBottom: 10,
+          ...shadows.floating,
         },
         tabBarLabelStyle: {
           fontSize: 10,
-          fontWeight: "500",
+          fontWeight: "600",
+          marginTop: 2,
         },
       }}
     >

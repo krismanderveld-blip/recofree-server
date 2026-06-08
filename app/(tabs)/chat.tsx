@@ -39,6 +39,7 @@ import { loadAndRestoreEliasProjection } from '@/lib/engine/elias/projection';
 import { loadAndRestoreKimProjection } from '@/lib/engine/kim/projection';
 import { logDebugEvent } from '@/lib/debug/session-logger';
 import { ChatErrorBoundary } from '@/components/chat-error-boundary';
+import { colors as dc, spacing, radius, typography, shadows } from '@/constants/design';
 
 const BACKPACK_KEY = '@recofree_backpack';
 const USERDAT_KEY = '@recofree_userdat';
@@ -645,25 +646,48 @@ function ChatScreenInner() {
 
   const renderMessage = useCallback(({ item }: { item: ChatMessage }) => {
     const isUser = item.role === 'user';
+    const isElias = state.userType === 'elias';
     // Parse clinical tag from assistant messages
     const { visibleContent, clinicalAnnotation } = parseClinicalTag(item.content, isUser);
 
+    const bubbleStyle = isUser
+      ? {
+          alignSelf: 'flex-end' as const,
+          maxWidth: '84%' as unknown as number,
+          backgroundColor: dc.surface,
+          borderColor: dc.border,
+          borderWidth: 1,
+          borderRadius: radius.lg,
+          borderTopRightRadius: 8,
+          paddingHorizontal: 16,
+          paddingVertical: 14,
+          ...shadows.soft,
+        }
+      : {
+          alignSelf: 'flex-start' as const,
+          maxWidth: '84%' as unknown as number,
+          backgroundColor: isElias ? dc.eliasAccentSoft : dc.kimAccentSoft,
+          borderColor: isElias ? '#DCEEFE' : dc.kimAccentMuted,
+          borderWidth: 1,
+          borderRadius: radius.lg,
+          borderTopLeftRadius: 8,
+          paddingHorizontal: 16,
+          paddingVertical: 14,
+        };
+
     return (
-      <View className={`mb-3 max-w-[85%] ${isUser ? 'self-end' : 'self-start'}`}>
+      <View style={{ marginBottom: 14, alignSelf: isUser ? 'flex-end' : 'flex-start', maxWidth: '84%' }}>
         {!isUser && (
-          <Text className="text-xs text-muted mb-1 ml-1">{companionName}</Text>
+          <Text style={{ ...typography.micro, color: dc.textTertiary, marginBottom: 4, marginLeft: 4 }}>
+            {companionName}
+          </Text>
         )}
-        <View
-          className={`rounded-2xl px-4 py-3 ${
-            isUser
-              ? 'bg-primary rounded-br-sm'
-              : 'bg-surface border border-border rounded-bl-sm'
-          }`}
-        >
+        <View style={bubbleStyle}>
           <Text
-            className={`text-base leading-relaxed ${
-              isUser ? 'text-white' : 'text-foreground'
-            }`}
+            style={{
+              ...typography.chat,
+              color: dc.textPrimary,
+            }}
           >
             {visibleContent}
           </Text>
@@ -671,12 +695,12 @@ function ChatScreenInner() {
             <ClinicalTag annotation={clinicalAnnotation} />
           )}
         </View>
-        <Text className={`text-xs text-muted mt-1 ${isUser ? 'text-right mr-1' : 'ml-1'}`}>
+        <Text style={{ ...typography.micro, color: dc.textMuted, marginTop: 4, textAlign: isUser ? 'right' : 'left', marginHorizontal: 4 }}>
           {formatTime(item.timestamp)}
         </Text>
       </View>
     );
-  }, [companionName]);
+  }, [companionName, state.userType]);
 
   const scrollToEnd = useCallback(() => {
     if (isUserScrolledUp.current) return;
@@ -755,20 +779,21 @@ function ChatScreenInner() {
         {/* Header */}
         <View
           style={{
-            paddingHorizontal: 20,
-            paddingVertical: 12,
-            borderBottomWidth: 0.5,
-            borderBottomColor: colors.border,
+            paddingHorizontal: spacing.screenHorizontal,
+            paddingVertical: 14,
+            borderBottomWidth: 1,
+            borderBottomColor: dc.borderSoft,
             flexDirection: 'row',
             alignItems: 'center',
             justifyContent: 'space-between',
+            backgroundColor: dc.surface,
           }}
         >
           <View>
-            <Text style={{ fontSize: 18, fontWeight: 'bold', color: colors.foreground }}>
+            <Text style={{ ...typography.titleSmall, color: dc.textPrimary }}>
               {companionName}
             </Text>
-            <Text style={{ fontSize: 12, color: colors.muted }}>
+            <Text style={{ ...typography.micro, color: dc.textTertiary, marginTop: 2 }}>
               {sessionPhase === 'ending'
                 ? `${companionName} is processing your session...`
                 : sessionPhase === 'completed'
@@ -1002,22 +1027,22 @@ function ChatScreenInner() {
               borderTopColor: colors.border,
             }}
           >
-            <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 8 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 10 }}>
               <TextInput
                 style={{
                   flex: 1,
-                  backgroundColor: colors.surface,
+                  backgroundColor: dc.surface,
                   borderWidth: 1,
-                  borderColor: colors.border,
-                  borderRadius: 20,
-                  paddingHorizontal: 16,
-                  paddingVertical: 12,
-                  fontSize: 16,
-                  color: colors.foreground,
+                  borderColor: dc.borderSoft,
+                  borderRadius: radius.lg,
+                  paddingHorizontal: spacing.inputPadding,
+                  paddingVertical: 14,
+                  ...typography.chat,
+                  color: dc.textPrimary,
                   maxHeight: 120,
                 }}
                 placeholder="Type a message..."
-                placeholderTextColor={colors.muted}
+                placeholderTextColor={dc.textMuted}
                 value={inputText}
                 onChangeText={setInputText}
                 multiline
@@ -1031,18 +1056,19 @@ function ChatScreenInner() {
                 style={({ pressed }) => [
                   {
                     opacity: !inputText.trim() || isTyping ? 0.4 : pressed ? 0.7 : 1,
-                    transform: [{ scale: pressed ? 0.9 : 1 }],
+                    transform: [{ scale: pressed ? 0.92 : 1 }],
                   },
                 ]}
               >
                 <View
                   style={{
-                    backgroundColor: colors.primary,
+                    backgroundColor: state.userType === 'elias' ? dc.eliasAccent : dc.kimAccent,
                     width: 48,
                     height: 48,
                     borderRadius: 24,
                     alignItems: 'center',
                     justifyContent: 'center',
+                    ...shadows.soft,
                   }}
                 >
                   <IconSymbol name="paperplane.fill" size={20} color="#FFFFFF" />

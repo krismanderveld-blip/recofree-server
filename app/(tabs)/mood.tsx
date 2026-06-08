@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo } from 'react';
-import { Text, View, ScrollView, Pressable, Platform } from 'react-native';
+import { Text, View, ScrollView, Pressable, Platform, StyleSheet } from 'react-native';
 import Slider from '@react-native-community/slider';
 import { ScreenContainer } from '@/components/screen-container';
 import { useUser } from '@/lib/user-context';
@@ -13,6 +13,7 @@ import {
   EIGEN_REGIE_SLIDER_LABELS,
   type EigenRegieZone,
 } from '@/lib/engine/kim/eigen-regie';
+import { colors as dc, spacing, radius, typography, shadows, cardStyles, buttonStyles } from '@/constants/design';
 
 // ─── Constants ──────────────────────────────────────────────────
 
@@ -30,18 +31,18 @@ const SLIDER_META: Record<string, { description: string; lowLabel: string; highL
 const POSITIVE_KEYS = new Set(['focus', 'selfCare']);
 
 const EIGEN_REGIE_ZONE_COLORS: Record<EigenRegieZone, string> = {
-  ROOD: '#EF4444',
-  ORANJE: '#F97316',
-  GEEL: '#F59E0B',
-  LICHTGROEN: '#84CC16',
-  GROEN: '#22C55E',
+  ROOD: dc.moodRed,
+  ORANJE: dc.moodOrange,
+  GEEL: dc.moodYellow,
+  LICHTGROEN: dc.moodGreen,
+  GROEN: dc.success,
 };
 
 const ZONE_CONFIG = {
-  GREEN:  { label: 'Stable', color: '#22C55E', description: 'You\'ve been in a calm, manageable space.' },
-  YELLOW: { label: 'Elevated', color: '#F59E0B', description: 'Some tension is building. Stay aware.' },
-  ORANGE: { label: 'Strained', color: '#F97316', description: 'Things have been harder lately. That\'s okay to acknowledge.' },
-  RED:    { label: 'Critical', color: '#EF4444', description: 'You\'ve been under heavy pressure. Consider reaching out.' },
+  GREEN:  { label: 'Stable', color: dc.moodGreen, description: 'You\'ve been in a calm, manageable space.' },
+  YELLOW: { label: 'Elevated', color: dc.moodYellow, description: 'Some tension is building. Stay aware.' },
+  ORANGE: { label: 'Strained', color: dc.moodOrange, description: 'Things have been harder lately. That\'s okay to acknowledge.' },
+  RED:    { label: 'Critical', color: dc.moodRed, description: 'You\'ve been under heavy pressure. Consider reaching out.' },
 } as const;
 
 type ZoneKey = keyof typeof ZONE_CONFIG;
@@ -51,9 +52,9 @@ type ZoneKey = keyof typeof ZONE_CONFIG;
 function getThresholdColor(value: number, key: string): string {
   const isPositive = POSITIVE_KEYS.has(key);
   const normalized = isPositive ? 10 - value : value;
-  if (normalized >= 7) return '#EF4444';
-  if (normalized >= 4) return '#F59E0B';
-  return '#10B981';
+  if (normalized >= 7) return dc.moodRed;
+  if (normalized >= 4) return dc.moodYellow;
+  return dc.moodGreen;
 }
 
 function snapshotDistress(snapshot: MoodSnapshot, sliderConfig: SliderConfig[]): number {
@@ -197,21 +198,22 @@ export default function MoodScreen() {
   );
 
   return (
-    <ScreenContainer className="px-0 pt-0">
-      <ScrollView contentContainerStyle={{ paddingBottom: 32, paddingHorizontal: 20, paddingTop: 8 }} showsVerticalScrollIndicator={false}>
+    <ScreenContainer containerClassName="bg-backgroundWarm">
+      <ScrollView contentContainerStyle={{ paddingBottom: 120, paddingHorizontal: spacing.screenHorizontal, paddingTop: spacing.screenTop }} showsVerticalScrollIndicator={false}>
+        <Text style={{ ...typography.titleLarge, color: dc.textPrimary, marginBottom: spacing.lg }}>How are you?</Text>
         {/* Intervention Alerts */}
         {severeAlerts.length > 0 && (
-          <View style={{ backgroundColor: '#FEE2E2', borderRadius: 16, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: '#FECACA' }}>
-            <Text style={{ color: '#DC2626', fontWeight: '700', fontSize: 13, marginBottom: 4 }}>High alert</Text>
-            <Text style={{ color: colors.foreground, fontSize: 13 }}>
+          <View style={{ backgroundColor: dc.dangerSoft, borderRadius: radius.xl, padding: spacing.cardPadding, marginBottom: spacing.cardGap, borderWidth: 1, borderColor: '#F3B8B8' }}>
+            <Text style={{ color: dc.danger, fontWeight: '700', fontSize: 13, marginBottom: 4 }}>High alert</Text>
+            <Text style={{ ...typography.bodySmall, color: dc.textPrimary }}>
               {severeAlerts.map((a) => a.label).join(', ')} {severeAlerts.length === 1 ? 'is' : 'are'} at a critical level.
             </Text>
           </View>
         )}
         {moderateAlerts.length > 0 && severeAlerts.length === 0 && (
-          <View style={{ backgroundColor: '#FEF3C7', borderRadius: 16, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: '#FDE68A' }}>
-            <Text style={{ color: '#D97706', fontWeight: '700', fontSize: 13, marginBottom: 4 }}>Heads up</Text>
-            <Text style={{ color: colors.foreground, fontSize: 13 }}>
+          <View style={{ backgroundColor: dc.warningSoft, borderRadius: radius.xl, padding: spacing.cardPadding, marginBottom: spacing.cardGap, borderWidth: 1, borderColor: dc.moodYellow }}>
+            <Text style={{ color: dc.warning, fontWeight: '700', fontSize: 13, marginBottom: 4 }}>Heads up</Text>
+            <Text style={{ ...typography.bodySmall, color: dc.textPrimary }}>
               {moderateAlerts.map((a) => a.label).join(', ')} {moderateAlerts.length === 1 ? 'is' : 'are'} elevated.
             </Text>
           </View>
@@ -227,22 +229,18 @@ export default function MoodScreen() {
             <View
               key={sc.key}
               style={{
-                backgroundColor: '#FFFFFF',
-                borderRadius: 16,
-                padding: 20,
-                marginBottom: 12,
-                borderWidth: 1,
-                borderColor: colors.border,
+                ...cardStyles.default,
+                marginBottom: spacing.cardGap,
               }}
             >
               {/* Title + Value */}
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                <Text style={{ fontSize: 16, fontWeight: '700', color: colors.foreground }}>{sc.label}</Text>
+                <Text style={{ ...typography.bodyLarge, fontWeight: '600', color: dc.textPrimary }}>{sc.label}</Text>
                 <Text style={{ fontSize: 24, fontWeight: '800', color: sliderColor }}>
                   {Math.round(value)}
                 </Text>
               </View>
-              <Text style={{ fontSize: 13, color: colors.muted, marginBottom: 16 }}>{meta.description}</Text>
+              <Text style={{ ...typography.bodySmall, color: dc.textSecondary, marginBottom: 16 }}>{meta.description}</Text>
 
               {/* Slider */}
               <Slider
@@ -259,13 +257,13 @@ export default function MoodScreen() {
 
               {/* Labels + Threshold Dots */}
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 4 }}>
-                <Text style={{ fontSize: 11, color: colors.muted }}>{meta.lowLabel}</Text>
+                <Text style={{ ...typography.micro, color: dc.textTertiary }}>{meta.lowLabel}</Text>
                 <View style={{ flexDirection: 'row', gap: 16 }}>
                   {sc.thresholds.map((t) => (
-                    <Text key={t.level} style={{ fontSize: 11, color: colors.muted }}>{t.value}</Text>
+                    <Text key={t.level} style={{ ...typography.micro, color: dc.textTertiary }}>{t.value}</Text>
                   ))}
                 </View>
-                <Text style={{ fontSize: 11, color: colors.muted }}>{meta.highLabel}</Text>
+                <Text style={{ ...typography.micro, color: dc.textTertiary }}>{meta.highLabel}</Text>
               </View>
             </View>
           );
@@ -275,18 +273,16 @@ export default function MoodScreen() {
         <Pressable
           onPress={handleSave}
           style={({ pressed }) => [{
-            opacity: pressed ? 0.9 : 1,
+            opacity: pressed ? 0.88 : 1,
             transform: [{ scale: pressed ? 0.97 : 1 }],
-            marginTop: 8,
+            marginTop: spacing.sm,
           }]}
         >
           <View style={{
-            backgroundColor: saved ? '#10B981' : colors.primary,
-            borderRadius: 16,
-            paddingVertical: 16,
-            alignItems: 'center',
+            ...buttonStyles.primaryElias,
+            backgroundColor: saved ? dc.success : dc.primary,
           }}>
-            <Text style={{ color: '#fff', fontSize: 16, fontWeight: '700' }}>
+            <Text style={{ ...typography.button, color: dc.textInverse }}>
               {saved ? 'Saved!' : 'Save Check-in'}
             </Text>
           </View>

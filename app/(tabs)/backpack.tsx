@@ -16,6 +16,7 @@ import { STAGE_OF_CHANGE_OPTIONS, DEFAULT_KIM_BACKPACK_SECTIONS } from '@/lib/ai
 import type { KimBackpackSection } from '@/lib/ai/types';
 import { useColors } from '@/hooks/use-colors';
 import { IconSymbol } from '@/components/ui/icon-symbol';
+import { colors as dc, spacing, radius, typography, shadows, cardStyles, buttonStyles } from '@/constants/design';
 
 const SECTION_COLORS: Record<LifePhaseId, string> = {
   childhood: '#FF6B6B',
@@ -298,19 +299,20 @@ export default function BackpackScreen() {
   };
 
   return (
-    <ScreenContainer className="px-5 pt-4">
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
+    <ScreenContainer containerClassName="bg-backgroundWarm">
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 120, paddingHorizontal: spacing.screenHorizontal, paddingTop: spacing.screenTop }}>
+        <Text style={{ ...typography.titleLarge, color: dc.textPrimary, marginBottom: spacing.lg }}>Your Story</Text>
         {/* Description Card */}
-        <View style={{ backgroundColor: '#fff', borderRadius: 16, padding: 16, marginBottom: 20, borderWidth: 1, borderColor: colors.border, flexDirection: 'row', alignItems: 'flex-start', gap: 12 }}>
+        <View style={{ ...cardStyles.default, marginBottom: spacing.lg, flexDirection: 'row', alignItems: 'flex-start', gap: 12 }}>
           <View style={{ flex: 1 }}>
-            <Text style={{ fontSize: 13, color: colors.foreground, lineHeight: 18 }}>
+            <Text style={{ ...typography.bodySmall, color: dc.textSecondary, lineHeight: 20 }}>
               {isKim
                 ? 'Your personal story as a loved one — it helps Kim truly understand your situation. Write at your own pace. Everything stays on your device and is NEVER modified by the system.'
                 : 'Your life story is your identity anchor — it helps your companion truly know you. Write at your own pace. Everything stays on your device and is NEVER modified by the system.'}
             </Text>
           </View>
-          <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: colors.primary + '15', alignItems: 'center', justifyContent: 'center' }}>
-            <IconSymbol name="backpack.fill" size={18} color={colors.primary} />
+          <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: dc.primarySoft, alignItems: 'center', justifyContent: 'center' }}>
+            <IconSymbol name="backpack.fill" size={18} color={dc.primary} />
           </View>
         </View>
 
@@ -402,9 +404,9 @@ export default function BackpackScreen() {
           : sections.map(renderEliasSection)}
 
         {/* Tip */}
-        <View style={{ backgroundColor: '#fff', borderRadius: 16, padding: 16, marginTop: 8, borderWidth: 1, borderColor: colors.border }}>
-          <Text style={{ fontSize: 13, color: colors.muted, lineHeight: 18 }}>
-            <Text style={{ fontWeight: '600', color: colors.foreground }}>Tip: </Text>
+        <View style={{ ...cardStyles.default, marginTop: spacing.sm }}>
+          <Text style={{ ...typography.bodySmall, color: dc.textTertiary, lineHeight: 20 }}>
+            <Text style={{ fontWeight: '600', color: dc.textPrimary }}>Tip: </Text>
             You can always come back to add or edit your story. Your backpack is sent in full to your companion at the start of each conversation — it is never summarized or reduced. Only you can change it.
           </Text>
         </View>

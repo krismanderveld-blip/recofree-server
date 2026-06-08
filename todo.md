@@ -1064,3 +1064,10 @@
 - [x] Server verification: VERGV01/IGH01/AGC01/HWK01 context fields correctly injected in buildSystemPrompt() for both Elias and Kim templates (SESSION_INIT + LIVE_MESSAGE)
 - [x] Integration test: end-to-end pipeline for VERGV01/IGH01/AGC01/HWK01 — 22 tests covering full path (gate → detect → payload builder → server contract), priority routing through payload, Kim/Elias persona separation
 - [x] Scroll-to-bottom FAB in chat: floating "↓" button rechtsonder wanneer gebruiker omhoog gescrold is, verdwijnt automatisch bij terugkeer naar bodem
+- [x] Design refresh: Update design tokens (theme.config.js, theme.ts, theme-provider, tailwind)
+- [x] Design refresh: Create shared design constants (colors, typography, spacing, radius, shadows)
+- [x] Design refresh: Home screen redesign
+- [x] Design refresh: Chat bubbles and input redesign
+- [x] Design refresh: Mood screen sliders and cards redesign
+- [x] Design refresh: Tab bar floating style
+- [x] Design refresh: Diary, Backpack, Profile screens update

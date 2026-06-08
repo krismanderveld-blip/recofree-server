@@ -12,6 +12,7 @@ import * as Haptics from 'expo-haptics';
 import Constants from 'expo-constants';
 import { SoberCounter } from '@/components/sober-counter';
 import { IconSymbol } from '@/components/ui/icon-symbol';
+import { colors as dc, spacing, radius, typography, shadows, cardStyles } from '@/constants/design';
 
 const STAGE_LABELS: Record<string, string> = {
   precontemplation: 'Precontemplation',
@@ -127,16 +128,13 @@ export default function ProfileScreen() {
   }, []);
 
   return (
-    <ScreenContainer className="px-5 pt-4">
-      <ScrollView contentContainerStyle={{ paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
+    <ScreenContainer containerClassName="bg-backgroundWarm">
+      <ScrollView contentContainerStyle={{ paddingBottom: 120, paddingHorizontal: spacing.screenHorizontal, paddingTop: spacing.screenTop }} showsVerticalScrollIndicator={false}>
+        <Text style={{ ...typography.titleLarge, color: dc.textPrimary, marginBottom: spacing.lg }}>Profile</Text>
         {/* User Card */}
         <View style={{
-          backgroundColor: '#fff',
-          borderRadius: 16,
-          padding: 20,
-          marginBottom: 20,
-          borderWidth: 1,
-          borderColor: colors.border,
+          ...cardStyles.default,
+          marginBottom: spacing.lg,
           flexDirection: 'row',
           alignItems: 'center',
         }}>
@@ -144,23 +142,23 @@ export default function ProfileScreen() {
             width: 52,
             height: 52,
             borderRadius: 26,
-            backgroundColor: colors.primary + '18',
+            backgroundColor: dc.primarySoft,
             alignItems: 'center',
             justifyContent: 'center',
             marginRight: 14,
           }}>
-            <Text style={{ fontSize: 22, fontWeight: '700', color: colors.primary }}>
+            <Text style={{ fontSize: 22, fontWeight: '700', color: dc.primary }}>
               {userName ? userName.charAt(0).toUpperCase() : '?'}
             </Text>
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={{ fontSize: 18, fontWeight: '700', color: colors.foreground }}>{fixUnicode(userName) || 'User'}</Text>
-            <Text style={{ fontSize: 13, color: colors.muted, marginTop: 2 }}>{userTypeLabel}</Text>
-            <Text style={{ fontSize: 12, color: colors.muted, marginTop: 2 }}>
+            <Text style={{ ...typography.titleSmall, color: dc.textPrimary }}>{fixUnicode(userName) || 'User'}</Text>
+            <Text style={{ ...typography.bodySmall, color: dc.textSecondary, marginTop: 2 }}>{userTypeLabel}</Text>
+            <Text style={{ ...typography.micro, color: dc.textTertiary, marginTop: 2 }}>
               {companionName}{isElias ? ` · ${STAGE_LABELS[stageOfChange] ?? stageOfChange}` : ''} · {totalSessions} session{totalSessions !== 1 ? 's' : ''} · {moodCheckIns} check-in{moodCheckIns !== 1 ? 's' : ''}
             </Text>
           </View>
-          <IconSymbol name="chevron.right" size={18} color={colors.muted} />
+          <IconSymbol name="chevron.right" size={18} color={dc.textTertiary} />
         </View>
 
         {/* Sober Counter (Elias only) */}

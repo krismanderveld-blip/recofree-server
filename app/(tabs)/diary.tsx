@@ -17,6 +17,7 @@ import { useColors } from '@/hooks/use-colors';
 import { useUser } from '@/lib/user-context';
 import { fixUnicode } from '@/lib/utils';
 import * as Haptics from 'expo-haptics';
+import { colors as dc, spacing, radius, typography, shadows, cardStyles } from '@/constants/design';
 
 interface GratitudeData {
   entry1: string;
@@ -210,9 +211,9 @@ export default function DiaryScreen() {
     const hasGratitude = item.gratitude && (item.gratitude.entry1 || item.gratitude.entry2 || item.gratitude.entry3);
 
     return (
-      <View style={{ backgroundColor: '#fff', borderRadius: 16, padding: 20, marginBottom: 12, borderWidth: 1, borderColor: colors.border }}>
+      <View style={{ ...cardStyles.default, marginBottom: spacing.cardGap }}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-          <Text style={{ fontSize: 12, color: colors.muted }}>{dateStr} at {timeStr}</Text>
+          <Text style={{ ...typography.micro, color: dc.textTertiary }}>{dateStr} at {timeStr}</Text>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
             {hasGratitude && (
               <View style={{ backgroundColor: '#DCFCE7', borderRadius: 12, paddingHorizontal: 8, paddingVertical: 3 }}>
@@ -225,15 +226,15 @@ export default function DiaryScreen() {
           </View>
         </View>
         {activeTab === 'journal' && item.content.trim() ? (
-          <Text style={{ fontSize: 14, color: colors.foreground, lineHeight: 20 }} numberOfLines={4}>
+          <Text style={{ ...typography.bodyMedium, color: dc.textPrimary }} numberOfLines={4}>
             {fixUnicode(item.content)}
           </Text>
         ) : null}
         {activeTab === 'gratitude' && hasGratitude ? (
           <View style={{ marginTop: 4 }}>
-            {item.gratitude!.entry1 ? <Text style={{ fontSize: 14, color: colors.foreground, marginBottom: 4 }}>1. {fixUnicode(item.gratitude!.entry1)}</Text> : null}
-            {item.gratitude!.entry2 ? <Text style={{ fontSize: 14, color: colors.foreground, marginBottom: 4 }}>2. {fixUnicode(item.gratitude!.entry2)}</Text> : null}
-            {item.gratitude!.entry3 ? <Text style={{ fontSize: 14, color: colors.foreground }}>3. {fixUnicode(item.gratitude!.entry3)}</Text> : null}
+            {item.gratitude!.entry1 ? <Text style={{ ...typography.bodyMedium, color: dc.textPrimary, marginBottom: 4 }}>1. {fixUnicode(item.gratitude!.entry1)}</Text> : null}
+            {item.gratitude!.entry2 ? <Text style={{ ...typography.bodyMedium, color: dc.textPrimary, marginBottom: 4 }}>2. {fixUnicode(item.gratitude!.entry2)}</Text> : null}
+            {item.gratitude!.entry3 ? <Text style={{ ...typography.bodyMedium, color: dc.textPrimary }}>3. {fixUnicode(item.gratitude!.entry3)}</Text> : null}
           </View>
         ) : null}
       </View>
@@ -241,7 +242,7 @@ export default function DiaryScreen() {
   }, [activeTab, colors]);
 
   return (
-    <ScreenContainer className="px-5 pt-2">
+    <ScreenContainer containerClassName="bg-backgroundWarm">
       {/* Tab Selector */}
       <TabSelector activeTab={activeTab} onTabChange={setActiveTab} colors={colors} />
 
