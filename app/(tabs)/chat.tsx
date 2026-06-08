@@ -45,7 +45,7 @@ const PENDING_CLOSE_KEY = '@recofree_pending_close';
 const DIARY_KEY = '@recofree_diary';
 
 // ─── Silence Detection (both personas) ───────────────────────────────
-const SILENCE_TIMEOUT_MS = 20_000; // 20 seconds
+const SILENCE_TIMEOUT_MS = 180_000; // 180 seconds (3 minutes)
 const POST_DISCLOSURE_TIMEOUT_MS = 90_000; // 90 seconds (Module 58)
 
 const STILTE_RESPONSES_ELIAS = [
