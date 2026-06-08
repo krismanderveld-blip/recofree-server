@@ -99,11 +99,18 @@ export default function ProfileScreen() {
         await AsyncStorage.clear();
         // Reset in-memory state (intakeCompleted → false, backpack → null, etc.)
         await resetUser();
+        // Success feedback: haptic confirmation
         if (Platform.OS !== 'web') {
-          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         }
-        // Navigate to intake — state is now reset so the redirect guard will also trigger
-        router.replace('/intake' as any);
+        // Brief toast-like alert on native before navigating, immediate on web
+        if (Platform.OS === 'web') {
+          router.replace('/intake' as any);
+        } else {
+          Alert.alert('Done', 'All data has been cleared. Starting fresh.', [
+            { text: 'OK', onPress: () => router.replace('/intake' as any) },
+          ]);
+        }
       } catch (e) {
         console.error('[Profile] Reset failed:', e);
       }

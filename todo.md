@@ -1081,3 +1081,6 @@
 - [x] Loading state animation: pulse/shimmer on "Submitting..." button in onboarding step 3
 - [x] Fix: PreChatVsp confirm button not reachable on small screens — moved button inside ScrollView instead of absolute positioning
 - [x] Fix: Reset All Data now correctly clears in-memory state (resetUser dispatch) + navigates to /intake instead of just showing "restart app" alert
+- [x] Confirmation haptic + success toast after Reset All Data before navigating to intake
+- [x] Chat history reset: verify chat messages in memory (useRef/state) are cleared on reset/navigation to intake
+- [x] PreChatEigenRegie (Kim) scroll-fix: move confirm button inside ScrollView like PreChatVsp

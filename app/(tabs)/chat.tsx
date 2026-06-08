@@ -123,6 +123,19 @@ function ChatScreenInner() {
   const userName = getUserName();
   const companionName = state.userType === 'elias' ? 'Elias' : 'Kim';
 
+  // Reset chat state when user data is cleared (e.g. after Reset All Data)
+  useEffect(() => {
+    if (!state.intakeCompleted) {
+      greetingSent.current = false;
+      silenceFiredRef.current = false;
+      disclosureDetectedRef.current = false;
+      setMessages([]);
+      setSessionPhase('active');
+      setIsTyping(false);
+      setShowScrollButton(false);
+    }
+  }, [state.intakeCompleted]);
+
   // ── Silence Detection (both personas) ──────────────────────────────
   const silenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const silenceFiredRef = useRef(false);
