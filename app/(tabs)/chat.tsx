@@ -913,13 +913,6 @@ function ChatScreenInner() {
                   )}
                 </View>
               )}
-              {showEmergency && (
-                <EmergencyCard
-                  visible={showEmergency}
-                  onDismiss={() => setShowEmergency(false)}
-                  lastUserMessage={messages.filter(m => m.role === 'user').pop()?.content ?? null}
-                />
-              )}
             </>
           }
           ListEmptyComponent={
@@ -931,6 +924,13 @@ function ChatScreenInner() {
           }
           ListFooterComponent={
             <>
+              {showEmergency && (
+                <EmergencyCard
+                  visible={showEmergency}
+                  onDismiss={() => setShowEmergency(false)}
+                  lastUserMessage={messages.filter(m => m.role === 'user').pop()?.content ?? null}
+                />
+              )}
               {isTyping && sessionPhase === 'active' && (
                 <View style={{ alignSelf: 'flex-start', marginBottom: 12 }}>
                   <Text style={{ fontSize: 12, color: colors.muted, marginBottom: 4, marginLeft: 4 }}>

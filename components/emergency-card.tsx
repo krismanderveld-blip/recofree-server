@@ -3,6 +3,7 @@ import { Text, View, Pressable, Linking, Platform, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getCrisisContentForMessage, type CrisisContent } from '@/lib/crisis/resources';
 import { IconSymbol } from '@/components/ui/icon-symbol';
+import { colors as dc, spacing, radius } from '@/constants/design';
 import * as Haptics from 'expo-haptics';
 
 interface EmergencyCardProps {
@@ -58,13 +59,22 @@ export function EmergencyCard({ visible, onDismiss, lastUserMessage }: Emergency
   };
 
   return (
-    <View className="bg-error/10 border-2 border-error rounded-2xl p-5 mb-4">
-      <View className="flex-row items-center mb-3">
-        <IconSymbol name="exclamationmark.triangle.fill" size={24} color="#E53935" />
-        <Text className="text-lg font-bold text-error ml-2">{content.title}</Text>
+    <View style={{
+      backgroundColor: dc.dangerSoft,
+      borderWidth: 2,
+      borderColor: dc.danger,
+      borderRadius: radius.xl,
+      padding: spacing.lg,
+      marginBottom: spacing.md,
+    }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: spacing.sm }}>
+        <IconSymbol name="exclamationmark.triangle.fill" size={24} color={dc.danger} />
+        <Text style={{ fontSize: 18, fontWeight: '700', color: dc.danger, marginLeft: 8 }}>
+          {content.title}
+        </Text>
       </View>
 
-      <Text className="text-sm text-foreground mb-4 leading-relaxed">
+      <Text style={{ fontSize: 14, color: dc.textPrimary, marginBottom: spacing.md, lineHeight: 20 }}>
         {content.intro}
       </Text>
 
@@ -73,7 +83,7 @@ export function EmergencyCard({ visible, onDismiss, lastUserMessage }: Emergency
         onPress={handlePrimaryCall}
         style={({ pressed }) => [
           {
-            backgroundColor: pressed ? '#C62828' : '#E53935',
+            backgroundColor: pressed ? '#9A3A3A' : dc.danger,
             borderRadius: 16,
             paddingVertical: 18,
             paddingHorizontal: 24,
@@ -96,10 +106,10 @@ export function EmergencyCard({ visible, onDismiss, lastUserMessage }: Emergency
         onPress={handleSms}
         style={({ pressed }) => [
           {
-            backgroundColor: pressed ? '#D32F2F' : 'transparent',
+            backgroundColor: pressed ? dc.dangerSoft : 'transparent',
             borderRadius: 12,
             borderWidth: 2,
-            borderColor: '#E53935',
+            borderColor: dc.danger,
             paddingVertical: 12,
             paddingHorizontal: 20,
             marginBottom: 16,
@@ -110,8 +120,8 @@ export function EmergencyCard({ visible, onDismiss, lastUserMessage }: Emergency
           },
         ]}
       >
-        <IconSymbol name="paperplane.fill" size={18} color="#E53935" />
-        <Text style={{ color: '#E53935', fontSize: 16, fontWeight: '600', marginLeft: 8 }}>
+        <IconSymbol name="paperplane.fill" size={18} color={dc.danger} />
+        <Text style={{ color: dc.danger, fontSize: 16, fontWeight: '600', marginLeft: 8 }}>
           {content.smsButtonText}
         </Text>
       </Pressable>
@@ -119,7 +129,7 @@ export function EmergencyCard({ visible, onDismiss, lastUserMessage }: Emergency
       {/* Personal emergency contacts */}
       {personalContacts.length > 0 && (
         <View style={{ marginBottom: 12 }}>
-          <Text style={{ fontSize: 11, fontWeight: '700', color: '#999', marginBottom: 8, letterSpacing: 0.5 }}>
+          <Text style={{ fontSize: 11, fontWeight: '700', color: dc.textMuted, marginBottom: 8, letterSpacing: 0.5 }}>
             YOUR CONTACTS
           </Text>
           {personalContacts.map((contact, idx) => (
@@ -128,7 +138,7 @@ export function EmergencyCard({ visible, onDismiss, lastUserMessage }: Emergency
               onPress={() => handleCall(contact.number)}
               style={({ pressed }) => [
                 {
-                  backgroundColor: pressed ? '#E3F2FD' : '#F5F9FF',
+                  backgroundColor: pressed ? dc.primarySoft : dc.surface,
                   borderRadius: 12,
                   paddingVertical: 14,
                   paddingHorizontal: 16,
@@ -136,15 +146,15 @@ export function EmergencyCard({ visible, onDismiss, lastUserMessage }: Emergency
                   flexDirection: 'row',
                   alignItems: 'center',
                   borderWidth: 1,
-                  borderColor: '#0a7ea430',
+                  borderColor: dc.borderSoft,
                   transform: [{ scale: pressed ? 0.97 : 1 }],
                 },
               ]}
             >
-              <IconSymbol name="phone.fill" size={18} color="#0a7ea4" />
+              <IconSymbol name="phone.fill" size={18} color={dc.primary} />
               <View style={{ marginLeft: 12, flex: 1 }}>
-                <Text style={{ fontSize: 14, fontWeight: '600', color: '#11181C' }}>{contact.name}</Text>
-                <Text style={{ fontSize: 15, fontWeight: '700', color: '#0a7ea4', marginTop: 2 }}>{contact.number}</Text>
+                <Text style={{ fontSize: 14, fontWeight: '600', color: dc.textPrimary }}>{contact.name}</Text>
+                <Text style={{ fontSize: 15, fontWeight: '700', color: dc.primary, marginTop: 2 }}>{contact.number}</Text>
               </View>
             </Pressable>
           ))}
@@ -160,18 +170,25 @@ export function EmergencyCard({ visible, onDismiss, lastUserMessage }: Emergency
             { opacity: pressed ? 0.7 : 1 },
           ]}
         >
-          <View className="bg-surface rounded-xl p-4 mb-2 border border-border">
-            <Text className="text-base font-bold text-foreground">{resource.name}</Text>
-            <Text className="text-lg font-bold text-primary mt-1">{resource.number}</Text>
-            <Text className="text-xs text-muted mt-1">{resource.description}</Text>
+          <View style={{
+            backgroundColor: dc.surface,
+            borderRadius: radius.lg,
+            padding: spacing.md,
+            marginBottom: 8,
+            borderWidth: 1,
+            borderColor: dc.borderSoft,
+          }}>
+            <Text style={{ fontSize: 16, fontWeight: '700', color: dc.textPrimary }}>{resource.name}</Text>
+            <Text style={{ fontSize: 18, fontWeight: '700', color: dc.primary, marginTop: 4 }}>{resource.number}</Text>
+            <Text style={{ fontSize: 12, color: dc.textMuted, marginTop: 4 }}>{resource.description}</Text>
           </View>
         </Pressable>
       ))}
 
       {onDismiss && (
         <Pressable onPress={onDismiss}>
-          <View className="py-2 items-center mt-2">
-            <Text className="text-sm text-muted">{content.dismissText}</Text>
+          <View style={{ paddingVertical: 8, alignItems: 'center', marginTop: 8 }}>
+            <Text style={{ fontSize: 14, color: dc.textMuted }}>{content.dismissText}</Text>
           </View>
         </Pressable>
       )}

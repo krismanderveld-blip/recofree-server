@@ -1085,3 +1085,7 @@
 - [x] Chat history reset: verify chat messages in memory (useRef/state) are cleared on reset/navigation to intake
 - [x] PreChatEigenRegie (Kim) scroll-fix: move confirm button inside ScrollView like PreChatVsp
 - [x] Fix: Crisis disclaimer overlapping tab bar and Back to Home button — added paddingBottom: insets.bottom + 60
+- [x] Color palette update: Switch to "Rust & Herstel" theme — Saliegroen (#A8C3A0), Donkergroen (#4F6F52), Petrolblauw (#1F4E5F), Crème (#F7F5F0), Lichtgrijs (#EAEAEA), Tekst (#2E2E2E)
+- [x] Fix: Crisis mode EmergencyCard not showing phone numbers — replaced NativeWind className (bg-error/10 broken with CSS var hex) with inline styles from design system
+- [x] Fix: EmergencyCard moved from ListHeaderComponent to ListFooterComponent so it appears after latest messages (visible without scrolling up)
+- [x] Fix: Progress bars/sliders barely visible — added dc.sliderTrack (#C4C2BD) color, darkened moodGreen (#6B9E63) and moodYellow (#B89B3E) for better contrast against white cards

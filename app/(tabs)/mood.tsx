@@ -251,7 +251,7 @@ export default function MoodScreen() {
                 value={value}
                 onValueChange={(v: number) => handleSliderChange(sc.key, v)}
                 minimumTrackTintColor={sliderColor}
-                maximumTrackTintColor={colors.border}
+                maximumTrackTintColor={dc.sliderTrack}
                 thumbTintColor={sliderColor}
               />
 
@@ -306,7 +306,7 @@ export default function MoodScreen() {
                 value={eigenRegieInput}
                 onValueChange={v => { setEigenRegieInput(Math.round(v)); setEigenRegieSaved(false); }}
                 minimumTrackTintColor={EIGEN_REGIE_ZONE_COLORS[eigenRegieResult.zone]}
-                maximumTrackTintColor={colors.border}
+                maximumTrackTintColor={dc.sliderTrack}
                 thumbTintColor={EIGEN_REGIE_ZONE_COLORS[eigenRegieResult.zone]}
               />
               <Text style={{ textAlign: 'center', fontSize: 24, fontWeight: '800', marginTop: 8, color: EIGEN_REGIE_ZONE_COLORS[eigenRegieResult.zone] }}>
@@ -427,8 +427,8 @@ function TimelineEntry({ snapshot, sliderConfig, colors }: { snapshot: MoodSnaps
           const barColor = getThresholdColor(value, sc.key);
           return (
             <View key={sc.key} style={{ flex: 1 }}>
-              <View style={{ height: 4, borderRadius: 2, backgroundColor: colors.border }}>
-                <View style={{ height: 4, borderRadius: 2, backgroundColor: barColor, width: `${Math.max((value / sc.max) * 100, 5)}%` }} />
+              <View style={{ height: 6, borderRadius: 3, backgroundColor: dc.sliderTrack }}>
+                <View style={{ height: 6, borderRadius: 3, backgroundColor: barColor, width: `${Math.max((value / sc.max) * 100, 5)}%` }} />
               </View>
             </View>
           );

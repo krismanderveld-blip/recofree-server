@@ -444,7 +444,7 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 4,
     borderRadius: radius.pill,
-    backgroundColor: dc.borderSoft,
+    backgroundColor: dc.sliderTrack,
     overflow: 'hidden' as const,
   },
   progressBarFill: {
