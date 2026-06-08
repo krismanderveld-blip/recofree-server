@@ -1063,3 +1063,4 @@
 - [x] Unit tests for advanced-modules detector: 47 tests covering NL+EN markers, gate conditions, priority routing (HWK01>VERGV01>IGH01>AGC01), confidence scoring, prompt block content
 - [x] Server verification: VERGV01/IGH01/AGC01/HWK01 context fields correctly injected in buildSystemPrompt() for both Elias and Kim templates (SESSION_INIT + LIVE_MESSAGE)
 - [x] Integration test: end-to-end pipeline for VERGV01/IGH01/AGC01/HWK01 — 22 tests covering full path (gate → detect → payload builder → server contract), priority routing through payload, Kim/Elias persona separation
+- [x] Scroll-to-bottom FAB in chat: floating "↓" button rechtsonder wanneer gebruiker omhoog gescrold is, verdwijnt automatisch bij terugkeer naar bodem

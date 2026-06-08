@@ -116,6 +116,7 @@ function ChatScreenInner() {
   const greetingSent = useRef(false);
   const appStateRef = useRef<AppStateStatus>(AppState.currentState);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
+  const [showScrollButton, setShowScrollButton] = useState(false);
 
   const userName = getUserName();
   const companionName = state.userType === 'elias' ? 'Elias' : 'Kim';
@@ -693,6 +694,7 @@ function ChatScreenInner() {
 
   const handleScrollBeginDrag = useCallback(() => {
     isUserScrolledUp.current = true;
+    setShowScrollButton(true);
   }, []);
 
   const handleScroll = useCallback((event: any) => {
@@ -701,6 +703,7 @@ function ChatScreenInner() {
     // If user scrolls back to within 50px of bottom, re-enable auto-scroll
     if (distanceFromBottom < 50) {
       isUserScrolledUp.current = false;
+      setShowScrollButton(false);
     }
   }, []);
 
@@ -947,6 +950,38 @@ function ChatScreenInner() {
             </>
           }
         />
+
+        {/* Scroll-to-bottom FAB */}
+        {showScrollButton && (
+          <Pressable
+            onPress={() => {
+              isUserScrolledUp.current = false;
+              setShowScrollButton(false);
+              flatListRef.current?.scrollToEnd({ animated: true });
+            }}
+            style={({ pressed }) => ({
+              position: 'absolute',
+              right: 16,
+              bottom: sessionPhase === 'active' ? 90 : 60,
+              width: 40,
+              height: 40,
+              borderRadius: 20,
+              backgroundColor: colors.primary,
+              alignItems: 'center',
+              justifyContent: 'center',
+              opacity: pressed ? 0.7 : 0.9,
+              transform: [{ scale: pressed ? 0.92 : 1 }],
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.2,
+              shadowRadius: 4,
+              elevation: 4,
+              zIndex: 10,
+            })}
+          >
+            <Text style={{ color: '#FFFFFF', fontSize: 20, fontWeight: '700', lineHeight: 22 }}>↓</Text>
+          </Pressable>
+        )}
 
         {/* Input Bar — sits at the bottom of the flex container */}
         {sessionPhase === 'active' && (
