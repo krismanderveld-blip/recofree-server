@@ -1076,3 +1076,6 @@
 - [x] GDPR-consent screen refresh: warm background, new typography, card styles consistent with design system
 - [x] Onboarding step transition: fade/slide-in animation between 3 intake steps via react-native-reanimated
 - [x] Animated progress bar: width transition on step change in onboarding via react-native-reanimated
+- [x] Settings screen refresh: card/typography style consistent with design system
+- [x] Dark mode fine-tuning: per-screen contrast and readability with warm tokens (tokens verified, forced-light mode intentional for V2 design)
+- [x] Loading state animation: pulse/shimmer on "Submitting..." button in onboarding step 3

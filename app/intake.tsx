@@ -19,6 +19,8 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
+  withRepeat,
+  withSequence,
   Easing,
 } from 'react-native-reanimated';
 
@@ -68,6 +70,28 @@ export default function IntakeScreen() {
   const [eigenRegieLevel, setEigenRegieLevel] = useState<EigenRegieLevel | null>(null);
   const [urgency, setUrgency] = useState<UrgencyLevel | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Pulse animation for submit button
+  const pulseAnim = useSharedValue(1);
+
+  useEffect(() => {
+    if (isSubmitting) {
+      pulseAnim.value = withRepeat(
+        withSequence(
+          withTiming(0.6, { duration: 600, easing: Easing.inOut(Easing.ease) }),
+          withTiming(1, { duration: 600, easing: Easing.inOut(Easing.ease) }),
+        ),
+        -1,
+        false,
+      );
+    } else {
+      pulseAnim.value = withTiming(1, { duration: 200 });
+    }
+  }, [isSubmitting, pulseAnim]);
+
+  const pulseStyle = useAnimatedStyle(() => ({
+    opacity: pulseAnim.value,
+  }));
 
   const isKim = selectedType === 'kim';
   const canProceedStep1 = name.trim().length >= 2 && selectedType !== null;
@@ -366,19 +390,21 @@ export default function IntakeScreen() {
                 </View>
 
                 <View style={styles.bottomActions}>
-                  <Pressable
-                    onPress={handleSubmit}
-                    disabled={!canSubmit || isSubmitting}
-                    style={({ pressed }) => [
-                      styles.primaryButton,
-                      { opacity: !canSubmit ? 0.4 : pressed ? 0.85 : 1 },
-                      pressed && canSubmit && { transform: [{ scale: 0.97 }] },
-                    ]}
-                  >
-                    <Text style={styles.primaryButtonText}>
-                      {isSubmitting ? 'One moment...' : 'Get Started'}
-                    </Text>
-                  </Pressable>
+                  <Animated.View style={isSubmitting ? pulseStyle : undefined}>
+                    <Pressable
+                      onPress={handleSubmit}
+                      disabled={!canSubmit || isSubmitting}
+                      style={({ pressed }) => [
+                        styles.primaryButton,
+                        { opacity: !canSubmit ? 0.4 : pressed ? 0.85 : 1 },
+                        pressed && canSubmit && { transform: [{ scale: 0.97 }] },
+                      ]}
+                    >
+                      <Text style={styles.primaryButtonText}>
+                        {isSubmitting ? 'One moment...' : 'Get Started'}
+                      </Text>
+                    </Pressable>
+                  </Animated.View>
                   <Pressable onPress={handleBack} style={styles.ghostButton}>
                     <Text style={styles.ghostButtonText}>Back</Text>
                   </Pressable>

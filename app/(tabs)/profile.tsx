@@ -5,7 +5,6 @@ import { useRouter } from 'expo-router';
 import { ScreenContainer } from '@/components/screen-container';
 import { useUser } from '@/lib/user-context';
 import { fixUnicode } from '@/lib/utils';
-import { useColors } from '@/hooks/use-colors';
 import { GUIDANCE_DEPTH_OPTIONS } from '@/lib/ai/types';
 import type { GuidanceDepth } from '@/lib/ai/types';
 import * as Haptics from 'expo-haptics';
@@ -26,7 +25,6 @@ const APP_VERSION = Constants.expoConfig?.version ?? '1.0.0';
 
 export default function ProfileScreen() {
   const { state, getUserName, getBackpack, getUserDat, updateGuidanceDepth, getGuidanceDepth } = useUser();
-  const colors = useColors();
   const router = useRouter();
   const userName = getUserName();
   const backpack = getBackpack();
@@ -131,13 +129,9 @@ export default function ProfileScreen() {
     <ScreenContainer containerClassName="bg-backgroundWarm">
       <ScrollView contentContainerStyle={{ paddingBottom: 120, paddingHorizontal: spacing.screenHorizontal, paddingTop: spacing.screenTop }} showsVerticalScrollIndicator={false}>
         <Text style={{ ...typography.titleLarge, color: dc.textPrimary, marginBottom: spacing.lg }}>Profile</Text>
+
         {/* User Card */}
-        <View style={{
-          ...cardStyles.default,
-          marginBottom: spacing.lg,
-          flexDirection: 'row',
-          alignItems: 'center',
-        }}>
+        <View style={{ ...cardStyles.default, marginBottom: spacing.lg, flexDirection: 'row', alignItems: 'center' }}>
           <View style={{
             width: 52,
             height: 52,
@@ -163,60 +157,61 @@ export default function ProfileScreen() {
 
         {/* Sober Counter (Elias only) */}
         {isElias && (
-          <View style={{ marginBottom: 20 }}>
+          <View style={{ marginBottom: spacing.lg }}>
             <SoberCounter />
           </View>
         )}
 
         {/* Guidance Depth */}
-        <View style={{ marginBottom: 24 }}>
-          <Text style={{ fontSize: 12, fontWeight: '700', color: colors.muted, marginBottom: 4, letterSpacing: 0.5 }}>
+        <View style={{ marginBottom: spacing.xl }}>
+          <Text style={{ ...typography.micro, color: dc.textTertiary, marginBottom: spacing.xs, fontWeight: '700', letterSpacing: 0.5 }}>
             GUIDANCE DEPTH
           </Text>
-          <Text style={{ fontSize: 13, color: colors.muted, marginBottom: 16, lineHeight: 18 }}>
+          <Text style={{ ...typography.bodySmall, color: dc.textSecondary, marginBottom: spacing.md, lineHeight: 18 }}>
             Choose how intensely the conversation goes. You can change this anytime.
           </Text>
 
-          <View style={{ gap: 8 }}>
+          <View style={{ gap: spacing.sm }}>
             {GUIDANCE_DEPTH_OPTIONS.map((option) => {
               const isActive = option.value === currentDepth;
               return (
                 <Pressable
                   key={option.value}
                   onPress={() => handleDepthChange(option.value)}
-                  style={({ pressed }) => [{ opacity: pressed ? 0.8 : 1 }]}
+                  style={({ pressed }) => [{ opacity: pressed ? 0.8 : 1, transform: [{ scale: pressed ? 0.98 : 1 }] }]}
                 >
                   <View style={{
-                    borderRadius: 14,
-                    padding: 16,
+                    ...cardStyles.default,
                     flexDirection: 'row',
                     alignItems: 'center',
                     gap: 12,
-                    backgroundColor: isActive ? colors.primary + '08' : '#fff',
-                    borderWidth: isActive ? 2 : 1,
-                    borderColor: isActive ? colors.primary : colors.border,
+                    ...(isActive ? {
+                      backgroundColor: dc.primarySoft,
+                      borderWidth: 2,
+                      borderColor: dc.primary,
+                    } : {}),
                   }}>
                     <View style={{
                       width: 22,
                       height: 22,
                       borderRadius: 11,
                       borderWidth: 2,
-                      borderColor: isActive ? colors.primary : colors.border,
-                      backgroundColor: isActive ? colors.primary : 'transparent',
+                      borderColor: isActive ? dc.primary : dc.border,
+                      backgroundColor: isActive ? dc.primary : 'transparent',
                       alignItems: 'center',
                       justifyContent: 'center',
                     }}>
-                      {isActive && <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#fff' }} />}
+                      {isActive && <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: dc.textInverse }} />}
                     </View>
                     <View style={{ flex: 1 }}>
                       <Text style={{
-                        fontSize: 14,
+                        ...typography.bodyMedium,
                         fontWeight: '600',
-                        color: isActive ? colors.primary : colors.foreground,
+                        color: isActive ? dc.primary : dc.textPrimary,
                       }}>
                         {option.label}
                       </Text>
-                      <Text style={{ fontSize: 12, color: colors.muted, marginTop: 2 }}>{option.description}</Text>
+                      <Text style={{ ...typography.caption, color: dc.textSecondary, marginTop: 2 }}>{option.description}</Text>
                     </View>
                   </View>
                 </Pressable>
@@ -226,22 +221,18 @@ export default function ProfileScreen() {
         </View>
 
         {/* Emergency Contacts */}
-        <View style={{ marginBottom: 24 }}>
-          <Text style={{ fontSize: 12, fontWeight: '700', color: colors.muted, marginBottom: 4, letterSpacing: 0.5 }}>
+        <View style={{ marginBottom: spacing.xl }}>
+          <Text style={{ ...typography.micro, color: dc.textTertiary, marginBottom: spacing.xs, fontWeight: '700', letterSpacing: 0.5 }}>
             EMERGENCY CONTACTS
           </Text>
-          <Text style={{ fontSize: 13, color: colors.muted, marginBottom: 16, lineHeight: 18 }}>
+          <Text style={{ ...typography.bodySmall, color: dc.textSecondary, marginBottom: spacing.md, lineHeight: 18 }}>
             Add up to 2 personal contacts shown during a crisis (e.g. family, sponsor).
           </Text>
 
           {emergencyContacts.map((contact, idx) => (
             <View key={idx} style={{
-              borderRadius: 14,
-              padding: 16,
-              marginBottom: 8,
-              backgroundColor: '#fff',
-              borderWidth: 1,
-              borderColor: colors.border,
+              ...cardStyles.default,
+              marginBottom: spacing.sm,
               flexDirection: 'row',
               alignItems: 'center',
             }}>
@@ -249,8 +240,8 @@ export default function ProfileScreen() {
                 onPress={() => Linking.openURL(`tel:${contact.number.replace(/\D/g, '')}`)}
                 style={({ pressed }) => [{ flex: 1, opacity: pressed ? 0.7 : 1 }]}
               >
-                <Text style={{ fontSize: 14, fontWeight: '600', color: colors.foreground }}>{contact.name}</Text>
-                <Text style={{ fontSize: 15, fontWeight: '700', color: colors.primary, marginTop: 2 }}>{contact.number}</Text>
+                <Text style={{ ...typography.bodyMedium, fontWeight: '600', color: dc.textPrimary }}>{contact.name}</Text>
+                <Text style={{ ...typography.bodyMedium, fontWeight: '700', color: dc.primary, marginTop: 2 }}>{contact.number}</Text>
               </Pressable>
               <Pressable
                 onPress={() => {
@@ -265,100 +256,95 @@ export default function ProfileScreen() {
                 }}
                 style={({ pressed }) => [{ opacity: pressed ? 0.5 : 1, padding: 8 }]}
               >
-                <Text style={{ fontSize: 18, color: colors.error }}>×</Text>
+                <Text style={{ fontSize: 18, color: dc.danger }}>×</Text>
               </Pressable>
             </View>
           ))}
 
           {showContactForm ? (
             <View style={{
-              borderRadius: 14,
-              padding: 16,
-              backgroundColor: '#fff',
-              borderWidth: 1,
-              borderColor: colors.primary,
+              ...cardStyles.default,
+              borderColor: dc.primary,
+              borderWidth: 2,
             }}>
               <TextInput
                 placeholder="Name (e.g. Dad, Sister)"
                 value={editingContact?.name ?? ''}
                 onChangeText={(t) => setEditingContact(prev => ({ name: t, number: prev?.number ?? '' }))}
-                style={{ fontSize: 14, borderBottomWidth: 1, borderBottomColor: colors.border, paddingVertical: 8, marginBottom: 12, color: colors.foreground }}
-                placeholderTextColor={colors.muted}
+                style={{ ...typography.bodyMedium, borderBottomWidth: 1, borderBottomColor: dc.borderSoft, paddingVertical: 8, marginBottom: 12, color: dc.textPrimary }}
+                placeholderTextColor={dc.textMuted}
               />
               <TextInput
                 placeholder="Phone number"
                 value={editingContact?.number ?? ''}
                 onChangeText={(t) => setEditingContact(prev => ({ name: prev?.name ?? '', number: t }))}
                 keyboardType="phone-pad"
-                style={{ fontSize: 14, borderBottomWidth: 1, borderBottomColor: colors.border, paddingVertical: 8, marginBottom: 16, color: colors.foreground }}
-                placeholderTextColor={colors.muted}
+                style={{ ...typography.bodyMedium, borderBottomWidth: 1, borderBottomColor: dc.borderSoft, paddingVertical: 8, marginBottom: spacing.md, color: dc.textPrimary }}
+                placeholderTextColor={dc.textMuted}
               />
               <View style={{ flexDirection: 'row', gap: 12 }}>
                 <Pressable
                   onPress={() => { setShowContactForm(false); setEditingContact(null); }}
-                  style={({ pressed }) => [{ flex: 1, opacity: pressed ? 0.7 : 1, paddingVertical: 12, alignItems: 'center', borderRadius: 10, backgroundColor: colors.border + '40' }]}
+                  style={({ pressed }) => [{ flex: 1, opacity: pressed ? 0.7 : 1, paddingVertical: 12, alignItems: 'center', borderRadius: radius.lg, backgroundColor: dc.borderSoft }]}
                 >
-                  <Text style={{ fontSize: 14, color: colors.muted }}>Cancel</Text>
+                  <Text style={{ ...typography.bodySmall, color: dc.textSecondary }}>Cancel</Text>
                 </Pressable>
                 <Pressable
                   onPress={saveContact}
-                  style={({ pressed }) => [{ flex: 1, opacity: pressed ? 0.8 : 1, paddingVertical: 12, alignItems: 'center', borderRadius: 10, backgroundColor: colors.primary }]}
+                  style={({ pressed }) => [{ flex: 1, opacity: pressed ? 0.8 : 1, paddingVertical: 12, alignItems: 'center', borderRadius: radius.lg, backgroundColor: dc.primary }]}
                 >
-                  <Text style={{ fontSize: 14, fontWeight: '600', color: '#fff' }}>Save</Text>
+                  <Text style={{ ...typography.bodySmall, fontWeight: '600', color: dc.textInverse }}>Save</Text>
                 </Pressable>
               </View>
             </View>
           ) : emergencyContacts.length < 2 ? (
             <Pressable
               onPress={() => { setShowContactForm(true); setEditingContact({ name: '', number: '' }); }}
-              style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}
+              style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1, transform: [{ scale: pressed ? 0.98 : 1 }] }]}
             >
               <View style={{
-                borderRadius: 14,
+                borderRadius: radius.xl,
                 paddingVertical: 14,
                 paddingHorizontal: 20,
                 borderWidth: 1,
-                borderColor: colors.primary + '40',
+                borderColor: dc.primary + '40',
                 borderStyle: 'dashed',
                 alignItems: 'center',
               }}>
-                <Text style={{ fontSize: 14, color: colors.primary, fontWeight: '600' }}>+ Add emergency contact</Text>
+                <Text style={{ ...typography.bodySmall, color: dc.primary, fontWeight: '600' }}>+ Add emergency contact</Text>
               </View>
             </Pressable>
           ) : null}
         </View>
 
         {/* Reset All Data */}
-        <View style={{ marginTop: 16 }}>
+        <View style={{ marginTop: spacing.md }}>
           <Pressable
             onPress={handleResetData}
             style={({ pressed }) => [{ opacity: pressed ? 0.85 : 1, transform: [{ scale: pressed ? 0.97 : 1 }] }]}
           >
             <View style={{
-              borderRadius: 14,
-              paddingVertical: 16,
-              paddingHorizontal: 20,
-              backgroundColor: colors.error + '08',
-              borderWidth: 1,
-              borderColor: colors.error + '25',
+              ...cardStyles.default,
+              backgroundColor: dc.dangerSoft,
+              borderColor: dc.danger + '25',
               flexDirection: 'row',
               alignItems: 'center',
               gap: 12,
             }}>
-              <View style={{ width: 32, height: 32, borderRadius: 8, backgroundColor: colors.error + '15', alignItems: 'center', justifyContent: 'center' }}>
+              <View style={{ width: 32, height: 32, borderRadius: 8, backgroundColor: dc.danger + '15', alignItems: 'center', justifyContent: 'center' }}>
                 <Text style={{ fontSize: 16 }}>{'\u{1F5D1}'}</Text>
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: 14, fontWeight: '600', color: colors.error }}>Reset All Data</Text>
-                <Text style={{ fontSize: 12, color: colors.muted, marginTop: 2 }}>Permanently deletes all data and restarts the intake process.</Text>
+                <Text style={{ ...typography.bodyMedium, fontWeight: '600', color: dc.danger }}>Reset All Data</Text>
+                <Text style={{ ...typography.caption, color: dc.textSecondary, marginTop: 2 }}>Permanently deletes all data and restarts the intake process.</Text>
               </View>
             </View>
           </Pressable>
         </View>
 
         {/* Version */}
-        <Pressable onPress={handleVersionTap} hitSlop={{ top: 20, bottom: 20, left: 40, right: 40 }} style={{ marginTop: 24, alignItems: 'center' }}>
-          <Text style={{ fontSize: 11, color: colors.muted }}>v{APP_VERSION}</Text>
+        <Pressable onPress={handleVersionTap} hitSlop={{ top: 20, bottom: 20, left: 40, right: 40 }} style={{ marginTop: spacing.xl, alignItems: 'center' }}>
+          <Text style={{ ...typography.micro, color: dc.textMuted }}>v{APP_VERSION}</Text>
         </Pressable>
       </ScrollView>
     </ScreenContainer>
