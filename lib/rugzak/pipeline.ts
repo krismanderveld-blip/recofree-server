@@ -257,6 +257,8 @@ import {
   createDefaultSTO01Progress,
 } from '../engine/elias/stoicism';
 import type { STO01Output, STO01Progress } from '../engine/elias/stoicism';
+import { runEliasAdvancedModules, hasAdvancedModuleMarkers } from '../engine/elias/advanced-modules';
+import type { EliasAdvancedModulesResult } from '../engine/elias/advanced-modules';
 
 // ─── Pattern Marking (post-GPT local state) ─────────────────
 
@@ -1286,6 +1288,26 @@ export async function processMessage(
     }
   }
 
+  // ── Step 5e5: Elias Advanced Modules (VERGV01 / IGH01 / AGC01 / HWK01) ──
+  let eliasAdvancedResult: EliasAdvancedModulesResult = {
+    vergv01Active: false, igh01Active: false, agc01Active: false, hwk01Active: false,
+    vergv01PromptBlock: null, igh01PromptBlock: null, agc01PromptBlock: null, hwk01PromptBlock: null,
+    primaryModule: 'NONE', confidence: 0,
+  };
+  if (hasAdvancedModuleMarkers(userMessage)) {
+    eliasAdvancedResult = runEliasAdvancedModules({
+      userType: backpack.userType as 'elias' | 'kim',
+      latestUserMessage: userMessage,
+      recentMessages: sessionBuffer.recentMessages.slice(-3).map(m => m.content),
+      crisisLevel: analysis.riskLevel === 'critical' || analysis.riskLevel === 'high' ? 2 : analysis.riskLevel === 'moderate' ? 1 : 0,
+      intakeCompleted: !!(backpack as any).intake?.startEmotion,
+      shameLevel: (currentUserDat.currentMood as any)?.shame ?? 0,
+      guiltLevel: (currentUserDat.currentMood as any)?.guilt ?? 0,
+      hopelessnessLevel: (currentUserDat.currentMood as any)?.hopelessness ?? 0,
+      relapseActive: (currentUserDat as any).relapseActive === true,
+    });
+  }
+
   // ── PRE-GPT STEP 6: Build ChatContext + ONE GPT call ──
   let crisisLevel = 0;
   let showEmergency = false;
@@ -1564,6 +1586,10 @@ export async function processMessage(
     kdl01Context: kimAdvancedResult.kdl01PromptBlock || undefined,
     kbr01Context: kimAdvancedResult.kbr01PromptBlock || undefined,
     ksc01Context: kimAdvancedResult.ksc01PromptBlock || undefined,
+    vergv01Context: eliasAdvancedResult.vergv01PromptBlock || undefined,
+    igh01Context: eliasAdvancedResult.igh01PromptBlock || undefined,
+    agc01Context: eliasAdvancedResult.agc01PromptBlock || undefined,
+    hwk01Context: eliasAdvancedResult.hwk01PromptBlock || undefined,
     // LANGUAGE_RECOVERY: inject recovery directive if detected
     languageRecovery: languageRecoveryResult.detected ? {
       detected: true,
@@ -1807,6 +1833,7 @@ export async function processMessage(
       { step: '5r. K03', status: k03Result.activated ? 'passed' : 'skipped', reason: k03Result.activated ? `mode=${k03Result.interventionMode}|level=${k03Result.responseLevel}|severity=${k03Result.severity}|shadow=${k03Result.primaryShadowPart}|ekt=${k03Result.ektPhase}` : 'selfCare > 3 or not activated' },
       { step: '5e3. SW01', status: sw01Result.active ? 'passed' : 'skipped', reason: sw01Result.active ? `mode=${sw01Result.interventionMode}|confidence=${sw01Result.confidence.toFixed(2)}|loop=${sw01Result.activeLoop?.loop_id ?? 'none'}|projection=${sw01Result.projectionActive}` : 'no shadow signals detected' },
       { step: '5e4. STO01', status: sto01Result.generatedInstruction.active ? 'passed' : 'skipped', reason: sto01Result.generatedInstruction.active ? `principle=${sto01Result.routingDecision.primaryPrinciple}|intervention=${sto01Result.routingDecision.interventionType}|strength=${sto01Result.routingDecision.activationStrength}` : (sto01Result.routingDecision.reason ?? 'no stoic markers detected') },
+      { step: '5e5. EliasAdvanced', status: eliasAdvancedResult.primaryModule !== 'NONE' ? 'passed' : 'skipped', reason: eliasAdvancedResult.primaryModule !== 'NONE' ? `module=${eliasAdvancedResult.primaryModule}|confidence=${eliasAdvancedResult.confidence.toFixed(2)}` : 'no advanced module markers detected' },
       { step: '6a. Zone decision', status: elisDecision ? 'passed' : 'skipped', reason: elisDecision ? `zone=${elisDecision.zone.computed.label}` : 'kim user' },
       { step: '6b. Engine directive', status: engineDirective ? 'passed' : 'skipped', reason: engineDirective ? `engine=${engineDirective.engine}` : 'none' },
       { step: '6c. Intervention', status: interventionContinuity ? 'passed' : 'skipped', reason: interventionContinuity ? `type=${interventionContinuity.lastInterventionType}` : 'not active' },

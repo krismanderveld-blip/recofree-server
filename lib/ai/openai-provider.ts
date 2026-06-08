@@ -324,6 +324,10 @@ export class OpenAIProvider implements AIProvider {
         k03Context: context.k03Context,
         sw01Context: context.sw01Context,
         sto01Context: context.sto01Context,
+        vergv01Context: context.vergv01Context,
+        igh01Context: context.igh01Context,
+        agc01Context: context.agc01Context,
+        hwk01Context: context.hwk01Context,
       });
 
       // ── STEP 3: Build server payload based on SESSION_INIT / LIVE_MESSAGE split ──
@@ -412,6 +416,11 @@ export class OpenAIProvider implements AIProvider {
           sw01Context: gptPayload.sw01Context ?? null,
           // STO01 Stoicism Integration (Elias only)
           sto01Context: gptPayload.sto01Context ?? null,
+          // VERGV01/IGH01/AGC01/HWK01 Advanced Modules
+          vergv01Context: gptPayload.vergv01Context ?? null,
+          igh01Context: gptPayload.igh01Context ?? null,
+          agc01Context: gptPayload.agc01Context ?? null,
+          hwk01Context: gptPayload.hwk01Context ?? null,
 
           // LOOPBLOCKER: cross-session repeating pattern directive
           loopDetected: gptPayload.loopDetected ?? null,
@@ -523,6 +532,11 @@ export class OpenAIProvider implements AIProvider {
           sw01Context: gptPayload.sw01Context ?? null,
           // STO01 Stoicism Integration (Elias only)
           sto01Context: gptPayload.sto01Context ?? null,
+          // VERGV01/IGH01/AGC01/HWK01 Advanced Modules
+          vergv01Context: gptPayload.vergv01Context ?? null,
+          igh01Context: gptPayload.igh01Context ?? null,
+          agc01Context: gptPayload.agc01Context ?? null,
+          hwk01Context: gptPayload.hwk01Context ?? null,
 
           // Signal engine: relevance scores for context gating (threshold 0.3)
           relevanceScores: context.relevanceScores ?? null,

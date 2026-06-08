@@ -1059,3 +1059,4 @@
 - [x] Clinical tag: change color from warning/orange to green (#2E7D32 / colors.success)
 - [x] Clinical tag: show fallback "[not annotated]" instead of hiding it
 - [x] Server: clinical mode now always routes to gpt-4o (mini unreliable for tag compliance)
+- [x] Module routing integration: VERGV01/IGH01/AGC01/HWK01 detectors wired into app pipeline (step 5e5) with end-to-end context injection to server
