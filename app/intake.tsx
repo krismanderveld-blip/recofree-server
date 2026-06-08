@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Text,
   View,
@@ -15,6 +15,12 @@ import { useUser } from '@/lib/user-context';
 import type { UserType, UrgencyLevel, StageOfChange, EigenRegieLevel } from '@/lib/ai/types';
 import { STAGE_OF_CHANGE_OPTIONS, EIGEN_REGIE_INTAKE_OPTIONS } from '@/lib/ai/types';
 import { colors as dc, radius, shadows, spacing, typography } from '@/constants/design';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  Easing,
+} from 'react-native-reanimated';
 
 type IntakeStep = 1 | 2 | 3;
 
@@ -50,12 +56,40 @@ export default function IntakeScreen() {
   const canProceedStep2 = isKim ? eigenRegieLevel !== null : stageOfChange !== null;
   const canSubmit = urgency !== null;
 
+  // Animation shared values
+  const fadeAnim = useSharedValue(1);
+  const slideAnim = useSharedValue(0);
+
+  const animatedStepStyle = useAnimatedStyle(() => ({
+    opacity: fadeAnim.value,
+    transform: [{ translateX: slideAnim.value }],
+  }));
+
+  const animateTransition = (direction: 'forward' | 'backward', callback: () => void) => {
+    const slideOut = direction === 'forward' ? -20 : 20;
+    const slideIn = direction === 'forward' ? 20 : -20;
+
+    fadeAnim.value = withTiming(0, { duration: 120, easing: Easing.out(Easing.cubic) });
+    slideAnim.value = withTiming(slideOut, { duration: 120, easing: Easing.out(Easing.cubic) });
+
+    setTimeout(() => {
+      callback();
+      slideAnim.value = slideIn;
+      fadeAnim.value = withTiming(1, { duration: 200, easing: Easing.out(Easing.cubic) });
+      slideAnim.value = withTiming(0, { duration: 200, easing: Easing.out(Easing.cubic) });
+    }, 130);
+  };
+
   const handleNext = () => {
-    if (step < 3) setStep((step + 1) as IntakeStep);
+    if (step < 3) {
+      animateTransition('forward', () => setStep((step + 1) as IntakeStep));
+    }
   };
 
   const handleBack = () => {
-    if (step > 1) setStep((step - 1) as IntakeStep);
+    if (step > 1) {
+      animateTransition('backward', () => setStep((step - 1) as IntakeStep));
+    }
   };
 
   const handleSubmit = async () => {
@@ -110,7 +144,7 @@ export default function IntakeScreen() {
 
             {/* Step 1: Name + User Type */}
             {step === 1 && (
-              <View style={styles.flex1}>
+              <Animated.View style={[styles.flex1, animatedStepStyle]}>
                 <View style={styles.heroSection}>
                   <Text style={styles.heroEmoji}>💙</Text>
                   <Text style={styles.heroTitle}>Welcome to RecoFree</Text>
@@ -188,12 +222,12 @@ export default function IntakeScreen() {
                     <Text style={styles.primaryButtonText}>Next</Text>
                   </Pressable>
                 </View>
-              </View>
+              </Animated.View>
             )}
 
             {/* Step 2: Stage of Change (Elias) OR Eigen Regie (Kim) */}
             {step === 2 && (
-              <View style={styles.flex1}>
+              <Animated.View style={[styles.flex1, animatedStepStyle]}>
                 {isKim ? (
                   <>
                     <Text style={styles.stepTitle}>
@@ -284,12 +318,12 @@ export default function IntakeScreen() {
                     <Text style={styles.ghostButtonText}>Back</Text>
                   </Pressable>
                 </View>
-              </View>
+              </Animated.View>
             )}
 
             {/* Step 3: Urgency (final step — submit) */}
             {step === 3 && (
-              <View style={styles.flex1}>
+              <Animated.View style={[styles.flex1, animatedStepStyle]}>
                 <Text style={styles.stepTitle}>How urgent does it feel?</Text>
                 <Text style={styles.stepSubtitle}>
                   This helps us set the right tone and pace for you.
@@ -339,7 +373,7 @@ export default function IntakeScreen() {
                 <Text style={styles.privacyNote}>
                   Your data stays on your phone. Nothing is shared without your consent.
                 </Text>
-              </View>
+              </Animated.View>
             )}
           </View>
         </ScrollView>
