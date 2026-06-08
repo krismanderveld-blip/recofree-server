@@ -24,7 +24,7 @@ const STAGE_LABELS: Record<string, string> = {
 const APP_VERSION = Constants.expoConfig?.version ?? '1.0.0';
 
 export default function ProfileScreen() {
-  const { state, getUserName, getBackpack, getUserDat, updateGuidanceDepth, getGuidanceDepth } = useUser();
+  const { state, getUserName, getBackpack, getUserDat, updateGuidanceDepth, getGuidanceDepth, resetUser } = useUser();
   const router = useRouter();
   const userName = getUserName();
   const backpack = getBackpack();
@@ -95,15 +95,15 @@ export default function ProfileScreen() {
   const handleResetData = useCallback(() => {
     const doReset = async () => {
       try {
+        // Clear ALL AsyncStorage keys (including any not tracked by user-context)
         await AsyncStorage.clear();
+        // Reset in-memory state (intakeCompleted → false, backpack → null, etc.)
+        await resetUser();
         if (Platform.OS !== 'web') {
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
         }
-        if (Platform.OS === 'web') {
-          window.location.reload();
-        } else {
-          Alert.alert('Data Cleared', 'All data has been reset. Please restart the app.', [{ text: 'OK' }]);
-        }
+        // Navigate to intake — state is now reset so the redirect guard will also trigger
+        router.replace('/intake' as any);
       } catch (e) {
         console.error('[Profile] Reset failed:', e);
       }
@@ -123,7 +123,7 @@ export default function ProfileScreen() {
         ],
       );
     }
-  }, []);
+  }, [resetUser, router]);
 
   return (
     <ScreenContainer containerClassName="bg-backgroundWarm">

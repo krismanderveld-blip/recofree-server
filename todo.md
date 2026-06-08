@@ -1080,3 +1080,4 @@
 - [x] Dark mode fine-tuning: per-screen contrast and readability with warm tokens (tokens verified, forced-light mode intentional for V2 design)
 - [x] Loading state animation: pulse/shimmer on "Submitting..." button in onboarding step 3
 - [x] Fix: PreChatVsp confirm button not reachable on small screens — moved button inside ScrollView instead of absolute positioning
+- [x] Fix: Reset All Data now correctly clears in-memory state (resetUser dispatch) + navigates to /intake instead of just showing "restart app" alert
