@@ -19,6 +19,7 @@ import {
 } from 'react-native';
 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import * as Haptics from 'expo-haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useUser } from '@/lib/user-context';
@@ -955,6 +956,9 @@ function ChatScreenInner() {
         {showScrollButton && (
           <Pressable
             onPress={() => {
+              if (Platform.OS !== 'web') {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              }
               isUserScrolledUp.current = false;
               setShowScrollButton(false);
               flatListRef.current?.scrollToEnd({ animated: true });
