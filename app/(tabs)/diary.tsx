@@ -139,6 +139,8 @@ export default function DiaryScreen() {
   const [isSaving, setIsSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<DiaryTab>('journal');
   const [editorTab, setEditorTab] = useState<DiaryTab>('journal');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isSearchActive, setIsSearchActive] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -198,6 +200,18 @@ export default function DiaryScreen() {
   }, [editorText, editorMood, gratitude1, gratitude2, gratitude3, entries, isSaving, resetEditor]);
 
   const filteredEntries = entries.filter((entry) => {
+    // Search filter
+    if (isSearchActive && searchQuery.trim().length > 0) {
+      const q = searchQuery.toLowerCase().trim();
+      const contentMatch = entry.content.toLowerCase().includes(q);
+      const gratitudeMatch = entry.gratitude
+        ? [entry.gratitude.entry1, entry.gratitude.entry2, entry.gratitude.entry3]
+            .some(g => g.toLowerCase().includes(q))
+        : false;
+      const moodMatch = entry.moodTag.toLowerCase().includes(q);
+      if (!contentMatch && !gratitudeMatch && !moodMatch) return false;
+    }
+    // Tab filter
     if (activeTab === 'gratitude') {
       return entry.gratitude && (entry.gratitude.entry1 || entry.gratitude.entry2 || entry.gratitude.entry3);
     }
@@ -306,6 +320,24 @@ export default function DiaryScreen() {
           </View>
         </View>
       )}
+
+      {/* Search Bar */}
+      <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12, backgroundColor: '#fff', borderRadius: 12, borderWidth: 1, borderColor: colors.border, paddingHorizontal: 12 }}>
+        <IconSymbol name="house.fill" size={16} color={colors.muted} />
+        <TextInput
+          value={searchQuery}
+          onChangeText={(text) => { setSearchQuery(text); setIsSearchActive(text.length > 0); }}
+          placeholder="Search entries..."
+          placeholderTextColor={colors.muted}
+          style={{ flex: 1, paddingVertical: 10, paddingHorizontal: 8, fontSize: 14, color: colors.foreground }}
+          returnKeyType="search"
+        />
+        {searchQuery.length > 0 && (
+          <Pressable onPress={() => { setSearchQuery(''); setIsSearchActive(false); }} style={({ pressed }) => [{ opacity: pressed ? 0.5 : 1, padding: 4 }]}>
+            <Text style={{ fontSize: 18, color: colors.muted, fontWeight: '600' }}>×</Text>
+          </Pressable>
+        )}
+      </View>
 
       {/* Entry List */}
       <FlatList

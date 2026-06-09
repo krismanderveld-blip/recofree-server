@@ -697,6 +697,7 @@ function ChatScreenInner() {
         )}
         <View style={bubbleStyle}>
           <Text
+            selectable={true}
             style={{
               ...typography.chat,
               color: dc.textPrimary,

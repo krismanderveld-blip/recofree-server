@@ -3,6 +3,10 @@ import { ScrollView, Text, View, Pressable, Modal, Platform, Image, StyleSheet }
 import { useRouter, type Href } from 'expo-router';
 import { ScreenContainer } from '@/components/screen-container';
 import { useUser } from '@/lib/user-context';
+import { MilestoneCard } from '@/components/milestone-card';
+import { evaluateEliasMilestone } from '@/lib/features/milestone-tracker/elias-milestone-tracker';
+import { evaluateKimMilestone } from '@/lib/features/milestone-tracker/kim-milestone-tracker';
+import type { MilestoneDefinition, EliasMilestoneTrackerState, KimMilestoneTrackerState } from '@/lib/features/milestone-tracker/milestone-tracker-types';
 import { fixUnicode } from '@/lib/utils';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useColors } from '@/hooks/use-colors';
@@ -17,7 +21,7 @@ export default function HomeScreen() {
   const userName = getUserName();
   const mood = getMood();
   const userDat = getUserDat();
-  const [milestoneMessage, setMilestoneMessage] = useState<string | null>(null);
+  const [activeMilestone, setActiveMilestone] = useState<MilestoneDefinition | null>(null);
   const [showClinicalModal, setShowClinicalModal] = useState(false);
 
   // Easter egg: 5x tap on companion name
@@ -55,7 +59,7 @@ export default function HomeScreen() {
   }, [toggleClinicalMode]);
 
   const handleDismissMilestone = useCallback(() => {
-    setMilestoneMessage(null);
+    setActiveMilestone(null);
     if (Platform.OS !== 'web') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
@@ -69,32 +73,51 @@ export default function HomeScreen() {
     }
   }, [state.isLoading, state.intakeCompleted, state.userDat?.gdprAccepted]);
 
-  // Milestone check (Elias only)
+  // Milestone check (both personas)
   useEffect(() => {
     if (state.isLoading || !state.intakeCompleted) return;
-    if (state.userType !== 'elias') return;
-    const sobrietyDate = userDat?.sobrietyDate;
-    if (!sobrietyDate) return;
+    const nowIso = new Date().toISOString();
+    const sessionId = `home_${Date.now()}`;
 
-    const days = Math.floor(
-      (Date.now() - new Date(sobrietyDate).getTime()) / 86400000
-    );
-    const MILESTONES: Record<number, string> = {
-      1: 'Day 1. The hardest one. You showed up.',
-      7: '7 days. One week of choosing yourself.',
-      30: '30 days. A month of showing up every day.',
-      90: '90 days. This is real.',
-      180: 'Half a year. You rebuilt something.',
-      365: 'One year. Remember who you were. Look who you are now.',
-    };
-
-    const today = new Date().toISOString().slice(0, 10);
-    const lastShown = userDat?.lastMilestoneShown ?? null;
-    if (MILESTONES[days] && lastShown !== today) {
-      setMilestoneMessage(MILESTONES[days]);
-      updateMilestoneShown(today);
+    if (state.userType === 'elias') {
+      const milestoneState: EliasMilestoneTrackerState = {
+        persona: 'elias',
+        seenMilestones: (userDat as any)?.milestoneTracker?.seenMilestones ?? [],
+        lastCheckedAt: (userDat as any)?.milestoneTracker?.lastCheckedAt ?? null,
+        lastDisplayedMilestoneId: (userDat as any)?.milestoneTracker?.lastDisplayedMilestoneId ?? null,
+      };
+      const result = evaluateEliasMilestone({
+        persona: 'elias',
+        intakeCompleted: true,
+        homeOpenedAt: nowIso,
+        homeOpenSessionId: sessionId,
+        sobrietyDate: userDat?.sobrietyDate ?? null,
+        milestoneState,
+      });
+      if (result.status === 'ACTIVE' && result.eligibleMilestone) {
+        setActiveMilestone(result.eligibleMilestone);
+        updateMilestoneShown(new Date().toISOString().slice(0, 10));
+      }
+    } else if (state.userType === 'kim') {
+      const milestoneState: KimMilestoneTrackerState = {
+        persona: 'kim',
+        seenMilestones: (userDat as any)?.milestoneTracker?.seenMilestones ?? [],
+        lastCheckedAt: (userDat as any)?.milestoneTracker?.lastCheckedAt ?? null,
+        lastDisplayedMilestoneId: (userDat as any)?.milestoneTracker?.lastDisplayedMilestoneId ?? null,
+      };
+      const result = evaluateKimMilestone({
+        persona: 'kim',
+        intakeCompleted: true,
+        homeOpenedAt: nowIso,
+        homeOpenSessionId: sessionId,
+        selfCareHistory: (userDat as any)?.selfCareHistory ?? [],
+        milestoneState,
+      });
+      if (result.status === 'ACTIVE' && result.eligibleMilestone) {
+        setActiveMilestone(result.eligibleMilestone);
+      }
     }
-  }, [state.isLoading, state.intakeCompleted, state.userType, userDat?.sobrietyDate, userDat?.lastMilestoneShown]);
+  }, [state.isLoading, state.intakeCompleted, state.userType, userDat?.sobrietyDate]);
 
   if (state.isLoading || !state.intakeCompleted) {
     return (
@@ -151,6 +174,20 @@ export default function HomeScreen() {
             </Pressable>
           )}
         </View>
+
+        {/* Milestone Card (inline, above hero) */}
+        {activeMilestone && (
+          <MilestoneCard
+            persona={activeMilestone.persona}
+            milestoneId={activeMilestone.milestoneId}
+            title={activeMilestone.title}
+            message={activeMilestone.message}
+            ctaLabel={activeMilestone.ctaLabel}
+            accentColor={activeMilestone.accentColor}
+            softBackgroundColor={activeMilestone.softBackgroundColor}
+            onAcknowledge={handleDismissMilestone}
+          />
+        )}
 
         {/* Hero Card */}
         <View style={[styles.heroCard, { backgroundColor: isElias ? dc.surfaceBlue : dc.surfaceKim }]}>
@@ -257,27 +294,7 @@ export default function HomeScreen() {
         </View>
       </ScrollView>
 
-      {/* Milestone Modal */}
-      {milestoneMessage && (
-        <Modal visible transparent animationType="fade" onRequestClose={handleDismissMilestone}>
-          <Pressable
-            onPress={handleDismissMilestone}
-            style={{ flex: 1, backgroundColor: dc.overlay, justifyContent: 'center', alignItems: 'center' }}
-          >
-            <View style={styles.modalCard}>
-              <Text style={{ fontSize: 17, fontWeight: '700', color: dc.textPrimary, textAlign: 'center', lineHeight: 24 }}>
-                {milestoneMessage}
-              </Text>
-              <Pressable
-                onPress={handleDismissMilestone}
-                style={({ pressed }) => [styles.ctaElias, { marginTop: 24, opacity: pressed ? 0.88 : 1 }]}
-              >
-                <Text style={styles.ctaText}>Thank you</Text>
-              </Pressable>
-            </View>
-          </Pressable>
-        </Modal>
-      )}
+
 
       {/* Clinical Mode Modal */}
       <Modal visible={showClinicalModal} transparent animationType="fade" onRequestClose={() => setShowClinicalModal(false)}>

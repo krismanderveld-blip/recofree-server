@@ -1128,3 +1128,6 @@
 - [x] Create SLAAP01 integration layers (Elias P4 + Kim extension)
 - [x] Wire SLAAP01 into pipeline.ts with persona separation
 - [x] Add SLAAP01 keywords to short-module-detector
+- [x] Implement Milestone Tracker (types + elias logic + kim logic + MilestoneCard UI on Home)
+- [x] Implement Diary Search (types + search logic + search UI on Diary tab)
+- [x] Implement Chat Text Selection (selectable={true} on chat bubbles, clinical dropdown non-copyable)
