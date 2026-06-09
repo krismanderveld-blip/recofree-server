@@ -132,6 +132,8 @@ export interface GPTPayload {
   zink01Context?: string;
   terv01Context?: string;
   mi02Context?: string;
+  slaap01EliasContext?: string;
+  slaap01KimContext?: string;
 
   // ── Loopblocker: cross-session repeating pattern directive ──
   loopDetected?: {
@@ -296,6 +298,8 @@ export interface PayloadBuilderInput {
   zink01Context?: string;
   terv01Context?: string;
   mi02Context?: string;
+  slaap01EliasContext?: string;
+  slaap01KimContext?: string;
 }
 
 // ─── Conversation History Optimisation (Patch N Step 5) ─────────────────
@@ -637,6 +641,12 @@ export function buildGPTPayload(input: PayloadBuilderInput): GPTPayload {
   }
   if (input.mi02Context) {
     payload.mi02Context = input.mi02Context;
+  }
+  if (input.slaap01EliasContext) {
+    payload.slaap01EliasContext = input.slaap01EliasContext;
+  }
+  if (input.slaap01KimContext) {
+    payload.slaap01KimContext = input.slaap01KimContext;
   }
 
   // ── Buffer snapshot (from pipeline, per message) ──

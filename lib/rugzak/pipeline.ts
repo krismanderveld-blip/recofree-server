@@ -263,6 +263,10 @@ import { runEliasAdvancedModulesP2, hasAdvancedModuleP2Markers } from '../engine
 import type { EliasAdvancedP2Result } from '../engine/elias/advanced-modules-p2';
 import { runEliasAdvancedModulesP3 } from '../engine/elias/advanced-modules-p3';
 import type { EliasAdvancedP3Result } from '../engine/elias/advanced-modules-p3';
+import { runEliasAdvancedP4 } from '../engine/elias/advanced-modules-p4';
+import type { EliasP4Result } from '../engine/elias/advanced-modules-p4';
+import { runKimSLAAP01 } from '../engine/kim/kim-slaap01-module';
+import type { KimSLAAP01Result } from '../engine/kim/kim-slaap01-module';
 import {
   evaluateModuleMemoryRepeat,
   buildModuleMemoryPromptContext,
@@ -1399,6 +1403,69 @@ export async function processMessage(
     });
   }
 
+  // ── STEP 5e8: Elias Advanced P4 — SLAAP01 ──
+  let eliasP4Result: EliasP4Result = {
+    slaap01Active: false,
+    slaap01Context: null,
+    slaap01ResponseMode: null,
+    slaap01RouteNext: null,
+    slaap01StoragePatch: null,
+  };
+  if (backpack.userType === 'elias' && !!(backpack as any).intake?.startEmotion) {
+    eliasP4Result = runEliasAdvancedP4({
+      persona: 'elias',
+      intakeCompleted: true,
+      latestUserMessage: userMessage,
+      recentMessages: sessionBuffer.recentMessages.slice(-3).map(m => m.content),
+      language: (currentUserDat as any).detectedLanguage ?? 'nl',
+      detectedMarkers: (currentUserDat as any).detectedMarkers ?? [],
+      crisisProtocolStatus: analysis.riskLevel === 'critical' ? 'ACTIVE' : analysis.riskLevel === 'high' ? 'MONITOR' : 'CLEAR',
+      medicalRisk: (currentUserDat as any).medicalRisk ?? 0,
+      safetyRisk: analysis.riskLevel === 'critical' ? 0.9 : analysis.riskLevel === 'high' ? 0.7 : 0.1,
+      sleepProblemDetected: (currentUserDat as any).sleepProblemDetected ?? false,
+      sleepAnxietyDetected: (currentUserDat as any).sleepAnxietyDetected ?? false,
+      nightCravingDetected: (currentUserDat as any).nightCravingDetected ?? false,
+      cravingIntensity: (currentUserDat.currentMood as any)?.craving ?? 0,
+      fatigueRelapseTriggerDetected: (currentUserDat as any).fatigueRelapseTriggerDetected ?? false,
+      withdrawalSleepConcern: (currentUserDat as any).withdrawalSleepConcern ?? false,
+      withdrawalRisk: (currentUserDat as any).withdrawalRisk ?? 0,
+      paarsZoneActive: (currentUserDat as any).currentZone === 'PAARS',
+      relapseRecentlyOccurred: (currentUserDat as any).relapseActive === true,
+      timestampIso: new Date().toISOString(),
+    });
+  }
+
+  // ── STEP 5e8b: Kim SLAAP01 ──
+  let kimSlaap01Result: KimSLAAP01Result = {
+    slaap01Active: false,
+    slaap01Context: null,
+    slaap01ResponseMode: null,
+    slaap01RouteNext: null,
+    slaap01StoragePatch: null,
+  };
+  if (backpack.userType === 'kim' && !!(backpack as any).intake?.startEmotion) {
+    kimSlaap01Result = runKimSLAAP01({
+      persona: 'kim',
+      intakeCompleted: true,
+      latestUserMessage: userMessage,
+      recentMessages: sessionBuffer.recentMessages.slice(-3).map(m => m.content),
+      language: (currentUserDat as any).detectedLanguage ?? 'nl',
+      detectedMarkers: (currentUserDat as any).detectedMarkers ?? [],
+      crisisProtocolStatus: analysis.riskLevel === 'critical' ? 'ACTIVE' : analysis.riskLevel === 'high' ? 'MONITOR' : 'CLEAR',
+      medicalRisk: (currentUserDat as any).medicalRisk ?? 0,
+      safetyRisk: analysis.riskLevel === 'critical' ? 0.9 : analysis.riskLevel === 'high' ? 0.7 : 0.1,
+      sleepProblemDetected: (currentUserDat as any).sleepProblemDetected ?? false,
+      sleepAnxietyDetected: (currentUserDat as any).sleepAnxietyDetected ?? false,
+      nightVigilanceDetected: (currentUserDat as any).nightVigilanceDetected ?? false,
+      sleepGuiltDetected: (currentUserDat as any).sleepGuiltDetected ?? false,
+      fatigueBoundaryTriggerDetected: (currentUserDat as any).fatigueBoundaryTriggerDetected ?? false,
+      boundaryFatigueIntensity: (currentUserDat.currentMood as any)?.boundaryFatigue ?? 0,
+      caregiverStressIntensity: (currentUserDat.currentMood as any)?.stress ?? 0,
+      acuteHouseholdSafetyRisk: (currentUserDat as any).acuteHouseholdSafetyRisk ?? false,
+      timestampIso: new Date().toISOString(),
+    });
+  }
+
   // ── PRE-GPT STEP 6: Build ChatContext + ONE GPT call ──
   let crisisLevel = 0;
   let showEmergency = false;
@@ -1688,6 +1755,8 @@ export async function processMessage(
     zink01Context: eliasAdvancedP2Result.zink01PromptBlock || undefined,
     terv01Context: eliasAdvancedP3Result.terv01PromptBlock || undefined,
     mi02Context: eliasAdvancedP3Result.mi02PromptBlock || undefined,
+    slaap01EliasContext: eliasP4Result.slaap01Context || undefined,
+    slaap01KimContext: kimSlaap01Result.slaap01Context || undefined,
     // LANGUAGE_RECOVERY: inject recovery directive if detected
     languageRecovery: languageRecoveryResult.detected ? {
       detected: true,
@@ -1934,6 +2003,7 @@ export async function processMessage(
       { step: '5e5. EliasAdvanced', status: eliasAdvancedResult.primaryModule !== 'NONE' ? 'passed' : 'skipped', reason: eliasAdvancedResult.primaryModule !== 'NONE' ? `module=${eliasAdvancedResult.primaryModule}|confidence=${eliasAdvancedResult.confidence.toFixed(2)}` : 'no advanced module markers detected' },
       { step: '5e6. EliasAdvancedP2', status: eliasAdvancedP2Result.primaryModule !== 'NONE' ? 'passed' : 'skipped', reason: eliasAdvancedP2Result.primaryModule !== 'NONE' ? `module=${eliasAdvancedP2Result.primaryModule}|confidence=${eliasAdvancedP2Result.confidence.toFixed(2)}` : 'no P2 advanced module markers detected' },
       { step: '5e7. EliasAdvancedP3', status: eliasAdvancedP3Result.primaryModule !== 'NONE' ? 'passed' : 'skipped', reason: eliasAdvancedP3Result.primaryModule !== 'NONE' ? `module=${eliasAdvancedP3Result.primaryModule}|confidence=${eliasAdvancedP3Result.confidence.toFixed(2)}|mode=${eliasAdvancedP3Result.responseMode}` : 'no P3 advanced module activation' },
+      { step: '5e8. SLAAP01', status: eliasP4Result.slaap01Active || kimSlaap01Result.slaap01Active ? 'passed' : 'skipped', reason: eliasP4Result.slaap01Active ? `elias|mode=${eliasP4Result.slaap01ResponseMode}` : kimSlaap01Result.slaap01Active ? `kim|mode=${kimSlaap01Result.slaap01ResponseMode}` : 'no SLAAP01 activation' },
       { step: '6a. Zone decision', status: elisDecision ? 'passed' : 'skipped', reason: elisDecision ? `zone=${elisDecision.zone.computed.label}` : 'kim user' },
       { step: '6b. Engine directive', status: engineDirective ? 'passed' : 'skipped', reason: engineDirective ? `engine=${engineDirective.engine}` : 'none' },
       { step: '6c. Intervention', status: interventionContinuity ? 'passed' : 'skipped', reason: interventionContinuity ? `type=${interventionContinuity.lastInterventionType}` : 'not active' },

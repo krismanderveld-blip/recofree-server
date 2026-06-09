@@ -1123,3 +1123,8 @@
 - [x] Create advanced-modules-p3.ts integration layer for TERV01 + MI02 (priority 5.7)
 - [x] Wire P3 into pipeline.ts at step 5e7 + GPT payload passthrough + engine trace
 - [x] Add TERV01/MI02 test suite (30 tests, all green)
+- [x] Implement SLAAP01 Elias module (types, detector, router, prompt, storage, tests)
+- [x] Implement SLAAP01 Kim module (types, detector, router, prompt, storage, tests)
+- [x] Create SLAAP01 integration layers (Elias P4 + Kim extension)
+- [x] Wire SLAAP01 into pipeline.ts with persona separation
+- [x] Add SLAAP01 keywords to short-module-detector

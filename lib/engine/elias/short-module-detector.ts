@@ -43,14 +43,14 @@ const TRANSLATION_MAP: Record<string, string[]> = {
   intiem: ['intimate', 'intimacy'],
   hechting: ['attachment'],
   gehecht: ['attached', 'attachment'],
-  slaap: ['sleep'],
-  slapen: ['sleep'],
-  wakker: ['awake', 'sleep'],
+  slaap: ['sleep', 'insomnia', 'cant-sleep'],
+  slapen: ['sleep', 'cant-sleep'],
+  wakker: ['awake', 'sleep', 'awake-at-night', 'insomnia'],
   insomnie: ['insomnia', 'sleep'],
   nacht: ['night', 'sleep'],
-  slapeloosheid: ['insomnia', 'sleep'],
+  slapeloosheid: ['insomnia', 'sleep', 'cant-sleep'],
   nachtmerrie: ['nightmare', 'sleep'],
-  moe: ['tired', 'fatigue', 'exhausted'],
+  moe: ['tired', 'fatigue', 'exhausted', 'fatigue-relapse'],
   vermoeid: ['tired', 'fatigue'],
   uitgeput: ['exhausted', 'exhaustion'],
   druk: ['pressure'],
@@ -163,7 +163,7 @@ const TRANSLATION_MAP: Record<string, string[]> = {
   grensoverschrijding: ['boundary-violation', 'violation', 'deserved', 'inevitable'],
   kwetsbaar: ['vulnerable', 'vulnerability'],
   kwetsbaarheid: ['vulnerability'],
-  waakzaam: ['vigilant', 'hypervigilance'],
+  waakzaam: ['vigilant', 'hypervigilance', 'night-vigilance'],
   alert: ['alert', 'hypervigilance'],
   hoede: ['guard', 'hypervigilance'],
   vermijden: ['avoidance', 'avoid'],
@@ -354,6 +354,15 @@ const TRANSLATION_MAP: Record<string, string[]> = {
   // ── Dutch: MI02 (ambivalence/motivational interviewing) ──
   dubbel: ['ambivalent', 'torn'],
   klaar: ['not-ready-yet'],
+  // ── Dutch: SLAAP01 (sleep and addiction recovery) ──
+  nachtelijk: ['nighttime', 'night-craving'],
+  vermoeidheid: ['fatigue-relapse'],
+  slaapangst: ['sleep-anxiety'],
+  nachtcraving: ['night-craving'],
+  ontwenning: ['withdrawal-sleep'],
+
+  slaapschuld: ['sleep-guilt'],
+  slaaphygiene: ['sleep-hygiene'],
 };
 
 // ─── MODULE KEYWORDS: English concept words per module ───
@@ -434,6 +443,7 @@ const MODULE_KEYWORDS: Record<string, string[]> = {
   ZINK01: ['meaning', 'purpose', 'pointless', 'meaningless', 'why-bother', 'empty-inside', 'nothing-to-live-for', 'existential', 'what-is-the-point'],
   TERV01: ['relapse-chain', 'trigger-analysis', 'what-went-wrong', 'understand-relapse', 'the-chain', 'before-i-used', 'relapse-analysis', 'how-it-went-wrong', 'want-to-understand'],
   MI02: ['ambivalent', 'want-but-not', 'part-of-me', 'doubtful', 'mixed-feelings', 'not-ready-yet', 'want-to-stop-but', 'torn', 'conflicted'],
+  SLAAP01: ['sleep', 'insomnia', 'cant-sleep', 'night-craving', 'sleep-anxiety', 'fatigue-relapse', 'withdrawal-sleep', 'nighttime', 'awake-at-night', 'sleep-hygiene', 'night-vigilance', 'sleep-guilt'],
 };
 
 // ─── DETECTOR LOGIC ───
