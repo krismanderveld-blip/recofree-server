@@ -531,6 +531,8 @@ export interface UserDat {
   firstChatSeen?: boolean;
   /** Module 98: consecutive sessions without diary, slider, or backpack engagement */
   consecutiveSessionsWithoutEngagement: number;
+  /** MODULE_MEMORY_CROSS_SESSION: persona-separated cross-session module dominance tracking (local within-device memory) */
+  moduleMemory?: import('../engine/shared/module-memory-cross-session').ModuleMemoryState;
 }
 
 /** A record of a completed session's analysis */

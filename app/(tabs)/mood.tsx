@@ -2,6 +2,7 @@ import { useState, useCallback, useMemo } from 'react';
 import { Text, View, ScrollView, Pressable, Platform, StyleSheet } from 'react-native';
 import Slider from '@react-native-community/slider';
 import { ScreenContainer } from '@/components/screen-container';
+import { ProgressCard } from '@/components/progress-card';
 import { useUser } from '@/lib/user-context';
 import { useColors } from '@/hooks/use-colors';
 import { getSliderConfig, checkInterventions } from '@/lib/ai/types';
@@ -335,6 +336,12 @@ export default function MoodScreen() {
             </Pressable>
           </View>
         )}
+
+        {/* Progress Tracker */}
+        <View style={{ marginTop: 40 }}>
+          <Text style={{ fontSize: 18, fontWeight: '700', color: colors.foreground, marginBottom: 16 }}>Progress</Text>
+          <ProgressCard />
+        </View>
 
         {/* Recognition Section */}
         <View style={{ marginTop: 40 }}>

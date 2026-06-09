@@ -261,6 +261,28 @@ import { runEliasAdvancedModules, hasAdvancedModuleMarkers } from '../engine/eli
 import type { EliasAdvancedModulesResult } from '../engine/elias/advanced-modules';
 import { runEliasAdvancedModulesP2, hasAdvancedModuleP2Markers } from '../engine/elias/advanced-modules-p2';
 import type { EliasAdvancedP2Result } from '../engine/elias/advanced-modules-p2';
+import {
+  evaluateModuleMemoryRepeat,
+  buildModuleMemoryPromptContext,
+  createDefaultModuleMemoryState,
+} from '../engine/shared/module-memory-cross-session';
+import type { ModuleMemoryState, ModuleMemoryDecisionResult, ModuleMemoryPromptContext } from '../engine/shared/module-memory-cross-session';
+import {
+  getEliasModuleMemorySessionState,
+  resetEliasModuleMemorySessionState,
+  recordEliasModuleActivation,
+  setEliasModuleMemoryDecision,
+  buildEliasModuleMemoryPatch,
+  applyEliasModuleMemoryPatch,
+} from '../engine/elias/elias-module-memory';
+import {
+  getKimModuleMemorySessionState,
+  resetKimModuleMemorySessionState,
+  recordKimModuleActivation,
+  setKimModuleMemoryDecision,
+  buildKimModuleMemoryPatch,
+  applyKimModuleMemoryPatch,
+} from '../engine/kim/kim-module-memory';
 
 // ─── Pattern Marking (post-GPT local state) ─────────────────
 
@@ -339,6 +361,8 @@ export function resetSessionState(): void {
   resetK03SessionState();
   resetSW01SessionState();
   resetSTO01SessionState();
+  resetEliasModuleMemorySessionState();
+  resetKimModuleMemorySessionState();
 }
 
 // ─── Pipeline Result ────────────────────────────────────────────
@@ -2757,6 +2781,41 @@ export async function endSession(
     const updatedSTO01Progress = updateSTO01Progress(existingSTO01Progress, sto01SessionSnapshot);
     updatedUserDat = { ...updatedUserDat, sto01Progress: updatedSTO01Progress } as any;
     console.log(`[Pipeline] STO01 persistence: sessions=${updatedSTO01Progress.sessionsWithStoicism}, activations=${updatedSTO01Progress.totalActivations}, principles=${updatedSTO01Progress.principlesUsedAllTime.length}`);
+  }
+
+  // ── MODULE_MEMORY_CROSS_SESSION persistence (persona-separated) ──
+  {
+    const existingMemory: ModuleMemoryState = (updatedUserDat as any).moduleMemory ?? createDefaultModuleMemoryState(backpack.userType as 'elias' | 'kim');
+    const sessionId = `session_${currentUserDat.totalSessions + 1}`;
+    const sessionStartedAt = (updatedUserDat as any).lastSessionDate ?? new Date().toISOString();
+    const sessionEndedAt = new Date().toISOString();
+    const dominantTheme = sessionSummary.themes[0] ?? undefined;
+
+    if (backpack.userType === 'elias' && existingMemory.persona === 'elias') {
+      const patch = buildEliasModuleMemoryPatch({
+        sessionId,
+        sessionStartedAt,
+        sessionEndedAt,
+        previousState: existingMemory,
+        therapeuticTheme: dominantTheme,
+        userStateSummary: sessionSummary.dominantEmotion,
+      });
+      const updatedMemory = applyEliasModuleMemoryPatch(existingMemory, patch);
+      updatedUserDat = { ...updatedUserDat, moduleMemory: updatedMemory } as any;
+      console.log(`[Pipeline] Module Memory (Elias): dominant=${updatedMemory.dominantModuleWindow.slice(-3).join(',')}, sessions=${updatedMemory.sessions.length}`);
+    } else if (backpack.userType === 'kim' && existingMemory.persona === 'kim') {
+      const patch = buildKimModuleMemoryPatch({
+        sessionId,
+        sessionStartedAt,
+        sessionEndedAt,
+        previousState: existingMemory,
+        therapeuticTheme: dominantTheme,
+        userStateSummary: sessionSummary.dominantEmotion,
+      });
+      const updatedMemory = applyKimModuleMemoryPatch(existingMemory, patch);
+      updatedUserDat = { ...updatedUserDat, moduleMemory: updatedMemory } as any;
+      console.log(`[Pipeline] Module Memory (Kim): dominant=${updatedMemory.dominantModuleWindow.slice(-3).join(',')}, sessions=${updatedMemory.sessions.length}`);
+    }
   }
 
   // ── STEP 5c: Gratitude streak update (both Elias and Kim) ──

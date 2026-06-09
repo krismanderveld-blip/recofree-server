@@ -1111,3 +1111,10 @@
 - [x] Wire new modules into pipeline.ts at step 5.6
 - [x] Add storage fields to user-dat schema (via ChatContext + GPTPayload types)
 - [x] Add keywords to short-module-detector for FALE01/VERG01/ROUW01/IDEN01/ZINK01
+- [x] Implement Module Memory Cross-Session (shared types + elias + kim persona-separated)
+- [x] Wire module memory into pipeline session-end (persona-separated persistence)
+- [x] Add moduleMemory field to UserDat type
+- [x] Implement Elias Progress Tracker engine (detector + trend computation + prompt payload)
+- [x] Implement Kim Progress Tracker engine (detector + trend computation + prompt payload)
+- [x] Build ProgressCard UI component with 7/30 day toggle, trend rows, signal summary
+- [x] Integrate ProgressCard into Mood tab (between check-in and recognition sections)
