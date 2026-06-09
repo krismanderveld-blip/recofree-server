@@ -1097,3 +1097,7 @@
 - [x] Fix: Meer Rust & Herstel kleuren door de hele app — surface, border, surfaceKim tokens getint
 - [x] Fix: Clinical annotation 'did not comply' error verborgen — fallback annotations worden niet meer getoond
 - [x] Fix: Module lijst dynamisch uit backend catalogs ipv hardcoded in prompt (voorkomt fabuleren)
+- [x] Implement all non-implemented Elias short modules (M05-M85) in module catalog — 66 modules with full prompt blocks
+- [x] Wire all modules into dynamic clinical mode module list + keyword detector + routing map (343 tags)
+- [x] Short module routing: detectShortModuleTrigger in dominant-state-selector (priority 5.5)
+- [x] getTriggerModule fallback: checks SHORT_MODULE_TAG_MAP when standard mapping returns default

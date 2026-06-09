@@ -1,0 +1,81 @@
+/**
+ * Elias Short Modules (M05–M85) — Complete Catalog
+ * Auto-generated from RECOFREE_SHORT_MODULE_SPECS spec files.
+ * These are Elias-only modules for specific therapeutic themes.
+ */
+
+export interface EliasShortModule {
+  readonly id: string;
+  readonly name: string;
+  readonly description: string;
+  readonly userType: 'elias';
+}
+
+export const ELIAS_SHORT_MODULES: readonly EliasShortModule[] = [
+  { id: 'M05', name: 'Structurele eenzaamheid', description: 'Module 5 detecteert diepe, structurele eenzaamheid bij de persoon in herstel', userType: 'elias' },
+  { id: 'M06', name: 'Vertrouwensbreuk', description: 'Module 6 detecteert wanneer de gebruiker spreekt vanuit diepe vertrouwensbreuk: elke band breekt, niemand blijft, ied...', userType: 'elias' },
+  { id: 'M07', name: 'Paniek bij nabijheid', description: 'Module 7 detecteert paniek, verstarring, vlucht, shutdown of emotionele ontregeling wanneer iemand emotioneel te dich...', userType: 'elias' },
+  { id: 'M08', name: 'Slaapstoornis', description: 'Module 8 detecteert verstoord slaapritme, hele nachten wakker liggen, angst voor de nacht, omgekeerd dag-nachtritme, ...', userType: 'elias' },
+  { id: 'M09', name: 'Interne druk / perfectionisme', description: 'Module 9 detecteert interne druk, perfectionisme, nooit-goed-genoeg denken, moeten, falen, zelfkritiek, prestatiedruk...', userType: 'elias' },
+  { id: 'M13', name: 'Verlies van ouder', description: 'Module 13 detecteert rouw rond het verlies van een ouder die blijft plakken, niet afgerond voelt, terugkeert in golve...', userType: 'elias' },
+  { id: 'M16', name: 'Overbelasting / ontploffing', description: 'Module 16 detecteert momenten waarop de gebruiker aangeeft bijna te ontploffen, te veel tegelijk te dragen, geen prik...', userType: 'elias' },
+  { id: 'M17', name: 'Traumatische kindervaring', description: 'Module 17 detecteert wanneer de gebruiker een huidige reactie koppelt aan vroegere kindervaringen: "dat was vroeger o...', userType: 'elias' },
+  { id: 'M19', name: 'Schaamte door afwijzing', description: 'Module 19 detecteert schaamte, zelfwalging en zelfafwijzing na ervaren of werkelijke afwijzing', userType: 'elias' },
+  { id: 'M20', name: 'Verinnerlijkte verwerping', description: 'Module 20 detecteert wanneer verwerping niet langer als gebeurtenis wordt ervaren, maar als identiteit: "ik stel niks...', userType: 'elias' },
+  { id: 'M21', name: 'Verlatingsangst', description: 'Module 21 detecteert verlatingsangst bij de persoon in herstel: de overtuiging dat mensen uiteindelijk vertrekken, ba...', userType: 'elias' },
+  { id: 'M22', name: 'Onzichtbaarheid', description: 'Module 22 detecteert het gevoel van onzichtbaarheid: niemand kijkt echt naar mij, niemand ziet mijn pijn, ik moet ver...', userType: 'elias' },
+  { id: 'M23', name: 'Intimiteit als gevaar', description: 'Module 23 detecteert wanneer intimiteit, nabijheid, zorg, liefde of emotionele beschikbaarheid niet alleen prettig ma...', userType: 'elias' },
+  { id: 'M25', name: 'Permanent buitenstaander', description: 'Module 25 detecteert het gevoel nergens bij te horen: niet in familie, relatie, groep, werk, herstelcontext, maatscha...', userType: 'elias' },
+  { id: 'M26', name: 'Chronisch misbegrepen', description: 'Module 26 detecteert het terugkerende gevoel chronisch misbegrepen te worden: niemand snapt wat ik bedoel, ze luister...', userType: 'elias' },
+  { id: 'M27', name: 'Overcontrole als overleving', description: 'Module 27 detecteert overcontrole als overlevingsstrategie: de gebruiker probeert herstel, emoties, relaties, dagritm...', userType: 'elias' },
+  { id: 'M29', name: 'Emotionele instabiliteit', description: 'Module 29 detecteert emotionele instabiliteit waarbij de gebruiker snel van het ene naar het andere schiet: hoop naar...', userType: 'elias' },
+  { id: 'M30', name: 'Angst voor nabijheid', description: 'Module 30 detecteert angst voor nabijheid en sociale overprikkeling waarbij te veel mensen, te veel contact, te veel ...', userType: 'elias' },
+  { id: 'M33', name: 'Controleverlies na confrontatie', description: 'Module 33 detecteert controleverlies na confrontatie: de gebruiker schiet uit, explodeert, wordt verbaal hard, verdwi...', userType: 'elias' },
+  { id: 'M34', name: 'Zelfmedicatie voor onrust', description: 'Module 34 detecteert gebruik van alcohol, benzo\'s, cannabis, medicatie, middelen of verdovend gedrag om innerlijke on...', userType: 'elias' },
+  { id: 'M35', name: 'Verantwoordelijkheid voor anderen', description: 'Module 35 detecteert wanneer de gebruiker zichzelf verantwoordelijk maakt voor het emotionele, praktische of relation...', userType: 'elias' },
+  { id: 'M40', name: 'Ambivalente nabijheid', description: 'Module 40 detecteert het gelijktijdige verlangen naar nabijheid en de overbelasting die nabijheid oproept', userType: 'elias' },
+  { id: 'M41', name: 'Schuld na terugval', description: 'Module 41 detecteert schuld, schaamte en zelfaanval na terugval', userType: 'elias' },
+  { id: 'M42', name: 'Autonoom maar uitgeput', description: 'Module 42 detecteert wanneer de gebruiker extreem zelfstandig functioneert maar uitgeput raakt door alles alleen te doen', userType: 'elias' },
+  { id: 'M43', name: 'Herhaling van afwijzing', description: 'Module 43 detecteert het patroon waarin de gebruiker afwijzing beleeft als herhaling van een diepe oude wond: "waarom...', userType: 'elias' },
+  { id: 'M44', name: 'Falen als identiteit', description: 'Module 44 detecteert wanneer falen niet langer als gebeurtenis wordt ervaren, maar als identiteit', userType: 'elias' },
+  { id: 'M45', name: 'Seksueel trauma', description: 'Module 45 detecteert signalen van seksueel trauma, seksuele grensschending, lichaamsvervreemding, schaamte, walging, ...', userType: 'elias' },
+  { id: 'M46', name: 'Oncontroleerbare drift', description: 'Module 46 detecteert plotselinge drift, impulsieve ontlading of explosieve handeling waarbij de gebruiker zegt dat hi...', userType: 'elias' },
+  { id: 'M47', name: 'Boete voor bestaan', description: 'Module 47 detecteert extreme bestaansschaamte en zelfverwerping waarin de gebruiker voelt dat bestaan zelf een fout is', userType: 'elias' },
+  { id: 'M49', name: 'Herhaalde hervalcontext', description: 'Module 49 detecteert herhaalde hervalcontexten waarin de gebruiker zegt: "ik kan het niet volhouden', userType: 'elias' },
+  { id: 'M50', name: 'Craving uit verveling', description: 'Module 50 detecteert craving die niet ontstaat uit acute pijn, paniek of conflict, maar uit leegte, verveling, vlakhe...', userType: 'elias' },
+  { id: 'M51', name: 'Kind moet sterk zijn', description: 'Module 51 detecteert het patroon waarin de gebruiker als kind al te veel moest dragen: emoties van ouders, zorg voor ...', userType: 'elias' },
+  { id: 'M52', name: 'Masker van vrolijkheid', description: 'Module 52 detecteert wanneer de gebruiker vrolijkheid, humor, sociaal gemak, lachen of luchtigheid gebruikt als maske...', userType: 'elias' },
+  { id: 'M53', name: 'Symbiose met ouder', description: 'Module 53 detecteert wanneer de gebruiker zich als volwassene nog steeds emotioneel vastzit in de rol van kind tegeno...', userType: 'elias' },
+  { id: 'M54', name: 'Perfectie als overleving', description: 'Module 54 detecteert wanneer perfectie niet wordt nagestreefd uit ambitie, maar uit overleving', userType: 'elias' },
+  { id: 'M55', name: 'Zelfhaat bij kwetsbaarheid', description: 'Module 55 detecteert zelfhaat, schaamte of minachting wanneer de gebruiker kwetsbaarheid toont, huilt, breekt, steun ...', userType: 'elias' },
+  { id: 'M56', name: 'Afstand na nabijheid', description: 'Module 56 detecteert het patroon waarin de gebruiker na een goed, eerlijk, warm of kwetsbaar gesprek plots afsluit, a...', userType: 'elias' },
+  { id: 'M57', name: 'Verwachting van mislukking', description: 'Module 57 detecteert de overtuiging dat iets toch fout zal gaan voordat het begonnen is', userType: 'elias' },
+  { id: 'M58', name: 'Paniek zonder aanleiding', description: 'Module 58 detecteert lichamelijke paniek, acute spanning of angst die lijkt te ontstaan zonder duidelijke aanleiding', userType: 'elias' },
+  { id: 'M59', name: 'Bang voor herkenning', description: 'Module 59 detecteert angst dat anderen de gebruiker "doorzien": dat ze de schaamte, afhankelijkheid, leugen, kwetsbaa...', userType: 'elias' },
+  { id: 'M60', name: 'Nooit genoeg zijn', description: 'Module 60 detecteert de ervaring dat de gebruiker blijft falen ondanks alles doen, proberen, geven, werken, herstelle...', userType: 'elias' },
+  { id: 'M61', name: 'Co-regulatie faalt', description: 'Module 61 detecteert wanneer de gebruiker ervaart dat niemand hem/haar kan kalmeren, bereiken, dragen of reguleren', userType: 'elias' },
+  { id: 'M62', name: 'Maatschappelijke afwijzing', description: 'Module 62 detecteert het gevoel niet te passen in het systeem: werk, school, zorg, administratie, samenleving, herste...', userType: 'elias' },
+  { id: 'M63', name: 'Isolatie als veiligheid', description: 'Module 63 detecteert isolatie die niet alleen voortkomt uit depressie of sociale vermijding, maar uit zelfbehoud', userType: 'elias' },
+  { id: 'M64', name: 'Nieuwe relaties als herhaling', description: 'Module 64 detecteert wanneer de gebruiker in nieuwe relaties oude patronen ziet terugkomen: aantrekken/afstoten, afha...', userType: 'elias' },
+  { id: 'M65', name: 'Moedercomplex', description: 'Module 65 detecteert het patroon waarin de gebruiker zoekt naar iemand die hem/haar draagt, opvangt, redt, kalmeert, ...', userType: 'elias' },
+  { id: 'M66', name: 'Identiteitsverwarring bij druk', description: 'Module 66 detecteert identiteitsverwarring onder relationele of emotionele druk', userType: 'elias' },
+  { id: 'M67', name: 'Weigering van hulp', description: 'Module 67 detecteert hulpweigering als beschermingsreactie', userType: 'elias' },
+  { id: 'M68', name: 'Relatie = regressie', description: 'Module 68 detecteert het patroon waarin de gebruiker in een relatie of nabij contact regressief wordt: klein, afhanke...', userType: 'elias' },
+  { id: 'M69', name: 'Constant scannen', description: 'Module 69 detecteert voortdurende hypervigilantie: de gebruiker scant gezichten, toon, berichten, stiltes, lichaamssi...', userType: 'elias' },
+  { id: 'M70', name: 'Verlies spiritualiteit', description: 'Module 70 detecteert verlies van spiritualiteit, zin, verbinding, geloof, innerlijke richting, symbolische houvast of...', userType: 'elias' },
+  { id: 'M71', name: 'Schuld bij hulp vragen', description: 'Module 71 detecteert schuld en schaamte rond hulp vragen', userType: 'elias' },
+  { id: 'M72', name: 'Geen bestaansrecht', description: 'Module 72 detecteert de overtuiging dat de gebruiker geen bestaansrecht heeft, overbodig is of beter niet aanwezig zo...', userType: 'elias' },
+  { id: 'M73', name: 'Vluchten in gedachten', description: 'Module 73 detecteert cognitieve vlucht: de gebruiker leeft vooral in zijn/haar hoofd, analyseert, plant, fantaseert, ...', userType: 'elias' },
+  { id: 'M74', name: 'Angst voor reflectie', description: 'Module 74 detecteert weerstand of angst rond zelfreflectie', userType: 'elias' },
+  { id: 'M75', name: 'Eenzaamheid naar gebruik', description: 'Module 75 detecteert het directe patroon waarin eenzaamheid leidt tot middelengebruik of gebruiksdrang', userType: 'elias' },
+  { id: 'M76', name: 'Existentieel zwart gat', description: 'Module 76 detecteert existentiele leegte, zinverlies en de vraag of herstel, leven, relaties of toekomst nog iets dragen', userType: 'elias' },
+  { id: 'M77', name: 'Sociale verwachting vs realiteit', description: 'Module 77 detecteert het verschil tussen hoe anderen denken dat het met de gebruiker gaat en hoe het werkelijk vanbin...', userType: 'elias' },
+  { id: 'M78', name: 'Maskeren van terugval', description: 'Module 78 detecteert wanneer de gebruiker terugval, craving, middelengebruik, voorbereiding op gebruik of herstelverl...', userType: 'elias' },
+  { id: 'M79', name: 'Verlies van controle in relatie', description: 'Module 79 detecteert wanneer de gebruiker in een relatie niet meer weet wat van hem/haar is: emoties, keuzes, grenzen...', userType: 'elias' },
+  { id: 'M80', name: 'Wens naar verdoving', description: 'Module 80 detecteert de wens om niets meer te voelen, alles even uit te zetten, emotie te dempen of bewustzijn te ver...', userType: 'elias' },
+  { id: 'M81', name: 'Automatisme gebruik', description: 'Module 81 detecteert gebruik dat als automatisch, reflexmatig of buiten bewuste keuze wordt ervaren', userType: 'elias' },
+  { id: 'M82', name: 'Steeds opnieuw beginnen', description: 'Module 82 detecteert het gevoel na terugval, mislukking of onderbreking dat alles opnieuw van nul moet beginnen', userType: 'elias' },
+  { id: 'M83', name: 'Onschuld verdacht', description: 'Module 83 detecteert schuldgevoel zonder duidelijke reden of concrete fout', userType: 'elias' },
+  { id: 'M84', name: 'Grensoverschrijding als norm', description: 'Module 84 detecteert wanneer de gebruiker grensoverschrijding als normaal, onvermijdelijk of verdiend beschouwt', userType: 'elias' },
+  { id: 'M85', name: 'Relatie als spiegel', description: 'Module 85 detecteert wanneer de gebruiker zichzelf gaat zien door de ogen van de ander en daar zelfhaat, schaamte, mi...', userType: 'elias' },
+];

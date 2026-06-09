@@ -42,6 +42,8 @@ import {
   ELIAS_DEFAULT_MODULE,
   ELIAS_CRISIS_MODULE,
 } from '../engine/elias/module-catalog';
+import { detectShortModuleTrigger } from '../engine/elias/short-module-detector';
+import { SHORT_MODULE_TAG_MAP } from '../engine/elias/short-module-routing';
 
 // ─── Output Types ────────────────────────────────────────────
 
@@ -57,7 +59,7 @@ export interface DominantState {
   /** Why this was selected (for debugging/logging) */
   selectionReason: string;
   /** The source layer that won (for priority tracking) */
-  sourceLayer: 'crisis' | 'live_trigger' | 'extreme_slider' | 'session_pattern' | 'userdat_pattern' | 'backpack_relevance' | 'default';
+  sourceLayer: 'crisis' | 'live_trigger' | 'extreme_slider' | 'session_pattern' | 'userdat_pattern' | 'short_module_keyword' | 'backpack_relevance' | 'default';
   /** Risk score on 0-100 scale */
   riskScore: number;
 }
@@ -90,7 +92,15 @@ function getCrisisModule(userType: UserType): string {
 }
 
 function getTriggerModule(trigger: string, userType: UserType): string {
-  if (userType === 'elias') return eliasTriggerToModule(trigger);
+  if (userType === 'elias') {
+    // First try the standard Elias trigger-to-module mapping
+    const standardModule = eliasTriggerToModule(trigger);
+    // If it returned the default module, check if the trigger matches a short module tag
+    if (standardModule === ELIAS_DEFAULT_MODULE && trigger in SHORT_MODULE_TAG_MAP) {
+      return SHORT_MODULE_TAG_MAP[trigger];
+    }
+    return standardModule;
+  }
   return kimTriggerToModule(trigger);
 }
 
@@ -224,6 +234,28 @@ export function selectDominantState(
       sourceLayer: 'userdat_pattern',
       riskScore: buffer.currentZoneScore,
     };
+  }
+
+  // ── PRIORITY 5.5: SHORT MODULE KEYWORD DETECTION (Elias only) ──
+  if (userType === 'elias' && buffer.recentMessages && buffer.recentMessages.length > 0) {
+    // Check last user message for short module keyword matches
+    const lastUserMsg = buffer.recentMessages
+      .filter((m: { role: string }) => m.role === 'user')
+      .pop();
+    if (lastUserMsg) {
+      const shortModuleId = detectShortModuleTrigger(lastUserMsg.content || '');
+      if (shortModuleId) {
+        return {
+          dominantModule: shortModuleId,
+          dominantTrigger: buffer.currentTriggerGuess || '',
+          dominantDirection: buffer.responseDirection,
+          dominantTone: determineTone(buffer.currentZoneColor, buffer.currentIntent, buffer.responseDirection),
+          selectionReason: `Short module keyword match: ${shortModuleId}`,
+          sourceLayer: 'short_module_keyword',
+          riskScore: buffer.currentZoneScore,
+        };
+      }
+    }
   }
 
   // ── PRIORITY 6: BACKPACK RELEVANCE / ANALYZER MODULES ──

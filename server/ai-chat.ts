@@ -26,6 +26,7 @@ import { KIM_IDENTITY_PROMPT, kimCrisisInstructions } from "../lib/engine/kim/pr
 import { KIM_POSITIVE_SLIDERS } from "../lib/engine/kim/slider-interpretation";
 import { ELIAS_POSITIVE_SLIDERS } from "../lib/engine/elias/slider-interpretation";
 import { ELIAS_HIGH_COMPLEXITY_MODULES, ELIAS_THERAPEUTIC_MODULES } from "../lib/engine/elias/module-catalog";
+import { ELIAS_SHORT_MODULE_PROMPTS, getEliasShortModulePrompts, getEliasShortModuleList } from "../lib/engine/elias/short-module-prompts";
 import { KIM_HIGH_COMPLEXITY_MODULES, KIM_MODULE_CATALOG } from "../lib/engine/kim/module-catalog";
 import { ELIAS_IDENTITY_PROMPT, ELIAS_SCHEMA_RECOGNITION, eliasCrisisInstructions } from "../lib/engine/elias/prompt-block";
 import { ELIAS_STAGE_DESCRIPTIONS_SHORT, ELIAS_STAGE_DESCRIPTIONS_FULL } from "../lib/engine/elias/stage-of-change";
@@ -831,9 +832,10 @@ function buildSystemPrompt(input: ChatRequestInput): string {
     '- DBT distress tolerance (crisis stabilization)',
     '- MBT mentalization (understanding what happens inside before interpreting behavior)',
   ].join('\n');
+  const eliasShortModules = getEliasShortModuleList();
   const kimModules = KIM_MODULE_CATALOG.map(m => `- ${m.name} (${m.description})`).join('\n');
   const dynamicModuleList = isElias
-    ? `YOUR ACTUAL MODULES AND CAPABILITIES:\n${eliasModules}\n${eliasExtra}`
+    ? `YOUR ACTUAL MODULES AND CAPABILITIES:\n${eliasModules}\n${eliasExtra}\n\nSHORT MODULES (M05-M85) — thematic deep-dive modules:\n${eliasShortModules}`
     : `YOUR ACTUAL MODULES AND CAPABILITIES:\n${kimModules}`;
 
   // ══════════════════════════════════════════════════════════════
@@ -1127,6 +1129,19 @@ These are not suggestions. These are minimum requirements.
     console.log(`[AI Chat] STO01 Stoicism context injected`);
   }
 
+  // Inject only the ACTIVE short module prompt block (M05-M85) for Elias
+  // We don't inject all 66 at once (53K tokens) — only the one the pipeline selected
+  let shortModuleBlock = '';
+  if (isElias) {
+    const dominantMod = (input.dominantModule || '').toUpperCase();
+    if (/^M\d{2,}$/.test(dominantMod)) {
+      const matchedModule = ELIAS_SHORT_MODULE_PROMPTS.find(m => m.id === dominantMod);
+      if (matchedModule) {
+        shortModuleBlock = `\n\n═══ ACTIVE SHORT MODULE: ${matchedModule.id} — ${matchedModule.name} ═══\n${matchedModule.promptBlock}\n═══ END ACTIVE SHORT MODULE ═══`;
+      }
+    }
+  }
+
   let sessionEndInstructions = "";
   if (input.message === "__SESSION_END__") {
     sessionEndInstructions = `\nThe user is ending this session. Generate a warm farewell that:
@@ -1228,6 +1243,7 @@ ${k01Block}
 ${k03Block}
 ${sw01Block}
 ${sto01Block}
+${shortModuleBlock}
 
 These behavioral instructions are ABSOLUTE. They override your default conversational style.
 The sliders tell you exactly how the user feels — USE them in your response.
@@ -1548,7 +1564,7 @@ ${k01Block}
 ${k03Block}
 ${sw01Block}
 ${sto01Block}
-
+${shortModuleBlock}
 These behavioral instructions are ABSOLUTE. They override your default conversational style.
 The sliders tell you exactly how the user feels — USE them in your response.
 === END MANDATORY INSTRUCTIONS ===
