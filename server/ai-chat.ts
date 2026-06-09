@@ -25,8 +25,8 @@ import { z } from "zod";
 import { KIM_IDENTITY_PROMPT, kimCrisisInstructions } from "../lib/engine/kim/prompt-block";
 import { KIM_POSITIVE_SLIDERS } from "../lib/engine/kim/slider-interpretation";
 import { ELIAS_POSITIVE_SLIDERS } from "../lib/engine/elias/slider-interpretation";
-import { ELIAS_HIGH_COMPLEXITY_MODULES } from "../lib/engine/elias/module-catalog";
-import { KIM_HIGH_COMPLEXITY_MODULES } from "../lib/engine/kim/module-catalog";
+import { ELIAS_HIGH_COMPLEXITY_MODULES, ELIAS_THERAPEUTIC_MODULES } from "../lib/engine/elias/module-catalog";
+import { KIM_HIGH_COMPLEXITY_MODULES, KIM_MODULE_CATALOG } from "../lib/engine/kim/module-catalog";
 import { ELIAS_IDENTITY_PROMPT, ELIAS_SCHEMA_RECOGNITION, eliasCrisisInstructions } from "../lib/engine/elias/prompt-block";
 import { ELIAS_STAGE_DESCRIPTIONS_SHORT, ELIAS_STAGE_DESCRIPTIONS_FULL } from "../lib/engine/elias/stage-of-change";
 
@@ -822,6 +822,20 @@ function buildSystemPrompt(input: ChatRequestInput): string {
   const isElias = input.userType === "elias";
   const name = input.userName;
 
+  // ── Dynamic Module List (from backend catalogs) ──
+  const eliasModules = ELIAS_THERAPEUTIC_MODULES.map(m => `- ${m.name} (${m.description})`).join('\n');
+  const eliasExtra = [
+    '- Shadow Work (recognizing hidden patterns driving behavior)',
+    '- STOA Sessions (15 Stoic reflections for specific recovery moments)',
+    '- Pattern Recognition (recognizing emotional modes and repeating life patterns)',
+    '- DBT distress tolerance (crisis stabilization)',
+    '- MBT mentalization (understanding what happens inside before interpreting behavior)',
+  ].join('\n');
+  const kimModules = KIM_MODULE_CATALOG.map(m => `- ${m.name} (${m.description})`).join('\n');
+  const dynamicModuleList = isElias
+    ? `YOUR ACTUAL MODULES AND CAPABILITIES:\n${eliasModules}\n${eliasExtra}`
+    : `YOUR ACTUAL MODULES AND CAPABILITIES:\n${kimModules}`;
+
   // ══════════════════════════════════════════════════════════════
   // CORE IDENTITY — Based on elias.dat V19 / kim.dat V1
   // ══════════════════════════════════════════════════════════════
@@ -1255,32 +1269,7 @@ When in doubt: ask, don't assume.
 CAPABILITY HONESTY RULE — ABSOLUTE:
 You may ONLY mention capabilities, modules, or therapeutic approaches that are ACTUALLY part of your system.
 
-YOUR ACTUAL MODULES AND CAPABILITIES (Elias):
-- Craving Management (acute craving episodes)
-- Emotional Regulation (managing difficult emotions)
-- Relapse Prevention (understanding relapse loops)
-- Self-Compassion (shame reduction)
-- Mindfulness & Grounding (anxiety, panic, racing thoughts)
-- Values & Meaning (purpose, motivation)
-- Focus & Clarity (foggy thinking, distraction)
-- ACT — Acceptance (acceptance vs resistance)
-- Shadow Work (recognizing hidden patterns driving behavior)
-- STOA Sessions (15 Stoic reflections for specific recovery moments)
-- Pattern Recognition (recognizing emotional modes and repeating life patterns)
-- DBT distress tolerance (crisis stabilization)
-- MBT mentalization (understanding what happens inside before interpreting behavior)
-
-YOUR ACTUAL MODULES AND CAPABILITIES (Kim):
-- Boundary Setting (learning to set and maintain healthy boundaries)
-- Enabling Awareness (recognizing and stopping enabling behaviors)
-- Self-Care (prioritizing your own well-being)
-- Emotional Regulation (managing emotional overload, betrayal, trust, hope)
-- Communication Skills (effective communication with someone in addiction)
-- Sustainable Support (caregiving without self-destruction)
-- Stoicism for Caregivers (control separation, steadiness)
-- Detachment with Love (loving detachment without abandonment)
-- Boundary Restoration (clear, humane, enforceable boundaries)
-- Self-Compassion for Caregivers (grounded self-compassion)
+${dynamicModuleList}
 
 You may NEVER:
 - Mention therapies or techniques NOT in the list above (e.g. EMDR, narrative therapy, psychodynamic therapy, hypnotherapy, art therapy, oplossingsgerichte therapie, etc.)
@@ -1593,32 +1582,7 @@ When in doubt: ask, don't assume.
 CAPABILITY HONESTY RULE — ABSOLUTE:
 You may ONLY mention capabilities, modules, or therapeutic approaches that are ACTUALLY part of your system.
 
-YOUR ACTUAL MODULES AND CAPABILITIES (Elias):
-- Craving Management (acute craving episodes)
-- Emotional Regulation (managing difficult emotions)
-- Relapse Prevention (understanding relapse loops)
-- Self-Compassion (shame reduction)
-- Mindfulness & Grounding (anxiety, panic, racing thoughts)
-- Values & Meaning (purpose, motivation)
-- Focus & Clarity (foggy thinking, distraction)
-- ACT — Acceptance (acceptance vs resistance)
-- Shadow Work (recognizing hidden patterns driving behavior)
-- STOA Sessions (15 Stoic reflections for specific recovery moments)
-- Pattern Recognition (recognizing emotional modes and repeating life patterns)
-- DBT distress tolerance (crisis stabilization)
-- MBT mentalization (understanding what happens inside before interpreting behavior)
-
-YOUR ACTUAL MODULES AND CAPABILITIES (Kim):
-- Boundary Setting (learning to set and maintain healthy boundaries)
-- Enabling Awareness (recognizing and stopping enabling behaviors)
-- Self-Care (prioritizing your own well-being)
-- Emotional Regulation (managing emotional overload, betrayal, trust, hope)
-- Communication Skills (effective communication with someone in addiction)
-- Sustainable Support (caregiving without self-destruction)
-- Stoicism for Caregivers (control separation, steadiness)
-- Detachment with Love (loving detachment without abandonment)
-- Boundary Restoration (clear, humane, enforceable boundaries)
-- Self-Compassion for Caregivers (grounded self-compassion)
+${dynamicModuleList}
 
 You may NEVER:
 - Mention therapies or techniques NOT in the list above (e.g. EMDR, narrative therapy, psychodynamic therapy, hypnotherapy, art therapy, oplossingsgerichte therapie, etc.)

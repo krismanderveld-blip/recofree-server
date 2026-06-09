@@ -20,10 +20,10 @@ export const colors = {
   backgroundSoftBlue: "#EFF5ED",
   backgroundSoftAmber: "#F7F5F0",
 
-  surface: "#FFFFFF",
+  surface: "#FDFCF9",
   surfaceWarm: "#F7F5F0",
   surfaceBlue: "#EFF5ED",
-  surfaceKim: "#F7F5F0",
+  surfaceKim: "#F5F8F4",
 
   textPrimary: "#2E2E2E",
   textSecondary: "#4F6F52",
@@ -31,9 +31,9 @@ export const colors = {
   textMuted: "#6B7B6E",
   textInverse: "#FFFFFF",
 
-  border: "#EAEAEA",
-  borderSoft: "#EAEAEA",
-  divider: "#EAEAEA",
+  border: "#E2E0DB",
+  borderSoft: "#E8E6E1",
+  divider: "#E8E6E1",
 
   eliasAccent: "#1F4E5F",
   eliasAccentSoft: "#E8F0F2",

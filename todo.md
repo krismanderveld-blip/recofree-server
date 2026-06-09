@@ -1093,3 +1093,7 @@
 - [x] Fix: Chat header moet donkergroen/petrolblauw achtergrond met witte tekst (zoals reference design)
 - [x] Fix: Intake scherm moet crème achtergrond (#F7F5F0) ipv wit
 - [x] Fix: Chat scherm achtergrond moet crème (#F7F5F0) zijn ipv wit
+- [x] Fix: Intake kaarten nog te wit — tint surface kleur naar licht crème/sage (#FDFCF9), borders naar warm grijs (#E2E0DB/#E8E6E1)
+- [x] Fix: Meer Rust & Herstel kleuren door de hele app — surface, border, surfaceKim tokens getint
+- [x] Fix: Clinical annotation 'did not comply' error verborgen — fallback annotations worden niet meer getoond
+- [x] Fix: Module lijst dynamisch uit backend catalogs ipv hardcoded in prompt (voorkomt fabuleren)
