@@ -1140,3 +1140,6 @@
 - [x] Add bedr01Context/vetr01Context/gasl01Context to GPTPayload, PayloadBuilderInput, ChatContext types
 - [x] Add Kim P2 passthrough + serialization in openai-provider.ts (both blocks)
 - [x] Add BEDR01/VETR01/GASL01 keywords to short-module-detector (English + NL/DE/FR/ES translations)
+- [x] FIX CRITICAL: Crisis nummers moeten IN de chattekst van Elias/Kim staan (niet alleen UI kaart)
+- [x] FIX CRITICAL: Correcte noodnummers onderaan chat scherm (Zelfmoordlijn 0800 32 123 + 112)
+- [x] FIX: Server fallback response bij API failure: 113 → 0800 32 123 (correct Belgisch nummer)

@@ -1821,7 +1821,7 @@ export async function generateAIResponse(
     console.error("[AI Chat] OpenAI API network error:", error);
     if (crisisLevel >= 1) {
       return {
-        response: 'I cannot reach you through the connection right now. If you do not feel safe, call 113 (suicide prevention) or 112 (emergency). You do not have to carry this alone.',
+        response: 'Ik kan je nu even niet bereiken door een verbindingsprobleem. Als je je niet veilig voelt, bel de Zelfmoordlijn: 0800 32 123 (24/7, gratis, anoniem) of 112 bij onmiddellijk gevaar. Je hoeft dit niet alleen te dragen.',
         advisoryEmotion: input.detectedEmotion,
         advisoryConfidence: 0,
         tokenUsage: undefined,
@@ -1836,7 +1836,7 @@ export async function generateAIResponse(
     console.error("[AI Chat] OpenAI API error:", openaiResponse.status, errorText);
     if (crisisLevel >= 1) {
       return {
-        response: 'I cannot reach you through the connection right now. If you do not feel safe, call 113 (suicide prevention) or 112 (emergency). You do not have to carry this alone.',
+        response: 'Ik kan je nu even niet bereiken door een verbindingsprobleem. Als je je niet veilig voelt, bel de Zelfmoordlijn: 0800 32 123 (24/7, gratis, anoniem) of 112 bij onmiddellijk gevaar. Je hoeft dit niet alleen te dragen.',
         advisoryEmotion: input.detectedEmotion,
         advisoryConfidence: 0,
         tokenUsage: undefined,

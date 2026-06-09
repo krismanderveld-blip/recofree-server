@@ -1093,19 +1093,19 @@ function ChatScreenInner() {
 
         {/* Fixed crisis disclaimer at bottom */}
         <Text style={{ fontSize: 11, color: '#999', textAlign: 'center', paddingTop: 4, paddingBottom: insets.bottom + 60 }}>
-          RecoFree is not a substitute for professional help.{' '}
+          RecoFree is geen vervanging voor professionele hulp.{' '}
           <Text
-            style={{ color: '#E53935', textDecorationLine: 'underline' }}
+            style={{ color: '#E53935', fontWeight: 'bold', textDecorationLine: 'underline' }}
             onPress={() => Linking.openURL('tel:080032123')}
           >
-            Crisis? Call 0800 32 123
+            Zelfmoordlijn: 0800 32 123
           </Text>
-          {' '}(24/7) or{' '}
+          {' '}(24/7, gratis, anoniem) |{' '}
           <Text
-            style={{ color: '#E53935', textDecorationLine: 'underline' }}
-            onPress={() => Linking.openURL('tel:107')}
+            style={{ color: '#E53935', fontWeight: 'bold', textDecorationLine: 'underline' }}
+            onPress={() => Linking.openURL('tel:112')}
           >
-            107
+            Noodgevallen: 112
           </Text>
         </Text>
       </View>

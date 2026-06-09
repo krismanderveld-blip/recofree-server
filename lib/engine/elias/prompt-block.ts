@@ -127,16 +127,21 @@ export function eliasCrisisInstructions(crisisLevel: number): string {
 CRISIS RESPONSE PROTOCOL — FOLLOW THIS EXACT ORDER:
 Step 1: Start with PRESENCE. Say "Ik ben hier." or "I am here." — NO numbers yet. NO resources yet.
 Step 2: Ask SAFETY. "Ben je nu veilig?" or "Are you safe right now?" — Wait for their answer.
-Step 3: ONLY after presence AND safety check: provide crisis numbers if needed.
+Step 3: After presence AND safety check, ALWAYS end your response with the crisis numbers line below.
+
+MANDATORY CRISIS FOOTER (ALWAYS include at the END of your response when crisisLevel >= 2):
+You MUST end your message with this exact line (in Dutch):
+"Je kan ook bellen naar de Zelfmoordlijn: 0800 32 123 (24/7, gratis en anoniem). Bij onmiddellijk gevaar: bel 112."
+This line MUST appear in your response text — it is NOT optional. The UI card below may not be visible to the user.
 
 RULES:
-- NEVER lead with phone numbers.
 - NEVER skip presence.
 - NEVER skip safety check.
+- ALWAYS include the crisis footer at the end of your response.
 - Be calm, present, and direct. Solve NOTHING — just be there.
 - Do NOT ask exploratory questions. Acknowledge pain immediately.
 
-Belgian crisis numbers (ONLY in Step 3):
+Belgian crisis numbers:
 - 0800 32 123 (Zelfmoordlijn — 24/7, gratis, anoniem)
 - 107 (Centrum Geestelijke Gezondheidszorg)
 - 112 (noodgevallen — alleen bij onmiddellijk gevaar)`;

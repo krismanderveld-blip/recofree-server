@@ -3,7 +3,7 @@
  *
  * Verifies that when the OpenAI fetch call fails (network error or HTTP error)
  * and crisisLevel >= 1, the system returns a static crisis-fallback response
- * containing emergency numbers (113, 112) instead of throwing a generic error.
+ * containing emergency numbers (0800 32 123, 112) instead of throwing a generic error.
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { generateAIResponse } from '../server/ai-chat';
@@ -42,7 +42,7 @@ describe('crisis-fallback-on-network-failure', () => {
     vi.restoreAllMocks();
   });
 
-  it('returns static crisis-fallback with 113 and 112 on network error (fetch throws)', async () => {
+  it('returns static crisis-fallback with 0800 32 123 and 112 on network error (fetch throws)', async () => {
     // Mock fetch to simulate a network failure (e.g., DNS resolution failure, timeout)
     globalThis.fetch = vi.fn().mockRejectedValue(new Error('Network error: ECONNREFUSED'));
 
@@ -50,7 +50,7 @@ describe('crisis-fallback-on-network-failure', () => {
 
     // Should NOT throw — should return a static fallback
     expect(result).toBeDefined();
-    expect(result.response).toContain('113');
+    expect(result.response).toContain('0800 32 123');
     expect(result.response).toContain('112');
     expect(result.response).not.toContain('Something went wrong');
     expect(result.response).not.toContain('try again');
@@ -60,7 +60,7 @@ describe('crisis-fallback-on-network-failure', () => {
     expect(result.tokenUsage).toBeUndefined();
   });
 
-  it('returns static crisis-fallback with 113 and 112 on HTTP error (500)', async () => {
+  it('returns static crisis-fallback with 0800 32 123 and 112 on HTTP error (500)', async () => {
     // Mock fetch to simulate an HTTP 500 from OpenAI
     globalThis.fetch = vi.fn().mockResolvedValue({
       ok: false,
@@ -72,11 +72,11 @@ describe('crisis-fallback-on-network-failure', () => {
 
     // Should NOT throw — should return a static fallback
     expect(result).toBeDefined();
-    expect(result.response).toContain('113');
+    expect(result.response).toContain('0800 32 123');
     expect(result.response).toContain('112');
     expect(result.response).not.toContain('Something went wrong');
-    // Should be in English
-    expect(result.response).toContain('do not feel safe');
+    // Should be in Dutch with correct crisis info
+    expect(result.response).toContain('Zelfmoordlijn');
     expect(result.advisoryConfidence).toBe(0);
     expect(result.tokenUsage).toBeUndefined();
   });
@@ -92,7 +92,7 @@ describe('crisis-fallback-on-network-failure', () => {
     const result = await generateAIResponse({ ...crisisInput, crisisLevel: 1 });
 
     expect(result).toBeDefined();
-    expect(result.response).toContain('113');
+    expect(result.response).toContain('0800 32 123');
     expect(result.response).toContain('112');
     expect(result.advisoryConfidence).toBe(0);
   });
