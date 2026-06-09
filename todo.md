@@ -1101,3 +1101,4 @@
 - [x] Wire all modules into dynamic clinical mode module list + keyword detector + routing map (343 tags)
 - [x] Short module routing: detectShortModuleTrigger in dominant-state-selector (priority 5.5)
 - [x] getTriggerModule fallback: checks SHORT_MODULE_TAG_MAP when standard mapping returns default
+- [x] Debug: Short modules (M05-M85) not activating — rewrote detector with English keywords + multilingual translation map (NL/DE/FR/ES→EN), threshold=1, all 66/66 modules now trigger correctly
