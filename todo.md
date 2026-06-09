@@ -1131,3 +1131,4 @@
 - [x] Implement Milestone Tracker (types + elias logic + kim logic + MilestoneCard UI on Home)
 - [x] Implement Diary Search (types + search logic + search UI on Diary tab)
 - [x] Implement Chat Text Selection (selectable={true} on chat bubbles, clinical dropdown non-copyable)
+- [x] Implement Mood Trend Chart (types + elias logic + kim logic + SVG line chart + integration on Mood tab)

@@ -3,6 +3,10 @@ import { Text, View, ScrollView, Pressable, Platform, StyleSheet } from 'react-n
 import Slider from '@react-native-community/slider';
 import { ScreenContainer } from '@/components/screen-container';
 import { ProgressCard } from '@/components/progress-card';
+import { MoodTrendChartCard } from '@/components/mood-trend-chart-card';
+import { buildEliasMoodTrendChartData } from '@/lib/features/mood-trend/elias-mood-trend';
+import { buildKimMoodTrendChartData } from '@/lib/features/mood-trend/kim-mood-trend';
+import type { MoodTrendRange, MoodTrendStateDatShape, RawMoodHistoryPoint } from '@/lib/features/mood-trend/mood-trend-types';
 import { useUser } from '@/lib/user-context';
 import { useColors } from '@/hooks/use-colors';
 import { getSliderConfig, checkInterventions } from '@/lib/ai/types';
@@ -107,6 +111,17 @@ function formatTimestamp(ts: string): string {
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
+// ─── Mood Trend Helpers ─────────────────────────────────────────
+
+function extractHistory(moodHistory: MoodSnapshot[], key: string): RawMoodHistoryPoint[] {
+  return moodHistory
+    .filter((s) => (s.sliders as any)?.[key] != null)
+    .map((s) => ({
+      timestampIso: s.timestamp,
+      value: (s.sliders as any)[key] as number,
+    }));
+}
+
 // ─── Main Screen ────────────────────────────────────────────────
 
 export default function MoodScreen() {
@@ -128,6 +143,30 @@ export default function MoodScreen() {
   });
   const [saved, setSaved] = useState(false);
   const [showTimeline, setShowTimeline] = useState(false);
+  const [moodTrendRange, setMoodTrendRange] = useState<MoodTrendRange>('DAYS_7');
+
+  // Mood Trend Chart data — local only, persona-separated
+  const moodTrendData = useMemo(() => {
+    const nowIso = new Date().toISOString();
+    if (userType === 'elias') {
+      const stateDat = {
+        persona: 'elias' as const,
+        cravingHistory: extractHistory(moodHistory, 'craving'),
+        frustrationHistory: extractHistory(moodHistory, 'frustration'),
+        despondencyHistory: extractHistory(moodHistory, 'despondency'),
+        focusHistory: extractHistory(moodHistory, 'focus'),
+      };
+      return buildEliasMoodTrendChartData({ persona: 'elias', range: moodTrendRange, nowIso, stateDat });
+    }
+    const stateDat = {
+      persona: 'kim' as const,
+      stressHistory: extractHistory(moodHistory, 'stress'),
+      boundaryFatigueHistory: extractHistory(moodHistory, 'boundaryFatigue'),
+      emotionalBurdenHistory: extractHistory(moodHistory, 'emotionalBurden'),
+      selfCareHistory: extractHistory(moodHistory, 'selfCare'),
+    };
+    return buildKimMoodTrendChartData({ persona: 'kim', range: moodTrendRange, nowIso, stateDat });
+  }, [userType, moodHistory, moodTrendRange]);
 
   // Eigen Regie (Kim only)
   const isKim = userType === 'kim';
@@ -336,6 +375,18 @@ export default function MoodScreen() {
             </Pressable>
           </View>
         )}
+
+        {/* Mood Trend Chart */}
+        <View style={{ marginTop: 40 }}>
+          <Text style={{ fontSize: 18, fontWeight: '700', color: colors.foreground, marginBottom: 16 }}>
+            {userType === 'elias' ? 'Mood trend' : 'Care trend'}
+          </Text>
+          <MoodTrendChartCard
+            persona={userType as 'elias' | 'kim'}
+            chartData={moodTrendData}
+            onRangeChange={setMoodTrendRange}
+          />
+        </View>
 
         {/* Progress Tracker */}
         <View style={{ marginTop: 40 }}>
