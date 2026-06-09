@@ -1089,3 +1089,4 @@
 - [x] Fix: Crisis mode EmergencyCard not showing phone numbers — replaced NativeWind className (bg-error/10 broken with CSS var hex) with inline styles from design system
 - [x] Fix: EmergencyCard moved from ListHeaderComponent to ListFooterComponent so it appears after latest messages (visible without scrolling up)
 - [x] Fix: Progress bars/sliders barely visible — added dc.sliderTrack (#C4C2BD) color, darkened moodGreen (#6B9E63) and moodYellow (#B89B3E) for better contrast against white cards
+- [x] Fix: Elias fabuleert over therapievormen (EMDR, etc.) die de app niet biedt — aanscherpen anti-hallucinatie regels in system prompt
