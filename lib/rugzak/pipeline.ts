@@ -261,6 +261,8 @@ import { runEliasAdvancedModules, hasAdvancedModuleMarkers } from '../engine/eli
 import type { EliasAdvancedModulesResult } from '../engine/elias/advanced-modules';
 import { runEliasAdvancedModulesP2, hasAdvancedModuleP2Markers } from '../engine/elias/advanced-modules-p2';
 import type { EliasAdvancedP2Result } from '../engine/elias/advanced-modules-p2';
+import { runEliasAdvancedModulesP3 } from '../engine/elias/advanced-modules-p3';
+import type { EliasAdvancedP3Result } from '../engine/elias/advanced-modules-p3';
 import {
   evaluateModuleMemoryRepeat,
   buildModuleMemoryPromptContext,
@@ -1354,6 +1356,49 @@ export async function processMessage(
     });
   }
 
+  // ── PRE-GPT STEP 5e7: Elias Advanced Modules P3 (TERV01 + MI02) ──
+  let eliasAdvancedP3Result: EliasAdvancedP3Result = {
+    terv01Active: false, mi02Active: false,
+    terv01PromptBlock: null, mi02PromptBlock: null,
+    primaryModule: 'NONE', confidence: 0, responseMode: null,
+  };
+  if (backpack.userType === 'elias' && !!(backpack as any).intake?.startEmotion) {
+    eliasAdvancedP3Result = runEliasAdvancedModulesP3({
+      userType: backpack.userType as 'elias' | 'kim',
+      latestUserMessage: userMessage,
+      recentMessages: sessionBuffer.recentMessages.slice(-3).map(m => m.content),
+      crisisLevel: analysis.riskLevel === 'critical' || analysis.riskLevel === 'high' ? 2 : analysis.riskLevel === 'moderate' ? 1 : 0,
+      intakeCompleted: !!(backpack as any).intake?.startEmotion,
+      currentZone: (currentUserDat as any).currentZone ?? 'UNKNOWN',
+      previousZone: (currentUserDat as any).previousZone ?? 'UNKNOWN',
+      previousSessionEnded: (currentUserDat as any).previousSessionEnded ?? false,
+      previousSessionId: (currentUserDat as any).previousSessionId ?? null,
+      stabilizationCompleted: (currentUserDat as any).stabilizationCompleted ?? false,
+      relapseConfirmed: (currentUserDat as any).relapseActive === true,
+      relapseLikely: (currentUserDat as any).relapseLikely === true,
+      userRegulationLevel: (currentUserDat as any).regulationLevel ?? 0.5,
+      shameIntensity: (currentUserDat.currentMood as any)?.shame ?? 0,
+      medicalRisk: (currentUserDat as any).medicalRisk ?? 0,
+      safetyRisk: analysis.riskLevel === 'critical' ? 0.9 : analysis.riskLevel === 'high' ? 0.7 : 0.1,
+      chainDataCompleteness: (currentUserDat as any).chainDataCompleteness ?? 0,
+      triggerKnown: (currentUserDat as any).triggerKnown ?? false,
+      thoughtKnown: (currentUserDat as any).thoughtKnown ?? false,
+      feelingKnown: (currentUserDat as any).feelingKnown ?? false,
+      behaviorKnown: (currentUserDat as any).behaviorKnown ?? false,
+      usePointKnown: (currentUserDat as any).usePointKnown ?? false,
+      directAmbivalenceMarker: (currentUserDat as any).directAmbivalenceMarker ?? false,
+      changeTalkPresent: (currentUserDat as any).changeTalkPresent ?? false,
+      sustainTalkPresent: (currentUserDat as any).sustainTalkPresent ?? false,
+      adviceResistance: (currentUserDat as any).adviceResistance ?? false,
+      externalMotivationDominant: (currentUserDat as any).externalMotivationDominant ?? false,
+      readinessScoreAvailable: (currentUserDat as any).readinessScore != null,
+      readinessScore: (currentUserDat as any).readinessScore,
+      sessionMixedSignalsCount: (currentUserDat as any).sessionMixedSignalsCount ?? 0,
+      mi01PreviouslyActive: (currentUserDat as any).mi01PreviouslyActive ?? false,
+      cravingIntensity: (currentUserDat.currentMood as any)?.craving ?? 0,
+    });
+  }
+
   // ── PRE-GPT STEP 6: Build ChatContext + ONE GPT call ──
   let crisisLevel = 0;
   let showEmergency = false;
@@ -1641,6 +1686,8 @@ export async function processMessage(
     rouw01Context: eliasAdvancedP2Result.rouw01PromptBlock || undefined,
     iden01Context: eliasAdvancedP2Result.iden01PromptBlock || undefined,
     zink01Context: eliasAdvancedP2Result.zink01PromptBlock || undefined,
+    terv01Context: eliasAdvancedP3Result.terv01PromptBlock || undefined,
+    mi02Context: eliasAdvancedP3Result.mi02PromptBlock || undefined,
     // LANGUAGE_RECOVERY: inject recovery directive if detected
     languageRecovery: languageRecoveryResult.detected ? {
       detected: true,
@@ -1886,6 +1933,7 @@ export async function processMessage(
       { step: '5e4. STO01', status: sto01Result.generatedInstruction.active ? 'passed' : 'skipped', reason: sto01Result.generatedInstruction.active ? `principle=${sto01Result.routingDecision.primaryPrinciple}|intervention=${sto01Result.routingDecision.interventionType}|strength=${sto01Result.routingDecision.activationStrength}` : (sto01Result.routingDecision.reason ?? 'no stoic markers detected') },
       { step: '5e5. EliasAdvanced', status: eliasAdvancedResult.primaryModule !== 'NONE' ? 'passed' : 'skipped', reason: eliasAdvancedResult.primaryModule !== 'NONE' ? `module=${eliasAdvancedResult.primaryModule}|confidence=${eliasAdvancedResult.confidence.toFixed(2)}` : 'no advanced module markers detected' },
       { step: '5e6. EliasAdvancedP2', status: eliasAdvancedP2Result.primaryModule !== 'NONE' ? 'passed' : 'skipped', reason: eliasAdvancedP2Result.primaryModule !== 'NONE' ? `module=${eliasAdvancedP2Result.primaryModule}|confidence=${eliasAdvancedP2Result.confidence.toFixed(2)}` : 'no P2 advanced module markers detected' },
+      { step: '5e7. EliasAdvancedP3', status: eliasAdvancedP3Result.primaryModule !== 'NONE' ? 'passed' : 'skipped', reason: eliasAdvancedP3Result.primaryModule !== 'NONE' ? `module=${eliasAdvancedP3Result.primaryModule}|confidence=${eliasAdvancedP3Result.confidence.toFixed(2)}|mode=${eliasAdvancedP3Result.responseMode}` : 'no P3 advanced module activation' },
       { step: '6a. Zone decision', status: elisDecision ? 'passed' : 'skipped', reason: elisDecision ? `zone=${elisDecision.zone.computed.label}` : 'kim user' },
       { step: '6b. Engine directive', status: engineDirective ? 'passed' : 'skipped', reason: engineDirective ? `engine=${engineDirective.engine}` : 'none' },
       { step: '6c. Intervention', status: interventionContinuity ? 'passed' : 'skipped', reason: interventionContinuity ? `type=${interventionContinuity.lastInterventionType}` : 'not active' },

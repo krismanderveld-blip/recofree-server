@@ -1118,3 +1118,8 @@
 - [x] Implement Kim Progress Tracker engine (detector + trend computation + prompt payload)
 - [x] Build ProgressCard UI component with 7/30 day toggle, trend rows, signal summary
 - [x] Integrate ProgressCard into Mood tab (between check-in and recognition sections)
+- [x] Implement TERV01 module (terugvalanalyse na PAARS — types, detector, router, prompt, storage, tests)
+- [x] Implement MI02 module (motivational interviewing verdieping — types, detector, router, prompt, storage, tests)
+- [x] Create advanced-modules-p3.ts integration layer for TERV01 + MI02 (priority 5.7)
+- [x] Wire P3 into pipeline.ts at step 5e7 + GPT payload passthrough + engine trace
+- [x] Add TERV01/MI02 test suite (30 tests, all green)
