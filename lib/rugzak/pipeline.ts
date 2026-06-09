@@ -259,6 +259,8 @@ import {
 import type { STO01Output, STO01Progress } from '../engine/elias/stoicism';
 import { runEliasAdvancedModules, hasAdvancedModuleMarkers } from '../engine/elias/advanced-modules';
 import type { EliasAdvancedModulesResult } from '../engine/elias/advanced-modules';
+import { runEliasAdvancedModulesP2, hasAdvancedModuleP2Markers } from '../engine/elias/advanced-modules-p2';
+import type { EliasAdvancedP2Result } from '../engine/elias/advanced-modules-p2';
 
 // ─── Pattern Marking (post-GPT local state) ─────────────────
 
@@ -1308,6 +1310,26 @@ export async function processMessage(
     });
   }
 
+  // ── Step 5e6: Elias Advanced Modules P2 (FALE01 / VERG01 / ROUW01 / IDEN01 / ZINK01) ──
+  let eliasAdvancedP2Result: EliasAdvancedP2Result = {
+    fale01Active: false, verg01Active: false, rouw01Active: false, iden01Active: false, zink01Active: false,
+    fale01PromptBlock: null, verg01PromptBlock: null, rouw01PromptBlock: null, iden01PromptBlock: null, zink01PromptBlock: null,
+    primaryModule: 'NONE', confidence: 0,
+  };
+  if (hasAdvancedModuleP2Markers(userMessage)) {
+    eliasAdvancedP2Result = runEliasAdvancedModulesP2({
+      userType: backpack.userType as 'elias' | 'kim',
+      latestUserMessage: userMessage,
+      recentMessages: sessionBuffer.recentMessages.slice(-3).map(m => m.content),
+      crisisLevel: analysis.riskLevel === 'critical' || analysis.riskLevel === 'high' ? 2 : analysis.riskLevel === 'moderate' ? 1 : 0,
+      intakeCompleted: !!(backpack as any).intake?.startEmotion,
+      relapseActive: (currentUserDat as any).relapseActive === true,
+      shameLevel: (currentUserDat.currentMood as any)?.shame ?? 0,
+      guiltLevel: (currentUserDat.currentMood as any)?.guilt ?? 0,
+      griefLevel: (currentUserDat.currentMood as any)?.grief ?? 0,
+    });
+  }
+
   // ── PRE-GPT STEP 6: Build ChatContext + ONE GPT call ──
   let crisisLevel = 0;
   let showEmergency = false;
@@ -1590,6 +1612,11 @@ export async function processMessage(
     igh01Context: eliasAdvancedResult.igh01PromptBlock || undefined,
     agc01Context: eliasAdvancedResult.agc01PromptBlock || undefined,
     hwk01Context: eliasAdvancedResult.hwk01PromptBlock || undefined,
+    fale01Context: eliasAdvancedP2Result.fale01PromptBlock || undefined,
+    verg01Context: eliasAdvancedP2Result.verg01PromptBlock || undefined,
+    rouw01Context: eliasAdvancedP2Result.rouw01PromptBlock || undefined,
+    iden01Context: eliasAdvancedP2Result.iden01PromptBlock || undefined,
+    zink01Context: eliasAdvancedP2Result.zink01PromptBlock || undefined,
     // LANGUAGE_RECOVERY: inject recovery directive if detected
     languageRecovery: languageRecoveryResult.detected ? {
       detected: true,
@@ -1834,6 +1861,7 @@ export async function processMessage(
       { step: '5e3. SW01', status: sw01Result.active ? 'passed' : 'skipped', reason: sw01Result.active ? `mode=${sw01Result.interventionMode}|confidence=${sw01Result.confidence.toFixed(2)}|loop=${sw01Result.activeLoop?.loop_id ?? 'none'}|projection=${sw01Result.projectionActive}` : 'no shadow signals detected' },
       { step: '5e4. STO01', status: sto01Result.generatedInstruction.active ? 'passed' : 'skipped', reason: sto01Result.generatedInstruction.active ? `principle=${sto01Result.routingDecision.primaryPrinciple}|intervention=${sto01Result.routingDecision.interventionType}|strength=${sto01Result.routingDecision.activationStrength}` : (sto01Result.routingDecision.reason ?? 'no stoic markers detected') },
       { step: '5e5. EliasAdvanced', status: eliasAdvancedResult.primaryModule !== 'NONE' ? 'passed' : 'skipped', reason: eliasAdvancedResult.primaryModule !== 'NONE' ? `module=${eliasAdvancedResult.primaryModule}|confidence=${eliasAdvancedResult.confidence.toFixed(2)}` : 'no advanced module markers detected' },
+      { step: '5e6. EliasAdvancedP2', status: eliasAdvancedP2Result.primaryModule !== 'NONE' ? 'passed' : 'skipped', reason: eliasAdvancedP2Result.primaryModule !== 'NONE' ? `module=${eliasAdvancedP2Result.primaryModule}|confidence=${eliasAdvancedP2Result.confidence.toFixed(2)}` : 'no P2 advanced module markers detected' },
       { step: '6a. Zone decision', status: elisDecision ? 'passed' : 'skipped', reason: elisDecision ? `zone=${elisDecision.zone.computed.label}` : 'kim user' },
       { step: '6b. Engine directive', status: engineDirective ? 'passed' : 'skipped', reason: engineDirective ? `engine=${engineDirective.engine}` : 'none' },
       { step: '6c. Intervention', status: interventionContinuity ? 'passed' : 'skipped', reason: interventionContinuity ? `type=${interventionContinuity.lastInterventionType}` : 'not active' },

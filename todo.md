@@ -1102,3 +1102,12 @@
 - [x] Short module routing: detectShortModuleTrigger in dominant-state-selector (priority 5.5)
 - [x] getTriggerModule fallback: checks SHORT_MODULE_TAG_MAP when standard mapping returns default
 - [x] Debug: Short modules (M05-M85) not activating — rewrote detector with English keywords + multilingual translation map (NL/DE/FR/ES→EN), threshold=1, all 66/66 modules now trigger correctly
+- [x] Implement FALE01 module (types, detector, router, prompt, storage, tests)
+- [x] Implement VERG01 module (types, detector, router, prompt, storage, tests)
+- [x] Implement ROUW01 module (types, detector, router, prompt, storage, tests)
+- [x] Implement IDEN01 module (types, detector, router, prompt, storage, tests)
+- [x] Implement ZINK01 module (types, detector, router, prompt, storage, tests)
+- [x] Create elias-advanced-modules-p2.ts integration layer (priority 5.6)
+- [x] Wire new modules into pipeline.ts at step 5.6
+- [x] Add storage fields to user-dat schema (via ChatContext + GPTPayload types)
+- [x] Add keywords to short-module-detector for FALE01/VERG01/ROUW01/IDEN01/ZINK01

@@ -320,6 +320,44 @@ const TRANSLATION_MAP: Record<string, string[]> = {
   perfeccionismo: ['perfectionism'],
   disociación: ['dissociation'],
   agotado: ['exhausted'],
+  // ── Dutch: FALE01 (relapse/failure) ──
+  terugval: ['relapse', 'fell-back'],
+  teruggevallen: ['relapse', 'fell-back'],
+  gefaald: ['failed', 'failure'],
+  falen: ['failure', 'failed'],
+  uitgegleden: ['slipped', 'lapse'],
+  gedronken: ['drank-again', 'used-again'],
+  gebruikt: ['used-again', 'using-again'],
+  toegegeven: ['craving-gave-in', 'slipped'],
+  // ── Dutch: VERG01 (forgiveness/guilt) ──
+  vergeving: ['forgiveness', 'self-forgiveness'],
+  vergeven: ['forgiveness', 'self-forgiveness'],
+  zelfvergeving: ['self-forgiveness'],
+  onvergeeflijk: ['unforgivable'],
+  zelfbestraffing: ['self-punishment', 'self-blame'],
+  straf: ['deserve-punishment', 'self-punishment'],
+  // ── Dutch: ROUW01 (grief/loss) ──
+  rouw: ['grief', 'mourning'],
+  rouwen: ['grief', 'mourning'],
+  verlies: ['loss'],
+  verloren: ['loss', 'lost-years', 'lost-myself'],
+  kwijt: ['loss', 'lost-myself'],
+  kwijtgeraakt: ['lost-myself', 'loss'],
+  gemist: ['missed-moments'],
+  afgepakt: ['taken-away'],
+  // ── Dutch: IDEN01 (identity) ──
+  identiteit: ['identity'],
+  verslaafde: ['just-an-addict'],
+  patient: ['only-a-patient'],
+  patiënt: ['only-a-patient'],
+  // ── Dutch: ZINK01 (meaning/purpose) ──
+  zingeving: ['meaning', 'purpose'],
+  zinloos: ['meaningless', 'pointless'],
+  doel: ['purpose'],
+  waarvoor: ['what-is-the-point', 'why-bother'],
+  leeg: ['empty-inside'],
+  leegte: ['empty-inside', 'emptiness'],
+  existentieel: ['existential'],
 };
 
 // ─── MODULE KEYWORDS: English concept words per module ───
@@ -392,6 +430,12 @@ const MODULE_KEYWORDS: Record<string, string[]> = {
   M83: ['guilt', 'no-reason', 'unexplained', 'innocent', 'vague', 'constant', 'diffuse'],
   M84: ['boundary-violation', 'violation', 'normal', 'deserved', 'inevitable', 'normalized', 'accepted-abuse', 'abuse'],
   M85: ['mirror', 'relationship', 'self-hatred', 'shame', 'eyes-of-other', 'reflection', 'contempt'],
+  // ── Phase 2 Advanced Modules ──
+  FALE01: ['relapse', 'failed', 'failure', 'fell-back', 'used-again', 'slipped', 'lapse', 'craving-gave-in', 'drank-again', 'using-again'],
+  VERG01: ['forgiveness', 'self-forgiveness', 'guilt', 'shame', 'deserve-punishment', 'unforgivable', 'self-blame', 'self-punishment', 'cannot-forgive-myself'],
+  ROUW01: ['grief', 'loss', 'lost-years', 'mourning', 'missed-moments', 'taken-away', 'too-late', 'lost-myself', 'lost-relationship'],
+  IDEN01: ['identity', 'who-am-i', 'just-an-addict', 'no-identity', 'lost-myself', 'without-addiction', 'role-fusion', 'only-a-patient'],
+  ZINK01: ['meaning', 'purpose', 'pointless', 'meaningless', 'why-bother', 'empty-inside', 'nothing-to-live-for', 'existential', 'what-is-the-point'],
 };
 
 // ─── DETECTOR LOGIC ───
