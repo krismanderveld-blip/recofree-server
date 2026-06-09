@@ -1032,6 +1032,9 @@ export interface ChatContext {
   mi02Context?: string;
   slaap01EliasContext?: string;
   slaap01KimContext?: string;
+  bedr01Context?: string;
+  vetr01Context?: string;
+  gasl01Context?: string;
   /** Whether the user's backpack is empty (no sections filled) — used for greeting tone adaptation */
   backpackEmpty?: boolean;
   /** LOOPBLOCKER: cross-session repeating pattern directive for GPT (injected by pipeline) */

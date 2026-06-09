@@ -337,6 +337,9 @@ export class OpenAIProvider implements AIProvider {
         mi02Context: context.mi02Context,
         slaap01EliasContext: context.slaap01EliasContext,
         slaap01KimContext: context.slaap01KimContext,
+        bedr01Context: context.bedr01Context,
+        vetr01Context: context.vetr01Context,
+        gasl01Context: context.gasl01Context,
       });
 
       // ── STEP 3: Build server payload based on SESSION_INIT / LIVE_MESSAGE split ──
@@ -439,6 +442,9 @@ export class OpenAIProvider implements AIProvider {
           mi02Context: gptPayload.mi02Context ?? null,
           slaap01EliasContext: gptPayload.slaap01EliasContext ?? null,
           slaap01KimContext: gptPayload.slaap01KimContext ?? null,
+          bedr01Context: gptPayload.bedr01Context ?? null,
+          vetr01Context: gptPayload.vetr01Context ?? null,
+          gasl01Context: gptPayload.gasl01Context ?? null,
 
           // LOOPBLOCKER: cross-session repeating pattern directive
           loopDetected: gptPayload.loopDetected ?? null,
@@ -564,6 +570,9 @@ export class OpenAIProvider implements AIProvider {
           mi02Context: gptPayload.mi02Context ?? null,
           slaap01EliasContext: gptPayload.slaap01EliasContext ?? null,
           slaap01KimContext: gptPayload.slaap01KimContext ?? null,
+          bedr01Context: gptPayload.bedr01Context ?? null,
+          vetr01Context: gptPayload.vetr01Context ?? null,
+          gasl01Context: gptPayload.gasl01Context ?? null,
 
           // Signal engine: relevance scores for context gating (threshold 0.3)
           relevanceScores: context.relevanceScores ?? null,

@@ -1132,3 +1132,10 @@
 - [x] Implement Diary Search (types + search logic + search UI on Diary tab)
 - [x] Implement Chat Text Selection (selectable={true} on chat bubbles, clinical dropdown non-copyable)
 - [x] Implement Mood Trend Chart (types + elias logic + kim logic + SVG line chart + integration on Mood tab)
+- [x] Implement BEDR01 Kim module (betrayal discovery acute shock — types, detector, router, prompt, storage, tests)
+- [x] Implement VETR01 Kim module (trust repair after betrayal — types, detector, router, prompt, storage, tests)
+- [x] Implement GASL01 Kim module (gaslighting recognition & fact anchoring — types, detector, router, prompt, storage, tests)
+- [x] Create kim-advanced-modules-p2.ts integration layer (BEDR01/VETR01/GASL01 priority routing)
+- [x] Wire Kim P2 into pipeline.ts at step 5e9 (detection block + context passthrough + engine trace)
+- [x] Add bedr01Context/vetr01Context/gasl01Context to GPTPayload, PayloadBuilderInput, ChatContext types
+- [x] Add Kim P2 passthrough + serialization in openai-provider.ts (both blocks)
