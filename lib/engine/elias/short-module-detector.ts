@@ -136,8 +136,8 @@ const TRANSLATION_MAP: Record<string, string[]> = {
   verantwoordelijk: ['responsible', 'responsibility'],
   verantwoordelijkheid: ['responsibility'],
   zorgen: ['caring', 'worry', 'responsibility'],
-  ambivalent: ['ambivalent', 'ambivalence'],
-  twijfel: ['doubt', 'ambivalence'],
+  ambivalent: ['ambivalent', 'ambivalence', 'conflicted', 'torn'],
+  twijfel: ['doubt', 'ambivalence', 'doubtful', 'mixed-feelings'],
   lichaam: ['body'],
   lichamelijk: ['physical', 'body'],
   identiteit: ['identity'],
@@ -235,7 +235,7 @@ const TRANSLATION_MAP: Record<string, string[]> = {
   bestaan: ['existence', 'exist'],
   volhouden: ['persevere', 'endure'],
   opgeven: ['give-up', 'quit'],
-  stoppen: ['stop', 'quit'],
+  stoppen: ['stop', 'quit', 'want-to-stop-but'],
   weigeren: ['refuse', 'rejection'],
   regressie: ['regression'],
   klein: ['small', 'regression'],
@@ -321,10 +321,7 @@ const TRANSLATION_MAP: Record<string, string[]> = {
   disociación: ['dissociation'],
   agotado: ['exhausted'],
   // ── Dutch: FALE01 (relapse/failure) ──
-  terugval: ['relapse', 'fell-back'],
   teruggevallen: ['relapse', 'fell-back'],
-  gefaald: ['failed', 'failure'],
-  falen: ['failure', 'failed'],
   uitgegleden: ['slipped', 'lapse'],
   gedronken: ['drank-again', 'used-again'],
   gebruikt: ['used-again', 'using-again'],
@@ -337,27 +334,26 @@ const TRANSLATION_MAP: Record<string, string[]> = {
   zelfbestraffing: ['self-punishment', 'self-blame'],
   straf: ['deserve-punishment', 'self-punishment'],
   // ── Dutch: ROUW01 (grief/loss) ──
-  rouw: ['grief', 'mourning'],
   rouwen: ['grief', 'mourning'],
-  verlies: ['loss'],
-  verloren: ['loss', 'lost-years', 'lost-myself'],
   kwijt: ['loss', 'lost-myself'],
   kwijtgeraakt: ['lost-myself', 'loss'],
   gemist: ['missed-moments'],
   afgepakt: ['taken-away'],
   // ── Dutch: IDEN01 (identity) ──
-  identiteit: ['identity'],
   verslaafde: ['just-an-addict'],
   patient: ['only-a-patient'],
   patiënt: ['only-a-patient'],
   // ── Dutch: ZINK01 (meaning/purpose) ──
-  zingeving: ['meaning', 'purpose'],
-  zinloos: ['meaningless', 'pointless'],
   doel: ['purpose'],
   waarvoor: ['what-is-the-point', 'why-bother'],
-  leeg: ['empty-inside'],
-  leegte: ['empty-inside', 'emptiness'],
-  existentieel: ['existential'],
+  // ── Dutch: TERV01 (relapse analysis) ──
+  terugvalanalyse: ['relapse-chain', 'relapse-analysis'],
+  keten: ['the-chain', 'relapse-chain'],
+  foutgelopen: ['what-went-wrong', 'how-it-went-wrong'],
+  gebruikte: ['before-i-used'],
+  // ── Dutch: MI02 (ambivalence/motivational interviewing) ──
+  dubbel: ['ambivalent', 'torn'],
+  klaar: ['not-ready-yet'],
 };
 
 // ─── MODULE KEYWORDS: English concept words per module ───
@@ -436,6 +432,8 @@ const MODULE_KEYWORDS: Record<string, string[]> = {
   ROUW01: ['grief', 'loss', 'lost-years', 'mourning', 'missed-moments', 'taken-away', 'too-late', 'lost-myself', 'lost-relationship'],
   IDEN01: ['identity', 'who-am-i', 'just-an-addict', 'no-identity', 'lost-myself', 'without-addiction', 'role-fusion', 'only-a-patient'],
   ZINK01: ['meaning', 'purpose', 'pointless', 'meaningless', 'why-bother', 'empty-inside', 'nothing-to-live-for', 'existential', 'what-is-the-point'],
+  TERV01: ['relapse-chain', 'trigger-analysis', 'what-went-wrong', 'understand-relapse', 'the-chain', 'before-i-used', 'relapse-analysis', 'how-it-went-wrong', 'want-to-understand'],
+  MI02: ['ambivalent', 'want-but-not', 'part-of-me', 'doubtful', 'mixed-feelings', 'not-ready-yet', 'want-to-stop-but', 'torn', 'conflicted'],
 };
 
 // ─── DETECTOR LOGIC ───
