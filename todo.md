@@ -1139,3 +1139,4 @@
 - [x] Wire Kim P2 into pipeline.ts at step 5e9 (detection block + context passthrough + engine trace)
 - [x] Add bedr01Context/vetr01Context/gasl01Context to GPTPayload, PayloadBuilderInput, ChatContext types
 - [x] Add Kim P2 passthrough + serialization in openai-provider.ts (both blocks)
+- [x] Add BEDR01/VETR01/GASL01 keywords to short-module-detector (English + NL/DE/FR/ES translations)

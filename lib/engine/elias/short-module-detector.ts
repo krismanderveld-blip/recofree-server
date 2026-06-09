@@ -113,7 +113,7 @@ const TRANSLATION_MAP: Record<string, string[]> = {
   kwaad: ['angry', 'anger'],
   razend: ['furious', 'rage'],
   confrontatie: ['confrontation'],
-  schuld: ['guilt'],
+  schuld: ['guilt', 'blame-shifting', 'darvo'],
   schuldig: ['guilty', 'guilt'],
   schuldgevoel: ['guilt'],
   medicatie: ['medication', 'self-medication'],
@@ -125,7 +125,7 @@ const TRANSLATION_MAP: Record<string, string[]> = {
   pillen: ['pills', 'substances'],
   verdoving: ['numbing', 'self-medication', 'switch-off'],
   verdoven: ['numbing', 'numb', 'switch-off', 'feel-nothing', 'self-medication'],
-  verdoofd: ['numb', 'numbing'],
+  verdoofd: ['numb', 'numbing', 'body-shock'],
   terugval: ['relapse'],
   hervallen: ['relapse'],
   craving: ['craving'],
@@ -225,7 +225,7 @@ const TRANSLATION_MAP: Record<string, string[]> = {
   gebruiken: ['substance-use', 'using'],
   automatisch: ['automatic', 'autopilot'],
   automatisme: ['automatism', 'autopilot'],
-  opnieuw: ['again', 'restart'],
+  opnieuw: ['again', 'restart', 'rebuilding-trust'],
   beginnen: ['start', 'restart'],
   seksueel: ['sexual'],
   seks: ['sexual'],
@@ -328,7 +328,7 @@ const TRANSLATION_MAP: Record<string, string[]> = {
   toegegeven: ['craving-gave-in', 'slipped'],
   // ── Dutch: VERG01 (forgiveness/guilt) ──
   vergeving: ['forgiveness', 'self-forgiveness'],
-  vergeven: ['forgiveness', 'self-forgiveness'],
+  vergeven: ['forgiveness', 'self-forgiveness', 'forgiveness-pressure'],
   zelfvergeving: ['self-forgiveness'],
   onvergeeflijk: ['unforgivable'],
   zelfbestraffing: ['self-punishment', 'self-blame'],
@@ -363,6 +363,36 @@ const TRANSLATION_MAP: Record<string, string[]> = {
 
   slaapschuld: ['sleep-guilt'],
   slaaphygiene: ['sleep-hygiene'],
+  // ── Dutch: BEDR01 (betrayal discovery acute shock) ──
+  bedrogen: ['betrayed', 'betrayal-discovery', 'partner-betrayal'],
+  ontdekt: ['discovered', 'discovery-just-happened', 'betrayal-discovery'],
+  vreemdgegaan: ['cheated', 'infidelity', 'partner-betrayal'],
+  ontrouw: ['infidelity', 'unfaithful', 'partner-betrayal'],
+  overspel: ['adultery', 'infidelity', 'partner-betrayal'],
+  shock: ['shock', 'acute-shock', 'body-shock'],
+  geschokt: ['shocked', 'acute-shock'],
+  bevroren: ['frozen', 'body-shock', 'acute-shock'],
+  trillen: ['shaking', 'body-dysregulation', 'body-shock'],
+  misselijk: ['nauseous', 'body-dysregulation'],
+  // ── Dutch: VETR01 (trust repair after betrayal) ──
+  vertrouwensherstel: ['trust-repair', 'rebuilding-trust'],
+  herstel: ['repair', 'trust-repair', 'rebuilding'],
+  vergiffenis: ['forgiveness', 'forgiveness-pressure'],
+  tweede: ['second-chance', 'trust-repair'],
+  kans: ['second-chance', 'trust-repair'],
+  geloven: ['believe-again', 'trust-repair'],
+  // ── Dutch: GASL01 (gaslighting recognition) ──
+  gaslighting: ['gaslighting', 'reality-distortion', 'manipulation'],
+  gek: ['crazy-making', 'gaslighting', 'self-doubt'],
+  gekgemaakt: ['crazy-making', 'gaslighting'],
+  manipulatie: ['manipulation', 'gaslighting'],
+  manipulatief: ['manipulation', 'gaslighting'],
+  verdraaien: ['twisting', 'reality-distortion', 'darvo'],
+  verdraaid: ['twisted', 'reality-distortion'],
+  waarheid: ['truth', 'reality-anchoring', 'fact-anchoring'],
+  realiteit: ['reality', 'reality-distortion', 'reality-anchoring'],
+  inbeelding: ['imagining', 'self-doubt', 'crazy-making'],
+  overdrijven: ['exaggerating', 'minimizing', 'gaslighting'],
 };
 
 // ─── MODULE KEYWORDS: English concept words per module ───
@@ -444,6 +474,10 @@ const MODULE_KEYWORDS: Record<string, string[]> = {
   TERV01: ['relapse-chain', 'trigger-analysis', 'what-went-wrong', 'understand-relapse', 'the-chain', 'before-i-used', 'relapse-analysis', 'how-it-went-wrong', 'want-to-understand'],
   MI02: ['ambivalent', 'want-but-not', 'part-of-me', 'doubtful', 'mixed-feelings', 'not-ready-yet', 'want-to-stop-but', 'torn', 'conflicted'],
   SLAAP01: ['sleep', 'insomnia', 'cant-sleep', 'night-craving', 'sleep-anxiety', 'fatigue-relapse', 'withdrawal-sleep', 'nighttime', 'awake-at-night', 'sleep-hygiene', 'night-vigilance', 'sleep-guilt'],
+  // ── Kim P2 Advanced Modules ──
+  BEDR01: ['betrayal-discovery', 'partner-betrayal', 'infidelity', 'cheated', 'acute-shock', 'body-shock', 'discovery-just-happened', 'body-dysregulation', 'shaking', 'frozen', 'nauseous', 'shocked'],
+  VETR01: ['trust-repair', 'rebuilding-trust', 'second-chance', 'believe-again', 'forgiveness-pressure', 'boundary-after-betrayal', 'timeline-pressure', 'trust-again', 'partner-mind-reading', 'relationship-meaning'],
+  GASL01: ['gaslighting', 'reality-distortion', 'crazy-making', 'manipulation', 'darvo', 'self-doubt', 'fact-anchoring', 'reality-anchoring', 'twisting', 'blame-shifting', 'information-asymmetry', 'minimizing'],
 };
 
 // ─── DETECTOR LOGIC ───
