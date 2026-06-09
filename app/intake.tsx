@@ -425,14 +425,17 @@ export default function IntakeScreen() {
 const styles = StyleSheet.create({
   flex1: {
     flex: 1,
+    backgroundColor: dc.background,
   },
   scrollContent: {
     flexGrow: 1,
+    backgroundColor: dc.background,
   },
   container: {
     flex: 1,
     paddingHorizontal: spacing.screenHorizontal,
     paddingTop: 48,
+    backgroundColor: dc.background,
     paddingBottom: spacing.screenBottom,
   },
   progressRow: {

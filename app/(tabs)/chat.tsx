@@ -786,27 +786,26 @@ function ChatScreenInner() {
   }
 
   const chatContent = (
-    <View style={{ flex: 1, backgroundColor: colors.background }}>
+    <View style={{ flex: 1, backgroundColor: dc.background }}>
       {/* Safe area for top only */}
-      <View style={{ paddingTop: insets.top, backgroundColor: colors.background }}>
+      <View style={{ paddingTop: insets.top, backgroundColor: isElias ? dc.eliasAccent : dc.kimAccentDeep }}>
         {/* Header */}
         <View
           style={{
             paddingHorizontal: spacing.screenHorizontal,
             paddingVertical: 14,
-            borderBottomWidth: 1,
-            borderBottomColor: dc.borderSoft,
+            borderBottomWidth: 0,
             flexDirection: 'row',
             alignItems: 'center',
             justifyContent: 'space-between',
-            backgroundColor: dc.surface,
+            backgroundColor: isElias ? dc.eliasAccent : dc.kimAccentDeep,
           }}
         >
           <View>
-            <Text style={{ ...typography.titleSmall, color: dc.textPrimary }}>
+            <Text style={{ ...typography.titleSmall, color: dc.textInverse }}>
               {companionName}
             </Text>
-            <Text style={{ ...typography.micro, color: dc.textTertiary, marginTop: 2 }}>
+            <Text style={{ ...typography.micro, color: 'rgba(255,255,255,0.7)', marginTop: 2 }}>
               {sessionPhase === 'ending'
                 ? `${companionName} is processing your session...`
                 : sessionPhase === 'completed'
@@ -826,17 +825,17 @@ function ChatScreenInner() {
                   flexDirection: 'row',
                   alignItems: 'center',
                   gap: 6,
-                  backgroundColor: colors.surface,
+                  backgroundColor: 'rgba(255,255,255,0.15)',
                   borderWidth: 1,
-                  borderColor: colors.border,
+                  borderColor: 'rgba(255,255,255,0.3)',
                   borderRadius: 20,
                   paddingHorizontal: 12,
                   paddingVertical: 6,
                 },
               ]}
             >
-              <IconSymbol name="stop.circle.fill" size={16} color={colors.error} />
-              <Text style={{ fontSize: 12, fontWeight: '500', color: colors.foreground }}>End</Text>
+              <IconSymbol name="stop.circle.fill" size={16} color="#FF6B6B" />
+              <Text style={{ fontSize: 12, fontWeight: '500', color: dc.textInverse }}>End</Text>
             </Pressable>
           )}
         </View>
