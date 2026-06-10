@@ -1985,8 +1985,10 @@ export async function processMessage(
     currentModuleId: activeDecision ? activeDecision.dominantModule : preGPTDominantState.dominantModule,
     crisisActive: crisisLevel >= 2,
   });
-  // Replace response with clean user-facing text (engine_signals + clinical stripped)
-  response = feedbackResult.userText;
+  // Replace response with user-facing text (engine_signals stripped, but clinical preserved for UI)
+  response = feedbackResult.clinicalBlock
+    ? feedbackResult.userText + `\n\n<clinical>${feedbackResult.clinicalBlock}</clinical>`
+    : feedbackResult.userText;
   // Apply buffer enrichment (topics, persons, emotional arc)
   if (feedbackResult.hasData) {
     Object.assign(sessionBuffer, {

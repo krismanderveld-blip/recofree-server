@@ -1197,3 +1197,4 @@
 - [x] Dual-output loop: Enrich buffer with content-aware tracking (topics, persons mentioned, emotional arcs)
 - [x] Dual-output loop: Write tests for parser, routing, module reconsideration
 - [x] Dual-output loop: Wire processFeedbackLoop into pipeline.ts POST-GPT flow (step 6.5)
+- [x] Fix clinical tag stripped by feedback loop — preserve <clinical> block in response for chat UI parsing
