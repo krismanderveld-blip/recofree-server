@@ -1151,3 +1151,6 @@
 - [x] FIX: Chat begint met antwoord op laatste vraag i.p.v. frisse begroeting — sessie-afscheiding fixen
 - [x] FIX: conversationHistory leeg bij SESSION_INIT (pipeline.ts) zodat GPT geen oud gesprek voortzet
 - [x] FIX: Expliciete greeting instructie toegevoegd aan SESSION_START system prompt (server/ai-chat.ts)
+- [x] FIX: Client-side session reset — greetingSent.current + preChatDone + messages + sessionPhase reset na End session
+- [x] FIX: useFocusEffect reset bij sessionPhase 'completed' — automatische fresh start bij terugkeer naar Chat tab
+- [x] FIX: handleBackToHome reset alle session state zodat volgende chat-open een verse sessie start

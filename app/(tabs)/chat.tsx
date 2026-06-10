@@ -372,8 +372,20 @@ function ChatScreenInner() {
   // This prevents the greeting from firing during intake/backpack fill
   // (Expo Router mounts all tabs simultaneously).
   // GUARD: For Elias users, greeting is blocked until VSP is submitted.
+  // RESET: If session was completed, reset for fresh start on next focus.
   useFocusEffect(
     useCallback(() => {
+      // If session was completed (user ended chat), reset for a fresh start
+      if (sessionPhase === 'completed') {
+        greetingSent.current = false;
+        setPreChatDone(false);
+        setSessionPhase('active');
+        setMessages([]);
+        setShowEmergency(false);
+        silenceFiredRef.current = false;
+        disclosureDetectedRef.current = false;
+        return; // Will re-trigger on next focus after preChatDone is set
+      }
       if (!preChatDone) return; // Pre-chat gate: required input not yet submitted
       if (state.intakeCompleted && state.backpack && state.userDat && !greetingSent.current) {
         // Greeting is always allowed regardless of backpack content.
@@ -397,7 +409,7 @@ function ChatScreenInner() {
           sendGreetingViaP();
         })();
       }
-    }, [state.intakeCompleted, state.backpack, state.userDat, preChatDone])
+    }, [state.intakeCompleted, state.backpack, state.userDat, preChatDone, sessionPhase])
   );
 
   const sendGreetingViaP = useCallback(async () => {
@@ -654,6 +666,14 @@ function ChatScreenInner() {
   }, [state.backpack, state.userDat, sessionPhase, userName, endSessionWithUserDat]);
 
   const handleBackToHome = useCallback(() => {
+    // Reset session state so next Chat tab focus triggers a fresh greeting
+    greetingSent.current = false;
+    setPreChatDone(false);
+    setSessionPhase('active');
+    setMessages([]);
+    setShowEmergency(false);
+    silenceFiredRef.current = false;
+    disclosureDetectedRef.current = false;
     router.replace('/(tabs)');
   }, [router]);
 
