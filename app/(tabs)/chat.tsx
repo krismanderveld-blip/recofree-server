@@ -1092,7 +1092,7 @@ function ChatScreenInner() {
         )}
 
         {/* Fixed crisis disclaimer at bottom */}
-        <Text style={{ fontSize: 11, color: '#999', textAlign: 'center', paddingTop: 4, paddingBottom: insets.bottom + 60 }}>
+        <Text style={{ fontSize: 12, color: '#999', textAlign: 'center', paddingTop: 8, paddingBottom: insets.bottom + 90, paddingHorizontal: 16 }}>
           RecoFree is geen vervanging voor professionele hulp.{' '}
           <Text
             style={{ color: '#E53935', fontWeight: 'bold', textDecorationLine: 'underline' }}

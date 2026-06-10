@@ -93,14 +93,14 @@ export function detectInputSignals(text: string): InputSignals {
   const lower = text.toLowerCase();
 
   return {
-    passiveSuicidal: /\b(giving up|no point|can'?t go on|why bother|done with (everything|life|this))\b/.test(lower),
-    activeSuicidal: /\b(want to die|kill myself|end it all|suicide|don'?t want to (live|be here|exist))\b/.test(lower),
-    selfHarm: /\b(hurt myself|cutting|self[- ]?harm|burn myself)\b/.test(lower),
-    cravingMention: /\b(crav(ing|e)|urge|want to (drink|use|smoke|take)|tempt(ed|ation)|relapse)\b/.test(lower),
-    isolationSignal: /\b(alone|lonely|nobody|no one (cares|understands)|isolated|by myself)\b/.test(lower),
-    hopelessness: /\b(hopeless|never get better|no hope|pointless|worthless|giving up|can'?t do this)\b/.test(lower),
-    dissociation: /\b(numb|don'?t feel anything|empty|disconnected|not real|floating)\b/.test(lower),
-    positiveSignal: /\b(feeling better|good day|grateful|proud|happy|hopeful|progress|strong)\b/.test(lower),
+    passiveSuicidal: /\b(giving up|no point|can'?t go on|why bother|done with (everything|life|this)|ik geef het op|geen zin meer|kan niet meer|waarom nog|klaar met alles)\b/.test(lower),
+    activeSuicidal: /\b(want to die|kill myself|end it all|suicide|don'?t want to (live|be here|exist)|wil (er niet meer zijn|dood|niet meer leven)|zelfmoord|maak er een einde aan|ik wil er niet meer zijn|wil niet meer verder|wil niet meer bestaan)\b/.test(lower),
+    selfHarm: /\b(hurt myself|cutting|self[- ]?harm|burn myself|mezelf (pijn doen|snijden|verwonden)|automutilatie|snijden)\b/.test(lower),
+    cravingMention: /\b(crav(ing|e)|urge|want to (drink|use|smoke|take)|tempt(ed|ation)|relapse|trek|drang|zucht|wil (drinken|gebruiken|roken)|terugval)\b/.test(lower),
+    isolationSignal: /\b(alone|lonely|nobody|no one (cares|understands)|isolated|by myself|alleen|eenzaam|niemand|ge[ïi]soleerd|op mezelf)\b/.test(lower),
+    hopelessness: /\b(hopeless|never get better|no hope|pointless|worthless|giving up|can'?t do this|hopeloos|wordt nooit beter|geen hoop|zinloos|waardeloos|ik kan dit niet)\b/.test(lower),
+    dissociation: /\b(numb|don'?t feel anything|empty|disconnected|not real|floating|verdoofd|voel niets|leeg|losgekoppeld|niet echt)\b/.test(lower),
+    positiveSignal: /\b(feeling better|good day|grateful|proud|happy|hopeful|progress|strong|beter|goede dag|dankbaar|trots|blij|hoopvol|vooruitgang|sterk)\b/.test(lower),
   };
 }
 

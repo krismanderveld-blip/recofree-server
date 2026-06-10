@@ -1143,3 +1143,8 @@
 - [x] FIX CRITICAL: Crisis nummers moeten IN de chattekst van Elias/Kim staan (niet alleen UI kaart)
 - [x] FIX CRITICAL: Correcte noodnummers onderaan chat scherm (Zelfmoordlijn 0800 32 123 + 112)
 - [x] FIX: Server fallback response bij API failure: 113 → 0800 32 123 (correct Belgisch nummer)
+- [x] FIX: Server-side post-processing: als crisisLevel >= 2 en nummers ontbreken in GPT response, automatisch toevoegen
+- [x] FIX: Crisis disclaimer onderaan chat wordt afgesneden door tab bar — meer padding nodig
+- [x] FIX: Rode crisis kaart verschijnt niet — root cause: Dutch keywords ontbraken in signal detection
+- [x] FIX: Dutch crisis keywords toegevoegd aan state-analyzer.ts (activeSuicidal, passiveSuicidal, selfHarm, etc.)
+- [x] FIX: Dutch crisis keywords toegevoegd aan lib/crisis/detector.ts (CRISIS_PATTERNS)

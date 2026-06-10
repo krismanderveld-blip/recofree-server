@@ -49,23 +49,40 @@ const CRISIS_PATTERNS = {
     /\b(kill myself|end it all|want to die|suicide|take my life)\b/i,
     /\b(don'?t want to live|no reason to live|better off dead)\b/i,
     /\b(end my life|jump off|overdose on purpose)\b/i,
+    // Dutch
+    /\b(wil (er niet meer zijn|dood|niet meer leven)|zelfmoord|maak er een einde aan)\b/i,
+    /\b(ik wil er niet meer zijn|wil niet meer verder|wil niet meer bestaan)\b/i,
+    /\b(ik wil dood|geen reden om te leven|beter af zonder mij)\b/i,
   ],
   suicidal_passive: [
     /\b(wish i was dead|wish i wasn'?t here|disappear forever)\b/i,
     /\b(wouldn'?t mind dying|don'?t care if i die)\b/i,
     /\b(no point|what'?s the point|pointless)\b/i,
+    // Dutch
+    /\b(was ik maar dood|wou dat ik er niet was|voor altijd verdwijnen)\b/i,
+    /\b(geen zin meer|waarom nog|klaar met alles|ik geef het op)\b/i,
+    /\b(kan niet meer|het heeft geen zin|maakt niet uit als ik doodga)\b/i,
   ],
   self_harm: [
     /\b(cut myself|hurt myself|harm myself|self.?harm)\b/i,
     /\b(punish myself|burn myself|hit myself)\b/i,
+    // Dutch
+    /\b(mezelf (pijn doen|snijden|verwonden|straffen)|automutilatie)\b/i,
+    /\b(mezelf branden|mezelf slaan|snijden)\b/i,
   ],
   dissociation: [
     /\b(can'?t feel anything|numb|empty|nothing matters)\b/i,
     /\b(not real|doesn'?t feel real|detached|disconnected)\b/i,
+    // Dutch
+    /\b(voel niets|verdoofd|leeg|niets doet ertoe)\b/i,
+    /\b(niet echt|voelt niet echt|losgekoppeld|afwezig)\b/i,
   ],
   relapse: [
     /\b(used again|relapsed|gave in|couldn'?t resist)\b/i,
     /\b(back to using|started again|fell off)\b/i,
+    // Dutch
+    /\b(weer gebruikt|terugval|toegegeven|kon niet weerstaan)\b/i,
+    /\b(opnieuw begonnen|weer begonnen|hervallen)\b/i,
   ],
 };
 

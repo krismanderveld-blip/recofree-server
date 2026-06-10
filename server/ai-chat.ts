@@ -1868,10 +1868,18 @@ export async function generateAIResponse(
     }
   }
 
+  // ─── CRISIS NUMBER ENFORCEMENT ──────────────────────────────
+  // If crisisLevel >= 2 and GPT did NOT include the crisis number in its response,
+  // we FORCE-APPEND it. This is a safety-critical fallback — the user MUST see the number.
+  let finalResponse = responseText;
+  if (crisisLevel >= 2 && !finalResponse.includes('0800 32 123')) {
+    console.warn('[AI Chat] CRISIS ENFORCEMENT: GPT omitted crisis number — force-appending');
+    finalResponse += '\n\nJe kan ook bellen naar de Zelfmoordlijn: 0800 32 123 (24/7, gratis en anoniem). Bij onmiddellijk gevaar: bel 112.';
+  }
+
   // ─── CLINICAL MODE FALLBACK ─────────────────────────────────
   // If clinical mode is active but GPT failed to include the <clinical> tag,
   // append a fallback annotation so the UI always has something to show.
-  let finalResponse = responseText;
   if (input.clinicalModeActive && !/<clinical>[\s\S]*?<\/clinical>/.test(responseText)) {
     console.warn('[AI Chat] Clinical Mode ACTIVE but GPT omitted <clinical> tag — appending fallback');
     finalResponse += `\n\n<clinical>\nMethod: [not annotated — model did not comply]\nObservation: [clinical annotation was requested but not generated]\nIntervention: [see therapeutic response above]\nSignals: none\n</clinical>`;
