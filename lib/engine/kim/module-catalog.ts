@@ -131,9 +131,25 @@ export const KIM_THERAPEUTIC_MODULES: readonly KimTherapeuticModule[] = Object.f
     ],
     userType: 'kim',
   },
+  {
+    id: 'PAR01', name: 'Parentificatie Patroon Detectie', category: 'Advanced',
+    description: 'Detects and mirrors parentification patterns — the child who had to be the parent',
+    triggers: [
+      { type: 'keyword', condition: 'ik moest altijd zorgen|ik was het ouderlijke kind|ik moest volwassen zijn|ik had geen kindertijd|ik zorgde voor mijn ouders|ik mocht niet kind zijn' },
+    ],
+    userType: 'kim',
+  },
+  {
+    id: 'FIN01', name: 'Financi\u00eble Afhankelijkheid/Controle', category: 'Advanced',
+    description: 'Detects financial dependency or control patterns — money as a tool of power',
+    triggers: [
+      { type: 'keyword', condition: 'hij beheert al het geld|ik mag niets uitgeven|financieel afhankelijk|geld als controle|ik heb geen eigen rekening|hij bepaalt wat ik koop' },
+    ],
+    userType: 'kim',
+  },
 ]);
 
-// ─── Kim Module Selection (from state-analyzer.ts) ──────────────
+// ─── Kim Module Selection (from state-analyzer.ts) ────────────────
 
 /**
  * Select priority modules based on Kim sliders and signals.

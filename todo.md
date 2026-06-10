@@ -1166,3 +1166,8 @@
 - [x] Wire CDP01/RNW01 into pipeline (step 5e10), payload builder, ChatContext, OpenAI provider
 - [x] Register CDP01/RNW01 in Kim module catalog
 - [x] Add CDP01/RNW01 keywords to short-module-detector (English + Dutch translations)
+- [x] Add CDP01/RNW01/BEDR01/VETR01/GASL01/PAR01/FIN01 to clinical mode dropdown (dr peuskens)
+- [x] Implement Kim P4 modules (PAR01: Parentificatie, FIN01: Financiële afhankelijkheid)
+- [x] Create kim-advanced-modules-p4.ts integration layer
+- [x] Wire P4 into pipeline (step 5e11), payload builder, ChatContext, OpenAI provider
+- [x] Register P4 modules in catalog and keyword detector

@@ -271,6 +271,8 @@ import { runKimAdvancedP2 } from '../engine/kim/kim-advanced-modules-p2';
 import type { KimAdvancedP2Result } from '../engine/kim/kim-advanced-modules-p2';
 import { runKimAdvancedP3 } from '../engine/kim/kim-advanced-modules-p3';
 import type { KimAdvancedP3Result } from '../engine/kim/kim-advanced-modules-p3';
+import { runKimAdvancedP4 } from '../engine/kim/kim-advanced-modules-p4';
+import type { KimAdvancedP4Result } from '../engine/kim/kim-advanced-modules-p4';
 import {
   evaluateModuleMemoryRepeat,
   buildModuleMemoryPromptContext,
@@ -1554,6 +1556,30 @@ export async function processMessage(
     });
   }
 
+  // ── 5e11. Kim Advanced P4 (PAR01/FIN01) ──
+  let kimAdvancedP4Result: KimAdvancedP4Result = {
+    par01Context: null,
+    fin01Context: null,
+    activeModule: null,
+    routeNext: 'NO_MODULE',
+  };
+  if (backpack.userType === 'kim' && !!(backpack as any).intake?.startEmotion && analysis.riskLevel !== 'critical') {
+    kimAdvancedP4Result = runKimAdvancedP4({
+      intakeCompleted: true,
+      persona: 'kim',
+      latestUserMessage: userMessage,
+      recentMessages: sessionBuffer.recentMessages.slice(-3).map(m => m.content),
+      language: (currentUserDat as any).detectedLanguage ?? 'nl',
+      crisisProtocolStatus: analysis.riskLevel === 'critical' ? 'ACTIVE' : analysis.riskLevel === 'high' ? 'MONITOR' : 'CLEAR',
+      K06StabilizationStatus: (currentUserDat as any).k06StabilizationStatus ?? 'NOT_RUN',
+      par01PreviousDetections: (currentUserDat as any).par01Detections ?? [],
+      fin01PreviousDetections: (currentUserDat as any).fin01Detections ?? [],
+      safetyRisk: analysis.riskLevel === 'critical' ? 0.9 : analysis.riskLevel === 'high' ? 0.7 : 0.1,
+      timestampIso: new Date().toISOString(),
+      backpackContext: JSON.stringify((backpack as any).sections ?? {}),
+    });
+  }
+
   // ── PRE-GPT STEP 6: Build ChatContext + ONE GPT call ──
   let crisisLevel = 0;
   let showEmergency = false;
@@ -1850,6 +1876,8 @@ export async function processMessage(
     gasl01Context: kimAdvancedP2Result.gasl01Context || undefined,
     cdp01Context: kimAdvancedP3Result.cdp01Context || undefined,
     rnw01Context: kimAdvancedP3Result.rnw01Context || undefined,
+    par01Context: kimAdvancedP4Result.par01Context || undefined,
+    fin01Context: kimAdvancedP4Result.fin01Context || undefined,
     // LANGUAGE_RECOVERY: inject recovery directive if detected
     languageRecovery: languageRecoveryResult.detected ? {
       detected: true,
@@ -2099,6 +2127,7 @@ export async function processMessage(
       { step: '5e8. SLAAP01', status: eliasP4Result.slaap01Active || kimSlaap01Result.slaap01Active ? 'passed' : 'skipped', reason: eliasP4Result.slaap01Active ? `elias|mode=${eliasP4Result.slaap01ResponseMode}` : kimSlaap01Result.slaap01Active ? `kim|mode=${kimSlaap01Result.slaap01ResponseMode}` : 'no SLAAP01 activation' },
       { step: '5e9. Kim P2 (BEDR01/VETR01/GASL01)', status: kimAdvancedP2Result.activeModule ? 'passed' : 'skipped', reason: kimAdvancedP2Result.activeModule ? `kim|module=${kimAdvancedP2Result.activeModule}` : 'no Kim P2 activation' },
       { step: '5e10. Kim P3 (CDP01/RNW01)', status: kimAdvancedP3Result.activeModule ? 'passed' : 'skipped', reason: kimAdvancedP3Result.activeModule ? `kim|module=${kimAdvancedP3Result.activeModule}` : 'no Kim P3 activation' },
+      { step: '5e11. Kim P4 (PAR01/FIN01)', status: kimAdvancedP4Result.activeModule ? 'passed' : 'skipped', reason: kimAdvancedP4Result.activeModule ? `kim|module=${kimAdvancedP4Result.activeModule}` : 'no Kim P4 activation' },
       { step: '6a. Zone decision', status: elisDecision ? 'passed' : 'skipped', reason: elisDecision ? `zone=${elisDecision.zone.computed.label}` : 'kim user' },
       { step: '6b. Engine directive', status: engineDirective ? 'passed' : 'skipped', reason: engineDirective ? `engine=${engineDirective.engine}` : 'none' },
       { step: '6c. Intervention', status: interventionContinuity ? 'passed' : 'skipped', reason: interventionContinuity ? `type=${interventionContinuity.lastInterventionType}` : 'not active' },

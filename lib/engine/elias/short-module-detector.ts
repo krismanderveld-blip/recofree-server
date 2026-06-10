@@ -141,14 +141,14 @@ const TRANSLATION_MAP: Record<string, string[]> = {
   lichaam: ['body'],
   lichamelijk: ['physical', 'body'],
   identiteit: ['identity'],
-  parentificatie: ['parentification'],
-  financieel: ['financial'],
+  parentificatie: ['parentification', 'role-reversal', 'caretaker-child'],
+  financieel: ['financial', 'financial-control', 'financial-dependency', 'money-as-power'],
   geld: ['money', 'financial'],
-  schulden: ['debt', 'financial'],
+  schulden: ['debt', 'financial', 'hidden-debt', 'financial-shame', 'money-manipulation'],
   dissociatie: ['dissociation'],
   afwezig: ['absent', 'dissociation'],
   pijn: ['pain'],
-  afhankelijk: ['dependent', 'dependency', 'codependency'],
+  afhankelijk: ['dependent', 'dependency', 'codependency', 'financial-dependency', 'economic-abuse', 'financial-isolation'],
   afhankelijkheid: ['dependency'],
   medeafhankelijk: ['codependent', 'codependency'],
   existentieel: ['existential'],
@@ -407,6 +407,16 @@ const TRANSLATION_MAP: Record<string, string[]> = {
   herkennen: ['person-before-addiction', 'miss-old-person', 'who-they-were'],
   acceptatiedruk: ['forced-acceptance', 'acceptance-pressure', 'ambiguous-grief'],
   terugkomen: ['false-hope', 'person-before-addiction', 'who-they-were'],
+  // ── Dutch: PAR01 (parentificatie) ──
+  ouderlijkkind: ['parentification', 'caretaker-child', 'lost-childhood'],
+  moestenzorgen: ['parentification', 'hyper-responsibility', 'childhood-burden'],
+  geenkindertijd: ['lost-childhood', 'adult-too-early', 'invisible-child'],
+  volwassenzijn: ['adult-too-early', 'role-reversal', 'hyper-responsibility'],
+  zorgenvoor: ['caretaker-child', 'parentification', 'instrumental-parentification'],
+  // ── Dutch: FIN01 (financiële afhankelijkheid) ──
+  geldcontrole: ['financial-control', 'money-as-power', 'spending-control'],
+  eigenrekening: ['financial-isolation', 'no-own-account', 'financial-dependency'],
+  magniets: ['spending-control', 'economic-abuse', 'financial-control'],
 };
 
 // ─── MODULE KEYWORDS: English concept words per module ───
@@ -495,6 +505,9 @@ const MODULE_KEYWORDS: Record<string, string[]> = {
   // ── Kim P3 Advanced Modules ──
   CDP01: ['self-loss', 'codependency', 'relational-fusion', 'identity-collapse', 'rescue-compulsion', 'emotional-dependency', 'over-responsibility', 'control-from-fear', 'self-care-guilt', 'without-him-i-am-nothing'],
   RNW01: ['ambiguous-grief', 'grief-living-person', 'miss-old-person', 'person-before-addiction', 'relationship-as-it-was', 'false-hope', 'forced-acceptance', 'grief-permission', 'future-loss', 'who-they-were'],
+  // ── Kim P4 Advanced Modules ──
+  PAR01: ['parentification', 'role-reversal', 'lost-childhood', 'caretaker-child', 'emotional-parentification', 'instrumental-parentification', 'hyper-responsibility', 'childhood-burden', 'adult-too-early', 'invisible-child'],
+  FIN01: ['financial-control', 'financial-dependency', 'money-as-power', 'economic-abuse', 'financial-isolation', 'spending-control', 'hidden-debt', 'financial-shame', 'money-manipulation', 'no-own-account'],
 };
 
 // ─── DETECTOR LOGIC ───
