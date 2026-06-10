@@ -2300,7 +2300,10 @@ export async function generateGreeting(
     userType: backpack.userType,
     userName: backpack.naam,
     currentMessage: '',
-    conversationHistory: currentUserDat.chatHistory || [],
+    // SESSION_START: pass EMPTY conversationHistory so GPT generates a fresh greeting.
+    // The full chatHistory is preserved in userDat for context-awareness (diary, triggers, etc.)
+    // but NOT sent as conversation messages — otherwise GPT continues from the last session.
+    conversationHistory: [],
     moodSliders: currentUserDat.currentMood || (ELIAS_DEFAULT_MOOD as any),
     rugzak,
     backpack,

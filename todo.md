@@ -1148,3 +1148,6 @@
 - [x] FIX: Rode crisis kaart verschijnt niet — root cause: Dutch keywords ontbraken in signal detection
 - [x] FIX: Dutch crisis keywords toegevoegd aan state-analyzer.ts (activeSuicidal, passiveSuicidal, selfHarm, etc.)
 - [x] FIX: Dutch crisis keywords toegevoegd aan lib/crisis/detector.ts (CRISIS_PATTERNS)
+- [x] FIX: Chat begint met antwoord op laatste vraag i.p.v. frisse begroeting — sessie-afscheiding fixen
+- [x] FIX: conversationHistory leeg bij SESSION_INIT (pipeline.ts) zodat GPT geen oud gesprek voortzet
+- [x] FIX: Expliciete greeting instructie toegevoegd aan SESSION_START system prompt (server/ai-chat.ts)
