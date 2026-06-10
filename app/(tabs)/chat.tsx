@@ -306,32 +306,75 @@ function ChatScreenInner() {
     })();
   }, []);
 
-  // ── Failsafe: cache chat state when app goes to background ──
+  // ── Auto-end session when app goes to background ──
+  const autoEndTriggeredRef = useRef(false);
   useEffect(() => {
     const subscription = AppState.addEventListener('change', async (nextState: AppStateStatus) => {
       if (
         appStateRef.current === 'active' &&
         (nextState === 'background' || nextState === 'inactive') &&
         sessionPhase === 'active' &&
-        messages.length > 0
+        messages.length > 1 &&
+        !autoEndTriggeredRef.current &&
+        state.backpack &&
+        state.userDat
       ) {
+        // Auto-end the session silently in the background
+        autoEndTriggeredRef.current = true;
         try {
-          await AsyncStorage.setItem(
-            PENDING_CLOSE_KEY,
-            JSON.stringify({
-              timestamp: new Date().toISOString(),
-              messageCount: messages.length,
-              lastMessage: messages[messages.length - 1]?.content?.slice(0, 100),
-            })
-          );
+          const userDatJson = await AsyncStorage.getItem(USERDAT_KEY);
+          const currentUserDat: UserDat = userDatJson ? JSON.parse(userDatJson) : state.userDat!;
+          const backpack = state.backpack!;
+          const provider = getAIProvider();
+          // Attach diary entries for gratitude streak calculation
+          let diaryForSession: DiaryEntry[] = [];
+          try {
+            const diaryJson = await AsyncStorage.getItem(DIARY_KEY);
+            if (diaryJson) diaryForSession = JSON.parse(diaryJson);
+          } catch (_e) { /* ignore */ }
+          const userDatWithDiary = { ...currentUserDat, _sessionDiaryEntries: diaryForSession } as any;
+          const result = await endSession(backpack, provider, userDatWithDiary);
+          await AsyncStorage.setItem(USERDAT_KEY, JSON.stringify(result.updatedUserDat));
+          await endSessionWithUserDat(result.updatedUserDat);
+          await AsyncStorage.removeItem(PENDING_CLOSE_KEY);
+          logDebugEvent('session_auto_end', {
+            trigger: 'app_background',
+            messageCount: result.updatedUserDat.chatHistory.length,
+          });
         } catch (e) {
-          console.error('Failsafe cache error:', e);
+          console.error('[Chat] Auto-end session error (background):', e);
+          // Fallback: at least mark pending close so next session knows
+          try {
+            await AsyncStorage.setItem(
+              PENDING_CLOSE_KEY,
+              JSON.stringify({
+                timestamp: new Date().toISOString(),
+                messageCount: messages.length,
+                lastMessage: messages[messages.length - 1]?.content?.slice(0, 100),
+              })
+            );
+          } catch (_e2) { /* ignore */ }
         }
+      }
+      // When app returns to foreground after auto-end, reset for fresh session
+      if (
+        (appStateRef.current === 'background' || appStateRef.current === 'inactive') &&
+        nextState === 'active' &&
+        autoEndTriggeredRef.current
+      ) {
+        autoEndTriggeredRef.current = false;
+        greetingSent.current = false;
+        setPreChatDone(false);
+        setSessionPhase('active');
+        setMessages([]);
+        setShowEmergency(false);
+        silenceFiredRef.current = false;
+        disclosureDetectedRef.current = false;
       }
       appStateRef.current = nextState;
     });
     return () => subscription.remove();
-  }, [sessionPhase, messages]);
+  }, [sessionPhase, messages, state.backpack, state.userDat, endSessionWithUserDat]);
 
   // Load previous session messages on mount (collapsed, for continuity)
   // Only the PREVIOUS session is shown — older sessions are archived.
@@ -827,38 +870,10 @@ function ChatScreenInner() {
               {companionName}
             </Text>
             <Text style={{ ...typography.micro, color: 'rgba(255,255,255,0.7)', marginTop: 2 }}>
-              {sessionPhase === 'ending'
-                ? `${companionName} is processing your session...`
-                : sessionPhase === 'completed'
-                ? 'Session completed'
-                : isTyping
-                ? 'Typing...'
-                : 'Online'}
+              {isTyping ? 'Typing...' : 'Online'}
             </Text>
           </View>
-          {sessionPhase === 'active' && messages.length > 1 && !isTyping && (
-            <Pressable
-              onPress={handleEndConversation}
-              style={({ pressed }) => [
-                {
-                  opacity: pressed ? 0.7 : 1,
-                  transform: [{ scale: pressed ? 0.97 : 1 }],
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  gap: 6,
-                  backgroundColor: 'rgba(255,255,255,0.15)',
-                  borderWidth: 1,
-                  borderColor: 'rgba(255,255,255,0.3)',
-                  borderRadius: 20,
-                  paddingHorizontal: 12,
-                  paddingVertical: 6,
-                },
-              ]}
-            >
-              <IconSymbol name="stop.circle.fill" size={16} color="#FF6B6B" />
-              <Text style={{ fontSize: 12, fontWeight: '500', color: dc.textInverse }}>End</Text>
-            </Pressable>
-          )}
+          {/* End button removed — session auto-ends when app goes to background */}
         </View>
       </View>
 
@@ -971,41 +986,7 @@ function ChatScreenInner() {
                   </View>
                 </View>
               )}
-              {sessionPhase === 'ending' && (
-                <View style={{ alignSelf: 'center', marginVertical: 16, alignItems: 'center', gap: 8 }}>
-                  <ActivityIndicator size="large" color={colors.primary} />
-                  <Text style={{ fontSize: 14, color: colors.muted, textAlign: 'center' }}>
-                    {companionName} is processing your session...
-                  </Text>
-                </View>
-              )}
-              {sessionPhase === 'completed' && (
-                <View style={{ alignSelf: 'center', marginVertical: 16, alignItems: 'center', gap: 12, width: '100%' }}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                    <IconSymbol name="checkmark.circle.fill" size={20} color={colors.success} />
-                    <Text style={{ fontSize: 14, fontWeight: '500', color: colors.success }}>Session saved</Text>
-                  </View>
-                  <Pressable
-                    onPress={handleBackToHome}
-                    style={({ pressed }) => [
-                      {
-                        opacity: pressed ? 0.8 : 1,
-                        transform: [{ scale: pressed ? 0.97 : 1 }],
-                        backgroundColor: colors.primary,
-                        borderRadius: 24,
-                        paddingHorizontal: 24,
-                        paddingVertical: 12,
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        gap: 8,
-                      },
-                    ]}
-                  >
-                    <IconSymbol name="house.fill" size={18} color="#FFFFFF" />
-                    <Text style={{ color: '#FFFFFF', fontWeight: '600', fontSize: 16 }}>Back to Home</Text>
-                  </Pressable>
-                </View>
-              )}
+              {/* Session ending/completed UI removed — auto-end happens silently in background */}
             </>
           }
         />

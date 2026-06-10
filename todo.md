@@ -1154,3 +1154,6 @@
 - [x] FIX: Client-side session reset — greetingSent.current + preChatDone + messages + sessionPhase reset na End session
 - [x] FIX: useFocusEffect reset bij sessionPhase 'completed' — automatische fresh start bij terugkeer naar Chat tab
 - [x] FIX: handleBackToHome reset alle session state zodat volgende chat-open een verse sessie start
+- [x] Remove End Chat button from UI
+- [x] Add AppState listener: auto-trigger endSession when app goes to background
+- [x] Ensure fresh greeting on next app open after auto-end (reset greetingSent + preChatDone on foreground return)
