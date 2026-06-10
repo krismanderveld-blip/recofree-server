@@ -604,3 +604,27 @@ export function detectShortModuleTrigger(text: string): string | null {
   // Threshold = 1: one strong keyword match is sufficient
   return bestScore >= 1 ? bestModule : null;
 }
+
+/**
+ * Detect ISO01-specific concept signals from user text.
+ * Returns a set of matched ISO01 concept keywords (e.g., 'social-withdrawal', 'burden-fear').
+ * Used by the Kim P5 pipeline to populate ISO01 boolean signals from NL/EN text.
+ */
+export function detectISO01Signals(text: string): Set<string> {
+  if (!text || text.trim().length < 3) return new Set();
+
+  const tokens = tokenize(text);
+  if (tokens.length === 0) return new Set();
+
+  const concepts = translateToEnglishConcepts(tokens);
+  const iso01Keywords = MODULE_KEYWORDS.ISO01 || [];
+  const matched = new Set<string>();
+
+  for (const kw of iso01Keywords) {
+    if (concepts.has(kw)) {
+      matched.add(kw);
+    }
+  }
+
+  return matched;
+}

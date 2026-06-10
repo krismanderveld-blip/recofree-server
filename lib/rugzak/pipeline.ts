@@ -275,6 +275,7 @@ import { runKimAdvancedP4 } from '../engine/kim/kim-advanced-modules-p4';
 import type { KimAdvancedP4Result } from '../engine/kim/kim-advanced-modules-p4';
 import { runKimAdvancedP5 } from '../engine/kim/kim-advanced-modules-p5';
 import type { KimAdvancedP5Result } from '../engine/kim/kim-advanced-modules-p5';
+import { detectISO01Signals } from '../engine/elias/short-module-detector';
 import {
   evaluateModuleMemoryRepeat,
   buildModuleMemoryPromptContext,
@@ -1595,26 +1596,38 @@ export async function processMessage(
     routeNext: 'NO_MODULE',
   };
   if (backpack.userType === 'kim' && !!(backpack as any).intake?.startEmotion && analysis.riskLevel !== 'critical') {
+    // Enrich ISO01 signals from short-module-detector keyword/concept matching
+    const iso01Concepts = detectISO01Signals(userMessage);
+    // Also check recent messages for broader context
+    const recentTexts = sessionBuffer.recentMessages.slice(-3).map(m => m.content);
+    for (const txt of recentTexts) {
+      const additionalConcepts = detectISO01Signals(txt);
+      for (const c of additionalConcepts) iso01Concepts.add(c);
+    }
+    // Also check the generic isolationSignal from state-analyzer
+    const iso01InputSignals = detectInputSignals(userMessage);
+    const genericIsolation = iso01InputSignals.isolationSignal;
+
     kimAdvancedP5Result = runKimAdvancedP5({
       intakeCompleted: true,
       persona: 'kim',
       latestUserMessage: userMessage,
-      recentMessages: sessionBuffer.recentMessages.slice(-3).map(m => m.content),
+      recentMessages: recentTexts,
       language: (currentUserDat as any).detectedLanguage ?? 'nl',
-      detectedMarkers: [],
+      detectedMarkers: [...iso01Concepts],
       crisisProtocolStatus: analysis.riskLevel === 'critical' ? 'ACTIVE' : analysis.riskLevel === 'high' ? 'MONITOR' : 'CLEAR',
       K06StabilizationStatus: (currentUserDat as any).k06StabilizationStatus ?? 'NOT_RUN',
-      socialWithdrawal: false,
-      shameAboutTalking: false,
-      burdenFear: false,
-      protectiveIsolation: false,
-      exhaustionIsolation: false,
-      noSocialContact: false,
-      privacyNeed: false,
-      fearOfJudgment: false,
-      adviceFatigue: false,
-      painfulLoneliness: false,
-      wantsConnectionButScared: false,
+      socialWithdrawal: iso01Concepts.has('social-withdrawal') || genericIsolation,
+      shameAboutTalking: iso01Concepts.has('shame-about-talking'),
+      burdenFear: iso01Concepts.has('burden-fear'),
+      protectiveIsolation: iso01Concepts.has('protective-isolation'),
+      exhaustionIsolation: iso01Concepts.has('exhaustion-isolation'),
+      noSocialContact: iso01Concepts.has('no-social-contact') || genericIsolation,
+      privacyNeed: iso01Concepts.has('privacy-need'),
+      fearOfJudgment: iso01Concepts.has('fear-of-judgment'),
+      adviceFatigue: iso01Concepts.has('advice-fatigue'),
+      painfulLoneliness: iso01Concepts.has('painful-loneliness') || genericIsolation,
+      wantsConnectionButScared: iso01Concepts.has('social-withdrawal') && iso01Concepts.has('painful-loneliness'),
       acuteOverload: analysis.riskLevel === 'high',
       safetyRisk: analysis.riskLevel === 'critical' ? 0.9 : analysis.riskLevel === 'high' ? 0.7 : 0.1,
       timestampIso: new Date().toISOString(),
@@ -3436,4 +3449,143 @@ function analyzeLanguageRecovery(
     delta: RECOVERY_DELTA,
     matchedIndicator,
   };
+}
+
+
+// ─── Deferred Session Analysis ──────────────────────────────────────
+// When the app went to background and the 10s timeout fired before
+// endSession could complete, the session was saved with needsFullAnalysis: true.
+// At the next session start, this function runs the full session-end analysis
+// (without generating a farewell or GPT call) on the previous chatHistory,
+// so that triggers, mood snapshots, promotions, and sessionAnalyses are still captured.
+
+/**
+ * Run a lightweight (no GPT call) session-end analysis on the previous session's chatHistory.
+ * This is called at the start of a new session when a PENDING_CLOSE marker with
+ * needsFullAnalysis: true was found.
+ *
+ * It performs:
+ * - Theme extraction from all user messages
+ * - Trigger pattern detection and promotion
+ * - Mood snapshot recording
+ * - Session analysis record creation
+ * - Chat history archiving
+ *
+ * It does NOT:
+ * - Generate a farewell message (session already ended)
+ * - Call GPT (no network dependency)
+ * - Modify the backpack (dual-store rule)
+ */
+export function runDeferredSessionAnalysis(
+  backpack: Backpack,
+  userDat: UserDat
+): UserDat {
+  const sessionMessages = userDat.chatHistory || [];
+  if (sessionMessages.length === 0) return userDat;
+
+  const sessionStartDate = userDat.lastSessionDate ? new Date(userDat.lastSessionDate) : new Date();
+  const durationMinutes = Math.floor((Date.now() - sessionStartDate.getTime()) / 60000);
+
+  const userMessages = sessionMessages.filter((m) => m.role === 'user');
+  const allUserText = userMessages.map((m) => m.content).join(' ');
+  const signals = detectInputSignals(allUserText);
+  const themes = extractThemes(signals, allUserText);
+  const newTriggers = extractTriggersFromSignals(signals);
+
+  const modulesUsed = [...new Set(
+    sessionMessages
+      .filter((m) => m.modulesUsed && m.modulesUsed.length > 0)
+      .flatMap((m) => m.modulesUsed!)
+  )];
+
+  const rugzak = composeRugzak(backpack, userDat);
+  const endAnalysis = analyzeState(rugzak, '');
+  const dominantEmotion = endAnalysis.emotionalState;
+
+  // Compute mood delta
+  const moodHistory = userDat.moodHistory || [];
+  let distressChange = 0;
+  let resilienceChange = 0;
+  if (moodHistory.length >= 2) {
+    const firstSliders = moodHistory[0].sliders;
+    const lastSliders = moodHistory[moodHistory.length - 1].sliders;
+    const userType = backpack.userType;
+    const firstDistress = userType === 'elias'
+      ? eliasDistressScore(firstSliders as any)
+      : kimDistressScore(firstSliders as any);
+    const lastDistress = userType === 'elias'
+      ? eliasDistressScore(lastSliders as any)
+      : kimDistressScore(lastSliders as any);
+    distressChange = lastDistress - firstDistress;
+    const firstResilience = userType === 'elias' ? eliasResilienceScore(firstSliders as any) : kimResilienceScore(firstSliders as any);
+    const lastResilience = userType === 'elias' ? eliasResilienceScore(lastSliders as any) : kimResilienceScore(lastSliders as any);
+    resilienceChange = lastResilience - firstResilience;
+  }
+
+  const sessionSummary: SessionSummary = {
+    messageCount: sessionMessages.length,
+    durationMinutes,
+    dominantEmotion,
+    themes,
+    newTriggers,
+    modulesUsed,
+    moodDelta: { distressChange, resilienceChange },
+    endRiskLevel: endAnalysis.riskLevel,
+  };
+
+  let updatedUserDat: UserDat = { ...userDat };
+
+  // Update trigger patterns
+  if (newTriggers.length > 0) {
+    updatedUserDat = {
+      ...updatedUserDat,
+      triggerPatterns: updateTriggerPatterns(updatedUserDat.triggerPatterns || [], newTriggers),
+    };
+  }
+
+  // Record mood snapshot
+  if (updatedUserDat.currentMood) {
+    const snapshot = {
+      timestamp: new Date().toISOString(),
+      sliders: sanitizeSliders(updatedUserDat.currentMood as unknown as Record<string, unknown>) as unknown as import('../ai/types').MoodSliders,
+    };
+    updatedUserDat = {
+      ...updatedUserDat,
+      moodHistory: [...(updatedUserDat.moodHistory || []), snapshot],
+    };
+  }
+
+  // Add session analysis record
+  const analysisRecord = {
+    sessionNumber: userDat.totalSessions,
+    date: new Date().toISOString(),
+    messageCount: sessionSummary.messageCount,
+    durationMinutes: sessionSummary.durationMinutes,
+    dominantEmotion: sessionSummary.dominantEmotion,
+    themes: sessionSummary.themes,
+    newTriggers: sessionSummary.newTriggers,
+    modulesUsed: sessionSummary.modulesUsed,
+    moodDelta: sessionSummary.moodDelta,
+    endRiskLevel: sessionSummary.endRiskLevel,
+  };
+  updatedUserDat = {
+    ...updatedUserDat,
+    sessionAnalyses: [...(updatedUserDat.sessionAnalyses || []), analysisRecord],
+  };
+
+  // Archive old chat history
+  const archived = archiveSessionHistory(
+    updatedUserDat.chatHistory || [],
+    (updatedUserDat as any).archivedSessions || [],
+    userDat.totalSessions,
+  );
+  updatedUserDat = {
+    ...updatedUserDat,
+    chatHistory: archived.activeMessages,
+  };
+  (updatedUserDat as any).archivedSessions = archived.archivedSessions;
+
+  console.log(`[Pipeline] DEFERRED ANALYSIS complete: themes=${themes.length}, triggers=${newTriggers.length}, modules=${modulesUsed.length}, archived=${archived.archivedSessions.length} sessions`);
+
+  return updatedUserDat;
 }

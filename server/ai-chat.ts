@@ -1349,6 +1349,7 @@ If asked about VETR01: explain trust repair scaffolding and boundary-after-betra
 If asked about GASL01: explain gaslighting recognition and reality/fact anchoring.
 If asked about CDP01: explain codependency pattern mirroring and self-loss awareness.
 If asked about RNW01: explain ambiguous grief validation for a living person (who they were before addiction).
+If asked about ISO01: explain social withdrawal and isolation detection for caregivers — recognizes shame-based silence, burden fear, protective isolation, exhaustion withdrawal, and offers micro-reconnection without pressure.
 In normal mode: never disclose internal methods. Stay therapeutic.
 In clinical mode: be transparent about your capabilities for clinical evaluation.
 
@@ -1673,6 +1674,7 @@ If asked about VETR01: explain trust repair scaffolding and boundary-after-betra
 If asked about GASL01: explain gaslighting recognition and reality/fact anchoring.
 If asked about CDP01: explain codependency pattern mirroring and self-loss awareness.
 If asked about RNW01: explain ambiguous grief validation for a living person (who they were before addiction).
+If asked about ISO01: explain social withdrawal and isolation detection for caregivers — recognizes shame-based silence, burden fear, protective isolation, exhaustion withdrawal, and offers micro-reconnection without pressure.
 In normal mode: never disclose internal methods. Stay therapeutic.
 In clinical mode: be transparent about your capabilities for clinical evaluation.
 

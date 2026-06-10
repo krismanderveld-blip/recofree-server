@@ -1177,4 +1177,7 @@
 - [x] Create kim-advanced-modules-p5.ts integration layer for ISO01
 - [x] Wire ISO01 into pipeline (step 5e12, after P4/PAR01/FIN01), payload builder, ChatContext, OpenAI provider
 - [x] Register ISO01 in Kim module catalog and keyword detector
-- [ ] Add ISO01 to clinical mode disclosure (dr peuskens)
+- [x] Add ISO01 to clinical mode disclosure (dr peuskens)
+- [x] Add ISO01 to clinical mode therapy disclosure (dr peuskens)
+- [x] Implement needsFullAnalysis handling at session start (run full analysis on previous chatHistory before new greeting)
+- [x] Enrich ISO01 pipeline signals from short-module-detector output (connect socialWithdrawal to actual keyword matches)

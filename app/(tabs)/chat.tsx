@@ -26,7 +26,7 @@ import { useUser } from '@/lib/user-context';
 import { fixUnicode } from '@/lib/utils';
 import { getAIProvider } from '@/lib/ai';
 import { preprocessInput } from '@/lib/ai/preprocessor';
-import { processMessage, generateGreeting, endSession } from '@/lib/rugzak/pipeline';
+import { processMessage, generateGreeting, endSession, runDeferredSessionAnalysis } from '@/lib/rugzak/pipeline';
 import { EmergencyCard } from '@/components/emergency-card';
 import type { ChatMessage, Rugzak, Backpack, UserDat, DiaryEntry } from '@/lib/ai/types';
 import { composeRugzak } from '@/lib/ai/types';
@@ -290,13 +290,34 @@ function ChatScreenInner() {
   }, []);
 
   // ── Check for pending close on mount ──
+  // If the previous session was saved with needsFullAnalysis: true (timeout fallback),
+  // run the deferred session-end analysis on the previous chatHistory before the new greeting.
   useEffect(() => {
     (async () => {
       try {
         const pending = await AsyncStorage.getItem(PENDING_CLOSE_KEY);
         if (pending) {
-          // Show non-intrusive toast instead of blocking Alert
+          const pendingData = JSON.parse(pending);
           await AsyncStorage.removeItem(PENDING_CLOSE_KEY);
+
+          // Run deferred analysis if the previous session needs it
+          if (pendingData.needsFullAnalysis) {
+            try {
+              const bpJson = await AsyncStorage.getItem(BACKPACK_KEY);
+              const udJson = await AsyncStorage.getItem(USERDAT_KEY);
+              if (bpJson && udJson) {
+                const backpack = JSON.parse(bpJson);
+                const userDat = JSON.parse(udJson);
+                const analyzedUserDat = runDeferredSessionAnalysis(backpack, userDat);
+                await AsyncStorage.setItem(USERDAT_KEY, JSON.stringify(analyzedUserDat));
+                console.log('[Chat] Deferred session analysis completed for previous session');
+              }
+            } catch (analysisErr) {
+              console.warn('[Chat] Deferred analysis failed (non-blocking):', analysisErr);
+            }
+          }
+
+          // Show non-intrusive toast
           setShowRestoreToast(true);
           setTimeout(() => setShowRestoreToast(false), 3500);
         }
