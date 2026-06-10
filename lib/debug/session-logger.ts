@@ -22,6 +22,12 @@ export interface DebugEvent {
   data: Record<string, unknown>;
 }
 
+export interface ModuleActivation {
+  id: string;
+  confidence: number;
+  mode: string;
+}
+
 export interface MessageEvent {
   messageIndex: number;
   zone: string;
@@ -30,6 +36,12 @@ export interface MessageEvent {
   activeBlocks: string[];
   dominantModule: string;
   riskScore: number;
+  /** P2/P3/P4 module activations with confidence scores */
+  activeModules: ModuleActivation[];
+  /** K06 stabilization status: 'complete' | 'in_progress' | 'not_started' */
+  k06Status: string;
+  /** Whether crisis protocol is currently active */
+  crisisProtocolActive: boolean;
 }
 
 // ─── In-memory event store ───────────────────────────────────

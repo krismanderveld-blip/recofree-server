@@ -28,7 +28,7 @@ import { getKimProjectionSummary, clearKimProjection } from '@/lib/engine/kim/pr
 import { getInterventionState } from '@/lib/engine/elias/intervention-continuity';
 import { getSessionCostSummary, getRemainingBudget, isOverBudget } from '@/lib/rugzak/cost-control';
 
-type TabId = 'live' | 'log' | 'copy';
+type TabId = 'live' | 'log' | 'modules' | 'copy';
 
 const USERDAT_KEY = '@recofree_userdat';
 const BACKPACK_KEY = '@recofree_backpack';
@@ -64,6 +64,11 @@ export default function DebugLogScreen() {
         ? 'WARNING'
         : 'OK';
 
+    // Module dashboard data
+    const activeModules = (lastMsgEvent?.data as any)?.activeModules ?? [];
+    const k06Status = (lastMsgEvent?.data as any)?.k06Status ?? (userDat as any)?.k06StabilizationStatus ?? 'NOT_RUN';
+    const crisisProtocolActive = (lastMsgEvent?.data as any)?.crisisProtocolActive ?? false;
+
     return {
       userType: state.userType ?? 'unknown',
       guidanceDepth,
@@ -77,6 +82,10 @@ export default function DebugLogScreen() {
       lastMessage: lastMsgEvent?.data ?? null,
       remaining,
       budgetStatus,
+      // Module dashboard
+      activeModules,
+      k06Status,
+      crisisProtocolActive,
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [refreshKey, state.userType]);
@@ -192,7 +201,7 @@ export default function DebugLogScreen() {
 
       {/* Tab Bar */}
       <View style={[styles.tabBar, { borderColor: colors.border }]}>
-        {(['live', 'log', 'copy'] as TabId[]).map((tab) => (
+        {(['live', 'modules', 'log', 'copy'] as TabId[]).map((tab) => (
           <Pressable
             key={tab}
             onPress={() => { setActiveTab(tab); refresh(); }}
@@ -208,7 +217,7 @@ export default function DebugLogScreen() {
                 { color: activeTab === tab ? colors.primary : colors.muted },
               ]}
             >
-              {tab === 'live' ? 'Live State' : tab === 'log' ? 'Session Log' : 'Copy All'}
+              {tab === 'live' ? 'Live' : tab === 'log' ? 'Log' : tab === 'modules' ? 'Modules' : 'Copy'}
             </Text>
           </Pressable>
         ))}
@@ -247,6 +256,61 @@ export default function DebugLogScreen() {
                 ))}
               </View>
             )}
+          </>
+        ) : activeTab === 'modules' ? (
+          <>
+            {/* Module Activation Dashboard */}
+            <Section title="K06 Stabilisatie">
+              <Row
+                label="Status"
+                value={liveState.k06Status === 'COMPLETE' ? '✅ Complete' : liveState.k06Status === 'IN_PROGRESS' ? '⏳ In Progress' : '❌ Not Run'}
+              />
+              <Row
+                label="Crisis Protocol"
+                value={liveState.crisisProtocolActive ? '🚨 ACTIVE' : '✅ Clear'}
+              />
+            </Section>
+
+            <Section title="Actieve Modules (P2/P3/P4)">
+              {liveState.activeModules.length === 0 ? (
+                <Row label="Status" value="Geen modules actief" />
+              ) : (
+                liveState.activeModules.map((mod: { id: string; confidence: number; mode: string }, i: number) => (
+                  <View key={`mod-${i}`} style={[styles.row, { paddingVertical: 6 }]}>
+                    <Text style={[styles.label, { color: colors.foreground, fontWeight: '700', fontSize: 13 }]}>
+                      {mod.id}
+                    </Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                      <Text style={{ fontSize: 11, color: colors.muted }}>{mod.mode}</Text>
+                      <View style={[styles.confidenceBar, { backgroundColor: colors.border }]}>
+                        <View style={[styles.confidenceFill, { width: `${Math.round(mod.confidence * 100)}%`, backgroundColor: mod.confidence >= 0.7 ? colors.success : mod.confidence >= 0.4 ? colors.warning : colors.error }]} />
+                      </View>
+                      <Text style={{ fontSize: 11, color: colors.foreground, fontWeight: '600', minWidth: 36, textAlign: 'right' }}>
+                        {Math.round(mod.confidence * 100)}%
+                      </Text>
+                    </View>
+                  </View>
+                ))
+              )}
+            </Section>
+
+            <Section title="Module Overzicht">
+              <Row label="BEDR01" value="Bedrog Detectie" />
+              <Row label="VETR01" value="Vertrouwensherstel" />
+              <Row label="GASL01" value="Gaslighting Detectie" />
+              <Row label="CDP01" value="Codependentie Patroon" />
+              <Row label="RNW01" value="Rouw Naaste: Wie Ze Was" />
+              <Row label="PAR01" value="Parentificatie" />
+              <Row label="FIN01" value="Financiële Afhankelijkheid" />
+            </Section>
+
+            <Section title="Pipeline Volgorde">
+              <Row label="1. K06" value="Stabilisatie (altijd eerst)" />
+              <Row label="2. P2" value="BEDR01 > VETR01 > GASL01" />
+              <Row label="3. P3" value="CDP01 > RNW01" />
+              <Row label="4. P4" value="PAR01 > FIN01" />
+              <Row label="Override" value="Crisis protocol overschrijft altijd" />
+            </Section>
           </>
         ) : activeTab === 'live' ? (
           <>
@@ -589,4 +653,14 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   utilBtnText: { fontSize: 13, fontWeight: '600' },
+  confidenceBar: {
+    width: 60,
+    height: 6,
+    borderRadius: 3,
+    overflow: 'hidden' as const,
+  },
+  confidenceFill: {
+    height: 6,
+    borderRadius: 3,
+  },
 });

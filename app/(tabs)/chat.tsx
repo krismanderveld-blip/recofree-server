@@ -662,6 +662,9 @@ function ChatScreenInner() {
             'projection',
             'intervention_continuity',
           ].filter(Boolean),
+          activeModules: result.moduleActivations ?? [],
+          k06Status: result.k06Status ?? 'NOT_RUN',
+          crisisProtocolActive: result.crisisProtocolActive ?? false,
         });
         if (result.crisisLevel > 0) {
           logDebugEvent('crisis_detected', {

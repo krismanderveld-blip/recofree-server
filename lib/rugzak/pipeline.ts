@@ -394,6 +394,12 @@ export interface PipelineResult {
   showEmergency: boolean;
   /** Pre-GPT dominant state used for this response */
   dominantState?: DominantState;
+  /** Active module activations from P2/P3/P4 with confidence and mode */
+  moduleActivations: { id: string; confidence: number; mode: string }[];
+  /** K06 stabilization status */
+  k06Status: string;
+  /** Whether crisis protocol is currently active */
+  crisisProtocolActive: boolean;
   /** Buffer snapshot sent to GPT */
   bufferSnapshot?: BufferSnapshot;
   /** Post-GPT log entry */
@@ -2239,6 +2245,23 @@ export async function processMessage(
   // Build and store the trace block
   buildTraceBlock(traceData);
 
+  // ── Collect module activations for dashboard ──
+  const moduleActivations: { id: string; confidence: number; mode: string }[] = [];
+  if (kimAdvancedP2Result.activeModule) {
+    const ctx = kimAdvancedP2Result.bedr01Context || kimAdvancedP2Result.vetr01Context || kimAdvancedP2Result.gasl01Context;
+    moduleActivations.push({ id: kimAdvancedP2Result.activeModule, confidence: (ctx as any)?.confidence ?? 0.8, mode: (ctx as any)?.mode ?? 'active' });
+  }
+  if (kimAdvancedP3Result.activeModule) {
+    const ctx = kimAdvancedP3Result.cdp01Context || kimAdvancedP3Result.rnw01Context;
+    moduleActivations.push({ id: kimAdvancedP3Result.activeModule, confidence: (ctx as any)?.confidence ?? 0.8, mode: (ctx as any)?.mode ?? 'active' });
+  }
+  if (kimAdvancedP4Result.activeModule) {
+    const ctx = kimAdvancedP4Result.par01Context || kimAdvancedP4Result.fin01Context;
+    moduleActivations.push({ id: kimAdvancedP4Result.activeModule, confidence: (ctx as any)?.confidence ?? 0.8, mode: (ctx as any)?.mode ?? 'active' });
+  }
+  const k06Status = (currentUserDat as any).k06StabilizationStatus ?? 'NOT_RUN';
+  const crisisProtocolActive = analysis.riskLevel === 'critical' || crisisLevel >= 2;
+
   return {
     response,
     analysis,
@@ -2250,6 +2273,9 @@ export async function processMessage(
     bufferSnapshot,
     messageLog,
     traceData,
+    moduleActivations,
+    k06Status,
+    crisisProtocolActive,
   };
 }
 
@@ -2434,6 +2460,9 @@ export async function generateGreeting(
     updatedUserDat,
     crisisLevel: 0,
     showEmergency: false,
+    moduleActivations: [],
+    k06Status: (updatedUserDat as any).k06StabilizationStatus ?? 'NOT_RUN',
+    crisisProtocolActive: false,
   };
 }
 
