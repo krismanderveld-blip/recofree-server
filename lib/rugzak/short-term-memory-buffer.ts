@@ -81,6 +81,19 @@ export interface BufferState {
   intensityTrajectory: 'rising' | 'stable' | 'falling';
   /** Modules already used in this session (loopblocker: prevents same module twice) */
   usedModules: string[];
+  // ─── Content-Aware Tracking (enriched by engine_signals) ───
+  /** Topics discussed this session (most recent last) */
+  topicHistory: string[];
+  /** Persons mentioned this session (deduplicated by name) */
+  personsDiscussed: string[];
+  /** Emotional arc: sequence of emotional shifts this session */
+  emotionalArc: string[];
+  /** Current dominant topic (latest from topicHistory) */
+  currentTopic: string;
+  /** Module switch count this session */
+  moduleSwitchCount: number;
+  /** How many messages the current module has been active */
+  currentModuleMessageCount: number;
 }
 
 // ─── Constants ────────────────────────────────────────────────
@@ -116,6 +129,12 @@ export function createBuffer(): BufferState {
     previousZoneScore: 20,
     intensityTrajectory: 'stable',
     usedModules: [],
+    topicHistory: [],
+    personsDiscussed: [],
+    emotionalArc: [],
+    currentTopic: '',
+    moduleSwitchCount: 0,
+    currentModuleMessageCount: 0,
   };
 }
 
@@ -630,12 +649,19 @@ export function updateBuffer(
     currentZoneColor: zoneColor,
     responseDirection: direction,
     temporaryRepeats,
-    messageCount: current.messageCount + 1,
+     messageCount: current.messageCount + 1,
     previousZoneScore: current.currentZoneScore,
     intensityTrajectory: trajectory,
+    usedModules: current.usedModules,
+    // Content-aware fields (preserved, enriched by signal-router after LLM response)
+    topicHistory: current.topicHistory,
+    personsDiscussed: current.personsDiscussed,
+    emotionalArc: current.emotionalArc,
+    currentTopic: current.currentTopic,
+    moduleSwitchCount: current.moduleSwitchCount,
+    currentModuleMessageCount: current.currentModuleMessageCount + 1,
   };
 }
-
 // ─── Buffer Snapshot for GPT Payload ─────────────────────────
 
 /**

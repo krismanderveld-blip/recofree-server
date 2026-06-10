@@ -473,6 +473,10 @@ export class OpenAIProvider implements AIProvider {
           // Active signals for clinical annotation
           activeSignals: buildActiveSignals(context),
 
+          // Structured entities (compact backpack memory)
+          extractedEntities: gptPayload.extractedEntities ?? null,
+          backpackChanged: gptPayload.backpackChanged ?? false,
+
           // Full data (SESSION_INIT only)
           backpack: gptPayload.backpack,
           userDat: gptPayload.userDat,

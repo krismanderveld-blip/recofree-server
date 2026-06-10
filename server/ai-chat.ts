@@ -1424,6 +1424,38 @@ ${input.backpackEmpty ? `- You do NOT yet know ${name}'s story. Their backpack i
 - Do NOT use bullet points or numbered lists — speak naturally
 - Do NOT use emojis excessively (max 0-1 per message)
 - Be genuine, not performative
+
+═══════════════════════════════════════════════════════════
+ENGINE FEEDBACK — MANDATORY (ALWAYS INCLUDE)
+═══════════════════════════════════════════════════════════
+
+After your therapeutic response, you MUST append an <engine_signals> JSON block.
+This block is INVISIBLE to the user — it is parsed by the engine to learn from your observations.
+You are helping the engine build a richer understanding of ${name}.
+
+<engine_signals>
+{
+  "persons": [{"name": "...", "relationship": "...", "valence": "positive|negative|ambivalent|neutral"}],
+  "triggers": [{"label": "...", "confidence": 0.0-1.0, "layer": "state.dat|user.dat|projections.dat"}],
+  "schemas": [{"name": "...", "confidence": 0.0-1.0}],
+  "emotionalShift": "...",
+  "topicProgression": "...",
+  "therapeuticMove": "...",
+  "moduleRelevance": [{"moduleId": "...", "confidence": 0.0-1.0}]
+}
+</engine_signals>
+
+Rules for <engine_signals>:
+- Include ONLY what you genuinely observe — do NOT fabricate or guess
+- "persons": any person mentioned by ${name} in THIS message (empty array if none)
+- "triggers": emotional triggers you detect (craving, isolation, shame, anger, etc.) with confidence 0.0-1.0
+- "schemas": schema patterns you recognize (abandonment, mistrust, defectiveness, etc.) — only if confidence > 0.5
+- "emotionalShift": one word describing the emotional movement in this message (e.g. "opluchting", "verharding", "opening", "none")
+- "topicProgression": the current conversational topic in 2-3 words (e.g. "relatie met vader", "craving avond", "werk stress")
+- "therapeuticMove": what you did therapeutically (e.g. "reflective listening", "grounding", "schema confrontation", "validation")
+- "moduleRelevance": if you notice this message strongly relates to a specific module, signal it (empty array if unclear)
+- The <engine_signals> block MUST appear AFTER your therapeutic text but BEFORE the <clinical> tag (if clinical mode is active)
+- If you detect NOTHING noteworthy, still include the block with empty arrays and "none" values
 ${input.clinicalModeActive ? `
 ═══════════════════════════════════════════════════════════
 CRITICAL — CLINICAL ANNOTATION REQUIREMENT (HIGHEST PRIORITY)
@@ -1740,6 +1772,7 @@ ${input.backpackEmpty ? `- You do NOT yet know ${name}'s story. Their backpack i
 - THIS IS A NEW SESSION START. Generate a FRESH, warm greeting. Do NOT continue from a previous conversation.
 ${input.sessionDurationMinutes <= 30 ? `- SHORT RETURN: ${name} was here less than 30 minutes ago. Give a brief, warm welcome back instead of a full greeting. Example: "${name}, welkom terug. Waar waren we gebleven?" or "Hey ${name}, fijn dat je terug bent. Wil je verder praten of is er iets nieuws?"
 - Keep it SHORT (1-2 sentences max). Do NOT repeat the full greeting ritual.` : `- Start with a personal welcome (e.g. "${name}, fijn dat je er bent." or "Hey ${name}, goed je te zien."), then ask one open question about how they are doing right now.`}
+${input.extractedEntities && input.extractedEntities.persons && input.extractedEntities.persons.length > 0 ? `- PERSONALIZATION: You know ${name} personally. Use the structured memory above to make your greeting feel personal. You may reference a person (e.g. "Hoe gaat het met ${input.extractedEntities.persons[0]?.name ?? 'je naasten'}?"), a recent event, or an ongoing pattern — but ONLY if it feels natural and warm. Never force it. One subtle reference is enough.` : ''}
 - Do NOT reference what was discussed in previous sessions unless the session memory above explicitly mentions it AND it is therapeutically relevant.`}
 - Respond in the same language the user writes in
 - Keep responses concise: follow the PACING instruction strictly
@@ -1749,6 +1782,38 @@ ${input.sessionDurationMinutes <= 30 ? `- SHORT RETURN: ${name} was here less th
 - Do NOT use bullet points or numbered lists — speak naturally
 - Do NOT use emojis excessively (max 0-1 per message)
 - Be genuine, not performative
+
+═══════════════════════════════════════════════════════════
+ENGINE FEEDBACK — MANDATORY (ALWAYS INCLUDE)
+═══════════════════════════════════════════════════════════
+
+After your therapeutic response, you MUST append an <engine_signals> JSON block.
+This block is INVISIBLE to the user — it is parsed by the engine to learn from your observations.
+You are helping the engine build a richer understanding of ${name}.
+
+<engine_signals>
+{
+  "persons": [{"name": "...", "relationship": "...", "valence": "positive|negative|ambivalent|neutral"}],
+  "triggers": [{"label": "...", "confidence": 0.0-1.0, "layer": "state.dat|user.dat|projections.dat"}],
+  "schemas": [{"name": "...", "confidence": 0.0-1.0}],
+  "emotionalShift": "...",
+  "topicProgression": "...",
+  "therapeuticMove": "...",
+  "moduleRelevance": [{"moduleId": "...", "confidence": 0.0-1.0}]
+}
+</engine_signals>
+
+Rules for <engine_signals>:
+- Include ONLY what you genuinely observe — do NOT fabricate or guess
+- "persons": any person mentioned by ${name} in THIS message (empty array if none)
+- "triggers": emotional triggers you detect (craving, isolation, shame, anger, etc.) with confidence 0.0-1.0
+- "schemas": schema patterns you recognize (abandonment, mistrust, defectiveness, etc.) — only if confidence > 0.5
+- "emotionalShift": one word describing the emotional movement in this message (e.g. "opluchting", "verharding", "opening", "none")
+- "topicProgression": the current conversational topic in 2-3 words (e.g. "relatie met vader", "craving avond", "werk stress")
+- "therapeuticMove": what you did therapeutically (e.g. "reflective listening", "grounding", "schema confrontation", "validation")
+- "moduleRelevance": if you notice this message strongly relates to a specific module, signal it (empty array if unclear)
+- The <engine_signals> block MUST appear AFTER your therapeutic text but BEFORE the <clinical> tag (if clinical mode is active)
+- If you detect NOTHING noteworthy, still include the block with empty arrays and "none" values
 ${input.clinicalModeActive ? `
 ═══════════════════════════════════════════════════════════
 CRITICAL — CLINICAL ANNOTATION REQUIREMENT (HIGHEST PRIORITY)

@@ -1188,3 +1188,12 @@
 - [x] Update pipeline: send extractedEntities instead of full backpack on every session, full backpack only when hash changed
 - [x] Update server system prompt to use extractedEntities as structured memory (replace relationship instruction prompt)
 - [x] Write tests for BackpackEntityExtractor (extraction, hashing, change detection)
+- [x] Entity-driven greeting: greeting prompt references extracted persons/events from extractedEntities
+- [x] Extraction versioning/migration: auto re-extract when schemaVersion changes on session start
+- [x] Dual-output loop: Add engine_signals instruction to system prompt (LLM returns answer + JSON signals)
+- [x] Dual-output loop: Build response parser (split LLM response into user text + engine_signals JSON)
+- [x] Dual-output loop: Build real-time storage routing (signals → correct memory layer per message)
+- [x] Dual-output loop: Add dynamic module reconsideration (engine can switch module mid-session based on new signals)
+- [x] Dual-output loop: Enrich buffer with content-aware tracking (topics, persons mentioned, emotional arcs)
+- [x] Dual-output loop: Write tests for parser, routing, module reconsideration
+- [x] Dual-output loop: Wire processFeedbackLoop into pipeline.ts POST-GPT flow (step 6.5)

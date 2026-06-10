@@ -78,6 +78,7 @@ import {
   type InputSignals,
 } from './state-analyzer';
 import { updateTriggerPatterns, recordModuleUsage } from './engine';
+import { processFeedbackLoop } from '../engine/feedback-loop';
 import {
   updateBuffer,
   createBuffer,
@@ -1976,10 +1977,56 @@ export async function processMessage(
   // POST-GPT FLOW (all local, no second GPT call)
   // ══════════════════════════════════════════════════════════════
 
+  // ── POST-GPT STEP 6.5: Feedback Loop (dual-output parsing) ──
+  // Parse engine_signals from LLM response, route to memory layers, enrich buffer.
+  const feedbackResult = processFeedbackLoop({
+    rawResponse: response,
+    bufferState: sessionBuffer,
+    currentModuleId: activeDecision ? activeDecision.dominantModule : preGPTDominantState.dominantModule,
+    crisisActive: crisisLevel >= 2,
+  });
+  // Replace response with clean user-facing text (engine_signals + clinical stripped)
+  response = feedbackResult.userText;
+  // Apply buffer enrichment (topics, persons, emotional arc)
+  if (feedbackResult.hasData) {
+    Object.assign(sessionBuffer, {
+      topicHistory: feedbackResult.updatedBuffer.topicHistory,
+      personsDiscussed: feedbackResult.updatedBuffer.personsDiscussed,
+      emotionalArc: feedbackResult.updatedBuffer.emotionalArc,
+      currentTopic: feedbackResult.updatedBuffer.currentTopic,
+      moduleSwitchCount: feedbackResult.updatedBuffer.moduleSwitchCount,
+      currentModuleMessageCount: feedbackResult.updatedBuffer.currentModuleMessageCount,
+    });
+  }
+  // Log feedback loop result
+  if (feedbackResult.signals) {
+    console.log(`[Pipeline] FEEDBACK_LOOP: persons=${feedbackResult.routing.personsToStore.length}, triggers=${feedbackResult.routing.triggersToPromote.length}, topic=${feedbackResult.updatedBuffer.currentTopic}, moduleSwitch=${feedbackResult.moduleDecision.shouldSwitch ? feedbackResult.moduleDecision.newModuleId : 'no'}`);
+  }
+
   // ── POST-GPT STEP 7: Update internal stored state ──
   // We do NOT reselect dominantState. The pre-GPT state is the decision variable.
   // We only update the buffer with the assistant response and adjust internal state.
   let updatedUserDat = { ...currentUserDat };
+
+  // 7a-pre. Apply feedback loop routing to userDat (persons → extractedEntities, triggers → triggerPatterns)
+  if (feedbackResult.routing.personsToStore.length > 0 && updatedUserDat.extractedEntities) {
+    const { mergePersons } = require('../engine/signal-router');
+    const existingPersons = updatedUserDat.extractedEntities.persons || [];
+    updatedUserDat = {
+      ...updatedUserDat,
+      extractedEntities: {
+        ...updatedUserDat.extractedEntities,
+        persons: mergePersons(existingPersons, feedbackResult.routing.personsToStore),
+      },
+    };
+  }
+  if (feedbackResult.routing.triggersToPromote.length > 0) {
+    const newTriggerLabels = feedbackResult.routing.triggersToPromote.map(t => t.label);
+    updatedUserDat = {
+      ...updatedUserDat,
+      triggerPatterns: updateTriggerPatterns(updatedUserDat.triggerPatterns || [], newTriggerLabels),
+    };
+  }
 
   // 7a. Add user message to history
   const userMsg: ChatMessage = {
@@ -2477,6 +2524,8 @@ export async function generateGreeting(
     startEmotion: backpack.intakeContext?.startEmotion ?? '',
     guidanceDepth: currentUserDat.guidanceDepth ?? 'normal',
     backpackEmpty: isBackpackEmpty,
+    extractedEntities: currentUserDat.extractedEntities ?? undefined,
+    backpackChanged: !currentUserDat.extractedEntities || (currentUserDat.extractedEntities.persons.length === 0),
   };
 
   let response: string;

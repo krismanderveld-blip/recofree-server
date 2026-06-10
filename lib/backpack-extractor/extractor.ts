@@ -13,7 +13,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { computeBackpackHash, hasBackpackChanged } from './hash';
 import type { BackpackHashState, ExtractedEntities } from './types';
-import { BACKPACK_HASH_KEY } from './types';
+import { BACKPACK_HASH_KEY, EXTRACTION_SCHEMA_VERSION as CURRENT_SCHEMA_VERSION } from './types';
 import type { Backpack } from '../ai/types';
 
 // ─── Storage Keys ──────────────────────────────────────────────
@@ -81,11 +81,16 @@ export async function checkAndExtract(
     // 2. Load previous hash
     const previousHash = await loadBackpackHash();
 
-    // 3. Check if changed
-    if (!hasBackpackChanged(currentHash, previousHash)) {
-      // No change — return cached entities
+    // 3. Check if changed OR schema version outdated
+    const cachedEntities = await loadExtractedEntities();
+    const schemaOutdated = cachedEntities && cachedEntities.schemaVersion < CURRENT_SCHEMA_VERSION;
+    if (!hasBackpackChanged(currentHash, previousHash) && !schemaOutdated) {
+      // No change and schema current — return cached entities
       console.log('[BackpackExtractor] No change detected, using cached entities');
-      return await loadExtractedEntities();
+      return cachedEntities;
+    }
+    if (schemaOutdated) {
+      console.log(`[BackpackExtractor] Schema outdated (${cachedEntities.schemaVersion} → ${CURRENT_SCHEMA_VERSION}), re-extracting...`);
     }
 
     console.log('[BackpackExtractor] Change detected, triggering extraction...');
