@@ -1157,3 +1157,6 @@
 - [x] Remove End Chat button from UI
 - [x] Add AppState listener: auto-trigger endSession when app goes to background
 - [x] Ensure fresh greeting on next app open after auto-end (reset greetingSent + preChatDone on foreground return)
+- [x] Enhancement: Timeout fallback (10s) for auto-end — lightweight local save if API too slow
+- [x] Enhancement: "Welkom terug" short greeting variant if user returns within 30 min
+- [x] Enhancement: Visual toast "Vorige sessie veilig opgeslagen" on session restore

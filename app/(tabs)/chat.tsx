@@ -112,6 +112,7 @@ function ChatScreenInner() {
   const [showEmergency, setShowEmergency] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [sessionPhase, setSessionPhase] = useState<SessionPhase>('active');
+  const [showRestoreToast, setShowRestoreToast] = useState(false);
   const flatListRef = useRef<FlatList>(null);
   const isUserScrolledUp = useRef(false);
   const prevMessagesLength = useRef(0);
@@ -294,11 +295,10 @@ function ChatScreenInner() {
       try {
         const pending = await AsyncStorage.getItem(PENDING_CLOSE_KEY);
         if (pending) {
-          Alert.alert(
-            'Previous Session',
-            `Your last session with ${companionName} wasn't fully saved. The data has been recovered and stored safely.`,
-            [{ text: 'OK', onPress: () => AsyncStorage.removeItem(PENDING_CLOSE_KEY) }]
-          );
+          // Show non-intrusive toast instead of blocking Alert
+          await AsyncStorage.removeItem(PENDING_CLOSE_KEY);
+          setShowRestoreToast(true);
+          setTimeout(() => setShowRestoreToast(false), 3500);
         }
       } catch (e) {
         console.error('Error checking pending close:', e);
@@ -319,9 +319,9 @@ function ChatScreenInner() {
         state.backpack &&
         state.userDat
       ) {
-        // Auto-end the session silently in the background
+        // Auto-end the session silently in the background with 10s timeout
         autoEndTriggeredRef.current = true;
-        try {
+        const endSessionWithTimeout = async () => {
           const userDatJson = await AsyncStorage.getItem(USERDAT_KEY);
           const currentUserDat: UserDat = userDatJson ? JSON.parse(userDatJson) : state.userDat!;
           const backpack = state.backpack!;
@@ -333,17 +333,43 @@ function ChatScreenInner() {
             if (diaryJson) diaryForSession = JSON.parse(diaryJson);
           } catch (_e) { /* ignore */ }
           const userDatWithDiary = { ...currentUserDat, _sessionDiaryEntries: diaryForSession } as any;
-          const result = await endSession(backpack, provider, userDatWithDiary);
-          await AsyncStorage.setItem(USERDAT_KEY, JSON.stringify(result.updatedUserDat));
-          await endSessionWithUserDat(result.updatedUserDat);
-          await AsyncStorage.removeItem(PENDING_CLOSE_KEY);
-          logDebugEvent('session_auto_end', {
-            trigger: 'app_background',
-            messageCount: result.updatedUserDat.chatHistory.length,
-          });
+          // Race: endSession vs 10s timeout
+          const timeoutPromise = new Promise<null>((resolve) => setTimeout(() => resolve(null), 10_000));
+          const resultOrNull = await Promise.race([
+            endSession(backpack, provider, userDatWithDiary).catch(() => null),
+            timeoutPromise,
+          ]);
+          if (resultOrNull && 'updatedUserDat' in resultOrNull) {
+            // Full session end succeeded within 10s
+            await AsyncStorage.setItem(USERDAT_KEY, JSON.stringify(resultOrNull.updatedUserDat));
+            await endSessionWithUserDat(resultOrNull.updatedUserDat);
+            await AsyncStorage.removeItem(PENDING_CLOSE_KEY);
+            logDebugEvent('session_auto_end', {
+              trigger: 'app_background',
+              messageCount: resultOrNull.updatedUserDat.chatHistory.length,
+            });
+          } else {
+            // Timeout or error: lightweight local save (pending close marker)
+            // Full analysis will happen at next session start
+            await AsyncStorage.setItem(
+              PENDING_CLOSE_KEY,
+              JSON.stringify({
+                timestamp: new Date().toISOString(),
+                messageCount: messages.length,
+                lastMessage: messages[messages.length - 1]?.content?.slice(0, 100),
+                needsFullAnalysis: true,
+              })
+            );
+            logDebugEvent('session_auto_end', {
+              trigger: 'app_background_timeout_fallback',
+              messageCount: messages.length,
+            });
+          }
+        };
+        try {
+          await endSessionWithTimeout();
         } catch (e) {
           console.error('[Chat] Auto-end session error (background):', e);
-          // Fallback: at least mark pending close so next session knows
           try {
             await AsyncStorage.setItem(
               PENDING_CLOSE_KEY,
@@ -351,6 +377,7 @@ function ChatScreenInner() {
                 timestamp: new Date().toISOString(),
                 messageCount: messages.length,
                 lastMessage: messages[messages.length - 1]?.content?.slice(0, 100),
+                needsFullAnalysis: true,
               })
             );
           } catch (_e2) { /* ignore */ }
@@ -370,6 +397,9 @@ function ChatScreenInner() {
         setShowEmergency(false);
         silenceFiredRef.current = false;
         disclosureDetectedRef.current = false;
+        // Show restore toast
+        setShowRestoreToast(true);
+        setTimeout(() => setShowRestoreToast(false), 3500);
       }
       appStateRef.current = nextState;
     });
@@ -876,6 +906,31 @@ function ChatScreenInner() {
           {/* End button removed — session auto-ends when app goes to background */}
         </View>
       </View>
+
+      {/* Restore toast */}
+      {showRestoreToast && (
+        <View style={{
+          position: 'absolute',
+          top: insets.top + 60,
+          left: 24,
+          right: 24,
+          zIndex: 100,
+          backgroundColor: 'rgba(34, 197, 94, 0.95)',
+          borderRadius: 12,
+          paddingVertical: 10,
+          paddingHorizontal: 16,
+          alignItems: 'center',
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.15,
+          shadowRadius: 4,
+          elevation: 4,
+        }}>
+          <Text style={{ color: '#fff', fontSize: 14, fontWeight: '600', textAlign: 'center' }}>
+            Vorige sessie veilig opgeslagen
+          </Text>
+        </View>
+      )}
 
       {/* Messages + Input: flex:1 container */}
       <View style={{ flex: 1 }}>
