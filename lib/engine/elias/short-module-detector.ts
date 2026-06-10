@@ -417,6 +417,17 @@ const TRANSLATION_MAP: Record<string, string[]> = {
   geldcontrole: ['financial-control', 'money-as-power', 'spending-control'],
   eigenrekening: ['financial-isolation', 'no-own-account', 'financial-dependency'],
   magniets: ['spending-control', 'economic-abuse', 'financial-control'],
+  // ── Dutch: ISO01 (isolatie en sociale terugtrekking) ──
+  niemandbelasten: ['burden-fear', 'social-withdrawal', 'isolation'],
+  schaamtepraten: ['shame-about-talking', 'social-withdrawal'],
+  geensociaal: ['no-social-contact', 'isolation', 'social-withdrawal'],
+  zieniemanmeer: ['no-social-contact', 'social-withdrawal', 'isolation'],
+  alleendragen: ['burden-fear', 'isolation', 'protective-isolation'],
+  geenenergievoormenesen: ['exhaustion-isolation', 'social-withdrawal'],
+  contactkosteveel: ['exhaustion-isolation', 'social-withdrawal'],
+  alleenzijnveiliger: ['protective-isolation', 'social-withdrawal'],
+  lastzijn: ['burden-fear', 'isolation'],
+  angstvooroordeel: ['fear-of-judgment', 'shame-about-talking'],
 };
 
 // ─── MODULE KEYWORDS: English concept words per module ───
@@ -508,6 +519,8 @@ const MODULE_KEYWORDS: Record<string, string[]> = {
   // ── Kim P4 Advanced Modules ──
   PAR01: ['parentification', 'role-reversal', 'lost-childhood', 'caretaker-child', 'emotional-parentification', 'instrumental-parentification', 'hyper-responsibility', 'childhood-burden', 'adult-too-early', 'invisible-child'],
   FIN01: ['financial-control', 'financial-dependency', 'money-as-power', 'economic-abuse', 'financial-isolation', 'spending-control', 'hidden-debt', 'financial-shame', 'money-manipulation', 'no-own-account'],
+  // ── Kim P5 Advanced Modules ──
+  ISO01: ['social-withdrawal', 'isolation', 'shame-about-talking', 'burden-fear', 'protective-isolation', 'exhaustion-isolation', 'no-social-contact', 'fear-of-judgment', 'advice-fatigue', 'painful-loneliness'],
 };
 
 // ─── DETECTOR LOGIC ───

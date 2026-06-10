@@ -140,10 +140,18 @@ export const KIM_THERAPEUTIC_MODULES: readonly KimTherapeuticModule[] = Object.f
     userType: 'kim',
   },
   {
-    id: 'FIN01', name: 'Financi\u00eble Afhankelijkheid/Controle', category: 'Advanced',
+    id: 'FIN01', name: 'Financiële Afhankelijkheid/Controle', category: 'Advanced',
     description: 'Detects financial dependency or control patterns — money as a tool of power',
     triggers: [
       { type: 'keyword', condition: 'hij beheert al het geld|ik mag niets uitgeven|financieel afhankelijk|geld als controle|ik heb geen eigen rekening|hij bepaalt wat ik koop' },
+    ],
+    userType: 'kim',
+  },
+  {
+    id: 'ISO01', name: 'Isolatie en Sociale Terugtrekking', category: 'Advanced',
+    description: 'Detects caregiver isolation and social withdrawal — validates withdrawal as understandable, supports safe reconnection on own tempo',
+    triggers: [
+      { type: 'keyword', condition: 'ik zie niemand meer|ik spreek niemand meer|ik ben geïsoleerd|ik trek me terug|ik sluit me af|ik vermijd iedereen|ik schaam me te veel om erover te praten|ik wil niemand belasten|niemand weet hoe erg het is|ik draag dit alleen|ik heb geen sociaal leven meer|mijn wereld is klein geworden|ik heb geen energie voor mensen|contact kost te veel|ik wil gewoon alleen zijn|alleen zijn voelt veiliger|ik wil geen last zijn|ik voel me een last' },
     ],
     userType: 'kim',
   },

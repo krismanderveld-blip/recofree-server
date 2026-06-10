@@ -273,6 +273,8 @@ import { runKimAdvancedP3 } from '../engine/kim/kim-advanced-modules-p3';
 import type { KimAdvancedP3Result } from '../engine/kim/kim-advanced-modules-p3';
 import { runKimAdvancedP4 } from '../engine/kim/kim-advanced-modules-p4';
 import type { KimAdvancedP4Result } from '../engine/kim/kim-advanced-modules-p4';
+import { runKimAdvancedP5 } from '../engine/kim/kim-advanced-modules-p5';
+import type { KimAdvancedP5Result } from '../engine/kim/kim-advanced-modules-p5';
 import {
   evaluateModuleMemoryRepeat,
   buildModuleMemoryPromptContext,
@@ -1586,6 +1588,39 @@ export async function processMessage(
     });
   }
 
+  // ── 5e12. Kim Advanced P5 (ISO01) ──
+  let kimAdvancedP5Result: KimAdvancedP5Result = {
+    iso01Context: null,
+    activeModule: null,
+    routeNext: 'NO_MODULE',
+  };
+  if (backpack.userType === 'kim' && !!(backpack as any).intake?.startEmotion && analysis.riskLevel !== 'critical') {
+    kimAdvancedP5Result = runKimAdvancedP5({
+      intakeCompleted: true,
+      persona: 'kim',
+      latestUserMessage: userMessage,
+      recentMessages: sessionBuffer.recentMessages.slice(-3).map(m => m.content),
+      language: (currentUserDat as any).detectedLanguage ?? 'nl',
+      detectedMarkers: [],
+      crisisProtocolStatus: analysis.riskLevel === 'critical' ? 'ACTIVE' : analysis.riskLevel === 'high' ? 'MONITOR' : 'CLEAR',
+      K06StabilizationStatus: (currentUserDat as any).k06StabilizationStatus ?? 'NOT_RUN',
+      socialWithdrawal: false,
+      shameAboutTalking: false,
+      burdenFear: false,
+      protectiveIsolation: false,
+      exhaustionIsolation: false,
+      noSocialContact: false,
+      privacyNeed: false,
+      fearOfJudgment: false,
+      adviceFatigue: false,
+      painfulLoneliness: false,
+      wantsConnectionButScared: false,
+      acuteOverload: analysis.riskLevel === 'high',
+      safetyRisk: analysis.riskLevel === 'critical' ? 0.9 : analysis.riskLevel === 'high' ? 0.7 : 0.1,
+      timestampIso: new Date().toISOString(),
+    });
+  }
+
   // ── PRE-GPT STEP 6: Build ChatContext + ONE GPT call ──
   let crisisLevel = 0;
   let showEmergency = false;
@@ -1884,6 +1919,7 @@ export async function processMessage(
     rnw01Context: kimAdvancedP3Result.rnw01Context || undefined,
     par01Context: kimAdvancedP4Result.par01Context || undefined,
     fin01Context: kimAdvancedP4Result.fin01Context || undefined,
+    iso01Context: kimAdvancedP5Result.iso01Context || undefined,
     // LANGUAGE_RECOVERY: inject recovery directive if detected
     languageRecovery: languageRecoveryResult.detected ? {
       detected: true,
@@ -2134,6 +2170,7 @@ export async function processMessage(
       { step: '5e9. Kim P2 (BEDR01/VETR01/GASL01)', status: kimAdvancedP2Result.activeModule ? 'passed' : 'skipped', reason: kimAdvancedP2Result.activeModule ? `kim|module=${kimAdvancedP2Result.activeModule}` : 'no Kim P2 activation' },
       { step: '5e10. Kim P3 (CDP01/RNW01)', status: kimAdvancedP3Result.activeModule ? 'passed' : 'skipped', reason: kimAdvancedP3Result.activeModule ? `kim|module=${kimAdvancedP3Result.activeModule}` : 'no Kim P3 activation' },
       { step: '5e11. Kim P4 (PAR01/FIN01)', status: kimAdvancedP4Result.activeModule ? 'passed' : 'skipped', reason: kimAdvancedP4Result.activeModule ? `kim|module=${kimAdvancedP4Result.activeModule}` : 'no Kim P4 activation' },
+      { step: '5e12. Kim P5 (ISO01)', status: kimAdvancedP5Result.activeModule ? 'passed' : 'skipped', reason: kimAdvancedP5Result.activeModule ? `kim|module=${kimAdvancedP5Result.activeModule}` : 'no Kim P5 activation' },
       { step: '6a. Zone decision', status: elisDecision ? 'passed' : 'skipped', reason: elisDecision ? `zone=${elisDecision.zone.computed.label}` : 'kim user' },
       { step: '6b. Engine directive', status: engineDirective ? 'passed' : 'skipped', reason: engineDirective ? `engine=${engineDirective.engine}` : 'none' },
       { step: '6c. Intervention', status: interventionContinuity ? 'passed' : 'skipped', reason: interventionContinuity ? `type=${interventionContinuity.lastInterventionType}` : 'not active' },
@@ -2258,6 +2295,9 @@ export async function processMessage(
   if (kimAdvancedP4Result.activeModule) {
     const ctx = kimAdvancedP4Result.par01Context || kimAdvancedP4Result.fin01Context;
     moduleActivations.push({ id: kimAdvancedP4Result.activeModule, confidence: (ctx as any)?.confidence ?? 0.8, mode: (ctx as any)?.mode ?? 'active' });
+  }
+  if (kimAdvancedP5Result.activeModule) {
+    moduleActivations.push({ id: kimAdvancedP5Result.activeModule, confidence: 0.8, mode: 'active' });
   }
   const k06Status = (currentUserDat as any).k06StabilizationStatus ?? 'NOT_RUN';
   const crisisProtocolActive = analysis.riskLevel === 'critical' || crisisLevel >= 2;
