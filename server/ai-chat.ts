@@ -917,19 +917,45 @@ function buildSystemPrompt(input: ChatRequestInput): string {
   const name = input.userName;
 
   // ── Dynamic Module List (from backend catalogs) ──
-  const eliasModules = ELIAS_THERAPEUTIC_MODULES.map(m => `- ${m.name} (${m.description})`).join('\n');
+  const eliasModules = ELIAS_THERAPEUTIC_MODULES.map(m => `- ${m.id}: ${m.name} — ${m.description}`).join('\n');
   const eliasExtra = [
-    '- Shadow Work (recognizing hidden patterns driving behavior)',
-    '- STOA Sessions (15 Stoic reflections for specific recovery moments)',
-    '- Pattern Recognition (recognizing emotional modes and repeating life patterns)',
-    '- DBT distress tolerance (crisis stabilization)',
-    '- MBT mentalization (understanding what happens inside before interpreting behavior)',
+    '- SW01: Shadow Work — herkenning van verborgen patronen die gedrag aansturen',
+    '- STOA: Stoïcijnse Sessies — 15 reflecties voor specifieke herstelmomenten',
+    '- SchemaMode: Patroonherkenning — emotionele modi en herhalende levenspatronen',
+    '- DBT/DGT: Distress Tolerance — crisisstabilisatie en emotieregulatie',
+    '- MBT: Mentalisatie — begrijpen wat er van binnen gebeurt voor je reageert',
+    '- ACT: Acceptance & Commitment — psychologische flexibiliteit en waardenactie',
+    '- CGT/CBT: Cognitieve Gedragstherapie — gedachtepatronen herkennen en bijsturen',
+    '- MI01: Motivational Interviewing — ambivalentie verkennen en verandermotivatie',
+    '- EKT01: Emotionele Kerntherapie — fasering (verheldering, spiegel, contract, exit)',
+    '- VERGV01: Vergevingsmodule — schuld en vergeving verwerken',
+    '- IGH01: Intergenerationeel Herstel — generatiepatronen doorbreken',
+    '- AGC01: Agency-check — externe vs interne motivatie herkennen',
+    '- HWK01: Herstelwaardigheid-kern — fundamenteel zelfwaardegevoel herstellen',
+    '- FALE01: Falen & Herval — actief herval verwerken zonder schaamtespiraal',
+    '- VERG01: Zelfvergeving — schuldverwerking na terugval',
+    '- ROUW01: Rouw & Verlies — rouwverwerking in herstelcontext',
+    '- IDEN01: Identiteitsverwarring — wie ben ik zonder de verslaving',
+    '- ZINK01: Zingeving & Leegte — existentieel vacuüm na stoppen',
+    '- TERV01: Terugvalpreventie Verdieping — na PAARS-sessie stabilisatie',
+    '- MI02: Diepe Ambivalentie — voortbouwend op MI01',
+    '- SLAAP01: Slaap & Herstel — slaapproblemen bij verslaving',
   ].join('\n');
   const eliasShortModules = getEliasShortModuleList();
-  const kimModules = KIM_MODULE_CATALOG.map(m => `- ${m.name} (${m.description})`).join('\n');
+  const kimModules = KIM_MODULE_CATALOG.map(m => `- ${m.id}: ${m.name} — ${m.description}`).join('\n');
+  const kimExtra = [
+    '- BEDR01: Ontdekking van Bedrog — stabilisatie na ontdekking van verraad',
+    '- VETR01: Vertrouwensherstel — vertrouwen opbouwen na bedrog',
+    '- GASL01: Gaslighting Herkenning — realiteitsverankering bij manipulatie',
+    '- CDP01: Codependentie Detectie — zelfverlies en afhankelijkheidspatronen',
+    '- RNW01: Rouw Naaste — rouw om wie de persoon was vóór de verslaving',
+    '- PAR01: Parentificatie — rolverwarring en verantwoordelijkheidsoverbelasting',
+    '- FIN01: Financiële Afhankelijkheid — financiële controle en machtsongelijkheid',
+    '- ISO01: Isolatie & Sociale Terugtrekking — schaamte-isolatie en micro-reconnectie',
+  ].join('\n');
   const dynamicModuleList = isElias
-    ? `YOUR ACTUAL MODULES AND CAPABILITIES:\n${eliasModules}\n${eliasExtra}\n\nSHORT MODULES (M05-M85) — thematic deep-dive modules:\n${eliasShortModules}`
-    : `YOUR ACTUAL MODULES AND CAPABILITIES:\n${kimModules}`;
+    ? `YOUR ACTUAL MODULES AND CAPABILITIES (use EXACT codes when listing):\n${eliasModules}\n${eliasExtra}\n\nSHORT MODULES (M05-M85) — thematic deep-dive modules:\n${eliasShortModules}`
+    : `YOUR ACTUAL MODULES AND CAPABILITIES (use EXACT codes when listing):\n${kimModules}\n${kimExtra}`;
 
   // ══════════════════════════════════════════════════════════════
   // CORE IDENTITY — Based on elias.dat V19 / kim.dat V1

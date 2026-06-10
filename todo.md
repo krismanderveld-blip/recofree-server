@@ -1198,3 +1198,6 @@
 - [x] Dual-output loop: Write tests for parser, routing, module reconsideration
 - [x] Dual-output loop: Wire processFeedbackLoop into pipeline.ts POST-GPT flow (step 6.5)
 - [x] Fix clinical tag stripped by feedback loop — preserve <clinical> block in response for chat UI parsing
+- [x] Fix clinical dropdown not appearing: remove suppression of fallback annotations in parseClinicalTag
+- [x] Fix module hallucination: add exact module codes (E01-E08, SW01, STOA, VERGV01, etc.) to dynamicModuleList in server prompt
+- [x] Add Kim advanced modules (BEDR01, VETR01, GASL01, CDP01, RNW01, PAR01, FIN01, ISO01) to Kim dynamicModuleList

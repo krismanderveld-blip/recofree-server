@@ -1268,10 +1268,7 @@ function parseClinicalTag(content: string, isUser: boolean): { visibleContent: s
   if (!match) return { visibleContent: fixed, clinicalAnnotation: null };
   const visibleContent = fixed.replace(/<clinical>[\s\S]*?<\/clinical>/, '').trim();
   const annotation = match[1].trim();
-  // Suppress fallback annotations when model did not comply — no useful info for clinician
-  if (annotation.includes('[not annotated') || annotation.includes('model did not comply')) {
-    return { visibleContent, clinicalAnnotation: null };
-  }
+  // Always show clinical annotations (even fallback) — clinician needs to see compliance status
   return { visibleContent, clinicalAnnotation: annotation };
 }
 
