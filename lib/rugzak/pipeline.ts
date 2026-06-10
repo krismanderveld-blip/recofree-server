@@ -1933,6 +1933,9 @@ export async function processMessage(
     par01Context: kimAdvancedP4Result.par01Context || undefined,
     fin01Context: kimAdvancedP4Result.fin01Context || undefined,
     iso01Context: kimAdvancedP5Result.iso01Context || undefined,
+    // Backpack entity extraction: send structured entities instead of full backpack when unchanged
+    extractedEntities: currentUserDat.extractedEntities ?? undefined,
+    backpackChanged: !currentUserDat.extractedEntities || (currentUserDat.extractedEntities.persons.length === 0),
     // LANGUAGE_RECOVERY: inject recovery directive if detected
     languageRecovery: languageRecoveryResult.detected ? {
       detected: true,

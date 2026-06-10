@@ -215,6 +215,10 @@ export interface GPTPayload {
     }>;
   };
   diaryEntries?: Array<{ content: string; moodTag: string; timestamp: string }>;
+  /** Structured entities extracted from backpack (persons, events, patterns, contexts). Sent instead of full backpack when backpack hasn't changed. */
+  extractedEntities?: import('../backpack-extractor/types').ExtractedEntities;
+  /** Whether backpack content changed since last extraction (triggers full backpack resend) */
+  backpackChanged?: boolean;
 }
 
 // ─── Builder ───────────────────────────────────────────────────
@@ -316,6 +320,10 @@ export interface PayloadBuilderInput {
   par01Context?: string;
   fin01Context?: string;
   iso01Context?: string;
+  /** Structured entities extracted from backpack (if available, sent instead of full backpack) */
+  extractedEntities?: import('../backpack-extractor/types').ExtractedEntities;
+  /** Whether backpack changed since last extraction (forces full backpack resend) */
+  backpackChanged?: boolean;
 }
 
 // ─── Conversation History Optimisation (Patch N Step 5) ─────────────────────
@@ -708,27 +716,53 @@ export function buildGPTPayload(input: PayloadBuilderInput): GPTPayload {
     };
   }
 
-  // ── Session start: add full backpack + userDat + diary ──
+  // ── Session start: add backpack context + userDat + diary ──
+  // Strategy: send extractedEntities (compact) unless backpack changed since last extraction
   if (isSessionStart) {
-    payload.backpack = {
-      naam: backpack.naam || '',
-      userType: backpack.userType || 'elias',
-      lifeStory: (backpack.sections || []).map((s) => ({
-        id: s.id,
-        label: s.label,
-        ageRange: s.ageRange,
-        content: s.content,
-      })),
-      ...(backpack.kimBackpack ? { kimBackpack: backpack.kimBackpack } : {}),
-      intakeContext: {
-        stageOfChange: backpack.intakeContext?.stageOfChange || ELIAS_DEFAULT_STAGE,
-        startEmotion: backpack.intakeContext?.startEmotion || '',
-        urgency: backpack.intakeContext?.urgency || 'midden',
-        initialContext: backpack.intakeContext?.initialContext || '',
-        intakeDate: backpack.intakeContext?.intakeDate || '',
-      },
-      createdAt: backpack.createdAt || new Date().toISOString(),
-    };
+    const hasEntities = input.extractedEntities && input.extractedEntities.persons.length > 0;
+    const shouldSendFullBackpack = input.backpackChanged || !hasEntities;
+
+    if (shouldSendFullBackpack) {
+      // Full backpack: either first time or content changed since last extraction
+      payload.backpack = {
+        naam: backpack.naam || '',
+        userType: backpack.userType || 'elias',
+        lifeStory: (backpack.sections || []).map((s) => ({
+          id: s.id,
+          label: s.label,
+          ageRange: s.ageRange,
+          content: s.content,
+        })),
+        ...(backpack.kimBackpack ? { kimBackpack: backpack.kimBackpack } : {}),
+        intakeContext: {
+          stageOfChange: backpack.intakeContext?.stageOfChange || ELIAS_DEFAULT_STAGE,
+          startEmotion: backpack.intakeContext?.startEmotion || '',
+          urgency: backpack.intakeContext?.urgency || 'midden',
+          initialContext: backpack.intakeContext?.initialContext || '',
+          intakeDate: backpack.intakeContext?.intakeDate || '',
+        },
+        createdAt: backpack.createdAt || new Date().toISOString(),
+      };
+      payload.backpackChanged = true;
+    } else {
+      // Compact mode: send only extractedEntities (structured memory)
+      payload.extractedEntities = input.extractedEntities;
+      payload.backpackChanged = false;
+      // Still send minimal backpack metadata for name/type/intake reference
+      payload.backpack = {
+        naam: backpack.naam || '',
+        userType: backpack.userType || 'elias',
+        lifeStory: [], // Empty — entities replace this
+        intakeContext: {
+          stageOfChange: backpack.intakeContext?.stageOfChange || ELIAS_DEFAULT_STAGE,
+          startEmotion: backpack.intakeContext?.startEmotion || '',
+          urgency: backpack.intakeContext?.urgency || 'midden',
+          initialContext: backpack.intakeContext?.initialContext || '',
+          intakeDate: backpack.intakeContext?.intakeDate || '',
+        },
+        createdAt: backpack.createdAt || new Date().toISOString(),
+      };
+    }
 
     payload.userDat = {
       totalSessions: userDat.totalSessions || 0,

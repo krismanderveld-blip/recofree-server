@@ -17,6 +17,8 @@ import {
   startNewSession,
 } from './rugzak/engine';
 import { sanitizeSliders } from './engine/shared/slider-sanitize';
+import { checkAndExtract, saveExtractedEntities } from './backpack-extractor/extractor';
+import { callExtractionEndpoint } from './backpack-extractor/client';
 
 // ─── State Types ────────────────────────────────────────────────
 
@@ -381,6 +383,21 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     })();
   }, []);
 
+  // ── Backpack Entity Extraction (fire-and-forget on content change) ──
+
+  const triggerExtractionIfNeeded = (updatedBackpack: Backpack) => {
+    // Non-blocking: run extraction in background, persist result to userDat
+    checkAndExtract(updatedBackpack, callExtractionEndpoint).then((entities) => {
+      if (entities && state.userDat) {
+        const updatedUserDat = { ...state.userDat, extractedEntities: entities };
+        dispatch({ type: 'UPDATE_USERDAT', payload: updatedUserDat });
+        persistUserDat(updatedUserDat);
+      }
+    }).catch((err) => {
+      console.warn('[UserContext] Extraction failed (non-blocking):', err);
+    });
+  };
+
   // ── Intake ──
 
   const completeIntake = useCallback(async (data: IntakeData) => {
@@ -467,6 +484,8 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     };
     dispatch({ type: 'UPDATE_BACKPACK', payload: updatedBackpack });
     await persistBackpack(updatedBackpack);
+    // Fire-and-forget: trigger extraction if content changed
+    triggerExtractionIfNeeded(updatedBackpack);
   }, [state.backpack]);
 
   // ── Kim Backpack Section — USER ACTION ONLY ──
@@ -489,6 +508,8 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     };
     dispatch({ type: 'UPDATE_BACKPACK', payload: updatedBackpack });
     await persistBackpack(updatedBackpack);
+    // Fire-and-forget: trigger extraction if content changed
+    triggerExtractionIfNeeded(updatedBackpack);
   }, [state.backpack]);
 
   // ── Stage of Change (user-editable in Backpack screen) ──

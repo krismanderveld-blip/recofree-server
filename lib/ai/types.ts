@@ -533,6 +533,8 @@ export interface UserDat {
   consecutiveSessionsWithoutEngagement: number;
   /** MODULE_MEMORY_CROSS_SESSION: persona-separated cross-session module dominance tracking (local within-device memory) */
   moduleMemory?: import('../engine/shared/module-memory-cross-session').ModuleMemoryState;
+  /** Structured entities extracted from backpack via LLM (persons, events, patterns, contexts). Updated only when backpack content changes. */
+  extractedEntities?: import('../backpack-extractor/types').ExtractedEntities;
 }
 
 /** A record of a completed session's analysis */
@@ -1040,6 +1042,10 @@ export interface ChatContext {
   par01Context?: string;
   fin01Context?: string;
   iso01Context?: string;
+  /** Structured entities extracted from backpack (persons, events, patterns, contexts). Sent instead of full backpack when unchanged. */
+  extractedEntities?: import('../backpack-extractor/types').ExtractedEntities;
+  /** Whether backpack content changed since last extraction (forces full backpack resend) */
+  backpackChanged?: boolean;
   /** Whether the user's backpack is empty (no sections filled) — used for greeting tone adaptation */
   backpackEmpty?: boolean;
   /** LOOPBLOCKER: cross-session repeating pattern directive for GPT (injected by pipeline) */

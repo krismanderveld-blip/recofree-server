@@ -4,6 +4,7 @@ import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router } from "./_core/trpc";
 import { chatInputSchema, generateAIResponse } from "./ai-chat";
+import { extractionInputSchema, extractEntitiesFromBackpack } from "./backpack-extractor";
 
 export const appRouter = router({
   // if you need to use socket.io, read and register route in server/_core/index.ts, all api should start with '/api/' so that the gateway can route correctly
@@ -36,6 +37,33 @@ export const appRouter = router({
           throw new TRPCError({
             code: 'INTERNAL_SERVER_ERROR',
             message: `[${input.userType}] ${errorMessage}`,
+          });
+        }
+      }),
+
+    // Backpack Entity Extraction — called ONLY when backpack content changed
+    extractEntities: publicProcedure
+      .input(extractionInputSchema)
+      .mutation(async ({ input }) => {
+        console.log('[ROUTER] extractEntities for:', input.userName, input.userType);
+        try {
+          const entities = await extractEntitiesFromBackpack(
+            {
+              userName: input.userName,
+              userType: input.userType,
+              sections: input.sections,
+              kimSections: input.kimSections,
+              intakeContext: input.intakeContext,
+            },
+            input.sourceHash,
+          );
+          return { success: true, entities };
+        } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          console.error(`[ROUTER ERROR] extractEntities:`, errorMessage);
+          throw new TRPCError({
+            code: 'INTERNAL_SERVER_ERROR',
+            message: errorMessage,
           });
         }
       }),

@@ -206,6 +206,19 @@ interface ChatRequestInput {
     score: number;
     memory: string;
   }>;
+
+  // Backpack Entity Extraction: structured memory (replaces full backpack text when unchanged)
+  extractedEntities?: {
+    persons: Array<{ name: string; relationship: string; relationshipNL: string; age: string | null; livingSituation: string | null; emotionalValence: string; context: string; sourceSection: string }>;
+    events: Array<{ description: string; type: string; timePeriod: string | null; peopleInvolved: string[]; emotionalImpact: string; isTriggerSource: boolean; sourceSection: string }>;
+    patterns: Array<{ description: string; type: string; schemaHypothesis: string | null; frequency: string; peopleInvolved: string[]; sourceSection: string }>;
+    contexts: Array<{ description: string; type: string; relevance: string; sourceSection: string }>;
+    extractedAt: string;
+    sourceHash: string;
+    schemaVersion: number;
+  };
+  /** Whether backpack content changed since last extraction (forces full backpack resend) */
+  backpackChanged?: boolean;
 }
 
 // ─── Server-side Session Cache ───────────────────────────────────
@@ -229,6 +242,10 @@ interface SessionCache {
   triggerPatterns: Array<{ trigger: string; count: number }>;
   messageCount: number; // Track messages for conditional injection
   guidanceDepth: 'light' | 'normal' | 'deep';
+  // Structured entities from backpack extraction (replaces full backpack text when available)
+  structuredMemory: string;
+  // Whether we have structured entities (vs. only text-based extraction)
+  hasStructuredEntities: boolean;
 }
 
 // Single-user cache: one active session per server instance (not multi-user safe)
@@ -236,6 +253,16 @@ interface SessionCache {
 let sessionCache: SessionCache | null = null;
 
 function cacheSessionInit(input: ChatRequestInput): void {
+  // Build structured memory from extractedEntities if available (compact, no full backpack needed)
+  let structuredMemory = '';
+  let hasStructuredEntities = false;
+
+  if (input.extractedEntities && input.extractedEntities.persons.length > 0) {
+    hasStructuredEntities = true;
+    structuredMemory = buildStructuredMemoryBlock(input.extractedEntities);
+    console.log(`[AI Chat] Using structured entities: ${input.extractedEntities.persons.length} persons, ${input.extractedEntities.events.length} events, ${input.extractedEntities.patterns.length} patterns`);
+  }
+
   sessionCache = {
     userName: input.userName,
     userType: input.userType,
@@ -248,9 +275,11 @@ function cacheSessionInit(input: ChatRequestInput): void {
     relationshipMap: input.backpack
       ? extractRelationshipMap(input.backpack.lifeStory, input.backpack.intakeContext.initialContext)
       : "",
-    lifeStorySummary: input.backpack
-      ? buildCompactLifeStorySummary(input.backpack.lifeStory, input.backpack.intakeContext.initialContext, input.userName, input.backpack.kimBackpack)
-      : "",
+    lifeStorySummary: hasStructuredEntities
+      ? structuredMemory  // Use structured entities instead of text summary
+      : (input.backpack
+        ? buildCompactLifeStorySummary(input.backpack.lifeStory, input.backpack.intakeContext.initialContext, input.userName, input.backpack.kimBackpack)
+        : ""),
     totalSessions: input.userDat?.totalSessions ?? 0,
     triggerPatterns: (input.userDat?.triggerPatterns ?? []).map(tp => ({
       trigger: tp.trigger,
@@ -258,8 +287,10 @@ function cacheSessionInit(input: ChatRequestInput): void {
     })),
     messageCount: 0,
     guidanceDepth: input.guidanceDepth ?? 'normal',
+    structuredMemory,
+    hasStructuredEntities,
   };
-  console.log("[AI Chat] Session cache created for:", input.userName);
+  console.log("[AI Chat] Session cache created for:", input.userName, hasStructuredEntities ? '(structured entities)' : '(text-based)');
 }
 
 function incrementMessageCount(): void {
@@ -456,6 +487,68 @@ export const chatInputSchema = z.object({
     memory: z.string(),
   })).optional(),
 });
+
+// ─── Structured Memory Block Builder (from extractedEntities) ──────────────
+
+/**
+ * Converts extractedEntities (from LLM backpack extraction) into a compact
+ * structured text block for the system prompt. Replaces the full backpack text
+ * with a much more efficient representation.
+ */
+function buildStructuredMemoryBlock(entities: NonNullable<ChatRequestInput['extractedEntities']>): string {
+  const lines: string[] = [];
+
+  // Persons
+  if (entities.persons.length > 0) {
+    lines.push('[PERSONEN IN HET LEVEN VAN DE GEBRUIKER]');
+    for (const p of entities.persons) {
+      let line = `- ${p.name} (${p.relationshipNL})`;
+      if (p.age) line += `, ${p.age} jaar`;
+      if (p.livingSituation) line += ` — ${p.livingSituation}`;
+      line += ` [${p.emotionalValence}]`;
+      if (p.context) line += `: ${p.context}`;
+      lines.push(line);
+    }
+    lines.push('');
+  }
+
+  // Events
+  if (entities.events.length > 0) {
+    lines.push('[BELANGRIJKE GEBEURTENISSEN]');
+    for (const e of entities.events) {
+      let line = `- [${e.type.toUpperCase()}]`;
+      if (e.timePeriod) line += ` (${e.timePeriod})`;
+      line += ` ${e.description}`;
+      if (e.peopleInvolved.length > 0) line += ` (betrokken: ${e.peopleInvolved.join(', ')})`;
+      if (e.isTriggerSource) line += ' ⚠️ TRIGGER';
+      lines.push(line);
+    }
+    lines.push('');
+  }
+
+  // Patterns
+  if (entities.patterns.length > 0) {
+    lines.push('[PATRONEN]');
+    for (const p of entities.patterns) {
+      let line = `- [${p.type.toUpperCase()}/${p.frequency}] ${p.description}`;
+      if (p.schemaHypothesis) line += ` (schema: ${p.schemaHypothesis})`;
+      if (p.peopleInvolved.length > 0) line += ` (met: ${p.peopleInvolved.join(', ')})`;
+      lines.push(line);
+    }
+    lines.push('');
+  }
+
+  // Contexts
+  if (entities.contexts.length > 0) {
+    lines.push('[CONTEXT]');
+    for (const c of entities.contexts) {
+      lines.push(`- [${c.type.toUpperCase()}] ${c.description} — ${c.relevance}`);
+    }
+    lines.push('');
+  }
+
+  return lines.join('\n');
+}
 
 // ─── Relationship Map Extractor ──────────────────────────────────
 
@@ -1190,11 +1283,14 @@ Keep it short (3-5 sentences max). Do NOT ask new questions.`;
     console.log(`[AI Chat] Follow-up selective injection: [${included.join(', ') || 'none'}]`);
 
     // Task 1: Gate context injection using relevanceScores (threshold 0.3)
-    // If contextSummary is available (from SignalEngine), use it instead of full lifeStorySummary.
-    // If backpackRelevance < 0.3, skip lifeStorySummary entirely (saves tokens).
+    // Priority: structuredMemory > contextSummary > lifeStorySummary
+    // If backpackRelevance < 0.3, skip entirely (token savings).
     const scores = input.relevanceScores;
     let lifeStoryContext = '';
-    if (input.contextSummary) {
+    if (sessionCache?.hasStructuredEntities && sessionCache.structuredMemory) {
+      // Structured entities available — always use (compact, high-value)
+      lifeStoryContext = `\n─── STRUCTURED MEMORY (extracted from rugzak) ───\n${sessionCache.structuredMemory}\n─── END STRUCTURED MEMORY ───`;
+    } else if (input.contextSummary) {
       // Task 2: Use compressed context summary from SignalEngine
       lifeStoryContext = `\n─── CONTEXT SUMMARY (live-compressed) ───\n${input.contextSummary}\n─── END CONTEXT SUMMARY ───`;
     } else if (!scores || scores.backpackRelevance >= 0.3) {

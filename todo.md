@@ -1181,3 +1181,10 @@
 - [x] Add ISO01 to clinical mode therapy disclosure (dr peuskens)
 - [x] Implement needsFullAnalysis handling at session start (run full analysis on previous chatHistory before new greeting)
 - [x] Enrich ISO01 pipeline signals from short-module-detector output (connect socialWithdrawal to actual keyword matches)
+- [x] Build BackpackEntityExtractor: types (ExtractedEntities with persons, events, patterns, locations)
+- [x] Build BackpackEntityExtractor: server-side LLM extraction endpoint (tRPC procedure)
+- [x] Add backpack section hashing + change detection (only extract on actual content change)
+- [x] Add extractedEntities field to UserDat + persist via AsyncStorage
+- [x] Update pipeline: send extractedEntities instead of full backpack on every session, full backpack only when hash changed
+- [x] Update server system prompt to use extractedEntities as structured memory (replace relationship instruction prompt)
+- [x] Write tests for BackpackEntityExtractor (extraction, hashing, change detection)

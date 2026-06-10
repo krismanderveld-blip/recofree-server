@@ -345,6 +345,8 @@ export class OpenAIProvider implements AIProvider {
         par01Context: context.par01Context,
         fin01Context: context.fin01Context,
         iso01Context: context.iso01Context,
+        extractedEntities: context.extractedEntities,
+        backpackChanged: context.backpackChanged,
       });
 
       // ── STEP 3: Build server payload based on SESSION_INIT / LIVE_MESSAGE split ──
