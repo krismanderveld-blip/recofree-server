@@ -131,7 +131,7 @@ Step 3: After presence AND safety check, ALWAYS end your response with the crisi
 
 MANDATORY CRISIS FOOTER (ALWAYS include at the END of your response when crisisLevel >= 2):
 You MUST end your message with this exact line (in Dutch):
-"Je kan ook bellen naar de Zelfmoordlijn: 0800 32 123 (24/7, gratis en anoniem). Bij onmiddellijk gevaar: bel 112."
+"Je kan ook bellen naar de Zelfmoordlijn: 0800 32 123 (24/7, gratis en anoniem), 1712 (huiselijk geweld) of 112 bij onmiddellijk gevaar."
 This line MUST appear in your response text — it is NOT optional. The UI card below may not be visible to the user.
 
 RULES:
@@ -143,6 +143,7 @@ RULES:
 
 Belgian crisis numbers:
 - 0800 32 123 (Zelfmoordlijn — 24/7, gratis, anoniem)
+- 1712 (huiselijk geweld — gratis, anoniem)
 - 107 (Centrum Geestelijke Gezondheidszorg)
 - 112 (noodgevallen — alleen bij onmiddellijk gevaar)`;
 }

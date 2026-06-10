@@ -1835,7 +1835,7 @@ export async function generateAIResponse(
     console.error("[AI Chat] OpenAI API network error:", error);
     if (crisisLevel >= 1) {
       return {
-        response: 'Ik kan je nu even niet bereiken door een verbindingsprobleem. Als je je niet veilig voelt, bel de Zelfmoordlijn: 0800 32 123 (24/7, gratis, anoniem) of 112 bij onmiddellijk gevaar. Je hoeft dit niet alleen te dragen.',
+        response: 'Ik kan je nu even niet bereiken door een verbindingsprobleem. Als je je niet veilig voelt, bel de Zelfmoordlijn: 0800 32 123 (24/7, gratis, anoniem), 1712 (huiselijk geweld) of 112 bij onmiddellijk gevaar. Je hoeft dit niet alleen te dragen.',
         advisoryEmotion: input.detectedEmotion,
         advisoryConfidence: 0,
         tokenUsage: undefined,
@@ -1850,7 +1850,7 @@ export async function generateAIResponse(
     console.error("[AI Chat] OpenAI API error:", openaiResponse.status, errorText);
     if (crisisLevel >= 1) {
       return {
-        response: 'Ik kan je nu even niet bereiken door een verbindingsprobleem. Als je je niet veilig voelt, bel de Zelfmoordlijn: 0800 32 123 (24/7, gratis, anoniem) of 112 bij onmiddellijk gevaar. Je hoeft dit niet alleen te dragen.',
+        response: 'Ik kan je nu even niet bereiken door een verbindingsprobleem. Als je je niet veilig voelt, bel de Zelfmoordlijn: 0800 32 123 (24/7, gratis, anoniem), 1712 (huiselijk geweld) of 112 bij onmiddellijk gevaar. Je hoeft dit niet alleen te dragen.',
         advisoryEmotion: input.detectedEmotion,
         advisoryConfidence: 0,
         tokenUsage: undefined,
@@ -1888,7 +1888,7 @@ export async function generateAIResponse(
   let finalResponse = responseText;
   if (crisisLevel >= 2 && !finalResponse.includes('0800 32 123')) {
     console.warn('[AI Chat] CRISIS ENFORCEMENT: GPT omitted crisis number — force-appending');
-    finalResponse += '\n\nJe kan ook bellen naar de Zelfmoordlijn: 0800 32 123 (24/7, gratis en anoniem). Bij onmiddellijk gevaar: bel 112.';
+    finalResponse += '\n\nJe kan ook bellen naar de Zelfmoordlijn: 0800 32 123 (24/7, gratis en anoniem), 1712 (huiselijk geweld) of 112 bij onmiddellijk gevaar.';
   }
 
   // ─── CLINICAL MODE FALLBACK ─────────────────────────────────

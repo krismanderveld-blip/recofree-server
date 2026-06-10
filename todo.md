@@ -1172,3 +1172,4 @@
 - [x] Wire P4 into pipeline (step 5e11), payload builder, ChatContext, OpenAI provider
 - [x] Register P4 modules in catalog and keyword detector
 - [x] Build module-activation dashboard in clinical mode (real-time active modules, confidence scores, K06 status)
+- [x] Add 1712 (huiselijk geweld) to crisis footer alongside 0800 32 123 and 112

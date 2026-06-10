@@ -1162,6 +1162,13 @@ function ChatScreenInner() {
           {' '}(24/7, gratis, anoniem) |{' '}
           <Text
             style={{ color: '#E53935', fontWeight: 'bold', textDecorationLine: 'underline' }}
+            onPress={() => Linking.openURL('tel:1712')}
+          >
+            1712
+          </Text>
+          {' '}(huiselijk geweld) |{' '}
+          <Text
+            style={{ color: '#E53935', fontWeight: 'bold', textDecorationLine: 'underline' }}
             onPress={() => Linking.openURL('tel:112')}
           >
             Noodgevallen: 112
