@@ -115,6 +115,22 @@ export const KIM_THERAPEUTIC_MODULES: readonly KimTherapeuticModule[] = Object.f
     ],
     userType: 'kim',
   },
+  {
+    id: 'CDP01', name: 'Codependentie Patroon Detectie', category: 'Advanced',
+    description: 'Mirrors self-loss and codependency-like patterns without diagnosis or forced change',
+    triggers: [
+      { type: 'keyword', condition: 'zonder hem besta ik niet|ik besta niet zonder|ik leef voor hem|ik leef voor haar|als het goed gaat met hem|ik moet hem redden|ik voel me egoistisch' },
+    ],
+    userType: 'kim',
+  },
+  {
+    id: 'RNW01', name: 'Rouw Naaste: Wie Ze Was', category: 'Advanced',
+    description: 'Validates ambiguous grief for who the loved one was before addiction',
+    triggers: [
+      { type: 'keyword', condition: 'ik mis wie hij was|ik mis de oude hem|hij is er nog maar toch weg|ik rouw om iemand die nog leeft|ik mis ons van vroeger' },
+    ],
+    userType: 'kim',
+  },
 ]);
 
 // ─── Kim Module Selection (from state-analyzer.ts) ──────────────

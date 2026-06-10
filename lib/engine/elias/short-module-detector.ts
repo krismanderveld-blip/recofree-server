@@ -393,6 +393,20 @@ const TRANSLATION_MAP: Record<string, string[]> = {
   realiteit: ['reality', 'reality-distortion', 'reality-anchoring'],
   inbeelding: ['imagining', 'self-doubt', 'crazy-making'],
   overdrijven: ['exaggerating', 'minimizing', 'gaslighting'],
+  // ── Dutch: CDP01 (codependentie patroon) ──
+  codependent: ['codependency', 'self-loss', 'relational-fusion'],
+  zelfverlies: ['self-loss', 'identity-collapse', 'codependency'],
+  versmelting: ['relational-fusion', 'codependency', 'identity-collapse'],
+  redden: ['rescue-compulsion', 'over-responsibility', 'codependency'],
+  egoistisch: ['self-care-guilt', 'codependency', 'over-responsibility'],
+  meegaan: ['emotional-dependency', 'codependency', 'relational-fusion'],
+  // ── Dutch: RNW01 (rouw naaste) ──
+  // Note: 'rouw' (line 65), 'rouwen' (line 337), 'vroeger' (line 83) already exist—extend via MODULE_KEYWORDS match
+  rouwnaaste: ['ambiguous-grief', 'grief-living-person', 'miss-old-person'],
+  levenderouw: ['ambiguous-grief', 'grief-living-person', 'who-they-were'],
+  herkennen: ['person-before-addiction', 'miss-old-person', 'who-they-were'],
+  acceptatiedruk: ['forced-acceptance', 'acceptance-pressure', 'ambiguous-grief'],
+  terugkomen: ['false-hope', 'person-before-addiction', 'who-they-were'],
 };
 
 // ─── MODULE KEYWORDS: English concept words per module ───
@@ -478,6 +492,9 @@ const MODULE_KEYWORDS: Record<string, string[]> = {
   BEDR01: ['betrayal-discovery', 'partner-betrayal', 'infidelity', 'cheated', 'acute-shock', 'body-shock', 'discovery-just-happened', 'body-dysregulation', 'shaking', 'frozen', 'nauseous', 'shocked'],
   VETR01: ['trust-repair', 'rebuilding-trust', 'second-chance', 'believe-again', 'forgiveness-pressure', 'boundary-after-betrayal', 'timeline-pressure', 'trust-again', 'partner-mind-reading', 'relationship-meaning'],
   GASL01: ['gaslighting', 'reality-distortion', 'crazy-making', 'manipulation', 'darvo', 'self-doubt', 'fact-anchoring', 'reality-anchoring', 'twisting', 'blame-shifting', 'information-asymmetry', 'minimizing'],
+  // ── Kim P3 Advanced Modules ──
+  CDP01: ['self-loss', 'codependency', 'relational-fusion', 'identity-collapse', 'rescue-compulsion', 'emotional-dependency', 'over-responsibility', 'control-from-fear', 'self-care-guilt', 'without-him-i-am-nothing'],
+  RNW01: ['ambiguous-grief', 'grief-living-person', 'miss-old-person', 'person-before-addiction', 'relationship-as-it-was', 'false-hope', 'forced-acceptance', 'grief-permission', 'future-loss', 'who-they-were'],
 };
 
 // ─── DETECTOR LOGIC ───

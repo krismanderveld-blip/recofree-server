@@ -1160,3 +1160,9 @@
 - [x] Enhancement: Timeout fallback (10s) for auto-end — lightweight local save if API too slow
 - [x] Enhancement: "Welkom terug" short greeting variant if user returns within 30 min
 - [x] Enhancement: Visual toast "Vorige sessie veilig opgeslagen" on session restore
+- [x] Implement CDP01 Kim module (Codependentie Patroon Detectie) — types, detector, router, prompt, storage, tests
+- [x] Implement RNW01 Kim module (Rouw Naaste: Wie Ze Was) — types, detector, router, prompt, storage, tests
+- [x] Create kim-advanced-modules-p3.ts integration layer for CDP01/RNW01
+- [x] Wire CDP01/RNW01 into pipeline (step 5e10), payload builder, ChatContext, OpenAI provider
+- [x] Register CDP01/RNW01 in Kim module catalog
+- [x] Add CDP01/RNW01 keywords to short-module-detector (English + Dutch translations)
