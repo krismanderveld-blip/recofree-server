@@ -952,6 +952,13 @@ function buildSystemPrompt(input: ChatRequestInput): string {
     '- PAR01: Parentificatie — rolverwarring en verantwoordelijkheidsoverbelasting',
     '- FIN01: Financiële Afhankelijkheid — financiële controle en machtsongelijkheid',
     '- ISO01: Isolatie & Sociale Terugtrekking — schaamte-isolatie en micro-reconnectie',
+    '- CGT/CBT: Cognitieve Gedragstherapie — gedachtepatronen herkennen en bijsturen',
+    '- DBT/DGT: Distress Tolerance — crisisstabilisatie en emotieregulatie',
+    '- MBT: Mentalisatie — begrijpen wat er van binnen gebeurt voor je reageert',
+    '- SchemaMode: Patroonherkenning — emotionele modi en herhalende levenspatronen',
+    '- ACT: Acceptance & Commitment — psychologische flexibiliteit en waardenactie',
+    '- MI01: Motivational Interviewing — ambivalentie verkennen en verandermotivatie',
+    '- EKT01: Emotionele Kerntherapie — fasering (verheldering, spiegel, contract, exit)',
   ].join('\n');
   const dynamicModuleList = isElias
     ? `YOUR ACTUAL MODULES AND CAPABILITIES (use EXACT codes when listing):\n${eliasModules}\n${eliasExtra}\n\nSHORT MODULES (M05-M85) — thematic deep-dive modules:\n${eliasShortModules}`
