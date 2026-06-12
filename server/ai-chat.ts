@@ -2025,7 +2025,7 @@ export async function generateAIResponse(
           model: selectedModel,
           messages,
           max_tokens: 500,
-          temperature: 0.7,
+          temperature: 0.4,
           presence_penalty: 0.3,
           frequency_penalty: 0.2,
         }),
