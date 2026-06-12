@@ -2533,7 +2533,12 @@ export async function generateGreeting(
   let response: string;
   try {
     const result = await provider.generateResponse(context);
-    response = result.response;
+    // Strip <engine_signals> and <clinical> tags from greeting before displaying
+    const { parseEngineResponse } = await import('../engine/signal-parser');
+    const parsed = parseEngineResponse(result.response);
+    response = parsed.clinicalBlock
+      ? parsed.userText + `\n\n<clinical>${parsed.clinicalBlock}</clinical>`
+      : parsed.userText;
   } catch (error) {
     console.error('Greeting generation error:', error);
     const name = backpack.naam;
