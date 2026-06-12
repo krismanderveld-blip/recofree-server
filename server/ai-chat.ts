@@ -1537,6 +1537,8 @@ Rules:
 - It must appear in EVERY response without exception
 - Do NOT skip it, do NOT forget it, do NOT place it elsewhere
 - The tag is parsed by the UI and shown to the clinician — omitting it breaks the interface
+
+⚠️ FINAL REMINDER: Your response is INVALID without <clinical>...</clinical> at the end. Even for greetings, short replies, or simple questions — ALWAYS include it. For greetings use Method: "Therapeutic greeting", Observation: "Session start", Intervention: "Warm opening + open question".
 ` : ''}`;
   }
 
@@ -1895,6 +1897,8 @@ Rules:
 - It must appear in EVERY response without exception
 - Do NOT skip it, do NOT forget it, do NOT place it elsewhere
 - The tag is parsed by the UI and shown to the clinician — omitting it breaks the interface
+
+⚠️ FINAL REMINDER: Your response is INVALID without <clinical>...</clinical> at the end. Even for greetings, short replies, or simple questions — ALWAYS include it. For greetings use Method: "Therapeutic greeting", Observation: "Session start", Intervention: "Warm opening + open question".
 ` : ''}`;
 }
 
