@@ -2110,13 +2110,35 @@ export async function generateAIResponse(
     console.warn('[AI Chat] CRISIS ENFORCEMENT: GPT omitted crisis number — force-appending');
     finalResponse += '\n\nJe kan ook bellen naar de Zelfmoordlijn: 0800 32 123 (24/7, gratis en anoniem), 1712 (huiselijk geweld) of 112 bij onmiddellijk gevaar.';
   }
+  // ─── CLINICAL ANNOTATION (separate gpt-4o call) ────────────────────
+  // When clinical mode is active, ALWAYS generate the annotation via gpt-4o.
+  // gpt-4o-mini does not reliably comply with annotation instructions.
+  // Only exception: if the therapeutic model was already gpt-4o AND it produced
+  // a valid annotation inline, we keep it (no double call needed).
+  if (input.clinicalModeActive) {
+    const existingClinical = /<clinical>[\s\S]*?<\/clinical>/.exec(finalResponse);
+    const hasValidInlineAnnotation = existingClinical &&
+      existingClinical[0].includes('Method:') &&
+      !existingClinical[0].includes('[not annotated') &&
+      !existingClinical[0].includes('model did not comply');
 
-  // ─── CLINICAL MODE FALLBACK ─────────────────────────────────
-  // If clinical mode is active but GPT failed to include the <clinical> tag,
-  // append a fallback annotation so the UI always has something to show.
-  if (input.clinicalModeActive && !/<clinical>[\s\S]*?<\/clinical>/.test(responseText)) {
-    console.warn('[AI Chat] Clinical Mode ACTIVE but GPT omitted <clinical> tag — appending fallback');
-    finalResponse += `\n\n<clinical>\nMethod: [not annotated — model did not comply]\nObservation: [clinical annotation was requested but not generated]\nIntervention: [see therapeutic response above]\nSignals: none\n</clinical>`;
+    if (hasValidInlineAnnotation && selectedModel === 'gpt-4o') {
+      // gpt-4o already produced a good annotation — keep it, no extra call
+      console.log('[ClinicalAnnotation] gpt-4o produced valid annotation inline — keeping');
+    } else {
+      // Strip any existing (bad/incomplete/mini-generated) annotation
+      if (existingClinical) {
+        finalResponse = finalResponse.replace(/<clinical>[\s\S]*?<\/clinical>/, '').trimEnd();
+      }
+      // Generate via dedicated gpt-4o call
+      const annotation = await generateClinicalAnnotation(
+        apiKey,
+        input,
+        finalResponse,
+        messages
+      );
+      finalResponse += `\n\n${annotation}`;
+    }
   }
 
   return {
@@ -2126,4 +2148,97 @@ export async function generateAIResponse(
     tokenUsage,
     selectedModel,
   };
+}
+
+// ─── CLINICAL ANNOTATION GENERATOR (always gpt-4o) ─────────────────────
+
+/**
+ * Generates a clinical annotation via a separate gpt-4o call.
+ * This ensures consistent compliance regardless of which model was used
+ * for the therapeutic response (gpt-4o-mini often ignores the annotation instruction).
+ *
+ * Model: gpt-4o (always)
+ * store: false (always)
+ * max_tokens: 300
+ */
+async function generateClinicalAnnotation(
+  apiKey: string,
+  input: ChatRequestInput,
+  therapeuticResponse: string,
+  conversationMessages: Array<{ role: string; content: string }>
+): Promise<string> {
+  const signalsBlock = input.activeSignals && input.activeSignals.length > 0
+    ? `Active signals for this message:\n${input.activeSignals.map(s => `- ${s.label} ${s.score >= 0 ? '+' : ''}${s.score} (${s.memory})`).join('\n')}`
+    : 'No active signals detected for this message.';
+
+  const lastUserMessage = input.message || conversationMessages.filter(m => m.role === 'user').pop()?.content || '';
+
+  const annotationPrompt = `You are a clinical annotation assistant for a therapeutic AI session.
+
+Given the user's message and the therapeutic response, generate a clinical annotation.
+
+USER MESSAGE:
+"${lastUserMessage}"
+
+THERAPEUTIC RESPONSE:
+"${therapeuticResponse.slice(0, 800)}"
+
+${signalsBlock}
+
+Active modules: ${input.activeModules?.join(', ') || 'none'}
+Dominant module: ${input.dominantModule || 'none'}
+User type: ${input.userType}
+Zone: ${input.bufferSnapshot?.zone || 'unknown'}
+
+Generate EXACTLY this format (no other text):
+
+<clinical>
+Method: [name the primary therapeutic method used in the response]
+Observation: [1 sentence — what you clinically observed in the user's message]
+Intervention: [1 sentence — what therapeutic move was made in the response]
+Signals: [comma-separated list of active signals with score and memory layer, or "none"]
+</clinical>`;
+
+  try {
+    console.log('[ClinicalAnnotation] Generating via gpt-4o (separate call)');
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o',
+        store: false,
+        messages: [
+          { role: 'system', content: 'You are a clinical annotation assistant. Output ONLY the requested <clinical> block. No other text.' },
+          { role: 'user', content: annotationPrompt },
+        ],
+        max_tokens: 300,
+        temperature: 0,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('[ClinicalAnnotation] OpenAI error:', response.status, errorText);
+      return `<clinical>\nMethod: [annotation generation failed — API error ${response.status}]\nObservation: [see therapeutic response]\nIntervention: [see therapeutic response]\nSignals: none\n</clinical>`;
+    }
+
+    const data = await response.json();
+    const result = data.choices?.[0]?.message?.content?.trim() ?? '';
+
+    // Validate the result contains a proper <clinical> block
+    if (/<clinical>[\s\S]*?<\/clinical>/.test(result)) {
+      console.log('[ClinicalAnnotation] gpt-4o annotation generated successfully');
+      return result;
+    }
+
+    // If gpt-4o returned content but not in the right format, wrap it
+    console.warn('[ClinicalAnnotation] gpt-4o returned non-standard format, wrapping');
+    return `<clinical>\n${result}\n</clinical>`;
+  } catch (error) {
+    console.error('[ClinicalAnnotation] Error:', error);
+    return `<clinical>\nMethod: [annotation generation failed — network error]\nObservation: [see therapeutic response]\nIntervention: [see therapeutic response]\nSignals: none\n</clinical>`;
+  }
 }

@@ -1209,3 +1209,4 @@
 - [x] Bug 2 fix: GptSignalEngine initialiseren bij app startup in chat.tsx (useEffect met initGptSignalEngine)
 - [x] Verification tests: 16 tests voor NL schema/mode detectie + GptSignalEngine init (621 total tests green)
 - [x] Signal Engine backend verificatie: endpoint bestaat (server/signal-engine.ts:16), store:false toegevoegd, model=gpt-4o-mini, test-POST retourneert correcte JSON
+- [x] Fix clinical annotation: separate gpt-4o call (store:false, max_tokens:300) when clinicalModeActive=true — no longer relies on gpt-4o-mini compliance
