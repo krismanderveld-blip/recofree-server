@@ -36,6 +36,7 @@ export function registerSignalEngineRoute(app: Express): void {
         },
         body: JSON.stringify({
           model: 'gpt-4o-mini',
+          store: false,
           messages: [
             {
               role: 'system',
