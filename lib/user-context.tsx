@@ -19,6 +19,7 @@ import {
 import { sanitizeSliders } from './engine/shared/slider-sanitize';
 import { checkAndExtract, saveExtractedEntities } from './backpack-extractor/extractor';
 import { callExtractionEndpoint } from './backpack-extractor/client';
+import { callBackpackAnalysis } from './backpack-analysis/client';
 
 // ─── State Types ────────────────────────────────────────────────
 
@@ -395,6 +396,28 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       }
     }).catch((err) => {
       console.warn('[UserContext] Extraction failed (non-blocking):', err);
+    });
+
+    // Fire-and-forget: trigger backpack deep analysis (GPT-4o) for schema/mode/trigger detection
+    const backpackText = updatedBackpack.sections.map(s => `${s.label}: ${s.content}`).join('\n');
+    const kimText = updatedBackpack.kimBackpack
+      ? Object.entries(updatedBackpack.kimBackpack).map(([k, v]) => `${k}: ${v}`).join('\n')
+      : '';
+    const fullText = kimText ? `${backpackText}\n\n--- Kim ---\n${kimText}` : backpackText;
+    const userId = state.userDat?.userName || 'anonymous';
+
+    callBackpackAnalysis(userId, fullText).then((analysis) => {
+      if (analysis && state.userDat) {
+        const previousAnalyzedAt = state.userDat.backpackAnalysis?.analyzedAt ?? null;
+        const updatedUserDat = {
+          ...state.userDat,
+          backpackAnalysis: { ...analysis, previousAnalyzedAt },
+        };
+        dispatch({ type: 'UPDATE_USERDAT', payload: updatedUserDat });
+        persistUserDat(updatedUserDat);
+      }
+    }).catch((err) => {
+      console.warn('[UserContext] BackpackAnalysis failed (non-blocking):', err);
     });
   };
 

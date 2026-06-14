@@ -219,6 +219,18 @@ interface ChatRequestInput {
   };
   /** Whether backpack content changed since last extraction (forces full backpack resend) */
   backpackChanged?: boolean;
+
+  /** Deep analysis of backpack (schemas, modes, triggers, core beliefs, coping patterns) from GPT-4o */
+  backpackAnalysis?: {
+    schemas: Array<{ name: string; confidence: number; evidence: string }>;
+    modi: Array<{ name: string; confidence: number; evidence: string }>;
+    triggers: string[];
+    coreBeliefs: string[];
+    copingPatterns: string[];
+    analysisVersion: number;
+    analyzedAt: string;
+    previousAnalyzedAt: string | null;
+  };
 }
 
 // ─── Server-side Session Cache ───────────────────────────────────
@@ -1332,6 +1344,29 @@ Keep it short (3-5 sentences max). Do NOT ask new questions.`;
     }
     // else: backpackRelevance < 0.3 → skip lifeStorySummary (token savings)
 
+    // Inject backpackAnalysis context (deep GPT-4o analysis of backpack content)
+    let backpackAnalysisContext = '';
+    if (input.backpackAnalysis && input.backpackAnalysis.schemas.length > 0) {
+      const schemas = input.backpackAnalysis.schemas
+        .filter(s => s.confidence >= 0.35)
+        .map(s => `${s.name} (${(s.confidence * 100).toFixed(0)}%): ${s.evidence}`)
+        .join('\n  ');
+      const modi = input.backpackAnalysis.modi
+        .filter(m => m.confidence >= 0.35)
+        .map(m => `${m.name} (${(m.confidence * 100).toFixed(0)}%): ${m.evidence}`)
+        .join('\n  ');
+      const triggers = input.backpackAnalysis.triggers.join(', ');
+      const beliefs = input.backpackAnalysis.coreBeliefs.join('; ');
+      const coping = input.backpackAnalysis.copingPatterns.join('; ');
+      backpackAnalysisContext = `\n─── BACKPACK DEEP ANALYSIS (GPT-4o, ${input.backpackAnalysis.analyzedAt}) ───
+  Schema’s: ${schemas || 'geen gedetecteerd'}
+  Modi: ${modi || 'geen gedetecteerd'}
+  Triggers: ${triggers || 'geen'}
+  Kernovertuigingen: ${beliefs || 'geen'}
+  Copingpatronen: ${coping || 'geen'}
+─── END BACKPACK ANALYSIS ───`;
+    }
+
     // Task 1: Gate diary injection using diaryRelevance threshold
     if (scores && scores.diaryRelevance < 0.3) {
       conditional.recentDiary = [];
@@ -1342,6 +1377,7 @@ Keep it short (3-5 sentences max). Do NOT ask new questions.`;
 ${antiHallucination}
 ${conditional.relationshipMap}
 ${lifeStoryContext}
+${backpackAnalysisContext}
 
 The user's name is ${name}. Address them by name occasionally.
 

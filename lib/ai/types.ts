@@ -226,6 +226,10 @@ export interface TriggerPattern {
   weight?: number;
   firstSeen: string;
   lastSeen: string;
+  /** ISO timestamp — moment of first detection, NEVER overwritten */
+  firstDetectedAt?: string;
+  /** ISO timestamp — moment of last reinforcement or update */
+  lastUpdatedAt?: string;
 }
 
 /**
@@ -367,9 +371,9 @@ export interface UserDat {
   /** STOA sessions used in previous sessions (cross-session cooldown tracking) */
   stoaSessionsUsed?: Array<{ sessionId: number; usedAtSession: number }>;
   /** Schema/Mode: recurring mode tendencies (hybrid persistence — patterns only, never identity) */
-  modeTendencies?: Array<{ modeId: string; frequency: number; lastSeen: string; effectiveInterventions: string[] }>;
+  modeTendencies?: Array<{ modeId: string; frequency: number; lastSeen: string; effectiveInterventions: string[]; /** ISO — first detection, never overwritten */ firstDetectedAt?: string; /** ISO — last confidence update */ lastUpdatedAt?: string; confidence?: number }>;
   /** Schema/Mode: recurring schema tendencies (hybrid persistence — patterns only, never diagnosis) */
-  schemaTendencies?: Array<{ schemaId: string; domain: string; frequency: number; lastSeen: string; copingStyle: string | null }>;
+  schemaTendencies?: Array<{ schemaId: string; domain: string; frequency: number; lastSeen: string; copingStyle: string | null; /** ISO — first detection, never overwritten */ firstDetectedAt?: string; /** ISO — last confidence update */ lastUpdatedAt?: string; confidence?: number }>;
   /** ACT: progress tracking (values, preferred tools, fusion patterns, success counts) */
   actProgress?: {
     userValues: string[];
@@ -535,6 +539,19 @@ export interface UserDat {
   moduleMemory?: import('../engine/shared/module-memory-cross-session').ModuleMemoryState;
   /** Structured entities extracted from backpack via LLM (persons, events, patterns, contexts). Updated only when backpack content changes. */
   extractedEntities?: import('../backpack-extractor/types').ExtractedEntities;
+  /** Deep analysis of backpack: schemas, modes, triggers, core beliefs, coping patterns. Updated on each backpack save via GPT-4o. */
+  backpackAnalysis?: {
+    schemas: Array<{ name: string; confidence: number; evidence: string }>;
+    modi: Array<{ name: string; confidence: number; evidence: string }>;
+    triggers: string[];
+    coreBeliefs: string[];
+    copingPatterns: string[];
+    analysisVersion: number;
+    /** ISO timestamp — moment of this analysis */
+    analyzedAt: string;
+    /** ISO timestamp — moment of previous analysis, null on first */
+    previousAnalyzedAt: string | null;
+  };
 }
 
 /** A record of a completed session's analysis */

@@ -1222,3 +1222,11 @@
 - [x] Memory Write Routing: debug output shows changedFields accurately
 - [x] Pipeline integration: executeMemoryWriteBack() called after each GPT response in chat pipeline
 - [x] Pipeline integration: sessionLifecycle.endSession() called at session end (Einde gesprek button + app background auto-end)
+- [x] BackpackDeepAnalysis: server endpoint POST /api/backpack/analyze (gpt-4o, store:false)
+- [x] BackpackDeepAnalysis: route results to user.dat (backpackAnalysis + schemaTendencies + triggerPatterns)
+- [x] BackpackDeepAnalysis: client-side fire-and-forget trigger on backpack save
+- [x] BackpackDeepAnalysis: engine reads backpackAnalysis in GPT context (injected in buildSystemPrompt after structured memory)
+- [x] Timestamps: triggerPatterns[] add firstDetectedAt + lastUpdatedAt (firstDetectedAt never overwritten)
+- [x] Timestamps: schemaTendencies[] add firstDetectedAt + lastUpdatedAt
+- [x] Timestamps: modeTendencies[] add firstDetectedAt + lastUpdatedAt
+- [x] Timestamps: backpackAnalysis add previousAnalyzedAt field

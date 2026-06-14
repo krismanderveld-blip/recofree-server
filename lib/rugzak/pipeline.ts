@@ -1937,6 +1937,8 @@ export async function processMessage(
     // Backpack entity extraction: send structured entities instead of full backpack when unchanged
     extractedEntities: currentUserDat.extractedEntities ?? undefined,
     backpackChanged: !currentUserDat.extractedEntities || (currentUserDat.extractedEntities.persons.length === 0),
+    // Backpack deep analysis: schema/mode/trigger context from GPT-4o
+    backpackAnalysis: currentUserDat.backpackAnalysis ?? undefined,
     // LANGUAGE_RECOVERY: inject recovery directive if detected
     languageRecovery: languageRecoveryResult.detected ? {
       detected: true,
