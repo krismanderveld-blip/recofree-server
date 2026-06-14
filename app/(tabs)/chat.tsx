@@ -38,6 +38,8 @@ import type { VspLevel } from '@/lib/engine/elias/vsp';
 import { loadAndRestoreEliasProjection } from '@/lib/engine/elias/projection';
 import { loadAndRestoreKimProjection } from '@/lib/engine/kim/projection';
 import { logDebugEvent } from '@/lib/debug/session-logger';
+import { initGptSignalEngine } from '@/lib/engine/local-llm/engine-provider';
+import { getApiBaseUrl } from '@/constants/oauth';
 import { ChatErrorBoundary } from '@/components/chat-error-boundary';
 import { colors as dc, spacing, radius, typography, shadows } from '@/constants/design';
 
@@ -123,6 +125,12 @@ function ChatScreenInner() {
 
   const userName = getUserName();
   const companionName = state.userType === 'elias' ? 'Elias' : 'Kim';
+
+  // ── Initialize GptSignalEngine once at mount ──────────────────────────
+  useEffect(() => {
+    const url = getApiBaseUrl();
+    if (url) initGptSignalEngine(url);
+  }, []);
 
   // Reset chat state when user data is cleared (e.g. after Reset All Data)
   useEffect(() => {

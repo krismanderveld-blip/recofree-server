@@ -1204,3 +1204,7 @@
 - [x] Timestamp-based filtering for SESSION_INIT greeting (mood: today, diary: 2d, gratitude: 2d, rugzak: 4d)
 - [x] VSP koppelen aan begroeting
 - [x] Fallback to last available data when no fresh data exists
+- [x] Bug 1 fix: Nederlandse markers toevoegen aan schema-detector.ts (alle 18 schema's, 5 domeinen)
+- [x] Bug 1 fix: Nederlandse markers toevoegen aan mode-detector.ts (alle 22 modi: child, coping, parent, healthy, addiction, Kim-specific)
+- [x] Bug 2 fix: GptSignalEngine initialiseren bij app startup in chat.tsx (useEffect met initGptSignalEngine)
+- [x] Verification tests: 16 tests voor NL schema/mode detectie + GptSignalEngine init (621 total tests green)
