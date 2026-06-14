@@ -2503,6 +2503,36 @@ export async function generateGreeting(
     ? !(backpack.kimBackpack && Object.values(backpack.kimBackpack).some((v: any) => v && typeof v === 'string' && v.trim().length > 0))
     : !(backpack.sections && backpack.sections.some((s) => s.content && s.content.trim().length > 0));
 
+  // ── TIMESTAMP-BASED FILTERING ──────────────────────────────────
+  // Apply time windows: mood=today, diary=2d, gratitude=2d, rugzak=4d
+  const now = Date.now();
+  const TWO_DAYS_MS = 2 * 24 * 60 * 60 * 1000;
+  const FOUR_DAYS_MS = 4 * 24 * 60 * 60 * 1000;
+  const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
+  const todayMs = todayStart.getTime();
+
+  // Filter diary entries: content within 2 days, gratitude within 2 days
+  const allDiary = diaryEntries ?? [];
+  const recentDiary = allDiary.filter(e => {
+    const ts = new Date(e.timestamp).getTime();
+    return (now - ts) <= TWO_DAYS_MS;
+  });
+  // Fallback: if no recent diary, use the most recent entry available
+  const filteredDiary = recentDiary.length > 0 ? recentDiary : allDiary.slice(0, 1);
+
+  // Mood sliders: use current (always today's state since user sets them live)
+  // Rugzak/backpack: check if updated within 4 days
+  const lastSessionTs = currentUserDat.lastSessionDate ? new Date(currentUserDat.lastSessionDate).getTime() : 0;
+  const backpackUpdatedRecently = backpack.sections?.some(
+    (s) => s.lastUpdated && (now - new Date(s.lastUpdated).getTime()) <= FOUR_DAYS_MS
+  ) ?? false;
+
+  // VSP level for greeting context
+  const currentMood = currentUserDat.currentMood;
+  const vspLevel: string | null = backpack.userType === 'elias' && currentMood && 'vsp' in currentMood
+    ? (currentMood as import('../ai/types').EliasMoodSliders).vsp
+    : null;
+
   const context: ChatContext = {
     userType: backpack.userType,
     userName: backpack.naam,
@@ -2516,7 +2546,7 @@ export async function generateGreeting(
     backpack,
     userDat: currentUserDat,
     isSessionStart: true,
-    diaryEntries: diaryEntries ?? [],
+    diaryEntries: filteredDiary,
     activeModules: [analysis.priorityModules[0] || (backpack.userType === 'elias' ? ELIAS_DEFAULT_MODULE : KIM_DEFAULT_MODULE)],
     crisisLevel: 0,
     detectedEmotion: analysis.emotionalState,
@@ -2527,7 +2557,8 @@ export async function generateGreeting(
     guidanceDepth: currentUserDat.guidanceDepth ?? 'normal',
     backpackEmpty: isBackpackEmpty,
     extractedEntities: currentUserDat.extractedEntities ?? undefined,
-    backpackChanged: !currentUserDat.extractedEntities || (currentUserDat.extractedEntities.persons.length === 0),
+    backpackChanged: backpackUpdatedRecently || !currentUserDat.extractedEntities || (currentUserDat.extractedEntities.persons.length === 0),
+    vspLevel,
   };
 
   let response: string;

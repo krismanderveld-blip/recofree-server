@@ -292,7 +292,7 @@ export class OpenAIProvider implements AIProvider {
         dominantModule,
         riskScore,
         relevance,
-        diaryEntries: context.diaryEntries,
+        diaryEntries: context.diaryEntries?.map(e => ({ content: e.content, moodTag: e.moodTag, timestamp: e.timestamp, gratitude: e.gratitude })),
         chatHistory: context.conversationHistory,
         detectedEmotion: context.detectedEmotion,
         therapeuticStance: context.therapeuticStance,

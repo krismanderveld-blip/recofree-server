@@ -1380,8 +1380,10 @@ The sliders tell you exactly how the user feels — USE them in your response.
 
 CURRENT STATE:
 - Mood sliders: ${sliderEntries}
+- VSP (Veiligheidsplan): ${input.vspLevel ?? 'niet ingesteld'} ${input.vspLevel === 'ROOD' || input.vspLevel === 'RED' ? '⚠️ HOOG TERUGVALRISICO' : input.vspLevel === 'ORANJE' || input.vspLevel === 'ORANGE' ? '⚠️ VERHOOGD RISICO' : input.vspLevel === 'PAARS' || input.vspLevel === 'PURPLE' ? '🚨 CRISIS' : ''}
 - Urgency level: ${input.urgency}
 - Risk score: ${input.riskScore ?? 0}/10
+- Current timestamp: ${new Date().toISOString()}
 ${sessionInfo}
 ${input.bufferSnapshot ? `
 LIVE SESSION CONTEXT (real-time analysis):
@@ -1627,16 +1629,25 @@ Rules:
   const diaryEntries = input.diaryEntries;
   let diaryMemory = "";
   if (diaryEntries && diaryEntries.length > 0) {
+    const nowMs = Date.now();
     diaryMemory += `\n\n╔══════════════════════════════════════════════════════╗`;
     diaryMemory += `\n║  DIARY — Personal notes by ${name}`;
     diaryMemory += `\n╚══════════════════════════════════════════════════════╝`;
-    diaryMemory += `\n\n─── RECENT DIARY ENTRIES ───`;
+    diaryMemory += `\n\n─── RECENT DIARY ENTRIES (time-stamped) ───`;
     for (const entry of diaryEntries) {
+      const entryTs = new Date(entry.timestamp).getTime();
+      const hoursAgo = Math.floor((nowMs - entryTs) / (1000 * 60 * 60));
+      const timeLabel = hoursAgo < 1 ? 'net geschreven' : hoursAgo < 24 ? `${hoursAgo}u geleden (vandaag)` : hoursAgo < 48 ? 'gisteren' : `${Math.floor(hoursAgo / 24)} dagen geleden`;
       const date = new Date(entry.timestamp).toLocaleDateString();
-      diaryMemory += `\n\n[${date}] (mood: ${entry.moodTag}):\n${entry.content}`;
+      diaryMemory += `\n\n[${date}] (⏰ ${timeLabel}) (mood: ${entry.moodTag}):\n${entry.content}`;
+      if ((entry as any).gratitude) {
+        const g = (entry as any).gratitude;
+        diaryMemory += `\n  ✨ Gratitude: ${g.entry1 || '-'} | ${g.entry2 || '-'} | ${g.entry3 || '-'}`;
+      }
     }
     diaryMemory += `\n─── END DIARY ───`;
     diaryMemory += `\nThese are ${name}'s own words. Do NOT quote their diary back unsolicited.`;
+    diaryMemory += `\nUse the ⏰ time labels to determine recency. Only reference entries marked 'vandaag' or 'gisteren' as recent.`;
   }
 
   // ── USER.DAT (Session Memory) ──
@@ -1740,8 +1751,10 @@ The sliders tell you exactly how the user feels — USE them in your response.
 
 CURRENT STATE:
 - Mood sliders: ${sliderEntries}
+- VSP (Veiligheidsplan): ${input.vspLevel ?? 'niet ingesteld'} ${input.vspLevel === 'ROOD' || input.vspLevel === 'RED' ? '⚠️ HOOG TERUGVALRISICO' : input.vspLevel === 'ORANJE' || input.vspLevel === 'ORANGE' ? '⚠️ VERHOOGD RISICO' : input.vspLevel === 'PAARS' || input.vspLevel === 'PURPLE' ? '🚨 CRISIS' : ''}
 - Urgency level: ${input.urgency}
 - Risk score: ${input.riskScore ?? 0}/10
+- Current timestamp: ${new Date().toISOString()}
 ${sessionInfo}
 
 ${moduleInstructions}
@@ -1808,7 +1821,13 @@ ${input.backpackEmpty ? `- You do NOT yet know ${name}'s story. Their backpack i
 ${input.sessionDurationMinutes <= 30 ? `- SHORT RETURN: ${name} was here less than 30 minutes ago. Give a brief, warm welcome back instead of a full greeting. Example: "${name}, welkom terug. Waar waren we gebleven?" or "Hey ${name}, fijn dat je terug bent. Wil je verder praten of is er iets nieuws?"
 - Keep it SHORT (1-2 sentences max). Do NOT repeat the full greeting ritual.` : `- Start with a personal welcome (e.g. "${name}, fijn dat je er bent." or "Hey ${name}, goed je te zien."), then ask one open question about how they are doing right now.`}
 ${input.extractedEntities && input.extractedEntities.persons && input.extractedEntities.persons.length > 0 ? `- PERSONALIZATION: You know ${name} personally. Use the structured memory above to make your greeting feel personal. You may reference a person (e.g. "Hoe gaat het met ${input.extractedEntities.persons[0]?.name ?? 'je naasten'}?"), a recent event, or an ongoing pattern — but ONLY if it feels natural and warm. Never force it. One subtle reference is enough.` : ''}
-- DIARY & MOOD AWARENESS: If recent diary entries or mood data are available above, USE them to personalize your greeting. For example: if mood is low (craving 7/10), acknowledge it ("Ik zie dat het vandaag wat zwaarder is. Wil je erover praten?"). If a diary entry mentions something specific, reference it subtly. This makes the greeting feel aware and connected — not generic.
+- DIARY & MOOD & VSP AWARENESS: You MUST personalize the greeting using the CURRENT STATE and DIARY data above. Rules:
+  * Mood sliders are from TODAY — reference them directly (e.g. craving 7/10 → "Ik merk dat de craving vandaag hoog zit.")
+  * Diary entries have dates — only reference entries from the last 2 days as "recent". Older entries are background context only.
+  * Gratitude entries from the last 2 days — acknowledge positively (e.g. "Mooi dat je gisteren dankbaar was voor...")
+  * VSP level — if ORANJE/ROOD/PAARS, acknowledge the risk level warmly (e.g. "Ik zie dat je je op dit moment in een oranje zone bevindt. Hoe gaat het echt?")
+  * If NO recent data exists (all entries older than 2 days), use the most recent available entry as gentle context but do NOT present it as "vandaag".
+  * NEVER treat old data as current. Always be time-aware.
 - Do NOT reference what was discussed in previous sessions unless the session memory above explicitly mentions it AND it is therapeutically relevant.`}
 - Respond in the same language the user writes in
 - Keep responses concise: follow the PACING instruction strictly

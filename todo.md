@@ -1201,3 +1201,6 @@
 - [x] Fix clinical dropdown not appearing: remove suppression of fallback annotations in parseClinicalTag
 - [x] Fix module hallucination: add exact module codes (E01-E08, SW01, STOA, VERGV01, etc.) to dynamicModuleList in server prompt
 - [x] Add Kim advanced modules (BEDR01, VETR01, GASL01, CDP01, RNW01, PAR01, FIN01, ISO01) to Kim dynamicModuleList
+- [x] Timestamp-based filtering for SESSION_INIT greeting (mood: today, diary: 2d, gratitude: 2d, rugzak: 4d)
+- [x] VSP koppelen aan begroeting
+- [x] Fallback to last available data when no fresh data exists
