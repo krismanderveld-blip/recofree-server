@@ -40,6 +40,11 @@ import { loadAndRestoreKimProjection } from '@/lib/engine/kim/projection';
 import { logDebugEvent } from '@/lib/debug/session-logger';
 import { initGptSignalEngine } from '@/lib/engine/local-llm/engine-provider';
 import { getApiBaseUrl } from '@/constants/oauth';
+import { getSessionLifecycleManager, buildDetectionBundle, runMemoryWriteBack, type PipelineResultForMemory } from '@/lib/pipeline/memory/memoryIntegration';
+import type { MemoryStoresSnapshot } from '@/lib/pipeline/memory/memoryCommitService';
+import { createEmptyUserDat } from '@/lib/types/memory/userDat.types';
+import { createEmptyStateDat } from '@/lib/types/memory/stateDat.types';
+import { createEmptyProjectionsDat } from '@/lib/types/memory/projectionsDat.types';
 import { ChatErrorBoundary } from '@/components/chat-error-boundary';
 import { colors as dc, spacing, radius, typography, shadows } from '@/constants/design';
 
@@ -377,6 +382,15 @@ function ChatScreenInner() {
               trigger: 'app_background',
               messageCount: resultOrNull.updatedUserDat.chatHistory.length,
             });
+            // Memory Lifecycle: end session on background
+            try {
+              const persona = (state.userType === 'elias' ? 'elias' : 'kim') as 'elias' | 'kim';
+              const apiBase = getApiBaseUrl();
+              const lifecycleManager = getSessionLifecycleManager();
+              await lifecycleManager.endSession(persona, apiBase);
+            } catch (_memErr) {
+              // Non-critical
+            }
           } else {
             // Timeout or error: lightweight local save (pending close marker)
             // Full analysis will happen at next session start
@@ -703,6 +717,105 @@ function ChatScreenInner() {
           });
         }
       }
+      // ── Memory Write-Back Step ──────────────────────────────────────────
+      // Execute after all pipeline detections are complete (step 16 → 17)
+      try {
+        const persona = (state.userType === 'elias' ? 'elias' : 'kim') as 'elias' | 'kim';
+        const memoryInput: PipelineResultForMemory = {
+          userMessage: processedText,
+          persona,
+          sessionId: `session_${Date.now()}`,
+          localUserId: 'local_user',
+          candidateSignals: result.traceData ? {
+            fears: (result.traceData as any)._candidateSignals?.fears?.map((f: any) => ({ label: f.keyword, confidence: f.confidence })) ?? [],
+            hopes: (result.traceData as any)._candidateSignals?.hopes?.map((h: any) => ({ label: h.keyword, confidence: h.confidence })) ?? [],
+            goals: [],
+            triggers: (result.traceData as any)._candidateSignals?.triggers?.map((t: any) => ({ label: t.keyword, confidence: t.confidence })) ?? [],
+          } : null,
+          schemaModeResult: result.traceData?.payload?.promptBlocks?.schemaMode === 'yes' ? {
+            activated: true,
+            modeDecision: {
+              acceptedModes: (result.traceData as any)._schemaModeResult?.modeDecision?.acceptedModes ?? [],
+              dominantMode: (result.traceData as any)._schemaModeResult?.modeDecision?.dominantMode ?? null,
+            },
+            schemaDecision: {
+              acceptedSchemas: (result.traceData as any)._schemaModeResult?.schemaDecision?.acceptedSchemas ?? [],
+              dominantSchema: (result.traceData as any)._schemaModeResult?.schemaDecision?.dominantSchema ?? null,
+              dominantDomain: (result.traceData as any)._schemaModeResult?.schemaDecision?.dominantDomain ?? null,
+            },
+          } : null,
+          bufferSnapshot: result.bufferSnapshot ? {
+            zoneColor: result.bufferSnapshot.zoneColor,
+            zoneScore: result.bufferSnapshot.zoneScore,
+          } : null,
+          activeModule: result.dominantState ? {
+            moduleId: result.dominantState.dominantModule,
+            confidence: 0.8,
+            responseMode: result.dominantState.dominantDirection,
+          } : null,
+          moodSliders: result.messageLog?.preGPT?.dominantState ? {} : null,
+          moduleActivations: result.moduleActivations,
+        };
+        const bundle = buildDetectionBundle(memoryInput);
+        // Build current stores snapshot (in-memory defaults for now)
+        const lifecycleManager = getSessionLifecycleManager();
+        const stores = lifecycleManager.getStores();
+        const currentStores: MemoryStoresSnapshot = {
+          userDat: await stores.userDatStore.load(persona, 'local_user'),
+          stateDat: await stores.stateDatStore.load(persona),
+          projectionsDat: await stores.projectionsDatStore.load(persona),
+          sessionBuffer: stores.sessionBufferStore.getBuffer(),
+        };
+        const writeResult = runMemoryWriteBack(bundle, currentStores);
+        // Persist updated stores
+        await stores.userDatStore.save(writeResult.updatedStores.userDat);
+        await stores.stateDatStore.save(writeResult.updatedStores.stateDat);
+        await stores.projectionsDatStore.save(writeResult.updatedStores.projectionsDat);
+        // Update session buffer with turn snapshot
+        const buffer = stores.sessionBufferStore.getBuffer();
+        if (buffer) {
+          stores.sessionBufferStore.appendMessage(buffer, {
+            role: 'user',
+            text: processedText,
+            timestampIso: new Date().toISOString(),
+          });
+          const updatedBuffer = stores.sessionBufferStore.getBuffer();
+          if (updatedBuffer) {
+            stores.sessionBufferStore.appendMessage(updatedBuffer, {
+              role: 'assistant',
+              text: result.response.slice(0, 200),
+              timestampIso: new Date().toISOString(),
+            });
+          }
+          stores.sessionBufferStore.appendTurnSnapshot(stores.sessionBufferStore.getBuffer()!, {
+            turnId: bundle.context.turnId,
+            timestampIso: bundle.context.timestampIso,
+            inputHash: bundle.context.inputHash,
+            zone: bundle.zoneDecision ?? undefined,
+            activeModule: bundle.activeModule ?? undefined,
+            detectedCounts: {
+              fears: bundle.fears.length,
+              hopes: bundle.hopes.length,
+              triggers: bundle.triggers.length,
+              schemaTendencies: bundle.schemaTendencies.length,
+              modeTendencies: bundle.modeTendencies.length,
+            },
+            changedFields: writeResult.commitResult.changedFields,
+          });
+        }
+        // Debug log
+        if (__DEV__) {
+          console.log(writeResult.debugLog);
+          logDebugEvent('memory_write_back', {
+            planId: writeResult.plan.planId,
+            patchCount: writeResult.plan.patches.length,
+            changedFields: writeResult.commitResult.changedFields,
+          });
+        }
+      } catch (memErr) {
+        // Memory write-back is non-critical — log and continue
+        console.warn('[MemoryWriteBack] Error (non-critical):', memErr);
+      }
     } catch (error) {
       console.error('Pipeline error:', error);
       const errorMsg: ChatMessage = {
@@ -757,6 +870,25 @@ function ChatScreenInner() {
         messageCount: result.updatedUserDat.chatHistory.length,
         durationMs: 0, // not tracked currently
       });
+      // ── Memory Lifecycle: End Session ──────────────────────────────────
+      // Generates session summary via GPT-4o-mini and appends to logs.dat (encrypted)
+      try {
+        const persona = (state.userType === 'elias' ? 'elias' : 'kim') as 'elias' | 'kim';
+        const apiBase = getApiBaseUrl();
+        const lifecycleManager = getSessionLifecycleManager();
+        const endResult = await lifecycleManager.endSession(persona, apiBase);
+        if (__DEV__) {
+          console.log(`[SessionLifecycle] endSession result: summarized=${endResult.summarized}, sessionId=${endResult.sessionId}`);
+          logDebugEvent('memory_session_end', {
+            sessionId: endResult.sessionId,
+            summarized: endResult.summarized,
+            error: endResult.error ?? null,
+          });
+        }
+      } catch (lifecycleErr) {
+        // Non-critical: session ends even if memory lifecycle fails
+        console.warn('[SessionLifecycle] endSession error (non-critical):', lifecycleErr);
+      }
     } catch (error) {
       console.error('End session error:', error);
       const fallbackMsg: ChatMessage = {

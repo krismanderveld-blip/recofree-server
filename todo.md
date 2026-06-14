@@ -1220,3 +1220,5 @@
 - [x] Memory Write Routing: pipeline integration + USE_LOGS_DAT_CONTEXT flag (flag=false, fallback to conversationHistory)
 - [x] Memory Write Routing: 15 acceptance tests (all green)
 - [x] Memory Write Routing: debug output shows changedFields accurately
+- [x] Pipeline integration: executeMemoryWriteBack() called after each GPT response in chat pipeline
+- [x] Pipeline integration: sessionLifecycle.endSession() called at session end (Einde gesprek button + app background auto-end)
