@@ -1210,3 +1210,13 @@
 - [x] Verification tests: 16 tests voor NL schema/mode detectie + GptSignalEngine init (621 total tests green)
 - [x] Signal Engine backend verificatie: endpoint bestaat (server/signal-engine.ts:16), store:false toegevoegd, model=gpt-4o-mini, test-POST retourneert correcte JSON
 - [x] Fix clinical annotation: separate gpt-4o call (store:false, max_tokens:300) when clinicalModeActive=true — no longer relies on gpt-4o-mini compliance
+- [x] Memory Write Routing: type definitions (memoryCore, userDat, stateDat, projectionsDat, sessionBuffer, logsDat)
+- [x] Memory Write Routing: utility functions (stableHash, roundTo3, clamp, unique, daysBetween, estimateTokens, createPatchId, createLogId)
+- [x] Memory Write Routing: merge functions (mergeUserDat, mergeStateDat, mergeProjectionsDat, projectionDecay)
+- [x] Memory Write Routing: crypto layer (secureKeyStore, aes256gcm, LocalCryptoProvider)
+- [x] Memory Write Routing: memory stores (userDatStore, stateDatStore, projectionsDatStore, sessionBufferStore, logsDatStore)
+- [x] Memory Write Routing: pipeline memory layer (memoryPatchBuilders, memoryWriteRouter, memoryWriteBackStep, memoryCommitService)
+- [x] Memory Write Routing: session lifecycle (sessionEndSummarizer, sessionInitContextBuilder, sessionLifecycle)
+- [x] Memory Write Routing: pipeline integration + USE_LOGS_DAT_CONTEXT flag (flag=false, fallback to conversationHistory)
+- [x] Memory Write Routing: 15 acceptance tests (all green)
+- [x] Memory Write Routing: debug output shows changedFields accurately

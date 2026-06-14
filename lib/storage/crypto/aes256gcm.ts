@@ -1,0 +1,104 @@
+/**
+ * AES-256-GCM encryption/decryption for logs.dat.
+ * Uses Web Crypto API (available in React Native via expo-crypto polyfill and web).
+ */
+import type { RecoFreePersona } from "@/lib/types/memory/memoryCore.types";
+import type { LogsDatEncryptedEnvelope } from "@/lib/types/memory/logsDat.types";
+import {
+  getOrCreateLocalEncryptionKey,
+  uint8ArrayToBase64,
+  base64ToUint8Array,
+  generateRandomBytes,
+} from "./secureKeyStore";
+
+/**
+ * Encrypt a JSON-serializable value with AES-256-GCM.
+ * Returns an encrypted envelope suitable for storage.
+ */
+export async function encryptJsonAes256Gcm<T>(
+  keyAlias: string,
+  persona: RecoFreePersona,
+  value: T
+): Promise<LogsDatEncryptedEnvelope> {
+  const keyBytes = await getOrCreateLocalEncryptionKey(keyAlias);
+  const plaintext = JSON.stringify(value);
+  const encoder = new TextEncoder();
+  const data = encoder.encode(plaintext);
+
+  // 96-bit random IV (never reuse with same key)
+  const iv = generateRandomBytes(12);
+
+  // Import key for Web Crypto
+  const cryptoKey = await crypto.subtle.importKey(
+    "raw",
+    keyBytes,
+    { name: "AES-GCM" },
+    false,
+    ["encrypt"]
+  );
+
+  // Encrypt
+  const encrypted = await crypto.subtle.encrypt(
+    { name: "AES-GCM", iv, tagLength: 128 },
+    cryptoKey,
+    data
+  );
+
+  // Web Crypto appends auth tag to ciphertext
+  const encryptedArray = new Uint8Array(encrypted);
+  const ciphertext = encryptedArray.slice(0, encryptedArray.length - 16);
+  const authTag = encryptedArray.slice(encryptedArray.length - 16);
+
+  const now = new Date().toISOString();
+
+  return {
+    schemaVersion: "logs.dat.encrypted.v2",
+    persona,
+    encryption: {
+      algorithm: "AES-256-GCM",
+      keyAlias,
+      ivBase64: uint8ArrayToBase64(iv),
+      authTagBase64: uint8ArrayToBase64(authTag),
+      createdAt: now,
+    },
+    ciphertextBase64: uint8ArrayToBase64(ciphertext),
+    updatedAt: now,
+  };
+}
+
+/**
+ * Decrypt an AES-256-GCM encrypted envelope back to JSON.
+ */
+export async function decryptJsonAes256Gcm<T>(
+  envelope: LogsDatEncryptedEnvelope
+): Promise<T> {
+  const keyBytes = await getOrCreateLocalEncryptionKey(envelope.encryption.keyAlias);
+  const iv = base64ToUint8Array(envelope.encryption.ivBase64);
+  const ciphertext = base64ToUint8Array(envelope.ciphertextBase64);
+  const authTag = base64ToUint8Array(envelope.encryption.authTagBase64);
+
+  // Reconstruct combined buffer (ciphertext + authTag) for Web Crypto
+  const combined = new Uint8Array(ciphertext.length + authTag.length);
+  combined.set(ciphertext, 0);
+  combined.set(authTag, ciphertext.length);
+
+  // Import key
+  const cryptoKey = await crypto.subtle.importKey(
+    "raw",
+    keyBytes,
+    { name: "AES-GCM" },
+    false,
+    ["decrypt"]
+  );
+
+  // Decrypt
+  const decrypted = await crypto.subtle.decrypt(
+    { name: "AES-GCM", iv, tagLength: 128 },
+    cryptoKey,
+    combined
+  );
+
+  const decoder = new TextDecoder();
+  const plaintext = decoder.decode(decrypted);
+  return JSON.parse(plaintext) as T;
+}
