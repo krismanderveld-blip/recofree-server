@@ -726,22 +726,22 @@ function ChatScreenInner() {
           persona,
           sessionId: `session_${Date.now()}`,
           localUserId: 'local_user',
-          candidateSignals: result.traceData ? {
-            fears: (result.traceData as any)._candidateSignals?.fears?.map((f: any) => ({ label: f.keyword, confidence: f.confidence })) ?? [],
-            hopes: (result.traceData as any)._candidateSignals?.hopes?.map((h: any) => ({ label: h.keyword, confidence: h.confidence })) ?? [],
-            goals: [],
-            triggers: (result.traceData as any)._candidateSignals?.triggers?.map((t: any) => ({ label: t.keyword, confidence: t.confidence })) ?? [],
+          candidateSignals: result.candidateSignals ? {
+            fears: (result.candidateSignals.fears || []).map((f: any) => ({ label: f.keyword || f.label || f, confidence: f.confidence ?? 0.5 })),
+            hopes: (result.candidateSignals.hopes || []).map((h: any) => ({ label: h.keyword || h.label || h, confidence: h.confidence ?? 0.5 })),
+            goals: (result.candidateSignals.goals || []).map((g: any) => ({ label: g.keyword || g.label || g, confidence: g.confidence ?? 0.5 })),
+            triggers: (result.candidateSignals.triggers || []).map((t: any) => ({ label: t.keyword || t.label || t, confidence: t.confidence ?? 0.5 })),
           } : null,
-          schemaModeResult: result.traceData?.payload?.promptBlocks?.schemaMode === 'yes' ? {
+          schemaModeResult: result.schemaModeResult?.activated ? {
             activated: true,
             modeDecision: {
-              acceptedModes: (result.traceData as any)._schemaModeResult?.modeDecision?.acceptedModes ?? [],
-              dominantMode: (result.traceData as any)._schemaModeResult?.modeDecision?.dominantMode ?? null,
+              acceptedModes: result.schemaModeResult.modeDecision?.acceptedModes ?? [],
+              dominantMode: result.schemaModeResult.modeDecision?.dominantMode ?? null,
             },
             schemaDecision: {
-              acceptedSchemas: (result.traceData as any)._schemaModeResult?.schemaDecision?.acceptedSchemas ?? [],
-              dominantSchema: (result.traceData as any)._schemaModeResult?.schemaDecision?.dominantSchema ?? null,
-              dominantDomain: (result.traceData as any)._schemaModeResult?.schemaDecision?.dominantDomain ?? null,
+              acceptedSchemas: result.schemaModeResult.schemaDecision?.acceptedSchemas ?? [],
+              dominantSchema: result.schemaModeResult.schemaDecision?.dominantSchema ?? null,
+              dominantDomain: result.schemaModeResult.schemaDecision?.dominantDomain ?? null,
             },
           } : null,
           bufferSnapshot: result.bufferSnapshot ? {

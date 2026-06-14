@@ -1230,3 +1230,6 @@
 - [x] Timestamps: schemaTendencies[] add firstDetectedAt + lastUpdatedAt
 - [x] Timestamps: modeTendencies[] add firstDetectedAt + lastUpdatedAt
 - [x] Timestamps: backpackAnalysis add previousAnalyzedAt field
+- [x] BackpackAnalysis Debug: fix memory write-back to use direct pipeline signals (candidateSignals + schemaModeResult now exposed on PipelineResult)
+- [x] BackpackAnalysis Debug: add backpackAnalysis + schemaTendencies + modeTendencies to debug snapshot in traceData.memory
+- [x] BackpackAnalysis Debug: verified endpoint returns 3 schemas, 2 modi, 2 triggers for Dutch abandonment text

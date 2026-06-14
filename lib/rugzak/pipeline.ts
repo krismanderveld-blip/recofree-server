@@ -420,6 +420,10 @@ export interface PipelineResult {
   blockReason?: string;
   /** Full engine trace data for debug logging */
   traceData?: import('@/lib/debug/engine-trace').EngineTraceInput;
+  /** Raw candidate signals from SignalEngine (fears/hopes/goals/triggers) */
+  candidateSignals?: { fears: any[]; hopes: any[]; goals: any[]; triggers: any[] } | null;
+  /** Raw schema/mode detection result */
+  schemaModeResult?: { activated: boolean; modeDecision: any; schemaDecision: any } | null;
 }
 
 /** Consolidated log entry for each message exchange */
@@ -2320,6 +2324,14 @@ export async function processMessage(
       bufferEmotionalDirection: preGPTDominantState.dominantDirection,
       bufferLiveIntent: analysis.emotionalState || '',
       bufferDominantState: `${preGPTDominantState.dominantModule} (${preGPTDominantState.sourceLayer})`,
+      backpackAnalysis: currentUserDat.backpackAnalysis ? {
+        schemaCount: (currentUserDat.backpackAnalysis as any).schemas?.length ?? 0,
+        modiCount: (currentUserDat.backpackAnalysis as any).modi?.length ?? 0,
+        triggerCount: (currentUserDat.backpackAnalysis as any).triggers?.length ?? 0,
+        analyzedAt: (currentUserDat.backpackAnalysis as any).analyzedAt ?? null,
+      } : null,
+      schemaTendencies: (currentUserDat.schemaTendencies || []).map((s: any) => ({ schemaId: s.schemaId, confidence: s.confidence ?? 0, frequency: s.frequency })),
+      modeTendencies: (currentUserDat.modeTendencies || []).map((m: any) => ({ modeId: m.modeId, confidence: m.confidence ?? 0, frequency: m.frequency })),
     },
     payload: {
       isSessionStart,
@@ -2383,6 +2395,12 @@ export async function processMessage(
     moduleActivations,
     k06Status,
     crisisProtocolActive,
+    candidateSignals: candidateSignals ?? null,
+    schemaModeResult: schemaModeResult ? {
+      activated: schemaModeResult.activated,
+      modeDecision: schemaModeResult.modeDecision,
+      schemaDecision: schemaModeResult.schemaDecision,
+    } : null,
   };
 }
 
