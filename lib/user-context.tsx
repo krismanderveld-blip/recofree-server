@@ -409,10 +409,109 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     callBackpackAnalysis(userId, fullText).then((analysis) => {
       if (analysis && state.userDat) {
         const previousAnalyzedAt = state.userDat.backpackAnalysis?.analyzedAt ?? null;
-        const updatedUserDat = {
+        const now = new Date().toISOString();
+        let updatedUserDat = {
           ...state.userDat,
           backpackAnalysis: { ...analysis, previousAnalyzedAt },
         };
+
+        // Route schemas → schemaTendencies (confidence ≥ 0.35)
+        const schemas = (analysis.schemas || []).filter((s: any) => s.confidence >= 0.35);
+        if (schemas.length > 0) {
+          const existingTendencies = [...(updatedUserDat.schemaTendencies || [])];
+          for (const schema of schemas) {
+            const schemaId = (schema.name || '').toLowerCase().replace(/[^a-z0-9_]/g, '_');
+            const existingIdx = existingTendencies.findIndex((s: any) => s.schemaId === schemaId);
+            if (existingIdx >= 0) {
+              // Update existing: moving average confidence, increment frequency
+              const existing = existingTendencies[existingIdx];
+              existingTendencies[existingIdx] = {
+                ...existing,
+                frequency: (existing.frequency || 0) + 1,
+                lastSeen: now,
+                lastUpdatedAt: now,
+                confidence: Math.round(((existing.confidence || 0.5) * 0.7 + schema.confidence * 0.3) * 1000) / 1000,
+              };
+            } else {
+              // New schema tendency
+              existingTendencies.push({
+                schemaId,
+                domain: schema.domain || 'unknown',
+                frequency: 1,
+                lastSeen: now,
+                copingStyle: null,
+                firstDetectedAt: now,
+                lastUpdatedAt: now,
+                confidence: schema.confidence,
+              });
+            }
+          }
+          updatedUserDat = { ...updatedUserDat, schemaTendencies: existingTendencies };
+        }
+
+        // Route modi → modeTendencies (confidence ≥ 0.35)
+        const modi = (analysis.modi || []).filter((m: any) => m.confidence >= 0.35);
+        if (modi.length > 0) {
+          const existingModes = [...(updatedUserDat.modeTendencies || [])];
+          for (const mode of modi) {
+            const modeId = (mode.name || '').toLowerCase().replace(/[^a-z0-9_]/g, '_');
+            const existingIdx = existingModes.findIndex((m: any) => m.modeId === modeId);
+            if (existingIdx >= 0) {
+              const existing = existingModes[existingIdx];
+              existingModes[existingIdx] = {
+                ...existing,
+                frequency: (existing.frequency || 0) + 1,
+                lastSeen: now,
+                lastUpdatedAt: now,
+                confidence: Math.round(((existing.confidence || 0.5) * 0.7 + mode.confidence * 0.3) * 1000) / 1000,
+              };
+            } else {
+              existingModes.push({
+                modeId,
+                frequency: 1,
+                lastSeen: now,
+                effectiveInterventions: [],
+                firstDetectedAt: now,
+                lastUpdatedAt: now,
+                confidence: mode.confidence,
+              });
+            }
+          }
+          updatedUserDat = { ...updatedUserDat, modeTendencies: existingModes };
+        }
+
+        // Route triggers → triggerPatterns (frequency upsert)
+        const triggers = analysis.triggers || [];
+        if (triggers.length > 0) {
+          const existingTriggers = [...(updatedUserDat.triggerPatterns || [])];
+          for (const triggerLabel of triggers) {
+            const normalized = (typeof triggerLabel === 'string' ? triggerLabel : triggerLabel.label || '').toLowerCase().trim();
+            if (!normalized) continue;
+            const existingIdx = existingTriggers.findIndex((t) => t.trigger.toLowerCase() === normalized);
+            if (existingIdx >= 0) {
+              const existing = existingTriggers[existingIdx];
+              existingTriggers[existingIdx] = {
+                ...existing,
+                count: (existing.count || 0) + 1,
+                lastSeen: now,
+                lastUpdatedAt: now,
+              };
+            } else {
+              existingTriggers.push({
+                trigger: normalized,
+                count: 1,
+                weight: 10,
+                firstSeen: now,
+                lastSeen: now,
+                firstDetectedAt: now,
+                lastUpdatedAt: now,
+              });
+            }
+          }
+          updatedUserDat = { ...updatedUserDat, triggerPatterns: existingTriggers };
+        }
+
+        console.log(`[BackpackAnalysis] Routed to user.dat: ${schemas.length} schemas → schemaTendencies, ${modi.length} modi → modeTendencies, ${triggers.length} triggers → triggerPatterns`);
         dispatch({ type: 'UPDATE_USERDAT', payload: updatedUserDat });
         persistUserDat(updatedUserDat);
       }
