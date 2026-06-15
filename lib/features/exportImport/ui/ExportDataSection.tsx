@@ -2,12 +2,15 @@
  * ExportDataSection — UI for creating encrypted .recofree backup.
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, Platform } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import { createEncryptedRecoFreeExport } from '../services/exportDataService';
 import type { ExportImportStores } from '../services/exportImportStores.types';
+
+const LAST_EXPORT_KEY = '@recofree_last_export_timestamp';
 
 interface ExportDataSectionProps {
   stores: ExportImportStores;
@@ -20,6 +23,13 @@ export function ExportDataSection({ stores, appVersion }: ExportDataSectionProps
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [lastExportedAt, setLastExportedAt] = useState<string | null>(null);
+
+  useEffect(() => {
+    AsyncStorage.getItem(LAST_EXPORT_KEY).then((val) => {
+      if (val) setLastExportedAt(val);
+    });
+  }, []);
 
   const passwordsMatch = password === confirmPassword;
   const passwordLongEnough = password.length >= 8;
@@ -53,6 +63,10 @@ export function ExportDataSection({ stores, appVersion }: ExportDataSectionProps
         });
       }
 
+      // Persist last export timestamp
+      await AsyncStorage.setItem(LAST_EXPORT_KEY, nowIso);
+      setLastExportedAt(nowIso);
+
       setSuccess(true);
       setPassword('');
       setConfirmPassword('');
@@ -69,6 +83,12 @@ export function ExportDataSection({ stores, appVersion }: ExportDataSectionProps
       <Text className="text-sm text-muted leading-relaxed">
         Create one encrypted file with your local RecoFree data. The file can only be opened with the password you choose.
       </Text>
+
+      {lastExportedAt && (
+        <Text className="text-xs text-muted">
+          Last exported: {formatExportDate(lastExportedAt)}
+        </Text>
+      )}
 
       <View className="gap-2">
         <Text className="text-xs font-medium text-muted uppercase">Password</Text>
@@ -134,4 +154,10 @@ export function ExportDataSection({ stores, appVersion }: ExportDataSectionProps
       </Text>
     </View>
   );
+}
+
+function formatExportDate(iso: string): string {
+  const d = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${pad(d.getDate())}-${pad(d.getMonth() + 1)}-${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }

@@ -1257,3 +1257,4 @@
 - [x] Encrypted Export/Import: settings/profile integration
 - [x] Encrypted Export/Import: 15 acceptance tests all green
 - [x] Encrypted Export/Import: existing 671 tests still green (was 656, now 671 with new tests)
+- [x] Encrypted Export/Import: "Last exported" timestamp shown in Profile export section
