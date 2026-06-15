@@ -1243,3 +1243,4 @@
 - [x] Session Greeting Engine: sessionInitGreetingStep pipeline integration (chat.tsx with fallback)
 - [x] Session Greeting Engine: 20 acceptance tests (corrected priority: RECENT_DIARY > BACKPACK_RECENT_UPDATE) — all passing
 - [x] Session Greeting Engine: server endpoint (POST /api/session-greeting) registered
+- [x] Debug snapshot: schemaTendencies/modeTendencies format changed from freq= to last= (date from lastUpdatedAt)

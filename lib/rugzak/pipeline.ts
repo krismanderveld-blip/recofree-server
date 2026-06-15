@@ -2330,8 +2330,8 @@ export async function processMessage(
         triggerCount: (currentUserDat.backpackAnalysis as any).triggers?.length ?? 0,
         analyzedAt: (currentUserDat.backpackAnalysis as any).analyzedAt ?? null,
       } : null,
-      schemaTendencies: (currentUserDat.schemaTendencies || []).map((s: any) => ({ schemaId: s.schemaId, confidence: s.confidence ?? 0, frequency: s.frequency })),
-      modeTendencies: (currentUserDat.modeTendencies || []).map((m: any) => ({ modeId: m.modeId, confidence: m.confidence ?? 0, frequency: m.frequency })),
+      schemaTendencies: (currentUserDat.schemaTendencies || []).map((s: any) => ({ schemaId: s.schemaId, confidence: s.confidence ?? 0, last: (s.lastUpdatedAt || s.lastSeen || '').slice(0, 10) || null })),
+      modeTendencies: (currentUserDat.modeTendencies || []).map((m: any) => ({ modeId: m.modeId, confidence: m.confidence ?? 0, last: (m.lastUpdatedAt || m.lastSeen || '').slice(0, 10) || null })),
     },
     payload: {
       isSessionStart,
