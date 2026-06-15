@@ -371,9 +371,9 @@ export interface UserDat {
   /** STOA sessions used in previous sessions (cross-session cooldown tracking) */
   stoaSessionsUsed?: Array<{ sessionId: number; usedAtSession: number }>;
   /** Schema/Mode: recurring mode tendencies (hybrid persistence — patterns only, never identity) */
-  modeTendencies?: Array<{ modeId: string; frequency: number; lastSeen: string; effectiveInterventions: string[]; /** ISO — first detection, never overwritten */ firstDetectedAt?: string; /** ISO — last confidence update */ lastUpdatedAt?: string; confidence?: number }>;
+  modeTendencies?: Array<{ modeId: string; frequency: number; lastSeen: string; effectiveInterventions: string[]; /** ISO — first detection, never overwritten */ firstDetectedAt?: string; /** ISO — last confidence update */ lastUpdatedAt?: string; confidence?: number; /** Confirmed = safe to present as known pattern to GPT. Auto-confirmed when frequency≥5 AND confidence≥0.7, or via clinical/user acknowledgment */ confirmed?: boolean; /** ISO — when confirmation occurred */ confirmedAt?: string }>;
   /** Schema/Mode: recurring schema tendencies (hybrid persistence — patterns only, never diagnosis) */
-  schemaTendencies?: Array<{ schemaId: string; domain: string; frequency: number; lastSeen: string; copingStyle: string | null; /** ISO — first detection, never overwritten */ firstDetectedAt?: string; /** ISO — last confidence update */ lastUpdatedAt?: string; confidence?: number }>;
+  schemaTendencies?: Array<{ schemaId: string; domain: string; frequency: number; lastSeen: string; copingStyle: string | null; /** ISO — first detection, never overwritten */ firstDetectedAt?: string; /** ISO — last confidence update */ lastUpdatedAt?: string; confidence?: number; /** Confirmed = safe to present as known pattern to GPT. Auto-confirmed when frequency≥5 AND confidence≥0.7, or via clinical/user acknowledgment */ confirmed?: boolean; /** ISO — when confirmation occurred */ confirmedAt?: string }>;
   /** ACT: progress tracking (values, preferred tools, fusion patterns, success counts) */
   actProgress?: {
     userValues: string[];

@@ -992,7 +992,7 @@ ${parts.join("\n")}
 
 // ─── System Prompt Builder ────────────────────────────────────────
 
-function buildSystemPrompt(input: ChatRequestInput): string {
+export function buildSystemPrompt(input: ChatRequestInput): string {
   const isElias = input.userType === "elias";
   const name = input.userName;
 

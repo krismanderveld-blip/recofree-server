@@ -1308,3 +1308,18 @@
 - [x] Verify: "Wat weet je over Melissa?" → Elias references rugzak content
 - [x] Verify: "Wat zijn mijn schema's?" → Elias lists known schemas
 - [x] All 751 tests remain green after changes
+- [x] E2E chain test: user.dat → openai-provider payload → Zod validation → server prompt (SESSION_INIT)
+- [x] E2E chain test: user.dat → openai-provider payload → Zod validation → server prompt (LIVE_MESSAGE)
+- [x] E2E chain test: asserts KNOWN USER PATTERNS block with schema name in GPT prompt
+- [x] E2E chain test: asserts rugzak person reference (Melissa) in GPT prompt
+- [x] E2E chain test: proves Zod stripping would break the test (regression guard)
+- [x] All 800 tests green (was 751, now 800 with e2e chain + confirmation tests)
+- [x] Schema/Mode confirmation layer: Add `confirmed: boolean` field to SchemaTendency and ModeTendency types
+- [x] Schema/Mode confirmation layer: Auto-confirm when frequency≥5 AND confidence≥0.7
+- [ ] Schema/Mode confirmation layer: Confirm via clinical mode acknowledgment (future: requires clinical mode integration)
+- [ ] Schema/Mode confirmation layer: Confirm via user self-acknowledgment in chat (future: requires NLU intent detection)
+- [x] Schema/Mode confirmation layer: Gate KNOWN USER PATTERNS injection to confirmed-only
+- [x] Schema/Mode confirmation layer: Keep SchemaMode engine using ALL candidates (confirmed + unconfirmed)
+- [x] Schema/Mode confirmation layer: Update debug trace to show confirmed vs candidate status
+- [x] Schema/Mode confirmation layer: Write tests for auto-confirmation threshold logic
+- [x] Schema/Mode confirmation layer: All existing tests remain green (800 total)

@@ -228,17 +228,21 @@ function buildActiveSignals(context: ChatContext): Array<{ label: string; score:
 
 /**
  * Build compact known user patterns block from userDat.
- * Filters schemas/modes to confidence >= 0.35, takes top 8 triggers by weight/count.
+ * Only CONFIRMED schemas/modes are included (safe to present as known patterns to GPT).
+ * Unconfirmed candidates still feed the SchemaMode engine but are NOT shown here.
+ * Triggers are always included (top 8 by weight/count).
  */
 function buildKnownUserPatterns(userDat: ChatContext['userDat']): { schemas: Array<{ name: string; confidence: number }>; modes: Array<{ name: string; confidence: number }>; triggers: string[] } | null {
   if (!userDat) return null;
 
+  // Only CONFIRMED schemas (confirmed === true) are safe to present as known
   const schemas = (userDat.schemaTendencies || [])
-    .filter((s: any) => (s.confidence ?? 0) >= 0.35)
+    .filter((s: any) => s.confirmed === true && (s.confidence ?? 0) >= 0.35)
     .map((s: any) => ({ name: s.schemaId, confidence: s.confidence ?? 0 }));
 
+  // Only CONFIRMED modes (confirmed === true) are safe to present as known
   const modes = (userDat.modeTendencies || [])
-    .filter((m: any) => (m.confidence ?? 0) >= 0.35)
+    .filter((m: any) => m.confirmed === true && (m.confidence ?? 0) >= 0.35)
     .map((m: any) => ({ name: m.modeId, confidence: m.confidence ?? 0 }));
 
   const triggers = (userDat.triggerPatterns || [])

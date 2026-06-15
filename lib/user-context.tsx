@@ -18,6 +18,7 @@ import {
 } from './rugzak/engine';
 import { sanitizeSliders } from './engine/shared/slider-sanitize';
 import { checkAndExtract, saveExtractedEntities } from './backpack-extractor/extractor';
+import { applyAutoConfirmation } from './engine/shared/tendency-confirmation';
 import { callExtractionEndpoint } from './backpack-extractor/client';
 import { callBackpackAnalysis } from './backpack-analysis/client';
 
@@ -448,7 +449,8 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
               });
             }
           }
-          updatedUserDat = { ...updatedUserDat, schemaTendencies: existingTendencies };
+          // Apply auto-confirmation to schemas meeting threshold (freq≥5 AND conf≥0.7)
+          updatedUserDat = { ...updatedUserDat, schemaTendencies: applyAutoConfirmation(existingTendencies, now) };
         }
 
         // Route modi → modeTendencies (confidence ≥ 0.35)
@@ -479,7 +481,8 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
               });
             }
           }
-          updatedUserDat = { ...updatedUserDat, modeTendencies: existingModes };
+          // Apply auto-confirmation to modes meeting threshold (freq≥5 AND conf≥0.7)
+          updatedUserDat = { ...updatedUserDat, modeTendencies: applyAutoConfirmation(existingModes, now) };
         }
 
         // Route triggers → triggerPatterns (frequency upsert)

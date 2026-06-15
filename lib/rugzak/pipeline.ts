@@ -299,6 +299,7 @@ import {
   buildKimModuleMemoryPatch,
   applyKimModuleMemoryPatch,
 } from '../engine/kim/kim-module-memory';
+import { applyAutoConfirmation } from '../engine/shared/tendency-confirmation';
 
 // ─── Pattern Marking (post-GPT local state) ─────────────────
 
@@ -2948,6 +2949,8 @@ export async function endSession(
       modeTendencies.sort((a, b) => b.frequency - a.frequency);
       modeTendencies = modeTendencies.slice(0, MAX_TENDENCIES);
     }
+    // Apply auto-confirmation to modes meeting threshold (freq≥5 AND conf≥0.7)
+    modeTendencies = applyAutoConfirmation(modeTendencies, now);
     updatedUserDat = { ...updatedUserDat, modeTendencies };
 
     // --- Schema tendencies: decay unseen, prune, cap ---
@@ -2976,6 +2979,8 @@ export async function endSession(
       schemaTendencies.sort((a, b) => b.frequency - a.frequency);
       schemaTendencies = schemaTendencies.slice(0, MAX_TENDENCIES);
     }
+    // Apply auto-confirmation to schemas meeting threshold (freq≥5 AND conf≥0.7)
+    schemaTendencies = applyAutoConfirmation(schemaTendencies, now);
     updatedUserDat = { ...updatedUserDat, schemaTendencies };
 
     const decayedModes = modeTendencies.length;
