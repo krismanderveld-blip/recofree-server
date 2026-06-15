@@ -1369,3 +1369,9 @@
 - [x] Kim Cluster 2: critical acceptance tests (persona separation, crisis numbers, KIND>GEVAAR priority)
 - [x] GptSignalEngine: Kim-specific prompt for third-person relapse detection
 - [x] All existing 954+ tests remain green (974 passed)
+- [x] Kim Cluster 3: types + acute override gate + detectors (ROL-K01, VETR02-K, LEUGEN-K01)
+- [x] Kim Cluster 3: NL/EN/FR marker files
+- [x] Kim Cluster 3: prompt payload builders + memory patch builder + output safety filter
+- [x] Kim Cluster 3: pipeline wiring as P8 (below acute clusters)
+- [x] Kim Cluster 3: 14 critical acceptance tests
+- [x] Kim Cluster 3: all existing 974+ tests remain green (988 passed)

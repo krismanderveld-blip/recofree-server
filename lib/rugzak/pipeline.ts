@@ -282,6 +282,8 @@ import { runKimAdvancedP6 } from '../engine/kim/kim-advanced-modules-p6';
 import type { KimAdvancedP6Result } from '../engine/kim/kim-advanced-modules-p6';
 import { runKimAdvancedP7 } from '../engine/kim/kim-advanced-modules-p7';
 import type { KimAdvancedP7Result } from '../engine/kim/kim-advanced-modules-p7';
+import { runKimAdvancedModulesP8 } from '../engine/kim/kim-advanced-modules-p8';
+import type { KimP8Result } from '../engine/kim/kim-advanced-modules-p8';
 import { detectISO01Signals } from '../engine/elias/short-module-detector';
 import {
   evaluateModuleMemoryRepeat,
@@ -1563,6 +1565,50 @@ export async function processMessage(
     });
   }
 
+  // ── STEP 5e9a: Kim P8 (Relational Dynamics: ROL-K01/VETR02-K/LEUGEN-K01) ──
+  // Reflective modules. Lower priority than acute clusters (P6/P7).
+  let kimP8Result: KimP8Result = {
+    active: false,
+    moduleId: null,
+    detectionResult: null,
+    payload: null,
+    memoryPatch: null,
+    promptContext: null,
+  };
+  if (backpack.userType === 'kim' && !!(backpack as any).intake?.startEmotion && !kimAdvancedP6Result.overridesLowerModules && !kimAdvancedP7Result.active) {
+    kimP8Result = runKimAdvancedModulesP8({
+      intakeCompleted: true,
+      persona: 'kim',
+      latestUserMessage: userMessage,
+      recentMessages: sessionBuffer.recentMessages.slice(-3).map(m => m.content),
+      language: (currentUserDat as any).detectedLanguage ?? 'nl',
+      activeRelapseNow: /(?:hij|zij|he|she).*(?:drinkt|gebruikt|drinks|uses).*(?:nu|weer|opnieuw|again|now)/i.test(userMessage),
+      postRelapseAftermath: /(?:gisteren|vorige week|yesterday|last week).*(?:gedronken|gebruikt|drank|used)/i.test(userMessage),
+      caregiverOverwhelmed: (currentUserDat as any).caregiverOverwhelmed ?? false,
+      immediateDanger: analysis.riskLevel === 'critical',
+      childPresentOrAffected: (currentUserDat as any).childrenInvolved ?? false,
+      aggressionDetected: (currentUserDat as any).aggressionDetected ?? false,
+      domesticViolenceOrAbuseDetected: (currentUserDat as any).domesticViolenceOrAbuseDetected ?? false,
+      selfHarmOrSuicideDetected: (currentUserDat as any).selfHarmOrSuicideDetected ?? false,
+      medicalEmergencyDetected: (currentUserDat as any).overdoseOrMedicalDangerDetected ?? false,
+      disappearanceAcuteDangerDetected: (currentUserDat as any).disappearanceDetected ?? false,
+      careRoleDroppedOrPaused: /(?:opgenomen|admitted|stabiel|stable|in behandeling|in treatment)/i.test(userMessage),
+      lovedOneStableOrAdmitted: /(?:opgenomen|admitted|stabiel|stable|veilig|safe|hulp heeft)/i.test(userMessage),
+      suppressedEmotionWaveDetected: /(?:boos|woede|leeg|moe|verdriet|huilen|anger|empty|exhausted|grief|crying)/i.test(userMessage),
+      partnerAbsentOrInAdmission: /(?:opgenomen|weg|afwezig|admitted|away|absent|in detox|in behandeling)/i.test(userMessage),
+      hypervigilanceDetected: /(?:check|controleer|telefoon|scannen|alert|v[eé]rifier)/i.test(userMessage),
+      reexperienceDetected: /(?:herleef|herbeleef|relive|re-experience|revis)/i.test(userMessage),
+      chronicLyingDetected: /(?:liegt.*constant|blijft liegen|lies.*constantly|keeps lying|ment.*tout le temps)/i.test(userMessage),
+      detectiveRoleDetected: /(?:detective|bewijs|proof|controleer alles|check everything|preuves)/i.test(userMessage),
+      betrayalPainDetected: /(?:vertrouw.*niet|trust.*not|confiance.*plus)/i.test(userMessage),
+      lovedOneUseContext: /(?:hij|zij|he|she|il|elle)/i.test(userMessage),
+      firstPersonUseContext: /\b(ik|I|je)\b.*\b(gebruik|drink|use|consume)\b/i.test(userMessage),
+      sessionId: sessionId ?? 'unknown',
+      turnId: `turn-${Date.now()}`,
+      timestampIso: new Date().toISOString(),
+    });
+  }
+
   // ── STEP 5e9: Kim P2 (BEDR01/VETR01/GASL01) ──
   let kimAdvancedP2Result: KimAdvancedP2Result = {
     bedr01Context: null,
@@ -2094,6 +2140,8 @@ export async function processMessage(
     relapseClusterContext: kimAdvancedP7Result.overridesLowerModules ? undefined : (kimAdvancedP6Result.relapseClusterContext || undefined),
     // Kim Danger/Child Cluster (GEVAAR-K01/KIND-K01) — overrides ALL lower Kim modules when active
     dangerChildContext: kimAdvancedP7Result.dangerChildContext || undefined,
+    // Kim Relational Dynamics Cluster (ROL-K01/VETR02-K/LEUGEN-K01) — reflective modules below acute
+    relationalDynamicsContext: (kimAdvancedP7Result.overridesLowerModules || kimAdvancedP6Result.overridesLowerModules) ? undefined : (kimP8Result.active ? kimP8Result.promptContext || undefined : undefined),
     // Backpack entity extraction: send structured entities instead of full backpack when unchanged
     extractedEntities: currentUserDat.extractedEntities ?? undefined,
     backpackChanged: !currentUserDat.extractedEntities || (currentUserDat.extractedEntities.persons.length === 0),
@@ -2400,6 +2448,7 @@ export async function processMessage(
       { step: '5e12. Kim P5 (ISO01)', status: kimAdvancedP5Result.activeModule ? 'passed' : 'skipped', reason: kimAdvancedP5Result.activeModule ? `kim|module=${kimAdvancedP5Result.activeModule}` : 'no Kim P5 activation' },
       { step: '5e13. Kim P6 (HERV-K01/NAHERV-K01/CRISIS-K01)', status: kimAdvancedP6Result.activeModule ? 'passed' : 'skipped', reason: kimAdvancedP6Result.activeModule ? `kim|module=${kimAdvancedP6Result.activeModule}|overrides=${kimAdvancedP6Result.overridesLowerModules}` : 'no Relapse Cluster activation' },
       { step: '5e14. Kim P7 (GEVAAR-K01/KIND-K01)', status: kimAdvancedP7Result.activeModule ? 'passed' : 'skipped', reason: kimAdvancedP7Result.activeModule ? `kim|module=${kimAdvancedP7Result.activeModule}|overrides=${kimAdvancedP7Result.overridesLowerModules}|crisis=${kimAdvancedP7Result.crisisNumbersToShow.join(',')}` : 'no Danger/Child Cluster activation' },
+      { step: '5e15. Kim P8 (ROL-K01/VETR02-K/LEUGEN-K01)', status: kimP8Result.active ? 'passed' : 'skipped', reason: kimP8Result.active ? `kim|module=${kimP8Result.moduleId}` : 'no Relational Dynamics activation' },
       { step: '6a. Zone decision', status: elisDecision ? 'passed' : 'skipped', reason: elisDecision ? `zone=${elisDecision.zone.computed.label}` : 'kim user' },
       { step: '6b. Engine directive', status: engineDirective ? 'passed' : 'skipped', reason: engineDirective ? `engine=${engineDirective.engine}` : 'none' },
       { step: '6c. Intervention', status: interventionContinuity ? 'passed' : 'skipped', reason: interventionContinuity ? `type=${interventionContinuity.lastInterventionType}` : 'not active' },

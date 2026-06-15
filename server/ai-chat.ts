@@ -249,6 +249,7 @@ interface ChatRequestInput {
   relapseClusterContext?: string;
   /** Kim Danger/Child Cluster prompt payload (GEVAAR-K01/KIND-K01). Injected into system prompt when active. Overrides relapse cluster. */
   dangerChildContext?: string;
+  relationalDynamicsContext?: string;
 }
 
 // ─── Server-side Session Cache ───────────────────────────────────
@@ -1048,6 +1049,9 @@ export function buildSystemPrompt(input: ChatRequestInput): string {
     '- CRISIS-K01: Crisis Naaste — acute veiligheidsdreiging, geweld, suïcide, medische nood',
     '- GEVAAR-K01: Gevaar Naaste — gevaarlijke situatie door middelengebruik (agressie, dronken rijden, verdwijning, overdosis)',
     '- KIND-K01: Kind in Gevaar — kindveiligheid bij verslaving (mishandeling, verwaarlozing, parentificatie)',
+    '- ROL-K01: Rol Naaste — emotiegolf na wegvallen zorgrol (opname, stabilisatie), onderdrukte woede/verdriet/leegte',
+    '- VETR02-K: Verlatingsvrees Naaste — hyperwaakzaamheid bij afwezigheid/stilte partner (opname, detox, afstand)',
+    '- LEUGEN-K01: Leugen Naaste — chronisch liegen, verbroken beloftes, wantrouwen vs hoop, grenzen zonder detective-rol',
     '- CGT/CBT: Cognitieve Gedragstherapie — gedachtepatronen herkennen en bijsturen',
     '- DBT/DGT: Distress Tolerance — crisisstabilisatie en emotieregulatie',
     '- MBT: Mentalisatie — begrijpen wat er van binnen gebeurt voor je reageert',
@@ -1555,6 +1559,7 @@ ${crisisInstructions}
 ${relapseIntentInstruction}
 ${input.relapseClusterContext ? `\n=== KIM RELAPSE CLUSTER MODULE ACTIVE ===\n${input.relapseClusterContext}\n=== END RELAPSE CLUSTER ===` : ''}
 ${input.dangerChildContext ? `\n=== KIM DANGER/CHILD CLUSTER MODULE ACTIVE ===\n${input.dangerChildContext}\n=== END DANGER/CHILD CLUSTER ===` : ''}
+${input.relationalDynamicsContext ? `\n=== KIM RELATIONAL DYNAMICS MODULE ACTIVE ===\n${input.relationalDynamicsContext}\n=== END RELATIONAL DYNAMICS ===` : ''}
 ${sessionEndInstructions}
 
 ANTI-FABRICATION RULE — ABSOLUTE:
@@ -1949,6 +1954,7 @@ ${crisisInstructions}
 ${relapseIntentInstruction}
 ${input.relapseClusterContext ? `\n=== KIM RELAPSE CLUSTER MODULE ACTIVE ===\n${input.relapseClusterContext}\n=== END RELAPSE CLUSTER ===` : ''}
 ${input.dangerChildContext ? `\n=== KIM DANGER/CHILD CLUSTER MODULE ACTIVE ===\n${input.dangerChildContext}\n=== END DANGER/CHILD CLUSTER ===` : ''}
+${input.relationalDynamicsContext ? `\n=== KIM RELATIONAL DYNAMICS MODULE ACTIVE ===\n${input.relationalDynamicsContext}\n=== END RELATIONAL DYNAMICS ===` : ''}
 ${sessionEndInstructions}
 
 ANTI-FABRICATION RULE — ABSOLUTE:
