@@ -245,8 +245,8 @@ export function buildTraceBlock(input: EngineTraceInput): string {
   lines.push('  user.dat:');
   lines.push(`    totalSessions: ${mem.totalSessions}`);
   lines.push(`    triggerPatterns: [${mem.triggerPatterns.map(t => `${t.trigger}(${t.count}x, w=${t.weight ?? 0})`).join(', ')}]`);
-  lines.push(`    schemaTendencies: [${(mem.schemaTendencies || []).map((s: any) => `${s.schemaId}(conf=${s.confidence}, freq=${s.frequency})`).join(', ')}]`);
-  lines.push(`    modeTendencies: [${(mem.modeTendencies || []).map((m: any) => `${m.modeId}(conf=${m.confidence}, freq=${m.frequency})`).join(', ')}]`);
+  lines.push(`    schemaTendencies: [${(mem.schemaTendencies || []).map((s: any) => `${s.schemaId}(conf=${s.confidence}, last=${s.last || s.lastUpdatedAt || s.lastSeen || '-'})`).join(', ')}]`);
+  lines.push(`    modeTendencies: [${(mem.modeTendencies || []).map((m: any) => `${m.modeId}(conf=${m.confidence}, last=${m.last || m.lastUpdatedAt || m.lastSeen || '-'})`).join(', ')}]`);
   lines.push(`    moduleUsage: [${mem.moduleUsage.map(m => `${m.moduleId}(${m.count}x)`).join(', ')}]`);
   lines.push(`    gewijzigde velden: [${mem.changedUserDatFields.join(', ') || 'geen'}]`);
   lines.push('');

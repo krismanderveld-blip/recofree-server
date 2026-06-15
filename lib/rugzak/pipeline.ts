@@ -2347,6 +2347,8 @@ export async function processMessage(
         stoa: stoaResult.activated ? 'yes' : 'no',
         schemaMode: schemaModeResult.activated ? 'yes' : 'no',
         act: actResult.activated ? 'yes' : 'no',
+        knownPatterns: currentUserDat.schemaTendencies?.some((s: any) => (s.confidence ?? 0) >= 0.35) || currentUserDat.modeTendencies?.some((m: any) => (m.confidence ?? 0) >= 0.35) || (currentUserDat.triggerPatterns?.length ?? 0) > 0 ? 'yes' : 'no',
+        backpackAnalysis: currentUserDat.backpackAnalysis ? 'yes' : 'no',
       },
       estimatedTokens: estimateTokens(JSON.stringify(context)),
       usedModel: selectedModel ?? 'unknown',

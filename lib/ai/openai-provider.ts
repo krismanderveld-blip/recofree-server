@@ -226,6 +226,32 @@ function buildActiveSignals(context: ChatContext): Array<{ label: string; score:
   return signals;
 }
 
+/**
+ * Build compact known user patterns block from userDat.
+ * Filters schemas/modes to confidence >= 0.35, takes top 8 triggers by weight/count.
+ */
+function buildKnownUserPatterns(userDat: ChatContext['userDat']): { schemas: Array<{ name: string; confidence: number }>; modes: Array<{ name: string; confidence: number }>; triggers: string[] } | null {
+  if (!userDat) return null;
+
+  const schemas = (userDat.schemaTendencies || [])
+    .filter((s: any) => (s.confidence ?? 0) >= 0.35)
+    .map((s: any) => ({ name: s.schemaId, confidence: s.confidence ?? 0 }));
+
+  const modes = (userDat.modeTendencies || [])
+    .filter((m: any) => (m.confidence ?? 0) >= 0.35)
+    .map((m: any) => ({ name: m.modeId, confidence: m.confidence ?? 0 }));
+
+  const triggers = (userDat.triggerPatterns || [])
+    .sort((a: any, b: any) => (b.weight ?? b.count ?? 0) - (a.weight ?? a.count ?? 0))
+    .slice(0, 8)
+    .map((t: any) => t.trigger);
+
+  // Only return if there's something meaningful
+  if (schemas.length === 0 && modes.length === 0 && triggers.length === 0) return null;
+
+  return { schemas, modes, triggers };
+}
+
 export class OpenAIProvider implements AIProvider {
   async generateResponse(context: ChatContext): Promise<AIResult> {
     try {
@@ -477,6 +503,12 @@ export class OpenAIProvider implements AIProvider {
           extractedEntities: gptPayload.extractedEntities ?? null,
           backpackChanged: gptPayload.backpackChanged ?? false,
 
+          // Backpack deep analysis (schemas, modes, triggers from GPT-4o)
+          backpackAnalysis: context.userDat?.backpackAnalysis ?? null,
+
+          // Known user patterns (compact, every turn)
+          knownUserPatterns: buildKnownUserPatterns(context.userDat),
+
           // Full data (SESSION_INIT only)
           backpack: gptPayload.backpack,
           userDat: gptPayload.userDat,
@@ -611,6 +643,12 @@ export class OpenAIProvider implements AIProvider {
 
           // Active signals for clinical annotation
           activeSignals: buildActiveSignals(context),
+
+          // Backpack deep analysis (schemas, modes, triggers from GPT-4o)
+          backpackAnalysis: context.userDat?.backpackAnalysis ?? null,
+
+          // Known user patterns (compact, every turn)
+          knownUserPatterns: buildKnownUserPatterns(context.userDat),
 
           // NO backpack, NO userDat, NO diaryEntries, NO coreWound,
           // NO contextLine, NO relationshipAnchor, NO relationalPattern

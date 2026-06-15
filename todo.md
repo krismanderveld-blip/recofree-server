@@ -1301,3 +1301,10 @@
 - [x] Absence Awareness: Write returnAfterAbsencePromptPayload tests (10 tests)
 - [x] Absence Awareness: Write sessionStatsUpdateOrder tests (5 tests)
 - [x] Absence Awareness: All 751 tests green (was 711, now 751 with 38 new absence tests + 2 updated)
+- [x] Chat pipeline: Inject KNOWN USER PATTERNS block (schemas, modes, triggers) into GPT prompt
+- [x] Chat pipeline: Inject relevant rugzak-context text via backpack_relevance into GPT prompt
+- [x] Chat pipeline: Add GPT instruction for natural referencing of user knowledge
+- [x] Debug fix: schemaTendencies/modeTendencies show last=datum instead of freq=undefined
+- [x] Verify: "Wat weet je over Melissa?" → Elias references rugzak content
+- [x] Verify: "Wat zijn mijn schema's?" → Elias lists known schemas
+- [x] All 751 tests remain green after changes

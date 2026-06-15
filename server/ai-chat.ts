@@ -231,6 +231,13 @@ interface ChatRequestInput {
     analyzedAt: string;
     previousAnalyzedAt: string | null;
   };
+
+  /** Compact known user patterns (schemas, modes, triggers) — injected every turn */
+  knownUserPatterns?: {
+    schemas: Array<{ name: string; confidence: number }>;
+    modes: Array<{ name: string; confidence: number }>;
+    triggers: string[];
+  };
 }
 
 // ─── Server-side Session Cache ───────────────────────────────────
@@ -498,6 +505,67 @@ export const chatInputSchema = z.object({
     score: z.number(),
     memory: z.string(),
   })).optional(),
+
+  // Backpack Entity Extraction: structured memory (replaces full backpack text when unchanged)
+  extractedEntities: z.object({
+    persons: z.array(z.object({
+      name: z.string(),
+      relationship: z.string(),
+      relationshipNL: z.string(),
+      age: z.string().nullable(),
+      livingSituation: z.string().nullable(),
+      emotionalValence: z.string(),
+      context: z.string(),
+      sourceSection: z.string(),
+    })),
+    events: z.array(z.object({
+      description: z.string(),
+      type: z.string(),
+      timePeriod: z.string().nullable(),
+      peopleInvolved: z.array(z.string()),
+      emotionalImpact: z.string(),
+      isTriggerSource: z.boolean(),
+      sourceSection: z.string(),
+    })),
+    patterns: z.array(z.object({
+      description: z.string(),
+      type: z.string(),
+      schemaHypothesis: z.string().nullable(),
+      frequency: z.string(),
+      peopleInvolved: z.array(z.string()),
+      sourceSection: z.string(),
+    })),
+    contexts: z.array(z.object({
+      description: z.string(),
+      type: z.string(),
+      relevance: z.string(),
+      sourceSection: z.string(),
+    })),
+    extractedAt: z.string(),
+    sourceHash: z.string(),
+    schemaVersion: z.number(),
+  }).optional(),
+  /** Whether backpack content changed since last extraction */
+  backpackChanged: z.boolean().optional(),
+
+  /** Deep analysis of backpack (schemas, modes, triggers, core beliefs, coping patterns) from GPT-4o */
+  backpackAnalysis: z.object({
+    schemas: z.array(z.object({ name: z.string(), confidence: z.number(), evidence: z.string() })),
+    modi: z.array(z.object({ name: z.string(), confidence: z.number(), evidence: z.string() })),
+    triggers: z.array(z.string()),
+    coreBeliefs: z.array(z.string()),
+    copingPatterns: z.array(z.string()),
+    analysisVersion: z.number(),
+    analyzedAt: z.string(),
+    previousAnalyzedAt: z.string().nullable(),
+  }).optional(),
+
+  /** Compact known user patterns (schemas, modes, triggers) — injected every turn */
+  knownUserPatterns: z.object({
+    schemas: z.array(z.object({ name: z.string(), confidence: z.number() })),
+    modes: z.array(z.object({ name: z.string(), confidence: z.number() })),
+    triggers: z.array(z.string()),
+  }).optional(),
 });
 
 // ─── Structured Memory Block Builder (from extractedEntities) ──────────────
@@ -1372,12 +1440,30 @@ Keep it short (3-5 sentences max). Do NOT ask new questions.`;
       conditional.recentDiary = [];
     }
 
+    // Build KNOWN USER PATTERNS block (compact, every turn)
+    let knownPatternsBlock = '';
+    if (input.knownUserPatterns) {
+      const kp = input.knownUserPatterns;
+      const schemaLines = kp.schemas.map(s => `${s.name} (${(s.confidence * 100).toFixed(0)}%)`).join(', ');
+      const modeLines = kp.modes.map(m => `${m.name} (${(m.confidence * 100).toFixed(0)}%)`).join(', ');
+      const triggerLines = kp.triggers.join(', ');
+      knownPatternsBlock = `\n\u2500\u2500\u2500 KNOWN USER PATTERNS \u2500\u2500\u2500
+Schemas: ${schemaLines || 'geen gedetecteerd'}
+Modes: ${modeLines || 'geen gedetecteerd'}
+Recurring triggers: ${triggerLines || 'geen'}
+
+This is information the user shared about themselves and patterns the engine detected. Reference it naturally when relevant. Never present as clinical diagnosis. You DO know this about the user \u2014 never say you don't know them.
+\u2500\u2500\u2500 END KNOWN USER PATTERNS \u2500\u2500\u2500`;
+      console.log(`[AI Chat] Known patterns injected: ${kp.schemas.length} schemas, ${kp.modes.length} modes, ${kp.triggers.length} triggers`);
+    }
+
     return `${identity}
 
 ${antiHallucination}
 ${conditional.relationshipMap}
 ${lifeStoryContext}
 ${backpackAnalysisContext}
+${knownPatternsBlock}
 
 The user's name is ${name}. Address them by name occasionally.
 
@@ -1738,21 +1824,48 @@ Rules:
   // ── RELEVANCE CONTEXT (full at session start) ──
   const relevanceContext = buildFullRelevanceBlock(input);
 
+  // ── BACKPACK ANALYSIS (session start) ──
+  let sessionStartBackpackAnalysis = '';
+  if (input.backpackAnalysis && input.backpackAnalysis.schemas.length > 0) {
+    const schemas = input.backpackAnalysis.schemas
+      .filter(s => s.confidence >= 0.35)
+      .map(s => `${s.name} (${(s.confidence * 100).toFixed(0)}%): ${s.evidence}`)
+      .join('\n  ');
+    const modi = input.backpackAnalysis.modi
+      .filter(m => m.confidence >= 0.35)
+      .map(m => `${m.name} (${(m.confidence * 100).toFixed(0)}%): ${m.evidence}`)
+      .join('\n  ');
+    const triggers = input.backpackAnalysis.triggers.join(', ');
+    const beliefs = input.backpackAnalysis.coreBeliefs.join('; ');
+    const coping = input.backpackAnalysis.copingPatterns.join('; ');
+    sessionStartBackpackAnalysis = `\n─── BACKPACK DEEP ANALYSIS (GPT-4o, ${input.backpackAnalysis.analyzedAt}) ───\n  Schema's: ${schemas || 'geen gedetecteerd'}\n  Modi: ${modi || 'geen gedetecteerd'}\n  Triggers: ${triggers || 'geen'}\n  Kernovertuigingen: ${beliefs || 'geen'}\n  Copingpatronen: ${coping || 'geen'}\n─── END BACKPACK ANALYSIS ───`;
+    console.log(`[AI Chat] SESSION_INIT: Backpack analysis injected (${input.backpackAnalysis.schemas.length} schemas, ${input.backpackAnalysis.modi.length} modes)`);
+  }
+
+  // ── KNOWN USER PATTERNS (session start) ──
+  let sessionStartKnownPatterns = '';
+  if (input.knownUserPatterns) {
+    const kp = input.knownUserPatterns;
+    const schemaLines = kp.schemas.map(s => `${s.name} (${(s.confidence * 100).toFixed(0)}%)`).join(', ');
+    const modeLines = kp.modes.map(m => `${m.name} (${(m.confidence * 100).toFixed(0)}%)`).join(', ');
+    const triggerLines = kp.triggers.join(', ');
+    sessionStartKnownPatterns = `\n─── KNOWN USER PATTERNS ───\nSchemas: ${schemaLines || 'geen gedetecteerd'}\nModes: ${modeLines || 'geen gedetecteerd'}\nRecurring triggers: ${triggerLines || 'geen'}\n\nThis is information the user shared about themselves and patterns the engine detected. Reference it naturally when relevant. Never present as clinical diagnosis. You DO know this about the user — never say you don't know them.\n─── END KNOWN USER PATTERNS ───`;
+    console.log(`[AI Chat] SESSION_INIT: Known patterns injected: ${kp.schemas.length} schemas, ${kp.modes.length} modes, ${kp.triggers.length} triggers`);
+  }
+
   // ══════════════════════════════════════════════════════════════
   // ASSEMBLE FULL SESSION-START PROMPT
   // ══════════════════════════════════════════════════════════════
-
   return `${identity}
-
 ${antiHallucination}
-
 ${schemaRecognition}
 
 The user's name is ${name}. Address them by name occasionally.
 ${identityMemory}
 ${diaryMemory}
 ${sessionMemory}
-
+${sessionStartBackpackAnalysis}
+${sessionStartKnownPatterns}
 ${relevanceContext}
 
 === MANDATORY BEHAVIORAL INSTRUCTIONS ===
