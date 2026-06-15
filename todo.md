@@ -1260,3 +1260,17 @@
 - [x] Encrypted Export/Import: "Last exported" timestamp shown in Profile export section
 - [x] BUG FIX: App crash on startup — expo-document-picker and expo-sharing static imports caused native module crash on APK builds compiled before packages were added. Fixed by converting all imports to dynamic `await import()`.
 - [x] BUG FIX: expo-document-picker and expo-sharing versions corrected from v56 to ~14.0.8 (SDK 54 compatible)
+- [x] Export scope: Add Elias Projection store (@recofree_projection_elias) to export/import
+- [x] Export scope: Add Kim Projection store (@recofree_projection_kim) to export/import
+- [x] Export scope: Add Emergency Contacts store (emergencyContacts) to export/import
+- [x] Export scope: Add derived stores (backpack_hash, extracted_entities) to export/import
+- [x] Export scope: Update ExportImportStores.types.ts with new store interfaces
+- [x] Export scope: Update ExportPayload types with new fields
+- [x] Export scope: Update exportDataService with new stores
+- [x] Export scope: Update importDataService with new stores
+- [x] Export scope: Update useExportImportStores hook with new store adapters
+- [x] Intake import: Add import-from-backup option to intake step 1
+- [x] Intake import: After successful import, skip intake and go to main app
+- [x] Tests: 8 new acceptance tests for extended export scope — all green
+- [x] Tests: All 679 tests green (was 671, now 679 with new tests)
+- [x] BUG FIX: Crypto layer rewritten from Web Crypto API to @noble/ciphers + @noble/hashes for native Android/iOS compatibility

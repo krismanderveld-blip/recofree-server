@@ -29,6 +29,10 @@ export interface ExportScopeMetadata {
   includesBackpackData: true;
   includesEliasPersona: boolean;
   includesKimPersona: boolean;
+  // NEW scope flags
+  includesPersonaProjections: true;
+  includesEmergencyContacts: true;
+  includesDerivedCaches: true;
 }
 
 export interface RecoFreeExportData {
@@ -36,6 +40,8 @@ export interface RecoFreeExportData {
     elias?: RecoFreePersonaExportBundle;
     kim?: RecoFreePersonaExportBundle;
   };
+  // NEW: shared (non-persona) data
+  shared: RecoFreeSharedExportBundle;
 }
 
 export interface RecoFreePersonaExportBundle {
@@ -47,6 +53,16 @@ export interface RecoFreePersonaExportBundle {
   diaryEntries: unknown[];
   gratitudeEntries: unknown[];
   backpackData: unknown | null;
+  // NEW: persona-specific projection (fears/hopes/goals engine)
+  personaProjection: unknown | null;
+}
+
+export interface RecoFreeSharedExportBundle {
+  emergencyContacts: unknown[];
+  derivedCaches: {
+    backpackHash: unknown | null;
+    extractedEntities: unknown | null;
+  };
 }
 
 export interface ExportPayloadIntegrity {
@@ -65,4 +81,6 @@ export interface ExportPersonaDatasetCounts {
   hasProjectionsDat: boolean;
   hasLogsDat: boolean;
   hasBackpackData: boolean;
+  // NEW counts
+  hasPersonaProjection: boolean;
 }

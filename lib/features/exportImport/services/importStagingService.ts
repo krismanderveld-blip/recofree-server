@@ -17,6 +17,7 @@ export async function buildImportStagingPackage(input: {
   return {
     payloadVersion: payload.payloadVersion,
     personas: payload.data.personas,
+    shared: payload.data.shared ?? { emergencyContacts: [], derivedCaches: { backpackHash: null, extractedEntities: null } },
     integrity: payload.integrity,
   };
 }
@@ -99,12 +100,26 @@ export async function replaceLocalDataFromStaging(input: {
     elias: elias?.backpackData ?? null,
     kim: kim?.backpackData ?? null,
   });
+
+  // NEW: Persona projections
+  await stores.personaProjectionStore.replaceAllPersonas({
+    elias: elias?.personaProjection ?? null,
+    kim: kim?.personaProjection ?? null,
+  });
+
+  // NEW: Emergency contacts
+  const emergencyContacts = stagingPackage.shared?.emergencyContacts ?? [];
+  await stores.emergencyContactsStore.replaceAll(emergencyContacts);
+
+  // NEW: Derived caches
+  const derivedCaches = stagingPackage.shared?.derivedCaches ?? { backpackHash: null, extractedEntities: null };
+  await stores.derivedCacheStore.replaceAll(derivedCaches);
 }
 
 // ─── Pre-Import Snapshot ─────────────────────────────────────────────────────
 
 export async function createPreImportSnapshot(stores: ExportImportStores): Promise<PreImportSnapshot> {
-  const [userDat, stateDat, projectionsDat, logsDat, diary, gratitude, backpack] = await Promise.all([
+  const [userDat, stateDat, projectionsDat, logsDat, diary, gratitude, backpack, personaProjection, emergencyContacts, derivedCaches] = await Promise.all([
     stores.userDatStore.exportAllPersonas(),
     stores.stateDatStore.exportAllPersonas(),
     stores.projectionsDatStore.exportAllPersonas(),
@@ -112,9 +127,12 @@ export async function createPreImportSnapshot(stores: ExportImportStores): Promi
     stores.diaryStore.exportAllPersonas(),
     stores.gratitudeStore.exportAllPersonas(),
     stores.backpackStore.exportAllPersonas(),
+    stores.personaProjectionStore.exportAllPersonas(),
+    stores.emergencyContactsStore.exportAll(),
+    stores.derivedCacheStore.exportAll(),
   ]);
 
-  return { userDat, stateDat, projectionsDat, logsDat, diary, gratitude, backpack };
+  return { userDat, stateDat, projectionsDat, logsDat, diary, gratitude, backpack, personaProjection, emergencyContacts, derivedCaches };
 }
 
 export interface PreImportSnapshot {
@@ -125,6 +143,9 @@ export interface PreImportSnapshot {
   diary: { elias?: unknown[]; kim?: unknown[] };
   gratitude: { elias?: unknown[]; kim?: unknown[] };
   backpack: { elias?: unknown | null; kim?: unknown | null };
+  personaProjection: { elias?: unknown | null; kim?: unknown | null };
+  emergencyContacts: unknown[];
+  derivedCaches: { backpackHash?: unknown | null; extractedEntities?: unknown | null };
 }
 
 export async function restorePreImportSnapshot(snapshot: PreImportSnapshot, stores: ExportImportStores): Promise<void> {
@@ -135,6 +156,9 @@ export async function restorePreImportSnapshot(snapshot: PreImportSnapshot, stor
   await stores.diaryStore.replaceAllPersonas(snapshot.diary);
   await stores.gratitudeStore.replaceAllPersonas(snapshot.gratitude);
   await stores.backpackStore.replaceAllPersonas(snapshot.backpack);
+  await stores.personaProjectionStore.replaceAllPersonas(snapshot.personaProjection);
+  await stores.emergencyContactsStore.replaceAll(snapshot.emergencyContacts);
+  await stores.derivedCacheStore.replaceAll(snapshot.derivedCaches);
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────

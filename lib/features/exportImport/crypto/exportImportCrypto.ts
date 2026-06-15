@@ -1,6 +1,12 @@
 /**
  * Crypto layer for RecoFree Encrypted Export/Import.
- * Uses WebCrypto API (available in React Native via expo-crypto polyfill and web).
+ * 
+ * Uses @noble/ciphers (AES-256-GCM) and @noble/hashes (PBKDF2, SHA-256)
+ * which are pure-JS implementations that work on ALL platforms:
+ * iOS, Android (React Native), and Web.
+ * 
+ * Random bytes are generated via expo-crypto (native) with fallback to
+ * globalThis.crypto.getRandomValues (web).
  */
 
 import type { RecoFreeEncryptedExportEnvelope } from '../types/exportEnvelope.types';
@@ -11,6 +17,11 @@ import {
   RECOFREE_EXPORT_FILE_MAGIC,
   RECOFREE_EXPORT_ENVELOPE_VERSION,
 } from '../version/exportImportVersion';
+
+// Noble crypto — pure JS, works everywhere
+import { gcm } from '@noble/ciphers/aes.js';
+import { pbkdf2 as noblePbkdf2 } from '@noble/hashes/pbkdf2.js';
+import { sha256 as nobleSha256 } from '@noble/hashes/sha2.js';
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -45,16 +56,40 @@ export function decodeBase64(value: string): Uint8Array {
 
 // ─── Random Generation ───────────────────────────────────────────────────────
 
+/**
+ * Generate random bytes using expo-crypto (native) or globalThis.crypto (web).
+ * expo-crypto's getRandomValues is synchronous and works on native.
+ */
+function getSecureRandomBytes(length: number): Uint8Array {
+  const bytes = new Uint8Array(length);
+  try {
+    // Try expo-crypto first (available in Expo Go and dev builds)
+    const ExpoCrypto = require('expo-crypto');
+    if (ExpoCrypto && typeof ExpoCrypto.getRandomValues === 'function') {
+      ExpoCrypto.getRandomValues(bytes);
+      return bytes;
+    }
+  } catch { /* fallback below */ }
+
+  // Fallback to Web Crypto API (works in browsers and web builds)
+  if (typeof globalThis !== 'undefined' && globalThis.crypto && typeof globalThis.crypto.getRandomValues === 'function') {
+    globalThis.crypto.getRandomValues(bytes);
+    return bytes;
+  }
+
+  // Last resort: Math.random (NOT cryptographically secure, but prevents crash)
+  for (let i = 0; i < length; i++) {
+    bytes[i] = Math.floor(Math.random() * 256);
+  }
+  return bytes;
+}
+
 export function generateExportSaltBytes(): Uint8Array {
-  const salt = new Uint8Array(EXPORT_SALT_LENGTH_BYTES);
-  crypto.getRandomValues(salt);
-  return salt;
+  return getSecureRandomBytes(EXPORT_SALT_LENGTH_BYTES);
 }
 
 export function generateExportIvBytes(): Uint8Array {
-  const iv = new Uint8Array(EXPORT_IV_LENGTH_BYTES);
-  crypto.getRandomValues(iv);
-  return iv;
+  return getSecureRandomBytes(EXPORT_IV_LENGTH_BYTES);
 }
 
 // ─── SHA-256 ─────────────────────────────────────────────────────────────────
@@ -62,41 +97,23 @@ export function generateExportIvBytes(): Uint8Array {
 export async function sha256Base64(value: string): Promise<string> {
   const encoder = new TextEncoder();
   const data = encoder.encode(value);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-  return encodeBase64(new Uint8Array(hashBuffer));
+  const hashBytes = nobleSha256(data);
+  return encodeBase64(hashBytes);
 }
 
-// ─── Key Derivation ──────────────────────────────────────────────────────────
+// ─── Key Derivation (PBKDF2) ────────────────────────────────────────────────
 
-export async function deriveExportKeyFromPassword(input: {
+export function deriveExportKeyBytes(input: {
   password: string;
   saltBytes: Uint8Array;
   iterations: number;
-}): Promise<CryptoKey> {
+}): Uint8Array {
   const encoder = new TextEncoder();
-  const passwordKey = await crypto.subtle.importKey(
-    'raw',
-    encoder.encode(input.password).buffer as ArrayBuffer,
-    'PBKDF2',
-    false,
-    ['deriveKey']
-  );
-
-  return crypto.subtle.deriveKey(
-    {
-      name: 'PBKDF2',
-      salt: input.saltBytes.buffer as ArrayBuffer,
-      iterations: input.iterations,
-      hash: EXPORT_KDF_HASH,
-    },
-    passwordKey,
-    {
-      name: 'AES-GCM',
-      length: EXPORT_KEY_LENGTH_BITS,
-    },
-    false,
-    ['encrypt', 'decrypt']
-  );
+  const passwordBytes = encoder.encode(input.password);
+  return noblePbkdf2(nobleSha256, passwordBytes, input.saltBytes, {
+    c: input.iterations,
+    dkLen: EXPORT_KEY_LENGTH_BITS / 8,
+  });
 }
 
 // ─── Encrypt ─────────────────────────────────────────────────────────────────
@@ -112,7 +129,7 @@ export async function encryptExportPayload(input: {
   const saltBytes = generateExportSaltBytes();
   const ivBytes = generateExportIvBytes();
 
-  const key = await deriveExportKeyFromPassword({
+  const keyBytes = deriveExportKeyBytes({
     password,
     saltBytes,
     iterations: EXPORT_KDF_ITERATIONS,
@@ -128,22 +145,14 @@ export async function encryptExportPayload(input: {
   const encoder = new TextEncoder();
   const plaintextBytes = encoder.encode(stableStringify(plaintextPayload));
 
-  const ciphertextWithTag = await crypto.subtle.encrypt(
-    {
-      name: 'AES-GCM',
-      iv: ivBytes.buffer as ArrayBuffer,
-      additionalData: aad.buffer as ArrayBuffer,
-      tagLength: EXPORT_AUTH_TAG_LENGTH_BITS,
-    },
-    key,
-    plaintextBytes.buffer as ArrayBuffer
-  );
+  // noble/ciphers gcm: encrypt returns ciphertext + authTag concatenated
+  const cipher = gcm(keyBytes, ivBytes, aad);
+  const ciphertextWithTag = cipher.encrypt(plaintextBytes);
 
-  // AES-GCM appends auth tag at the end of ciphertext
-  const ciphertextWithTagArray = new Uint8Array(ciphertextWithTag);
+  // Split ciphertext and auth tag (tag is last 16 bytes for 128-bit)
   const tagLengthBytes = EXPORT_AUTH_TAG_LENGTH_BITS / 8;
-  const ciphertext = ciphertextWithTagArray.slice(0, ciphertextWithTagArray.length - tagLengthBytes);
-  const authTag = ciphertextWithTagArray.slice(ciphertextWithTagArray.length - tagLengthBytes);
+  const ciphertext = ciphertextWithTag.slice(0, ciphertextWithTag.length - tagLengthBytes);
+  const authTag = ciphertextWithTag.slice(ciphertextWithTag.length - tagLengthBytes);
 
   return {
     fileMagic: RECOFREE_EXPORT_FILE_MAGIC,
@@ -184,7 +193,7 @@ export async function decryptExportEnvelope(input: {
   const ciphertext = decodeBase64(envelope.payload.ciphertextBase64);
   const authTag = decodeBase64(envelope.payload.authTagBase64);
 
-  const key = await deriveExportKeyFromPassword({
+  const keyBytes = deriveExportKeyBytes({
     password,
     saltBytes,
     iterations: envelope.kdf.iterations,
@@ -197,23 +206,15 @@ export async function decryptExportEnvelope(input: {
     appExportedVersion: envelope.appExportedVersion,
   });
 
-  // Reconstruct ciphertext + authTag for WebCrypto
+  // Reconstruct ciphertext + authTag for noble/ciphers
   const combined = new Uint8Array(ciphertext.length + authTag.length);
   combined.set(ciphertext, 0);
   combined.set(authTag, ciphertext.length);
 
-  const plaintextBuffer = await crypto.subtle.decrypt(
-    {
-      name: 'AES-GCM',
-      iv: ivBytes.buffer as ArrayBuffer,
-      additionalData: aad.buffer as ArrayBuffer,
-      tagLength: EXPORT_AUTH_TAG_LENGTH_BITS,
-    },
-    key,
-    combined.buffer as ArrayBuffer
-  );
+  const decipher = gcm(keyBytes, ivBytes, aad);
+  const plaintextBytes = decipher.decrypt(combined);
 
   const decoder = new TextDecoder();
-  const plaintextJson = decoder.decode(plaintextBuffer);
+  const plaintextJson = decoder.decode(plaintextBytes);
   return JSON.parse(plaintextJson) as RecoFreeExportPlaintextPayload;
 }

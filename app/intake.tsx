@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Text,
   View,
@@ -8,7 +8,10 @@ import {
   Platform,
   ScrollView,
   StyleSheet,
+  Modal,
+  ActivityIndicator,
 } from 'react-native';
+
 import { useRouter } from 'expo-router';
 import { ScreenContainer } from '@/components/screen-container';
 import { useUser } from '@/lib/user-context';
@@ -61,7 +64,7 @@ function AnimatedProgressBar({ active }: { active: boolean }) {
 
 export default function IntakeScreen() {
   const router = useRouter();
-  const { completeIntake } = useUser();
+  const { completeIntake, reloadFromStorage } = useUser();
 
   const [step, setStep] = useState<IntakeStep>(1);
   const [name, setName] = useState('');
@@ -70,6 +73,12 @@ export default function IntakeScreen() {
   const [eigenRegieLevel, setEigenRegieLevel] = useState<EigenRegieLevel | null>(null);
   const [urgency, setUrgency] = useState<UrgencyLevel | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showImportFlow, setShowImportFlow] = useState(false);
+  const [importFile, setImportFile] = useState<{ uri: string; name: string } | null>(null);
+  const [importPassword, setImportPassword] = useState('');
+  const [importLoading, setImportLoading] = useState(false);
+  const [importError, setImportError] = useState<string | null>(null);
+  const [importSuccess, setImportSuccess] = useState(false);
 
   // Pulse animation for submit button
   const pulseAnim = useSharedValue(1);
@@ -133,6 +142,56 @@ export default function IntakeScreen() {
       animateTransition('backward', () => setStep((step - 1) as IntakeStep));
     }
   };
+
+  // ── Import from backup ──
+  const handleImportPickFile = useCallback(async () => {
+    try {
+      const DocumentPicker = await import('expo-document-picker');
+      const result = await DocumentPicker.getDocumentAsync({
+        type: 'application/octet-stream',
+        copyToCacheDirectory: true,
+      });
+      if (result.canceled || !result.assets || result.assets.length === 0) return;
+      const asset = result.assets[0];
+      setImportFile({ uri: asset.uri, name: asset.name });
+      setImportError(null);
+    } catch {
+      setImportError('Could not open file picker.');
+    }
+  }, []);
+
+  const handleImportExecute = useCallback(async () => {
+    if (!importFile || !importPassword) return;
+    setImportLoading(true);
+    setImportError(null);
+    try {
+      const FileSystem = await import('expo-file-system/legacy');
+      const { importEncryptedRecoFreeBackup } = await import('@/lib/features/exportImport/services/importDataService');
+      const { createExportImportStoresAdapter } = await import('@/lib/features/exportImport/hooks/useExportImportStores');
+      const stores = createExportImportStoresAdapter();
+
+      const envelopeJson = await FileSystem.readAsStringAsync(importFile.uri, { encoding: FileSystem.EncodingType.UTF8 });
+      const result = await importEncryptedRecoFreeBackup({
+        envelopeJson,
+        password: importPassword,
+        currentAppVersion: '1.0.0',
+        stores,
+      });
+
+      if (result.status === 'SUCCESS') {
+        setImportSuccess(true);
+        // Reload stores into memory and navigate to main app
+        await reloadFromStorage();
+        router.replace('/(tabs)' as any);
+      } else {
+        setImportError(result.errorMessage ?? 'Import failed.');
+      }
+    } catch (err: any) {
+      setImportError(err?.safeMessage ?? err?.message ?? 'Import failed.');
+    } finally {
+      setImportLoading(false);
+    }
+  }, [importFile, importPassword, reloadFromStorage, router]);
 
   const handleSubmit = async () => {
     if (!canSubmit || isSubmitting || !selectedType || !urgency) return;
@@ -258,6 +317,16 @@ export default function IntakeScreen() {
                     ]}
                   >
                     <Text style={styles.primaryButtonText}>Next</Text>
+                  </Pressable>
+
+                  <Pressable
+                    onPress={() => setShowImportFlow(true)}
+                    style={({ pressed }) => [
+                      styles.ghostButton,
+                      { opacity: pressed ? 0.6 : 1 },
+                    ]}
+                  >
+                    <Text style={styles.ghostButtonText}>I have a backup — import my data</Text>
                   </Pressable>
                 </View>
               </Animated.View>
@@ -418,6 +487,73 @@ export default function IntakeScreen() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      {/* Import Backup Modal */}
+      <Modal visible={showImportFlow} transparent animationType="fade">
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <View style={[styles.optionCard, { backgroundColor: dc.background, borderColor: dc.border, marginHorizontal: 24, maxWidth: 380, width: '90%', padding: 24 }]}>
+            <Text style={[styles.heroTitle, { fontSize: 20, marginBottom: 8 }]}>Import backup</Text>
+            <Text style={[styles.optionDescription, { marginBottom: 20, textAlign: 'center' }]}>
+              Heb je een eerdere back-up? Importeer je gegevens en ga direct verder.
+            </Text>
+
+            {/* File picker */}
+            <Pressable
+              onPress={handleImportPickFile}
+              style={({ pressed }) => [
+                styles.textInput,
+                { alignItems: 'center', justifyContent: 'center', paddingVertical: 14, opacity: pressed ? 0.7 : 1 },
+              ]}
+            >
+              <Text style={{ color: importFile ? dc.textPrimary : dc.textMuted, fontSize: 14 }}>
+                {importFile ? importFile.name : 'Kies .recofree bestand'}
+              </Text>
+            </Pressable>
+
+            {/* Password */}
+            <TextInput
+              style={[styles.textInput, { marginTop: 12 }]}
+              secureTextEntry
+              value={importPassword}
+              onChangeText={(t) => { setImportPassword(t); setImportError(null); }}
+              placeholder="Wachtwoord van de back-up"
+              placeholderTextColor={dc.textMuted}
+              autoComplete="off"
+              returnKeyType="done"
+            />
+
+            {/* Error */}
+            {importError && (
+              <Text style={{ color: dc.danger, fontSize: 13, marginTop: 8 }}>{importError}</Text>
+            )}
+
+            {/* Import button */}
+            <Pressable
+              onPress={handleImportExecute}
+              disabled={!importFile || !importPassword || importLoading}
+              style={({ pressed }) => [
+                styles.primaryButton,
+                { marginTop: 16, opacity: (!importFile || !importPassword || importLoading) ? 0.4 : pressed ? 0.85 : 1 },
+                pressed && importFile && importPassword && !importLoading && { transform: [{ scale: 0.97 }] },
+              ]}
+            >
+              {importLoading ? (
+                <ActivityIndicator color="#fff" size="small" />
+              ) : (
+                <Text style={styles.primaryButtonText}>Importeer en ga verder</Text>
+              )}
+            </Pressable>
+
+            {/* Cancel */}
+            <Pressable
+              onPress={() => { setShowImportFlow(false); setImportError(null); setImportFile(null); setImportPassword(''); }}
+              style={({ pressed }) => [styles.ghostButton, { opacity: pressed ? 0.6 : 1 }]}
+            >
+              <Text style={styles.ghostButtonText}>Annuleren</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
     </ScreenContainer>
   );
 }

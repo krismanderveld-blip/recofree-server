@@ -38,6 +38,29 @@ export interface ExportableBackpackStore {
   replaceAllPersonas(data: { elias?: unknown | null; kim?: unknown | null }): Promise<void>;
 }
 
+// ─── NEW: Persona Projection Stores ─────────────────────────────────────────
+
+export interface ExportablePersonaProjectionStore {
+  exportAllPersonas(): Promise<{ elias?: unknown | null; kim?: unknown | null }>;
+  replaceAllPersonas(data: { elias?: unknown | null; kim?: unknown | null }): Promise<void>;
+}
+
+// ─── NEW: Emergency Contacts Store ──────────────────────────────────────────
+
+export interface ExportableEmergencyContactsStore {
+  exportAll(): Promise<unknown[]>;
+  replaceAll(data: unknown[]): Promise<void>;
+}
+
+// ─── NEW: Derived/Cache Stores ──────────────────────────────────────────────
+
+export interface ExportableDerivedCacheStore {
+  exportAll(): Promise<{ backpackHash?: unknown | null; extractedEntities?: unknown | null }>;
+  replaceAll(data: { backpackHash?: unknown | null; extractedEntities?: unknown | null }): Promise<void>;
+}
+
+// ─── Main Interface ─────────────────────────────────────────────────────────
+
 export interface ExportImportStores {
   userDatStore: ExportableUserDatStore;
   stateDatStore: ExportableStateDatStore;
@@ -46,4 +69,8 @@ export interface ExportImportStores {
   diaryStore: ExportableDiaryStore;
   gratitudeStore: ExportableGratitudeStore;
   backpackStore: ExportableBackpackStore;
+  // NEW stores
+  personaProjectionStore: ExportablePersonaProjectionStore;
+  emergencyContactsStore: ExportableEmergencyContactsStore;
+  derivedCacheStore: ExportableDerivedCacheStore;
 }

@@ -94,6 +94,8 @@ interface UserContextValue {
   /** End session with explicit userDat update */
   endSessionWithUserDat: (updatedUserDat: UserDat) => Promise<void>;
   resetUser: () => Promise<void>;
+  /** Reload backpack + userDat from AsyncStorage (e.g. after import) */
+  reloadFromStorage: () => Promise<void>;
   /** Update Stage of Change in backpack (user action) */
   updateStageOfChange: (stage: import('./ai/types').StageOfChange) => Promise<void>;
   /** Update guidance depth preference (user action) */
@@ -846,6 +848,18 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     ]);
   }, []);
 
+  const reloadFromStorage = useCallback(async () => {
+    const [backpackJson, userDatJson] = await Promise.all([
+      AsyncStorage.getItem(BACKPACK_KEY),
+      AsyncStorage.getItem(USERDAT_KEY),
+    ]);
+    if (backpackJson && userDatJson) {
+      const backpack = migrateBackpack(JSON.parse(backpackJson));
+      const userDat = migrateUserDat(JSON.parse(userDatJson), backpack.userType);
+      dispatch({ type: 'RESTORE_STORES', payload: { backpack, userDat } });
+    }
+  }, []);
+
   // ── Convenience Getters ──
 
   const getUserName = useCallback(() => {
@@ -898,6 +912,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         endSessionWithRugzak,
         endSessionWithUserDat,
         resetUser,
+        reloadFromStorage,
         getUserName,
         getMood,
         getChatHistory,

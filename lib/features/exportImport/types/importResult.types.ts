@@ -27,6 +27,7 @@ export interface ImportStagingPackage {
     elias?: import('./exportPayload.types').RecoFreePersonaExportBundle;
     kim?: import('./exportPayload.types').RecoFreePersonaExportBundle;
   };
+  shared?: import('./exportPayload.types').RecoFreeSharedExportBundle;
   integrity: import('./exportPayload.types').ExportPayloadIntegrity;
 }
 

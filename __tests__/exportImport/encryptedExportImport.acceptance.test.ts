@@ -77,6 +77,18 @@ function createMockStores(data?: Partial<{
       async exportAllPersonas() { return store.backpack; },
       async replaceAllPersonas(d) { store.backpack = d as any; },
     },
+    personaProjectionStore: {
+      async exportAllPersonas() { return { elias: { projection: 'test' }, kim: null }; },
+      async replaceAllPersonas(_d) { /* no-op in test */ },
+    },
+    emergencyContactsStore: {
+      async exportAll() { return [{ name: 'SOS', phone: '112' }]; },
+      async replaceAll(_d) { /* no-op in test */ },
+    },
+    derivedCacheStore: {
+      async exportAll() { return { backpackHash: 'abc123', extractedEntities: null }; },
+      async replaceAll(_d) { /* no-op in test */ },
+    },
   };
 }
 

@@ -8,6 +8,7 @@ import type {
   RecoFreeExportPlaintextPayload,
   RecoFreeExportData,
   RecoFreePersonaExportBundle,
+  RecoFreeSharedExportBundle,
   ExportScopeMetadata,
   ExportPayloadIntegrity,
   ExportPersonaDatasetCounts,
@@ -47,8 +48,19 @@ export async function createEncryptedRecoFreeExport(input: {
   }
 
   try {
-    // 1. Read all data from stores
-    const [userDatAll, stateDatAll, projectionsDatAll, logsDatAll, diaryAll, gratitudeAll, backpackAll] = await Promise.all([
+    // 1. Read all data from stores (including new stores)
+    const [
+      userDatAll,
+      stateDatAll,
+      projectionsDatAll,
+      logsDatAll,
+      diaryAll,
+      gratitudeAll,
+      backpackAll,
+      personaProjectionAll,
+      emergencyContacts,
+      derivedCaches,
+    ] = await Promise.all([
       stores.userDatStore.exportAllPersonas(),
       stores.stateDatStore.exportAllPersonas(),
       stores.projectionsDatStore.exportAllPersonas(),
@@ -56,6 +68,9 @@ export async function createEncryptedRecoFreeExport(input: {
       stores.diaryStore.exportAllPersonas(),
       stores.gratitudeStore.exportAllPersonas(),
       stores.backpackStore.exportAllPersonas(),
+      stores.personaProjectionStore.exportAllPersonas(),
+      stores.emergencyContactsStore.exportAll(),
+      stores.derivedCacheStore.exportAll(),
     ]);
 
     // 2. Build persona bundles
@@ -64,13 +79,32 @@ export async function createEncryptedRecoFreeExport(input: {
     const hasKim = !!(userDatAll.kim || stateDatAll.kim || backpackAll.kim);
 
     if (hasElias) {
-      personas.elias = buildPersonaBundle('elias', userDatAll.elias, stateDatAll.elias, projectionsDatAll.elias, logsDatAll.elias, diaryAll.elias ?? [], gratitudeAll.elias ?? [], backpackAll.elias);
+      personas.elias = buildPersonaBundle(
+        'elias',
+        userDatAll.elias, stateDatAll.elias, projectionsDatAll.elias, logsDatAll.elias,
+        diaryAll.elias ?? [], gratitudeAll.elias ?? [], backpackAll.elias,
+        personaProjectionAll.elias,
+      );
     }
     if (hasKim) {
-      personas.kim = buildPersonaBundle('kim', userDatAll.kim, stateDatAll.kim, projectionsDatAll.kim, logsDatAll.kim, diaryAll.kim ?? [], gratitudeAll.kim ?? [], backpackAll.kim);
+      personas.kim = buildPersonaBundle(
+        'kim',
+        userDatAll.kim, stateDatAll.kim, projectionsDatAll.kim, logsDatAll.kim,
+        diaryAll.kim ?? [], gratitudeAll.kim ?? [], backpackAll.kim,
+        personaProjectionAll.kim,
+      );
     }
 
-    // 3. Build scope metadata
+    // 3. Build shared bundle
+    const shared: RecoFreeSharedExportBundle = {
+      emergencyContacts: emergencyContacts ?? [],
+      derivedCaches: {
+        backpackHash: derivedCaches.backpackHash ?? null,
+        extractedEntities: derivedCaches.extractedEntities ?? null,
+      },
+    };
+
+    // 4. Build scope metadata
     const exportScope: ExportScopeMetadata = {
       includesUserDat: true,
       includesStateDat: true,
@@ -81,38 +115,41 @@ export async function createEncryptedRecoFreeExport(input: {
       includesBackpackData: true,
       includesEliasPersona: hasElias,
       includesKimPersona: hasKim,
+      includesPersonaProjections: true,
+      includesEmergencyContacts: true,
+      includesDerivedCaches: true,
     };
 
-    // 4. Build source device metadata
+    // 5. Build source device metadata
     const sourceDevice: ExportSourceDeviceMetadata = {
       platform,
       expoSdkVersion,
     };
 
-    // 5. Build integrity (without hash first)
+    // 6. Build integrity (without hash first)
     const datasetCounts: ExportPayloadIntegrity['datasetCounts'] = {};
     if (personas.elias) datasetCounts.elias = buildDatasetCounts(personas.elias);
     if (personas.kim) datasetCounts.kim = buildDatasetCounts(personas.kim);
 
-    // 6. Build payload without integrity hash
+    // 7. Build payload without integrity hash
     const payloadWithoutHash: Omit<RecoFreeExportPlaintextPayload, 'integrity'> & { integrity: Omit<ExportPayloadIntegrity, 'plaintextSha256Base64'> & { plaintextSha256Base64: string } } = {
       payloadVersion: RECOFREE_EXPORT_PAYLOAD_VERSION,
       createdAt: nowIso,
       appVersion,
       sourceDevice,
       exportScope,
-      data: { personas },
+      data: { personas, shared },
       integrity: {
         plaintextSha256Base64: "",
         datasetCounts,
       },
     };
 
-    // 7. Compute hash over payload with empty hash field
+    // 8. Compute hash over payload with empty hash field
     const hashInput = stableStringify(payloadWithoutHash);
     const plaintextSha256Base64 = await sha256Base64(hashInput);
 
-    // 8. Build final payload
+    // 9. Build final payload
     const plaintextPayload: RecoFreeExportPlaintextPayload = {
       ...payloadWithoutHash,
       integrity: {
@@ -121,7 +158,7 @@ export async function createEncryptedRecoFreeExport(input: {
       },
     };
 
-    // 9. Encrypt
+    // 10. Encrypt
     const envelope = await encryptExportPayload({
       plaintextPayload,
       password,
@@ -129,7 +166,7 @@ export async function createEncryptedRecoFreeExport(input: {
       nowIso,
     });
 
-    // 10. Serialize
+    // 11. Serialize
     const envelopeJson = JSON.stringify(envelope);
     const fileName = createRecoFreeExportFileName(nowIso);
 
@@ -181,6 +218,9 @@ export function buildRecoFreeExportPlaintextPayload(
       includesBackpackData: true,
       includesEliasPersona: !!data.personas.elias,
       includesKimPersona: !!data.personas.kim,
+      includesPersonaProjections: true,
+      includesEmergencyContacts: true,
+      includesDerivedCaches: true,
     },
     data,
     integrity: { plaintextSha256Base64: integrityHash, datasetCounts },
@@ -196,6 +236,7 @@ function buildPersonaBundle(
   diaryEntries: unknown[],
   gratitudeEntries: unknown[],
   backpackData: unknown | null | undefined,
+  personaProjection: unknown | null | undefined,
 ): RecoFreePersonaExportBundle {
   return {
     persona,
@@ -206,6 +247,7 @@ function buildPersonaBundle(
     diaryEntries: diaryEntries ?? [],
     gratitudeEntries: gratitudeEntries ?? [],
     backpackData: backpackData ?? null,
+    personaProjection: personaProjection ?? null,
   };
 }
 
@@ -218,5 +260,6 @@ function buildDatasetCounts(bundle: RecoFreePersonaExportBundle): ExportPersonaD
     hasProjectionsDat: bundle.projectionsDat !== null,
     hasLogsDat: bundle.logsDat !== null,
     hasBackpackData: bundle.backpackData !== null,
+    hasPersonaProjection: bundle.personaProjection !== null,
   };
 }

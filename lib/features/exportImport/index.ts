@@ -9,7 +9,7 @@ export type { ImportRecoFreeResult, ImportStagingPackage, ImportValidationResult
 export type { ExportImportStores, ExportableUserDatStore, ExportableStateDatStore, ExportableProjectionsDatStore, ExportableLogsDatStore, ExportableDiaryStore, ExportableGratitudeStore, ExportableBackpackStore } from './services/exportImportStores.types';
 
 // Crypto
-export { encryptExportPayload, decryptExportEnvelope, deriveExportKeyFromPassword, generateExportSaltBytes, generateExportIvBytes, encodeBase64, decodeBase64, sha256Base64 } from './crypto/exportImportCrypto';
+export { encryptExportPayload, decryptExportEnvelope, deriveExportKeyBytes, generateExportSaltBytes, generateExportIvBytes, encodeBase64, decodeBase64, sha256Base64 } from './crypto/exportImportCrypto';
 export { buildExportAad } from './crypto/exportImportAad';
 
 // Services
