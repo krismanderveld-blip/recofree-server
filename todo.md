@@ -1348,3 +1348,10 @@
 - [x] Proposal 1: GPT-4o prompt instruction block for relapse-intent (grounding, non-judgmental, directive)
 - [x] Proposal 2: Relapse-intent logging in user.dat (persist events for cross-session pattern detection)
 - [x] Proposal 3: Kim-variant detection for loved ones reporting relapse ("hij wil weer drinken") — 918 tests green
+- [x] Kim Relapse Cluster: types with corrected crisis numbers (0800 32 123 not 1813, add 101)
+- [x] Kim Relapse Cluster: NL/EN/FR marker files for HERV-K01, NAHERV-K01, CRISIS-K01
+- [x] Kim Relapse Cluster: detector, crisis escalation gate, memory patch builder, router
+- [x] Kim Relapse Cluster: prompt payload builders + response rules for all 3 modules
+- [x] Kim Relapse Cluster: output safety filter (anti-rescue/control/diagnosis)
+- [x] Kim Relapse Cluster: 20 acceptance tests with corrected crisis numbers
+- [x] Kim Relapse Cluster: all existing 918+ tests remain green (938 passed)
