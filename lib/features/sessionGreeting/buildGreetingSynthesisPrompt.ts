@@ -1,21 +1,24 @@
 /**
- * Session Greeting V3 — Synthesis Prompt Builder
+ * Session Greeting V3 — Synthesis Prompt Builder (with Absence Awareness)
  *
  * Builds the GPT prompt payload for synthesis mode.
  * GPT receives:
- * - Selected sources (max 3) with safe anchors
+ * - Selected sources (max 3 normal, max 2 for return-after-absence) with safe anchors
  * - Synthesis instruction: "weave these into ONE natural greeting"
- * - Forbidden patterns (checklist style, "hoe voel je je", inventory)
+ * - Absence context when RETURN_AFTER_ABSENCE mode is active
+ * - Forbidden patterns (checklist style, "hoe voel je je", inventory, blame/relapse)
  * - Language rule: grammatically correct, fluent Dutch
  *
- * Also provides override prompt builders for CRISIS/FIRST/MISSING modes.
+ * Also provides override prompt builders for CRISIS/FIRST/MISSING/RETURN modes.
  */
 
 import type {
   GreetingSynthesisPromptPayload,
   SelectedSynthesisSource,
-  GreetingOverrideResult,
+  SessionAbsenceResultForPrompt,
+  GreetingSynthesisMode,
 } from './sessionGreetingV3.types';
+import type { SessionAbsenceResult } from './calculateSessionAbsence';
 
 // ─── Forbidden Patterns ─────────────────────────────────────────────────────
 
@@ -36,29 +39,79 @@ const FORBIDDEN_PATTERNS: string[] = [
   'checklist',
   'inventory',
   'laat me even opsommen',
+  // Absence-specific forbidden patterns (blame/relapse assumption)
+  'terugval',
+  'hervallen',
+  'je hebt het opgegeven',
+  'je was weg',
+  'waar was je',
+  'waarom ben je weggebleven',
+  'je hebt gefaald',
+  'het is mislukt',
+  'je bent teruggevallen',
 ];
 
 // ─── Synthesis Prompt ───────────────────────────────────────────────────────
 
+export interface BuildSynthesisPromptInput {
+  userName: string;
+  selectedSources: SelectedSynthesisSource[];
+  absence: SessionAbsenceResult;
+  mode: GreetingSynthesisMode;
+}
+
 export function buildGreetingSynthesisPromptPayload(
-  userName: string,
-  selectedSources: SelectedSynthesisSource[],
+  input: BuildSynthesisPromptInput,
 ): GreetingSynthesisPromptPayload {
+  const { userName, selectedSources, absence, mode } = input;
+
   const sourceDescriptions = selectedSources
     .map((s, i) => `  ${i + 1}. [${s.sourceType}]: "${s.safeAnchor}"`)
     .join('\n');
 
-  const synthesisInstruction = buildSynthesisInstruction(userName, sourceDescriptions, selectedSources.length);
+  const isReturnMode = mode === 'RETURN_AFTER_ABSENCE';
+  const absenceForPrompt: SessionAbsenceResultForPrompt | undefined = isReturnMode
+    ? buildAbsenceForPrompt(absence)
+    : undefined;
+
+  const synthesisInstruction = isReturnMode
+    ? buildReturnAfterAbsenceInstruction(userName, sourceDescriptions, selectedSources.length, absence)
+    : buildSynthesisInstruction(userName, sourceDescriptions, selectedSources.length);
+
+  const openQuestionInstruction = isReturnMode
+    ? 'Eindig met een zachte, open vraag die NIET vraagt waarom ze weg waren. Vraag naar het nu-moment of wat ze nodig hebben.'
+    : 'Eindig met een open, uitnodigende vraag die aansluit bij de bronnen.';
 
   return {
     persona: 'elias',
     userName,
-    mode: 'SYNTHESIS',
+    mode,
     maxSentences: 4,
     selectedSources,
+    absence: absenceForPrompt,
     synthesisInstruction,
+    openQuestionInstruction,
     forbiddenPatterns: FORBIDDEN_PATTERNS,
     languageRule: 'Schrijf grammaticaal correct, vloeiend Nederlands. Geen afkortingen, geen emoji, geen opsommingen.',
+  };
+}
+
+function buildAbsenceForPrompt(absence: SessionAbsenceResult): SessionAbsenceResultForPrompt {
+  let wordingHint: SessionAbsenceResultForPrompt['wordingHint'];
+  if (absence.band === 'LONG_RETURN') {
+    wordingHint = 'long_return_soft';
+  } else if (absence.band === 'SHORT') {
+    wordingHint = 'short_return';
+  } else {
+    wordingHint = 'return_after_absence';
+  }
+
+  return {
+    band: absence.band,
+    absenceDaysRounded: absence.absenceDaysExact !== null
+      ? Math.round(absence.absenceDaysExact * 10) / 10
+      : null,
+    wordingHint,
   };
 }
 
@@ -93,6 +146,51 @@ VERBODEN ZINNEN:
 
 VOORBEELD VAN GOEDE SYNTHESE (ter illustratie, niet kopiëren):
 "${userName}, fijn dat je er bent. Goed dat je gisteren een fijne dag had — dat straalt door. Waar wil je het vandaag over hebben?"`;
+}
+
+function buildReturnAfterAbsenceInstruction(
+  userName: string,
+  sourceDescriptions: string,
+  sourceCount: number,
+  absence: SessionAbsenceResult,
+): string {
+  const days = absence.absenceDaysExact !== null
+    ? Math.round(absence.absenceDaysExact)
+    : 'enkele';
+  const isLongReturn = absence.band === 'LONG_RETURN';
+
+  const toneInstruction = isLongReturn
+    ? `TOON: Extra zacht en warm. Geen alarm, geen bezorgdheid, geen verwijt. De gebruiker is er weer — dat is het enige dat telt. Behandel de terugkeer als iets positiefs.`
+    : `TOON: Warm en verwelkomend. Erken kort dat het even geleden is, zonder er zwaar aan te tillen.`;
+
+  const sourcePart = sourceCount > 0
+    ? `\nOPTIONELE BRONNEN om subtiel te verweven (${sourceCount}):\n${sourceDescriptions}\n- Verweef deze ALLEEN als het natuurlijk past bij de terugkeer-begroeting\n- De afwezigheids-erkenning staat VOOROP, bronnen zijn secundair`
+    : '';
+
+  return `Je bent Elias. ${userName} is terug na ${days} dagen afwezigheid.
+
+${toneInstruction}
+
+INSTRUCTIES:
+- Begin met een warme erkenning dat ${userName} er weer is
+- Gebruik MAXIMAAL 3-4 zinnen totaal
+- Erken de afwezigheid ZONDER te vragen waarom ze weg waren
+- Maak GEEN aannames over wat er gebeurd is (geen "terugval", geen "moeilijke periode")
+- Eindig met een zachte, open vraag over het nu-moment
+- De begroeting moet aanvoelen als een vriend die blij is je te zien
+${sourcePart}
+
+ABSOLUUT VERBODEN:
+- Vragen waarom ze weg waren ("waar was je?", "waarom ben je weggebleven?")
+- Aannames over terugval of falen ("je bent teruggevallen", "het is mislukt")
+- Verwijten of schuldgevoel triggeren
+- Alarm-toon of bezorgdheid over de afwezigheid
+- "Hoe voel je je?" of "Hoe gaat het?"
+- Opsommingen of checklist-taal
+- Emoji
+
+VOORBEELD (ter illustratie, niet kopiëren):
+"${userName}, fijn dat je er weer bent. Het maakt niet uit hoe lang het geweest is — je bent hier, en dat telt. Wat heb je nodig vandaag?"`;
 }
 
 // ─── Override Prompt Builders ────────────────────────────────────────────────
@@ -146,6 +244,7 @@ export interface GreetingOutputValidation {
  * - Contains emoji
  * - Contains numbered lists or bullet points
  * - Is empty or too short
+ * - Contains blame/relapse assumptions (absence-specific)
  */
 export function enforceGreetingOutputRulesV3(output: string): GreetingOutputValidation {
   if (!output || output.trim().length < 10) {
@@ -191,6 +290,19 @@ export function enforceGreetingOutputRulesV3(output: string): GreetingOutputVali
   for (const pattern of inventoryPatterns) {
     if (pattern.test(trimmed)) {
       return { valid: false, reason: 'Contains inventory/checklist language' };
+    }
+  }
+
+  // Check blame/relapse assumption patterns
+  const blamePatterns = [
+    /je\s+(?:hebt|bent)\s+(?:het\s+)?(?:opgegeven|gefaald|teruggevallen)/i,
+    /(?:het\s+is|dat\s+is)\s+mislukt/i,
+    /waarom\s+(?:ben|was)\s+je\s+(?:weg|weggebleven)/i,
+    /waar\s+was\s+je/i,
+  ];
+  for (const pattern of blamePatterns) {
+    if (pattern.test(trimmed)) {
+      return { valid: false, reason: 'Contains blame or relapse assumption' };
     }
   }
 

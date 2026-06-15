@@ -20,7 +20,12 @@ describe('Synthesis Prompt Building', () => {
       { sourceType: 'RECENT_DIARY', safeAnchor: 'Vandaag was het moeilijk op werk', relevanceScore: 0.7 },
     ];
 
-    const payload = buildGreetingSynthesisPromptPayload('Kris', sources);
+    const payload = buildGreetingSynthesisPromptPayload({
+      userName: 'Kris',
+      selectedSources: sources,
+      absence: { band: 'SHORT', isReturnAfterAbsence: false, absenceDaysExact: 1, absenceHoursExact: 24, lastSessionStartedAt: null, thresholdDays: 3, reason: 'short' },
+      mode: 'SYNTHESIS',
+    });
     expect(payload.synthesisInstruction).toContain('frustration=6');
     expect(payload.synthesisInstruction).toContain('Vandaag was het moeilijk op werk');
     expect(payload.userName).toBe('Kris');
@@ -33,7 +38,12 @@ describe('Synthesis Prompt Building', () => {
       { sourceType: 'RECENT_GRATITUDE', safeAnchor: 'Dankbaar voor rust', relevanceScore: 0.6 },
     ];
 
-    const payload = buildGreetingSynthesisPromptPayload('Kris', sources);
+    const payload = buildGreetingSynthesisPromptPayload({
+      userName: 'Kris',
+      selectedSources: sources,
+      absence: { band: 'SHORT', isReturnAfterAbsence: false, absenceDaysExact: 1, absenceHoursExact: 24, lastSessionStartedAt: null, thresholdDays: 3, reason: 'short' },
+      mode: 'SYNTHESIS',
+    });
     expect(payload.languageRule).toContain('grammaticaal correct');
     expect(payload.languageRule).toContain('Nederlands');
     expect(payload.synthesisInstruction).toContain('Grammaticaal correct');

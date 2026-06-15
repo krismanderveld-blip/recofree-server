@@ -24,10 +24,13 @@ import type {
 export type GreetingOverrideMode =
   | 'CRISIS_OVERRIDE'
   | 'FIRST_SESSION'
+  | 'RETURN_AFTER_ABSENCE'
   | 'MISSING_DATA';
 
 export interface GreetingOverrideResult {
   mode: GreetingOverrideMode;
+  shouldBypassSynthesis: boolean;
+  shouldPrefixSynthesisWithAbsence: boolean;
   reason: string;
   payload: Record<string, unknown>;
 }
@@ -89,10 +92,12 @@ export interface MoodMetricSelection {
 export interface GreetingSynthesisPromptPayload {
   persona: 'elias';
   userName: string;
-  mode: 'SYNTHESIS' | GreetingOverrideMode;
-  maxSentences: 4; // 3-4 in synthesis, 2-3 in override
+  mode: GreetingSynthesisMode;
+  maxSentences: 4;
   selectedSources: SelectedSynthesisSource[];
+  absence?: SessionAbsenceResultForPrompt;
   synthesisInstruction: string;
+  openQuestionInstruction: string;
   forbiddenPatterns: string[];
   languageRule: string;
 }
@@ -101,9 +106,10 @@ export interface GreetingSynthesisPromptPayload {
 
 export interface SessionGreetingV3Result {
   greeting: string;
-  mode: 'SYNTHESIS' | GreetingOverrideMode;
+  mode: GreetingSynthesisMode;
   selectedSources: SelectedSynthesisSource[];
   override: GreetingOverrideResult | null;
+  absence: import('./calculateSessionAbsence').SessionAbsenceResult;
   debugLog: string;
   estimatedTokens: number;
 }
@@ -114,11 +120,12 @@ export interface SessionGreetingV3Debug {
   nowIso: string;
   sessionNumber: number;
   freshness: GreetingFreshnessResult;
+  absence: import('./calculateSessionAbsence').SessionAbsenceResult;
   override: GreetingOverrideResult | null;
   synthesisCandidates: GreetingSynthesisCandidate[];
   selectedSources: SelectedSynthesisSource[];
   moodMetric: MoodMetricSelection | null;
-  mode: 'SYNTHESIS' | GreetingOverrideMode;
+  mode: GreetingSynthesisMode;
 }
 
 // ─── Constants ──────────────────────────────────────────────────────────────
@@ -145,3 +152,21 @@ export const V3_SCHEMA_ROTATION_INTERVAL = 4;
 
 /** Active fear/hope decay threshold */
 export const V3_ACTIVE_PROJECTION_DECAY_THRESHOLD = 0.60;
+
+// ─── Synthesis Mode (V3 + Absence) ────────────────────────────────────────────
+
+export type GreetingSynthesisMode =
+  | 'SYNTHESIS'
+  | 'CRISIS_OVERRIDE'
+  | 'FIRST_SESSION'
+  | 'RETURN_AFTER_ABSENCE'
+  | 'MISSING_DATA';
+
+/**
+ * Absence result subset safe for GPT prompt (no raw timestamps).
+ */
+export interface SessionAbsenceResultForPrompt {
+  band: import('./calculateSessionAbsence').SessionAbsenceBand;
+  absenceDaysRounded: number | null; // rounded to 1 decimal
+  wordingHint: 'short_return' | 'return_after_absence' | 'long_return_soft';
+}

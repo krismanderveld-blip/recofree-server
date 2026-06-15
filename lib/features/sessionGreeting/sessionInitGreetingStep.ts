@@ -77,7 +77,7 @@ export async function sessionInitGreetingStep(
   const userName = greetingUserDat?.userName ?? 'daar';
   let systemPrompt: string;
 
-  if (engineResult.mode === 'SYNTHESIS' && engineResult.synthesisPayload) {
+  if ((engineResult.mode === 'SYNTHESIS' || engineResult.mode === 'RETURN_AFTER_ABSENCE') && engineResult.synthesisPayload) {
     systemPrompt = engineResult.synthesisPayload.synthesisInstruction;
   } else if (engineResult.overridePrompt) {
     systemPrompt = engineResult.overridePrompt;
@@ -148,6 +148,9 @@ function buildV3DebugLog(
 ): string {
   const sources = result.selectedSources.map(s => s.sourceType).join(', ') || 'none';
   let log = `[SessionGreetingV3] mode=${result.mode} sources=[${sources}]`;
+  if (result.absence.band !== 'NONE') {
+    log += ` absence=${result.absence.band}(${result.absence.absenceDaysExact !== null ? Math.round(result.absence.absenceDaysExact) : '?'}d)`;
+  }
   if (result.override) {
     log += ` override_reason="${result.override.reason}"`;
   }
@@ -162,6 +165,7 @@ function buildV3DebugLog(
 function adaptUserDat(backpack: Backpack, userDat: UserDat): GreetingUserDatSnapshot {
   const userName = backpack.naam || undefined;
   const totalSessionsStarted = userDat.totalSessions ?? 0;
+  const lastSessionStartedAt = (userDat as any).lastSessionStartedAt ?? (userDat as any)._lastSessionStartedAt ?? undefined;
 
   // Adapt schemaTendencies from legacy format
   const schemaTendencies: GreetingSchemaTendency[] = (userDat.schemaTendencies ?? []).map((s) => ({
@@ -187,6 +191,7 @@ function adaptUserDat(backpack: Backpack, userDat: UserDat): GreetingUserDatSnap
     sessionStats: {
       totalSessionsStarted,
       currentSessionNumber: totalSessionsStarted + 1,
+      lastSessionStartedAt,
       schemaRotationState,
     },
     schemaTendencies,

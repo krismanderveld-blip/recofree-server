@@ -1,16 +1,19 @@
 /**
- * Session Greeting Engine V3 — Main Orchestrator
+ * Session Greeting Engine V3 — Main Orchestrator (with Absence Awareness)
  *
  * Flow:
  * 1. Evaluate freshness (reuse from V1)
- * 2. Resolve override (CRISIS/FIRST/MISSING) → if override, build override prompt, return
- * 3. Build synthesis candidates (score all 6 source types)
- * 4. Select top 3 sources (balance rules)
- * 5. Build synthesis prompt payload
- * 6. Return payload for GPT call (server-side)
+ * 2. Calculate session absence (days since lastSessionStartedAt)
+ * 3. Resolve override (CRISIS > FIRST > RETURN_AFTER_ABSENCE > MISSING) → handle each mode
+ * 4. Build synthesis candidates (score all 6 source types)
+ * 5. Select sources:
+ *    - RETURN_AFTER_ABSENCE: max 2 sources via selectReturnAfterAbsenceSources
+ *    - SYNTHESIS: max 3 sources via selectGreetingSynthesisSources
+ * 6. Build prompt payload (with absence context if applicable)
+ * 7. Return payload for GPT call (server-side)
  *
- * The engine is DETERMINISTIC — it produces the same prompt payload
- * given the same input. GPT is the only non-deterministic step.
+ * CRITICAL: lastSessionStartedAt must be read BEFORE sessionStats is updated.
+ * The engine receives the pre-update value. Update happens AFTER greeting is generated.
  */
 
 import type {
@@ -24,29 +27,38 @@ import type {
   MoodMetricSelection,
   SessionGreetingV3Debug,
   GreetingSynthesisPromptPayload,
+  GreetingSynthesisMode,
 } from './sessionGreetingV3.types';
 
 import { evaluateGreetingFreshness } from './evaluateGreetingFreshness';
 import { resolveGreetingOverride } from './resolveGreetingOverride';
 import { buildGreetingSynthesisCandidates } from './buildGreetingSynthesisCandidates';
-import { selectGreetingSynthesisSources } from './selectGreetingSynthesisSources';
+import {
+  selectGreetingSynthesisSources,
+  selectReturnAfterAbsenceSources,
+} from './selectGreetingSynthesisSources';
 import {
   buildGreetingSynthesisPromptPayload,
   buildCrisisOverridePrompt,
   buildFirstSessionOverridePrompt,
   buildMissingDataOverridePrompt,
 } from './buildGreetingSynthesisPrompt';
+import {
+  calculateSessionAbsence,
+  type SessionAbsenceResult,
+} from './calculateSessionAbsence';
 
 // ─── V3 Engine Result ───────────────────────────────────────────────────────
 
 export interface SessionGreetingV3EngineResult {
-  mode: 'SYNTHESIS' | 'CRISIS_OVERRIDE' | 'FIRST_SESSION' | 'MISSING_DATA';
+  mode: GreetingSynthesisMode;
   override: GreetingOverrideResult | null;
-  /** For SYNTHESIS mode: structured payload for GPT */
+  absence: SessionAbsenceResult;
+  /** For SYNTHESIS and RETURN_AFTER_ABSENCE modes: structured payload for GPT */
   synthesisPayload: GreetingSynthesisPromptPayload | null;
-  /** For OVERRIDE modes: simple prompt string for GPT */
+  /** For OVERRIDE modes (CRISIS/FIRST/MISSING): simple prompt string for GPT */
   overridePrompt: string | null;
-  /** Selected sources (empty for override modes) */
+  /** Selected sources (empty for bypass override modes) */
   selectedSources: SelectedSynthesisSource[];
   /** Debug information */
   debug: SessionGreetingV3Debug;
@@ -82,14 +94,34 @@ export function sessionGreetingEngineV3(
 
   const sessionNumber = userDat?.sessionStats.currentSessionNumber ?? 0;
 
-  // ─── Step 2: Resolve Override ───────────────────────────────────────────────
+  // ─── Step 2: Calculate Session Absence ──────────────────────────────────────
+  const lastSessionStartedAt = userDat?.sessionStats.lastSessionStartedAt ?? null;
+  const absence = calculateSessionAbsence({
+    lastSessionStartedAt,
+    nowIso,
+  });
+
+  // ─── Step 3: Build Synthesis Candidates (needed for override resolution) ────
+  const { candidates, moodMetric } = buildGreetingSynthesisCandidates({
+    userDat,
+    stateDat,
+    projectionsDat,
+    diaryMetadata,
+    gratitudeMetadata,
+    freshness,
+  });
+
+  // ─── Step 4: Resolve Override ───────────────────────────────────────────────
   const override = resolveGreetingOverride({
     userDat,
     stateDat,
     freshness,
+    synthesisCandidates: candidates,
+    absence,
   });
 
-  if (override) {
+  // Handle bypass overrides (CRISIS, FIRST_SESSION, MISSING_DATA)
+  if (override && override.shouldBypassSynthesis) {
     const userName = userDat?.userName ?? '';
     let overridePrompt: string;
 
@@ -115,6 +147,7 @@ export function sessionGreetingEngineV3(
     return {
       mode: override.mode,
       override,
+      absence,
       synthesisPayload: null,
       overridePrompt,
       selectedSources: [],
@@ -122,6 +155,7 @@ export function sessionGreetingEngineV3(
         nowIso,
         sessionNumber,
         freshness,
+        absence,
         override,
         synthesisCandidates: [],
         selectedSources: [],
@@ -131,29 +165,61 @@ export function sessionGreetingEngineV3(
     };
   }
 
-  // ─── Step 3: Build Synthesis Candidates ─────────────────────────────────────
-  const { candidates, moodMetric } = buildGreetingSynthesisCandidates({
-    userDat,
-    stateDat,
-    projectionsDat,
-    diaryMetadata,
-    gratitudeMetadata,
-    freshness,
-  });
+  // Handle RETURN_AFTER_ABSENCE (prefix with absence, optional 2 sources)
+  if (override && override.shouldPrefixSynthesisWithAbsence) {
+    const selectedSources = selectReturnAfterAbsenceSources({
+      candidates,
+      absence,
+    });
 
-  // ─── Step 4: Select Sources ─────────────────────────────────────────────────
+    const userName = userDat?.userName ?? '';
+    const synthesisPayload = buildGreetingSynthesisPromptPayload({
+      userName,
+      selectedSources,
+      absence,
+      mode: 'RETURN_AFTER_ABSENCE',
+    });
+
+    return {
+      mode: 'RETURN_AFTER_ABSENCE',
+      override,
+      absence,
+      synthesisPayload,
+      overridePrompt: null,
+      selectedSources,
+      debug: buildDebug({
+        nowIso,
+        sessionNumber,
+        freshness,
+        absence,
+        override,
+        synthesisCandidates: candidates,
+        selectedSources,
+        moodMetric,
+        mode: 'RETURN_AFTER_ABSENCE',
+      }),
+    };
+  }
+
+  // ─── Step 5: Normal Synthesis — Select Sources ─────────────────────────────
   const selectedSources = selectGreetingSynthesisSources({
     candidates,
     moodMetric,
   });
 
-  // ─── Step 5: Build Prompt Payload ───────────────────────────────────────────
+  // ─── Step 6: Build Prompt Payload ──────────────────────────────────────────
   const userName = userDat?.userName ?? '';
-  const synthesisPayload = buildGreetingSynthesisPromptPayload(userName, selectedSources);
+  const synthesisPayload = buildGreetingSynthesisPromptPayload({
+    userName,
+    selectedSources,
+    absence,
+    mode: 'SYNTHESIS',
+  });
 
   return {
     mode: 'SYNTHESIS',
     override: null,
+    absence,
     synthesisPayload,
     overridePrompt: null,
     selectedSources,
@@ -161,6 +227,7 @@ export function sessionGreetingEngineV3(
       nowIso,
       sessionNumber,
       freshness,
+      absence,
       override: null,
       synthesisCandidates: candidates,
       selectedSources,

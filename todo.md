@@ -1286,3 +1286,18 @@
 - [x] Greeting V3: Update sessionInitGreetingStep and server endpoint
 - [x] Greeting V3: Write acceptance tests (32 tests in 4 files — all green)
 - [x] Greeting V3: All 711 existing tests green (was 679)
+- [x] Absence Awareness: Create calculateSessionAbsence module (bands: NONE/SHORT/RETURN_AFTER_ABSENCE/LONG_RETURN)
+- [x] Absence Awareness: Update V3 types (GreetingOverrideType, GreetingSynthesisMode, SessionAbsenceResult)
+- [x] Absence Awareness: Update resolveGreetingOverride with RETURN_AFTER_ABSENCE in priority 3
+- [x] Absence Awareness: Add selectReturnAfterAbsenceSources (max 2 sources, no fear on LONG_RETURN)
+- [x] Absence Awareness: Update buildGreetingSynthesisPrompt with absence mode instructions
+- [x] Absence Awareness: Update output safety filter with blame/relapse rejection patterns
+- [x] Absence Awareness: Update main V3 engine with absence calculation step
+- [x] Absence Awareness: Create sessionStatsUpdateStep (commitSessionStartedAfterGreeting)
+- [x] Absence Awareness: Update sessionInitGreetingStep pipeline integration
+- [x] Absence Awareness: Write calculateSessionAbsence tests (12 tests)
+- [x] Absence Awareness: Write returnAfterAbsenceOverride tests (6 tests)
+- [x] Absence Awareness: Write returnAfterAbsenceSourceSelection tests (5 tests)
+- [x] Absence Awareness: Write returnAfterAbsencePromptPayload tests (10 tests)
+- [x] Absence Awareness: Write sessionStatsUpdateOrder tests (5 tests)
+- [x] Absence Awareness: All 751 tests green (was 711, now 751 with 38 new absence tests + 2 updated)

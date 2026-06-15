@@ -123,6 +123,7 @@ export interface GreetingUserDatSnapshot {
   sessionStats: {
     totalSessionsStarted: number;
     currentSessionNumber: number;
+    lastSessionStartedAt?: string;
     schemaRotationState?: GreetingSchemaRotationState;
   };
   schemaTendencies: GreetingSchemaTendency[];

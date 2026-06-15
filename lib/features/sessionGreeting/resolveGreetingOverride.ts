@@ -1,11 +1,14 @@
 /**
- * Session Greeting V3 — Override Resolution
+ * Session Greeting V3 — Override Resolution (with Absence Awareness)
  *
- * Determines if the greeting should bypass synthesis entirely.
- * Override modes: CRISIS_OVERRIDE, FIRST_SESSION, MISSING_DATA
+ * Determines if the greeting should bypass or prefix synthesis.
  *
- * Priority: FIRST_SESSION > CRISIS_OVERRIDE > MISSING_DATA
- * If an override is returned, synthesis is skipped.
+ * Priority order:
+ * 1. CRISIS_OR_HIGH_CRAVING — bypasses everything
+ * 2. FIRST_SESSION — no prior session to compare
+ * 3. RETURN_AFTER_ABSENCE — acknowledges return, optional synthesis (max 2 sources)
+ * 4. MISSING_DATA — no fresh data available
+ * 5. NONE — normal synthesis
  */
 
 import type {
@@ -13,35 +16,32 @@ import type {
   GreetingUserDatSnapshot,
   GreetingStateDatSnapshot,
 } from './sessionGreeting.types';
-import type { GreetingOverrideResult } from './sessionGreetingV3.types';
+import type {
+  GreetingOverrideResult,
+  GreetingSynthesisCandidate,
+} from './sessionGreetingV3.types';
 import { V3_CRISIS_CRAVING_THRESHOLD, V3_CRISIS_ZONES } from './sessionGreetingV3.types';
+import type { SessionAbsenceResult } from './calculateSessionAbsence';
 
 export interface ResolveGreetingOverrideInput {
   userDat: GreetingUserDatSnapshot | null;
   stateDat: GreetingStateDatSnapshot | null;
   freshness: GreetingFreshnessResult;
+  synthesisCandidates: GreetingSynthesisCandidate[];
+  absence: SessionAbsenceResult;
 }
 
 /**
- * Returns an override result if the greeting should bypass synthesis,
- * or null if synthesis should proceed.
+ * Returns an override result describing the greeting mode.
+ * - shouldBypassSynthesis: true means no synthesis sources at all
+ * - shouldPrefixSynthesisWithAbsence: true means absence acknowledgement first, then optional sources
  */
 export function resolveGreetingOverride(
   input: ResolveGreetingOverrideInput,
 ): GreetingOverrideResult | null {
-  const { userDat, stateDat, freshness } = input;
+  const { userDat, stateDat, freshness, absence } = input;
 
-  // 1. FIRST_SESSION — totalSessionsStarted === 0
-  const totalSessions = userDat?.sessionStats.totalSessionsStarted ?? 0;
-  if (totalSessions === 0) {
-    return {
-      mode: 'FIRST_SESSION',
-      reason: 'First session ever (totalSessionsStarted=0)',
-      payload: { userName: userDat?.userName ?? null },
-    };
-  }
-
-  // 2. CRISIS_OVERRIDE — craving >= 7 (today) OR vspZone in [ROOD, PAARS, ORANJE]
+  // 1. CRISIS_OR_HIGH_CRAVING — craving >= 7 (today) OR vspZone in [ROOD, PAARS, ORANJE]
   const craving = stateDat?.currentMood?.craving ?? 0;
   const vspZone = (stateDat?.vspZone ?? '').toUpperCase();
   const cravingCrisis = craving >= V3_CRISIS_CRAVING_THRESHOLD && freshness.slidersFilledToday;
@@ -50,6 +50,8 @@ export function resolveGreetingOverride(
   if (cravingCrisis || zoneCrisis) {
     return {
       mode: 'CRISIS_OVERRIDE',
+      shouldBypassSynthesis: true,
+      shouldPrefixSynthesisWithAbsence: false,
       reason: cravingCrisis
         ? `High craving today: craving=${craving}`
         : `Crisis zone active: vspZone=${vspZone}`,
@@ -57,7 +59,30 @@ export function resolveGreetingOverride(
     };
   }
 
-  // 3. MISSING_DATA — no sliders today AND no recent diary AND no recent gratitude
+  // 2. FIRST_SESSION — totalSessionsStarted === 0
+  const totalSessions = userDat?.sessionStats.totalSessionsStarted ?? 0;
+  if (totalSessions === 0) {
+    return {
+      mode: 'FIRST_SESSION',
+      shouldBypassSynthesis: true,
+      shouldPrefixSynthesisWithAbsence: false,
+      reason: 'First session ever (totalSessionsStarted=0)',
+      payload: { userName: userDat?.userName ?? null },
+    };
+  }
+
+  // 3. RETURN_AFTER_ABSENCE — absence >= 3 days
+  if (absence.isReturnAfterAbsence) {
+    return {
+      mode: 'RETURN_AFTER_ABSENCE',
+      shouldBypassSynthesis: false, // may include up to 2 sources
+      shouldPrefixSynthesisWithAbsence: true,
+      reason: `Return after absence: band=${absence.band}, days=${absence.absenceDaysExact?.toFixed(1) ?? 'unknown'}`,
+      payload: { band: absence.band, absenceDays: absence.absenceDaysExact },
+    };
+  }
+
+  // 4. MISSING_DATA — no sliders today AND no recent diary AND no recent gratitude AND no backpack
   const hasAnyFreshData =
     freshness.slidersFilledToday ||
     freshness.diaryRecentUnder3Days ||
@@ -67,6 +92,8 @@ export function resolveGreetingOverride(
   if (!hasAnyFreshData) {
     return {
       mode: 'MISSING_DATA',
+      shouldBypassSynthesis: true,
+      shouldPrefixSynthesisWithAbsence: false,
       reason: 'No fresh data available (no sliders, no recent diary/gratitude, no backpack update)',
       payload: {
         missingSlidersToday: !freshness.slidersFilledToday,
@@ -76,6 +103,6 @@ export function resolveGreetingOverride(
     };
   }
 
-  // No override — proceed with synthesis
+  // 5. NONE — proceed with normal synthesis
   return null;
 }
