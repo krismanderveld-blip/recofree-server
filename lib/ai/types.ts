@@ -1088,6 +1088,8 @@ export interface ChatContext {
   dangerChildContext?: string;
   /** Kim Relational Dynamics Cluster (ROL-K01/VETR02-K/LEUGEN-K01) prompt context. Reflective modules below acute clusters. */
   relationalDynamicsContext?: string;
+  /** Kim Cluster 4 (HOOP-K01/SCHAAM-K01/ROUW-K01/ISOL-K01) — emotional loss context */
+  emotionalLossContext?: string;
   /** Structured entities extracted from backpack (persons, events, patterns, contexts). Sent instead of full backpack when unchanged. */
   extractedEntities?: import('../backpack-extractor/types').ExtractedEntities;
   /** Whether backpack content changed since last extraction (forces full backpack resend) */

@@ -250,6 +250,7 @@ interface ChatRequestInput {
   /** Kim Danger/Child Cluster prompt payload (GEVAAR-K01/KIND-K01). Injected into system prompt when active. Overrides relapse cluster. */
   dangerChildContext?: string;
   relationalDynamicsContext?: string;
+  emotionalLossContext?: string;
 }
 
 // ─── Server-side Session Cache ───────────────────────────────────
@@ -1052,6 +1053,10 @@ export function buildSystemPrompt(input: ChatRequestInput): string {
     '- ROL-K01: Rol Naaste — emotiegolf na wegvallen zorgrol (opname, stabilisatie), onderdrukte woede/verdriet/leegte',
     '- VETR02-K: Verlatingsvrees Naaste — hyperwaakzaamheid bij afwezigheid/stilte partner (opname, detox, afstand)',
     '- LEUGEN-K01: Leugen Naaste — chronisch liegen, verbroken beloftes, wantrouwen vs hoop, grenzen zonder detective-rol',
+    '- HOOP-K01: Hoop Naaste — hoopuitputting, wanneer-is-genoeg-genoeg, verlies van geloof in herstel/relatie',
+    '- SCHAAM-K01: Schaamte Naaste — schaamte om verslaving dierbare, geheimhouding, sociaal terugtrekken',
+    '- ROUW-K01: Rouw Naaste — ambigue verlies, levende rouw, missen wie dierbare was, gemiste toekomst',
+    '- ISOL-K01: Isolatie Naaste — sociale isolatie door zorgrol, verlies eigen contacten, uitputting',
     '- CGT/CBT: Cognitieve Gedragstherapie — gedachtepatronen herkennen en bijsturen',
     '- DBT/DGT: Distress Tolerance — crisisstabilisatie en emotieregulatie',
     '- MBT: Mentalisatie — begrijpen wat er van binnen gebeurt voor je reageert',
@@ -1560,6 +1565,7 @@ ${relapseIntentInstruction}
 ${input.relapseClusterContext ? `\n=== KIM RELAPSE CLUSTER MODULE ACTIVE ===\n${input.relapseClusterContext}\n=== END RELAPSE CLUSTER ===` : ''}
 ${input.dangerChildContext ? `\n=== KIM DANGER/CHILD CLUSTER MODULE ACTIVE ===\n${input.dangerChildContext}\n=== END DANGER/CHILD CLUSTER ===` : ''}
 ${input.relationalDynamicsContext ? `\n=== KIM RELATIONAL DYNAMICS MODULE ACTIVE ===\n${input.relationalDynamicsContext}\n=== END RELATIONAL DYNAMICS ===` : ''}
+${input.emotionalLossContext ? `\n=== KIM EMOTIONAL LOSS MODULE ACTIVE ===\n${input.emotionalLossContext}\n=== END EMOTIONAL LOSS ===` : ''}
 ${sessionEndInstructions}
 
 ANTI-FABRICATION RULE — ABSOLUTE:
@@ -1955,6 +1961,7 @@ ${relapseIntentInstruction}
 ${input.relapseClusterContext ? `\n=== KIM RELAPSE CLUSTER MODULE ACTIVE ===\n${input.relapseClusterContext}\n=== END RELAPSE CLUSTER ===` : ''}
 ${input.dangerChildContext ? `\n=== KIM DANGER/CHILD CLUSTER MODULE ACTIVE ===\n${input.dangerChildContext}\n=== END DANGER/CHILD CLUSTER ===` : ''}
 ${input.relationalDynamicsContext ? `\n=== KIM RELATIONAL DYNAMICS MODULE ACTIVE ===\n${input.relationalDynamicsContext}\n=== END RELATIONAL DYNAMICS ===` : ''}
+${input.emotionalLossContext ? `\n=== KIM EMOTIONAL LOSS MODULE ACTIVE ===\n${input.emotionalLossContext}\n=== END EMOTIONAL LOSS ===` : ''}
 ${sessionEndInstructions}
 
 ANTI-FABRICATION RULE — ABSOLUTE:

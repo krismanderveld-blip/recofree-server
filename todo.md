@@ -1375,3 +1375,9 @@
 - [x] Kim Cluster 3: pipeline wiring as P8 (below acute clusters)
 - [x] Kim Cluster 3: 14 critical acceptance tests
 - [x] Kim Cluster 3: all existing 974+ tests remain green (988 passed)
+- [x] Kim Cluster 4: types + acute override gate + suicidality-split
+- [x] Kim Cluster 4: NL/EN/FR markers for HOOP-K01, SCHAAM-K01, ROUW-K01, ISOL-K01
+- [x] Kim Cluster 4: detectors, priority resolver, payloads, memory patch, safety filter
+- [x] Kim Cluster 4: pipeline wiring as P9 (below P6/P7/P8)
+- [x] Kim Cluster 4: 14 critical acceptance tests (suicidality-split, persona separation, acute override)
+- [x] Kim Cluster 4: all existing tests remain green (1002 passed)

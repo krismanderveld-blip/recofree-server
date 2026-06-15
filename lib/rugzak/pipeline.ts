@@ -284,6 +284,8 @@ import { runKimAdvancedP7 } from '../engine/kim/kim-advanced-modules-p7';
 import type { KimAdvancedP7Result } from '../engine/kim/kim-advanced-modules-p7';
 import { runKimAdvancedModulesP8 } from '../engine/kim/kim-advanced-modules-p8';
 import type { KimP8Result } from '../engine/kim/kim-advanced-modules-p8';
+import { runKimAdvancedP9 } from '../engine/kim/kim-advanced-modules-p9';
+import type { KimP9Result } from '../engine/kim/kim-advanced-modules-p9';
 import { detectISO01Signals } from '../engine/elias/short-module-detector';
 import {
   evaluateModuleMemoryRepeat,
@@ -1609,6 +1611,39 @@ export async function processMessage(
     });
   }
 
+  // ── STEP 5e9b: Kim P9 (Emotional Loss: HOOP-K01/SCHAAM-K01/ROUW-K01/ISOL-K01) ──
+  // Reflective modules. Lower priority than acute clusters (P6/P7) and relational dynamics (P8).
+  let kimP9Result: KimP9Result = {
+    active: false,
+    moduleId: 'NONE',
+    detectionResult: null,
+    payload: null,
+    contextString: '',
+  };
+  if (backpack.userType === 'kim' && !!(backpack as any).intake?.startEmotion && !kimAdvancedP6Result.overridesLowerModules && !kimAdvancedP7Result.active && !kimP8Result.active) {
+    kimP9Result = runKimAdvancedP9({
+      message: userMessage,
+      persona: 'kim',
+      selfHarmOrSuicideDetectedInKim: (currentUserDat as any).selfHarmOrSuicideDetected ?? false,
+      immediateDanger: analysis.riskLevel === 'critical',
+      dangerOrViolenceDetected: (currentUserDat as any).aggressionDetected ?? false,
+      domesticViolenceOrAbuseDetected: (currentUserDat as any).domesticViolenceOrAbuseDetected ?? false,
+      aggressionDetected: (currentUserDat as any).aggressionDetected ?? false,
+      childPresentOrAffected: (currentUserDat as any).childrenInvolved ?? false,
+      activeRelapseNow: /(?:hij|zij|he|she).*(?:drinkt|gebruikt|drinks|uses).*(?:nu|weer|opnieuw|again|now)/i.test(userMessage),
+      immediateAftermathActive: /(?:gisteren|vorige week|yesterday|last week).*(?:gedronken|gebruikt|drank|used)/i.test(userMessage),
+      enoughIsEnoughDetected: /(?:wanneer is genoeg|when is enough|quand est-ce que [cç]a suffit)/i.test(userMessage),
+      hopeExhaustionDetected: /(?:verlies.*hoop|geen hoop|losing hope|no hope|perds.*espoir|plus d'espoir)/i.test(userMessage),
+      shameSecrecyDetected: /(?:schaam|verberg|hide|ashamed|honte|cache)/i.test(userMessage),
+      socialWithdrawalDetected: /(?:trek.*terug|zie.*niemand|withdraw|see.*no ?one|me retire|ne vois.*personne)/i.test(userMessage),
+      ambiguousLossDetected: /(?:mis.*wie.*was|kwijt.*terwijl.*leeft|miss.*used to be|lost.*still alive|deuil.*vivant)/i.test(userMessage),
+      lostFutureGriefDetected: /(?:rouw.*toekomst|ander.*leven.*voorgesteld|grieve.*future|imagined.*different|deuil.*avenir)/i.test(userMessage),
+      socialIsolationDetected: /(?:ge[ïi]soleerd|niemand meer|alleen.*hiermee|isolated|alone.*with this|isol[ée]|seul.*avec)/i.test(userMessage),
+      lossOfOwnContactsDetected: /(?:contacten kwijt|geen sociaal leven|lost.*contacts|no social life|perdu.*contacts|plus de vie sociale)/i.test(userMessage),
+      detectedMarkers: [],
+    });
+  }
+
   // ── STEP 5e9: Kim P2 (BEDR01/VETR01/GASL01) ──
   let kimAdvancedP2Result: KimAdvancedP2Result = {
     bedr01Context: null,
@@ -2142,6 +2177,8 @@ export async function processMessage(
     dangerChildContext: kimAdvancedP7Result.dangerChildContext || undefined,
     // Kim Relational Dynamics Cluster (ROL-K01/VETR02-K/LEUGEN-K01) — reflective modules below acute
     relationalDynamicsContext: (kimAdvancedP7Result.overridesLowerModules || kimAdvancedP6Result.overridesLowerModules) ? undefined : (kimP8Result.active ? kimP8Result.promptContext || undefined : undefined),
+    // Kim Emotional Loss Cluster (HOOP-K01/SCHAAM-K01/ROUW-K01/ISOL-K01) — reflective modules below acute + relational dynamics
+    emotionalLossContext: (kimAdvancedP7Result.overridesLowerModules || kimAdvancedP6Result.overridesLowerModules || kimP8Result.active) ? undefined : (kimP9Result.active ? kimP9Result.contextString || undefined : undefined),
     // Backpack entity extraction: send structured entities instead of full backpack when unchanged
     extractedEntities: currentUserDat.extractedEntities ?? undefined,
     backpackChanged: !currentUserDat.extractedEntities || (currentUserDat.extractedEntities.persons.length === 0),
@@ -2449,6 +2486,7 @@ export async function processMessage(
       { step: '5e13. Kim P6 (HERV-K01/NAHERV-K01/CRISIS-K01)', status: kimAdvancedP6Result.activeModule ? 'passed' : 'skipped', reason: kimAdvancedP6Result.activeModule ? `kim|module=${kimAdvancedP6Result.activeModule}|overrides=${kimAdvancedP6Result.overridesLowerModules}` : 'no Relapse Cluster activation' },
       { step: '5e14. Kim P7 (GEVAAR-K01/KIND-K01)', status: kimAdvancedP7Result.activeModule ? 'passed' : 'skipped', reason: kimAdvancedP7Result.activeModule ? `kim|module=${kimAdvancedP7Result.activeModule}|overrides=${kimAdvancedP7Result.overridesLowerModules}|crisis=${kimAdvancedP7Result.crisisNumbersToShow.join(',')}` : 'no Danger/Child Cluster activation' },
       { step: '5e15. Kim P8 (ROL-K01/VETR02-K/LEUGEN-K01)', status: kimP8Result.active ? 'passed' : 'skipped', reason: kimP8Result.active ? `kim|module=${kimP8Result.moduleId}` : 'no Relational Dynamics activation' },
+      { step: '5e16. Kim P9 (HOOP-K01/SCHAAM-K01/ROUW-K01/ISOL-K01)', status: kimP9Result.active ? 'passed' : 'skipped', reason: kimP9Result.active ? `kim|module=${kimP9Result.moduleId}` : 'no Emotional Loss activation' },
       { step: '6a. Zone decision', status: elisDecision ? 'passed' : 'skipped', reason: elisDecision ? `zone=${elisDecision.zone.computed.label}` : 'kim user' },
       { step: '6b. Engine directive', status: engineDirective ? 'passed' : 'skipped', reason: engineDirective ? `engine=${engineDirective.engine}` : 'none' },
       { step: '6c. Intervention', status: interventionContinuity ? 'passed' : 'skipped', reason: interventionContinuity ? `type=${interventionContinuity.lastInterventionType}` : 'not active' },
