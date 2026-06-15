@@ -1244,3 +1244,16 @@
 - [x] Session Greeting Engine: 20 acceptance tests (corrected priority: RECENT_DIARY > BACKPACK_RECENT_UPDATE) — all passing
 - [x] Session Greeting Engine: server endpoint (POST /api/session-greeting) registered
 - [x] Debug snapshot: schemaTendencies/modeTendencies format changed from freq= to last= (date from lastUpdatedAt)
+- [x] Encrypted Export/Import: type definitions (envelope, payload, import result)
+- [x] Encrypted Export/Import: error classes and error codes
+- [x] Encrypted Export/Import: version constants and forward compatibility
+- [x] Encrypted Export/Import: utility modules (stableStringify, base64, sha256)
+- [x] Encrypted Export/Import: crypto layer (PBKDF2, AES-256-GCM, AAD)
+- [x] Encrypted Export/Import: export service (createEncryptedRecoFreeExport)
+- [x] Encrypted Export/Import: import service with staging and rollback
+- [x] Encrypted Export/Import: store export/import interfaces (exportAllPersonas, replaceAllPersonas)
+- [x] Encrypted Export/Import: file picker (pickRecoFreeBackupFile)
+- [x] Encrypted Export/Import: UI components (ExportDataSection, ImportDataSection, DataPrivacySection)
+- [x] Encrypted Export/Import: settings/profile integration
+- [x] Encrypted Export/Import: 15 acceptance tests all green
+- [x] Encrypted Export/Import: existing 671 tests still green (was 656, now 671 with new tests)

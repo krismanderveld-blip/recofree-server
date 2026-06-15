@@ -12,6 +12,8 @@ import Constants from 'expo-constants';
 import { SoberCounter } from '@/components/sober-counter';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { colors as dc, spacing, radius, typography, shadows, cardStyles } from '@/constants/design';
+import { DataPrivacySection } from '@/lib/features/exportImport/ui/DataPrivacySection';
+import { useExportImportStores } from '@/lib/features/exportImport/hooks/useExportImportStores';
 
 const STAGE_LABELS: Record<string, string> = {
   precontemplation: 'Precontemplation',
@@ -31,6 +33,7 @@ export default function ProfileScreen() {
   const userDat = getUserDat();
   const currentDepth = getGuidanceDepth();
 
+  const exportImportStores = useExportImportStores();
   const isElias = state.userType === 'elias';
   const companionName = isElias ? 'Elias' : 'Kim';
   const userTypeLabel = isElias ? 'Personal recovery' : 'Supporting a loved one';
@@ -322,6 +325,11 @@ export default function ProfileScreen() {
               </View>
             </Pressable>
           ) : null}
+        </View>
+
+        {/* Data & Privacy — Export / Import */}
+        <View style={{ marginBottom: spacing.xl }}>
+          <DataPrivacySection stores={exportImportStores} appVersion={APP_VERSION} />
         </View>
 
         {/* Reset All Data */}
