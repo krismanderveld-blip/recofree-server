@@ -1234,3 +1234,12 @@
 - [x] BackpackAnalysis Debug: add backpackAnalysis + schemaTendencies + modeTendencies to debug snapshot in traceData.memory
 - [x] BackpackAnalysis Debug: verified endpoint returns 3 schemas, 2 modi, 2 triggers for Dutch abandonment text
 - [x] BackpackAnalysis routing: schemas (≥0.35) → schemaTendencies, modi (≥0.35) → modeTendencies, triggers → triggerPatterns with timestamps (firstDetectedAt never overwritten, lastUpdatedAt updated)
+- [x] Session Greeting Engine: type definitions (sessionGreeting.types.ts)
+- [x] Session Greeting Engine: evaluateGreetingFreshness with time helpers
+- [x] Session Greeting Engine: buildGreetingAnchorCandidates
+- [x] Session Greeting Engine: resolveGreetingAnchorPriority + resolveSchemaRotationAnchor
+- [x] Session Greeting Engine: buildGreetingPromptPayload + enforceGreetingOutputRules
+- [x] Session Greeting Engine: sessionGreetingEngine main function + debug + buildSessionInitContext
+- [x] Session Greeting Engine: sessionInitGreetingStep pipeline integration (chat.tsx with fallback)
+- [x] Session Greeting Engine: 20 acceptance tests (corrected priority: RECENT_DIARY > BACKPACK_RECENT_UPDATE) — all passing
+- [x] Session Greeting Engine: server endpoint (POST /api/session-greeting) registered

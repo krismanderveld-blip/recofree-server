@@ -6,6 +6,7 @@ import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { registerOAuthRoutes } from "./oauth";
 import { registerSignalEngineRoute } from "../signal-engine";
 import { registerBackpackAnalysisRoute } from "../backpack-analysis";
+import { registerSessionGreetingRoute } from "../session-greeting";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 
@@ -59,6 +60,7 @@ async function startServer() {
   registerOAuthRoutes(app);
   registerSignalEngineRoute(app);
   registerBackpackAnalysisRoute(app);
+  registerSessionGreetingRoute(app);
 
   app.get("/api/health", (_req, res) => {
     res.json({ ok: true, timestamp: Date.now() });

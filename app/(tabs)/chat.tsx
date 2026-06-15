@@ -41,6 +41,7 @@ import { logDebugEvent } from '@/lib/debug/session-logger';
 import { initGptSignalEngine } from '@/lib/engine/local-llm/engine-provider';
 import { getApiBaseUrl } from '@/constants/oauth';
 import { getSessionLifecycleManager, buildDetectionBundle, runMemoryWriteBack, type PipelineResultForMemory } from '@/lib/pipeline/memory/memoryIntegration';
+import { sessionInitGreetingStep } from '@/lib/features/sessionGreeting/sessionInitGreetingStep';
 import type { MemoryStoresSnapshot } from '@/lib/pipeline/memory/memoryCommitService';
 import { createEmptyUserDat } from '@/lib/types/memory/userDat.types';
 import { createEmptyStateDat } from '@/lib/types/memory/stateDat.types';
@@ -610,18 +611,60 @@ function ChatScreenInner() {
       }
 
       const provider = getAIProvider();
-      // SESSION START: send full backpack + userDat + diary entries
-      const result = await generateGreeting(backpack, provider, userDat, diaryEntries);
-      // Only persist userDat (backpack is NEVER modified by the system)
-      await AsyncStorage.setItem(USERDAT_KEY, JSON.stringify(result.updatedUserDat));
-      // Only show the greeting message (last item in chatHistory), not old session messages
-      const greeting = result.updatedUserDat.chatHistory.slice(-1);
-      setMessages(greeting);
-      // Debug: log session start
-      logDebugEvent('session_start', {
-        userType: state.userType ?? 'unknown',
-        sessionNumber: result.updatedUserDat.totalSessions,
-      });
+
+      // ── Session Greeting Engine: deterministic anchor selection + GPT greeting ──
+      let greetingText: string | null = null;
+      try {
+        const apiUrl = getApiBaseUrl();
+        if (apiUrl) {
+          const greetingResult = await sessionInitGreetingStep({
+            backpack,
+            userDat,
+            diaryEntries,
+            apiBaseUrl: apiUrl,
+            timezone: 'Europe/Amsterdam',
+          });
+          greetingText = greetingResult.greeting;
+          console.log(greetingResult.debugLog);
+        }
+      } catch (greetingErr) {
+        console.warn('[Chat] Session Greeting Engine failed, falling back to pipeline greeting:', greetingErr);
+      }
+
+      // If greeting engine produced a result, use it directly
+      if (greetingText) {
+        const greetingMsg: ChatMessage = {
+          id: `msg_greeting_${Date.now()}`,
+          role: 'assistant',
+          content: greetingText,
+          timestamp: new Date().toISOString(),
+        };
+        // Append to chatHistory and persist
+        userDat.chatHistory = [...(userDat.chatHistory || []), greetingMsg];
+        userDat.totalSessions = (userDat.totalSessions ?? 0) + 1;
+        userDat.lastSessionDate = new Date().toISOString().slice(0, 10);
+        await AsyncStorage.setItem(USERDAT_KEY, JSON.stringify(userDat));
+        setMessages([greetingMsg]);
+        logDebugEvent('session_start', {
+          userType: state.userType ?? 'unknown',
+          sessionNumber: userDat.totalSessions,
+          greetingEngine: true,
+        });
+      } else {
+        // Fallback: use existing pipeline greeting
+        const result = await generateGreeting(backpack, provider, userDat, diaryEntries);
+        // Only persist userDat (backpack is NEVER modified by the system)
+        await AsyncStorage.setItem(USERDAT_KEY, JSON.stringify(result.updatedUserDat));
+        // Only show the greeting message (last item in chatHistory), not old session messages
+        const greeting = result.updatedUserDat.chatHistory.slice(-1);
+        setMessages(greeting);
+        // Debug: log session start
+        logDebugEvent('session_start', {
+          userType: state.userType ?? 'unknown',
+          sessionNumber: result.updatedUserDat.totalSessions,
+          greetingEngine: false,
+        });
+      }
     } catch (error) {
       console.error('Greeting error:', error);
       // Show the error to the user so we can debug on device
