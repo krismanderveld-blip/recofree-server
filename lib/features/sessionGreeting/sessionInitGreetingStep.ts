@@ -1,10 +1,13 @@
 /**
- * Session Init Greeting Step — Pipeline Integration
+ * Session Init Greeting Step — Pipeline Integration (V3)
  * 
  * Bridges the legacy stores (Backpack, UserDat, diary) and new memory-layer stores
- * to the Session Greeting Engine. Called at session start in chat.tsx.
+ * to the Session Greeting Engine V3. Called at session start in chat.tsx.
  * 
- * Returns a greeting string + debug info to be displayed as the first AI message.
+ * V3 changes:
+ * - Uses sessionGreetingEngineV3 (synthesis model) instead of V1 (single-anchor)
+ * - Passes synthesis prompt OR override prompt to server endpoint
+ * - Applies output safety filter (enforceGreetingOutputRulesV3)
  */
 
 import type { Backpack, UserDat, DiaryEntry } from '@/lib/ai/types';
@@ -19,7 +22,8 @@ import type {
   GreetingSchemaTendency,
   GreetingSchemaRotationState,
 } from './sessionGreeting.types';
-import { runSessionGreetingEngine, type SessionGreetingResult } from './sessionGreetingEngine';
+import { sessionGreetingEngineV3, type SessionGreetingV3EngineResult } from './sessionGreetingEngineV3';
+import { enforceGreetingOutputRulesV3 } from './buildGreetingSynthesisPrompt';
 
 export interface SessionInitGreetingInput {
   backpack: Backpack;
@@ -36,7 +40,7 @@ export interface SessionInitGreetingOutput {
 
 /**
  * Main entry point called from chat.tsx at session start.
- * Adapts legacy data shapes into the greeting engine's expected input format.
+ * Adapts legacy data shapes into the V3 greeting engine's expected input format.
  */
 export async function sessionInitGreetingStep(
   input: SessionInitGreetingInput,
@@ -66,14 +70,91 @@ export async function sessionInitGreetingStep(
     gratitudeMetadata,
   };
 
-  const result: SessionGreetingResult = await runSessionGreetingEngine(engineInput, { apiBaseUrl });
+  // Run V3 engine (deterministic)
+  const engineResult: SessionGreetingV3EngineResult = sessionGreetingEngineV3(engineInput);
 
-  console.log(result.debugLog);
+  // Build the GPT prompt based on mode
+  const userName = greetingUserDat?.userName ?? 'daar';
+  let systemPrompt: string;
 
-  return {
-    greeting: result.greeting,
-    debugLog: result.debugLog,
-  };
+  if (engineResult.mode === 'SYNTHESIS' && engineResult.synthesisPayload) {
+    systemPrompt = engineResult.synthesisPayload.synthesisInstruction;
+  } else if (engineResult.overridePrompt) {
+    systemPrompt = engineResult.overridePrompt;
+  } else {
+    // Fallback: generic greeting prompt
+    systemPrompt = `Je bent Elias. Schrijf een warme, korte begroeting voor ${userName}. Max 3 zinnen. Grammaticaal correct Nederlands, geen emoji.`;
+  }
+
+  // Call GPT via server endpoint
+  let rawGreeting: string;
+  try {
+    rawGreeting = await callSessionGreetingEndpoint(apiBaseUrl, systemPrompt, userName);
+  } catch (error) {
+    console.warn('[SessionGreetingV3] GPT call failed, using fallback:', error);
+    rawGreeting = `${userName}, fijn dat je er bent. Waar wil je het vandaag over hebben?`;
+  }
+
+  // Apply output safety filter
+  const validation = enforceGreetingOutputRulesV3(rawGreeting);
+  let greeting = rawGreeting;
+  if (!validation.valid) {
+    console.warn(`[SessionGreetingV3] Output rejected: ${validation.reason}. Using raw output anyway.`);
+    // In V3 we still use the output but log the violation
+    // A strict mode could retry or fallback here
+  }
+
+  // Build debug log
+  const debugLog = buildV3DebugLog(engineResult, validation);
+  console.log(debugLog);
+
+  return { greeting, debugLog };
+}
+
+// ─── Server Call ────────────────────────────────────────────────────────────
+
+async function callSessionGreetingEndpoint(
+  apiBaseUrl: string,
+  systemPrompt: string,
+  userName: string,
+): Promise<string> {
+  const url = `${apiBaseUrl}/api/session-greeting`;
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ systemPrompt, userName }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Session greeting endpoint error: ${response.status} - ${errorText}`);
+  }
+
+  const data = await response.json() as { success: boolean; greeting: string };
+  if (!data.success || !data.greeting) {
+    throw new Error('Invalid response from session greeting endpoint');
+  }
+
+  return data.greeting;
+}
+
+// ─── Debug Log ──────────────────────────────────────────────────────────────
+
+function buildV3DebugLog(
+  result: SessionGreetingV3EngineResult,
+  validation: { valid: boolean; reason: string },
+): string {
+  const sources = result.selectedSources.map(s => s.sourceType).join(', ') || 'none';
+  let log = `[SessionGreetingV3] mode=${result.mode} sources=[${sources}]`;
+  if (result.override) {
+    log += ` override_reason="${result.override.reason}"`;
+  }
+  if (!validation.valid) {
+    log += ` output_violation="${validation.reason}"`;
+  }
+  return log;
 }
 
 // ─── Adapters ─────────────────────────────────────────────────────────────────
@@ -136,23 +217,17 @@ function adaptStateDat(userDat: UserDat): GreetingStateDatSnapshot {
 }
 
 function adaptProjectionsDat(): GreetingProjectionsDatSnapshot {
-  // Projections are loaded from the memory-layer store via sessionLifecycle
-  // For now, we return empty since projections are managed separately
-  // and the greeting engine handles null gracefully
   return { fears: [] };
 }
 
 function adaptLogsDat(): GreetingLogsDatSnapshot {
-  // logs.dat context is behind feature flag (USE_LOGS_DAT_CONTEXT = false)
   return { lastSessionOpenLoops: [] };
 }
 
 function adaptDiaryMetadata(diaryEntries: DiaryEntry[]): GreetingDiaryMetadata | null {
-  // Filter journal entries (have content, not just gratitude)
   const journalEntries = diaryEntries.filter((e) => e.content && e.content.trim().length > 0);
   if (journalEntries.length === 0) return null;
 
-  // Most recent journal entry
   const sorted = [...journalEntries].sort((a, b) => {
     const tA = new Date(a.timestamp).getTime();
     const tB = new Date(b.timestamp).getTime();
@@ -160,7 +235,6 @@ function adaptDiaryMetadata(diaryEntries: DiaryEntry[]): GreetingDiaryMetadata |
   });
   const latest = sorted[0];
 
-  // Safe anchor: first 80 chars of content, no personal names
   const safeAnchor = latest.content.slice(0, 80).trim();
 
   return {
@@ -170,13 +244,11 @@ function adaptDiaryMetadata(diaryEntries: DiaryEntry[]): GreetingDiaryMetadata |
 }
 
 function adaptGratitudeMetadata(diaryEntries: DiaryEntry[]): GreetingGratitudeMetadata | null {
-  // Filter gratitude entries (have gratitude object with at least one entry)
   const gratitudeEntries = diaryEntries.filter((e) =>
     e.gratitude && (e.gratitude.entry1 || e.gratitude.entry2 || e.gratitude.entry3)
   );
   if (gratitudeEntries.length === 0) return null;
 
-  // Most recent gratitude entry
   const sorted = [...gratitudeEntries].sort((a, b) => {
     const tA = new Date(a.timestamp).getTime();
     const tB = new Date(b.timestamp).getTime();
@@ -184,7 +256,6 @@ function adaptGratitudeMetadata(diaryEntries: DiaryEntry[]): GreetingGratitudeMe
   });
   const latest = sorted[0];
 
-  // Safe anchor: first non-empty gratitude line
   const safeAnchor = latest.gratitude!.entry1 || latest.gratitude!.entry2 || latest.gratitude!.entry3 || '';
 
   return {

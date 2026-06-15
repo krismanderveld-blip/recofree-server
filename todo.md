@@ -1275,3 +1275,14 @@
 - [x] Tests: All 679 tests green (was 671, now 679 with new tests)
 - [x] BUG FIX: Crypto layer rewritten from Web Crypto API to @noble/ciphers + @noble/hashes for native Android/iOS compatibility
 - [x] BUG FIX: Export now saves locally via SAF directory picker (no share sheet) — user chooses where to save the .recofree file
+- [x] Greeting V3: Update types (synthesis source, override mode, mood metric types)
+- [x] Greeting V3: Implement resolveGreetingOverride (CRISIS/FIRST/MISSING bypass)
+- [x] Greeting V3: Implement selectMostEmotionallyRelevantMoodMetric
+- [x] Greeting V3: Implement buildGreetingSynthesisCandidates with relevance scoring
+- [x] Greeting V3: Implement selectGreetingSynthesisSources (max 3, balance rules)
+- [x] Greeting V3: Implement buildGreetingSynthesisPromptPayload (weave instruction)
+- [x] Greeting V3: Update enforceGreetingOutputRules (reject checklist/inventory style, "hoe voel je je")
+- [x] Greeting V3: Update main sessionGreetingEngine to V3 flow
+- [x] Greeting V3: Update sessionInitGreetingStep and server endpoint
+- [x] Greeting V3: Write acceptance tests (32 tests in 4 files — all green)
+- [x] Greeting V3: All 711 existing tests green (was 679)
