@@ -1274,3 +1274,4 @@
 - [x] Tests: 8 new acceptance tests for extended export scope — all green
 - [x] Tests: All 679 tests green (was 671, now 679 with new tests)
 - [x] BUG FIX: Crypto layer rewritten from Web Crypto API to @noble/ciphers + @noble/hashes for native Android/iOS compatibility
+- [x] BUG FIX: Export now saves locally via SAF directory picker (no share sheet) — user chooses where to save the .recofree file

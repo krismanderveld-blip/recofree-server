@@ -1,12 +1,17 @@
 /**
  * ExportDataSection — UI for creating encrypted .recofree backup.
  * 
- * IMPORTANT: expo-file-system and expo-sharing are loaded dynamically (lazy)
- * to avoid crashing on APK builds that were compiled before these packages were added.
+ * Export flow:
+ * - Android: Uses StorageAccessFramework to let user pick a save location (Downloads, etc.)
+ * - iOS: Uses StorageAccessFramework / documentDirectory as fallback
+ * - No share sheet — file is saved locally only.
+ * 
+ * IMPORTANT: expo-file-system is loaded dynamically (lazy)
+ * to avoid crashing on APK builds that were compiled before the package was added.
  */
 
 import React, { useState, useCallback, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, Platform } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, Platform, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createEncryptedRecoFreeExport } from '../services/exportDataService';
 import type { ExportImportStores } from '../services/exportImportStores.types';
@@ -52,21 +57,30 @@ export function ExportDataSection({ stores, appVersion }: ExportDataSectionProps
         stores,
       });
 
-      // Dynamic imports — only loaded when user actually exports
+      // Dynamic import — only loaded when user actually exports
       const FileSystem = await import('expo-file-system/legacy');
-      const Sharing = await import('expo-sharing');
+      const { StorageAccessFramework } = FileSystem;
 
-      // Save file and share
-      const fileUri = `${FileSystem.cacheDirectory}${result.fileName}`;
-      await FileSystem.writeAsStringAsync(fileUri, result.envelopeJson, { encoding: FileSystem.EncodingType.UTF8 });
+      // Ask user to pick a directory to save the file
+      const permissions = await StorageAccessFramework.requestDirectoryPermissionsAsync();
 
-      if (await Sharing.isAvailableAsync()) {
-        await Sharing.shareAsync(fileUri, {
-          mimeType: 'application/octet-stream',
-          dialogTitle: 'Save RecoFree backup',
-          UTI: 'public.data',
-        });
+      if (!permissions.granted) {
+        // User cancelled — don't show error, just abort silently
+        setLoading(false);
+        return;
       }
+
+      // Create the .recofree file in the user-chosen directory
+      const fileUri = await StorageAccessFramework.createFileAsync(
+        permissions.directoryUri,
+        result.fileName,
+        'application/octet-stream'
+      );
+
+      // Write the encrypted content to the file
+      await StorageAccessFramework.writeAsStringAsync(fileUri, result.envelopeJson, {
+        encoding: FileSystem.EncodingType.UTF8,
+      });
 
       // Persist last export timestamp
       await AsyncStorage.setItem(LAST_EXPORT_KEY, nowIso);
@@ -148,7 +162,7 @@ export function ExportDataSection({ stores, appVersion }: ExportDataSectionProps
       </TouchableOpacity>
 
       {success && (
-        <Text className="text-sm text-success font-medium">Encrypted export created.</Text>
+        <Text className="text-sm text-success font-medium">Backup saved to your chosen location.</Text>
       )}
       {error && (
         <Text className="text-sm text-error">{error}</Text>
