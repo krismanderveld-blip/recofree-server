@@ -18,7 +18,7 @@ export interface MarkerDefinition {
 const HERV_NL_MARKERS: MarkerDefinition[] = [
   // Active drinking/use
   { pattern: /\b(hij|zij|ze)\s+(heeft|heef)\s+(weer|opnieuw)\s+gedronken\b/i, moduleCandidate: 'HERV-K01', markerType: 'active_use', markerId: 'nl_herv_weer_gedronken', confidence: 0.9 },
-  { pattern: /\b(hij|zij|ze)\s+is\s+aan\s+het\s+(drinken|gebruiken)\b/i, moduleCandidate: 'HERV-K01', markerType: 'active_use', markerId: 'nl_herv_aan_het_drinken', confidence: 0.9 },
+  { pattern: /\b(hij|zij|ze)\s+is\s+(?:\w+\s+)*aan\s+het\s+(drinken|gebruiken)\b/i, moduleCandidate: 'HERV-K01', markerType: 'active_use', markerId: 'nl_herv_aan_het_drinken', confidence: 0.9 },
   { pattern: /\b(hij|zij|ze)\s+gebruikt\s+weer\b/i, moduleCandidate: 'HERV-K01', markerType: 'active_use', markerId: 'nl_herv_gebruikt_weer', confidence: 0.9 },
   { pattern: /\b(hij|zij|ze)\s+is\s+(dronken|high|stoned|onder\s+invloed)\b/i, moduleCandidate: 'HERV-K01', markerType: 'active_use', markerId: 'nl_herv_is_dronken', confidence: 0.85 },
   { pattern: /\b(hij|zij|ze)\s+is\s+weer\s+bezig\b/i, moduleCandidate: 'HERV-K01', markerType: 'active_use', markerId: 'nl_herv_weer_bezig', confidence: 0.8 },
@@ -40,6 +40,9 @@ const HERV_NL_MARKERS: MarkerDefinition[] = [
 // ============================================================
 const NAHERV_NL_MARKERS: MarkerDefinition[] = [
   { pattern: /\b(hij|zij|ze)\s+(heeft|heef)\s+gisteren\s+gedronken\b/i, moduleCandidate: 'NAHERV-K01', markerType: 'post_relapse', markerId: 'nl_naherv_gisteren_gedronken', confidence: 0.85 },
+  { pattern: /\bgisteren\b.*\b(dronken|gedronken|gebruikt|high|stoned)\b/i, moduleCandidate: 'NAHERV-K01', markerType: 'post_relapse', markerId: 'nl_naherv_gisteren_flex', confidence: 0.8 },
+  { pattern: /\bdoet.*alsof.*niets.*gebeurd\b/i, moduleCandidate: 'NAHERV-K01', markerType: 'aftercare_conversation', markerId: 'nl_naherv_doet_alsof', confidence: 0.75 },
+  { pattern: /\b(hij|zij|ze)\s+was\s+(?:\w+\s+)*(?:dronken|high|stoned|onder\s+invloed)\b/i, moduleCandidate: 'NAHERV-K01', markerType: 'post_relapse', markerId: 'nl_naherv_was_dronken', confidence: 0.8 },
   { pattern: /\b(hij|zij|ze)\s+is\s+hervallen\b/i, moduleCandidate: 'NAHERV-K01', markerType: 'post_relapse', markerId: 'nl_naherv_hervallen', confidence: 0.9 },
   { pattern: /\bna\s+(zijn|haar)\s+herval\b/i, moduleCandidate: 'NAHERV-K01', markerType: 'post_relapse', markerId: 'nl_naherv_na_herval', confidence: 0.9 },
   { pattern: /\bwat\s+moet\s+ik\s+nu\s+zeggen\b/i, moduleCandidate: 'NAHERV-K01', markerType: 'aftercare_conversation', markerId: 'nl_naherv_wat_zeggen', confidence: 0.75 },

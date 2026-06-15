@@ -245,6 +245,8 @@ interface ChatRequestInput {
     confidence: number;
     source: 'gpt' | 'fallback';
   };
+  /** Kim Relapse Cluster prompt payload (HERV-K01/NAHERV-K01/CRISIS-K01). Injected into system prompt when active. */
+  relapseClusterContext?: string;
 }
 
 // ─── Server-side Session Cache ───────────────────────────────────
@@ -1039,6 +1041,9 @@ export function buildSystemPrompt(input: ChatRequestInput): string {
     '- PAR01: Parentificatie — rolverwarring en verantwoordelijkheidsoverbelasting',
     '- FIN01: Financiële Afhankelijkheid — financiële controle en machtsongelijkheid',
     '- ISO01: Isolatie & Sociale Terugtrekking — schaamte-isolatie en micro-reconnectie',
+    '- HERV-K01: Herval Naaste — actieve herval van de naaste, stabilisatie en grensbewaking',
+    '- NAHERV-K01: Na-Herval — nasleep van herval, emotionele verwerking en zelfzorg',
+    '- CRISIS-K01: Crisis Naaste — acute veiligheidsdreiging, geweld, suïcide, medische nood',
     '- CGT/CBT: Cognitieve Gedragstherapie — gedachtepatronen herkennen en bijsturen',
     '- DBT/DGT: Distress Tolerance — crisisstabilisatie en emotieregulatie',
     '- MBT: Mentalisatie — begrijpen wat er van binnen gebeurt voor je reageert',
@@ -1544,6 +1549,7 @@ Use this live context to attune your tone and depth to the CURRENT moment.` : ''
 ${moduleInstructions}
 ${crisisInstructions}
 ${relapseIntentInstruction}
+${input.relapseClusterContext ? `\n=== KIM RELAPSE CLUSTER MODULE ACTIVE ===\n${input.relapseClusterContext}\n=== END RELAPSE CLUSTER ===` : ''}
 ${sessionEndInstructions}
 
 ANTI-FABRICATION RULE — ABSOLUTE:
@@ -1936,6 +1942,7 @@ ${sessionInfo}
 ${moduleInstructions}
 ${crisisInstructions}
 ${relapseIntentInstruction}
+${input.relapseClusterContext ? `\n=== KIM RELAPSE CLUSTER MODULE ACTIVE ===\n${input.relapseClusterContext}\n=== END RELAPSE CLUSTER ===` : ''}
 ${sessionEndInstructions}
 
 ANTI-FABRICATION RULE — ABSOLUTE:

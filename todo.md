@@ -1355,3 +1355,7 @@
 - [x] Kim Relapse Cluster: output safety filter (anti-rescue/control/diagnosis)
 - [x] Kim Relapse Cluster: 20 acceptance tests with corrected crisis numbers
 - [x] Kim Relapse Cluster: all existing 918+ tests remain green (938 passed)
+- [x] Pipeline wiring: Create kim-advanced-modules-p6.ts for Relapse Cluster
+- [x] Pipeline wiring: Wire P6 into pipeline.ts (import, call, pass to ChatContext)
+- [x] Pipeline wiring: Add relapseClusterContext to ChatContext type + server prompt injection
+- [x] Pipeline wiring: Integration tests + full suite green (954 passed)

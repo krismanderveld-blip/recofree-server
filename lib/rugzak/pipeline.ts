@@ -278,6 +278,8 @@ import { runKimAdvancedP4 } from '../engine/kim/kim-advanced-modules-p4';
 import type { KimAdvancedP4Result } from '../engine/kim/kim-advanced-modules-p4';
 import { runKimAdvancedP5 } from '../engine/kim/kim-advanced-modules-p5';
 import type { KimAdvancedP5Result } from '../engine/kim/kim-advanced-modules-p5';
+import { runKimAdvancedP6 } from '../engine/kim/kim-advanced-modules-p6';
+import type { KimAdvancedP6Result } from '../engine/kim/kim-advanced-modules-p6';
 import { detectISO01Signals } from '../engine/elias/short-module-detector';
 import {
   evaluateModuleMemoryRepeat,
@@ -1489,6 +1491,41 @@ export async function processMessage(
     });
   }
 
+  // ── STEP 5e8b: Kim P6 (Relapse Cluster: HERV-K01/NAHERV-K01/CRISIS-K01) ──
+  // Highest priority among Kim advanced modules — when active, overrides P2-P5.
+  let kimAdvancedP6Result: KimAdvancedP6Result = {
+    relapseClusterContext: null,
+    activeModule: null,
+    routeNext: 'NO_MODULE',
+    overridesLowerModules: false,
+    safetyFilterFn: null,
+    memoryPatch: null,
+  };
+  if (backpack.userType === 'kim' && !!(backpack as any).intake?.startEmotion) {
+    kimAdvancedP6Result = runKimAdvancedP6({
+      intakeCompleted: true,
+      persona: 'kim',
+      latestUserMessage: userMessage,
+      recentMessages: sessionBuffer.recentMessages.slice(-3).map(m => m.content),
+      language: (currentUserDat as any).detectedLanguage ?? 'nl',
+      sessionId: sessionId ?? 'unknown',
+      turnId: `turn-${Date.now()}`,
+      caregiverState: (currentUserDat as any).caregiverState ?? 'unknown',
+      safetyRiskLevel: analysis.riskLevel === 'critical' ? 'IMMEDIATE' : analysis.riskLevel === 'high' ? 'HIGH' : 'NONE',
+      vspZone: (currentUserDat as any).vspZone ?? 'GROEN',
+      riskLevel: analysis.riskLevel as 'low' | 'moderate' | 'high' | 'critical',
+      explicitAcuteDanger: analysis.riskLevel === 'critical',
+      explicitSelfHarmRiskLovedOne: false,
+      explicitSelfHarmRiskCaregiver: false,
+      explicitViolenceRisk: false,
+      explicitMedicalEmergency: false,
+      explicitDisappearance: false,
+      explicitImpairedDrivingRisk: false,
+      explicitChildSafetyRisk: false,
+      timestampIso: new Date().toISOString(),
+    });
+  }
+
   // ── STEP 5e9: Kim P2 (BEDR01/VETR01/GASL01) ──
   let kimAdvancedP2Result: KimAdvancedP2Result = {
     bedr01Context: null,
@@ -2008,14 +2045,16 @@ export async function processMessage(
     mi02Context: eliasAdvancedP3Result.mi02PromptBlock || undefined,
     slaap01EliasContext: eliasP4Result.slaap01Context || undefined,
     slaap01KimContext: kimSlaap01Result.slaap01Context || undefined,
-    bedr01Context: kimAdvancedP2Result.bedr01Context || undefined,
-    vetr01Context: kimAdvancedP2Result.vetr01Context || undefined,
-    gasl01Context: kimAdvancedP2Result.gasl01Context || undefined,
-    cdp01Context: kimAdvancedP3Result.cdp01Context || undefined,
-    rnw01Context: kimAdvancedP3Result.rnw01Context || undefined,
-    par01Context: kimAdvancedP4Result.par01Context || undefined,
-    fin01Context: kimAdvancedP4Result.fin01Context || undefined,
-    iso01Context: kimAdvancedP5Result.iso01Context || undefined,
+    bedr01Context: kimAdvancedP6Result.overridesLowerModules ? undefined : (kimAdvancedP2Result.bedr01Context || undefined),
+    vetr01Context: kimAdvancedP6Result.overridesLowerModules ? undefined : (kimAdvancedP2Result.vetr01Context || undefined),
+    gasl01Context: kimAdvancedP6Result.overridesLowerModules ? undefined : (kimAdvancedP2Result.gasl01Context || undefined),
+    cdp01Context: kimAdvancedP6Result.overridesLowerModules ? undefined : (kimAdvancedP3Result.cdp01Context || undefined),
+    rnw01Context: kimAdvancedP6Result.overridesLowerModules ? undefined : (kimAdvancedP3Result.rnw01Context || undefined),
+    par01Context: kimAdvancedP6Result.overridesLowerModules ? undefined : (kimAdvancedP4Result.par01Context || undefined),
+    fin01Context: kimAdvancedP6Result.overridesLowerModules ? undefined : (kimAdvancedP4Result.fin01Context || undefined),
+    iso01Context: kimAdvancedP6Result.overridesLowerModules ? undefined : (kimAdvancedP5Result.iso01Context || undefined),
+    // Kim Relapse Cluster (HERV-K01/NAHERV-K01/CRISIS-K01) — overrides all lower Kim modules when active
+    relapseClusterContext: kimAdvancedP6Result.relapseClusterContext || undefined,
     // Backpack entity extraction: send structured entities instead of full backpack when unchanged
     extractedEntities: currentUserDat.extractedEntities ?? undefined,
     backpackChanged: !currentUserDat.extractedEntities || (currentUserDat.extractedEntities.persons.length === 0),
@@ -2320,6 +2359,7 @@ export async function processMessage(
       { step: '5e10. Kim P3 (CDP01/RNW01)', status: kimAdvancedP3Result.activeModule ? 'passed' : 'skipped', reason: kimAdvancedP3Result.activeModule ? `kim|module=${kimAdvancedP3Result.activeModule}` : 'no Kim P3 activation' },
       { step: '5e11. Kim P4 (PAR01/FIN01)', status: kimAdvancedP4Result.activeModule ? 'passed' : 'skipped', reason: kimAdvancedP4Result.activeModule ? `kim|module=${kimAdvancedP4Result.activeModule}` : 'no Kim P4 activation' },
       { step: '5e12. Kim P5 (ISO01)', status: kimAdvancedP5Result.activeModule ? 'passed' : 'skipped', reason: kimAdvancedP5Result.activeModule ? `kim|module=${kimAdvancedP5Result.activeModule}` : 'no Kim P5 activation' },
+      { step: '5e13. Kim P6 (HERV-K01/NAHERV-K01/CRISIS-K01)', status: kimAdvancedP6Result.activeModule ? 'passed' : 'skipped', reason: kimAdvancedP6Result.activeModule ? `kim|module=${kimAdvancedP6Result.activeModule}|overrides=${kimAdvancedP6Result.overridesLowerModules}` : 'no Relapse Cluster activation' },
       { step: '6a. Zone decision', status: elisDecision ? 'passed' : 'skipped', reason: elisDecision ? `zone=${elisDecision.zone.computed.label}` : 'kim user' },
       { step: '6b. Engine directive', status: engineDirective ? 'passed' : 'skipped', reason: engineDirective ? `engine=${engineDirective.engine}` : 'none' },
       { step: '6c. Intervention', status: interventionContinuity ? 'passed' : 'skipped', reason: interventionContinuity ? `type=${interventionContinuity.lastInterventionType}` : 'not active' },
@@ -2465,6 +2505,9 @@ export async function processMessage(
   }
   if (kimAdvancedP5Result.activeModule) {
     moduleActivations.push({ id: kimAdvancedP5Result.activeModule, confidence: 0.8, mode: 'active' });
+  }
+  if (kimAdvancedP6Result.activeModule) {
+    moduleActivations.push({ id: kimAdvancedP6Result.activeModule, confidence: 0.95, mode: 'active' });
   }
   const k06Status = (currentUserDat as any).k06StabilizationStatus ?? 'NOT_RUN';
   const crisisProtocolActive = analysis.riskLevel === 'critical' || crisisLevel >= 2;
