@@ -1258,3 +1258,5 @@
 - [x] Encrypted Export/Import: 15 acceptance tests all green
 - [x] Encrypted Export/Import: existing 671 tests still green (was 656, now 671 with new tests)
 - [x] Encrypted Export/Import: "Last exported" timestamp shown in Profile export section
+- [x] BUG FIX: App crash on startup — expo-document-picker and expo-sharing static imports caused native module crash on APK builds compiled before packages were added. Fixed by converting all imports to dynamic `await import()`.
+- [x] BUG FIX: expo-document-picker and expo-sharing versions corrected from v56 to ~14.0.8 (SDK 54 compatible)

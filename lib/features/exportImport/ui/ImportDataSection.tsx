@@ -1,14 +1,19 @@
 /**
  * ImportDataSection — UI for importing encrypted .recofree backup.
+ * 
+ * IMPORTANT: expo-document-picker and expo-file-system are loaded dynamically (lazy)
+ * to avoid crashing on APK builds that were compiled before these packages were added.
  */
 
 import React, { useState, useCallback } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, Modal } from 'react-native';
-import * as FileSystem from 'expo-file-system/legacy';
 import { importEncryptedRecoFreeBackup } from '../services/importDataService';
-import { pickRecoFreeBackupFile } from '../filePicker/exportImportFilePicker';
 import type { ExportImportStores } from '../services/exportImportStores.types';
-import type { PickedRecoFreeBackupFile } from '../types/importResult.types';
+
+interface PickedFile {
+  uri: string;
+  name: string;
+}
 
 interface ImportDataSectionProps {
   stores: ExportImportStores;
@@ -17,7 +22,7 @@ interface ImportDataSectionProps {
 }
 
 export function ImportDataSection({ stores, appVersion, onImportSuccess }: ImportDataSectionProps) {
-  const [selectedFile, setSelectedFile] = useState<PickedRecoFreeBackupFile | null>(null);
+  const [selectedFile, setSelectedFile] = useState<PickedFile | null>(null);
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -27,11 +32,24 @@ export function ImportDataSection({ stores, appVersion, onImportSuccess }: Impor
   const canImport = !!selectedFile && password.length >= 1 && !loading;
 
   const handlePickFile = useCallback(async () => {
-    const file = await pickRecoFreeBackupFile();
-    if (file) {
-      setSelectedFile(file);
+    try {
+      // Dynamic import to avoid crash on APK builds without native module
+      const DocumentPicker = await import('expo-document-picker');
+      const result = await DocumentPicker.getDocumentAsync({
+        type: 'application/octet-stream',
+        copyToCacheDirectory: true,
+      });
+
+      if (result.canceled || !result.assets || result.assets.length === 0) {
+        return;
+      }
+
+      const asset = result.assets[0];
+      setSelectedFile({ uri: asset.uri, name: asset.name });
       setError(null);
       setSuccess(false);
+    } catch (err: any) {
+      setError('Could not open file picker. Please try again.');
     }
   }, []);
 
@@ -44,6 +62,8 @@ export function ImportDataSection({ stores, appVersion, onImportSuccess }: Impor
     setSuccess(false);
 
     try {
+      // Dynamic import for file system
+      const FileSystem = await import('expo-file-system/legacy');
       const envelopeJson = await FileSystem.readAsStringAsync(selectedFile.uri, { encoding: FileSystem.EncodingType.UTF8 });
 
       const result = await importEncryptedRecoFreeBackup({
@@ -62,7 +82,7 @@ export function ImportDataSection({ stores, appVersion, onImportSuccess }: Impor
         setError(result.errorMessage ?? "Something went wrong.");
       }
     } catch (err: any) {
-      setError(err?.safeMessage ?? "Something went wrong.");
+      setError(err?.safeMessage ?? err?.message ?? "Something went wrong.");
     } finally {
       setLoading(false);
     }

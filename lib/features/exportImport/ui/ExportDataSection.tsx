@@ -1,12 +1,13 @@
 /**
  * ExportDataSection — UI for creating encrypted .recofree backup.
+ * 
+ * IMPORTANT: expo-file-system and expo-sharing are loaded dynamically (lazy)
+ * to avoid crashing on APK builds that were compiled before these packages were added.
  */
 
 import React, { useState, useCallback, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as FileSystem from 'expo-file-system/legacy';
-import * as Sharing from 'expo-sharing';
 import { createEncryptedRecoFreeExport } from '../services/exportDataService';
 import type { ExportImportStores } from '../services/exportImportStores.types';
 
@@ -51,6 +52,10 @@ export function ExportDataSection({ stores, appVersion }: ExportDataSectionProps
         stores,
       });
 
+      // Dynamic imports — only loaded when user actually exports
+      const FileSystem = await import('expo-file-system/legacy');
+      const Sharing = await import('expo-sharing');
+
       // Save file and share
       const fileUri = `${FileSystem.cacheDirectory}${result.fileName}`;
       await FileSystem.writeAsStringAsync(fileUri, result.envelopeJson, { encoding: FileSystem.EncodingType.UTF8 });
@@ -71,7 +76,7 @@ export function ExportDataSection({ stores, appVersion }: ExportDataSectionProps
       setPassword('');
       setConfirmPassword('');
     } catch (err: any) {
-      setError(err?.safeMessage ?? "Encrypted export could not be created.");
+      setError(err?.safeMessage ?? err?.message ?? "Encrypted export could not be created.");
     } finally {
       setLoading(false);
     }
