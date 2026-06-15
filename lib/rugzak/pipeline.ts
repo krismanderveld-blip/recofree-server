@@ -131,7 +131,7 @@ import {
 import { sanitizeSliders } from '../engine/shared/slider-sanitize';
 import { buildTraceBlock, type EngineTraceInput, type PipelineStepStatus } from '../debug/engine-trace';
 import { getEngine } from '../engine/local-llm/engine-provider';
-import { detectRelapseIntentFallback } from '../engine/local-llm/relapse-intent-fallback';
+import { detectRelapseIntentFallback, detectKimRelapseIntentFallback } from '../engine/local-llm/relapse-intent-fallback';
 import { computeEliasImpact } from '../engine/elias/vsp-impact';
 import {
   selectStoaSession,
@@ -1872,11 +1872,19 @@ export async function processMessage(
     // GPT failed — fall through to deterministic fallback
   }
 
-  // Deterministic fallback: always runs for Elias when GPT didn't detect
-  if (!relapseIntentResult && backpack.userType === 'elias') {
-    const fallbackResult = detectRelapseIntentFallback(userMessage);
-    if (fallbackResult.detected) {
-      relapseIntentResult = { detected: true, confidence: fallbackResult.confidence, source: 'fallback' as const };
+  // Deterministic fallback: always runs when GPT didn't detect
+  if (!relapseIntentResult) {
+    if (backpack.userType === 'elias') {
+      const fallbackResult = detectRelapseIntentFallback(userMessage);
+      if (fallbackResult.detected) {
+        relapseIntentResult = { detected: true, confidence: fallbackResult.confidence, source: 'fallback' as const };
+      }
+    } else if (backpack.userType === 'kim') {
+      // Kim-variant: detect loved one reporting their person's relapse intent (third person)
+      const kimFallbackResult = detectKimRelapseIntentFallback(userMessage);
+      if (kimFallbackResult.detected) {
+        relapseIntentResult = { detected: true, confidence: kimFallbackResult.confidence, source: 'fallback' as const };
+      }
     }
   }
 
@@ -1905,6 +1913,24 @@ export async function processMessage(
     }
   }
 
+  // ── Persist relapse-intent event to user.dat log (cross-session pattern tracking) ──
+  if (relapseIntentResult?.detected) {
+    const relapseEvent = {
+      timestamp: new Date().toISOString(),
+      source: relapseIntentResult.source,
+      confidence: relapseIntentResult.confidence,
+      sessionNumber: currentUserDat.totalSessions,
+      messageSnippet: userMessage.slice(0, 200),
+      zoneBeforeEscalation: vspLevel ?? 'GROEN',
+      zoneAfterEscalation: elisDecision?.zone.resolved?.finalZoneLabel ?? 'ORANJE',
+    };
+    currentUserDat = {
+      ...currentUserDat,
+      relapseIntentLog: [...(currentUserDat.relapseIntentLog ?? []), relapseEvent],
+    };
+    console.log(`[Pipeline] RELAPSE_INTENT_LOGGED: event #${currentUserDat.relapseIntentLog!.length} persisted to user.dat`);
+  }
+
   const sessionStart = currentUserDat.lastSessionDate ? new Date(currentUserDat.lastSessionDate) : new Date();
   const sessionMinutes = Math.floor((Date.now() - sessionStart.getTime()) / 60000);
 
@@ -1922,7 +1948,7 @@ export async function processMessage(
     activeModules: [activeDecision ? activeDecision.dominantModule : preGPTDominantState.dominantModule],
     crisisLevel: activeDecision ? activeDecision.crisisLevel : crisisLevel,
     isCrisis: (elisDecision?.zone.resolved?.isCrisis ?? false) || (kimDecision?.isKimCrisis ?? false),
-    vspLevel,
+    vspLevel: elisDecision?.zone.resolved?.finalZoneLabel ?? vspLevel,
     engineDirective: engineDirective ?? undefined,
     detectedEmotion: analysis.emotionalState,
     therapeuticStance: buildTherapeuticStance(analysis),
@@ -2301,8 +2327,8 @@ export async function processMessage(
       { step: '8. Post-GPT update', status: 'passed', reason: `patterns=[${markedPatterns.join(',')}]` },
     ],
     zoneDecision: elisDecision ? {
-      vspInput: elisDecision.zone.resolved?.vspLevel ?? null,
-      vspSeverity: elisDecision.zone.resolved?.finalSeverity ?? null,
+      vspInput: vspLevel ?? null,
+      vspSeverity: ({'GROEN':1,'LICHTGROEN':1,'GEEL':2,'ORANJE':3,'ROOD':4,'PAARS':5} as Record<string,number>)[vspLevel ?? ''] ?? null,
       computedZone: elisDecision.zone.computed.label,
       computedSeverity: ({'GROEN':1,'LICHTGROEN':1,'GEEL':2,'ORANJE':3,'ROOD':4} as Record<string,number>)[elisDecision.zone.computed.level] ?? 0,
       finalZone: elisDecision.zone.resolved?.finalZoneLabel ?? null,
@@ -2310,6 +2336,13 @@ export async function processMessage(
       reason: elisDecision.zone.resolved?.reason ?? '',
       isBlocked: elisDecision.isBlocked,
       isCrisis: elisDecision.zone.resolved?.isCrisis ?? false,
+      relapseEscalation: relapseIntentResult?.detected ? {
+        detected: true,
+        source: relapseIntentResult.source,
+        confidence: relapseIntentResult.confidence,
+        escalatedTo: 'ORANJE',
+        escalatedSeverity: 3,
+      } : undefined,
     } : kimDecision ? {
       vspInput: null,
       vspSeverity: null,
@@ -2342,6 +2375,7 @@ export async function processMessage(
       selectedModel: selectedModel ?? 'unknown',
       riskScore: preGPTDominantState.riskScore,
       crisisLevel,
+      finalZoneForRouting: elisDecision?.zone.resolved?.finalZoneLabel ?? kimDecision?.zone.engine?.level ?? undefined,
     },
     interventionContinuity: interventionContinuity ? {
       interventionType: interventionContinuity.lastInterventionType,

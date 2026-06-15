@@ -215,3 +215,116 @@ describe('Relapse intent edge cases', () => {
     expect(result.detected).toBe(false); // "stoppen met" breaks the pattern
   });
 });
+
+// ─── Kim-variant: Loved ones reporting relapse intent (third person) ────
+
+import { detectKimRelapseIntentFallback } from '../../lib/engine/local-llm/relapse-intent-fallback';
+
+describe('detectKimRelapseIntentFallback — NL markers (third person)', () => {
+  const NL_KIM_POSITIVE_CASES = [
+    'hij wil weer drinken',
+    'zij wil gebruiken',
+    'ze gaat weer roken',
+    'mijn partner wil weer drinken',
+    'mijn zoon gaat gebruiken',
+    'hij heeft weer zin om te drinken',
+    'ze kan het niet weerstaan',
+    'hij zegt dat hij wil gebruiken',
+    'ze dreigt te gebruiken',
+    'mijn man wil weer blowen',
+    'mijn dochter gaat weer snuiven',
+  ];
+
+  it.each(NL_KIM_POSITIVE_CASES)('detects Kim relapse intent in: "%s"', (message) => {
+    const result = detectKimRelapseIntentFallback(message);
+    expect(result.detected).toBe(true);
+    expect(result.confidence).toBe(0.65);
+  });
+
+  const NL_KIM_NEGATIVE_CASES = [
+    'hij heeft vandaag niet gedronken',
+    'mijn partner gaat naar therapie',
+    'ze voelt zich beter',
+    'hij is al drie maanden clean',
+    'mijn zoon heeft hulp gezocht',
+    'ik maak me zorgen om hem',
+  ];
+
+  it.each(NL_KIM_NEGATIVE_CASES)('does NOT detect Kim relapse intent in: "%s"', (message) => {
+    const result = detectKimRelapseIntentFallback(message);
+    expect(result.detected).toBe(false);
+    expect(result.confidence).toBe(0);
+  });
+});
+
+describe('detectKimRelapseIntentFallback — EN markers (third person)', () => {
+  const EN_KIM_POSITIVE_CASES = [
+    'he wants to drink again',
+    'she wants to use',
+    "he's going to relapse",
+    "she's going to drink",
+    "they can't resist the urge",
+    'he said he wants to smoke',
+    "she's threatening to use",
+    'my partner wants to drink',
+    'my husband wants to use',
+    'my son is going to relapse',
+  ];
+
+  it.each(EN_KIM_POSITIVE_CASES)('detects Kim relapse intent in: "%s"', (message) => {
+    const result = detectKimRelapseIntentFallback(message);
+    expect(result.detected).toBe(true);
+    expect(result.confidence).toBe(0.65);
+  });
+
+  const EN_KIM_NEGATIVE_CASES = [
+    'he is doing better today',
+    'she went to her meeting',
+    'my partner is in recovery',
+    'he used to drink but stopped',
+    'they are getting help',
+  ];
+
+  it.each(EN_KIM_NEGATIVE_CASES)('does NOT detect Kim relapse intent in: "%s"', (message) => {
+    const result = detectKimRelapseIntentFallback(message);
+    expect(result.detected).toBe(false);
+    expect(result.confidence).toBe(0);
+  });
+});
+
+describe('detectKimRelapseIntentFallback — FR markers (third person)', () => {
+  const FR_KIM_POSITIVE_CASES = [
+    'il veut consommer',
+    'elle veut boire',
+    'il va rechuter',
+    'elle va boire',
+    'il ne peut pas résister',
+    "il dit qu'il veut boire",
+  ];
+
+  it.each(FR_KIM_POSITIVE_CASES)('detects Kim relapse intent in: "%s"', (message) => {
+    const result = detectKimRelapseIntentFallback(message);
+    expect(result.detected).toBe(true);
+    expect(result.confidence).toBe(0.65);
+  });
+});
+
+describe('Kim vs Elias marker separation', () => {
+  it('Elias first-person markers do NOT trigger Kim detection', () => {
+    const result = detectKimRelapseIntentFallback('ik wil gebruiken');
+    expect(result.detected).toBe(false);
+  });
+
+  it('Kim third-person markers do NOT trigger Elias detection', () => {
+    const result = detectRelapseIntentFallback('hij wil weer drinken');
+    expect(result.detected).toBe(false);
+  });
+
+  it('confidence is lower for Kim (0.65) than Elias (0.7) — reported vs expressed', () => {
+    const eliasResult = detectRelapseIntentFallback('ik wil gebruiken');
+    const kimResult = detectKimRelapseIntentFallback('hij wil weer drinken');
+    expect(eliasResult.confidence).toBe(0.7);
+    expect(kimResult.confidence).toBe(0.65);
+    expect(kimResult.confidence).toBeLessThan(eliasResult.confidence);
+  });
+});

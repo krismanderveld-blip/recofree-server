@@ -22,7 +22,7 @@ import type { RelapseIntentResult } from './signal-engine';
  * Matches explicit desire/plan/urge to use substances.
  */
 const NL_MARKERS: RegExp[] = [
-  /\b(ik\s+)?wil\s+(weer\s+|zo\s+graag\s+|echt\s+|gewoon\s+)?(gebruiken|drinken|roken|blowen|snuiven|spuiten)\b/i,
+  /\bik\s+wil\s+(weer\s+|zo\s+graag\s+|echt\s+|gewoon\s+)?(gebruiken|drinken|roken|blowen|snuiven|spuiten)\b/i,
   /\bwil\s+ik\s+(zo\s+graag\s+|echt\s+|gewoon\s+|weer\s+)?(gebruiken|drinken|roken|blowen|snuiven|spuiten)\b/i,
   /\b(ik\s+)?ga\s+(weer\s+)?(gebruiken|drinken|roken|blowen|snuiven|spuiten)\b/i,
   /\bzin\s+(om\s+te\s+)?(gebruiken|drinken|roken)\b/i,
@@ -57,14 +57,55 @@ const FR_MARKERS: RegExp[] = [
   /\bje\s+ne\s+(peux|pourrai)\s+pas\s+r[eé]sister\b/i,
 ];
 
+// ─── Kim-variant markers (loved ones reporting relapse intent of their person) ───
+
+/**
+ * Dutch Kim-variant markers.
+ * Matches a naaste (loved one) reporting that their person wants to / is going to use.
+ * Third-person: "hij wil weer drinken", "ze gaat gebruiken", "mijn partner wil weer drinken"
+ */
+const NL_KIM_MARKERS: RegExp[] = [
+  /\b(hij|zij|ze|mijn\s+(?:partner|man|vrouw|zoon|dochter|broer|zus|vriend|vriendin))\s+wil\s+(weer\s+|zo\s+graag\s+|echt\s+)?(gebruiken|drinken|roken|blowen|snuiven|spuiten)\b/i,
+  /\b(hij|zij|ze|mijn\s+(?:partner|man|vrouw|zoon|dochter|broer|zus|vriend|vriendin))\s+ga(?:at)?\s+(weer\s+)?(gebruiken|drinken|roken|blowen|snuiven|spuiten)\b/i,
+  /\b(hij|zij|ze)\s+heeft\s+(weer\s+)?zin\s+(om\s+te\s+)?(gebruiken|drinken|roken)\b/i,
+  /\b(hij|zij|ze)\s+kan\s+(het\s+)?niet\s+(laten|weerstaan)\b/i,
+  /\b(hij|zij|ze)\s+zegt\s+dat\s+(hij|zij|ze)\s+wil\s+(gebruiken|drinken|roken)\b/i,
+  /\b(hij|zij|ze)\s+dreigt\s+(te\s+)?(gebruiken|drinken|roken|terugvallen)\b/i,
+];
+
+/**
+ * English Kim-variant markers.
+ * Third-person: "he wants to drink again", "she's going to use"
+ */
+const EN_KIM_MARKERS: RegExp[] = [
+  /\b(he|she|my\s+(?:partner|husband|wife|son|daughter|brother|sister|friend))\s+wants?\s+to\s+(use|drink|smoke|get high|relapse)\b/i,
+  /\b(he|she|they|my\s+(?:partner|husband|wife|son|daughter|brother|sister|friend))\s+is\s+going\s+to\s+(use|drink|smoke|relapse)\b/i,
+  /\b(he|she|they)('s|\s+are)\s+going\s+to\s+(use|drink|smoke|relapse)\b/i,
+  /\b(he|she|they)\s+can'?t\s+resist\s+(the\s+)?(urge|craving|temptation)\b/i,
+  /\b(he|she|they)\s+said\s+(he|she|they)\s+want(s)?\s+to\s+(use|drink|smoke)\b/i,
+  /\b(he|she|they|my\s+(?:partner|husband|wife|son|daughter|brother|sister|friend))('s|\s+is|\s+are)\s+threatening\s+to\s+(use|drink|relapse)\b/i,
+];
+
+/**
+ * French Kim-variant markers.
+ * Third-person: "il veut reconsommer", "elle va boire"
+ */
+const FR_KIM_MARKERS: RegExp[] = [
+  /\b(il|elle|mon\s+(?:partenaire|mari|femme|fils|fille|fr[eè]re|s[oœ]ur|ami|amie))\s+veut\s+(consommer|boire|fumer|rechuter)\b/i,
+  /\b(il|elle)\s+va\s+(consommer|boire|fumer|rechuter)\b/i,
+  /\b(il|elle)\s+ne\s+(peut|pourra)\s+pas\s+r[eé]sister\b/i,
+  /\b(il|elle)\s+dit\s+qu'?(il|elle)\s+veut\s+(consommer|boire|fumer)\b/i,
+];
+
 // ─── All markers combined ────────────────────────────────────────
 
 const ALL_MARKERS: RegExp[] = [...NL_MARKERS, ...EN_MARKERS, ...FR_MARKERS];
+const ALL_KIM_MARKERS: RegExp[] = [...NL_KIM_MARKERS, ...EN_KIM_MARKERS, ...FR_KIM_MARKERS];
 
 // ─── Public API ──────────────────────────────────────────────────
 
 /**
- * Deterministic fallback detection for relapse intent.
+ * Deterministic fallback detection for relapse intent (Elias — first person).
  *
  * Used ONLY when GptSignalEngine.detectRelapseIntent() fails (timeout/error).
  * Returns confidence 0.7 on match (high enough to trigger ORANJE escalation
@@ -74,6 +115,25 @@ export function detectRelapseIntentFallback(message: string): RelapseIntentResul
   for (const pattern of ALL_MARKERS) {
     if (pattern.test(message)) {
       return { detected: true, confidence: 0.7 };
+    }
+  }
+
+  return { detected: false, confidence: 0 };
+}
+
+/**
+ * Kim-variant: Deterministic fallback detection for loved ones reporting
+ * that their person expresses relapse intent (third person).
+ *
+ * "Hij wil weer drinken", "She's going to use", "Il veut reconsommer"
+ *
+ * Returns confidence 0.65 (slightly lower than first-person — the intent
+ * is reported, not directly expressed by the user themselves).
+ */
+export function detectKimRelapseIntentFallback(message: string): RelapseIntentResult {
+  for (const pattern of ALL_KIM_MARKERS) {
+    if (pattern.test(message)) {
+      return { detected: true, confidence: 0.65 };
     }
   }
 

@@ -1343,3 +1343,8 @@
 - [x] Deterministic marker fallback for relapse-intent (NL/EN/FR) when engine fails
 - [x] Wire relapseIntent into zone escalation (computed zone → minimum ORANJE)
 - [x] Tests: relapseIntent detection + zone escalation + fallback + full suite green (877 passed)
+- [x] BUG 1: Model routing follows finale zone (ORANJE+ → gpt-4o) + relapseIntent as routing condition
+- [x] BUG 2: Severity display shows correct VSP (GROEN=1) + escalation as separate step in trace
+- [x] Proposal 1: GPT-4o prompt instruction block for relapse-intent (grounding, non-judgmental, directive)
+- [x] Proposal 2: Relapse-intent logging in user.dat (persist events for cross-session pattern detection)
+- [x] Proposal 3: Kim-variant detection for loved ones reporting relapse ("hij wil weer drinken") — 918 tests green

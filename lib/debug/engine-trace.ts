@@ -33,6 +33,14 @@ export interface EngineTraceInput {
     reason: string;
     isBlocked: boolean;
     isCrisis: boolean;
+    // Relapse-intent escalation (separate from VSP/computed)
+    relapseEscalation?: {
+      detected: boolean;
+      source: 'gpt' | 'fallback';
+      confidence: number;
+      escalatedTo: string;
+      escalatedSeverity: number;
+    };
     // Kim-specific crisis fields (only present for Kim users)
     isKimCrisis?: boolean;
     eigenRegieUserInput?: number | null;
@@ -62,6 +70,8 @@ export interface EngineTraceInput {
     selectedModel: string;
     riskScore: number;
     crisisLevel: number;
+    routingReason?: string;
+    finalZoneForRouting?: string;
   };
 
   // Intervention continuity (Elias only)
@@ -166,6 +176,9 @@ export function buildTraceBlock(input: EngineTraceInput): string {
     const zd = input.zoneDecision;
     lines.push(`  VSP input: ${zd.vspInput ?? 'null'} → severity: ${zd.vspSeverity ?? 'N/A'}`);
     lines.push(`  Computed zone: ${zd.computedZone} → severity: ${zd.computedSeverity}`);
+    if (zd.relapseEscalation?.detected) {
+      lines.push(`  Relapse-intent escalation: → ${zd.relapseEscalation.escalatedTo} (severity ${zd.relapseEscalation.escalatedSeverity}) [source=${zd.relapseEscalation.source}, confidence=${zd.relapseEscalation.confidence.toFixed(2)}]`);
+    }
     lines.push(`  Finale zone: ${zd.finalZone ?? 'null'} — source: ${zd.source}`);
     lines.push(`  Reden: ${zd.reason}`);
     lines.push(`  isBlocked: ${zd.isBlocked}`);
@@ -205,6 +218,8 @@ export function buildTraceBlock(input: EngineTraceInput): string {
   lines.push(`  selectedModel: ${mr.selectedModel}`);
   lines.push(`  riskScore: ${mr.riskScore}`);
   lines.push(`  crisisLevel: ${mr.crisisLevel}`);
+  if (mr.finalZoneForRouting) lines.push(`  finalZoneForRouting: ${mr.finalZoneForRouting}`);
+  if (mr.routingReason) lines.push(`  routingReason: ${mr.routingReason}`);
   lines.push('');
 
   // Intervention continuity

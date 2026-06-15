@@ -552,6 +552,23 @@ export interface UserDat {
     /** ISO timestamp — moment of previous analysis, null on first */
     previousAnalyzedAt: string | null;
   };
+  /** Relapse-intent event log: persisted per-detection for cross-session pattern analysis */
+  relapseIntentLog?: Array<{
+    /** ISO timestamp of detection */
+    timestamp: string;
+    /** Detection source: 'gpt' (semantic) or 'fallback' (deterministic markers) */
+    source: 'gpt' | 'fallback';
+    /** Confidence score 0-1 */
+    confidence: number;
+    /** Session number when detected */
+    sessionNumber: number;
+    /** The user message that triggered detection (truncated to 200 chars) */
+    messageSnippet: string;
+    /** Zone before escalation */
+    zoneBeforeEscalation: string;
+    /** Zone after escalation */
+    zoneAfterEscalation: string;
+  }>;
 }
 
 /** A record of a completed session's analysis */

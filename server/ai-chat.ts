@@ -238,6 +238,13 @@ interface ChatRequestInput {
     modes: Array<{ name: string; confidence: number }>;
     triggers: string[];
   };
+
+  /** Relapse intent detection result from engine (triggers zone escalation + prompt instruction) */
+  relapseIntent?: {
+    detected: boolean;
+    confidence: number;
+    source: 'gpt' | 'fallback';
+  };
 }
 
 // ─── Server-side Session Cache ───────────────────────────────────
@@ -1101,6 +1108,25 @@ VIOLATION OF THIS PROTOCOL IS UNACCEPTABLE.`;
     crisisInstructions = `\nHEIGHTENED VIGILANCE. Be extra attentive to signs of distress.`;
   }
 
+  // ── Relapse-intent instruction (when engine detected relapse intent) ──
+  let relapseIntentInstruction = '';
+  if (input.relapseIntent?.detected) {
+    relapseIntentInstruction = `
+=== RELAPSE-INTENT GEDETECTEERD (confidence: ${input.relapseIntent.confidence.toFixed(2)}) ===
+De gebruiker heeft een expliciete gebruikswens of relapse-intentie uitgesproken.
+Je MOET nu:
+1. GROUNDING: Erken het verlangen zonder oordeel. "Ik hoor dat je nu een sterk verlangen voelt."
+2. NORMALISEER: Verlangen is een normaal onderdeel van herstel. Zeg dit expliciet.
+3. NIET-OORDELEND: Geen schuldgevoel opwekken. Geen "maar je was zo goed bezig".
+4. DIRECTIEF: Bied concrete coping-strategieën aan (urge surfing, 5-4-3-2-1 grounding, bel iemand).
+5. VEILIGHEID: Vraag of de gebruiker nu veilig is en of er middelen in de buurt zijn.
+6. VERBINDING: Verwijs naar het netwerk (sponsor, hulpverlener, vertrouwenspersoon).
+
+Toon: Warm, direct, niet-panikeren. Je bent een anker, geen politieagent.
+Doe NIET: bagatelliseren, moraliseren, of het verlangen negeren.
+=== EINDE RELAPSE-INTENT INSTRUCTIE ===`;
+  }
+
   const dominantModule = input.dominantModule || (input.activeModules.length > 0 ? input.activeModules[0] : '');
   const moduleInstructions = dominantModule
     ? `Dominant therapeutic module: ${dominantModule}. Focus your response on this approach.`
@@ -1517,6 +1543,7 @@ Use this live context to attune your tone and depth to the CURRENT moment.` : ''
 
 ${moduleInstructions}
 ${crisisInstructions}
+${relapseIntentInstruction}
 ${sessionEndInstructions}
 
 ANTI-FABRICATION RULE — ABSOLUTE:
@@ -1908,6 +1935,7 @@ ${sessionInfo}
 
 ${moduleInstructions}
 ${crisisInstructions}
+${relapseIntentInstruction}
 ${sessionEndInstructions}
 
 ANTI-FABRICATION RULE — ABSOLUTE:
@@ -2148,6 +2176,9 @@ export async function generateAIResponse(
   } else if (input.vspLevel === 'ORANJE' || input.vspLevel === 'ORANGE') {
     selectedModel = 'gpt-4o';
     routingReason = `VSP ${input.vspLevel} (elevated risk)`;
+  } else if (input.relapseIntent?.detected) {
+    selectedModel = 'gpt-4o';
+    routingReason = `relapse-intent detected (confidence=${input.relapseIntent.confidence.toFixed(2)}, source=${input.relapseIntent.source})`;
   } else if (HIGH_COMPLEXITY_MODULES.some(m => dominantModuleForRouting.includes(m))) {
     selectedModel = 'gpt-4o';
     routingReason = `complex module (${dominantModuleForRouting})`;
