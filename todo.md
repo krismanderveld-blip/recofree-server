@@ -1359,3 +1359,13 @@
 - [x] Pipeline wiring: Wire P6 into pipeline.ts (import, call, pass to ChatContext)
 - [x] Pipeline wiring: Add relapseClusterContext to ChatContext type + server prompt injection
 - [x] Pipeline wiring: Integration tests + full suite green (954 passed)
+- [x] Kim Cluster 2: types file (KimCluster2ModuleId, danger/child categories, detection result)
+- [x] Kim Cluster 2: NL/EN/FR marker files for GEVAAR-K01 and KIND-K01
+- [x] Kim Cluster 2: detectors for GEVAAR-K01 and KIND-K01 with priority resolver
+- [x] Kim Cluster 2: prompt payload builders for GEVAAR-K01 and KIND-K01
+- [x] Kim Cluster 2: memory patch builder (Kim-scoped only)
+- [x] Kim Cluster 2: output safety filter (anti-rescue/control/parentification/diagnosis)
+- [x] Kim Cluster 2: pipeline wiring as P7 (above P6 relapse cluster)
+- [x] Kim Cluster 2: critical acceptance tests (persona separation, crisis numbers, KIND>GEVAAR priority)
+- [x] GptSignalEngine: Kim-specific prompt for third-person relapse detection
+- [x] All existing 954+ tests remain green (974 passed)

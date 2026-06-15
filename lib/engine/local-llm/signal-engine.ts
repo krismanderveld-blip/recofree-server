@@ -89,6 +89,12 @@ export interface LocalSignalEngine {
    */
   detectRelapseIntent(message: string): Promise<RelapseIntentResult>;
 
+  /**
+   * Detect THIRD-PERSON relapse intent: caregiver reporting loved one's desire/urge/intention to use.
+   * Kim-specific semantic detection. Language-agnostic via GPT-4o-mini.
+   */
+  detectKimRelapseIntent(message: string): Promise<RelapseIntentResult>;
+
   /** Score relevance of context blocks for the current message */
   scoreRelevance(message: string, context: RelevanceContext): Promise<RelevanceScores>;
 

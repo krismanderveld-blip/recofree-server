@@ -247,6 +247,8 @@ interface ChatRequestInput {
   };
   /** Kim Relapse Cluster prompt payload (HERV-K01/NAHERV-K01/CRISIS-K01). Injected into system prompt when active. */
   relapseClusterContext?: string;
+  /** Kim Danger/Child Cluster prompt payload (GEVAAR-K01/KIND-K01). Injected into system prompt when active. Overrides relapse cluster. */
+  dangerChildContext?: string;
 }
 
 // ─── Server-side Session Cache ───────────────────────────────────
@@ -1044,6 +1046,8 @@ export function buildSystemPrompt(input: ChatRequestInput): string {
     '- HERV-K01: Herval Naaste — actieve herval van de naaste, stabilisatie en grensbewaking',
     '- NAHERV-K01: Na-Herval — nasleep van herval, emotionele verwerking en zelfzorg',
     '- CRISIS-K01: Crisis Naaste — acute veiligheidsdreiging, geweld, suïcide, medische nood',
+    '- GEVAAR-K01: Gevaar Naaste — gevaarlijke situatie door middelengebruik (agressie, dronken rijden, verdwijning, overdosis)',
+    '- KIND-K01: Kind in Gevaar — kindveiligheid bij verslaving (mishandeling, verwaarlozing, parentificatie)',
     '- CGT/CBT: Cognitieve Gedragstherapie — gedachtepatronen herkennen en bijsturen',
     '- DBT/DGT: Distress Tolerance — crisisstabilisatie en emotieregulatie',
     '- MBT: Mentalisatie — begrijpen wat er van binnen gebeurt voor je reageert',
@@ -1550,6 +1554,7 @@ ${moduleInstructions}
 ${crisisInstructions}
 ${relapseIntentInstruction}
 ${input.relapseClusterContext ? `\n=== KIM RELAPSE CLUSTER MODULE ACTIVE ===\n${input.relapseClusterContext}\n=== END RELAPSE CLUSTER ===` : ''}
+${input.dangerChildContext ? `\n=== KIM DANGER/CHILD CLUSTER MODULE ACTIVE ===\n${input.dangerChildContext}\n=== END DANGER/CHILD CLUSTER ===` : ''}
 ${sessionEndInstructions}
 
 ANTI-FABRICATION RULE — ABSOLUTE:
@@ -1943,6 +1948,7 @@ ${moduleInstructions}
 ${crisisInstructions}
 ${relapseIntentInstruction}
 ${input.relapseClusterContext ? `\n=== KIM RELAPSE CLUSTER MODULE ACTIVE ===\n${input.relapseClusterContext}\n=== END RELAPSE CLUSTER ===` : ''}
+${input.dangerChildContext ? `\n=== KIM DANGER/CHILD CLUSTER MODULE ACTIVE ===\n${input.dangerChildContext}\n=== END DANGER/CHILD CLUSTER ===` : ''}
 ${sessionEndInstructions}
 
 ANTI-FABRICATION RULE — ABSOLUTE:

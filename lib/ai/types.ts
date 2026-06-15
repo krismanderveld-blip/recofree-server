@@ -1084,6 +1084,8 @@ export interface ChatContext {
   iso01Context?: string;
   /** Kim Relapse Cluster prompt payload (HERV-K01/NAHERV-K01/CRISIS-K01). When present, overrides all lower Kim module contexts. */
   relapseClusterContext?: string;
+  /** Kim Danger/Child Cluster prompt payload (GEVAAR-K01/KIND-K01). When present, overrides ALL lower Kim modules including relapse cluster. */
+  dangerChildContext?: string;
   /** Structured entities extracted from backpack (persons, events, patterns, contexts). Sent instead of full backpack when unchanged. */
   extractedEntities?: import('../backpack-extractor/types').ExtractedEntities;
   /** Whether backpack content changed since last extraction (forces full backpack resend) */

@@ -100,6 +100,28 @@ User message: "${message}"
 Return JSON only:
 {"detected": true/false, "confidence": 0.0-1.0}`;
 
+const RELAPSE_INTENT_KIM_PROMPT = (message: string) =>
+  `Detect THIRD-PERSON relapse intent in this message from a caregiver/loved one of someone with addiction.
+
+Third-person relapse intent means: the caregiver reporting that their loved one is expressing desire, urge, or intention to use substances or drink.
+Examples:
+- "hij wil weer drinken" (he wants to drink again)
+- "ze zegt dat ze wil gebruiken" (she says she wants to use)
+- "my partner says he's going to drink tonight"
+- "il dit qu'il va consommer ce soir" (he says he'll use tonight)
+- "mijn zoon zegt dat hij gaat gebruiken" (my son says he's going to use)
+- "she told me she wants to relapse"
+- "hij heeft zin om te gebruiken" (he feels like using)
+
+This is about the LOVED ONE's intent/urge to use, reported by the caregiver.
+NOT the caregiver's own intent. NOT a completed relapse ("he used again" is NOT intent).
+NOT general discussion about addiction — it must be a reported desire/plan/urge by the loved one.
+
+User message: "${message}"
+
+Return JSON only:
+{"detected": true/false, "confidence": 0.0-1.0}`;
+
 // ─── Default (empty/neutral) values ─────────────────────────────
 
 const EMPTY_SIGNALS: SignalDetectionResult = {
@@ -153,6 +175,21 @@ export class GptSignalEngine implements LocalSignalEngine {
   async detectRelapseIntent(message: string): Promise<RelapseIntentResult> {
     try {
       const response = await this.callGptMini(RELAPSE_INTENT_PROMPT(message));
+      const parsed = JSON.parse(response);
+
+      return {
+        detected: parsed.detected === true,
+        confidence: this.clampScore(parsed.confidence),
+      };
+    } catch {
+      // On failure, return not detected — deterministic fallback handles this case
+      return { detected: false, confidence: 0 };
+    }
+  }
+
+  async detectKimRelapseIntent(message: string): Promise<RelapseIntentResult> {
+    try {
+      const response = await this.callGptMini(RELAPSE_INTENT_KIM_PROMPT(message));
       const parsed = JSON.parse(response);
 
       return {

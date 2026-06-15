@@ -29,6 +29,10 @@ export class NullSignalEngine implements LocalSignalEngine {
     return { detected: false, confidence: 0 };
   }
 
+  async detectKimRelapseIntent(_message: string): Promise<RelapseIntentResult> {
+    return { detected: false, confidence: 0 };
+  }
+
   async scoreRelevance(_message: string, _context: RelevanceContext): Promise<RelevanceScores> {
     return {
       backpackRelevance: 0.5,
