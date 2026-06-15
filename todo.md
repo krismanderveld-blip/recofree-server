@@ -1381,3 +1381,9 @@
 - [x] Kim Cluster 4: pipeline wiring as P9 (below P6/P7/P8)
 - [x] Kim Cluster 4: 14 critical acceptance tests (suicidality-split, persona separation, acute override)
 - [x] Kim Cluster 4: all existing tests remain green (1002 passed)
+- [x] Kim Cluster 5 (STOA-K): types + acute override gate + detector
+- [x] Kim Cluster 5 (STOA-K): NL/EN/FR marker files
+- [x] Kim Cluster 5 (STOA-K): prompt payload builder + memory patch builder + output safety filter
+- [x] Kim Cluster 5 (STOA-K): pipeline wiring as P10 (below reflective clusters, KST01 boundary)
+- [x] Kim Cluster 5 (STOA-K): 10 critical acceptance tests
+- [x] Kim Cluster 5 (STOA-K): all existing tests remain green (1012 passed, 1 skipped)

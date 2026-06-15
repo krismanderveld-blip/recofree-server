@@ -251,6 +251,7 @@ interface ChatRequestInput {
   dangerChildContext?: string;
   relationalDynamicsContext?: string;
   emotionalLossContext?: string;
+  stoaKContext?: string;
 }
 
 // ─── Server-side Session Cache ───────────────────────────────────
@@ -1057,6 +1058,7 @@ export function buildSystemPrompt(input: ChatRequestInput): string {
     '- SCHAAM-K01: Schaamte Naaste — schaamte om verslaving dierbare, geheimhouding, sociaal terugtrekken',
     '- ROUW-K01: Rouw Naaste — ambigue verlies, levende rouw, missen wie dierbare was, gemiste toekomst',
     '- ISOL-K01: Isolatie Naaste — sociale isolatie door zorgrol, verlies eigen contacten, uitputting',
+    '- STOA-K: Stoic Reflective Framework — controle/niet-controle onderscheid, waarden als kompas, grenzen als eigen actie, acceptatie ≠ goedkeuring, loslaten ≠ verlaten',
     '- CGT/CBT: Cognitieve Gedragstherapie — gedachtepatronen herkennen en bijsturen',
     '- DBT/DGT: Distress Tolerance — crisisstabilisatie en emotieregulatie',
     '- MBT: Mentalisatie — begrijpen wat er van binnen gebeurt voor je reageert',
@@ -1566,6 +1568,7 @@ ${input.relapseClusterContext ? `\n=== KIM RELAPSE CLUSTER MODULE ACTIVE ===\n${
 ${input.dangerChildContext ? `\n=== KIM DANGER/CHILD CLUSTER MODULE ACTIVE ===\n${input.dangerChildContext}\n=== END DANGER/CHILD CLUSTER ===` : ''}
 ${input.relationalDynamicsContext ? `\n=== KIM RELATIONAL DYNAMICS MODULE ACTIVE ===\n${input.relationalDynamicsContext}\n=== END RELATIONAL DYNAMICS ===` : ''}
 ${input.emotionalLossContext ? `\n=== KIM EMOTIONAL LOSS MODULE ACTIVE ===\n${input.emotionalLossContext}\n=== END EMOTIONAL LOSS ===` : ''}
+${input.stoaKContext ? `\n=== KIM STOA-K (STOIC REFLECTIVE FRAMEWORK) ACTIVE ===\n${input.stoaKContext}\n=== END STOA-K ===` : ''}
 ${sessionEndInstructions}
 
 ANTI-FABRICATION RULE — ABSOLUTE:
@@ -1962,6 +1965,7 @@ ${input.relapseClusterContext ? `\n=== KIM RELAPSE CLUSTER MODULE ACTIVE ===\n${
 ${input.dangerChildContext ? `\n=== KIM DANGER/CHILD CLUSTER MODULE ACTIVE ===\n${input.dangerChildContext}\n=== END DANGER/CHILD CLUSTER ===` : ''}
 ${input.relationalDynamicsContext ? `\n=== KIM RELATIONAL DYNAMICS MODULE ACTIVE ===\n${input.relationalDynamicsContext}\n=== END RELATIONAL DYNAMICS ===` : ''}
 ${input.emotionalLossContext ? `\n=== KIM EMOTIONAL LOSS MODULE ACTIVE ===\n${input.emotionalLossContext}\n=== END EMOTIONAL LOSS ===` : ''}
+${input.stoaKContext ? `\n=== KIM STOA-K (STOIC REFLECTIVE FRAMEWORK) ACTIVE ===\n${input.stoaKContext}\n=== END STOA-K ===` : ''}
 ${sessionEndInstructions}
 
 ANTI-FABRICATION RULE — ABSOLUTE:

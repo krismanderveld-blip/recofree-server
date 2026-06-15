@@ -286,6 +286,8 @@ import { runKimAdvancedModulesP8 } from '../engine/kim/kim-advanced-modules-p8';
 import type { KimP8Result } from '../engine/kim/kim-advanced-modules-p8';
 import { runKimAdvancedP9 } from '../engine/kim/kim-advanced-modules-p9';
 import type { KimP9Result } from '../engine/kim/kim-advanced-modules-p9';
+import { runKimAdvancedP10 } from '../engine/kim/kim-advanced-modules-p10';
+import type { KimP10Result } from '../engine/kim/kim-advanced-modules-p10';
 import { detectISO01Signals } from '../engine/elias/short-module-detector';
 import {
   evaluateModuleMemoryRepeat,
@@ -1644,6 +1646,39 @@ export async function processMessage(
     });
   }
 
+  // ── STEP 5e9c: Kim P10 (STOA-K: Stoic Reflective Framework) ──
+  // Lowest reflective priority. Below all acute (P6/P7) and all specific reflective (P8/P9).
+  // Never both STOA-K and KST01 as primary in one turn.
+  let kimP10Result: KimP10Result = {
+    active: false,
+    moduleId: 'NONE',
+    detectionResult: null,
+    payload: null,
+    memoryPatch: null,
+    contextString: '',
+  };
+  if (backpack.userType === 'kim' && !!(backpack as any).intake?.startEmotion && !kimAdvancedP6Result.overridesLowerModules && !kimAdvancedP7Result.active && !kimP8Result.active && !kimP9Result.active) {
+    kimP10Result = runKimAdvancedP10({
+      message: userMessage,
+      persona: 'kim',
+      recentMessages: sessionBuffer.recentMessages.slice(-3).map(m => m.content),
+      language: (currentUserDat as any).detectedLanguage ?? 'nl',
+      intakeCompleted: true,
+      lovedOneUseContext: (currentUserDat as any).lovedOneUseContext ?? false,
+      firstPersonUseContext: (currentUserDat as any).firstPersonUseContext ?? false,
+      caregiverOverwhelmed: (currentUserDat as any).caregiverOverwhelmed ?? false,
+      immediateDanger: analysis.riskLevel === 'critical',
+      childPresentOrAffected: (currentUserDat as any).childrenInvolved ?? false,
+      aggressionDetected: (currentUserDat as any).aggressionDetected ?? false,
+      domesticViolenceOrAbuseDetected: (currentUserDat as any).domesticViolenceOrAbuseDetected ?? false,
+      disappearanceAcuteDangerDetected: (currentUserDat as any).disappearanceAcuteDangerDetected ?? false,
+      selfHarmOrSuicideDetected: (currentUserDat as any).selfHarmOrSuicideDetected ?? false,
+      medicalEmergencyDetected: (currentUserDat as any).medicalEmergencyDetected ?? false,
+      activeRelapseNow: /(?:hij|zij|he|she).*(?:drinkt|gebruikt|drinks|uses).*(?:nu|weer|opnieuw|again|now)/i.test(userMessage),
+      specificReflectiveModuleCandidate: null,
+    });
+  }
+
   // ── STEP 5e9: Kim P2 (BEDR01/VETR01/GASL01) ──
   let kimAdvancedP2Result: KimAdvancedP2Result = {
     bedr01Context: null,
@@ -2179,6 +2214,8 @@ export async function processMessage(
     relationalDynamicsContext: (kimAdvancedP7Result.overridesLowerModules || kimAdvancedP6Result.overridesLowerModules) ? undefined : (kimP8Result.active ? kimP8Result.promptContext || undefined : undefined),
     // Kim Emotional Loss Cluster (HOOP-K01/SCHAAM-K01/ROUW-K01/ISOL-K01) — reflective modules below acute + relational dynamics
     emotionalLossContext: (kimAdvancedP7Result.overridesLowerModules || kimAdvancedP6Result.overridesLowerModules || kimP8Result.active) ? undefined : (kimP9Result.active ? kimP9Result.contextString || undefined : undefined),
+    // Kim STOA-K (Stoic Reflective Framework) — lowest reflective priority, suppressed when any higher module active
+    stoaKContext: (kimAdvancedP6Result.overridesLowerModules || kimAdvancedP7Result.active || kimP8Result.active || kimP9Result.active) ? undefined : (kimP10Result.active ? kimP10Result.contextString || undefined : undefined),
     // Backpack entity extraction: send structured entities instead of full backpack when unchanged
     extractedEntities: currentUserDat.extractedEntities ?? undefined,
     backpackChanged: !currentUserDat.extractedEntities || (currentUserDat.extractedEntities.persons.length === 0),
@@ -2487,6 +2524,7 @@ export async function processMessage(
       { step: '5e14. Kim P7 (GEVAAR-K01/KIND-K01)', status: kimAdvancedP7Result.activeModule ? 'passed' : 'skipped', reason: kimAdvancedP7Result.activeModule ? `kim|module=${kimAdvancedP7Result.activeModule}|overrides=${kimAdvancedP7Result.overridesLowerModules}|crisis=${kimAdvancedP7Result.crisisNumbersToShow.join(',')}` : 'no Danger/Child Cluster activation' },
       { step: '5e15. Kim P8 (ROL-K01/VETR02-K/LEUGEN-K01)', status: kimP8Result.active ? 'passed' : 'skipped', reason: kimP8Result.active ? `kim|module=${kimP8Result.moduleId}` : 'no Relational Dynamics activation' },
       { step: '5e16. Kim P9 (HOOP-K01/SCHAAM-K01/ROUW-K01/ISOL-K01)', status: kimP9Result.active ? 'passed' : 'skipped', reason: kimP9Result.active ? `kim|module=${kimP9Result.moduleId}` : 'no Emotional Loss activation' },
+      { step: '5e17. Kim P10 (STOA-K)', status: kimP10Result.active ? 'passed' : 'skipped', reason: kimP10Result.active ? `kim|module=STOA-K|mode=${kimP10Result.detectionResult?.responseMode}` : 'no STOA-K activation' },
       { step: '6a. Zone decision', status: elisDecision ? 'passed' : 'skipped', reason: elisDecision ? `zone=${elisDecision.zone.computed.label}` : 'kim user' },
       { step: '6b. Engine directive', status: engineDirective ? 'passed' : 'skipped', reason: engineDirective ? `engine=${engineDirective.engine}` : 'none' },
       { step: '6c. Intervention', status: interventionContinuity ? 'passed' : 'skipped', reason: interventionContinuity ? `type=${interventionContinuity.lastInterventionType}` : 'not active' },
