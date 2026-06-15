@@ -131,6 +131,8 @@ import {
 import { sanitizeSliders } from '../engine/shared/slider-sanitize';
 import { buildTraceBlock, type EngineTraceInput, type PipelineStepStatus } from '../debug/engine-trace';
 import { getEngine } from '../engine/local-llm/engine-provider';
+import { detectRelapseIntentFallback } from '../engine/local-llm/relapse-intent-fallback';
+import { computeEliasImpact } from '../engine/elias/vsp-impact';
 import {
   selectStoaSession,
   resetStoaSessionState,
@@ -1855,6 +1857,54 @@ export async function processMessage(
     console.log(`[Pipeline] SignalEngine error (non-blocking): ${(e as Error).message}`);
   }
 
+  // ── PRE-GPT STEP 5d: Relapse Intent Detection ──
+  // Dual-path: GptSignalEngine (semantic, language-agnostic) + deterministic fallback (NL/EN/FR markers).
+  // If detected with confidence ≥ 0.6 → escalate computed zone to minimum ORANJE.
+  let relapseIntentResult: ChatContext['relapseIntent'] = undefined;
+  try {
+    if (backpack.userType === 'elias' && signalEngineReady) {
+      const gptResult = await engine.detectRelapseIntent(userMessage);
+      if (gptResult.detected && gptResult.confidence >= 0.6) {
+        relapseIntentResult = { detected: true, confidence: gptResult.confidence, source: 'gpt' as const };
+      }
+    }
+  } catch {
+    // GPT failed — fall through to deterministic fallback
+  }
+
+  // Deterministic fallback: always runs for Elias when GPT didn't detect
+  if (!relapseIntentResult && backpack.userType === 'elias') {
+    const fallbackResult = detectRelapseIntentFallback(userMessage);
+    if (fallbackResult.detected) {
+      relapseIntentResult = { detected: true, confidence: fallbackResult.confidence, source: 'fallback' as const };
+    }
+  }
+
+  // Zone escalation: if relapse intent detected → override elisDecision to minimum ORANJE
+  if (relapseIntentResult?.detected && elisDecision && !elisDecision.isBlocked) {
+    const currentSeverity = elisDecision.zone.resolved?.finalSeverity ?? 0;
+    if (currentSeverity < 3) {
+      // Escalate to ORANJE (severity 3)
+      const escalatedResolved = {
+        ...elisDecision.zone.resolved!,
+        finalSeverity: 3 as const,
+        finalZoneLabel: 'ORANJE' as const,
+        source: 'COMPUTED' as const,
+        reason: `RELAPSE_INTENT_ESCALATION (${relapseIntentResult.source}, confidence=${relapseIntentResult.confidence.toFixed(2)})`,
+      };
+      const escalatedImpact = computeEliasImpact(escalatedResolved as any);
+      elisDecision = {
+        ...elisDecision,
+        zone: {
+          ...elisDecision.zone,
+          resolved: escalatedResolved as any,
+          impact: escalatedImpact,
+        },
+      };
+      console.log(`[Pipeline] RELAPSE_INTENT_ESCALATION: zone escalated to ORANJE (was severity ${currentSeverity}, source=${relapseIntentResult.source})`);
+    }
+  }
+
   const sessionStart = currentUserDat.lastSessionDate ? new Date(currentUserDat.lastSessionDate) : new Date();
   const sessionMinutes = Math.floor((Date.now() - sessionStart.getTime()) / 60000);
 
@@ -1898,6 +1948,7 @@ export async function processMessage(
     candidateSignals,
     relevanceScores,
     contextSummary,
+    relapseIntent: relapseIntentResult,
     stoaContext: stoaResult.injectionBlock ?? undefined,
     schemaModeContext: schemaModeResult.promptInjection || undefined,
     actContext: actResult.promptBlock || undefined,

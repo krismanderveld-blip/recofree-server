@@ -1011,6 +1011,12 @@ export interface ChatContext {
   };
   /** Signal engine: compressed context summary for LIVE_MESSAGE (replaces full lifeStorySummary) */
   contextSummary?: string;
+  /** Signal engine: relapse intent detection result — triggers zone escalation to ORANJE minimum */
+  relapseIntent?: {
+    detected: boolean;
+    confidence: number;
+    source: 'gpt' | 'fallback';
+  };
   /** STOA engine: injection block for Stoic session (Elias only) */
   stoaContext?: string;
   /** Schema/Mode engine: compact intervention context from deterministic mode/schema detection */

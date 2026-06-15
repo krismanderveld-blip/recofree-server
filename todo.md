@@ -1339,3 +1339,7 @@
 - [x] Import in intake: Verified createExportImportStoresAdapter (non-hook) is used in intake import flow
 - [x] Export scope tests: 11 new acceptance tests (sobriety, milestones, mood, schemas, modes, triggers, full round-trip)
 - [x] Export scope tests: All 811 tests green (was 800, now 811 with new acceptance tests)
+- [x] GptSignalEngine: add relapseIntent category to interface + prompts + output
+- [x] Deterministic marker fallback for relapse-intent (NL/EN/FR) when engine fails
+- [x] Wire relapseIntent into zone escalation (computed zone → minimum ORANJE)
+- [x] Tests: relapseIntent detection + zone escalation + fallback + full suite green (877 passed)

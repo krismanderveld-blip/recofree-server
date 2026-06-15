@@ -16,6 +16,7 @@
 import type {
   LocalSignalEngine,
   SignalDetectionResult,
+  RelapseIntentResult,
   RelevanceScores,
   RelevanceContext,
   ContextSummary,
@@ -85,6 +86,20 @@ const SUMMARIZE_CONTEXT_PROMPT = (context: SummarizationContext) =>
 ${context.backpackSections}
 ${context.recentSessionThemes}`;
 
+const RELAPSE_INTENT_PROMPT = (message: string) =>
+  `Detect relapse intent in this message from someone in addiction recovery.
+
+Relapse intent means: the user expressing a desire, urge, or intention to use substances or drink.
+Examples: "ik wil gebruiken", "j'ai envie de consommer", "I want to use", "ik ga drinken", "I'm going to drink", "zin om te gebruiken", "envie de boire".
+
+This is INTENT or strong urge to use, NOT a report of past relapse ("I used again" is NOT intent).
+This is NOT general craving discussion — it must be an expressed desire/plan/urge to actually use.
+
+User message: "${message}"
+
+Return JSON only:
+{"detected": true/false, "confidence": 0.0-1.0}`;
+
 // ─── Default (empty/neutral) values ─────────────────────────────
 
 const EMPTY_SIGNALS: SignalDetectionResult = {
@@ -132,6 +147,21 @@ export class GptSignalEngine implements LocalSignalEngine {
       };
     } catch {
       return EMPTY_SIGNALS;
+    }
+  }
+
+  async detectRelapseIntent(message: string): Promise<RelapseIntentResult> {
+    try {
+      const response = await this.callGptMini(RELAPSE_INTENT_PROMPT(message));
+      const parsed = JSON.parse(response);
+
+      return {
+        detected: parsed.detected === true,
+        confidence: this.clampScore(parsed.confidence),
+      };
+    } catch {
+      // On failure, return not detected — deterministic fallback handles this case
+      return { detected: false, confidence: 0 };
     }
   }
 

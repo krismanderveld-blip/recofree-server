@@ -8,6 +8,7 @@
 import type {
   LocalSignalEngine,
   SignalDetectionResult,
+  RelapseIntentResult,
   RelevanceScores,
   RelevanceContext,
   ContextSummary,
@@ -22,6 +23,10 @@ export class NullSignalEngine implements LocalSignalEngine {
 
   async detectSignals(_message: string, _context?: SignalContext): Promise<SignalDetectionResult> {
     return { fears: [], hopes: [], goals: [], triggers: [] };
+  }
+
+  async detectRelapseIntent(_message: string): Promise<RelapseIntentResult> {
+    return { detected: false, confidence: 0 };
   }
 
   async scoreRelevance(_message: string, _context: RelevanceContext): Promise<RelevanceScores> {

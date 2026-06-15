@@ -33,6 +33,13 @@ export interface SignalDetectionResult {
   triggers: DetectedSignal[];
 }
 
+export interface RelapseIntentResult {
+  /** Whether relapse intent was detected */
+  detected: boolean;
+  /** Confidence score 0.0 - 1.0 */
+  confidence: number;
+}
+
 export interface RelevanceScores {
   backpackRelevance: number; // 0.0 - 1.0
   diaryRelevance: number;   // 0.0 - 1.0
@@ -74,6 +81,13 @@ export interface LocalSignalEngine {
 
   /** Detect signals (fears, hopes, goals, triggers) in a single message */
   detectSignals(message: string, context?: SignalContext): Promise<SignalDetectionResult>;
+
+  /**
+   * Detect relapse intent: user expressing desire/urge/intention to use substances.
+   * Distinct from completed relapse (handled by crisis detector).
+   * Language-agnostic via GPT-4o-mini.
+   */
+  detectRelapseIntent(message: string): Promise<RelapseIntentResult>;
 
   /** Score relevance of context blocks for the current message */
   scoreRelevance(message: string, context: RelevanceContext): Promise<RelevanceScores>;
