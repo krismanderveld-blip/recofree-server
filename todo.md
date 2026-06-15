@@ -1326,3 +1326,16 @@
 - [x] BUG: Zod 400 error on ai.chat — backpackAnalysis expects object but client sends null/undefined (added .nullable() to Zod schema)
 - [x] BUG: Clinical mode active but no green bar under greeting (added clinical annotation to session-greeting endpoint)
 - [x] BUG: Greeting references "sessies van gisteren" when there were no sessions yesterday (added anti-hallucination instruction to greeting prompts)
+- [x] Export scope investigation: Inventariseer all persistent stores (sobriety, milestones, mood, progress, triggers)
+- [x] Export scope investigation: Confirmed ALL stores already covered — no missing stores
+- [x] Export scope investigation: sobrietyDate in userDat → exported via userDatStore
+- [x] Export scope investigation: milestoneTracker in userDat → exported via userDatStore
+- [x] Export scope investigation: moodHistory in userDat + stateDat → exported via both stores
+- [x] Export scope investigation: Progress Tracker has NO persistent store (computed at runtime)
+- [x] Export scope investigation: Mood Trend has NO persistent store (computed at runtime)
+- [x] Import in intake: Verified import option already exists in Step 1 ("I have a backup — import my data")
+- [x] Import in intake: Verified import modal with file picker + password field is complete
+- [x] Import in intake: Verified success path calls reloadFromStorage() then router.replace('/(tabs)') — skips rest of intake
+- [x] Import in intake: Verified createExportImportStoresAdapter (non-hook) is used in intake import flow
+- [x] Export scope tests: 11 new acceptance tests (sobriety, milestones, mood, schemas, modes, triggers, full round-trip)
+- [x] Export scope tests: All 811 tests green (was 800, now 811 with new acceptance tests)
