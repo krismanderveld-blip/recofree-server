@@ -31,6 +31,7 @@ export interface SessionInitGreetingInput {
   diaryEntries: DiaryEntry[];
   apiBaseUrl: string;
   timezone?: string;
+  clinicalModeActive?: boolean;
 }
 
 export interface SessionInitGreetingOutput {
@@ -45,7 +46,7 @@ export interface SessionInitGreetingOutput {
 export async function sessionInitGreetingStep(
   input: SessionInitGreetingInput,
 ): Promise<SessionInitGreetingOutput> {
-  const { backpack, userDat, diaryEntries, apiBaseUrl, timezone = 'Europe/Amsterdam' } = input;
+  const { backpack, userDat, diaryEntries, apiBaseUrl, timezone = 'Europe/Amsterdam', clinicalModeActive = false } = input;
 
   const nowIso = new Date().toISOString();
   const localCalendarDate = getLocalCalendarDate(nowIso, timezone);
@@ -89,7 +90,7 @@ export async function sessionInitGreetingStep(
   // Call GPT via server endpoint
   let rawGreeting: string;
   try {
-    rawGreeting = await callSessionGreetingEndpoint(apiBaseUrl, systemPrompt, userName);
+    rawGreeting = await callSessionGreetingEndpoint(apiBaseUrl, systemPrompt, userName, clinicalModeActive);
   } catch (error) {
     console.warn('[SessionGreetingV3] GPT call failed, using fallback:', error);
     rawGreeting = `${userName}, fijn dat je er bent. Waar wil je het vandaag over hebben?`;
@@ -117,14 +118,14 @@ async function callSessionGreetingEndpoint(
   apiBaseUrl: string,
   systemPrompt: string,
   userName: string,
+  clinicalModeActive: boolean = false,
 ): Promise<string> {
   const url = `${apiBaseUrl}/api/session-greeting`;
-
   const response = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
-    body: JSON.stringify({ systemPrompt, userName }),
+    body: JSON.stringify({ systemPrompt, userName, clinicalModeActive }),
   });
 
   if (!response.ok) {

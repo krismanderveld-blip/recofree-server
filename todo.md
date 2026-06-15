@@ -1323,3 +1323,6 @@
 - [x] Schema/Mode confirmation layer: Update debug trace to show confirmed vs candidate status
 - [x] Schema/Mode confirmation layer: Write tests for auto-confirmation threshold logic
 - [x] Schema/Mode confirmation layer: All existing tests remain green (800 total)
+- [x] BUG: Zod 400 error on ai.chat — backpackAnalysis expects object but client sends null/undefined (added .nullable() to Zod schema)
+- [x] BUG: Clinical mode active but no green bar under greeting (added clinical annotation to session-greeting endpoint)
+- [x] BUG: Greeting references "sessies van gisteren" when there were no sessions yesterday (added anti-hallucination instruction to greeting prompts)

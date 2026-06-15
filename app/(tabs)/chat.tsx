@@ -623,6 +623,7 @@ function ChatScreenInner() {
             diaryEntries,
             apiBaseUrl: apiUrl,
             timezone: 'Europe/Amsterdam',
+            clinicalModeActive: userDat?.clinicalModeActive ?? false,
           });
           greetingText = greetingResult.greeting;
           console.log(greetingResult.debugLog);

@@ -558,14 +558,14 @@ export const chatInputSchema = z.object({
     analysisVersion: z.number(),
     analyzedAt: z.string(),
     previousAnalyzedAt: z.string().nullable(),
-  }).optional(),
+  }).nullable().optional(),
 
   /** Compact known user patterns (schemas, modes, triggers) — injected every turn */
   knownUserPatterns: z.object({
     schemas: z.array(z.object({ name: z.string(), confidence: z.number() })),
     modes: z.array(z.object({ name: z.string(), confidence: z.number() })),
     triggers: z.array(z.string()),
-  }).optional(),
+  }).nullable().optional(),
 });
 
 // ─── Structured Memory Block Builder (from extractedEntities) ──────────────

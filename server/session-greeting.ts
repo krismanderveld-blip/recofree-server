@@ -3,6 +3,7 @@
  * POST /api/session-greeting
  * 
  * Accepts a system prompt from the client-side engine and generates a greeting via GPT-4o.
+ * When clinicalModeActive is true, also generates a clinical annotation via a second GPT call.
  * Model: gpt-4o, store: false, max_tokens: 150, temperature: 0.7
  */
 
@@ -11,7 +12,7 @@ import type { Express, Request, Response } from 'express';
 export function registerSessionGreetingRoute(app: Express): void {
   app.post('/api/session-greeting', async (req: Request, res: Response) => {
     try {
-      const { systemPrompt, userName } = req.body;
+      const { systemPrompt, userName, clinicalModeActive } = req.body;
 
       if (!systemPrompt || typeof systemPrompt !== 'string') {
         res.status(400).json({ error: 'systemPrompt is required and must be a string' });
@@ -28,7 +29,8 @@ export function registerSessionGreetingRoute(app: Express): void {
         return;
       }
 
-      console.log(`[SessionGreeting] Generating greeting for userName="${userName}", promptLength=${systemPrompt.length}`);
+      const isClinical = clinicalModeActive === true;
+      console.log(`[SessionGreeting] Generating greeting for userName="${userName}", promptLength=${systemPrompt.length}, clinical=${isClinical}`);
 
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
@@ -56,7 +58,7 @@ export function registerSessionGreetingRoute(app: Express): void {
       }
 
       const data = await response.json() as any;
-      const greeting = data.choices?.[0]?.message?.content?.trim();
+      let greeting = data.choices?.[0]?.message?.content?.trim();
 
       if (!greeting) {
         console.error('[SessionGreeting] No content in response');
@@ -65,6 +67,25 @@ export function registerSessionGreetingRoute(app: Express): void {
       }
 
       console.log(`[SessionGreeting] Success: "${greeting.slice(0, 60)}..."`);
+
+      // ─── CLINICAL ANNOTATION (separate GPT-4o call when clinical mode is active) ───
+      if (isClinical) {
+        try {
+          const clinicalAnnotation = await generateGreetingClinicalAnnotation(
+            apiKey,
+            greeting,
+            systemPrompt,
+            userName,
+          );
+          if (clinicalAnnotation) {
+            greeting = `${greeting}\n<clinical>${clinicalAnnotation}</clinical>`;
+            console.log(`[SessionGreeting] Clinical annotation appended (${clinicalAnnotation.length} chars)`);
+          }
+        } catch (clinicalErr) {
+          console.warn('[SessionGreeting] Clinical annotation failed, sending greeting without it:', clinicalErr);
+          // Still return the greeting without annotation rather than failing
+        }
+      }
 
       res.json({
         success: true,
@@ -75,4 +96,61 @@ export function registerSessionGreetingRoute(app: Express): void {
       res.status(500).json({ error: 'Internal server error' });
     }
   });
+}
+
+// ─── CLINICAL ANNOTATION GENERATOR ─────────────────────────────────────────
+
+async function generateGreetingClinicalAnnotation(
+  apiKey: string,
+  greeting: string,
+  systemPrompt: string,
+  userName: string,
+): Promise<string | null> {
+  const annotationPrompt = `You are a clinical annotation engine for a therapeutic AI companion called Elias.
+A greeting was just generated for the user "${userName}".
+
+GREETING SYSTEM PROMPT (what the engine decided):
+---
+${systemPrompt.slice(0, 800)}
+---
+
+GENERATED GREETING:
+---
+${greeting}
+---
+
+Produce a concise clinical annotation (max 100 words) covering:
+1. Greeting strategy: what data sources informed this greeting
+2. Tone assessment: appropriate warmth/safety level
+3. Risk flags: any concerns (none if clean)
+4. Compliance: did the greeting follow the engine instructions
+
+Format: plain text, no markdown, no headers. Write in English for clinical readability.`;
+
+  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: 'gpt-4o',
+      store: false,
+      temperature: 0.3,
+      max_tokens: 150,
+      messages: [
+        { role: 'system', content: annotationPrompt },
+        { role: 'user', content: 'Generate the clinical annotation for this greeting.' },
+      ],
+    }),
+  });
+
+  if (!response.ok) {
+    console.warn('[SessionGreeting] Clinical annotation GPT error:', response.status);
+    return null;
+  }
+
+  const data = await response.json() as any;
+  const annotation = data.choices?.[0]?.message?.content?.trim();
+  return annotation || null;
 }

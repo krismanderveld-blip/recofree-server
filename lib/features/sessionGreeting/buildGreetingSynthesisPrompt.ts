@@ -144,8 +144,15 @@ VERBODEN ZINNEN:
 - "Laten we beginnen met..." (te gestructureerd)
 - Elke zin die klinkt als een inventarisatie of checklist
 
+KRITIEK — GEEN HALLUCINATIE:
+- Verwijs ALLEEN naar informatie die EXPLICIET in de bronnen hierboven staat
+- Verzin NOOIT sessies, gesprekken of activiteiten die niet in de bronnen staan
+- Als een bron zegt "dagboek van gisteren" mag je ernaar verwijzen; als er GEEN bron over gisteren is, NOEM gisteren dan NIET
+- Zeg NOOIT "fijne dag gisteren" of "sessie van gisteren" tenzij dit LETTERLIJK uit een bron komt
+- Bij twijfel: houd het algemeen en warm zonder specifieke tijdsreferenties
+
 VOORBEELD VAN GOEDE SYNTHESE (ter illustratie, niet kopiëren):
-"${userName}, fijn dat je er bent. Goed dat je gisteren een fijne dag had — dat straalt door. Waar wil je het vandaag over hebben?"`;
+"${userName}, fijn dat je er bent. Er klinkt iets door van rust in wat je deelde — mooi om te zien. Waar wil je het vandaag over hebben?"`;
 }
 
 function buildReturnAfterAbsenceInstruction(
@@ -188,6 +195,12 @@ ABSOLUUT VERBODEN:
 - "Hoe voel je je?" of "Hoe gaat het?"
 - Opsommingen of checklist-taal
 - Emoji
+
+KRITIEK — GEEN HALLUCINATIE:
+- Verwijs ALLEEN naar informatie die EXPLICIET in de bronnen hierboven staat
+- Verzin NOOIT sessies, gesprekken of activiteiten die niet in de bronnen staan
+- Zeg NOOIT "sessie van gisteren" of "vorige keer" tenzij dit LETTERLIJK uit een bron komt
+- Bij twijfel: houd het algemeen en warm zonder specifieke tijdsreferenties
 
 VOORBEELD (ter illustratie, niet kopiëren):
 "${userName}, fijn dat je er weer bent. Het maakt niet uit hoe lang het geweest is — je bent hier, en dat telt. Wat heb je nodig vandaag?"`;
