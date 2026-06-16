@@ -199,7 +199,7 @@ export function detectKimRelapseClusterModule(
 
 /**
  * Resolve the crisis escalation route based on input flags and markers.
- * Uses CORRECTED Belgian crisis numbers (1813, not 1813).
+ * Uses Belgian crisis number 1813 for suicide prevention.
  */
 function resolveEscalationRoute(
   input: KimRelapseClusterRuntimeInput,
@@ -235,7 +235,7 @@ function resolveEscalationRoute(
     return 'CONTACT_1712';
   }
 
-  // Suicide/self-harm → 1813 (corrected, not 1813)
+  // Suicide/self-harm → 1813
   if (
     input.explicitSelfHarmRiskLovedOne ||
     input.explicitSelfHarmRiskCaregiver ||

@@ -3,7 +3,7 @@
  * Modules: HERV-K01, NAHERV-K01, CRISIS-K01
  * 
  * CORRECTED CRISIS NUMBERS — aligned with app-wide crisis footer:
- * - 1813 (Zelfmoordlijn, 24/7 gratis anoniem) — NOT 1813
+ * - 1813 (Zelfmoordlijn, 24/7 gratis anoniem)
  * - 1712 (huiselijk geweld, misbruik, kindermishandeling)
  * - 112 (noodgevallen / levensbedreigend / ambulance)
  * - 101 (dringende politiehulp)
@@ -55,7 +55,7 @@ export type KimSafetyRiskLevel =
 
 /**
  * Crisis escalation routes — CORRECTED per app-wide crisis footer.
- * NO CALL_1813. Suicide support = CALL_1813.
+ * Suicide support = CALL_1813.
  * Added CALL_101 for urgent police help.
  */
 export type KimCrisisEscalationRoute =

@@ -1,7 +1,7 @@
 /**
  * Kim Relapse Cluster — 20 Acceptance Tests
  * Tests: HERV-K01, NAHERV-K01, CRISIS-K01
- * Corrected Belgian crisis numbers (1813, NOT 1813).
+ * Belgian crisis number: 1813 for suicide prevention.
  */
 import { describe, it, expect } from 'vitest';
 import {
@@ -120,9 +120,9 @@ describe('Kim Relapse Cluster — Acceptance Tests', () => {
   });
 
   // ============================================================
-  // TEST 8: Suicide risk → routes to 1813 (NOT 1813)
+  // TEST 8: Suicide risk → routes to 1813
   // ============================================================
-  it('TEST 8: Suicide risk routes to 1813 (corrected, not 1813)', () => {
+  it('TEST 8: Suicide risk routes to 1813', () => {
     const input = kimInput('hij wil zichzelf iets aandoen', {
       explicitSelfHarmRiskLovedOne: true,
     });
@@ -134,7 +134,7 @@ describe('Kim Relapse Cluster — Acceptance Tests', () => {
   });
 
   // ============================================================
-  // TEST 9: Medical emergency → routes to 112 (NOT 1813)
+  // TEST 9: Medical emergency → routes to 112 (not suicide line)
   // ============================================================
   it('TEST 9: Medical emergency routes to 112', () => {
     const input = kimInput('hij is bewusteloos', {
