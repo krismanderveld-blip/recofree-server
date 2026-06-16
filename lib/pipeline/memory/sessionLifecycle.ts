@@ -19,7 +19,7 @@ import { generateSessionSummary } from "./sessionEndSummarizer";
  * Feature flag: when true, uses logs.dat for session init context.
  * Set to false until logs.dat is validated via Test 11.
  */
-export const USE_LOGS_DAT_CONTEXT = false;
+export const USE_LOGS_DAT_CONTEXT = true;
 
 export interface SessionLifecycleManager {
   startSession(persona: RecoFreePersona, sessionId: string, localUserId: string, apiBaseUrl: string): Promise<SessionStartResult>;

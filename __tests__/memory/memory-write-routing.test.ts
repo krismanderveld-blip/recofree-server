@@ -267,9 +267,9 @@ describe("Memory Write Routing — Acceptance Tests", () => {
     expect(output.commitResult.errors.length).toBe(0);
   });
 
-  // Test 11: USE_LOGS_DAT_CONTEXT flag exists and is false
-  it("Test 11: USE_LOGS_DAT_CONTEXT flag is false", () => {
-    expect(USE_LOGS_DAT_CONTEXT).toBe(false);
+  // Test 11: USE_LOGS_DAT_CONTEXT flag exists and is true
+  it("Test 11: USE_LOGS_DAT_CONTEXT flag is true", () => {
+    expect(USE_LOGS_DAT_CONTEXT).toBe(true);
   });
 
   // Test 12: buildSessionInitContext returns empty when no data
