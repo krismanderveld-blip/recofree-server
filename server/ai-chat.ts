@@ -252,6 +252,8 @@ interface ChatRequestInput {
   relationalDynamicsContext?: string;
   emotionalLossContext?: string;
   stoaKContext?: string;
+  /** VSP Insight System — framework selection (MI/MBT/DGT) prompt frame. Never mutates safety core. store:false. */
+  vspInsightContext?: string;
 }
 
 // ─── Server-side Session Cache ───────────────────────────────────
@@ -498,6 +500,14 @@ export const chatInputSchema = z.object({
   k03Context: z.string().nullable().optional(),
   sw01Context: z.string().nullable().optional(),
   sto01Context: z.string().nullable().optional(),
+  // Kim cluster contexts
+  relapseClusterContext: z.string().nullable().optional(),
+  dangerChildContext: z.string().nullable().optional(),
+  relationalDynamicsContext: z.string().nullable().optional(),
+  emotionalLossContext: z.string().nullable().optional(),
+  stoaKContext: z.string().nullable().optional(),
+  // VSP Insight System (MI/MBT/DGT framework selection, store:false)
+  vspInsightContext: z.string().nullable().optional(),
 
   // Signal engine: relevance scores for context gating (LIVE_MESSAGE only)
   relevanceScores: z.object({
@@ -1381,6 +1391,12 @@ These are not suggestions. These are minimum requirements.
     console.log(`[AI Chat] STO01 Stoicism context injected`);
   }
 
+  let vspInsightBlock = '';
+  if (input.vspInsightContext) {
+    vspInsightBlock = `\n${input.vspInsightContext}`;
+    console.log(`[AI Chat] VSP Insight context injected (store:false)`);
+  }
+
   // Inject only the ACTIVE short module prompt block (M05-M85) for Elias
   // We don't inject all 66 at once (53K tokens) — only the one the pipeline selected
   let shortModuleBlock = '';
@@ -1541,6 +1557,7 @@ ${k03Block}
 ${sw01Block}
 ${sto01Block}
 ${shortModuleBlock}
+${vspInsightBlock}
 
 These behavioral instructions are ABSOLUTE. They override your default conversational style.
 The sliders tell you exactly how the user feels — USE them in your response.
@@ -1569,6 +1586,7 @@ ${input.dangerChildContext ? `\n=== KIM DANGER/CHILD CLUSTER MODULE ACTIVE ===\n
 ${input.relationalDynamicsContext ? `\n=== KIM RELATIONAL DYNAMICS MODULE ACTIVE ===\n${input.relationalDynamicsContext}\n=== END RELATIONAL DYNAMICS ===` : ''}
 ${input.emotionalLossContext ? `\n=== KIM EMOTIONAL LOSS MODULE ACTIVE ===\n${input.emotionalLossContext}\n=== END EMOTIONAL LOSS ===` : ''}
 ${input.stoaKContext ? `\n=== KIM STOA-K (STOIC REFLECTIVE FRAMEWORK) ACTIVE ===\n${input.stoaKContext}\n=== END STOA-K ===` : ''}
+${input.vspInsightContext ? `\n=== VSP INSIGHT SYSTEM ACTIVE (store:false) ===\n${input.vspInsightContext}\n=== END VSP INSIGHT ===` : ''}
 ${sessionEndInstructions}
 
 ANTI-FABRICATION RULE — ABSOLUTE:
@@ -1978,6 +1996,7 @@ ${k03Block}
 ${sw01Block}
 ${sto01Block}
 ${shortModuleBlock}
+${vspInsightBlock}
 These behavioral instructions are ABSOLUTE. They override your default conversational style.
 The sliders tell you exactly how the user feels — USE them in your response.
 === END MANDATORY INSTRUCTIONS ===
@@ -1998,6 +2017,7 @@ ${input.dangerChildContext ? `\n=== KIM DANGER/CHILD CLUSTER MODULE ACTIVE ===\n
 ${input.relationalDynamicsContext ? `\n=== KIM RELATIONAL DYNAMICS MODULE ACTIVE ===\n${input.relationalDynamicsContext}\n=== END RELATIONAL DYNAMICS ===` : ''}
 ${input.emotionalLossContext ? `\n=== KIM EMOTIONAL LOSS MODULE ACTIVE ===\n${input.emotionalLossContext}\n=== END EMOTIONAL LOSS ===` : ''}
 ${input.stoaKContext ? `\n=== KIM STOA-K (STOIC REFLECTIVE FRAMEWORK) ACTIVE ===\n${input.stoaKContext}\n=== END STOA-K ===` : ''}
+${input.vspInsightContext ? `\n=== VSP INSIGHT SYSTEM ACTIVE (store:false) ===\n${input.vspInsightContext}\n=== END VSP INSIGHT ===` : ''}
 ${sessionEndInstructions}
 
 ANTI-FABRICATION RULE — ABSOLUTE:

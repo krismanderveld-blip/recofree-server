@@ -1092,6 +1092,8 @@ export interface ChatContext {
   emotionalLossContext?: string;
   /** Kim Cluster 5 (STOA-K) — stoic reflective framework context */
   stoaKContext?: string;
+  /** VSP Insight System — framework selection and prompt frame (MI/MBT/DGT). Never mutates safety core. store:false. */
+  vspInsightContext?: string;
   /** Structured entities extracted from backpack (persons, events, patterns, contexts). Sent instead of full backpack when unchanged. */
   extractedEntities?: import('../backpack-extractor/types').ExtractedEntities;
   /** Whether backpack content changed since last extraction (forces full backpack resend) */

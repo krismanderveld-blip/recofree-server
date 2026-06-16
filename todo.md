@@ -1393,3 +1393,35 @@
 - [x] iOS build fix: buildReactNativeFromSource in expo-build-properties
 - [x] iOS build fix: eas.json env vars HERMES_USE_PREBUILT=false + BUILD_FROM_SOURCE=true
 - [x] Clinical dropdown: show detected schemas and modi as full chat response when asked in clinical mode
+- [x] Auto-confirmation threshold lowered from 5 to 3 (faster schema/mode confirmation)
+- [ ] VSP Insight System: types files (vspInsight.types, vspState, vspDiscrepancy, vspFramework, vspSoothing, vspTransition, vspPdfExport, vspProfile)
+- [ ] VSP Insight System: engine core (state detection, rational green detector, overwhelm detector, silent discrepancy, framework selection, prompt frame builder)
+- [ ] VSP Insight System: DGT soothing flow (catalog, safety filter, selector, recorder, evaluator, prompt builder)
+- [ ] VSP Insight System: phase transition detector + example builder + profile updater + safety boundary
+- [ ] VSP Insight System: adapters (mood, chat signal, logs.dat, diary, gratitude, backpack, greeting)
+- [ ] VSP Insight System: intake adapters (wheel-of-change, early signs, self-image)
+- [ ] VSP Insight System: PDF export (builder, renderer, disclaimer, data selector)
+- [ ] VSP Insight System: Kim variant (engine, state detector, profile updater, prompt frame)
+- [ ] VSP Insight System: pipeline wiring (pipeline.ts, ai-chat.ts, openai-provider.ts)
+- [ ] VSP Insight System: 22 test cases from spec
+- [ ] VSP Insight System: output safety filter
+- [ ] iOS publish: show Expo Go QR code instead of failing TestFlight build
+- [x] VSP Insight System: Create vspInsightTypes.ts (full type definitions)
+- [x] VSP Insight System: Create detectVspInsightState.ts (state detection engine)
+- [x] VSP Insight System: Create detectRationalGreenSignals.ts
+- [x] VSP Insight System: Create detectOverwhelmSignals.ts
+- [x] VSP Insight System: Create vspInsightRouter.ts (MI/MBT/DGT framework selection)
+- [x] VSP Insight System: Create vspInsightStorage.ts (AsyncStorage, silent discrepancy)
+- [x] VSP Insight System: Create vspInsightPhaseTracker.ts (state transitions)
+- [x] VSP Insight System: Create vspChatSignalAdapter.ts (marker extraction)
+- [x] VSP Insight System: Create vspInsightPdfExport.ts (disclaimer: geen diagnose)
+- [x] VSP Insight System: Create kimVspVariant.ts (caregiver framing)
+- [x] VSP Insight System: Create vspDgtSoothingFlow.ts (sensory options, safety filter)
+- [x] VSP Insight System: Create vspInsightPipelineLayer.ts (pipeline integration)
+- [x] VSP Insight System: Wire into pipeline.ts (after safety core, before GPT call)
+- [x] VSP Insight System: Add vspInsightContext to ChatContext type
+- [x] VSP Insight System: Add vspInsightContext to chatInputSchema (zod)
+- [x] VSP Insight System: Wire vspInsightContext in openai-provider.ts (SESSION_INIT + LIVE_MESSAGE)
+- [x] VSP Insight System: Inject vspInsightContext into buildSystemPrompt (Elias + Kim)
+- [x] VSP Insight System: 22 test cases — all passing
+- [ ] Expo Go QR code always visible for iOS on publish

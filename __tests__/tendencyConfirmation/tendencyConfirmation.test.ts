@@ -66,7 +66,7 @@ const NOW = '2026-06-15T12:00:00.000Z';
 
 describe('shouldAutoConfirm', () => {
   it('TC01: returns false when frequency below threshold', () => {
-    const t = makeSchema({ frequency: 4, confidence: 0.8 });
+    const t = makeSchema({ frequency: 2, confidence: 0.8 });
     expect(shouldAutoConfirm(t)).toBe(false);
   });
 
@@ -319,7 +319,7 @@ describe('KNOWN USER PATTERNS gating (integration)', () => {
 
 describe('Exported thresholds', () => {
   it('TC26: AUTO_CONFIRM_FREQUENCY_THRESHOLD is 5', () => {
-    expect(AUTO_CONFIRM_FREQUENCY_THRESHOLD).toBe(5);
+    expect(AUTO_CONFIRM_FREQUENCY_THRESHOLD).toBe(3);
   });
 
   it('TC27: AUTO_CONFIRM_CONFIDENCE_THRESHOLD is 0.7', () => {

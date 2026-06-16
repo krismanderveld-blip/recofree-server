@@ -312,6 +312,7 @@ import {
   applyKimModuleMemoryPatch,
 } from '../engine/kim/kim-module-memory';
 import { applyAutoConfirmation } from '../engine/shared/tendency-confirmation';
+import { runVspInsightLayer, type VspInsightPipelineResult } from '../../src/features/vspInsight/vspInsightPipelineLayer';
 
 // ─── Pattern Marking (post-GPT local state) ─────────────────
 
@@ -2124,6 +2125,32 @@ export async function processMessage(
   const sessionStart = currentUserDat.lastSessionDate ? new Date(currentUserDat.lastSessionDate) : new Date();
   const sessionMinutes = Math.floor((Date.now() - sessionStart.getTime()) / 60000);
 
+  // ── STEP 5f: VSP Insight Layer (AFTER safety core, BEFORE GPT call) ──
+  // Reads safety core output but NEVER mutates it. store:false.
+  const vspInsightResult: VspInsightPipelineResult = runVspInsightLayer({
+    persona: backpack.userType as 'elias' | 'kim',
+    userMessage,
+    recentMessages: sessionBuffer.recentMessages.slice(-3).map(m => m.content),
+    moodSliders: {
+      craving: (currentUserDat.currentMood as any)?.craving ?? 0,
+      frustration: (currentUserDat.currentMood as any)?.frustration ?? 0,
+      despondency: (currentUserDat.currentMood as any)?.despondency ?? 0,
+      focus: (currentUserDat.currentMood as any)?.focus ?? 5,
+    },
+    selfReportedZone: (vspLevel ?? 'GROEN') as any,
+    sessionTurnCount: sessionBuffer.recentMessages.length,
+    safetyCore: {
+      finalZone: (elisDecision?.zone.resolved?.finalZoneLabel ?? kimDecision?.resolvedZone ?? vspLevel ?? 'GROEN') as any,
+      userReportedZone: (vspLevel ?? 'GROEN') as any,
+      safetyOverrideActive: analysis.riskLevel === 'critical',
+      crisisDetected: (elisDecision?.zone.resolved?.isCrisis ?? false) || (kimDecision?.isKimCrisis ?? false),
+      relapseIntentDetected: relapseIntentResult?.detected ?? false,
+      modelRoutingDecision: elisDecision?.recommendedModel ?? kimDecision?.recommendedModel ?? 'gpt-4o-mini',
+      activeSafetyModuleId: null,
+    },
+    profile: null, // Profile loaded from AsyncStorage on device — not available in pipeline
+  });
+
   const context: ChatContext = {
     userType: backpack.userType,
     userName: backpack.naam,
@@ -2216,6 +2243,8 @@ export async function processMessage(
     emotionalLossContext: (kimAdvancedP7Result.overridesLowerModules || kimAdvancedP6Result.overridesLowerModules || kimP8Result.active) ? undefined : (kimP9Result.active ? kimP9Result.contextString || undefined : undefined),
     // Kim STOA-K (Stoic Reflective Framework) — lowest reflective priority, suppressed when any higher module active
     stoaKContext: (kimAdvancedP6Result.overridesLowerModules || kimAdvancedP7Result.active || kimP8Result.active || kimP9Result.active) ? undefined : (kimP10Result.active ? kimP10Result.contextString || undefined : undefined),
+    // VSP Insight System — framework selection (MI/MBT/DGT). Never mutates safety core.
+    vspInsightContext: vspInsightResult.active ? vspInsightResult.contextString || undefined : undefined,
     // Backpack entity extraction: send structured entities instead of full backpack when unchanged
     extractedEntities: currentUserDat.extractedEntities ?? undefined,
     backpackChanged: !currentUserDat.extractedEntities || (currentUserDat.extractedEntities.persons.length === 0),

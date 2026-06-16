@@ -6,7 +6,7 @@
  * Unconfirmed tendencies still feed the SchemaMode engine (deterministic per-turn detection).
  *
  * Confirmation paths:
- * 1. AUTO: frequency >= 5 AND confidence >= 0.7 (multiple sessions of consistent evidence)
+ * 1. AUTO: frequency >= 3 AND confidence >= 0.7 (faster confirmation for recurring patterns)
  * 2. CLINICAL: clinical mode explicitly acknowledges the pattern
  * 3. USER: user self-acknowledges in chat (e.g., "ja dat herken ik", "dat klopt")
  *
@@ -14,7 +14,7 @@
  */
 
 // ─── Thresholds ────────────────────────────────────────────────────
-export const AUTO_CONFIRM_FREQUENCY_THRESHOLD = 5;
+export const AUTO_CONFIRM_FREQUENCY_THRESHOLD = 3;
 export const AUTO_CONFIRM_CONFIDENCE_THRESHOLD = 0.7;
 
 // ─── Types ─────────────────────────────────────────────────────────
