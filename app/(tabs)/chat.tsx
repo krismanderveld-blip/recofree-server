@@ -1463,10 +1463,12 @@ function ClinicalTag({ annotation }: { annotation: string }) {
   // Show fallback annotation when model did not comply (visible to clinician)
   const isFallback = annotation.includes('[not annotated') || annotation.includes('model did not comply');
 
-  // Parse Signals line from annotation
+  // Parse Signals line and VSP-Framework line from annotation
   const lines = annotation.split('\n');
   const signalsLine = lines.find(l => l.startsWith('Signals:'));
-  const otherLines = lines.filter(l => !l.startsWith('Signals:')).join('\n');
+  const vspFrameworkLine = lines.find(l => l.startsWith('VSP-Framework:'));
+  const vspFramework = vspFrameworkLine ? vspFrameworkLine.replace('VSP-Framework:', '').trim() : null;
+  const otherLines = lines.filter(l => !l.startsWith('Signals:') && !l.startsWith('VSP-Framework:')).join('\n');
   const signalsValue = signalsLine ? signalsLine.replace('Signals:', '').trim() : null;
 
   return (
@@ -1476,11 +1478,18 @@ function ClinicalTag({ annotation }: { annotation: string }) {
         style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}
       >
         <Text style={{ fontSize: 11, fontWeight: '600', color: isFallback ? '#B71C1C' : '#2E7D32' }}>
-          {expanded ? '⚕ clinical ▼' : '⚕ clinical ▶'}{isFallback ? ' ⚠' : ''}
+          {expanded ? '⚕ clinical ▼' : '⚕ clinical ▶'}{isFallback ? ' ⚠' : ''}{vspFramework ? ` · VSP: ${vspFramework}` : ''}
         </Text>
       </Pressable>
       {expanded && (
         <View style={{ marginTop: 6, backgroundColor: colors.background, borderRadius: 8, padding: 10 }}>
+          {vspFramework && (
+            <View style={{ marginBottom: 8, paddingBottom: 6, borderBottomWidth: 0.5, borderBottomColor: colors.border }}>
+              <Text style={{ fontSize: 11, fontWeight: '700', color: '#1565C0' }}>
+                VSP-Framework: <Text style={{ fontWeight: '600', color: vspFramework === 'DGT' ? '#E65100' : vspFramework === 'MBT' ? '#6A1B9A' : '#2E7D32' }}>{vspFramework}</Text>
+              </Text>
+            </View>
+          )}
           <Text style={{ fontSize: 12, color: colors.muted, lineHeight: 17, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace' }}>
             {otherLines}
           </Text>

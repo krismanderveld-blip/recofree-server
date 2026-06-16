@@ -1424,4 +1424,5 @@
 - [x] VSP Insight System: Wire vspInsightContext in openai-provider.ts (SESSION_INIT + LIVE_MESSAGE)
 - [x] VSP Insight System: Inject vspInsightContext into buildSystemPrompt (Elias + Kim)
 - [x] VSP Insight System: 22 test cases — all passing
+- [x] VSP Insight UI: Clinical mode ClinicalTag shows VSP-Framework badge (MI/MBT/DGT) when active
 - [ ] Expo Go QR code always visible for iOS on publish

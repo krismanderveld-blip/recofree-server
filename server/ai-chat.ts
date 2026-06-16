@@ -1747,7 +1747,7 @@ FAILURE TO INCLUDE THIS TAG IS A CRITICAL COMPLIANCE ERROR.
 After your therapeutic response, you MUST append exactly this structure:
 
 <clinical>
-Method: [name the primary therapeutic method used]
+Method: [name the primary therapeutic method used]${input.vspInsightContext ? `\nVSP-Framework: ${input.vspInsightContext.match(/Framework: (\w+)/)?.[1] ?? 'n/a'}` : ''}
 Observation: [1 sentence — what you clinically observed]
 Intervention: [1 sentence — what therapeutic move you made]
 Signals: [comma-separated list of active signals with score and memory layer, e.g. "verlatingsangst +1 (projections.dat), hopeloosheid +2 (state.dat)"]${input.activeSignals && input.activeSignals.length > 0 ? `
@@ -1762,7 +1762,7 @@ Rules:
 - The <clinical> block MUST be the LAST thing in your response
 - It must appear in EVERY response without exception
 - Do NOT skip it, do NOT forget it, do NOT place it elsewhere
-- The tag is parsed by the UI and shown to the clinician — omitting it breaks the interface
+- The tag is parsed by the UI and shown to the clinician — omitting it breaks the interface${input.vspInsightContext ? `\n- The VSP-Framework line is ENGINE-DETERMINED — copy it exactly as shown, do NOT change it` : ''}
 
 ⚠️ FINAL REMINDER: Your response is INVALID without <clinical>...</clinical> at the end. Even for greetings, short replies, or simple questions — ALWAYS include it. For greetings use Method: "Therapeutic greeting", Observation: "Session start", Intervention: "Warm opening + open question".
 ` : ''}`;
@@ -2192,7 +2192,7 @@ FAILURE TO INCLUDE THIS TAG IS A CRITICAL COMPLIANCE ERROR.
 After your therapeutic response, you MUST append exactly this structure:
 
 <clinical>
-Method: [name the primary therapeutic method used]
+Method: [name the primary therapeutic method used]${input.vspInsightContext ? `\nVSP-Framework: ${input.vspInsightContext.match(/Framework: (\w+)/)?.[1] ?? 'n/a'}` : ''}
 Observation: [1 sentence — what you clinically observed]
 Intervention: [1 sentence — what therapeutic move you made]
 Signals: [comma-separated list of active signals with score and memory layer, e.g. "verlatingsangst +1 (projections.dat), hopeloosheid +2 (state.dat)"]${input.activeSignals && input.activeSignals.length > 0 ? `
@@ -2207,7 +2207,7 @@ Rules:
 - The <clinical> block MUST be the LAST thing in your response
 - It must appear in EVERY response without exception
 - Do NOT skip it, do NOT forget it, do NOT place it elsewhere
-- The tag is parsed by the UI and shown to the clinician — omitting it breaks the interface
+- The tag is parsed by the UI and shown to the clinician — omitting it breaks the interface${input.vspInsightContext ? `\n- The VSP-Framework line is ENGINE-DETERMINED — copy it exactly as shown, do NOT change it` : ''}
 
 ⚠️ FINAL REMINDER: Your response is INVALID without <clinical>...</clinical> at the end. Even for greetings, short replies, or simple questions — ALWAYS include it. For greetings use Method: "Therapeutic greeting", Observation: "Session start", Intervention: "Warm opening + open question".
 ` : ''}`;
@@ -2484,10 +2484,10 @@ Dominant module: ${input.dominantModule || 'none'}
 User type: ${input.userType}
 Zone: ${input.bufferSnapshot?.zone || 'unknown'}
 
-Generate EXACTLY this format (no other text):
+${input.vspInsightContext ? `VSP Insight Framework active: ${input.vspInsightContext.match(/Framework: (\w+)/)?.[1] ?? 'unknown'}\n\n` : ''}Generate EXACTLY this format (no other text):
 
 <clinical>
-Method: [name the primary therapeutic method used in the response]
+Method: [name the primary therapeutic method used in the response]${input.vspInsightContext ? `\nVSP-Framework: ${input.vspInsightContext.match(/Framework: (\w+)/)?.[1] ?? 'n/a'}` : ''}
 Observation: [1 sentence — what you clinically observed in the user's message]
 Intervention: [1 sentence — what therapeutic move was made in the response]
 Signals: [comma-separated list of active signals with score and memory layer, or "none"]
