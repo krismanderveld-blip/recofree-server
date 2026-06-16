@@ -17,6 +17,7 @@
       }
     },
     "production": {
+      "distribution": "store",
       "ios": {
         "appleTeamId": "2NZD62J82X"
       }
