@@ -90,7 +90,7 @@ import {
 import { logDebugEvent } from '../debug/session-logger';
 import { selectDominantState, type DominantState } from './dominant-state-selector';
 import { applyDecay, applyDecayToBuffer, type DecayResult } from './regulation-decay-engine';
-import { analyzeBackpackRelevance, resetTriggerDecay } from './backpack-relevance-analyzer';
+import { analyzeBackpackRelevance, resetTriggerDecay, parseVspProfileFromBackpack } from './backpack-relevance-analyzer';
 import { evaluatePromotions, applyPromotions, type PromotionCandidate, type PromotionResult } from './userdat-promotion';
 import { recordCallCost, resetSessionCost, estimateTokens, type TokenUsage } from './cost-control';
 import { applyRegulation, type RegulationResult, type ZoneColor } from './regulation-layer';
@@ -2151,6 +2151,19 @@ export async function processMessage(
     profile: null, // Profile loaded from AsyncStorage on device — not available in pipeline
   });
 
+  // ── VSP Backpack Profile: load LLM-analyzed profile from cache (Elias only) ──
+  let vspBackpackProfileBlock: string | undefined;
+  if (backpack.userType === 'elias') {
+    try {
+      const { loadCachedVspProfile } = await import('../backpack-extractor/vsp-backpack-analyzer');
+      const cached = await loadCachedVspProfile();
+      vspBackpackProfileBlock = cached?.contextBlock || buildVspBackpackProfileBlock(backpack.sections || []);
+    } catch {
+      // Fallback to local parsing if AsyncStorage unavailable
+      vspBackpackProfileBlock = buildVspBackpackProfileBlock(backpack.sections || []);
+    }
+  }
+
   const context: ChatContext = {
     userType: backpack.userType,
     userName: backpack.naam,
@@ -2245,6 +2258,8 @@ export async function processMessage(
     stoaKContext: (kimAdvancedP6Result.overridesLowerModules || kimAdvancedP7Result.active || kimP8Result.active || kimP9Result.active) ? undefined : (kimP10Result.active ? kimP10Result.contextString || undefined : undefined),
     // VSP Insight System — framework selection (MI/MBT/DGT). Never mutates safety core.
     vspInsightContext: vspInsightResult.active ? vspInsightResult.contextString || undefined : undefined,
+    // VSP Backpack Profile — LLM-analyzed from recurringThemes (Elias only, cached in AsyncStorage)
+    vspBackpackProfile: vspBackpackProfileBlock,
     // Backpack entity extraction: send structured entities instead of full backpack when unchanged
     extractedEntities: currentUserDat.extractedEntities ?? undefined,
     backpackChanged: !currentUserDat.extractedEntities || (currentUserDat.extractedEntities.persons.length === 0),
@@ -3752,6 +3767,32 @@ function extractThemes(signals: InputSignals, text: string): string[] {
 }
 
 // ─── Helper: Build therapeutic stance string for AI prompt ──────
+
+/**
+ * Build VSP Backpack Profile block for Elias prompt injection.
+ * Parses zone labels from recurringThemes and formats as structured context.
+ * Read-only: never modifies backpack. Only for Elias.
+ */
+function buildVspBackpackProfileBlock(sections: import('../ai/types').LifePhaseSection[]): string | undefined {
+  const profile = parseVspProfileFromBackpack(sections);
+  // If no zones detected, return undefined (no injection)
+  if (!profile.green.length && !profile.yellow.length && !profile.orange.length && !profile.red.length && !profile.purple.length) {
+    // No structured zones found, but if raw content exists, send it as-is
+    if (profile.raw && profile.raw.trim().length > 0) {
+      return `[USER VSP PROFILE — from backpack recurring themes]\n${profile.raw.trim().slice(0, 2000)}`;
+    }
+    return undefined;
+  }
+
+  const lines: string[] = ['[USER VSP PROFILE — personal relapse prevention plan from backpack]'];
+  if (profile.green.length) lines.push(`GREEN signals: ${profile.green.join('; ')}`);
+  if (profile.yellow.length) lines.push(`YELLOW signals: ${profile.yellow.join('; ')}`);
+  if (profile.orange.length) lines.push(`ORANGE signals: ${profile.orange.join('; ')}`);
+  if (profile.red.length) lines.push(`RED signals: ${profile.red.join('; ')}`);
+  if (profile.purple.length) lines.push(`PURPLE signals: ${profile.purple.join('; ')}`);
+  lines.push('INSTRUCTION: Reference this profile when user discusses zone-related content. Ask what makes them choose their current zone.');
+  return lines.join('\n');
+}
 
 function buildTherapeuticStance(analysis: StateAnalysis): string {
   const parts: string[] = [];

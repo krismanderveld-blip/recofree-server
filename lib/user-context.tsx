@@ -21,6 +21,8 @@ import { checkAndExtract, saveExtractedEntities } from './backpack-extractor/ext
 import { applyAutoConfirmation } from './engine/shared/tendency-confirmation';
 import { callExtractionEndpoint } from './backpack-extractor/client';
 import { callBackpackAnalysis } from './backpack-analysis/client';
+import { checkAndAnalyzeVspProfile } from './backpack-extractor/vsp-backpack-analyzer';
+import { callVspBackpackAnalysis } from './backpack-extractor/vsp-backpack-client';
 
 // ─── State Types ────────────────────────────────────────────────
 
@@ -523,6 +525,15 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     }).catch((err) => {
       console.warn('[UserContext] BackpackAnalysis failed (non-blocking):', err);
     });
+
+    // Fire-and-forget: VSP zone analysis from recurring themes (Elias only)
+    const themesSection = updatedBackpack.sections.find((s: any) =>
+      s.id === 'recurringThemes' || (s.label && s.label.toLowerCase().includes('recurring'))
+    );
+    if (themesSection?.content) {
+      checkAndAnalyzeVspProfile(themesSection.content, callVspBackpackAnalysis)
+        .catch((err) => console.warn('[UserContext] VSP backpack analysis failed:', err));
+    }
   };
 
   // ── Intake ──

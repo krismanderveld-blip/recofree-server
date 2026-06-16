@@ -1094,6 +1094,8 @@ export interface ChatContext {
   stoaKContext?: string;
   /** VSP Insight System — framework selection and prompt frame (MI/MBT/DGT). Never mutates safety core. store:false. */
   vspInsightContext?: string;
+  /** VSP profile parsed from backpack recurringThemes section (Elias only, read-only). Bypasses relevance analyzer 2-source limit. */
+  vspBackpackProfile?: string;
   /** Structured entities extracted from backpack (persons, events, patterns, contexts). Sent instead of full backpack when unchanged. */
   extractedEntities?: import('../backpack-extractor/types').ExtractedEntities;
   /** Whether backpack content changed since last extraction (forces full backpack resend) */

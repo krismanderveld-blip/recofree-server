@@ -1432,3 +1432,14 @@
 - [x] Greeting engine: LAST_SESSION_SUMMARY als 7e gewogen source in buildGreetingSynthesisCandidates
 - [x] USE_LOGS_DAT_CONTEXT flag set to true
 - [ ] Expo Go QR code always visible for iOS on publish
+- [x] Fix 1: Higher weight for recurringThemes in BackpackRelevanceAnalyzer (1.5x)
+- [x] Fix 2: VSP-label parser for backpack recurringThemes (extract per zone)
+- [x] Fix 3: VSP profile block injection in Elias prompt (SESSION_INIT)
+- [x] VSP Backpack Analyzer: server endpoint (POST /api/backpack/vsp-analyze) with LLM zone extraction
+- [x] VSP Backpack Analyzer: client module (vsp-backpack-client.ts) with auth + fire-and-forget call
+- [x] VSP Backpack Analyzer: analyzer module (vsp-backpack-analyzer.ts) with hash-based change detection + AsyncStorage cache
+- [x] VSP Backpack Analyzer: wired in user-context.tsx triggerExtractionIfNeeded (fire-and-forget on backpack change)
+- [x] VSP Backpack Analyzer: pipeline.ts loads cached profile via loadCachedVspProfile with fallback to local parser
+- [x] VSP Backpack Analyzer: openai-provider.ts forwards vspBackpackProfile in SESSION_INIT + LIVE_MESSAGE payloads
+- [x] VSP Backpack Analyzer: server ai-chat.ts injects vspBackpackProfileBlock into Elias system prompt
+- [x] VSP Backpack Analyzer: 12 unit tests (all passing)

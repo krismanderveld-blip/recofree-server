@@ -370,15 +370,104 @@ export function analyzeBackpackRelevance(
   };
 }
 
+// ─── VSP Keywords for Detection ──────────────────────────────
+
+const VSP_KEYWORDS = ['vsp', 'groen', 'green', 'geel', 'yellow', 'oranje', 'orange', 'rood', 'red', 'paars', 'purple', 'zone', 'fase'];
+
+const VSP_ZONE_LABELS: Record<string, RegExp> = {
+  green: /(?:^|\n)\s*(?:GROEN|GREEN|🟢)[:\s-]*/i,
+  yellow: /(?:^|\n)\s*(?:GEEL|YELLOW|🟡)[:\s-]*/i,
+  orange: /(?:^|\n)\s*(?:ORANJE|ORANGE|🟠)[:\s-]*/i,
+  red: /(?:^|\n)\s*(?:ROOD|RED|🔴)[:\s-]*/i,
+  purple: /(?:^|\n)\s*(?:PAARS|PURPLE|🟣)[:\s-]*/i,
+};
+
+/**
+ * VSP Profile extracted from backpack recurringThemes section.
+ * Read-only — never writes to backpack.
+ */
+export interface VspBackpackProfile {
+  green: string[];
+  yellow: string[];
+  orange: string[];
+  red: string[];
+  purple: string[];
+  raw: string | null;
+}
+
+/**
+ * Parse VSP zone labels from the recurringThemes section content.
+ * Extracts sentences per zone (GROEN/GREEN, GEEL/YELLOW, etc.).
+ * Read-only: never modifies backpack.
+ */
+export function parseVspProfileFromBackpack(sections: LifePhaseSection[]): VspBackpackProfile {
+  const themesSection = sections.find((s) => s.id === 'themes');
+  const profile: VspBackpackProfile = { green: [], yellow: [], orange: [], red: [], purple: [], raw: null };
+
+  if (!themesSection?.content || themesSection.content.trim().length === 0) return profile;
+
+  profile.raw = themesSection.content;
+  const content = themesSection.content;
+
+  // Find zone boundaries
+  const zoneOrder: { zone: keyof typeof VSP_ZONE_LABELS; start: number }[] = [];
+  for (const [zone, regex] of Object.entries(VSP_ZONE_LABELS)) {
+    const match = content.match(regex);
+    if (match && match.index !== undefined) {
+      zoneOrder.push({ zone: zone as keyof typeof VSP_ZONE_LABELS, start: match.index + match[0].length });
+    }
+  }
+
+  if (zoneOrder.length === 0) return profile;
+
+  // Sort by position in text
+  zoneOrder.sort((a, b) => a.start - b.start);
+
+  // Extract content between zone labels
+  for (let i = 0; i < zoneOrder.length; i++) {
+    const start = zoneOrder[i].start;
+    const end = i + 1 < zoneOrder.length ? zoneOrder[i + 1].start - (content.slice(0, zoneOrder[i + 1].start).match(/(?:GROEN|GREEN|GEEL|YELLOW|ORANJE|ORANGE|ROOD|RED|PAARS|PURPLE|🟢|🟡|🟠|🔴|🟣)[:\s-]*/i)?.[0]?.length || 0) : content.length;
+    const rawEnd = i + 1 < zoneOrder.length
+      ? content.lastIndexOf('\n', zoneOrder[i + 1].start) > start
+        ? content.lastIndexOf('\n', zoneOrder[i + 1].start)
+        : zoneOrder[i + 1].start
+      : content.length;
+    const zoneContent = content.slice(start, rawEnd).trim();
+    const lines = zoneContent.split(/[\n;,]+/).map((l) => l.trim()).filter((l) => l.length > 3);
+    profile[zoneOrder[i].zone as keyof Omit<VspBackpackProfile, 'raw'>] = lines as string[];
+  }
+
+  return profile;
+}
+
+/**
+ * Check if the user message is asking about VSP content.
+ */
+function isVspRelatedMessage(messageLower: string): boolean {
+  return VSP_KEYWORDS.some((kw) => messageLower.includes(kw));
+}
+
 /**
  * Find the most relevant context line from backpack sections.
  * Looks for sentences that contain trigger-related or message-related keywords.
+ *
+ * Fix 1: recurringThemes section gets 1.5x weight multiplier.
+ * Fix 2: If message is VSP-related, return full recurringThemes content.
  */
 function findRelevantContextLine(
   messageLower: string,
   sections: LifePhaseSection[],
   triggerIds: string[]
 ): string | null {
+  // Fix 2: VSP-related message → return full recurringThemes section
+  if (isVspRelatedMessage(messageLower)) {
+    const themesSection = sections.find((s) => s.id === 'themes');
+    if (themesSection?.content && themesSection.content.trim().length > 0) {
+      // Return full content (capped at 2000 chars to avoid token overflow)
+      return themesSection.content.trim().slice(0, 2000);
+    }
+  }
+
   // Extract meaningful words from the message (3+ chars, not common words)
   const stopWords = new Set(['the', 'and', 'but', 'for', 'are', 'not', 'you', 'all', 'can', 'had', 'her', 'was', 'one', 'our', 'out',
     'this', 'that', 'with', 'from', 'have', 'been', 'will', 'just', 'also', 'still', 'more', 'than']);
@@ -398,8 +487,14 @@ function findRelevantContextLine(
   let bestLine: string | null = null;
   let bestScore = 0;
 
+  // Fix 1: recurringThemes gets 1.5x weight
+  const THEMES_WEIGHT = 1.5;
+
   for (const section of sections) {
     if (!section.content || section.content.trim().length === 0) continue;
+
+    const isThemes = section.id === 'themes';
+    const weightMultiplier = isThemes ? THEMES_WEIGHT : 1.0;
 
     // Split into sentences
     const sentences = section.content.split(/[.!?\n]+/).filter((s) => s.trim().length > 10);
@@ -410,6 +505,7 @@ function findRelevantContextLine(
       for (const term of searchTerms) {
         if (sentLower.includes(term)) score++;
       }
+      score *= weightMultiplier;
       if (score > bestScore) {
         bestScore = score;
         bestLine = sentence.trim();
@@ -418,5 +514,6 @@ function findRelevantContextLine(
   }
 
   // Only return if at least 2 terms matched (avoid noise)
+  // For themes with 1.5x weight, effective threshold is 1.33 raw matches
   return bestScore >= 2 ? bestLine : null;
 }

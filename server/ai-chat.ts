@@ -254,6 +254,8 @@ interface ChatRequestInput {
   stoaKContext?: string;
   /** VSP Insight System — framework selection (MI/MBT/DGT) prompt frame. Never mutates safety core. store:false. */
   vspInsightContext?: string;
+  /** VSP Backpack Profile — parsed from recurringThemes (Elias only, read-only). Bypasses relevance analyzer 2-source limit. */
+  vspBackpackProfile?: string;
 }
 
 // ─── Server-side Session Cache ───────────────────────────────────
@@ -508,6 +510,8 @@ export const chatInputSchema = z.object({
   stoaKContext: z.string().nullable().optional(),
   // VSP Insight System (MI/MBT/DGT framework selection, store:false)
   vspInsightContext: z.string().nullable().optional(),
+  // VSP Backpack Profile (LLM-analyzed zone signals from recurringThemes, Elias only)
+  vspBackpackProfile: z.string().nullable().optional(),
 
   // Signal engine: relevance scores for context gating (LIVE_MESSAGE only)
   relevanceScores: z.object({
@@ -1397,6 +1401,12 @@ These are not suggestions. These are minimum requirements.
     console.log(`[AI Chat] VSP Insight context injected (store:false)`);
   }
 
+  let vspBackpackProfileBlock = '';
+  if (input.vspBackpackProfile && isElias) {
+    vspBackpackProfileBlock = `\n=== VSP BACKPACK PROFILE (personal relapse prevention plan) ===\n${input.vspBackpackProfile}\n=== END VSP BACKPACK PROFILE ===`;
+    console.log(`[AI Chat] VSP Backpack Profile injected (${input.vspBackpackProfile.length} chars)`);
+  }
+
   // Inject only the ACTIVE short module prompt block (M05-M85) for Elias
   // We don't inject all 66 at once (53K tokens) — only the one the pipeline selected
   let shortModuleBlock = '';
@@ -1558,6 +1568,7 @@ ${sw01Block}
 ${sto01Block}
 ${shortModuleBlock}
 ${vspInsightBlock}
+${vspBackpackProfileBlock}
 
 These behavioral instructions are ABSOLUTE. They override your default conversational style.
 The sliders tell you exactly how the user feels — USE them in your response.
@@ -1997,6 +2008,7 @@ ${sw01Block}
 ${sto01Block}
 ${shortModuleBlock}
 ${vspInsightBlock}
+${vspBackpackProfileBlock}
 These behavioral instructions are ABSOLUTE. They override your default conversational style.
 The sliders tell you exactly how the user feels — USE them in your response.
 === END MANDATORY INSTRUCTIONS ===

@@ -6,6 +6,7 @@ import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { registerOAuthRoutes } from "./oauth";
 import { registerSignalEngineRoute } from "../signal-engine";
 import { registerBackpackAnalysisRoute } from "../backpack-analysis";
+import { registerVspBackpackAnalysisRoute } from "../vsp-backpack-analysis";
 import { registerSessionGreetingRoute } from "../session-greeting";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
@@ -60,6 +61,7 @@ async function startServer() {
   registerOAuthRoutes(app);
   registerSignalEngineRoute(app);
   registerBackpackAnalysisRoute(app);
+  registerVspBackpackAnalysisRoute(app);
   registerSessionGreetingRoute(app);
 
   app.get("/api/health", (_req, res) => {
