@@ -12,7 +12,7 @@ import type { Express, Request, Response } from 'express';
 export function registerSessionGreetingRoute(app: Express): void {
   app.post('/api/session-greeting', async (req: Request, res: Response) => {
     try {
-      const { systemPrompt, userName, clinicalModeActive } = req.body;
+      const { systemPrompt, userName, clinicalModeActive, vspInsightContext } = req.body;
 
       if (!systemPrompt || typeof systemPrompt !== 'string') {
         res.status(400).json({ error: 'systemPrompt is required and must be a string' });
@@ -78,8 +78,17 @@ export function registerSessionGreetingRoute(app: Express): void {
             userName,
           );
           if (clinicalAnnotation) {
-            greeting = `${greeting}\n<clinical>${clinicalAnnotation}</clinical>`;
-            console.log(`[SessionGreeting] Clinical annotation appended (${clinicalAnnotation.length} chars)`);
+            // Deterministic VSP-Framework injection
+            const vspLine = vspInsightContext
+              ? `\nVSP-Framework: ${(vspInsightContext as string).match(/Framework: (\w+)/)?.[1] ?? 'MI'}`
+              : '';
+            greeting = `${greeting}\n<clinical>${vspLine}\n${clinicalAnnotation}</clinical>`;
+            console.log(`[SessionGreeting] Clinical annotation appended (${clinicalAnnotation.length} chars) vsp=${vspLine ? 'yes' : 'no'}`);
+          } else if (vspInsightContext) {
+            // No annotation from GPT but VSP is active — inject minimal clinical tag
+            const fw = (vspInsightContext as string).match(/Framework: (\w+)/)?.[1] ?? 'MI';
+            greeting = `${greeting}\n<clinical>\nVSP-Framework: ${fw}\nMethod: Therapeutic greeting\nObservation: Session start\nIntervention: Warm opening + open question</clinical>`;
+            console.log(`[SessionGreeting] Minimal clinical tag with VSP-Framework: ${fw}`);
           }
         } catch (clinicalErr) {
           console.warn('[SessionGreeting] Clinical annotation failed, sending greeting without it:', clinicalErr);

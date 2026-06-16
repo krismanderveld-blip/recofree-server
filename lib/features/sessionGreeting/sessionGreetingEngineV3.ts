@@ -106,6 +106,7 @@ export function sessionGreetingEngineV3(
     userDat,
     stateDat,
     projectionsDat,
+    logsDat: _logsDat,
     diaryMetadata,
     gratitudeMetadata,
     freshness,

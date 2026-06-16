@@ -1426,4 +1426,9 @@
 - [x] VSP Insight System: 22 test cases — all passing
 - [x] VSP Insight UI: Clinical mode ClinicalTag shows VSP-Framework badge (MI/MBT/DGT) when active
 - [x] Profile export knop: VSP Insight PDF export + share-sheet in settings
+- [x] VSP Insight: framework badge actief bij greeting (SESSION_INIT) via session-greeting endpoint
+- [x] VSP Insight: deterministic VSP-Framework injection in clinical annotation (GPT-onafhankelijk)
+- [x] Greeting engine: real logs.dat session summary loaded via lifecycle manager
+- [x] Greeting engine: LAST_SESSION_SUMMARY als 7e gewogen source in buildGreetingSynthesisCandidates
+- [x] USE_LOGS_DAT_CONTEXT flag set to true
 - [ ] Expo Go QR code always visible for iOS on publish

@@ -20,6 +20,7 @@ import type {
   GreetingProjectionsDatSnapshot,
   GreetingDiaryMetadata,
   GreetingGratitudeMetadata,
+  GreetingLogsDatSnapshot,
 } from './sessionGreeting.types';
 import type {
   GreetingSynthesisCandidate,
@@ -36,6 +37,7 @@ export interface BuildSynthesisCandidatesInput {
   userDat: GreetingUserDatSnapshot | null;
   stateDat: GreetingStateDatSnapshot | null;
   projectionsDat: GreetingProjectionsDatSnapshot | null;
+  logsDat: GreetingLogsDatSnapshot | null;
   diaryMetadata: GreetingDiaryMetadata | null;
   gratitudeMetadata: GreetingGratitudeMetadata | null;
   freshness: GreetingFreshnessResult;
@@ -49,7 +51,7 @@ export interface BuildSynthesisCandidatesResult {
 export function buildGreetingSynthesisCandidates(
   input: BuildSynthesisCandidatesInput,
 ): BuildSynthesisCandidatesResult {
-  const { userDat, stateDat, projectionsDat, diaryMetadata, gratitudeMetadata, freshness } = input;
+  const { userDat, stateDat, projectionsDat, logsDat, diaryMetadata, gratitudeMetadata, freshness } = input;
   const candidates: GreetingSynthesisCandidate[] = [];
 
   // ─── 1. TODAY_MOOD ──────────────────────────────────────────────────────────
@@ -183,6 +185,33 @@ export function buildGreetingSynthesisCandidates(
       eligible: false,
       relevanceScore: 0,
       reason: schemaResult.reason,
+      safeAnchor: '',
+    });
+  }
+
+  // ─── 7. LAST_SESSION_SUMMARY (from logs.dat) ─────────────────────────────────
+  if (logsDat && (logsDat.lastSessionOpenLoops.length > 0 || logsDat.latestLogDigest)) {
+    // High weight: continuity from last session is very relevant for greeting
+    const hasOpenLoops = logsDat.lastSessionOpenLoops.length > 0;
+    const relevance = hasOpenLoops ? 0.88 : 0.75;
+    const safeAnchor = hasOpenLoops
+      ? `Vorige sessie: ${logsDat.lastSessionOpenLoops.slice(0, 2).join(', ')}`
+      : logsDat.latestLogDigest?.slice(0, 100) ?? '';
+    candidates.push({
+      sourceType: 'LAST_SESSION_SUMMARY',
+      eligible: true,
+      relevanceScore: relevance,
+      reason: hasOpenLoops
+        ? `${logsDat.lastSessionOpenLoops.length} open loops from last session`
+        : 'Last session digest available',
+      safeAnchor,
+    });
+  } else {
+    candidates.push({
+      sourceType: 'LAST_SESSION_SUMMARY',
+      eligible: false,
+      relevanceScore: 0,
+      reason: 'No last session data available',
       safeAnchor: '',
     });
   }

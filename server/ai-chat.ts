@@ -2419,6 +2419,11 @@ export async function generateAIResponse(
     if (hasValidInlineAnnotation && selectedModel === 'gpt-4o') {
       // gpt-4o already produced a good annotation — keep it, no extra call
       console.log('[ClinicalAnnotation] gpt-4o produced valid annotation inline — keeping');
+      // Deterministic VSP-Framework injection for inline annotations
+      if (input.vspInsightContext && !finalResponse.includes('VSP-Framework:')) {
+        const fw = input.vspInsightContext.match(/Framework: (\w+)/)?.[1] ?? 'MI';
+        finalResponse = finalResponse.replace('<clinical>\n', `<clinical>\nVSP-Framework: ${fw}\n`);
+      }
     } else {
       // Strip any existing (bad/incomplete/mini-generated) annotation
       if (existingClinical) {
@@ -2525,6 +2530,12 @@ Signals: [comma-separated list of active signals with score and memory layer, or
     // Validate the result contains a proper <clinical> block
     if (/<clinical>[\s\S]*?<\/clinical>/.test(result)) {
       console.log('[ClinicalAnnotation] gpt-4o annotation generated successfully');
+      // Deterministic VSP-Framework injection: ensure it's always present when VSP Insight is active
+      if (input.vspInsightContext && !result.includes('VSP-Framework:')) {
+        const fw = input.vspInsightContext.match(/Framework: (\w+)/)?.[1] ?? 'MI';
+        const injected = result.replace('<clinical>\n', `<clinical>\nVSP-Framework: ${fw}\n`);
+        return injected;
+      }
       return result;
     }
 

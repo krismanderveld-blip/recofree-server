@@ -54,7 +54,7 @@ function makeProjections(overrides: Partial<GreetingProjectionsDatSnapshot> = {}
 
 describe('Synthesis Candidate Building', () => {
   it('T7: All sources eligible when data is fresh', () => {
-    const { candidates } = buildGreetingSynthesisCandidates({
+    const { candidates } = buildGreetingSynthesisCandidates({ logsDat: null,
       userDat: makeUserDat(),
       stateDat: makeStateDat({ currentMood: { craving: 3, frustration: 6, despondency: 2, focus: 6 } }),
       projectionsDat: makeProjections(),
@@ -78,7 +78,7 @@ describe('Synthesis Candidate Building', () => {
   });
 
   it('T8: Mood not eligible when sliders not filled today', () => {
-    const { candidates } = buildGreetingSynthesisCandidates({
+    const { candidates } = buildGreetingSynthesisCandidates({ logsDat: null,
       userDat: makeUserDat(),
       stateDat: makeStateDat({ moodLastUpdatedAt: undefined, currentMood: undefined }),
       projectionsDat: makeProjections(),
@@ -92,7 +92,7 @@ describe('Synthesis Candidate Building', () => {
   });
 
   it('T9: Schema rotation eligible every 4th session', () => {
-    const { candidates } = buildGreetingSynthesisCandidates({
+    const { candidates } = buildGreetingSynthesisCandidates({ logsDat: null,
       userDat: makeUserDat({ sessionStats: { totalSessionsStarted: 11, currentSessionNumber: 12 } }),
       stateDat: makeStateDat(),
       projectionsDat: makeProjections(),
@@ -109,7 +109,7 @@ describe('Synthesis Candidate Building', () => {
 
 describe('Synthesis Source Selection', () => {
   it('T10: Selects max 3 sources from eligible candidates', () => {
-    const { candidates, moodMetric } = buildGreetingSynthesisCandidates({
+    const { candidates, moodMetric } = buildGreetingSynthesisCandidates({ logsDat: null,
       userDat: makeUserDat(),
       stateDat: makeStateDat({ currentMood: { craving: 3, frustration: 6, despondency: 2, focus: 6 } }),
       projectionsDat: makeProjections({ fears: [{ label: 'Terugval', decayScore: 0.75, lastReinforcedAt: YESTERDAY }] }),
@@ -124,7 +124,7 @@ describe('Synthesis Source Selection', () => {
   });
 
   it('T11: Sources sorted by relevance score (highest first)', () => {
-    const { candidates, moodMetric } = buildGreetingSynthesisCandidates({
+    const { candidates, moodMetric } = buildGreetingSynthesisCandidates({ logsDat: null,
       userDat: makeUserDat(),
       stateDat: makeStateDat({ currentMood: { craving: 5, frustration: 6, despondency: 3, focus: 4 } }),
       projectionsDat: makeProjections(),
@@ -140,7 +140,7 @@ describe('Synthesis Source Selection', () => {
   });
 
   it('T12: No more than 1 positive source when negative source present', () => {
-    const { candidates, moodMetric } = buildGreetingSynthesisCandidates({
+    const { candidates, moodMetric } = buildGreetingSynthesisCandidates({ logsDat: null,
       userDat: makeUserDat(),
       stateDat: makeStateDat({ currentMood: { craving: 6, frustration: 7, despondency: 6, focus: 2 } }),
       projectionsDat: makeProjections({ fears: [{ label: 'Terugval angst', decayScore: 0.80, lastReinforcedAt: YESTERDAY }] }),

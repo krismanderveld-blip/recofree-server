@@ -32,6 +32,17 @@ export interface SessionInitGreetingInput {
   apiBaseUrl: string;
   timezone?: string;
   clinicalModeActive?: boolean;
+  /** Real logs.dat session summaries (loaded from lifecycle manager) */
+  lastSessionSummary?: {
+    compressedNarrative: string;
+    discussedTopics: string[];
+    unresolvedTensions: string[];
+    suggestedFollowUp: string[];
+    emotionalArc?: string;
+    turnCount?: number;
+  } | null;
+  /** VSP Insight context string (for clinical annotation injection) */
+  vspInsightContext?: string | null;
 }
 
 export interface SessionInitGreetingOutput {
@@ -46,7 +57,7 @@ export interface SessionInitGreetingOutput {
 export async function sessionInitGreetingStep(
   input: SessionInitGreetingInput,
 ): Promise<SessionInitGreetingOutput> {
-  const { backpack, userDat, diaryEntries, apiBaseUrl, timezone = 'Europe/Amsterdam', clinicalModeActive = false } = input;
+  const { backpack, userDat, diaryEntries, apiBaseUrl, timezone = 'Europe/Amsterdam', clinicalModeActive = false, vspInsightContext = null } = input;
 
   const nowIso = new Date().toISOString();
   const localCalendarDate = getLocalCalendarDate(nowIso, timezone);
@@ -55,7 +66,7 @@ export async function sessionInitGreetingStep(
   const greetingUserDat = adaptUserDat(backpack, userDat);
   const greetingStateDat = adaptStateDat(userDat);
   const greetingProjectionsDat = adaptProjectionsDat();
-  const greetingLogsDat = adaptLogsDat();
+  const greetingLogsDat = adaptLogsDat(input.lastSessionSummary);
   const diaryMetadata = adaptDiaryMetadata(diaryEntries);
   const gratitudeMetadata = adaptGratitudeMetadata(diaryEntries);
 
@@ -90,7 +101,7 @@ export async function sessionInitGreetingStep(
   // Call GPT via server endpoint
   let rawGreeting: string;
   try {
-    rawGreeting = await callSessionGreetingEndpoint(apiBaseUrl, systemPrompt, userName, clinicalModeActive);
+    rawGreeting = await callSessionGreetingEndpoint(apiBaseUrl, systemPrompt, userName, clinicalModeActive, vspInsightContext);
   } catch (error) {
     console.warn('[SessionGreetingV3] GPT call failed, using fallback:', error);
     rawGreeting = `${userName}, fijn dat je er bent. Waar wil je het vandaag over hebben?`;
@@ -119,13 +130,14 @@ async function callSessionGreetingEndpoint(
   systemPrompt: string,
   userName: string,
   clinicalModeActive: boolean = false,
+  vspInsightContext: string | null = null,
 ): Promise<string> {
   const url = `${apiBaseUrl}/api/session-greeting`;
   const response = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
-    body: JSON.stringify({ systemPrompt, userName, clinicalModeActive }),
+    body: JSON.stringify({ systemPrompt, userName, clinicalModeActive, vspInsightContext }),
   });
 
   if (!response.ok) {
@@ -226,8 +238,21 @@ function adaptProjectionsDat(): GreetingProjectionsDatSnapshot {
   return { fears: [] };
 }
 
-function adaptLogsDat(): GreetingLogsDatSnapshot {
-  return { lastSessionOpenLoops: [] };
+function adaptLogsDat(lastSessionSummary?: SessionInitGreetingInput['lastSessionSummary']): GreetingLogsDatSnapshot {
+  if (!lastSessionSummary) {
+    return { lastSessionOpenLoops: [] };
+  }
+  // Build a digest from the last session for the greeting engine
+  const digest = [
+    lastSessionSummary.compressedNarrative?.slice(0, 120),
+    lastSessionSummary.discussedTopics?.length > 0 ? `Thema's: ${lastSessionSummary.discussedTopics.join(', ')}` : null,
+    lastSessionSummary.emotionalArc ? `Verloop: ${lastSessionSummary.emotionalArc}` : null,
+  ].filter(Boolean).join(' | ');
+
+  return {
+    latestLogDigest: digest || undefined,
+    lastSessionOpenLoops: lastSessionSummary.unresolvedTensions ?? [],
+  };
 }
 
 function adaptDiaryMetadata(diaryEntries: DiaryEntry[]): GreetingDiaryMetadata | null {

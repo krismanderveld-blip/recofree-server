@@ -41,7 +41,7 @@ import { logDebugEvent } from '@/lib/debug/session-logger';
 import { initGptSignalEngine } from '@/lib/engine/local-llm/engine-provider';
 import { getApiBaseUrl } from '@/constants/oauth';
 import { getSessionLifecycleManager, buildDetectionBundle, runMemoryWriteBack, type PipelineResultForMemory } from '@/lib/pipeline/memory/memoryIntegration';
-import { sessionInitGreetingStep } from '@/lib/features/sessionGreeting/sessionInitGreetingStep';
+import { sessionInitGreetingStep, type SessionInitGreetingInput } from '@/lib/features/sessionGreeting/sessionInitGreetingStep';
 import type { MemoryStoresSnapshot } from '@/lib/pipeline/memory/memoryCommitService';
 import { createEmptyUserDat } from '@/lib/types/memory/userDat.types';
 import { createEmptyStateDat } from '@/lib/types/memory/stateDat.types';
@@ -617,6 +617,61 @@ function ChatScreenInner() {
       try {
         const apiUrl = getApiBaseUrl();
         if (apiUrl) {
+          // Load last session summary from logs.dat via lifecycle manager
+          let lastSessionSummary: SessionInitGreetingInput['lastSessionSummary'] = null;
+          try {
+            const lifecycleMgr = getSessionLifecycleManager();
+            const stores = lifecycleMgr.getStores();
+            const persona = (state.userType === 'elias' ? 'elias' : 'kim') as any;
+            const logsDat = await stores.logsDatStore.load(persona);
+            if (logsDat && logsDat.sessions.length > 0) {
+              // Runtime shape from sessionEndSummarizer has fields not in TS type
+              const lastSession = logsDat.sessions[logsDat.sessions.length - 1] as any;
+              lastSessionSummary = {
+                compressedNarrative: lastSession.compressedNarrative ?? '',
+                discussedTopics: lastSession.discussedTopics ?? lastSession.dominantThemes ?? [],
+                unresolvedTensions: lastSession.unresolvedTensions ?? [],
+                suggestedFollowUp: lastSession.suggestedFollowUp ?? [],
+                emotionalArc: lastSession.emotionalArc ?? undefined,
+                turnCount: lastSession.turnCount ?? undefined,
+              };
+            }
+          } catch (logsErr) {
+            console.warn('[Chat] Could not load logs.dat for greeting context:', logsErr);
+          }
+
+          // Generate VSP Insight context for clinical annotation
+          let vspInsightCtx: string | null = null;
+          try {
+            const vspLevel = (userDat?.currentMood as any)?.vsp as string | undefined;
+            if (vspLevel) {
+              const { runVspInsightLayer } = await import('@/src/features/vspInsight/vspInsightPipelineLayer');
+              const vspResult = runVspInsightLayer({
+                persona: (state.userType === 'elias' ? 'elias' : 'kim') as any,
+                userMessage: '',
+                recentMessages: [],
+                moodSliders: {},
+                selfReportedZone: vspLevel as any,
+                sessionTurnCount: 0,
+                safetyCore: {
+                  finalZone: vspLevel as any,
+                  userReportedZone: vspLevel as any,
+                  safetyOverrideActive: false,
+                  crisisDetected: false,
+                  relapseIntentDetected: false,
+                  modelRoutingDecision: 'gpt-4o',
+                  activeSafetyModuleId: null,
+                },
+                profile: null,
+              });
+              if (vspResult.active) {
+                vspInsightCtx = vspResult.contextString;
+              }
+            }
+          } catch (vspErr) {
+            console.warn('[Chat] VSP Insight for greeting failed:', vspErr);
+          }
+
           const greetingResult = await sessionInitGreetingStep({
             backpack,
             userDat,
@@ -624,6 +679,8 @@ function ChatScreenInner() {
             apiBaseUrl: apiUrl,
             timezone: 'Europe/Amsterdam',
             clinicalModeActive: userDat?.clinicalModeActive ?? false,
+            lastSessionSummary,
+            vspInsightContext: vspInsightCtx,
           });
           greetingText = greetingResult.greeting;
           console.log(greetingResult.debugLog);

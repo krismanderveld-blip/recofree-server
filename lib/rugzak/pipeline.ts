@@ -2881,6 +2881,31 @@ export async function generateGreeting(
     ? (currentMood as import('../ai/types').EliasMoodSliders).vsp
     : null;
 
+  // ── VSP Insight Layer for greeting ──
+  const greetingVspResult = runVspInsightLayer({
+    persona: backpack.userType as 'elias' | 'kim',
+    userMessage: '',
+    recentMessages: [],
+    moodSliders: {
+      craving: (currentMood as any)?.craving ?? 0,
+      frustration: (currentMood as any)?.frustration ?? 0,
+      despondency: (currentMood as any)?.despondency ?? 0,
+      focus: (currentMood as any)?.focus ?? 5,
+    },
+    selfReportedZone: (vspLevel ?? 'GROEN') as any,
+    sessionTurnCount: 0,
+    safetyCore: {
+      finalZone: (vspLevel ?? 'GROEN') as any,
+      userReportedZone: (vspLevel ?? 'GROEN') as any,
+      safetyOverrideActive: analysis.riskLevel === 'critical',
+      crisisDetected: false,
+      relapseIntentDetected: false,
+      modelRoutingDecision: 'gpt-4o-mini',
+      activeSafetyModuleId: null,
+    },
+    profile: null,
+  });
+
   const context: ChatContext = {
     userType: backpack.userType,
     userName: backpack.naam,
@@ -2907,6 +2932,7 @@ export async function generateGreeting(
     extractedEntities: currentUserDat.extractedEntities ?? undefined,
     backpackChanged: backpackUpdatedRecently || !currentUserDat.extractedEntities || (currentUserDat.extractedEntities.persons.length === 0),
     vspLevel,
+    vspInsightContext: greetingVspResult.active ? greetingVspResult.contextString || undefined : undefined,
   };
 
   let response: string;
