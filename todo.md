@@ -1425,4 +1425,5 @@
 - [x] VSP Insight System: Inject vspInsightContext into buildSystemPrompt (Elias + Kim)
 - [x] VSP Insight System: 22 test cases — all passing
 - [x] VSP Insight UI: Clinical mode ClinicalTag shows VSP-Framework badge (MI/MBT/DGT) when active
+- [x] Profile export knop: VSP Insight PDF export + share-sheet in settings
 - [ ] Expo Go QR code always visible for iOS on publish

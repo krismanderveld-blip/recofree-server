@@ -14,6 +14,7 @@ import { IconSymbol } from '@/components/ui/icon-symbol';
 import { colors as dc, spacing, radius, typography, shadows, cardStyles } from '@/constants/design';
 import { DataPrivacySection } from '@/lib/features/exportImport/ui/DataPrivacySection';
 import { useExportImportStores } from '@/lib/features/exportImport/hooks/useExportImportStores';
+import { loadVspInsightProfile, buildPdfPlainText } from '@/src/features/vspInsight';
 
 const STAGE_LABELS: Record<string, string> = {
   precontemplation: 'Precontemplation',
@@ -34,6 +35,39 @@ export default function ProfileScreen() {
   const currentDepth = getGuidanceDepth();
 
   const exportImportStores = useExportImportStores();
+  const [vspExporting, setVspExporting] = useState(false);
+
+  const handleVspExport = useCallback(async () => {
+    setVspExporting(true);
+    try {
+      const persona = (state.userType === 'elias' ? 'elias' : 'kim') as 'elias' | 'kim';
+      const profile = await loadVspInsightProfile('local_user', persona);
+      if (!profile) {
+        Alert.alert('No data yet', 'Start a few conversations first so the VSP Insight system can build your profile.');
+        setVspExporting(false);
+        return;
+      }
+      const plainText = buildPdfPlainText({
+        persona,
+        profile,
+        includeRawUserSelectedExamples: false,
+        selectedExampleIds: [],
+        exportedAt: new Date().toISOString(),
+      });
+      // Write to temp file and share
+      const FileSystem = await import('expo-file-system/legacy');
+      const Sharing = await import('expo-sharing');
+      const fileUri = FileSystem.documentDirectory + 'vsp-insight-overzicht.txt';
+      await FileSystem.writeAsStringAsync(fileUri, plainText, { encoding: FileSystem.EncodingType.UTF8 });
+      await Sharing.shareAsync(fileUri, { mimeType: 'text/plain', dialogTitle: 'VSP Insight Overzicht' });
+      if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } catch (e) {
+      console.error('[Profile] VSP export failed:', e);
+      Alert.alert('Export failed', 'Could not generate the VSP Insight overview.');
+    } finally {
+      setVspExporting(false);
+    }
+  }, [state.userType]);
   const isElias = state.userType === 'elias';
   const companionName = isElias ? 'Elias' : 'Kim';
   const userTypeLabel = isElias ? 'Personal recovery' : 'Supporting a loved one';
@@ -325,6 +359,40 @@ export default function ProfileScreen() {
               </View>
             </Pressable>
           ) : null}
+        </View>
+
+        {/* VSP Insight Export */}
+        <View style={{ marginBottom: spacing.xl }}>
+          <Text style={{ ...typography.micro, color: dc.textTertiary, marginBottom: spacing.xs, fontWeight: '700', letterSpacing: 0.5 }}>
+            VSP INSIGHT
+          </Text>
+          <Text style={{ ...typography.bodySmall, color: dc.textSecondary, marginBottom: spacing.md, lineHeight: 18 }}>
+            Export your personal insight profile to share with your therapist.
+          </Text>
+          <Pressable
+            onPress={handleVspExport}
+            disabled={vspExporting}
+            style={({ pressed }) => [{ opacity: pressed ? 0.85 : 1, transform: [{ scale: pressed ? 0.97 : 1 }] }]}
+          >
+            <View style={{
+              ...cardStyles.default,
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 12,
+              opacity: vspExporting ? 0.6 : 1,
+            }}>
+              <View style={{ width: 32, height: 32, borderRadius: 8, backgroundColor: dc.primarySoft, alignItems: 'center', justifyContent: 'center' }}>
+                <Text style={{ fontSize: 16 }}>{vspExporting ? '\u23F3' : '\uD83D\uDCC4'}</Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ ...typography.bodyMedium, fontWeight: '600', color: dc.primary }}>
+                  {vspExporting ? 'Generating...' : 'Export VSP Insight Profile'}
+                </Text>
+                <Text style={{ ...typography.caption, color: dc.textSecondary, marginTop: 2 }}>Share your patterns and early signs with your therapist.</Text>
+              </View>
+              <IconSymbol name="chevron.right" size={16} color={dc.textTertiary} />
+            </View>
+          </Pressable>
         </View>
 
         {/* Data & Privacy — Export / Import */}
