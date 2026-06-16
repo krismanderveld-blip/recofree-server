@@ -142,7 +142,7 @@ export function detectGevaarK01(input: KimCluster2RuntimeInput): KimCluster2Dete
   }
   if (dangerCategories.includes('SELF_HARM_THREAT_BY_LOVED_ONE')) {
     if (immediateDanger) numbers.push('112');
-    numbers.push('0800 32 123');
+    numbers.push('1813');
   }
 
   // Determine response mode
@@ -154,7 +154,7 @@ export function detectGevaarK01(input: KimCluster2RuntimeInput): KimCluster2Dete
   } else if (dangerCategories.includes('DRUNK_DRIVING')) {
     responseMode = 'DO_NOT_INTERVENE_PHYSICALLY';
   } else if (dangerCategories.includes('SELF_HARM_THREAT_BY_LOVED_ONE')) {
-    responseMode = immediateDanger ? 'CALL_112_NOW' : 'CONTACT_0800_32_123';
+    responseMode = immediateDanger ? 'CALL_112_NOW' : 'CONTACT_1813';
   }
 
   // Confidence
@@ -240,7 +240,7 @@ export function detectKindK01(input: KimCluster2RuntimeInput): KimCluster2Detect
   }
   if (input.selfHarmThreatByLovedOneDetected) {
     if (input.immediateDanger) numbers.push('112');
-    numbers.push('0800 32 123');
+    numbers.push('1813');
   }
 
   // Response mode

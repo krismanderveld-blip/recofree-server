@@ -173,8 +173,8 @@ export function assessCrisis(
 export const EMERGENCY_RESOURCES = [
   {
     name: 'Zelfmoordlijn',
-    number: '0800 32 123',
-    description: 'Bel 0800 32 123, 24/7 gratis anoniem',
+    number: '1813',
+    description: 'Bel 1813, 24/7 gratis anoniem',
   },
   {
     name: 'Centrum Geestelijke Gezondheidszorg',

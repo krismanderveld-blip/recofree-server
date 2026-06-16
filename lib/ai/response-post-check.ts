@@ -48,7 +48,7 @@ const MEDICAL_CLAIM_PATTERNS = [
 const UNAUTHORIZED_ESCALATION_PATTERNS = [
   /\b(call 911|call the police|go to the ER|check yourself in)\b/i,
   /\b(bel de politie|ga naar de spoed|laat je opnemen)\b/i,
-  // Note: 112, 0800 32 123 are ALLOWED when crisis is locally authorized
+  // Note: 112, 1813 are ALLOWED when crisis is locally authorized
 ];
 
 /** Patterns that indicate risk minimization */

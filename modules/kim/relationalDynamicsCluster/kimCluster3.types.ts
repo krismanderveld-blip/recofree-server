@@ -50,13 +50,13 @@ export type KimCluster3Theme =
   | 'self_compassion_needed';
 
 export type FixedBelgianCrisisNumber =
-  | '0800 32 123'
+  | '1813'
   | '1712'
   | '112'
   | '101';
 
 export const ALLOWED_CRISIS_NUMBERS: FixedBelgianCrisisNumber[] = [
-  '0800 32 123',
+  '1813',
   '1712',
   '112',
   '101',

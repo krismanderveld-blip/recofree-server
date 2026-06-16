@@ -3,7 +3,7 @@
  * Modules: HERV-K01, NAHERV-K01, CRISIS-K01
  * 
  * CORRECTED CRISIS NUMBERS — aligned with app-wide crisis footer:
- * - 0800 32 123 (Zelfmoordlijn, 24/7 gratis anoniem) — NOT 1813
+ * - 1813 (Zelfmoordlijn, 24/7 gratis anoniem) — NOT 1813
  * - 1712 (huiselijk geweld, misbruik, kindermishandeling)
  * - 112 (noodgevallen / levensbedreigend / ambulance)
  * - 101 (dringende politiehulp)
@@ -55,7 +55,7 @@ export type KimSafetyRiskLevel =
 
 /**
  * Crisis escalation routes — CORRECTED per app-wide crisis footer.
- * NO CALL_1813. Suicide support = CALL_0800_32_123.
+ * NO CALL_1813. Suicide support = CALL_1813.
  * Added CALL_101 for urgent police help.
  */
 export type KimCrisisEscalationRoute =
@@ -64,7 +64,7 @@ export type KimCrisisEscalationRoute =
   | 'CRISIS_K01'
   | 'CALL_112'
   | 'CALL_101'
-  | 'CALL_0800_32_123'
+  | 'CALL_1813'
   | 'CONTACT_1712'
   | 'CONTACT_LOCAL_DOCTOR_OR_ON_CALL_DOCTOR'
   | 'CONTACT_PROFESSIONAL_SUPPORT';
@@ -160,20 +160,20 @@ export interface KimRelapseClusterPromptPayload {
 
 /**
  * Belgian crisis numbers — CORRECTED.
- * Uses 0800 32 123 as the single suicide prevention number (matches app footer).
+ * Uses 1813 as the single suicide prevention number (matches app footer).
  * NO 1813.
  */
 export interface BelgianCrisisNumbers {
   emergency112: '112';
   urgentPolice101: '101';
-  suicideLine080032123: '0800 32 123';
+  suicideLine1813: '1813';
   violenceAbuse1712: '1712';
 }
 
 export const BELGIAN_CRISIS_NUMBERS: BelgianCrisisNumbers = {
   emergency112: '112',
   urgentPolice101: '101',
-  suicideLine080032123: '0800 32 123',
+  suicideLine1813: '1813',
   violenceAbuse1712: '1712',
 };
 

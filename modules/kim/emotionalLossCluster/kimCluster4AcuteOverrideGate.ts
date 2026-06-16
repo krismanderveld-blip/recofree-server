@@ -3,7 +3,7 @@
  *
  * Ensures reflective modules (HOOP, SCHAAM, ROUW, ISOL) always lose to acute clusters.
  * Special case: HOOP-K01 suicidality-split — if Kim expresses suicidal ideation,
- * escalate to CRISIS-K01 with 0800 32 123 (+ 112 if immediate danger).
+ * escalate to CRISIS-K01 with 1813 (+ 112 if immediate danger).
  */
 
 import type {
@@ -45,7 +45,7 @@ export function applyKimCluster4AcuteOverride(
   // ─── Suicidality-split (applies to ALL Cluster 4 modules) ─────────────────
   // If Kim herself expresses suicidal ideation / self-harm, escalate to CRISIS-K01
   if (input.selfHarmOrSuicideDetectedInKim) {
-    const crisisNumbers: FixedBelgianCrisisNumber[] = ['0800 32 123'];
+    const crisisNumbers: FixedBelgianCrisisNumber[] = ['1813'];
     if (input.immediateDanger) {
       crisisNumbers.push('112');
     }

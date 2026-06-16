@@ -46,7 +46,7 @@ export type KimCluster2ResponseMode =
   | 'CALL_112_NOW'
   | 'CALL_101_POLICE'
   | 'CONTACT_1712'
-  | 'CONTACT_0800_32_123'
+  | 'CONTACT_1813'
   | 'PROTECT_CHILDREN_FIRST'
   | 'AGE_APPROPRIATE_CHILD_SUPPORT'
   | 'CHILD_MALTREATMENT_ROUTE'
@@ -56,7 +56,7 @@ export type KimCluster2ResponseMode =
   | 'K06_STABILIZATION'
   | 'CRISIS_K01_BRIDGE';
 
-export type FixedBelgianCrisisNumber = '0800 32 123' | '1712' | '112' | '101';
+export type FixedBelgianCrisisNumber = '1813' | '1712' | '112' | '101';
 
 export interface KimCluster2RuntimeInput {
   persona: 'kim' | 'elias' | 'unknown';

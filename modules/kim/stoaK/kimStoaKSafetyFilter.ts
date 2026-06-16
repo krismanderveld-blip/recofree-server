@@ -6,12 +6,12 @@
  * - Boundary undermining
  * - Control advice about the loved one
  * - Diagnosis / legal advice
- * - Unauthorized crisis numbers (only 0800 32 123, 1712, 112, 101 allowed)
+ * - Unauthorized crisis numbers (only 1813, 1712, 112, 101 allowed)
  *
  * Returns safe fallback text when violations detected.
  */
 
-const ALLOWED_NUMBERS: string[] = ['0800 32 123', '1712', '112', '101'];
+const ALLOWED_NUMBERS: string[] = ['1813', '1712', '112', '101'];
 
 // ─── Forbidden Patterns ──────────────────────────────────────────────────────
 

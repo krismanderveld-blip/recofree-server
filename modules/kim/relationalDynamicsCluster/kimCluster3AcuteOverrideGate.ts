@@ -89,7 +89,7 @@ export function applyKimCluster3AcuteOverride(
       activationStatus: 'DEFER_TO_CRISIS_K01',
       routeNext: 'CRISIS-K01',
       responseMode: 'CRISIS_BRIDGE',
-      crisisNumbersToShow: ['0800 32 123'],
+      crisisNumbersToShow: ['1813'],
       reason: 'Suicide/self-harm signal overrides reflective relationship module.',
     };
   }

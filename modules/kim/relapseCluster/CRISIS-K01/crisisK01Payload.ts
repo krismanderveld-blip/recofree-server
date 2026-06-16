@@ -43,7 +43,7 @@ export function buildCrisisK01Payload(
     'Als de Kim-gebruiker NIET veilig is: "Verlaat de situatie als dat kan. Bel 112."',
     'Als kinderen niet veilig zijn: "De veiligheid van de kinderen gaat voor. Bel 112."',
     hasSuicideRisk
-      ? `Suïciderisico naaste: "Bel 0800 32 123 (Zelfmoordlijn, 24/7, gratis, anoniem). Zij kunnen jou helpen om te bepalen wat je nu kunt doen."`
+      ? `Suïciderisico naaste: "Bel 1813 (Zelfmoordlijn, 24/7, gratis, anoniem). Zij kunnen jou helpen om te bepalen wat je nu kunt doen."`
       : '',
     hasViolence
       ? `Geweld: "Als je in gevaar bent, verlaat de situatie en bel 112. Voor steun bij huiselijk geweld: 1712."`
@@ -104,7 +104,7 @@ ${forbiddenOutput.map((f, i) => `- ${f}`).join('\n')}
 BELGISCHE CRISISNUMMERS (CORRECT):
 - 112: Noodgevallen / levensbedreigend / ambulance
 - 101: Dringende politiehulp
-- 0800 32 123: Zelfmoordlijn (24/7, gratis, anoniem)
+- 1813: Zelfmoordlijn (24/7, gratis, anoniem)
 - 1712: Huiselijk geweld, misbruik, kindermishandeling
 
 store:false`;
@@ -129,8 +129,8 @@ function buildCrisisNumberInstruction(route: KimCrisisEscalationRoute): string {
       return 'CRISISNUMMER: Verwijs naar 112 (noodgevallen). "Bel 112 nu."';
     case 'CALL_101':
       return 'CRISISNUMMER: Verwijs naar 101 (dringende politiehulp). "Bel 101."';
-    case 'CALL_0800_32_123':
-      return 'CRISISNUMMER: Verwijs naar 0800 32 123 (Zelfmoordlijn, 24/7, gratis, anoniem).';
+    case 'CALL_1813':
+      return 'CRISISNUMMER: Verwijs naar 1813 (Zelfmoordlijn, 24/7, gratis, anoniem).';
     case 'CONTACT_1712':
       return 'CRISISNUMMER: Verwijs naar 1712 (huiselijk geweld, gratis, anoniem).';
     case 'CONTACT_LOCAL_DOCTOR_OR_ON_CALL_DOCTOR':
@@ -150,7 +150,7 @@ function getNumberForRoute(route: KimCrisisEscalationRoute): string {
   switch (route) {
     case 'CALL_112': return '112';
     case 'CALL_101': return '101';
-    case 'CALL_0800_32_123': return '0800 32 123';
+    case 'CALL_1813': return '1813';
     case 'CONTACT_1712': return '1712';
     default: return '';
   }

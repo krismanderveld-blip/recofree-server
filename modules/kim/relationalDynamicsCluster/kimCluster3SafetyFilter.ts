@@ -10,7 +10,7 @@ import type {
   ALLOWED_CRISIS_NUMBERS,
 } from './kimCluster3.types';
 
-const ALLOWED_NUMBERS: string[] = ['0800 32 123', '1712', '112', '101'];
+const ALLOWED_NUMBERS: string[] = ['1813', '1712', '112', '101'];
 
 const FORBIDDEN_PATTERNS: RegExp[] = [
   /controleer (?:zijn|haar) telefoon/i,

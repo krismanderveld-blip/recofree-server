@@ -1417,9 +1417,9 @@ function ChatScreenInner() {
           RecoFree is geen vervanging voor professionele hulp.{' '}
           <Text
             style={{ color: '#E53935', fontWeight: 'bold', textDecorationLine: 'underline' }}
-            onPress={() => Linking.openURL('tel:080032123')}
+            onPress={() => Linking.openURL('tel:1813')}
           >
-            Zelfmoordlijn: 0800 32 123
+            Zelfmoordlijn: 1813
           </Text>
           {' '}(24/7, gratis, anoniem) |{' '}
           <Text
@@ -1457,7 +1457,7 @@ function ChatScreenInner() {
                 {'\n'}
                 {'\u2022'} Sometimes professional help is the better choice — and that is okay.
                 {'\n'}
-                {'\u2022'} In case of crisis, always contact a professional or call 0800 32 123.
+                {'\u2022'} In case of crisis, always contact a professional or call 1813.
                 {'\n'}
                 {'\u2022'} Your conversations are private and stay on your device.
               </Text>

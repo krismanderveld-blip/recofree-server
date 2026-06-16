@@ -1,7 +1,7 @@
 /**
  * Kim Relapse Cluster — 20 Acceptance Tests
  * Tests: HERV-K01, NAHERV-K01, CRISIS-K01
- * Corrected Belgian crisis numbers (0800 32 123, NOT 1813).
+ * Corrected Belgian crisis numbers (1813, NOT 1813).
  */
 import { describe, it, expect } from 'vitest';
 import {
@@ -120,17 +120,17 @@ describe('Kim Relapse Cluster — Acceptance Tests', () => {
   });
 
   // ============================================================
-  // TEST 8: Suicide risk → routes to 0800 32 123 (NOT 1813)
+  // TEST 8: Suicide risk → routes to 1813 (NOT 1813)
   // ============================================================
-  it('TEST 8: Suicide risk routes to 0800 32 123 (corrected, not 1813)', () => {
+  it('TEST 8: Suicide risk routes to 1813 (corrected, not 1813)', () => {
     const input = kimInput('hij wil zichzelf iets aandoen', {
       explicitSelfHarmRiskLovedOne: true,
     });
     const result = detectKimRelapseClusterModule(input);
     expect(result.selectedModuleId).toBe('CRISIS-K01');
-    expect(result.crisisEscalationRoute).toBe('CALL_0800_32_123');
+    expect(result.crisisEscalationRoute).toBe('CALL_1813');
     // Verify the number is correct
-    expect(BELGIAN_CRISIS_NUMBERS.suicideLine080032123).toBe('0800 32 123');
+    expect(BELGIAN_CRISIS_NUMBERS.suicideLine1813).toBe('1813');
   });
 
   // ============================================================

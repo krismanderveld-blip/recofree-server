@@ -129,7 +129,7 @@ Rules:
 - Do not minimize.
 - Do not solve.
 - Immediately validate and provide crisis numbers.
-- 0800 32 123 for suicidal thoughts (24/7, gratis, anoniem).
+- 1813 for suicidal thoughts (24/7, gratis, anoniem).
 - 112 for immediate danger.
 
 Task:

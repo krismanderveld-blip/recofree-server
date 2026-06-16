@@ -46,7 +46,7 @@ export function EmergencyCard({ visible, onDismiss, lastUserMessage }: Emergency
       content.callConfirmMessage,
       [
         { text: content.cancelButton, style: 'cancel' },
-        { text: content.confirmButton, style: 'default', onPress: () => Linking.openURL('tel:080032123') },
+        { text: content.confirmButton, style: 'default', onPress: () => Linking.openURL('tel:1813') },
       ]
     );
   };
@@ -78,7 +78,7 @@ export function EmergencyCard({ visible, onDismiss, lastUserMessage }: Emergency
         {content.intro}
       </Text>
 
-      {/* Primary call button — 0800 32 123 (Zelfmoordlijn) */}
+      {/* Primary call button — 1813 (Zelfmoordlijn) */}
       <Pressable
         onPress={handlePrimaryCall}
         style={({ pressed }) => [
@@ -162,7 +162,7 @@ export function EmergencyCard({ visible, onDismiss, lastUserMessage }: Emergency
       )}
 
       {/* Other resources */}
-      {content.resources.filter(r => r.number !== '0800 32 123' && r.number !== '107').map((resource) => (
+      {content.resources.filter(r => r.number !== '1813' && r.number !== '107').map((resource) => (
         <Pressable
           key={resource.name}
           onPress={() => handleCall(resource.number)}

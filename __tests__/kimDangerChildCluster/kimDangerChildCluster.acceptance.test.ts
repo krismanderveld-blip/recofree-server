@@ -3,7 +3,7 @@
  *
  * Tests cover:
  * - Persona separation (Elias → BLOCKED_BY_PERSONA)
- * - Crisis numbers (only 0800 32 123 / 1712 / 112 / 101)
+ * - Crisis numbers (only 1813 / 1712 / 112 / 101)
  * - KIND-K01 priority over GEVAAR-K01 when child is in danger
  * - Safety filter (anti-rescue/control/diagnosis)
  * - Kim-scoped memory patches
@@ -57,7 +57,7 @@ function kimInput(message: string, overrides: Partial<KimCluster2RuntimeInput> =
   };
 }
 
-const ALLOWED: FixedBelgianCrisisNumber[] = ['0800 32 123', '1712', '112', '101'];
+const ALLOWED: FixedBelgianCrisisNumber[] = ['1813', '1712', '112', '101'];
 
 // ─── TEST 1: Persona separation — Elias does NOT activate ─────────
 
@@ -78,12 +78,11 @@ describe('Kim Cluster 2: Persona Separation', () => {
 // ─── TEST 2: Crisis numbers — only allowed Belgian numbers ────────
 
 describe('Kim Cluster 2: Crisis Numbers', () => {
-  it('only uses allowed Belgian crisis numbers (0800 32 123, 1712, 112, 101)', () => {
-    expect(ALLOWED).toContain('0800 32 123');
+  it('only uses allowed Belgian crisis numbers (1813, 1712, 112, 101)', () => {
+    expect(ALLOWED).toContain('1813');
     expect(ALLOWED).toContain('1712');
     expect(ALLOWED).toContain('112');
     expect(ALLOWED).toContain('101');
-    expect(ALLOWED).not.toContain('1813');
   });
 
   it('GEVAAR-K01 violence scenario routes to 101 and/or 1712', () => {

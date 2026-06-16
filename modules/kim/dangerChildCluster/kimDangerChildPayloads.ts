@@ -147,7 +147,7 @@ function formatCrisisNumbers(numbers: FixedBelgianCrisisNumber[]): string {
       case '112': return '112 — Noodgevallen / levensbedreigend / ambulance';
       case '101': return '101 — Politie (niet-levensbedreigend)';
       case '1712': return '1712 — Huiselijk geweld, misbruik, kindermishandeling';
-      case '0800 32 123': return '0800 32 123 — Zelfmoordlijn (24/7, gratis, anoniem)';
+      case '1813': return '1813 — Zelfmoordlijn (24/7, gratis, anoniem)';
     }
   }).join('\n');
 }
@@ -190,8 +190,8 @@ function getResponseModeInstruction(mode: KimCluster2ResponseMode): string {
       return 'Advise the user to call 101 (police). Frame as safety, not punishment.';
     case 'CONTACT_1712':
       return 'Point to 1712 for professional guidance on domestic violence/abuse.';
-    case 'CONTACT_0800_32_123':
-      return 'Point to 0800 32 123 for suicide prevention support.';
+    case 'CONTACT_1813':
+      return 'Point to 1813 for suicide prevention support.';
     case 'DO_NOT_INTERVENE_PHYSICALLY':
       return 'Explicitly state: do NOT try to physically stop them. Call 101 instead.';
     case 'SAFETY_FIRST':

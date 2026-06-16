@@ -139,13 +139,13 @@ describe('Kim Cluster 5 — STOA-K Acceptance Tests', () => {
 
   // ─── Test 9: Crisis number validation rejects unauthorized numbers ──────────
   it('Test 9: Safety filter rejects unauthorized crisis numbers', () => {
-    const outputWithBadNumber = 'Bel 1813 voor hulp bij zelfmoordgedachten.';
+    const outputWithBadNumber = 'Bel 0900 123 456 voor hulp bij zelfmoordgedachten.';
     const filterResult = enforceKimStoaKOutputSafety(outputWithBadNumber);
     expect(filterResult.safe).toBe(false);
     expect(filterResult.violations.some(v => v.includes('unauthorized_number'))).toBe(true);
 
     // Allowed numbers pass
-    const outputWithGoodNumber = 'Bij nood, bel 0800 32 123 voor hulp.';
+    const outputWithGoodNumber = 'Bij nood, bel 1813 voor hulp.';
     const goodResult = enforceKimStoaKOutputSafety(outputWithGoodNumber);
     expect(goodResult.safe).toBe(true);
   });

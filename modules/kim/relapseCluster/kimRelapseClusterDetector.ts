@@ -199,7 +199,7 @@ export function detectKimRelapseClusterModule(
 
 /**
  * Resolve the crisis escalation route based on input flags and markers.
- * Uses CORRECTED Belgian crisis numbers (0800 32 123, not 1813).
+ * Uses CORRECTED Belgian crisis numbers (1813, not 1813).
  */
 function resolveEscalationRoute(
   input: KimRelapseClusterRuntimeInput,
@@ -235,7 +235,7 @@ function resolveEscalationRoute(
     return 'CONTACT_1712';
   }
 
-  // Suicide/self-harm → 0800 32 123 (corrected, not 1813)
+  // Suicide/self-harm → 1813 (corrected, not 1813)
   if (
     input.explicitSelfHarmRiskLovedOne ||
     input.explicitSelfHarmRiskCaregiver ||
@@ -245,7 +245,7 @@ function resolveEscalationRoute(
     if (input.explicitAcuteDanger || input.safetyRiskLevel === 'IMMEDIATE') {
       return 'CALL_112';
     }
-    return 'CALL_0800_32_123';
+    return 'CALL_1813';
   }
 
   // Disappearance with danger
