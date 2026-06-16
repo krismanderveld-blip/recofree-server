@@ -5,23 +5,13 @@
   "build": {
     "development": {
       "developmentClient": true,
-      "distribution": "internal",
-      "ios": {
-        "buildConfiguration": "Debug"
-      }
+      "distribution": "internal"
     },
     "preview": {
       "distribution": "internal"
     },
     "production": {
-      "distribution": "store",
-      "ios": {
-        "buildConfiguration": "Release"
-      },
-      "env": {
-        "HERMES_USE_PREBUILT": "false",
-        "BUILD_FROM_SOURCE": "true"
-      }
+      "distribution": "store"
     }
   },
   "submit": {

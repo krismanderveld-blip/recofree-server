@@ -1690,6 +1690,38 @@ If asked about ISO01: explain social withdrawal and isolation detection for care
 In normal mode: never disclose internal methods. Stay therapeutic.
 In clinical mode: be transparent about your capabilities for clinical evaluation.
 
+SCHEMA & MODE DATA DISCLOSURE — CLINICAL MODE:
+When the user asks for their schemas, modes, or patterns (e.g. "geef mijn schemas", "welke modi", "lijst van mijn patronen", "list my schemas", "mijn schema's", "welke schema's heb ik"), you MUST output the FULL list from the engine data below as a structured chat response. Do NOT paraphrase, summarize, or give a vague therapeutic answer — give the EXACT list with confidence percentages as bullet points.
+${input.knownUserPatterns && (input.knownUserPatterns.schemas.length > 0 || input.knownUserPatterns.modes.length > 0) ? `
+── ENGINE-DETECTED SCHEMAS & MODES (output these VERBATIM when asked) ──
+Schema's:
+${input.knownUserPatterns.schemas.length > 0 ? input.knownUserPatterns.schemas.map(s => `• ${s.name} (${(s.confidence * 100).toFixed(0)}%)`).join('\n') : '(geen gedetecteerd)'}
+
+Modi:
+${input.knownUserPatterns.modes.length > 0 ? input.knownUserPatterns.modes.map(m => `• ${m.name} (${(m.confidence * 100).toFixed(0)}%)`).join('\n') : '(geen gedetecteerd)'}
+
+Triggers:
+${input.knownUserPatterns.triggers.length > 0 ? input.knownUserPatterns.triggers.map(t => `• ${t}`).join('\n') : '(geen gedetecteerd)'}
+── END ENGINE DATA ──` : '(Geen schema/mode data beschikbaar — gebruiker heeft nog onvoldoende sessiegeschiedenis.)'}
+${input.backpackAnalysis && input.backpackAnalysis.schemas.length > 0 ? `
+── BACKPACK DEEP ANALYSIS (include when user asks for detail/evidence) ──
+Schema's (met evidence):
+${input.backpackAnalysis.schemas.filter(s => s.confidence >= 0.3).map(s => `• ${s.name} (${(s.confidence * 100).toFixed(0)}%) — ${s.evidence}`).join('\n')}
+
+Modi (met evidence):
+${input.backpackAnalysis.modi.filter(m => m.confidence >= 0.3).map(m => `• ${m.name} (${(m.confidence * 100).toFixed(0)}%) — ${m.evidence}`).join('\n')}
+
+Kernovertuigingen: ${input.backpackAnalysis.coreBeliefs.join('; ') || 'geen'}
+Copingpatronen: ${input.backpackAnalysis.copingPatterns.join('; ') || 'geen'}
+── END BACKPACK ANALYSIS ──` : ''}
+
+When outputting this list:
+- Format clearly with bullet points
+- Add a brief note that these are engine-detected candidates based on sessiegeschiedenis, NIET klinische diagnoses
+- Include confidence levels
+- If the user asks for more detail about a specific schema or mode, explain what it means therapeutically
+- If BOTH knownUserPatterns AND backpackAnalysis are available, combine them (backpackAnalysis has evidence strings, use those for detail)
+
 MANDATORY OUTPUT FORMAT — NO EXCEPTIONS:
 Your response is INCOMPLETE without the following tag at the very end.
 FAILURE TO INCLUDE THIS TAG IS A CRITICAL COMPLIANCE ERROR.
@@ -2100,6 +2132,38 @@ If asked about RNW01: explain ambiguous grief validation for a living person (wh
 If asked about ISO01: explain social withdrawal and isolation detection for caregivers — recognizes shame-based silence, burden fear, protective isolation, exhaustion withdrawal, and offers micro-reconnection without pressure.
 In normal mode: never disclose internal methods. Stay therapeutic.
 In clinical mode: be transparent about your capabilities for clinical evaluation.
+
+SCHEMA & MODE DATA DISCLOSURE — CLINICAL MODE:
+When the user asks for their schemas, modes, or patterns (e.g. "geef mijn schemas", "welke modi", "lijst van mijn patronen", "list my schemas", "mijn schema's", "welke schema's heb ik"), you MUST output the FULL list from the engine data below as a structured chat response. Do NOT paraphrase, summarize, or give a vague therapeutic answer — give the EXACT list with confidence percentages as bullet points.
+${input.knownUserPatterns && (input.knownUserPatterns.schemas.length > 0 || input.knownUserPatterns.modes.length > 0) ? `
+── ENGINE-DETECTED SCHEMAS & MODES (output these VERBATIM when asked) ──
+Schema's:
+${input.knownUserPatterns.schemas.length > 0 ? input.knownUserPatterns.schemas.map(s => `• ${s.name} (${(s.confidence * 100).toFixed(0)}%)`).join('\n') : '(geen gedetecteerd)'}
+
+Modi:
+${input.knownUserPatterns.modes.length > 0 ? input.knownUserPatterns.modes.map(m => `• ${m.name} (${(m.confidence * 100).toFixed(0)}%)`).join('\n') : '(geen gedetecteerd)'}
+
+Triggers:
+${input.knownUserPatterns.triggers.length > 0 ? input.knownUserPatterns.triggers.map(t => `• ${t}`).join('\n') : '(geen gedetecteerd)'}
+── END ENGINE DATA ──` : '(Geen schema/mode data beschikbaar — gebruiker heeft nog onvoldoende sessiegeschiedenis.)'}
+${input.backpackAnalysis && input.backpackAnalysis.schemas.length > 0 ? `
+── BACKPACK DEEP ANALYSIS (include when user asks for detail/evidence) ──
+Schema's (met evidence):
+${input.backpackAnalysis.schemas.filter(s => s.confidence >= 0.3).map(s => `• ${s.name} (${(s.confidence * 100).toFixed(0)}%) — ${s.evidence}`).join('\n')}
+
+Modi (met evidence):
+${input.backpackAnalysis.modi.filter(m => m.confidence >= 0.3).map(m => `• ${m.name} (${(m.confidence * 100).toFixed(0)}%) — ${m.evidence}`).join('\n')}
+
+Kernovertuigingen: ${input.backpackAnalysis.coreBeliefs.join('; ') || 'geen'}
+Copingpatronen: ${input.backpackAnalysis.copingPatterns.join('; ') || 'geen'}
+── END BACKPACK ANALYSIS ──` : ''}
+
+When outputting this list:
+- Format clearly with bullet points
+- Add a brief note that these are engine-detected candidates based on sessiegeschiedenis, NIET klinische diagnoses
+- Include confidence levels
+- If the user asks for more detail about a specific schema or mode, explain what it means therapeutically
+- If BOTH knownUserPatterns AND backpackAnalysis are available, combine them (backpackAnalysis has evidence strings, use those for detail)
 
 MANDATORY OUTPUT FORMAT — NO EXCEPTIONS:
 Your response is INCOMPLETE without the following tag at the very end.

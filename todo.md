@@ -1392,3 +1392,4 @@
 - [x] iOS build fix: withHermesFromSource.js config plugin (forces Hermes compile from source, fixes ABI mismatch)
 - [x] iOS build fix: buildReactNativeFromSource in expo-build-properties
 - [x] iOS build fix: eas.json env vars HERMES_USE_PREBUILT=false + BUILD_FROM_SOURCE=true
+- [x] Clinical dropdown: show detected schemas and modi as full chat response when asked in clinical mode
