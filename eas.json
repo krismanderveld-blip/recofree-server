@@ -5,22 +5,13 @@
   "build": {
     "development": {
       "developmentClient": true,
-      "distribution": "internal",
-      "ios": {
-        "appleTeamId": "2NZD62J82X"
-      }
+      "distribution": "internal"
     },
     "preview": {
-      "distribution": "internal",
-      "ios": {
-        "appleTeamId": "2NZD62J82X"
-      }
+      "distribution": "internal"
     },
     "production": {
-      "distribution": "store",
-      "ios": {
-        "appleTeamId": "2NZD62J82X"
-      }
+      "distribution": "store"
     }
   },
   "submit": {
