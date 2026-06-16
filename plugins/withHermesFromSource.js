@@ -3,33 +3,59 @@ const fs = require('fs');
 const path = require('path');
 
 /**
- * Config plugin to force Hermes compilation from source on iOS.
+ * Config plugin to fix iOS C++ ABI mismatch on Xcode 16+.
  * 
- * This fixes the "Undefined symbols for architecture arm64" linker error
- * caused by C++ ABI mismatches between prebuilt Hermes binaries and locally
- * compiled native modules (reanimated, worklets, expo-modules-core) on
- * Xcode 16+ / EAS Build.
+ * Forces all CocoaPods targets to use C++20 standard and disables prebuilt
+ * Hermes binaries, ensuring ABI tag alignment across all native modules.
  * 
- * By setting HERMES_USE_PREBUILT=false and BUILD_FROM_SOURCE=true,
- * all C++ code is compiled with the same toolchain, ensuring ABI tag alignment.
+ * This fixes "Undefined symbols for architecture arm64" linker errors caused
+ * by mismatched libc++ inline namespace tags between prebuilt frameworks
+ * and locally compiled modules.
  */
 module.exports = function withHermesFromSource(config) {
   return withDangerousMod(config, [
     'ios',
     async (config) => {
       const podfile = path.join(config.modRequest.platformProjectRoot, 'Podfile');
-      
+
       if (!fs.existsSync(podfile)) {
         return config;
       }
 
       let contents = fs.readFileSync(podfile, 'utf8');
 
-      // Inject environment variables to force source compilation of Hermes
-      const envInjection = `ENV['HERMES_USE_PREBUILT'] = 'false'\nENV['BUILD_FROM_SOURCE'] = 'true'\n`;
+      // 1. Force Hermes to compile from source (prevents ABI mismatch)
+      const envInjection = `# Force Hermes from source to prevent C++ ABI mismatch with Xcode 16+
+ENV['HERMES_USE_PREBUILT'] = 'false'
+ENV['BUILD_FROM_SOURCE'] = 'true'
+`;
 
-      if (!contents.includes("ENV['HERMES_USE_PREBUILT'] = 'false'")) {
+      // 2. Post-install hook to align C++ standard across all pods
+      const postInstallHook = `
+# Fix C++ ABI alignment for all pods (Xcode 16+ compatibility)
+post_install do |installer|
+  installer.pods_project.targets.each do |target|
+    target.build_configurations.each do |config|
+      config.build_settings['CLANG_CXX_LANGUAGE_STANDARD'] = 'c++20'
+      config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.1'
+    end
+  end
+end
+`;
+
+      let modified = false;
+
+      if (!contents.includes("ENV['HERMES_USE_PREBUILT']")) {
         contents = envInjection + contents;
+        modified = true;
+      }
+
+      if (!contents.includes("CLANG_CXX_LANGUAGE_STANDARD")) {
+        contents = contents + "\n" + postInstallHook;
+        modified = true;
+      }
+
+      if (modified) {
         fs.writeFileSync(podfile, contents);
       }
 

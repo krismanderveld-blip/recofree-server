@@ -121,6 +121,7 @@ const config: ExpoConfig = {
           deploymentTarget: "15.1",
           newArchEnabled: true,
           buildReactNativeFromSource: true,
+          ccacheEnabled: false,
         },
         android: {
           buildArchs: ["armeabi-v7a", "arm64-v8a"],
