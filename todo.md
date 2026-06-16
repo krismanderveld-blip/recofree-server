@@ -1387,3 +1387,5 @@
 - [x] Kim Cluster 5 (STOA-K): pipeline wiring as P10 (below reflective clusters, KST01 boundary)
 - [x] Kim Cluster 5 (STOA-K): 10 critical acceptance tests
 - [x] Kim Cluster 5 (STOA-K): all existing tests remain green (1012 passed, 1 skipped)
+- [x] iOS build fix: newArchEnabled set to true (required by react-native-worklets 0.5.1 + reanimated 4.x)
+- [x] iOS build fix: expo-build-properties iOS deploymentTarget 15.1 + newArchEnabled for both platforms

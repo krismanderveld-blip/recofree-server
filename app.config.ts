@@ -46,7 +46,7 @@ const config: ExpoConfig = {
   icon: "./assets/images/icon.png",
   scheme: env.scheme,
   userInterfaceStyle: "automatic",
-  newArchEnabled: false,
+  newArchEnabled: true,
   ios: {
     supportsTablet: true,
     bundleIdentifier: env.iosBundleId,
@@ -116,9 +116,14 @@ const config: ExpoConfig = {
     [
       "expo-build-properties",
       {
+        ios: {
+          deploymentTarget: "15.1",
+          newArchEnabled: true,
+        },
         android: {
           buildArchs: ["armeabi-v7a", "arm64-v8a"],
           minSdkVersion: 24,
+          newArchEnabled: true,
         },
       },
     ],
