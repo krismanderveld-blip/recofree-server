@@ -228,22 +228,37 @@ function buildActiveSignals(context: ChatContext): Array<{ label: string; score:
 
 /**
  * Build compact known user patterns block from userDat.
- * Only CONFIRMED schemas/modes are included (safe to present as known patterns to GPT).
- * Unconfirmed candidates still feed the SchemaMode engine but are NOT shown here.
+ * In NORMAL mode: Only CONFIRMED schemas/modes are included (safe to present as known patterns to GPT).
+ * In CLINICAL mode: ALL candidates with confidence >= 0.3 are included (clinician needs full picture).
  * Triggers are always included (top 8 by weight/count).
  */
-function buildKnownUserPatterns(userDat: ChatContext['userDat']): { schemas: Array<{ name: string; confidence: number }>; modes: Array<{ name: string; confidence: number }>; triggers: string[] } | null {
+function buildKnownUserPatterns(userDat: ChatContext['userDat'], clinicalMode = false): { schemas: Array<{ name: string; confidence: number }>; modes: Array<{ name: string; confidence: number }>; triggers: string[] } | null {
   if (!userDat) return null;
 
-  // Only CONFIRMED schemas (confirmed === true) are safe to present as known
-  const schemas = (userDat.schemaTendencies || [])
-    .filter((s: any) => s.confirmed === true && (s.confidence ?? 0) >= 0.35)
-    .map((s: any) => ({ name: s.schemaId, confidence: s.confidence ?? 0 }));
+  let schemas: Array<{ name: string; confidence: number }>;
+  let modes: Array<{ name: string; confidence: number }>;
 
-  // Only CONFIRMED modes (confirmed === true) are safe to present as known
-  const modes = (userDat.modeTendencies || [])
-    .filter((m: any) => m.confirmed === true && (m.confidence ?? 0) >= 0.35)
-    .map((m: any) => ({ name: m.modeId, confidence: m.confidence ?? 0 }));
+  if (clinicalMode) {
+    // CLINICAL MODE: show ALL candidates with confidence >= 0.3 (regardless of confirmed status)
+    schemas = (userDat.schemaTendencies || [])
+      .filter((s: any) => (s.confidence ?? 0) >= 0.3)
+      .sort((a: any, b: any) => (b.confidence ?? 0) - (a.confidence ?? 0))
+      .map((s: any) => ({ name: s.schemaId, confidence: s.confidence ?? 0 }));
+
+    modes = (userDat.modeTendencies || [])
+      .filter((m: any) => (m.confidence ?? 0) >= 0.3)
+      .sort((a: any, b: any) => (b.confidence ?? 0) - (a.confidence ?? 0))
+      .map((m: any) => ({ name: m.modeId, confidence: m.confidence ?? 0 }));
+  } else {
+    // NORMAL MODE: Only CONFIRMED schemas/modes (confirmed === true) are safe to present
+    schemas = (userDat.schemaTendencies || [])
+      .filter((s: any) => s.confirmed === true && (s.confidence ?? 0) >= 0.35)
+      .map((s: any) => ({ name: s.schemaId, confidence: s.confidence ?? 0 }));
+
+    modes = (userDat.modeTendencies || [])
+      .filter((m: any) => m.confirmed === true && (m.confidence ?? 0) >= 0.35)
+      .map((m: any) => ({ name: m.modeId, confidence: m.confidence ?? 0 }));
+  }
 
   const triggers = (userDat.triggerPatterns || [])
     .sort((a: any, b: any) => (b.weight ?? b.count ?? 0) - (a.weight ?? a.count ?? 0))
@@ -510,8 +525,8 @@ export class OpenAIProvider implements AIProvider {
           // Backpack deep analysis (schemas, modes, triggers from GPT-4o)
           backpackAnalysis: context.userDat?.backpackAnalysis ?? null,
 
-          // Known user patterns (compact, every turn)
-          knownUserPatterns: buildKnownUserPatterns(context.userDat),
+          // Known user patterns (compact, every turn) — in clinical mode, show ALL candidates
+          knownUserPatterns: buildKnownUserPatterns(context.userDat, context.userDat?.clinicalModeActive ?? false),
 
           // Full data (SESSION_INIT only)
           backpack: gptPayload.backpack,
@@ -651,8 +666,8 @@ export class OpenAIProvider implements AIProvider {
           // Backpack deep analysis (schemas, modes, triggers from GPT-4o)
           backpackAnalysis: context.userDat?.backpackAnalysis ?? null,
 
-          // Known user patterns (compact, every turn)
-          knownUserPatterns: buildKnownUserPatterns(context.userDat),
+          // Known user patterns (compact, every turn) — in clinical mode, show ALL candidates
+          knownUserPatterns: buildKnownUserPatterns(context.userDat, context.userDat?.clinicalModeActive ?? false),
 
           // NO backpack, NO userDat, NO diaryEntries, NO coreWound,
           // NO contextLine, NO relationshipAnchor, NO relationalPattern
