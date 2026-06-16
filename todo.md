@@ -1389,3 +1389,6 @@
 - [x] Kim Cluster 5 (STOA-K): all existing tests remain green (1012 passed, 1 skipped)
 - [x] iOS build fix: newArchEnabled set to true (required by react-native-worklets 0.5.1 + reanimated 4.x)
 - [x] iOS build fix: expo-build-properties iOS deploymentTarget 15.1 + newArchEnabled for both platforms
+- [x] iOS build fix: withHermesFromSource.js config plugin (forces Hermes compile from source, fixes ABI mismatch)
+- [x] iOS build fix: buildReactNativeFromSource in expo-build-properties
+- [x] iOS build fix: eas.json env vars HERMES_USE_PREBUILT=false + BUILD_FROM_SOURCE=true

@@ -87,6 +87,7 @@ const config: ExpoConfig = {
     favicon: "./assets/images/favicon.png",
   },
   plugins: [
+    "./plugins/withHermesFromSource.js",
     "expo-router",
     [
       "expo-audio",
@@ -119,6 +120,7 @@ const config: ExpoConfig = {
         ios: {
           deploymentTarget: "15.1",
           newArchEnabled: true,
+          buildReactNativeFromSource: true,
         },
         android: {
           buildArchs: ["armeabi-v7a", "arm64-v8a"],
