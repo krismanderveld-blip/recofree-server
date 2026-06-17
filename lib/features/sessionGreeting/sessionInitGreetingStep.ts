@@ -338,7 +338,15 @@ function adaptVspSection(backpack: Backpack, vspZone?: string): GreetingVspSecti
   if (!vspPlan) return null;
 
   const zone = (vspZone ?? 'GROEN').toUpperCase();
-  const zoneKey = zone.toLowerCase() as 'groen' | 'geel' | 'oranje' | 'rood' | 'paars';
+  // Map Dutch/English zone names to English storage keys used in VspStructuredPlan
+  const ZONE_KEY_MAP: Record<string, string> = {
+    'GROEN': 'green', 'GREEN': 'green',
+    'GEEL': 'yellow', 'YELLOW': 'yellow',
+    'ORANJE': 'orange', 'ORANGE': 'orange',
+    'ROOD': 'red', 'RED': 'red',
+    'PAARS': 'purple', 'PURPLE': 'purple',
+  };
+  const zoneKey = ZONE_KEY_MAP[zone] ?? zone.toLowerCase();
   const zoneEntry = vspPlan.zones?.[zoneKey];
 
   // Normalize field: can be string OR string[] depending on data version

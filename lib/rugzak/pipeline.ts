@@ -3881,13 +3881,19 @@ function buildVspStructuredBlock(backpack: import('../ai/types').Backpack, curre
   lines.push('The user has self-reported being in this zone RIGHT NOW.');
   lines.push('');
 
+  // Map Dutch zone names to English storage keys for matching
+  const DUTCH_TO_ENGLISH: Record<string, string> = {
+    'GROEN': 'GREEN', 'GEEL': 'YELLOW', 'ORANJE': 'ORANGE', 'ROOD': 'RED', 'PAARS': 'PURPLE',
+  };
+  const normalizedActiveZone = DUTCH_TO_ENGLISH[activeZone] ?? activeZone;
+
   // ONLY output the active zone content
   const zones = vspSection.zones;
   if (zones) {
     for (const [zoneName, entry] of Object.entries(zones)) {
       if (!entry) continue;
       const zoneUpper = zoneName.toUpperCase();
-      if (zoneUpper !== activeZone) continue;
+      if (zoneUpper !== normalizedActiveZone && zoneUpper !== activeZone) continue;
       const signalsStr = normalizeField((entry as any).signals);
       if (signalsStr.length > 0) {
         lines.push(`Recognition signals (user's words): ${signalsStr}`);

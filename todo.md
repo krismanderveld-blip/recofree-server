@@ -1531,3 +1531,5 @@
 - [x] Fix: Pipeline crash 'Cannot read property topicHistory of null' — enrichBuffer receives null bufferState
 - [x] Fix: Clinical annotation block visible to user in chat (should be hidden unless Clinical Mode active)
 - [x] Fix: VSP data (zones, wat helpt, signalen) must persist across app updates like backpack does
+- [ ] Fix: VSP 'wat helpt' content must be used as PRIMARY intervention when zone ROOD is active (not generic grounding)
+- [ ] Fix: Clinical annotation still showing — verify clinicalModeActive check works on published version
