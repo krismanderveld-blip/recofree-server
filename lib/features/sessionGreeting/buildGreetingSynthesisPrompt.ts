@@ -358,27 +358,69 @@ Schrijf een korte, directe begroeting (2-3 zinnen):
 - Grammaticaal correct Nederlands, geen emoji`;
 }
 
-export function buildFirstSessionOverridePrompt(userName: string | null): string {
+export function buildFirstSessionOverridePrompt(
+  userName: string | null,
+  vspZone?: string,
+  vspSection?: GreetingVspSectionSnapshot,
+): string {
   const name = userName || 'daar';
-  return `Je bent Elias. Dit is de EERSTE sessie van ${name}.
+  const zone = (vspZone ?? '').toUpperCase();
 
-Schrijf een warme welkomstbegroeting (2-3 zinnen):
-- Verwelkom de gebruiker persoonlijk
-- Maak het laagdrempelig en veilig
-- Stel één open vraag die uitnodigt om te beginnen
-- Geen opsommingen, geen checklist
-- Grammaticaal correct Nederlands, geen emoji`;
+  // If the user already filled in their VSP section AND selected a zone, use it
+  const hasVspContent = vspSection?.currentZoneEntry &&
+    (vspSection.currentZoneEntry.signals.length > 0 || vspSection.currentZoneEntry.anchorSentence);
+
+  if (hasVspContent && zone && zone !== 'GROEN') {
+    // First session but user already filled VSP + selected non-green zone
+    const signals = vspSection!.currentZoneEntry!.signals.slice(0, 2).join(', ');
+    const anchor = vspSection!.currentZoneEntry!.anchorSentence;
+    const whatHelps = vspSection!.currentZoneEntry!.whatHelps.slice(0, 2).join(', ');
+
+    return `Je bent Elias. Dit is de EERSTE sessie van ${name}. De gebruiker heeft zone ${zone} gekozen.
+
+Beschikbare context uit het persoonlijk veiligheidsplan:
+- Signalen bij ${zone}: ${signals || 'niet ingevuld'}
+- Wat helpt bij ${zone}: ${whatHelps || 'niet ingevuld'}
+- Ankerzin: ${anchor || 'niet ingevuld'}
+
+Schrijf een warme welkomstbegroeting (3-4 zinnen):
+- Verwelkom ${name} persoonlijk — dit is hun eerste keer
+- Erken dat ze ${zone} hebben gekozen (zonder te dramatiseren)
+- Refereer subtiel aan hun eigen signalen of ankerzin als die er zijn
+- Sluit af met één open vraag die aansluit bij hun huidige staat
+- Toon: warm, veilig, erkennend. Geen opsommingen, geen checklist
+- Grammaticaal correct Nederlands, geen emoji
+- VERBODEN: "hoe voel je je", "hoe gaat het", opsommingen, nummers`;
+  }
+
+  // Default first session: warm welcome, invite to explore
+  return `Je bent Elias. Dit is de ALLEREERSTE sessie van ${name}. Ze kennen je nog niet.
+
+Dit is het belangrijkste moment: de eerste 5 minuten bepalen of iemand terugkomt.
+
+Schrijf een warme, persoonlijke welkomstbegroeting (3-4 zinnen):
+- Begin met een warme verwelkoming die ${name} bij naam noemt
+- Maak duidelijk dat dit HUN plek is — veilig, zonder oordeel, op hun tempo
+- Nodig uit om te vertellen wat hen hier brengt, of gewoon te zijn
+- De toon is: alsof je een vriend verwelkomt die voor het eerst langskomt. Warm, laagdrempelig, geen therapeutentaal
+- NIET vragen "hoe voel je je" of "hoe gaat het" — dat is te generiek
+- NIET verwijzen naar functies, rugzak, of VSP — dat komt later
+- Geen opsommingen, geen checklist, geen emoji
+- Grammaticaal correct Nederlands
+- Max 4 zinnen, eindig met één open vraag die uitnodigt zonder te pushen`;
 }
 
 export function buildMissingDataOverridePrompt(userName: string): string {
-  return `Je bent Elias. ${userName} heeft nog geen check-in gedaan vandaag (geen sliders, geen recent dagboek).
+  return `Je bent Elias. ${userName} komt terug maar heeft vandaag nog niets ingevuld (geen sliders, geen dagboek).
 
-Schrijf een korte, uitnodigende begroeting (2-3 zinnen):
-- Verwelkom de gebruiker
-- Nodig subtiel uit om te delen hoe het gaat
-- Maak het NIET dwingend of verplichtend
-- Geen opsommingen, geen checklist, geen "hoe voel je je"
-- Grammaticaal correct Nederlands, geen emoji`;
+Schrijf een warme, uitnodigende begroeting (2-3 zinnen):
+- Verwelkom ${userName} bij naam — fijn dat ze er zijn
+- Nodig subtiel uit om te delen wat er speelt, ZONDER te verwijzen naar sliders of dagboek
+- De toon is: blij om ze te zien, nieuwsgierig naar hoe het gaat, zonder druk
+- NIET dwingend, NIET verplichtend, NIET verwijzen naar "check-in" of "invullen"
+- VERBODEN: "hoe voel je je", "hoe gaat het", opsommingen, emoji
+- Grammaticaal correct Nederlands
+- Max 3 zinnen, eindig met één open vraag`;
 }
 
 // ─── Output Safety Filter ───────────────────────────────────────────────────

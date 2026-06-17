@@ -138,6 +138,8 @@ export function sessionGreetingEngineV3(
       case 'FIRST_SESSION':
         overridePrompt = buildFirstSessionOverridePrompt(
           (override.payload.userName as string) ?? null,
+          stateDat?.vspZone,
+          vspSection ?? undefined,
         );
         break;
       case 'MISSING_DATA':

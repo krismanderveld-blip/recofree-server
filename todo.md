@@ -1467,3 +1467,9 @@
 - [x] Backpack: Wire VSP structured section into pipeline + ai-chat for ongoing conversation
 - [x] Backpack: Update parseVspProfileFromBackpack to prefer structured section over legacy themes
 - [x] All 1058 tests passing
+
+## New-User Greeting Flow
+
+- [x] Greeting: FIRST_SESSION prompt rewritten — warm, personal, no therapy-speak, invites to share
+- [x] Greeting: FIRST_SESSION with VSP zone — uses personal signals/whatHelps/anchor from VSP section
+- [x] Greeting: MISSING_DATA prompt rewritten — warmer, no reference to "check-in" or "invullen"
