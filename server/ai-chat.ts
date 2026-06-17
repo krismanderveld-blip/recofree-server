@@ -230,14 +230,14 @@ interface ChatRequestInput {
     analysisVersion: number;
     analyzedAt: string;
     previousAnalyzedAt: string | null;
-  };
+  } | null;
 
   /** Compact known user patterns (schemas, modes, triggers) — injected every turn */
   knownUserPatterns?: {
     schemas: Array<{ name: string; confidence: number }>;
     modes: Array<{ name: string; confidence: number }>;
     triggers: string[];
-  };
+  } | null;
 
   /** Relapse intent detection result from engine (triggers zone escalation + prompt instruction) */
   relapseIntent?: {
@@ -246,18 +246,18 @@ interface ChatRequestInput {
     source: 'gpt' | 'fallback';
   };
   /** Kim Relapse Cluster prompt payload (HERV-K01/NAHERV-K01/CRISIS-K01). Injected into system prompt when active. */
-  relapseClusterContext?: string;
+  relapseClusterContext?: string | null;
   /** Kim Danger/Child Cluster prompt payload (GEVAAR-K01/KIND-K01). Injected into system prompt when active. Overrides relapse cluster. */
-  dangerChildContext?: string;
-  relationalDynamicsContext?: string;
-  emotionalLossContext?: string;
-  stoaKContext?: string;
+  dangerChildContext?: string | null;
+  relationalDynamicsContext?: string | null;
+  emotionalLossContext?: string | null;
+  stoaKContext?: string | null;
   /** VSP Insight System — framework selection (MI/MBT/DGT) prompt frame. Never mutates safety core. store:false. */
-  vspInsightContext?: string;
+  vspInsightContext?: string | null;
   /** VSP Backpack Profile — parsed from recurringThemes (Elias only, read-only). Bypasses relevance analyzer 2-source limit. */
-  vspBackpackProfile?: string;
+  vspBackpackProfile?: string | null;
   /** VSP Structured Section — user's own per-zone signals, whatHelps, anchorSentence (Elias only) */
-  vspStructuredSection?: string;
+  vspStructuredSection?: string | null;
 }
 
 // ─── Server-side Session Cache ───────────────────────────────────
@@ -767,139 +767,21 @@ function resolveConditionalContext(
   dominantModule: string,
   cache: SessionCache,
 ): ConditionalContext {
-  const msgLower = message.toLowerCase();
-  const last2Messages = conversationHistory.slice(-2).map(m => m.content.toLowerCase()).join(" ");
-  const combinedContext = msgLower + " " + last2Messages;
-
   // ══════════════════════════════════════════════════════════════
-  // FIRST 2 MESSAGES: inject ALL cached data UNCONDITIONALLY
-  // This ensures the first engine decision after greeting has FULL context.
-  // No keyword matching, no token savings — full personal data.
+  // V3.2: ALWAYS inject ALL cached data UNCONDITIONALLY on EVERY turn.
+  // No keyword matching, no message count gating, no token savings.
+  // The user's personal data is ALWAYS available to GPT.
+  // This ensures GPT can reference Melissa, diary, coreWound, etc.
+  // at any point in the conversation — not just the first 2 messages.
   // ══════════════════════════════════════════════════════════════
-  if (cache.messageCount <= 2) {
-    return {
-      contextLine: cache.contextLine,
-      relationshipAnchor: cache.relationshipAnchor,
-      relationalPattern: cache.relationalPattern,
-      coreWound: cache.coreWound,
-      recentDiary: cache.recentDiary,
-      stageOfChange: cache.stageOfChange,
-      relationshipMap: cache.relationshipMap,
-    };
-  }
-
-  // ── contextLine: only if keyword overlap with current message ──
-  let contextLine: string | null = null;
-  if (cache.contextLine) {
-    const contextWords = cache.contextLine.toLowerCase().split(/\s+/).filter(w => w.length > 3);
-    const matchCount = contextWords.filter(w => msgLower.includes(w)).length;
-    if (matchCount >= 2 || (contextWords.length <= 4 && matchCount >= 1)) {
-      contextLine = cache.contextLine;
-    }
-  }
-
-  // ── relationshipAnchor: only if name appears in current or last 2 messages ──
-  let relationshipAnchor = cache.relationshipAnchor;
-  if (relationshipAnchor) {
-    const nameInContext = combinedContext.includes(relationshipAnchor.name.toLowerCase());
-    if (!nameInContext) {
-      relationshipAnchor = null;
-    }
-  }
-
-  // ── relationshipMap: only if any name-like word appears in message ──
-  // (lightweight check — if user mentions any person, include the map)
-  let relationshipMap = "";
-  if (cache.relationshipMap) {
-    // Check if message contains a capitalized word that could be a name
-    const hasNameLikeWord = /\b[A-Z][a-z]{2,}\b/.test(message);
-    // Or if message asks about someone ("who is", "do you know", "tell about")
-    const asksAboutPerson = /who is|do you know|tell.*about/i.test(message);
-    if (hasNameLikeWord || asksAboutPerson || relationshipAnchor) {
-      relationshipMap = cache.relationshipMap;
-    }
-  }
-
-  // ── relationalPattern: only if confidence >= 0.35 AND relevant to message ──
-  let relationalPattern = cache.relationalPattern;
-  if (relationalPattern) {
-    if (relationalPattern.confidence < 0.35) {
-      relationalPattern = null;
-    } else {
-      // Check if the pattern theme appears in the message context
-      const patternWords = [
-        relationalPattern.pattern.toLowerCase(),
-        relationalPattern.schema.toLowerCase(),
-      ];
-      const patternRelevant = patternWords.some(w =>
-        combinedContext.includes(w) ||
-        combinedContext.includes("relationship") ||
-        combinedContext.includes("boundary") ||
-        combinedContext.includes("partner") ||
-        combinedContext.includes("together")
-      );
-      if (!patternRelevant) {
-        relationalPattern = null;
-      }
-    }
-  }
-
-  // ── coreWound: only if dominant module or trigger relates to wound theme ──
-  let coreWound: string | null = null;
-  if (cache.coreWound) {
-    const woundLower = cache.coreWound.toLowerCase();
-    const triggerNames = selectedTriggers.map(t => t.trigger.toLowerCase());
-    const moduleLower = dominantModule.toLowerCase();
-
-    // Wound-to-trigger/module mapping
-    const woundRelevant =
-      triggerNames.some(t => woundLower.includes(t) || t.includes(woundLower)) ||
-      moduleLower.includes("trauma") ||
-      moduleLower.includes("schema") ||
-      moduleLower.includes("relational") ||
-      msgLower.includes(woundLower) ||
-      msgLower.includes("pain") ||
-      msgLower.includes("wound") ||
-      msgLower.includes("always") ||
-      msgLower.includes("never") ||
-      msgLower.includes("not good enough");
-
-    if (woundRelevant) {
-      coreWound = cache.coreWound;
-    }
-  }
-
-  // ── recentDiary: only if message touches a diary theme ──
-  let recentDiary: Array<{ content: string; moodTag: string; date: string }> = [];
-  if (cache.recentDiary.length > 0) {
-    for (const entry of cache.recentDiary) {
-      const entryWords = entry.content.toLowerCase().split(/\s+/).filter(w => w.length > 3);
-      const matchCount = entryWords.filter(w => msgLower.includes(w)).length;
-      if (matchCount >= 2) {
-        recentDiary.push(entry);
-        if (recentDiary.length >= 2) break; // Max 2
-      }
-    }
-  }
-
-  // ── stageOfChange: only in first 2 messages OR if user talks about change/motivation ──
-  let stageOfChange: string | null = null;
-  if (cache.stageOfChange) {
-    const isEarlyInSession = cache.messageCount <= 2;
-    const talksAboutChange = /change|motivat|quit|stop|persist|relapse|continue|give up|try|can't manage|do I want|should I|can I/i.test(message);
-    if (isEarlyInSession || talksAboutChange) {
-      stageOfChange = cache.stageOfChange;
-    }
-  }
-
   return {
-    contextLine,
-    relationshipAnchor,
-    relationalPattern,
-    coreWound,
-    recentDiary,
-    stageOfChange,
-    relationshipMap,
+    contextLine: cache.contextLine,
+    relationshipAnchor: cache.relationshipAnchor,
+    relationalPattern: cache.relationalPattern,
+    coreWound: cache.coreWound,
+    recentDiary: cache.recentDiary,
+    stageOfChange: cache.stageOfChange,
+    relationshipMap: cache.relationshipMap,
   };
 }
 
@@ -920,57 +802,68 @@ function buildSelectiveRelevanceBlock(
     }
   }
 
-  // Core wound (CONDITIONAL)
+  // Core wound (ALWAYS injected)
   if (conditional.coreWound) {
     parts.push(`CORE WOUND: ${conditional.coreWound}`);
-    parts.push(`  → Be aware of this underlying pattern.`);
+    parts.push(`  → VERPLICHT: Wees je bewust van dit onderliggende patroon. Verwijs ernaar wanneer de gebruiker emotioneel beladen taal gebruikt.`);
   }
 
-  // Context line (CONDITIONAL)
+  // Context line (ALWAYS injected)
   if (conditional.contextLine) {
-    parts.push(`RELEVANT CONTEXT FROM LIFE STORY:`);
+    parts.push(`RELEVANT CONTEXT UIT LEVENSVERHAAL:`);
     parts.push(`  "${conditional.contextLine}"`);
-    parts.push(`  → Relevant to this message. You may carefully reference it.`);
+    parts.push(`  → VERPLICHT: Dit is persoonlijke context. Gebruik het ACTIEF in je antwoord — niet als achtergrond.`);
   }
 
-  // Relationship anchor (CONDITIONAL)
+  // Relationship anchor (ALWAYS injected)
   if (conditional.relationshipAnchor) {
     const roleDisplay = conditional.relationshipAnchor.roleEN
       ? `${conditional.relationshipAnchor.role} / ${conditional.relationshipAnchor.roleEN}`
       : conditional.relationshipAnchor.role;
-    parts.push(`RELATIONSHIP ANCHOR: ${conditional.relationshipAnchor.name} (${roleDisplay})`);
-    parts.push(`  → Use ONLY this exact relationship.`);
+    parts.push(`RELATIE-ANKER: ${conditional.relationshipAnchor.name} (${roleDisplay})`);
+    parts.push(`  → VERPLICHT: Noem deze persoon bij NAAM wanneer relevant. Dit is iemand die de gebruiker kent — gebruik het.`);
   }
 
-  // Relational pattern (CONDITIONAL)
+  // Relational pattern (ALWAYS injected)
   if (conditional.relationalPattern) {
-    parts.push(`RELATIONAL PATTERN: ${conditional.relationalPattern.pattern}`);
+    parts.push(`RELATIONEEL PATROON: ${conditional.relationalPattern.pattern}`);
     if (conditional.relationalPattern.schema) {
       parts.push(`  Schema: ${conditional.relationalPattern.schema}`);
     }
-    parts.push(`  → Name carefully if relevant.`);
+    parts.push(`  → VERPLICHT: Noem dit patroon wanneer je het herkent in wat de gebruiker zegt.`);
   }
 
-  // Stage of Change (CONDITIONAL)
+  // Stage of Change (ALWAYS injected)
   if (conditional.stageOfChange) {
     const desc = ELIAS_STAGE_DESCRIPTIONS_SHORT[conditional.stageOfChange] || conditional.stageOfChange;
     parts.push(`STAGE: ${conditional.stageOfChange} — ${desc}`);
   }
 
-  // Recent diary (CONDITIONAL)
+  // Recent diary (ALWAYS injected)
   if (conditional.recentDiary.length > 0) {
-    parts.push(`RELEVANT DIARY ENTRIES:`);
+    parts.push(`DAGBOEK VAN DE GEBRUIKER (ZELF geschreven):`);
     for (const d of conditional.recentDiary) {
       parts.push(`  [${d.date}] (${d.moodTag}): ${d.content}`);
     }
+    parts.push(`  → VERPLICHT: Refereer aan specifieke dagboek-inhoud wanneer de gebruiker over gerelateerde thema's praat.`);
+  }
+
+  // Relationship map (ALWAYS injected)
+  if (conditional.relationshipMap) {
+    parts.push(`RELATIEKAART:`);
+    parts.push(`${conditional.relationshipMap}`);
+    parts.push(`  → VERPLICHT: Gebruik namen uit deze kaart wanneer je over relaties praat. Noem ALTIJD de specifieke naam, niet "je partner" of "iemand".`);
   }
 
   if (parts.length === 0) return "";
 
   return `
-─── RELEVANCE CONTEXT (selective for this message) ───
+═══ PERSOONLIJKE CONTEXT (VERPLICHT TE GEBRUIKEN) ═══
+Deze data is door de gebruiker ZELF verstrekt. Je MOET het actief gebruiken in je antwoord.
+Geef NOOIT generiek advies als je specifieke persoonlijke data hebt.
+Noem ALTIJD namen, specifieke activiteiten, en concrete details uit deze context.
 ${parts.join("\n")}
-─── END ───`;
+═══ EINDE PERSOONLIJKE CONTEXT ═══`;
 }
 
 // ─── Build Full Relevance Block (for SESSION_INIT) ───────────────
@@ -1501,22 +1394,16 @@ Keep it short (3-5 sentences max). Do NOT ask new questions.`;
     if (conditional.relationshipMap) included.push('relationMap');
     console.log(`[AI Chat] Follow-up selective injection: [${included.join(', ') || 'none'}]`);
 
-    // Task 1: Gate context injection using relevanceScores (threshold 0.3)
-    // Priority: structuredMemory > contextSummary > lifeStorySummary
-    // If backpackRelevance < 0.3, skip entirely (token savings).
-    const scores = input.relevanceScores;
+    // V3.2: ALWAYS inject full context — no relevance gating, no token savings.
+    // The user's personal data is ALWAYS available to GPT on every turn.
     let lifeStoryContext = '';
     if (sessionCache?.hasStructuredEntities && sessionCache.structuredMemory) {
-      // Structured entities available — always use (compact, high-value)
       lifeStoryContext = `\n─── STRUCTURED MEMORY (extracted from rugzak) ───\n${sessionCache.structuredMemory}\n─── END STRUCTURED MEMORY ───`;
     } else if (input.contextSummary) {
-      // Task 2: Use compressed context summary from SignalEngine
       lifeStoryContext = `\n─── CONTEXT SUMMARY (live-compressed) ───\n${input.contextSummary}\n─── END CONTEXT SUMMARY ───`;
-    } else if (!scores || scores.backpackRelevance >= 0.3) {
-      // No scores available OR backpack is relevant → include full summary
+    } else {
       lifeStoryContext = sessionCache?.lifeStorySummary ?? '';
     }
-    // else: backpackRelevance < 0.3 → skip lifeStorySummary (token savings)
 
     // Inject backpackAnalysis context (deep GPT-4o analysis of backpack content)
     let backpackAnalysisContext = '';
@@ -1541,10 +1428,7 @@ Keep it short (3-5 sentences max). Do NOT ask new questions.`;
 ─── END BACKPACK ANALYSIS ───`;
     }
 
-    // Task 1: Gate diary injection using diaryRelevance threshold
-    if (scores && scores.diaryRelevance < 0.3) {
-      conditional.recentDiary = [];
-    }
+    // V3.2: No diary gating — always inject full diary data.
 
     // Build KNOWN USER PATTERNS block (compact, every turn)
     let knownPatternsBlock = '';

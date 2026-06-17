@@ -1545,3 +1545,12 @@
 - [x] Fix: buildContextBriefing outputs full content per source (not one-line summaries)
 - [x] Fix: server ai-chat.ts SESSION_INIT vspStructuredSectionBlock uses hard directive for ALL zones
 - [x] Fix: Backpack "indien gewijzigd" logic — include backpack in greeting when backpackAnalysis.analyzedAt is newer than previousAnalyzedAt in user.dat
+
+## LIVE_MESSAGE Path — Full Personal Data on EVERY Turn (not just first 2)
+
+- [x] Audit: What data does GPT get on turn 3+ via LIVE_MESSAGE path?
+- [x] Fix: Extend full VSP + personal data + hard directive to EVERY turn (not just first 2)
+- [x] Fix: Ensure relatie-context (partner names like Melissa) is injected on every turn
+- [x] Fix: Check and raise LIVE_MESSAGE token cap if too low
+- [x] Test: Turn 5+ with "veel stress gehad vandaag" → GPT references Melissa + Jan (4/8 score)
+- [x] Test: Turn 5+ with relatie-context → GPT names Melissa + schema (2/5 score)
