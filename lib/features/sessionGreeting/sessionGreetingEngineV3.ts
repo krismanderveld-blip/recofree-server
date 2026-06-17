@@ -133,6 +133,7 @@ export function sessionGreetingEngineV3(
           userName,
           (override.payload.craving as number) ?? 0,
           stateDat?.vspZone,
+          vspSection ?? undefined,
         );
         break;
       case 'FIRST_SESSION':

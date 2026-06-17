@@ -39,10 +39,10 @@ export function registerSessionGreetingRoute(app: Express): void {
           'Authorization': `Bearer ${apiKey}`,
         },
         body: JSON.stringify({
-          model: 'gpt-4o',
+          model: 'gpt-4o-mini',
           store: false,
           temperature: 0.7,
-          max_tokens: 150,
+          max_tokens: 300,
           messages: [
             { role: 'system', content: systemPrompt },
             { role: 'user', content: `Generate a personal greeting for ${userName}. Follow the language instruction in the system prompt exactly.` },

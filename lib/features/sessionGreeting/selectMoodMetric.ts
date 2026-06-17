@@ -86,22 +86,27 @@ export function selectMostEmotionallyRelevantMoodMetric(
 }
 
 /**
- * Generates a safe textual description of the mood state for GPT.
- * Does NOT include raw numbers — only qualitative descriptions.
+ * V3.1: Generates a RICH textual description of the mood state for GPT.
+ * Includes actual values so GPT can reference them meaningfully.
  */
 export function buildMoodSafeAnchor(metric: MoodMetricSelection): string {
-  const { metricName, interpretation } = metric;
+  const { metricName, value, interpretation } = metric;
+
+  const metricLabel = metricName === 'craving' ? 'craving'
+    : metricName === 'despondency' ? 'somberheid'
+    : metricName === 'frustration' ? 'frustratie'
+    : 'focus';
 
   switch (interpretation) {
     case 'high_alarm':
-      return `check-in staat op alarm (${metricName} hoog)`;
+      return `${metricLabel} staat op ${value}/10 (alarm) — dit vraagt directe aandacht`;
     case 'elevated':
-      return `check-in toont verhoogde ${metricName === 'craving' ? 'craving' : metricName === 'despondency' ? 'somberheid' : 'frustratie'}`;
+      return `${metricLabel} is verhoogd (${value}/10) — er speelt iets`;
     case 'positive':
-      return 'check-in voelt wat helderder vandaag';
+      return `focus voelt helderder vandaag (${value}/10)`;
     case 'neutral':
-      return 'check-in is er al';
+      return `${metricLabel} op ${value}/10 (stabiel)`;
     default:
-      return 'check-in is ingevuld';
+      return `check-in ingevuld (${metricLabel}: ${value}/10)`;
   }
 }

@@ -202,9 +202,9 @@ function adaptUserDat(backpack: Backpack, userDat: UserDat): GreetingUserDatSnap
 
   // Adapt schemaTendencies from legacy format
   const schemaTendencies: GreetingSchemaTendency[] = (userDat.schemaTendencies ?? []).map((s) => ({
-    schemaId: s.schemaId,
-    schemaName: s.domain || s.schemaId,
-    confidence: s.confidence ?? 0,
+    name: s.domain || s.schemaId || 'unknown',
+    score: s.confidence ?? 0,
+    confirmed: (s.confidence ?? 0) > 0.6,
     lastUpdatedAt: s.lastUpdatedAt ?? s.lastSeen ?? new Date().toISOString(),
   }));
 
@@ -265,15 +265,16 @@ function adaptLogsDat(
   const result: GreetingLogsDatSnapshot = { lastSessionOpenLoops: [] };
 
   if (lastSessionSummary) {
-    // Build a digest from the last session for the greeting engine
-    const digest = [
-      lastSessionSummary.compressedNarrative?.slice(0, 120),
-      lastSessionSummary.discussedTopics?.length > 0 ? `Thema's: ${lastSessionSummary.discussedTopics.join(', ')}` : null,
-      lastSessionSummary.emotionalArc ? `Verloop: ${lastSessionSummary.emotionalArc}` : null,
-    ].filter(Boolean).join(' | ');
-
-    result.latestLogDigest = digest || undefined;
+    // V3.1: Send FULL narrative — no truncation. GPT needs the complete picture.
+    result.latestLogDigest = lastSessionSummary.compressedNarrative || undefined;
     result.lastSessionOpenLoops = lastSessionSummary.unresolvedTensions ?? [];
+    result.lastSessionTopics = lastSessionSummary.discussedTopics?.length > 0
+      ? lastSessionSummary.discussedTopics
+      : undefined;
+    result.lastSessionEmotionalArc = lastSessionSummary.emotionalArc || undefined;
+    result.lastSessionFollowUp = lastSessionSummary.suggestedFollowUp?.length > 0
+      ? lastSessionSummary.suggestedFollowUp
+      : undefined;
   }
 
   // Cross-session pattern detection
@@ -304,11 +305,18 @@ function adaptDiaryMetadata(diaryEntries: DiaryEntry[]): GreetingDiaryMetadata |
   });
   const latest = sorted[0];
 
-  const safeAnchor = latest.content.slice(0, 80).trim();
+  // V3.1: Send FULL diary content — no 80-char truncation.
+  // Also include up to 3 recent entries for richer context.
+  const recentEntries = sorted.slice(0, 3).map(e => ({
+    content: e.content.trim(),
+    moodTag: e.moodTag || '',
+    timestamp: e.timestamp,
+  }));
 
   return {
     latestEntryCreatedAt: latest.timestamp,
-    latestSafeAnchor: safeAnchor,
+    latestSafeAnchor: latest.content.trim(),
+    recentEntries,
   };
 }
 
@@ -325,11 +333,19 @@ function adaptGratitudeMetadata(diaryEntries: DiaryEntry[]): GreetingGratitudeMe
   });
   const latest = sorted[0];
 
-  const safeAnchor = latest.gratitude!.entry1 || latest.gratitude!.entry2 || latest.gratitude!.entry3 || '';
+  // V3.1: Send ALL 3 gratitude entries — no truncation.
+  const entries: string[] = [
+    latest.gratitude!.entry1,
+    latest.gratitude!.entry2,
+    latest.gratitude!.entry3,
+  ].filter(Boolean).map(s => s.trim());
+
+  const combinedAnchor = entries.join(' | ');
 
   return {
     latestEntryCreatedAt: latest.timestamp,
-    latestSafeAnchor: safeAnchor.slice(0, 80).trim(),
+    latestSafeAnchor: combinedAnchor,
+    gratitudeEntries: entries,
   };
 }
 

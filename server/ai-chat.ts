@@ -771,6 +771,23 @@ function resolveConditionalContext(
   const last2Messages = conversationHistory.slice(-2).map(m => m.content.toLowerCase()).join(" ");
   const combinedContext = msgLower + " " + last2Messages;
 
+  // ══════════════════════════════════════════════════════════════
+  // FIRST 2 MESSAGES: inject ALL cached data UNCONDITIONALLY
+  // This ensures the first engine decision after greeting has FULL context.
+  // No keyword matching, no token savings — full personal data.
+  // ══════════════════════════════════════════════════════════════
+  if (cache.messageCount <= 2) {
+    return {
+      contextLine: cache.contextLine,
+      relationshipAnchor: cache.relationshipAnchor,
+      relationalPattern: cache.relationalPattern,
+      coreWound: cache.coreWound,
+      recentDiary: cache.recentDiary,
+      stageOfChange: cache.stageOfChange,
+      relationshipMap: cache.relationshipMap,
+    };
+  }
+
   // ── contextLine: only if keyword overlap with current message ──
   let contextLine: string | null = null;
   if (cache.contextLine) {
@@ -1416,9 +1433,12 @@ These are not suggestions. These are minimum requirements.
     const isHighZone = input.vspLevel === 'ROOD' || input.vspLevel === 'RED' || 
                        input.vspLevel === 'PAARS' || input.vspLevel === 'PURPLE' ||
                        input.vspLevel === 'ORANJE' || input.vspLevel === 'ORANGE';
-    const deEscalationDirective = isHighZone ? `\n\n⚠️ DE-ESCALATION DIRECTIVE (MANDATORY):\nThe user is currently in zone ${input.vspLevel}. Below is what THEY WROTE helps them de-escalate.\nYou MUST proactively offer these strategies — do NOT wait for the user to ask.\nUse their own words. Suggest ONE specific action from their "what helps" list.\nDo NOT give generic advice ("let's breathe together") when they have written specific personal strategies.\nTheir plan is their anchor — reference it directly.` : '';
-    vspStructuredSectionBlock = `\n=== USER'S PERSONAL SAFETY PLAN (written by the user themselves) ===${deEscalationDirective}\n${input.vspStructuredSection}\n=== END PERSONAL SAFETY PLAN ===`;
-    console.log(`[AI Chat] VSP Structured Section injected (${input.vspStructuredSection.length} chars, highZone=${isHighZone})`);
+    // V3.1: HARD directive for ALL zones — the user's own content is ALWAYS primary material
+    const directive = isHighZone
+      ? `\n\n⚠️ VERPLICHTE DE-ESCALATIE INSTRUCTIE (ZONE ${input.vspLevel}):\nDe gebruiker zit in zone ${input.vspLevel}. Hieronder staat wat ZIJ ZELF schreven dat helpt.\nJe MOET deze strategieën PROACTIEF aanbieden — wacht NIET tot de gebruiker erom vraagt.\nGebruik hun EIGEN woorden. Stel ÉÉN specifieke actie voor uit hun "wat helpt" lijst.\nGeef GEEN generiek advies ("laten we samen ademen") als ze specifieke persoonlijke strategieën hebben.\nHun plan is hun anker — verwijs er DIRECT naar.`
+      : `\n\n=== VERPLICHTE INSTRUCTIE (ZONE ${input.vspLevel || 'GROEN'}) ===\nHieronder staat het PERSOONLIJK veiligheidsplan van de gebruiker — door HEN ZELF geschreven.\nJe MOET deze content ACTIEF gebruiken in je antwoorden:\n- Refereer aan hun signalen als je patronen herkent in wat ze zeggen.\n- Verwijs naar hun "wat helpt" als je een suggestie doet.\n- Gebruik hun ankerzin als grondingstechniek wanneer passend.\n- Zeg NOOIT "je veiligheidsplan zegt..." — verweef het NATUURLIJK.\n- Dit is GEEN achtergrondkennis — dit is hun ACTIEVE zelfhulp-strategie.`;
+    vspStructuredSectionBlock = `\n=== PERSOONLIJK VEILIGHEIDSPLAN (door de gebruiker ZELF geschreven) ===${directive}\n${input.vspStructuredSection}\n=== EINDE PERSOONLIJK VEILIGHEIDSPLAN ===`;
+    console.log(`[AI Chat] VSP Structured Section injected (${input.vspStructuredSection.length} chars, zone=${input.vspLevel}, highZone=${isHighZone})`);
   }
 
   // Inject only the ACTIVE short module prompt block (M05-M85) for Elias

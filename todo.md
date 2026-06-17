@@ -1533,3 +1533,14 @@
 - [x] Fix: VSP data (zones, wat helpt, signalen) must persist across app updates like backpack does
 - [ ] Fix: VSP 'wat helpt' content must be used as PRIMARY intervention when zone ROOD is active (not generic grounding)
 - [ ] Fix: Clinical annotation still showing — verify clinicalModeActive check works on published version
+
+## Greeting Engine — Full Personal Data Injection (bij elke kleur)
+
+- [x] Fix: adaptDiaryMetadata sends FULL diary content (not 80-char truncation)
+- [x] Fix: adaptGratitudeMetadata sends ALL 3 gratitude entries (not just first 80 chars)
+- [x] Fix: adaptLogsDat sends full session summary (not 120-char digest)
+- [x] Fix: buildVspPersonalContext uses HARD directive for ALL zones (not just ORANJE/ROOD/PAARS)
+- [x] Fix: buildCoherentSynthesisInstruction MANDATES GPT to use all personal data as primary material
+- [x] Fix: Remove V3_MAX_SYNTHESIS_SOURCES=3 limit — send ALL eligible sources to GPT
+- [x] Fix: buildContextBriefing outputs full content per source (not one-line summaries)
+- [x] Fix: server ai-chat.ts SESSION_INIT vspStructuredSectionBlock uses hard directive for ALL zones

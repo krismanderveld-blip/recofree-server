@@ -134,15 +134,15 @@ export interface SessionGreetingV3Debug {
 
 /** Crisis thresholds */
 export const V3_CRISIS_CRAVING_THRESHOLD = 7;
-export const V3_CRISIS_ZONES = ['ROOD', 'PAARS', 'ORANJE'];
+export const V3_CRISIS_ZONES = ['ROOD', 'PAARS'];
 
 /** Freshness thresholds */
 export const V3_DIARY_MAX_AGE_DAYS = 3;
 export const V3_GRATITUDE_MAX_AGE_DAYS = 3;
 export const V3_BACKPACK_MAX_AGE_HOURS = 24;
 
-/** Selection limits */
-export const V3_MAX_SYNTHESIS_SOURCES = 3;
+/** Selection limits — V3.1: raised to 8 so ALL eligible sources reach GPT */
+export const V3_MAX_SYNTHESIS_SOURCES = 8;
 
 /** Mood thresholds */
 export const V3_MOOD_HIGH_ALARM_THRESHOLD = 7; // craving/despondency/frustration

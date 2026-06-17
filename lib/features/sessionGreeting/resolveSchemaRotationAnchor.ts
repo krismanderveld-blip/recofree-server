@@ -41,12 +41,16 @@ export function resolveSchemaRotationAnchor(input: ResolveSchemaRotationInput): 
 
   // Filter eligible schemas (confidence >= 0.60)
   const eligible = schemaTendencies
-    .filter(s => s.confidence >= SCHEMA_CONFIDENCE_THRESHOLD)
+    .filter(s => (s.confidence ?? s.score ?? 0) >= SCHEMA_CONFIDENCE_THRESHOLD)
     .sort((a, b) => {
       // Sort by: 1. highest confidence, 2. most recent lastUpdatedAt, 3. lexical schemaId
-      if (b.confidence !== a.confidence) return b.confidence - a.confidence;
-      if (a.lastUpdatedAt !== b.lastUpdatedAt) return b.lastUpdatedAt.localeCompare(a.lastUpdatedAt);
-      return a.schemaId.localeCompare(b.schemaId);
+      const confA = a.confidence ?? a.score ?? 0;
+      const confB = b.confidence ?? b.score ?? 0;
+      if (confB !== confA) return confB - confA;
+      const dateA = a.lastUpdatedAt ?? '';
+      const dateB = b.lastUpdatedAt ?? '';
+      if (dateA !== dateB) return dateB.localeCompare(dateA);
+      return (a.schemaId ?? a.name ?? '').localeCompare(b.schemaId ?? b.name ?? '');
     });
 
   if (eligible.length === 0) {
@@ -59,7 +63,7 @@ export function resolveSchemaRotationAnchor(input: ResolveSchemaRotationInput): 
 
   // Check if all eligible schemas have been used in current cycle
   let usedIds = [...state.usedSchemaIdsInCurrentCycle];
-  const eligibleIds = eligible.map(s => s.schemaId);
+  const eligibleIds = eligible.map(s => s.schemaId ?? s.name ?? '');
   const allUsed = eligibleIds.every(id => usedIds.includes(id));
 
   if (allUsed) {
@@ -68,7 +72,7 @@ export function resolveSchemaRotationAnchor(input: ResolveSchemaRotationInput): 
   }
 
   // Select first eligible schema not in usedIds
-  const selected = eligible.find(s => !usedIds.includes(s.schemaId)) ?? null;
+  const selected = eligible.find(s => !usedIds.includes(s.schemaId ?? s.name ?? '')) ?? null;
 
   if (!selected) {
     return {
@@ -78,15 +82,16 @@ export function resolveSchemaRotationAnchor(input: ResolveSchemaRotationInput): 
     };
   }
 
+  const selectedId = selected.schemaId ?? selected.name ?? '';
   const nextRotationState: GreetingSchemaRotationState = {
-    usedSchemaIdsInCurrentCycle: [...usedIds, selected.schemaId],
+    usedSchemaIdsInCurrentCycle: [...usedIds, selectedId],
     lastSchemaAnchorSessionNumber: currentSessionNumber,
-    lastSchemaIdUsed: selected.schemaId,
+    lastSchemaIdUsed: selectedId,
   };
 
   return {
     selectedSchema: selected,
     nextRotationState,
-    reason: `Schema rotation: selected "${selected.schemaName}" (conf=${selected.confidence}, session=${currentSessionNumber})`,
+    reason: `Schema rotation: selected "${selected.schemaName ?? selected.name ?? 'unknown'}" (conf=${selected.confidence ?? selected.score ?? 0}, session=${currentSessionNumber})`,
   };
 }

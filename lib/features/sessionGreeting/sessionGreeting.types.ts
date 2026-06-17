@@ -1,9 +1,13 @@
 /**
  * Session Greeting Engine — Type Definitions
- * Engine decides anchor, GPT generates greeting text.
+ *
+ * V3.1 REDESIGN: Types now carry FULL personal content instead of truncated summaries.
+ * The engine's job is to build a rich prompt for GPT — not to compress data.
+ * 
+ * BACKWARD COMPATIBLE: Original types preserved for legacy V1 engine + tests.
  */
 
-// ─── Anchor Types ────────────────────────────────────────────────────────────
+// ─── Greeting Anchor Types ──────────────────────────────────────────────────
 
 export type GreetingAnchorType =
   | 'FIRST_SESSION'
@@ -53,7 +57,7 @@ export interface GreetingFreshnessResult {
   backpackAgeInHours: number | null;
 }
 
-// ─── Candidate ───────────────────────────────────────────────────────────────
+// ─── Anchor Candidate ────────────────────────────────────────────────────────
 
 export interface GreetingAnchorCandidate {
   anchorType: GreetingAnchorType;
@@ -73,10 +77,13 @@ export interface SelectedGreetingAnchor {
 // ─── Schema Rotation ─────────────────────────────────────────────────────────
 
 export interface GreetingSchemaTendency {
-  schemaId: string;
-  schemaName: string;
-  confidence: number;
-  lastUpdatedAt: string;
+  schemaId?: string;
+  schemaName?: string;
+  name?: string;
+  score?: number;
+  confidence?: number;
+  confirmed?: boolean;
+  lastUpdatedAt?: string;
 }
 
 export interface GreetingSchemaRotationState {
@@ -152,22 +159,52 @@ export interface GreetingProjectionFear {
   lastReinforcedAt: string;
 }
 
+/**
+ * V3.1: LogsDat snapshot now carries FULL session narrative + topics + emotional arc.
+ * No more 120-char truncation. Original fields preserved for backward compat.
+ */
 export interface GreetingLogsDatSnapshot {
+  /** Full compressed narrative from last session (no truncation) */
   latestLogDigest?: string;
+  /** Open loops / unresolved tensions from last session */
   lastSessionOpenLoops: string[];
+  /** Discussed topics from last session */
+  lastSessionTopics?: string[];
+  /** Emotional arc description from last session */
+  lastSessionEmotionalArc?: string;
+  /** Suggested follow-up from last session */
+  lastSessionFollowUp?: string[];
   /** Cross-session recurring pattern detected from logs.dat history */
   recurringPatternAnchor?: string;
   recurringPatternConfidence?: number;
 }
 
+/**
+ * V3.1: Diary metadata now carries FULL content of recent entries (up to 3).
+ * No more 80-char truncation. Original fields preserved for backward compat.
+ */
 export interface GreetingDiaryMetadata {
   latestEntryCreatedAt?: string;
+  /** FULL content of the most recent diary entry (no truncation) */
   latestSafeAnchor?: string;
+  /** Full content of up to 3 recent entries for richer context */
+  recentEntries?: Array<{
+    content: string;
+    moodTag: string;
+    timestamp: string;
+  }>;
 }
 
+/**
+ * V3.1: Gratitude metadata now carries ALL 3 gratitude entries.
+ * No more single-field 80-char truncation. Original fields preserved for backward compat.
+ */
 export interface GreetingGratitudeMetadata {
   latestEntryCreatedAt?: string;
+  /** Combined gratitude text (all entries, not truncated) */
   latestSafeAnchor?: string;
+  /** Individual gratitude entries for richer context */
+  gratitudeEntries?: string[];
 }
 
 // ─── Main Engine Input ───────────────────────────────────────────────────────

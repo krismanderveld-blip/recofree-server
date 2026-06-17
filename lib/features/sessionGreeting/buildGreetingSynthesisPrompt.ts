@@ -69,15 +69,15 @@ const ZONE_TONE_MAP: Record<string, ZoneToneConfig> = {
   },
   ORANJE: {
     toneInstruction: 'TOON: Direct, grondend en steunend. De gebruiker ervaart spanning — wees concreet en aanwezig. Geen positief-wassing, geen afleiding.',
-    openQuestionStyle: 'Eindig met een concrete vraag over het nu-moment: wat heeft de gebruiker nu nodig?',
+    openQuestionStyle: 'Eindig met een SPECIFIEKE vraag gebaseerd op de VSP "wat helpt" data (bv. "Heb je al even buiten gelopen?" of "Wil je Henk bellen?"). NOOIT "hoe voel je je" of andere generieke vragen.',
   },
   ROOD: {
     toneInstruction: 'TOON: Kalm, direct en veilig. De gebruiker is in een acute fase — bied aanwezigheid zonder paniek.',
-    openQuestionStyle: 'Stel één concrete vraag over het nu-moment.',
+    openQuestionStyle: 'Eindig met een SPECIFIEKE vraag gebaseerd op de VSP "wat helpt" data (bv. "Heb je al even buiten gelopen?" of "Wil je Henk bellen?"). NOOIT "hoe voel je je" of andere generieke vragen.',
   },
   PAARS: {
     toneInstruction: 'TOON: Kalm, direct en veilig. De gebruiker is in een acute fase — bied aanwezigheid zonder paniek.',
-    openQuestionStyle: 'Stel één concrete vraag over het nu-moment.',
+    openQuestionStyle: 'Eindig met een SPECIFIEKE vraag gebaseerd op de VSP "wat helpt" data (bv. "Heb je al even buiten gelopen?" of "Wil je Henk bellen?"). NOOIT "hoe voel je je" of andere generieke vragen.',
   },
 };
 
@@ -164,45 +164,57 @@ function buildCoherentSynthesisInstruction(
 ZONE: ${zone}
 ${zoneTone.toneInstruction}
 
-CONTEXT (dit is wat je weet over de gebruiker NU):
-${contextBriefing}${vspPersonalContext}
+=== PERSOONLIJKE DATA VAN DE GEBRUIKER (VERPLICHT TE GEBRUIKEN) ===
 
-INSTRUCTIES:
-- Verweef de context tot ÉÉN vloeiende, menselijke begroeting
-- Gebruik MAXIMAAL 3-4 zinnen totaal
+${contextBriefing}
+${vspPersonalContext}
+
+=== EINDE PERSOONLIJKE DATA ===
+
+KERNINSTRUCTIE:
+Je MOET minstens één concreet element uit de bovenstaande persoonlijke data ACTIEF verwerken in je begroeting.
+Dit is GEEN optionele context — dit is het DOEL van deze begroeting: de gebruiker laten voelen dat je HEN kent.
+
+HOE:
+- Verweef de persoonlijke data tot ÉÉN vloeiende, menselijke begroeting
+- Gebruik MAXIMAAL 4-5 zinnen totaal
 - Begin met een persoonlijke opening (gebruik de naam)
 - ${zoneTone.openQuestionStyle}
-- De begroeting moet aanvoelen als een warm gesprek, NIET als een samenvatting
-- De TOON moet passen bij zone ${zone}: ${zone === 'GROEN' ? 'open en warm' : zone === 'GEEL' ? 'erkennend en zacht — er speelt iets' : 'direct en grondend'}
-- Noem NOOIT de bronnen expliciet ("ik zie in je dagboek" is verboden)
-- Noem NOOIT de zone of kleuren ("je zit in geel" is verboden)
-- Verwijs indirect en natuurlijk naar de inhoud
-- Geen opsommingen, geen checklist-taal, geen "ten eerste/ten tweede"
-- Grammaticaal correct, vloeiend Nederlands
-- Geen emoji
+- De begroeting moet aanvoelen als een warm gesprek met iemand die je KENT
+- De TOON moet passen bij zone ${zone}: ${zone === 'GROEN' ? 'open, warm en erkennend van wat goed gaat' : zone === 'GEEL' ? 'erkennend en zacht — er speelt iets, benoem dat subtiel' : zone === 'ORANJE' ? 'direct, grondend, en verwijzend naar wat de gebruiker zelf zegt dat helpt' : 'rustig, aanwezig, en direct verwijzend naar hun copingstrategie'}
 
-VERBODEN ZINNEN:
-- "Hoe voel je je?" (te generiek)
-- "Hoe gaat het?" (te generiek)
-- "Ik zie dat je..." (te klinisch)
+CONCREET VOORBEELD van hoe je data verweeft:
+- Als dagboek zegt "vandaag was zwaar op werk" → "Het klinkt alsof werk je bezighoudt..."
+- Als gratitude zegt "mijn hond" → "Fijn dat [hond] er is voor je..."
+- Als mood craving 7/10 is → "Ik merk dat het vandaag stevig trekt..."
+- Als VSP "wandelen" als wat helpt noemt → "Heb je al even buiten gelopen?"
+
+VERBODEN (HARD — elke overtreding maakt de output ONGELDIG):
+- "Hoe voel je je?" / "Hoe gaat het?" / "Hoe voel je je nu?" / "Hoe is het?" → NOOIT. Je HEBT data, stel een SPECIFIEKE vraag.
+- "Ik zie dat je..." / "Ik lees in je dagboek..." (te klinisch, noem bronnen NOOIT)
+- "Je zit in zone..." / kleuren noemen
 - "Laten we beginnen met..." (te gestructureerd)
-- Elke zin die klinkt als een inventarisatie of checklist
+- Opsommingen, checklist-taal, "ten eerste/ten tweede"
+- Emoji
+- GENERIEKE begroetingen die je ook zonder data zou kunnen schrijven
+- Eindigen met een open vraag die je ook ZONDER data zou stellen → vervang door een SPECIFIEKE vraag gebaseerd op de data (bv. "Heb je al even buiten gelopen?" of "Heb je Henk al gebeld?")
+
+TAALREGEL:
+- Grammaticaal correct Nederlands, geen emoji
 
 KRITIEK — GEEN HALLUCINATIE:
-- Verwijs ALLEEN naar informatie die EXPLICIET in de CONTEXT hierboven staat
-- Verzin NOOIT sessies, gesprekken of activiteiten die niet in de context staan
-- Als de context zegt "dagboek van gisteren" mag je ernaar verwijzen; als er GEEN bron over gisteren is, NOEM gisteren dan NIET
-- Zeg NOOIT "fijne dag gisteren" of "sessie van gisteren" tenzij dit LETTERLIJK uit de context komt
-- Bij twijfel: houd het algemeen en warm zonder specifieke tijdsreferenties
+- Verwijs ALLEEN naar informatie die EXPLICIET in de persoonlijke data hierboven staat
+- Verzin NOOIT sessies, gesprekken of activiteiten die niet in de data staan
+- Bij twijfel: houd het concreet maar algemeen, zonder specifieke tijdsreferenties
 
-VOORBEELD VAN GOEDE BEGROETING BIJ ZONE ${zone} (ter illustratie, niet kopiëren):
+VOORBEELD (ter illustratie, niet kopiëren):
 ${getZoneExample(userName, zone)}`;
 }
 
 /**
- * Builds personal VSP context from the user's own structured VSP section.
- * This gives GPT access to the user's self-described signals, what helps, and anchor sentence
- * for their current zone — enabling deeply personal, relevant greetings.
+ * V3.1: Builds personal VSP context from the user's own structured VSP section.
+ * CRITICAL CHANGE: Now uses HARD directive for ALL zones (not just high zones).
+ * The user's own words are ALWAYS the primary material for personalization.
  */
 function buildVspPersonalContext(vspSection: GreetingVspSectionSnapshot | undefined, zone: string): string {
   if (!vspSection) return '';
@@ -212,13 +224,13 @@ function buildVspPersonalContext(vspSection: GreetingVspSectionSnapshot | undefi
 
   if (entry) {
     if (entry.signals && entry.signals.length > 0) {
-      parts.push(`\n\nPERSOONLIJKE VSP-SIGNALEN (wat de gebruiker ZELF beschrijft als herkenningspunten in zone ${zone}):\n  ${entry.signals.join('\n  ')}`);
+      parts.push(`\n\n=== PERSOONLIJK VEILIGHEIDSPLAN (VSP) — ZONE ${zone} ===\nSIGNALEN (wat de gebruiker ZELF herkent bij zone ${zone}):\n  - ${entry.signals.join('\n  - ')}`);
     }
     if (entry.whatHelps && entry.whatHelps.length > 0) {
-      parts.push(`\nWAT HELPT (door de gebruiker zelf benoemd voor zone ${zone}):\n  ${entry.whatHelps.join('\n  ')}`);
+      parts.push(`\nWAT HELPT (door de gebruiker ZELF benoemd voor zone ${zone}):\n  - ${entry.whatHelps.join('\n  - ')}`);
     }
     if (entry.anchorSentence) {
-      parts.push(`\nANKERZIN: "${entry.anchorSentence}"`);
+      parts.push(`\nANKERZIN (de gebruiker koos deze zin voor zichzelf):\n  "${entry.anchorSentence}"`);
     }
   }
 
@@ -226,19 +238,35 @@ function buildVspPersonalContext(vspSection: GreetingVspSectionSnapshot | undefi
     parts.push(`\nALGEMENE ANKERZIN: "${vspSection.mainAnchorSentence}"`);
   }
 
-  if (parts.length === 0) return '';
-
-  const isHighZone = ['ROOD', 'PAARS', 'ORANJE'].includes(zone);
-
-  if (isHighZone) {
-    return parts.join('') + `\n\nCRITICAL — VSP ZONE ${zone} ACTIVE:\n- The user is in a HIGH zone. Their safety plan content above is DIRECTLY relevant RIGHT NOW.\n- You MUST incorporate what THEY wrote helps them. Use their own words and phrasing.\n- If they wrote "calling my sponsor" as what helps → mention reaching out to someone.\n- If they wrote an anchor sentence → weave it into your greeting naturally.\n- Do NOT say "your safety plan says..." — but DO use the content directly.\n- This is NOT background context — this is their ACTIVE coping strategy for this exact moment.`;
+  // Add triggers with counter-thoughts if available
+  if (vspSection.triggers && vspSection.triggers.length > 0) {
+    const triggerLines = vspSection.triggers.map(t =>
+      `  - Trigger: "${t.trigger}" → Tegenzin: "${t.counterThought}"`
+    ).join('\n');
+    parts.push(`\nTRIGGERS & TEGENZINNEN (door gebruiker zelf opgesteld):\n${triggerLines}`);
   }
 
-  return parts.join('') + `\n\nVSP-CONTEXT GUIDANCE:\n- You may subtly reference what the user described as signals or what helps\n- Never mention it literally ("your safety plan says...") — weave it naturally\n- Use it as background knowledge to guide tone and direction\n- If the user mentions "slowing down" as helpful, you might say "take a moment"\n- If the user mentions "being in my head" as a signal, you might ask "what do you feel right now?" (toward body)`;
+  // Add recovery rules if available
+  if (vspSection.recoveryRules && vspSection.recoveryRules.length > 0) {
+    parts.push(`\nHERSTELREGELS (door gebruiker zelf opgesteld):\n  - ${vspSection.recoveryRules.join('\n  - ')}`);
+  }
+
+  if (parts.length === 0) return '';
+
+  // V3.1: HARD directive for ALL zones — the user's own content is ALWAYS primary
+  const isHighZone = ['ROOD', 'PAARS', 'ORANJE'].includes(zone);
+
+  const directive = isHighZone
+    ? `\n\n=== VERPLICHTE INSTRUCTIE (VSP ZONE ${zone}) ===\nDe gebruiker zit in zone ${zone}. Dit is ACUUT.\n- Je MOET hun eigen "wat helpt" content DIRECT gebruiken als interventie.\n- Gebruik hun EIGEN woorden en formuleringen.\n- Als ze "wandelen" schreven → noem bewegen/naar buiten gaan.\n- Als ze "bellen met sponsor" schreven → noem contact zoeken.\n- Als ze een ankerzin hebben → verweef die LETTERLIJK in je begroeting.\n- Zeg NOOIT "je veiligheidsplan zegt..." — maar gebruik de inhoud WEL direct.\n- Dit is GEEN achtergrondkennis — dit is hun ACTIEVE copingstrategie voor DIT moment.`
+    : `\n\n=== VERPLICHTE INSTRUCTIE (VSP ZONE ${zone}) ===\n- Je MOET de bovenstaande persoonlijke VSP-content ACTIEF gebruiken in je begroeting.\n- Dit is GEEN optionele achtergrondkennis — dit is wat de gebruiker ZELF heeft opgeschreven.\n- Refereer subtiel maar CONCREET aan hun signalen, wat helpt, of ankerzin.\n- Als ze "onrust in mijn buik" als signaal noemden → vraag naar hoe hun lichaam nu voelt.\n- Als ze "muziek luisteren" als wat helpt noemden → verwijs ernaar.\n- Zeg NOOIT "je veiligheidsplan zegt..." — verweef het NATUURLIJK.\n- Het doel: de gebruiker voelt zich HERKEND en GEZIEN door hun eigen woorden terug te horen.`;
+
+  return parts.join('') + directive;
 }
 
 /**
- * Builds a coherent narrative context from selected sources instead of a numbered list.
+ * V3.1: Builds a RICH narrative context from selected sources.
+ * Each source outputs its FULL content — no truncation, no one-liners.
+ * GPT needs the complete picture to create a truly personal greeting.
  */
 function buildContextBriefing(sources: SelectedSynthesisSource[], zone: string): string {
   if (sources.length === 0) {
@@ -250,33 +278,33 @@ function buildContextBriefing(sources: SelectedSynthesisSource[], zone: string):
   for (const source of sources) {
     switch (source.sourceType) {
       case 'TODAY_MOOD':
-        parts.push(`De check-in van vandaag laat zien: ${source.safeAnchor}.`);
+        parts.push(`MOOD CHECK-IN VANDAAG:\n  ${source.safeAnchor}`);
         break;
       case 'RECENT_DIARY':
-        parts.push(`Uit het dagboek (recent): "${source.safeAnchor}".`);
+        parts.push(`DAGBOEK (recent — dit schreef de gebruiker ZELF):\n  "${source.safeAnchor}"`);
         break;
       case 'RECENT_GRATITUDE':
-        parts.push(`Dankbaarheid (recent): "${source.safeAnchor}".`);
+        parts.push(`DANKBAARHEID (recent — dit noemde de gebruiker ZELF):\n  "${source.safeAnchor}"`);
         break;
       case 'BACKPACK_RECENT_UPDATE':
-        parts.push(`De rugzak is recent bijgewerkt.`);
+        parts.push(`RUGZAK: recent bijgewerkt (de gebruiker heeft actief aan zichzelf gewerkt).`);
         break;
       case 'ACTIVE_HOPE_OR_FEAR':
-        parts.push(`Actieve zorg: "${source.safeAnchor}".`);
+        parts.push(`ACTIEVE ZORG/HOOP (projectie):\n  "${source.safeAnchor}"`);
         break;
       case 'SCHEMA_ROTATION':
-        parts.push(`Terugkerend thema: ${source.safeAnchor}.`);
+        parts.push(`TERUGKEREND SCHEMA/THEMA:\n  ${source.safeAnchor}`);
         break;
       case 'LAST_SESSION_SUMMARY':
-        parts.push(`Vorige sessie: ${source.safeAnchor}.`);
+        parts.push(`VORIGE SESSIE (samenvatting):\n  ${source.safeAnchor}`);
         break;
       case 'RECURRING_PATTERN':
-        parts.push(`Terugkerend patroon over meerdere sessies: ${source.safeAnchor}.`);
+        parts.push(`TERUGKEREND PATROON (meerdere sessies):\n  ${source.safeAnchor}`);
         break;
     }
   }
 
-  return parts.map(p => `  ${p}`).join('\n');
+  return parts.join('\n\n');
 }
 
 /**
@@ -355,16 +383,47 @@ VOORBEELD (ter illustratie, niet kopiëren):
 
 // ─── Override Prompt Builders ────────────────────────────────────────────────
 
-export function buildCrisisOverridePrompt(userName: string, craving: number, vspZone?: string): string {
+export function buildCrisisOverridePrompt(
+  userName: string,
+  craving: number,
+  vspZone?: string,
+  vspSection?: GreetingVspSectionSnapshot,
+): string {
   const zone = (vspZone ?? 'ROOD').toUpperCase();
-  return `Je bent Elias. ${userName} heeft een hoge craving (${craving}/10) ingevuld. Zone: ${zone}.
 
-Schrijf een korte, directe begroeting (2-3 zinnen):
+  // V3.1: Include VSP personal content in crisis override
+  const entry = vspSection?.currentZoneEntry;
+  let vspBlock = '';
+
+  if (entry && (entry.signals.length > 0 || entry.whatHelps.length > 0 || entry.anchorSentence)) {
+    const parts: string[] = [];
+    if (entry.signals.length > 0) {
+      parts.push(`SIGNALEN die de gebruiker ZELF herkent bij zone ${zone}:\n  - ${entry.signals.join('\n  - ')}`);
+    }
+    if (entry.whatHelps.length > 0) {
+      parts.push(`WAT HELPT (door de gebruiker ZELF benoemd):\n  - ${entry.whatHelps.join('\n  - ')}`);
+    }
+    if (entry.anchorSentence) {
+      parts.push(`ANKERZIN: "${entry.anchorSentence}"`);
+    }
+    if (vspSection?.triggers && vspSection.triggers.length > 0) {
+      const triggerLines = vspSection.triggers.map(t =>
+        `  - "${t.trigger}" → Tegenzin: "${t.counterThought}"`
+      ).join('\n');
+      parts.push(`TRIGGERS & TEGENZINNEN:\n${triggerLines}`);
+    }
+    vspBlock = `\n\n=== PERSOONLIJK VEILIGHEIDSPLAN (VSP) — ZONE ${zone} ===\n${parts.join('\n\n')}\n\n=== VERPLICHTE INSTRUCTIE ===\nJe MOET de bovenstaande "wat helpt" content DIRECT gebruiken als interventie.\nGebruik hun EIGEN woorden. Als ze "wandelen" schreven → noem bewegen.\nAls ze een ankerzin hebben → verweef die in je begroeting.\nZeg NOOIT "je veiligheidsplan zegt..." — maar gebruik de inhoud WEL.`;
+  }
+
+  return `Je bent Elias. ${userName} heeft een hoge craving (${craving}/10) ingevuld. Zone: ${zone}.${vspBlock}
+
+Schrijf een korte, directe begroeting (3-4 zinnen):
 - Erken dat het zwaar is ZONDER te dramatiseren
 - Bied aanwezigheid ("ik ben hier")
-- Stel één concrete vraag over het nu-moment
+- ${entry?.whatHelps?.length ? 'Verwijs CONCREET naar wat de gebruiker zelf zegt dat helpt (zie VSP hierboven)' : 'Stel \u00e9\u00e9n concrete vraag over het nu-moment'}
 - Geen opsommingen, geen checklist, geen "hoe voel je je"
-- Grammaticaal correct Nederlands, geen emoji`;
+- Grammaticaal correct Nederlands, geen emoji
+- VERBODEN: generieke zinnen die je ook zonder VSP-data zou schrijven`;
 }
 
 export function buildFirstSessionOverridePrompt(

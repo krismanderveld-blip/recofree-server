@@ -44,7 +44,7 @@ describe('V3 Engine Integration', () => {
     expect(result.override).toBeNull();
     expect(result.synthesisPayload).not.toBeNull();
     expect(result.selectedSources.length).toBeGreaterThan(0);
-    expect(result.selectedSources.length).toBeLessThanOrEqual(3);
+    expect(result.selectedSources.length).toBeLessThanOrEqual(8);
   });
 
   it('T27: Crisis session produces CRISIS_OVERRIDE mode', () => {
