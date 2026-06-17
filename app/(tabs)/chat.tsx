@@ -930,10 +930,32 @@ function ChatScreenInner() {
       }
     } catch (error) {
       console.error('Pipeline error:', error);
+      // ── CRASH REPORTER: Full stack trace on screen ──
+      const err = error as Error;
+      const stack = err?.stack ?? 'No stack trace available';
+      // Extract the most useful info: first 5 stack frames
+      const stackLines = stack.split('\n').slice(0, 8).join('\n');
+      const crashReport = [
+        `⚠️ PIPELINE CRASH REPORT`,
+        `━━━━━━━━━━━━━━━━━━━━━━━━`,
+        `Error: ${err?.message ?? 'Unknown'}`,
+        `Type: ${err?.name ?? 'Unknown'}`,
+        `━━━━━━━━━━━━━━━━━━━━━━━━`,
+        `Stack trace:`,
+        stackLines,
+        `━━━━━━━━━━━━━━━━━━━━━━━━`,
+        `Timestamp: ${new Date().toISOString()}`,
+        `Session phase: ${sessionPhase}`,
+        `Has backpack: ${!!state.backpack}`,
+        `Has userDat: ${!!state.userDat}`,
+        `━━━━━━━━━━━━━━━━━━━━━━━━`,
+        `📸 SCREENSHOT DIT BERICHT`,
+        `en stuur het naar de developer.`,
+      ].join('\n');
       const errorMsg: ChatMessage = {
         id: `msg_${Date.now() + 1}`,
         role: 'assistant',
-        content: `[DEBUG] Pipeline error: ${(error as Error)?.message ?? 'Unknown error'}`,
+        content: crashReport,
         timestamp: new Date().toISOString(),
       };
       setMessages((prev) => [...prev, errorMsg]);

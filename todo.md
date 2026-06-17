@@ -1507,3 +1507,5 @@
 - [x] Fix: T18 and T29 test assertions — updated to match new MISSING_DATA prompt text
 - [x] Tests: 5 new VSP undefined-fields crash tests (T_VSP_01–T_VSP_05) confirming the fix
 - [x] Full test suite: 1079 passed, 0 failed, 1 skipped (1080 total)
+- [x] Add on-screen crash reporter to handleSend (full stack trace visible on device for debugging)
+- [x] Enhance ChatErrorBoundary with full stack trace display (not just __DEV__)

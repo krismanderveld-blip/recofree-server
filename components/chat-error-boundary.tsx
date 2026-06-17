@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { View, Text, Pressable, StyleSheet, Platform, ScrollView } from 'react-native';
 import { logDebugEvent } from '@/lib/debug/session-logger';
 
 interface Props {
@@ -43,17 +43,24 @@ export class ChatErrorBoundary extends React.Component<Props, State> {
 
   render() {
     if (this.state.hasError) {
+      const err = this.state.error;
+      const stackLines = (err?.stack ?? 'No stack').split('\n').slice(0, 10).join('\n');
       return (
         <View style={styles.container}>
-          <Text style={styles.title}>Something went wrong</Text>
+          <Text style={styles.title}>⚠️ Chat Crash</Text>
           <Text style={styles.message}>
-            An unexpected error occurred in the chat. Your data is safe.
+            Er is een fout opgetreden. Je data is veilig.
           </Text>
-          {__DEV__ && this.state.error && (
-            <Text style={styles.errorDetail} numberOfLines={4}>
-              {this.state.error.message}
-            </Text>
+          {err && (
+            <ScrollView style={styles.crashBox} nestedScrollEnabled>
+              <Text style={styles.crashTitle}>Error: {err.name}</Text>
+              <Text style={styles.crashMessage}>{err.message}</Text>
+              <Text style={styles.crashStack} selectable>{stackLines}</Text>
+            </ScrollView>
           )}
+          <Text style={styles.screenshotHint}>
+            📸 Screenshot dit scherm en stuur het naar de developer
+          </Text>
           <Pressable
             onPress={this.handleRestart}
             style={({ pressed }) => [
@@ -61,7 +68,7 @@ export class ChatErrorBoundary extends React.Component<Props, State> {
               pressed && { opacity: 0.8 },
             ]}
           >
-            <Text style={styles.buttonText}>Restart session</Text>
+            <Text style={styles.buttonText}>Herstart sessie</Text>
           </Pressable>
         </View>
       );
@@ -98,6 +105,40 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 24,
     paddingHorizontal: 16,
+  },
+  crashBox: {
+    width: '100%',
+    maxHeight: 280,
+    backgroundColor: '#FEF2F2',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#FECACA',
+  },
+  crashTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#991B1B',
+    marginBottom: 4,
+  },
+  crashMessage: {
+    fontSize: 12,
+    color: '#DC2626',
+    marginBottom: 8,
+  },
+  crashStack: {
+    fontSize: 10,
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+    color: '#7F1D1D',
+    lineHeight: 14,
+  },
+  screenshotHint: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#0369A1',
+    textAlign: 'center',
+    marginBottom: 20,
   },
   button: {
     backgroundColor: '#039BE5',
