@@ -79,6 +79,9 @@ import {
 } from './state-analyzer';
 import { updateTriggerPatterns, recordModuleUsage } from './engine';
 import { processFeedbackLoop } from '../engine/feedback-loop';
+import { mergePersons } from '../engine/signal-router';
+import { loadCachedVspProfile } from '../backpack-extractor/vsp-backpack-analyzer';
+import { parseEngineResponse } from '../engine/signal-parser';
 import {
   updateBuffer,
   createBuffer,
@@ -2155,7 +2158,6 @@ export async function processMessage(
   let vspBackpackProfileBlock: string | undefined;
   if (backpack.userType === 'elias') {
     try {
-      const { loadCachedVspProfile } = await import('../backpack-extractor/vsp-backpack-analyzer');
       const cached = await loadCachedVspProfile();
       vspBackpackProfileBlock = cached?.contextBlock || buildVspBackpackProfileBlock(backpack.sections || []);
     } catch {
@@ -2342,7 +2344,7 @@ export async function processMessage(
 
   // 7a-pre. Apply feedback loop routing to userDat (persons → extractedEntities, triggers → triggerPatterns)
   if (feedbackResult.routing.personsToStore.length > 0 && updatedUserDat.extractedEntities) {
-    const { mergePersons } = require('../engine/signal-router');
+    // Static import used (Metro bundler cannot resolve dynamic require on device)
     const existingPersons = updatedUserDat.extractedEntities.persons || [];
     updatedUserDat = {
       ...updatedUserDat,
@@ -2956,7 +2958,7 @@ export async function generateGreeting(
   try {
     const result = await provider.generateResponse(context);
     // Strip <engine_signals> and <clinical> tags from greeting before displaying
-    const { parseEngineResponse } = await import('../engine/signal-parser');
+    // Static import used (Metro bundler cannot resolve dynamic import on device)
     const parsed = parseEngineResponse(result.response);
     response = parsed.clinicalBlock
       ? parsed.userText + `\n\n<clinical>${parsed.clinicalBlock}</clinical>`
@@ -3827,12 +3829,18 @@ function buildVspStructuredBlock(backpack: import('../ai/types').Backpack): stri
   if (vspSection.triggers && vspSection.triggers.length > 0) {
     lines.push('TRIGGERS:');
     for (const t of vspSection.triggers) {
-      lines.push(`  - ${t.trigger} → Tegenzin: "${t.counterThought}"`);
+      // Defensive: skip null/undefined entries (can occur from incomplete VSP documents)
+      if (!t || !t.trigger) continue;
+      lines.push(`  - ${t.trigger} → Tegenzin: "${t.counterThought ?? ''}"`);
     }
   }
 
   if (vspSection.recoveryRules && vspSection.recoveryRules.length > 0) {
-    lines.push(`HERSTELREGELS: ${vspSection.recoveryRules.join('; ')}`);
+    // Defensive: filter out null/undefined entries
+    const validRules = vspSection.recoveryRules.filter((r: any) => r != null);
+    if (validRules.length > 0) {
+      lines.push(`HERSTELREGELS: ${validRules.join('; ')}`);
+    }
   }
 
   if (vspSection.mainAnchorSentence) {

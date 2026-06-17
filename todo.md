@@ -1502,6 +1502,8 @@
 
 ## Bug Fixes (post-deploy)
 
-- [x] Fix: Pipeline error "undefined is not a function" — defensive guard + static import fix (not reproducible in tests; likely Metro bundler require() issue)
+- [x] Fix: Pipeline error "undefined is not a function" — ROOT CAUSE: null entries in vspSection.triggers crash buildVspStructuredBlock (line 3832). Fix: defensive null check + skip invalid entries.
+- [x] Fix: 3 dynamic require()/await import() in pipeline.ts converted to static imports (Metro bundler cannot resolve dynamic imports on device)
 - [x] Fix: T18 and T29 test assertions — updated to match new MISSING_DATA prompt text
-- [x] Full test suite: 1074 passed, 0 failed, 1 skipped (1075 total)
+- [x] Tests: 5 new VSP undefined-fields crash tests (T_VSP_01–T_VSP_05) confirming the fix
+- [x] Full test suite: 1079 passed, 0 failed, 1 skipped (1080 total)
