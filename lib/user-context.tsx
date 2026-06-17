@@ -992,6 +992,7 @@ function migrateBackpack(raw: any): Backpack {
     },
     createdAt: raw.createdAt ?? new Date().toISOString(),
     kimBackpack: raw.kimBackpack ?? undefined,
+    vspSection: raw.vspSection ?? undefined,
   };
 }
 
@@ -1052,5 +1053,7 @@ function migrateUserDat(raw: any, userType: UserType): UserDat {
     gdprAcceptedAt: raw.gdprAcceptedAt ?? undefined,
     gdprVersion: raw.gdprVersion ?? undefined,
     firstChatSeen: raw.firstChatSeen ?? undefined,
+    backpackAnalysis: raw.backpackAnalysis ?? undefined,
+    extractedEntities: raw.extractedEntities ?? undefined,
   };
 }

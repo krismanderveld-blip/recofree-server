@@ -1530,3 +1530,4 @@
 - [x] Fix: Privacy disclaimer screen keeps reappearing — should only show once (first use), then never again
 - [x] Fix: Pipeline crash 'Cannot read property topicHistory of null' — enrichBuffer receives null bufferState
 - [x] Fix: Clinical annotation block visible to user in chat (should be hidden unless Clinical Mode active)
+- [x] Fix: VSP data (zones, wat helpt, signalen) must persist across app updates like backpack does
