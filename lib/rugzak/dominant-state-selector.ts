@@ -135,6 +135,52 @@ function determineTone(
   return 'warm';
 }
 
+// ─── VSP "What Helps" Matcher ────────────────────────────────
+
+/**
+ * Check if the user's message references something from their VSP "what helps" content.
+ * Uses keyword extraction and fuzzy matching to detect when the user mentions
+ * their own coping strategies.
+ */
+function matchesWhatHelps(userMessage: string, whatHelps: string): boolean {
+  if (!whatHelps || whatHelps.trim().length < 3) return false;
+  if (!userMessage || userMessage.trim().length < 3) return false;
+  
+  const msgLower = userMessage.toLowerCase();
+  
+  // Split whatHelps into meaningful phrases (by comma, semicolon, period, newline, or 'en'/'and')
+  const phrases = whatHelps
+    .split(/[,;.\n]|\b(?:en|and|or|of)\b/i)
+    .map(p => p.trim().toLowerCase())
+    .filter(p => p.length >= 3);
+  
+  // Check if any phrase from "what helps" appears in the user message
+  for (const phrase of phrases) {
+    // Extract key words (3+ chars) from the phrase
+    const keywords = phrase.split(/\s+/).filter(w => w.length >= 3);
+    
+    // If the full phrase is short enough, check direct inclusion
+    if (phrase.length <= 30 && msgLower.includes(phrase)) {
+      return true;
+    }
+    
+    // If 2+ keywords from a phrase appear in the message, consider it a match
+    if (keywords.length >= 2) {
+      const matchCount = keywords.filter(kw => msgLower.includes(kw)).length;
+      if (matchCount >= Math.ceil(keywords.length * 0.6)) {
+        return true;
+      }
+    } else if (keywords.length === 1 && keywords[0].length >= 5) {
+      // Single long keyword (like "wandelen", "sponsor", "ademhaling")
+      if (msgLower.includes(keywords[0])) {
+        return true;
+      }
+    }
+  }
+  
+  return false;
+}
+
 // ─── Main Selector ───────────────────────────────────────────
 
 /**
@@ -146,6 +192,7 @@ function determineTone(
  * @param userType - 'elias' or 'kim'
  * @param triggerPatterns - Long-term trigger patterns from user.dat
  * @param analyzerModules - Priority modules from StateAnalyzer
+ * @param vspContext - Optional VSP context: the user's selected zone and what helps them
  */
 export function selectDominantState(
   buffer: BufferState,
@@ -153,7 +200,8 @@ export function selectDominantState(
   mood: MoodSliders,
   userType: UserType,
   triggerPatterns: TriggerPattern[],
-  analyzerModules: string[]
+  analyzerModules: string[],
+  vspContext?: { vspLevel: string | null; whatHelps: string | null; userMessage: string }
 ): DominantState {
   const distress = getDistress100(mood, userType);
   const resilience = getResilience100(mood, userType);
@@ -170,6 +218,80 @@ export function selectDominantState(
       sourceLayer: 'crisis',
       riskScore: Math.max(buffer.currentZoneScore, 90),
     };
+  }
+
+  // ── PRIORITY 1.5: VSP ZONE OVERRIDE (Elias only) ──
+  // When user explicitly selects a high zone (ROOD/PAARS) in pre-chat VSP,
+  // force appropriate module regardless of slider state.
+  if (vspContext?.vspLevel && userType === 'elias') {
+    const vspZone = vspContext.vspLevel.toUpperCase();
+    
+    // PAARS = crisis/relapse → force crisis module
+    if (vspZone === 'PAARS' || vspZone === 'PURPLE') {
+      return {
+        dominantModule: getCrisisModule(userType),
+        dominantTrigger: buffer.currentTriggerGuess || 'vsp_crisis',
+        dominantDirection: 'crisis_override',
+        dominantTone: 'crisis',
+        selectionReason: `VSP zone PURPLE selected: user indicated crisis/relapse state`,
+        sourceLayer: 'crisis',
+        riskScore: 90,
+      };
+    }
+    
+    // ROOD = not safe alone → force grounding (E05) or craving (E01) based on content
+    if (vspZone === 'ROOD' || vspZone === 'RED') {
+      // Check if user message mentions something from their "what helps" → support that
+      const whatHelpsMatch = vspContext.whatHelps && vspContext.userMessage
+        ? matchesWhatHelps(vspContext.userMessage, vspContext.whatHelps)
+        : false;
+      
+      // If user is already doing what helps them, support it (E08 = acceptance/support)
+      if (whatHelpsMatch) {
+        return {
+          dominantModule: 'E08',
+          dominantTrigger: buffer.currentTriggerGuess || 'vsp_self_help',
+          dominantDirection: 'stabilize',
+          dominantTone: 'grounding',
+          selectionReason: `VSP RED + user mentions their own coping strategy → support mode`,
+          sourceLayer: 'crisis',
+          riskScore: 75,
+        };
+      }
+      
+      // Default RED: grounding module
+      const redModule = buffer.currentTriggerGuess === 'craving' ? 'E01' : 'E05';
+      return {
+        dominantModule: redModule,
+        dominantTrigger: buffer.currentTriggerGuess || 'vsp_red_zone',
+        dominantDirection: 'stabilize',
+        dominantTone: 'grounding',
+        selectionReason: `VSP zone RED selected: user indicated not safe alone → grounding`,
+        sourceLayer: 'crisis',
+        riskScore: 75,
+      };
+    }
+    
+    // ORANJE = active intervention needed → containing module
+    if (vspZone === 'ORANJE' || vspZone === 'ORANGE') {
+      // Check if user mentions their coping strategy
+      const whatHelpsMatch = vspContext.whatHelps && vspContext.userMessage
+        ? matchesWhatHelps(vspContext.userMessage, vspContext.whatHelps)
+        : false;
+      
+      if (whatHelpsMatch) {
+        return {
+          dominantModule: 'E08',
+          dominantTrigger: buffer.currentTriggerGuess || 'vsp_self_help',
+          dominantDirection: buffer.responseDirection,
+          dominantTone: 'containing',
+          selectionReason: `VSP ORANGE + user mentions their own coping strategy → support mode`,
+          sourceLayer: 'live_trigger',
+          riskScore: 55,
+        };
+      }
+      // Don't override for ORANGE if no whatHelps match — let normal priority flow handle it
+    }
   }
 
   // ── PRIORITY 2: URGENT LIVE TRIGGER FROM BUFFER ──

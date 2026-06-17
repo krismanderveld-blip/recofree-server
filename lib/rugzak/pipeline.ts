@@ -626,6 +626,26 @@ export async function processMessage(
   );
 
   // Select dominant state (pre-GPT decision variable — NOT reselected after GPT)
+  // Build VSP context for module selection: active zone + what helps for that zone
+  const earlyMood = currentUserDat.currentMood || (ELIAS_DEFAULT_MOOD as any);
+  const earlyVspLevel: string | null = backpack.userType === 'elias' && 'vsp' in earlyMood
+    ? (earlyMood as import('../ai/types').EliasMoodSliders).vsp
+    : null;
+  let vspWhatHelps: string | null = null;
+  if (earlyVspLevel && backpack.vspSection?.zones) {
+    const zoneMap: Record<string, keyof typeof backpack.vspSection.zones> = {
+      'GROEN': 'green', 'GREEN': 'green',
+      'GEEL': 'yellow', 'YELLOW': 'yellow',
+      'ORANJE': 'orange', 'ORANGE': 'orange',
+      'ROOD': 'red', 'RED': 'red',
+      'PAARS': 'purple', 'PURPLE': 'purple',
+    };
+    const zoneKey = zoneMap[earlyVspLevel.toUpperCase()];
+    if (zoneKey && backpack.vspSection.zones[zoneKey]) {
+      vspWhatHelps = backpack.vspSection.zones[zoneKey].whatHelps || null;
+    }
+  }
+
   let preGPTDominantState = selectDominantState(
     sessionBuffer,
     analysis,
@@ -633,6 +653,7 @@ export async function processMessage(
     backpack.userType,
     currentUserDat.triggerPatterns || [],
     analysis.priorityModules,
+    backpack.userType === 'elias' ? { vspLevel: earlyVspLevel, whatHelps: vspWhatHelps, userMessage } : undefined,
   );
 
   // ── LOOPBLOCKER: Per-session module repetition detection ──
@@ -659,6 +680,41 @@ export async function processMessage(
         ...preGPTDominantState,
         dominantModule: alternativeModule,
         selectionReason: `Loopblocker: "${preGPTDominantState.dominantModule}" already used → fallback to "${alternativeModule}"`,
+      };
+    }
+  }
+
+  // ── MID-SESSION RE-EVALUATION: Dynamic module switching based on conversation progression ──
+  // After 3+ messages, check if the user's intensity trajectory warrants a module switch.
+  // This allows therapy approach to evolve as the conversation progresses.
+  if (sessionBuffer.messageCount >= 3 && backpack.userType === 'elias') {
+    const trajectory = sessionBuffer.intensityTrajectory;
+    const currentModule = preGPTDominantState.dominantModule;
+    const isGroundingModule = ['E05', 'E01', 'E_CRISIS'].includes(currentModule);
+    const isExplorationModule = ['E02', 'E03', 'E04', 'E06', 'E07', 'E08'].includes(currentModule);
+
+    // User is stabilizing (falling intensity) → switch from grounding to deeper exploration
+    if (trajectory === 'falling' && isGroundingModule && currentModule !== 'E_CRISIS') {
+      const deeperModules = ['E02', 'E04', 'E06', 'E08'].filter(m => !usedModules.includes(m));
+      if (deeperModules.length > 0) {
+        const newModule = deeperModules[0];
+        console.log(`[Pipeline] MID-SESSION RE-EVAL: Trajectory falling + grounding module → switching to deeper module "${newModule}"`);
+        preGPTDominantState = {
+          ...preGPTDominantState,
+          dominantModule: newModule,
+          selectionReason: `Mid-session re-eval: user stabilizing (trajectory=falling), switching from grounding (${currentModule}) to exploration (${newModule})`,
+        };
+      }
+    }
+    // User is escalating (rising intensity) → switch from exploration to grounding/stabilization
+    else if (trajectory === 'rising' && isExplorationModule) {
+      const groundingModules = ['E05', 'E01'].filter(m => !usedModules.includes(m));
+      const newModule = groundingModules[0] || 'E05'; // E05 (Mindfulness & Grounding) as fallback
+      console.log(`[Pipeline] MID-SESSION RE-EVAL: Trajectory rising + exploration module → switching to grounding "${newModule}"`);
+      preGPTDominantState = {
+        ...preGPTDominantState,
+        dominantModule: newModule,
+        selectionReason: `Mid-session re-eval: user escalating (trajectory=rising), switching from exploration (${currentModule}) to grounding (${newModule})`,
       };
     }
   }

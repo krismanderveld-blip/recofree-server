@@ -1521,3 +1521,9 @@
 - [x] Fix: adaptVspSection crashed on string signals (same type mismatch as buildVspStructuredBlock)
 - [x] Fix: greeting prompt now DIRECTLY uses user's VSP content for high zones (ROOD/PAARS/ORANJE)
 - [x] Fix: buildVspStructuredBlock now sends ONLY the active zone (not all zones)
+- [x] Pipeline must use VSP zone content to actively influence module selection (not just send to GPT)
+- [x] Module switching based on user response: if user mentions something from their VSP "what helps", support that action instead of continuing current module
+- [x] Pipeline must use VSP zone content to guide module selection (ROOD/PAARS → grounding/crisis)
+- [x] Module switching based on user answer matching VSP "what helps" content
+- [x] Proactively inject VSP "what helps" content into GPT instructions as de-escalation suggestions (DE-ESCALATION DIRECTIVE)
+- [x] Dynamic mid-session module re-evaluation: switch therapy approach as conversation progresses (intensityTrajectory-based)

@@ -1413,8 +1413,12 @@ These are not suggestions. These are minimum requirements.
 
   let vspStructuredSectionBlock = '';
   if (input.vspStructuredSection && isElias) {
-    vspStructuredSectionBlock = `\n=== VSP PERSOONLIJK PLAN (door gebruiker zelf ingevuld) ===\n${input.vspStructuredSection}\n=== END VSP PERSOONLIJK PLAN ===`;
-    console.log(`[AI Chat] VSP Structured Section injected (${input.vspStructuredSection.length} chars)`);
+    const isHighZone = input.vspLevel === 'ROOD' || input.vspLevel === 'RED' || 
+                       input.vspLevel === 'PAARS' || input.vspLevel === 'PURPLE' ||
+                       input.vspLevel === 'ORANJE' || input.vspLevel === 'ORANGE';
+    const deEscalationDirective = isHighZone ? `\n\n⚠️ DE-ESCALATION DIRECTIVE (MANDATORY):\nThe user is currently in zone ${input.vspLevel}. Below is what THEY WROTE helps them de-escalate.\nYou MUST proactively offer these strategies — do NOT wait for the user to ask.\nUse their own words. Suggest ONE specific action from their "what helps" list.\nDo NOT give generic advice ("let's breathe together") when they have written specific personal strategies.\nTheir plan is their anchor — reference it directly.` : '';
+    vspStructuredSectionBlock = `\n=== USER'S PERSONAL SAFETY PLAN (written by the user themselves) ===${deEscalationDirective}\n${input.vspStructuredSection}\n=== END PERSONAL SAFETY PLAN ===`;
+    console.log(`[AI Chat] VSP Structured Section injected (${input.vspStructuredSection.length} chars, highZone=${isHighZone})`);
   }
 
   // Inject only the ACTIVE short module prompt block (M05-M85) for Elias
@@ -1587,7 +1591,7 @@ The sliders tell you exactly how the user feels — USE them in your response.
 
 CURRENT STATE:
 - Mood sliders: ${sliderEntries}
-- VSP (Veiligheidsplan): ${input.vspLevel ?? 'niet ingesteld'} ${input.vspLevel === 'ROOD' || input.vspLevel === 'RED' ? '⚠️ HOOG TERUGVALRISICO' : input.vspLevel === 'ORANJE' || input.vspLevel === 'ORANGE' ? '⚠️ VERHOOGD RISICO' : input.vspLevel === 'PAARS' || input.vspLevel === 'PURPLE' ? '🚨 CRISIS' : ''}
+- Safety Plan Zone: ${input.vspLevel ?? 'not set'} ${input.vspLevel === 'ROOD' || input.vspLevel === 'RED' ? '⚠️ HIGH RELAPSE RISK' : input.vspLevel === 'ORANJE' || input.vspLevel === 'ORANGE' ? '⚠️ ELEVATED RISK' : input.vspLevel === 'PAARS' || input.vspLevel === 'PURPLE' ? '🚨 CRISIS' : ''}
 - Urgency level: ${input.urgency}
 - Risk score: ${input.riskScore ?? 0}/10
 - Current timestamp: ${new Date().toISOString()}
@@ -2027,7 +2031,7 @@ The sliders tell you exactly how the user feels — USE them in your response.
 
 CURRENT STATE:
 - Mood sliders: ${sliderEntries}
-- VSP (Veiligheidsplan): ${input.vspLevel ?? 'niet ingesteld'} ${input.vspLevel === 'ROOD' || input.vspLevel === 'RED' ? '⚠️ HOOG TERUGVALRISICO' : input.vspLevel === 'ORANJE' || input.vspLevel === 'ORANGE' ? '⚠️ VERHOOGD RISICO' : input.vspLevel === 'PAARS' || input.vspLevel === 'PURPLE' ? '🚨 CRISIS' : ''}
+- Safety Plan Zone: ${input.vspLevel ?? 'not set'} ${input.vspLevel === 'ROOD' || input.vspLevel === 'RED' ? '⚠️ HIGH RELAPSE RISK' : input.vspLevel === 'ORANJE' || input.vspLevel === 'ORANGE' ? '⚠️ ELEVATED RISK' : input.vspLevel === 'PAARS' || input.vspLevel === 'PURPLE' ? '🚨 CRISIS' : ''}
 - Urgency level: ${input.urgency}
 - Risk score: ${input.riskScore ?? 0}/10
 - Current timestamp: ${new Date().toISOString()}
