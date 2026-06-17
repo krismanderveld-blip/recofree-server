@@ -228,7 +228,13 @@ function buildVspPersonalContext(vspSection: GreetingVspSectionSnapshot | undefi
 
   if (parts.length === 0) return '';
 
-  return parts.join('') + `\n\nBELANGRIJK OVER VSP-CONTEXT:\n- Je mag SUBTIEL verwijzen naar wat de gebruiker zelf heeft beschreven als signalen of wat helpt\n- Noem het NOOIT letterlijk ("je hebt in je VSP geschreven dat...") — verweef het natuurlijk\n- Gebruik het als achtergrondkennis om de toon en richting van je vraag te bepalen\n- Als de gebruiker "vertragen" als helpend noemt, kun je bijv. zeggen "neem even de tijd"\n- Als de gebruiker "in mijn hoofd zitten" als signaal noemt, kun je bijv. vragen "wat voel je nu?" (richting lichaam)`;
+  const isHighZone = ['ROOD', 'PAARS', 'ORANJE'].includes(zone);
+
+  if (isHighZone) {
+    return parts.join('') + `\n\nCRITICAL — VSP ZONE ${zone} ACTIVE:\n- The user is in a HIGH zone. Their safety plan content above is DIRECTLY relevant RIGHT NOW.\n- You MUST incorporate what THEY wrote helps them. Use their own words and phrasing.\n- If they wrote "calling my sponsor" as what helps → mention reaching out to someone.\n- If they wrote an anchor sentence → weave it into your greeting naturally.\n- Do NOT say "your safety plan says..." — but DO use the content directly.\n- This is NOT background context — this is their ACTIVE coping strategy for this exact moment.`;
+  }
+
+  return parts.join('') + `\n\nVSP-CONTEXT GUIDANCE:\n- You may subtly reference what the user described as signals or what helps\n- Never mention it literally ("your safety plan says...") — weave it naturally\n- Use it as background knowledge to guide tone and direction\n- If the user mentions "slowing down" as helpful, you might say "take a moment"\n- If the user mentions "being in my head" as a signal, you might ask "what do you feel right now?" (toward body)`;
 }
 
 /**

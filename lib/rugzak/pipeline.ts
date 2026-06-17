@@ -2263,7 +2263,8 @@ export async function processMessage(
     // VSP Backpack Profile — LLM-analyzed from recurringThemes (Elias only, cached in AsyncStorage)
     vspBackpackProfile: vspBackpackProfileBlock,
     // VSP Structured Section — user's own per-zone signals, whatHelps, anchorSentence (Elias only)
-    vspStructuredSection: backpack.userType === 'elias' ? buildVspStructuredBlock(backpack) : undefined,
+    // Pass the current zone so the active zone content is highlighted prominently for GPT
+    vspStructuredSection: backpack.userType === 'elias' ? buildVspStructuredBlock(backpack, elisDecision?.zone.resolved?.finalZoneLabel ?? vspLevel) : undefined,
     // Backpack entity extraction: send structured entities instead of full backpack when unchanged
     extractedEntities: currentUserDat.extractedEntities ?? undefined,
     backpackChanged: !currentUserDat.extractedEntities || (currentUserDat.extractedEntities.persons.length === 0),
@@ -3802,11 +3803,9 @@ function buildVspBackpackProfileBlock(sections: import('../ai/types').LifePhaseS
  * Builds a prompt block from the user's structured VSP section (per-zone signals, whatHelps, anchorSentence).
  * This is the user's OWN words about their relapse prevention plan, structured per zone.
  */
-function buildVspStructuredBlock(backpack: import('../ai/types').Backpack): string | undefined {
+function buildVspStructuredBlock(backpack: import('../ai/types').Backpack, currentZone?: string | null): string | undefined {
   const vspSection = backpack.vspSection;
   if (!vspSection) return undefined;
-
-  const lines: string[] = ['[USER VSP STRUCTURED PLAN — persoonlijk vroegsignaleringsplan, door de gebruiker zelf ingevuld]'];
 
   // Helper: normalize signals/whatHelps which can be string OR string[] depending on data version
   const normalizeField = (val: unknown): string => {
@@ -3816,50 +3815,61 @@ function buildVspStructuredBlock(backpack: import('../ai/types').Backpack): stri
     return String(val);
   };
 
-  // Get current zone from the most recent mood if available
+  const lines: string[] = ['[USER SAFETY PLAN — personal early-warning plan for the CURRENT zone, written by the user themselves]'];
+
+  // Determine the active zone (normalize to uppercase for matching)
+  const activeZone = currentZone?.toUpperCase() ?? null;
+  if (!activeZone) return undefined; // No zone selected = no VSP block needed
+
+  lines.push(`⚠️ CURRENT ZONE: ${activeZone}`);
+  lines.push('The user has self-reported being in this zone RIGHT NOW.');
+  lines.push('');
+
+  // ONLY output the active zone content
   const zones = vspSection.zones;
   if (zones) {
     for (const [zoneName, entry] of Object.entries(zones)) {
       if (!entry) continue;
       const zoneUpper = zoneName.toUpperCase();
+      if (zoneUpper !== activeZone) continue;
       const signalsStr = normalizeField((entry as any).signals);
       if (signalsStr.length > 0) {
-        lines.push(`${zoneUpper} — Herkenning: ${signalsStr}`);
+        lines.push(`Recognition signals (user's words): ${signalsStr}`);
       }
       const whatHelpsStr = normalizeField((entry as any).whatHelps);
       if (whatHelpsStr.length > 0) {
-        lines.push(`${zoneUpper} — Wat helpt: ${whatHelpsStr}`);
+        lines.push(`What helps (user's words): ${whatHelpsStr}`);
       }
       if ((entry as any).anchorSentence) {
-        lines.push(`${zoneUpper} — Ankerzin: "${(entry as any).anchorSentence}"`);
+        lines.push(`Anchor sentence: "${(entry as any).anchorSentence}"`);
       }
     }
   }
 
   if (vspSection.triggers && vspSection.triggers.length > 0) {
+    lines.push('');
     lines.push('TRIGGERS:');
     for (const t of vspSection.triggers) {
-      // Defensive: skip null/undefined entries (can occur from incomplete VSP documents)
       if (!t || !t.trigger) continue;
-      lines.push(`  - ${t.trigger} → Tegenzin: "${t.counterThought ?? ''}"`);
+      lines.push(`  - ${t.trigger} → Counter-thought: "${t.counterThought ?? ''}"`);
     }
   }
 
   if (vspSection.recoveryRules && vspSection.recoveryRules.length > 0) {
-    // Defensive: filter out null/undefined entries
     const validRules = vspSection.recoveryRules.filter((r: any) => r != null);
     if (validRules.length > 0) {
-      lines.push(`HERSTELREGELS: ${validRules.join('; ')}`);
+      lines.push(`RECOVERY RULES: ${validRules.join('; ')}`);
     }
   }
 
   if (vspSection.mainAnchorSentence) {
-    lines.push(`HOOFDANKERZIN: "${vspSection.mainAnchorSentence}"`);
+    lines.push(`MAIN ANCHOR SENTENCE: "${vspSection.mainAnchorSentence}"`);
   }
 
   if (lines.length <= 1) return undefined;
 
-  lines.push('INSTRUCTIE: Gebruik deze informatie als achtergrondkennis. Verwijs er SUBTIEL naar — noem het nooit letterlijk. Gebruik het om de juiste toon, richting en interventie te kiezen.');
+  lines.push('');
+  lines.push('INSTRUCTION: This is the user\'s OWN safety plan. When the user is in the active zone, you MUST reference what THEY wrote helps them. Use their own words and anchor sentences. Do not give generic advice — use THEIR plan.');
   return lines.join('\n');
 }
 

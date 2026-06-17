@@ -1517,3 +1517,7 @@
 - [x] Set auto-close/auto-save timer to 10 minutes inactivity
 - [x] Verify write-back to memory layers (incl. logs.dat) triggers on timer expiry
 - [x] Verify auto-close works on app background (not just foreground inactivity)
+- [x] Fix: VSP zone selection does not pass zone-specific content to GPT (generic response instead of zone-specific)
+- [x] Fix: adaptVspSection crashed on string signals (same type mismatch as buildVspStructuredBlock)
+- [x] Fix: greeting prompt now DIRECTLY uses user's VSP content for high zones (ROOD/PAARS/ORANJE)
+- [x] Fix: buildVspStructuredBlock now sends ONLY the active zone (not all zones)

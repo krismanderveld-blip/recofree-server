@@ -341,9 +341,17 @@ function adaptVspSection(backpack: Backpack, vspZone?: string): GreetingVspSecti
   const zoneKey = zone.toLowerCase() as 'groen' | 'geel' | 'oranje' | 'rood' | 'paars';
   const zoneEntry = vspPlan.zones?.[zoneKey];
 
+  // Normalize field: can be string OR string[] depending on data version
+  const normalizeToArray = (val: unknown): string[] => {
+    if (!val) return [];
+    if (Array.isArray(val)) return val.filter((s: string) => typeof s === 'string' && s.trim().length > 0);
+    if (typeof val === 'string' && val.trim().length > 0) return [val.trim()];
+    return [];
+  };
+
   const currentZoneEntry = zoneEntry ? {
-    signals: zoneEntry.signals?.filter((s: string) => s.trim().length > 0) ?? [],
-    whatHelps: zoneEntry.whatHelps?.filter((s: string) => s.trim().length > 0) ?? [],
+    signals: normalizeToArray(zoneEntry.signals),
+    whatHelps: normalizeToArray(zoneEntry.whatHelps),
     anchorSentence: zoneEntry.anchorSentence ?? '',
   } : null;
 
