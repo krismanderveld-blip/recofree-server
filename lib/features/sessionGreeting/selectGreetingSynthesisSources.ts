@@ -82,6 +82,7 @@ const RETURN_RELEVANCE_PRIORITY: GreetingSynthesisSourceType[] = [
   'TODAY_MOOD',
   'RECENT_DIARY',
   'LAST_SESSION_SUMMARY',
+  'RECURRING_PATTERN',
   'RECENT_GRATITUDE',
   'BACKPACK_RECENT_UPDATE',
   'ACTIVE_HOPE_OR_FEAR',
@@ -177,6 +178,9 @@ function getSourceValence(
 
     case 'LAST_SESSION_SUMMARY':
       return 'neutral'; // session continuity is contextual
+
+    case 'RECURRING_PATTERN':
+      return 'neutral'; // observational cross-session insight
 
     default:
       return 'neutral';

@@ -85,7 +85,7 @@ export function resolveGreetingOverride(
   // 4. MISSING_DATA — no sliders today AND no recent diary AND no recent gratitude AND no backpack AND no logs.dat
   // logs.dat with open loops or a digest counts as valid context (session continuity)
   const hasLogsDatContext = input.synthesisCandidates.some(
-    c => c.sourceType === 'LAST_SESSION_SUMMARY' && c.eligible
+    c => (c.sourceType === 'LAST_SESSION_SUMMARY' || c.sourceType === 'RECURRING_PATTERN') && c.eligible
   );
   const hasAnyFreshData =
     freshness.slidersFilledToday ||

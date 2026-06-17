@@ -264,6 +264,9 @@ function buildContextBriefing(sources: SelectedSynthesisSource[], zone: string):
       case 'LAST_SESSION_SUMMARY':
         parts.push(`Vorige sessie: ${source.safeAnchor}.`);
         break;
+      case 'RECURRING_PATTERN':
+        parts.push(`Terugkerend patroon over meerdere sessies: ${source.safeAnchor}.`);
+        break;
     }
   }
 

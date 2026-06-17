@@ -44,7 +44,8 @@ export type GreetingSynthesisSourceType =
   | 'BACKPACK_RECENT_UPDATE'
   | 'ACTIVE_HOPE_OR_FEAR'
   | 'SCHEMA_ROTATION'
-  | 'LAST_SESSION_SUMMARY';
+  | 'LAST_SESSION_SUMMARY'
+  | 'RECURRING_PATTERN';
 
 /**
  * A candidate synthesis source with relevance score.

@@ -286,6 +286,28 @@ export function buildGreetingSynthesisCandidates(
     });
   }
 
+  // ─── 8. RECURRING_PATTERN (cross-session theme from logs.dat) ────────────────
+  if (logsDat?.recurringPatternAnchor && logsDat.recurringPatternConfidence && logsDat.recurringPatternConfidence >= 0.4) {
+    const baseRelevance = Math.min(logsDat.recurringPatternConfidence * 0.90, 0.85);
+    // Recurring patterns are neutral — they are observational, not emotional
+    const zoneAdjusted = applyZoneModifier(baseRelevance, 'neutral', zoneMods);
+    candidates.push({
+      sourceType: 'RECURRING_PATTERN',
+      eligible: true,
+      relevanceScore: zoneAdjusted,
+      reason: `Recurring pattern detected (confidence=${logsDat.recurringPatternConfidence.toFixed(2)})`,
+      safeAnchor: logsDat.recurringPatternAnchor,
+    });
+  } else {
+    candidates.push({
+      sourceType: 'RECURRING_PATTERN',
+      eligible: false,
+      relevanceScore: 0,
+      reason: 'No recurring pattern detected or insufficient confidence',
+      safeAnchor: '',
+    });
+  }
+
   // ─── Apply Recency Rank Bonus ───────────────────────────────────────────────
   // Sort timestamps descending (most recent first)
   // Most recent eligible source gets +0.15, second +0.08, third +0.03

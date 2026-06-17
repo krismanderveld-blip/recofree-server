@@ -1480,3 +1480,22 @@
 - [x] Export/Import: VSP analyzer cache (@vsp_backpack_profile, @vsp_backpack_hash) added to derivedCacheStore
 - [x] Export/Import: Import button removed from profile screen (export-only now)
 - [x] Export/Import: All 34 export/import tests passing
+
+## Guided VSP Fill-in Flow with Document Upload
+
+- [x] Server: POST /api/vsp/parse-document endpoint — accepts uploaded VSP document text, GPT extracts all fields into VspStructuredPlan
+- [x] Server: POST /api/vsp/extract-text endpoint — extracts text from DOCX/PDF uploads
+- [x] Client: VSP upload flow — document picker + send to server + receive parsed VspStructuredPlan
+- [x] UI: Guided VSP wizard screen with upload option (upload document OR manual fill-in per zone)
+- [x] UI: After upload parse, show pre-filled fields for user review/edit before saving
+- [x] Integration: Save parsed VSP to backpack.vspSection via updateVspSection
+- [x] GPT prompt includes exact UI field names for accurate mapping
+
+## Logs.dat Cross-Session Pattern Detection
+
+- [x] Engine: Pattern detector — analyzes logs.dat session summaries for recurring themes/triggers
+- [x] Engine: Frequency + recency scoring for detected patterns (topic, emotional, temporal, risk)
+- [x] Engine: Wire detected patterns as RECURRING_PATTERN source in greeting engine
+- [x] Engine: Pattern context block in greeting synthesis prompt
+- [x] Engine: RECURRING_PATTERN added to source selection priority + valence + MISSING_DATA check
+- [x] Tests: 13 new tests for pattern detection + greeting source integration (all passing)

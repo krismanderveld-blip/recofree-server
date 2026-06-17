@@ -155,6 +155,9 @@ export interface GreetingProjectionFear {
 export interface GreetingLogsDatSnapshot {
   latestLogDigest?: string;
   lastSessionOpenLoops: string[];
+  /** Cross-session recurring pattern detected from logs.dat history */
+  recurringPatternAnchor?: string;
+  recurringPatternConfidence?: number;
 }
 
 export interface GreetingDiaryMetadata {

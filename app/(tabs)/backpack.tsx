@@ -17,6 +17,7 @@ import type { KimBackpackSection } from '@/lib/ai/types';
 import { useColors } from '@/hooks/use-colors';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { VspSectionEditor } from '@/components/vsp-section-editor';
+import { VspWizardScreen } from '@/lib/features/vspWizard/VspWizardScreen';
 import { colors as dc, spacing, radius, typography, shadows, cardStyles, buttonStyles } from '@/constants/design';
 
 const SECTION_COLORS: Record<LifePhaseId, string> = {
@@ -52,6 +53,7 @@ export default function BackpackScreen() {
   const [editingSection, setEditingSection] = useState<LifePhaseId | KimBackpackSectionId | null>(null);
   const [editText, setEditText] = useState('');
 
+  const [showVspWizard, setShowVspWizard] = useState(false);
   const isKim = state.backpack?.userType === 'kim';
   const sections = state.backpack?.sections ?? [];
   const kimData = state.backpack?.kimBackpack;
@@ -403,10 +405,23 @@ export default function BackpackScreen() {
 
         {/* VSP Section (Elias only) */}
         {!isKim && state.backpack?.userType === 'elias' && (
-          <VspSectionEditor
-            vspPlan={state.backpack?.vspSection}
-            onSave={updateVspSection}
-          />
+          <View>
+            {/* Wizard button */}
+            <Pressable onPress={() => setShowVspWizard(true)} style={({ pressed }) => [{ opacity: pressed ? 0.8 : 1, marginBottom: 12 }]}>
+              <View style={{ backgroundColor: '#8B5CF620', borderRadius: 12, padding: 14, flexDirection: 'row', alignItems: 'center', gap: 10, borderWidth: 1, borderColor: '#8B5CF640' }}>
+                <Text style={{ fontSize: 20 }}>{"\u{1F4C4}"}</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: 14, fontWeight: '600', color: colors.foreground }}>VSP Wizard</Text>
+                  <Text style={{ fontSize: 12, color: colors.muted }}>Upload een document of vul stap voor stap in</Text>
+                </View>
+                <Text style={{ fontSize: 14, color: colors.muted }}>{"\u{203A}"}</Text>
+              </View>
+            </Pressable>
+            <VspSectionEditor
+              vspPlan={state.backpack?.vspSection}
+              onSave={updateVspSection}
+            />
+          </View>
         )}
 
         {/* Life Phase Sections */}
@@ -422,6 +437,19 @@ export default function BackpackScreen() {
           </Text>
         </View>
       </ScrollView>
+
+      {/* VSP Wizard Modal Overlay */}
+      {showVspWizard && (
+        <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: colors.background, zIndex: 100 }}>
+          <VspWizardScreen
+            existingPlan={state.backpack?.vspSection}
+            onSave={async (plan) => {
+              await updateVspSection(plan);
+            }}
+            onCancel={() => setShowVspWizard(false)}
+          />
+        </View>
+      )}
     </ScreenContainer>
   );
 }

@@ -42,6 +42,8 @@ export interface SessionInitGreetingInput {
     emotionalArc?: string;
     turnCount?: number;
   } | null;
+  /** All sessions from logs.dat for cross-session pattern detection */
+  allSessions?: import('@/lib/types/memory/logsDat.types').SessionLogSummary[];
   /** VSP Insight context string (for clinical annotation injection) */
   vspInsightContext?: string | null;
 }
@@ -67,7 +69,7 @@ export async function sessionInitGreetingStep(
   const greetingUserDat = adaptUserDat(backpack, userDat);
   const greetingStateDat = adaptStateDat(userDat);
   const greetingProjectionsDat = adaptProjectionsDat();
-  const greetingLogsDat = adaptLogsDat(input.lastSessionSummary);
+  const greetingLogsDat = adaptLogsDat(input.lastSessionSummary, input.allSessions);
   const diaryMetadata = adaptDiaryMetadata(diaryEntries);
   const gratitudeMetadata = adaptGratitudeMetadata(diaryEntries);
 
@@ -243,21 +245,40 @@ function adaptProjectionsDat(): GreetingProjectionsDatSnapshot {
   return { fears: [] };
 }
 
-function adaptLogsDat(lastSessionSummary?: SessionInitGreetingInput['lastSessionSummary']): GreetingLogsDatSnapshot {
-  if (!lastSessionSummary) {
-    return { lastSessionOpenLoops: [] };
-  }
-  // Build a digest from the last session for the greeting engine
-  const digest = [
-    lastSessionSummary.compressedNarrative?.slice(0, 120),
-    lastSessionSummary.discussedTopics?.length > 0 ? `Thema's: ${lastSessionSummary.discussedTopics.join(', ')}` : null,
-    lastSessionSummary.emotionalArc ? `Verloop: ${lastSessionSummary.emotionalArc}` : null,
-  ].filter(Boolean).join(' | ');
+function adaptLogsDat(
+  lastSessionSummary?: SessionInitGreetingInput['lastSessionSummary'],
+  allSessions?: import('@/lib/types/memory/logsDat.types').SessionLogSummary[],
+): GreetingLogsDatSnapshot {
+  const result: GreetingLogsDatSnapshot = { lastSessionOpenLoops: [] };
 
-  return {
-    latestLogDigest: digest || undefined,
-    lastSessionOpenLoops: lastSessionSummary.unresolvedTensions ?? [],
-  };
+  if (lastSessionSummary) {
+    // Build a digest from the last session for the greeting engine
+    const digest = [
+      lastSessionSummary.compressedNarrative?.slice(0, 120),
+      lastSessionSummary.discussedTopics?.length > 0 ? `Thema's: ${lastSessionSummary.discussedTopics.join(', ')}` : null,
+      lastSessionSummary.emotionalArc ? `Verloop: ${lastSessionSummary.emotionalArc}` : null,
+    ].filter(Boolean).join(' | ');
+
+    result.latestLogDigest = digest || undefined;
+    result.lastSessionOpenLoops = lastSessionSummary.unresolvedTensions ?? [];
+  }
+
+  // Cross-session pattern detection
+  if (allSessions && allSessions.length >= 3) {
+    try {
+      const { detectRecurringPatterns } = require('./detectRecurringPatterns');
+      const patternResult = detectRecurringPatterns(allSessions);
+      if (patternResult.bestPattern) {
+        result.recurringPatternAnchor = patternResult.bestPattern.safeAnchor;
+        result.recurringPatternConfidence = patternResult.bestPattern.confidence;
+      }
+    } catch (err) {
+      // Pattern detection is non-critical — fail silently
+      console.warn('[GreetingInit] Pattern detection failed:', err);
+    }
+  }
+
+  return result;
 }
 
 function adaptDiaryMetadata(diaryEntries: DiaryEntry[]): GreetingDiaryMetadata | null {

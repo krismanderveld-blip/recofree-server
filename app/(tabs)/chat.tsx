@@ -619,6 +619,7 @@ function ChatScreenInner() {
         if (apiUrl) {
           // Load last session summary from logs.dat via lifecycle manager
           let lastSessionSummary: SessionInitGreetingInput['lastSessionSummary'] = null;
+          let allSessions: SessionInitGreetingInput['allSessions'] = undefined;
           try {
             const lifecycleMgr = getSessionLifecycleManager();
             const stores = lifecycleMgr.getStores();
@@ -635,6 +636,8 @@ function ChatScreenInner() {
                 emotionalArc: lastSession.emotionalArc ?? undefined,
                 turnCount: lastSession.turnCount ?? undefined,
               };
+              // Pass all sessions for cross-session pattern detection
+              allSessions = logsDat.sessions;
             }
           } catch (logsErr) {
             console.warn('[Chat] Could not load logs.dat for greeting context:', logsErr);
@@ -680,6 +683,7 @@ function ChatScreenInner() {
             timezone: 'Europe/Amsterdam',
             clinicalModeActive: userDat?.clinicalModeActive ?? false,
             lastSessionSummary,
+            allSessions,
             vspInsightContext: vspInsightCtx,
           });
           greetingText = greetingResult.greeting;
