@@ -1527,3 +1527,4 @@
 - [x] Module switching based on user answer matching VSP "what helps" content
 - [x] Proactively inject VSP "what helps" content into GPT instructions as de-escalation suggestions (DE-ESCALATION DIRECTIVE)
 - [x] Dynamic mid-session module re-evaluation: switch therapy approach as conversation progresses (intensityTrajectory-based)
+- [x] Fix: Privacy disclaimer screen keeps reappearing — should only show once (first use), then never again

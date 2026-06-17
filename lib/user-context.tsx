@@ -1047,5 +1047,10 @@ function migrateUserDat(raw: any, userType: UserType): UserDat {
     clinicalModeActive: raw.clinicalModeActive ?? false,
     guidanceDepth: raw.guidanceDepth ?? 'normal',
     consecutiveSessionsWithoutEngagement: raw.consecutiveSessionsWithoutEngagement ?? 0,
+    repeatingPatterns: raw.repeatingPatterns ?? [],
+    gdprAccepted: raw.gdprAccepted ?? undefined,
+    gdprAcceptedAt: raw.gdprAcceptedAt ?? undefined,
+    gdprVersion: raw.gdprVersion ?? undefined,
+    firstChatSeen: raw.firstChatSeen ?? undefined,
   };
 }
