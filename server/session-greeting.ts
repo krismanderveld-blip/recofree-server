@@ -4,7 +4,7 @@
  * 
  * Accepts a system prompt from the client-side engine and generates a greeting via GPT-4o.
  * When clinicalModeActive is true, also generates a clinical annotation via a second GPT call.
- * Model: gpt-4o, store: false, max_tokens: 150, temperature: 0.7
+ * Model: gpt-4o-mini, store: false, max_tokens: 1590, temperature: 0.7
  */
 
 import type { Express, Request, Response } from 'express';
@@ -42,7 +42,7 @@ export function registerSessionGreetingRoute(app: Express): void {
           model: 'gpt-4o-mini',
           store: false,
           temperature: 0.7,
-          max_tokens: 300,
+          max_tokens: 1590,
           messages: [
             { role: 'system', content: systemPrompt },
             { role: 'user', content: `Generate a personal greeting for ${userName}. Follow the language instruction in the system prompt exactly.` },
