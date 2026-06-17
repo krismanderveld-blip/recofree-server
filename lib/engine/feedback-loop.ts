@@ -15,15 +15,15 @@ import { parseEngineResponse, type ParsedResponse, type EngineSignals } from './
 import { routeSignals, mergePersons, type SignalRoutingResult } from './signal-router';
 import { reconsiderModule, type ModuleReconsiderationResult } from './module-reconsideration';
 import { enrichBuffer, recordModuleSwitch } from './buffer-enrichment';
-import type { BufferState } from '../rugzak/short-term-memory-buffer';
+import { createBuffer, type BufferState } from '../rugzak/short-term-memory-buffer';
 
 // ─── Types ─────────────────────────────────────────────────────────
 
 export interface FeedbackLoopInput {
   /** Raw LLM response (includes engine_signals and possibly clinical block) */
   rawResponse: string;
-  /** Current buffer state */
-  bufferState: BufferState;
+  /** Current buffer state (may be null if session just started) */
+  bufferState: BufferState | null;
   /** Currently active module ID */
   currentModuleId: string;
   /** Whether crisis is active */
@@ -64,8 +64,9 @@ export function processFeedbackLoop(input: FeedbackLoopInput): FeedbackLoopResul
     ? routeSignals(parsed.signals)
     : { personsToStore: [], triggersToPromote: [], stateSignals: [], schemasToStore: [], bufferUpdate: { topic: '', emotionalShift: '', therapeuticMove: '', personsDiscussed: [] }, moduleSuggestion: null, hasSignals: false };
 
-  // 3. Enrich buffer
-  let updatedBuffer = enrichBuffer(bufferState, routing);
+  // 3. Enrich buffer (guard against null bufferState)
+  const safeBuffer = bufferState ?? createBuffer();
+  let updatedBuffer = enrichBuffer(safeBuffer, routing);
 
   // 4. Module reconsideration
   const moduleDecision = reconsiderModule({

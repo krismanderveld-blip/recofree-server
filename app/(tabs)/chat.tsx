@@ -1237,7 +1237,7 @@ function ChatScreenInner() {
           >
             {visibleContent}
           </Text>
-          {clinicalAnnotation && (
+          {clinicalAnnotation && state.userDat?.clinicalModeActive && (
             <ClinicalTag annotation={clinicalAnnotation} />
           )}
         </View>

@@ -1528,3 +1528,5 @@
 - [x] Proactively inject VSP "what helps" content into GPT instructions as de-escalation suggestions (DE-ESCALATION DIRECTIVE)
 - [x] Dynamic mid-session module re-evaluation: switch therapy approach as conversation progresses (intensityTrajectory-based)
 - [x] Fix: Privacy disclaimer screen keeps reappearing — should only show once (first use), then never again
+- [x] Fix: Pipeline crash 'Cannot read property topicHistory of null' — enrichBuffer receives null bufferState
+- [x] Fix: Clinical annotation block visible to user in chat (should be hidden unless Clinical Mode active)
