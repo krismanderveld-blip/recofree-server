@@ -3808,20 +3808,30 @@ function buildVspStructuredBlock(backpack: import('../ai/types').Backpack): stri
 
   const lines: string[] = ['[USER VSP STRUCTURED PLAN — persoonlijk vroegsignaleringsplan, door de gebruiker zelf ingevuld]'];
 
+  // Helper: normalize signals/whatHelps which can be string OR string[] depending on data version
+  const normalizeField = (val: unknown): string => {
+    if (!val) return '';
+    if (Array.isArray(val)) return val.filter(Boolean).join('; ');
+    if (typeof val === 'string') return val;
+    return String(val);
+  };
+
   // Get current zone from the most recent mood if available
   const zones = vspSection.zones;
   if (zones) {
     for (const [zoneName, entry] of Object.entries(zones)) {
       if (!entry) continue;
       const zoneUpper = zoneName.toUpperCase();
-      if (entry.signals && entry.signals.length > 0) {
-        lines.push(`${zoneUpper} — Herkenning: ${entry.signals.join('; ')}`);
+      const signalsStr = normalizeField((entry as any).signals);
+      if (signalsStr.length > 0) {
+        lines.push(`${zoneUpper} — Herkenning: ${signalsStr}`);
       }
-      if (entry.whatHelps && entry.whatHelps.length > 0) {
-        lines.push(`${zoneUpper} — Wat helpt: ${entry.whatHelps.join('; ')}`);
+      const whatHelpsStr = normalizeField((entry as any).whatHelps);
+      if (whatHelpsStr.length > 0) {
+        lines.push(`${zoneUpper} — Wat helpt: ${whatHelpsStr}`);
       }
-      if (entry.anchorSentence) {
-        lines.push(`${zoneUpper} — Ankerzin: "${entry.anchorSentence}"`);
+      if ((entry as any).anchorSentence) {
+        lines.push(`${zoneUpper} — Ankerzin: "${(entry as any).anchorSentence}"`);
       }
     }
   }

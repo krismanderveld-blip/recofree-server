@@ -1509,3 +1509,5 @@
 - [x] Full test suite: 1079 passed, 0 failed, 1 skipped (1080 total)
 - [x] Add on-screen crash reporter to handleSend (full stack trace visible on device for debugging)
 - [x] Enhance ChatErrorBoundary with full stack trace display (not just __DEV__)
+- [x] Fix crash in buildVspStructuredBlock: .join() called on string instead of array (signals/whatHelps)
+- [x] Fix auto VSP upload returning empty fields after document upload (mammoth DOCX parser + better logging)

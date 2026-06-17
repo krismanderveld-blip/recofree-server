@@ -88,6 +88,16 @@ export function VspWizardScreen({ existingPlan, onSave, onCancel }: VspWizardScr
       return;
     }
 
+    // Check if any zones actually have content
+    const filledZones = Object.values(result.vspPlan.zones || {}).filter(
+      (z: any) => z && (z.signals || z.whatHelps || z.anchorSentence)
+    ).length;
+    if (filledZones === 0 && (!result.vspPlan.triggers || result.vspPlan.triggers.length === 0)) {
+      setUploadError('Het document is verwerkt maar er konden geen VSP-velden worden herkend. Probeer handmatig invullen of een ander document.');
+      setStep('choose_method');
+      return;
+    }
+
     setPlan(result.vspPlan);
     setActiveZoneIdx(0);
     setStep('review_zones');

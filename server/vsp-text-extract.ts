@@ -4,96 +4,23 @@
  * Accepts base64-encoded DOCX/PDF files and extracts plain text.
  * Used as a preprocessing step before VSP document parsing.
  *
- * For DOCX: uses a simple XML-based extraction (no heavy deps).
- * For PDF: uses a basic text layer extraction.
+ * For DOCX: uses mammoth for reliable extraction.
+ * For PDF: uses basic text layer extraction (fallback).
  */
 import type { Request, Response, Express } from 'express';
 import { Buffer } from 'buffer';
+import * as mammoth from 'mammoth';
 
 /**
- * Extract text from a DOCX file (Office Open XML).
- * DOCX is a ZIP containing XML files. The main content is in word/document.xml.
+ * Extract text from a DOCX file using mammoth (robust, handles complex docs).
  */
 async function extractDocxText(buffer: Buffer): Promise<string> {
-  // Use the built-in 'zlib' approach — DOCX is a ZIP file
-  const { Readable } = await import('stream');
-  const { createInflateRaw } = await import('zlib');
-
-  // Simple ZIP parser for DOCX — find word/document.xml
-  const entries = parseZipEntries(buffer);
-  const docEntry = entries.find(e => e.name === 'word/document.xml');
-  if (!docEntry) {
-    throw new Error('Not a valid DOCX file: word/document.xml not found');
+  const result = await mammoth.extractRawText({ buffer });
+  const text = result.value.trim();
+  if (result.messages && result.messages.length > 0) {
+    console.log(`[VspTextExtract] Mammoth messages:`, result.messages.slice(0, 5));
   }
-
-  const xmlContent = docEntry.content.toString('utf-8');
-
-  // Strip XML tags and extract text content
-  const text = xmlContent
-    // Replace paragraph endings with newlines
-    .replace(/<\/w:p>/g, '\n')
-    // Replace line breaks
-    .replace(/<w:br[^>]*\/>/g, '\n')
-    // Extract text from <w:t> tags
-    .replace(/<w:t[^>]*>(.*?)<\/w:t>/g, '$1')
-    // Remove all remaining XML tags
-    .replace(/<[^>]+>/g, '')
-    // Decode XML entities
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"')
-    .replace(/&apos;/g, "'")
-    // Clean up excessive whitespace
-    .replace(/\n{3,}/g, '\n\n')
-    .trim();
-
   return text;
-}
-
-/**
- * Minimal ZIP entry parser — extracts file entries from a ZIP buffer.
- * Only supports DEFLATE (method 8) and STORED (method 0).
- */
-function parseZipEntries(buffer: Buffer): { name: string; content: Buffer }[] {
-  const entries: { name: string; content: Buffer }[] = [];
-  let offset = 0;
-
-  while (offset < buffer.length - 4) {
-    // Look for local file header signature (PK\x03\x04)
-    if (buffer.readUInt32LE(offset) !== 0x04034b50) break;
-
-    const compressionMethod = buffer.readUInt16LE(offset + 8);
-    const compressedSize = buffer.readUInt32LE(offset + 18);
-    const uncompressedSize = buffer.readUInt32LE(offset + 22);
-    const nameLength = buffer.readUInt16LE(offset + 26);
-    const extraLength = buffer.readUInt16LE(offset + 28);
-
-    const name = buffer.slice(offset + 30, offset + 30 + nameLength).toString('utf-8');
-    const dataStart = offset + 30 + nameLength + extraLength;
-    const compressedData = buffer.slice(dataStart, dataStart + compressedSize);
-
-    let content: Buffer;
-    if (compressionMethod === 0) {
-      // STORED
-      content = compressedData;
-    } else if (compressionMethod === 8) {
-      // DEFLATE — use sync inflate
-      const { inflateRawSync } = require('zlib');
-      try {
-        content = inflateRawSync(compressedData);
-      } catch {
-        content = Buffer.alloc(0);
-      }
-    } else {
-      content = Buffer.alloc(0);
-    }
-
-    entries.push({ name, content });
-    offset = dataStart + compressedSize;
-  }
-
-  return entries;
 }
 
 export function registerVspTextExtractRoute(app: Express): void {
@@ -158,11 +85,14 @@ export function registerVspTextExtractRoute(app: Express): void {
       }
 
       if (!text || text.trim().length < 10) {
+        console.error(`[VspTextExtract] FAILED: Could not extract text from ${fileName}. Buffer size: ${buffer.length}, extracted length: ${text?.length ?? 0}`);
         res.status(422).json({ error: 'Could not extract readable text from the document' });
         return;
       }
 
-      console.log(`[VspTextExtract] Extracted ${text.length} chars from ${fileName}`);
+      console.log(`[VspTextExtract] SUCCESS: Extracted ${text.length} chars from ${fileName}`);
+      // Log first 200 chars for debugging
+      console.log(`[VspTextExtract] Preview: ${text.slice(0, 200).replace(/\n/g, ' | ')}`);
       res.json({ success: true, text });
     } catch (error: any) {
       console.error('[VspTextExtract] Error:', error);

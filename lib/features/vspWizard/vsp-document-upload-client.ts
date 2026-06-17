@@ -53,11 +53,20 @@ export async function pickAndParseVspDocument(): Promise<VspUploadResult> {
       return { success: false, error: 'Het document bevat te weinig tekst om te verwerken.' };
     }
 
+    console.log(`[VspUpload] Text extracted successfully, length=${documentText.length}`);
+    console.log(`[VspUpload] Preview: ${documentText.slice(0, 150).replace(/\n/g, ' | ')}`);
+
     // 3. Send to server for GPT parsing
     const vspPlan = await sendForParsing(documentText);
     if (!vspPlan) {
-      return { success: false, error: 'Het document kon niet verwerkt worden. Probeer het opnieuw.' };
+      return { success: false, error: 'Het document kon niet verwerkt worden door GPT. Probeer het opnieuw.' };
     }
+
+    // Log what was extracted
+    const filledZones = Object.entries(vspPlan.zones || {}).filter(
+      ([_, z]: [string, any]) => z && (z.signals || z.whatHelps || z.anchorSentence)
+    ).length;
+    console.log(`[VspUpload] GPT extraction complete: ${filledZones}/5 zones filled, ${vspPlan.triggers?.length ?? 0} triggers`);
 
     return { success: true, vspPlan };
   } catch (error: any) {
@@ -167,6 +176,8 @@ async function sendForParsing(documentText: string): Promise<VspStructuredPlan |
     const headers: Record<string, string> = { 'Content-Type': 'application/json' };
     if (token) headers['Authorization'] = `Bearer ${token}`;
 
+    console.log(`[VspUpload] Sending ${documentText.length} chars to ${apiBaseUrl}/api/vsp/parse-document`);
+
     const response = await fetch(`${apiBaseUrl}/api/vsp/parse-document`, {
       method: 'POST',
       headers,
@@ -174,12 +185,18 @@ async function sendForParsing(documentText: string): Promise<VspStructuredPlan |
     });
 
     if (!response.ok) {
-      console.error('[VspUpload] Parse failed:', response.status);
+      const errBody = await response.text().catch(() => 'no body');
+      console.error(`[VspUpload] Parse failed: HTTP ${response.status} — ${errBody.slice(0, 200)}`);
       return null;
     }
 
     const data = await response.json();
-    if (!data.success || !data.vspPlan) return null;
+    console.log(`[VspUpload] Server response: success=${data.success}, hasVspPlan=${!!data.vspPlan}`);
+
+    if (!data.success || !data.vspPlan) {
+      console.error('[VspUpload] Server returned no vspPlan:', JSON.stringify(data).slice(0, 300));
+      return null;
+    }
 
     // Add lastUpdated timestamp
     return {
