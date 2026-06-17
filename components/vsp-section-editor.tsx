@@ -7,17 +7,17 @@ import { useColors } from '@/hooks/use-colors';
 type ZoneKey = 'green' | 'yellow' | 'orange' | 'red' | 'purple';
 
 const ZONE_CONFIG: { key: ZoneKey; label: string; color: string; emoji: string }[] = [
-  { key: 'green', label: 'Groen — Stabiel', color: '#22C55E', emoji: '🟢' },
-  { key: 'yellow', label: 'Geel — Eerste signalen', color: '#EAB308', emoji: '🟡' },
-  { key: 'orange', label: 'Oranje — Actief ingrijpen', color: '#F97316', emoji: '🟠' },
-  { key: 'red', label: 'Rood — Niet veilig alleen', color: '#EF4444', emoji: '🔴' },
-  { key: 'purple', label: 'Paars — Crisis/herval', color: '#8B5CF6', emoji: '🟣' },
+  { key: 'green', label: 'Green — Stable', color: '#22C55E', emoji: '🟢' },
+  { key: 'yellow', label: 'Yellow — First signs', color: '#EAB308', emoji: '🟡' },
+  { key: 'orange', label: 'Orange — Active intervention', color: '#F97316', emoji: '🟠' },
+  { key: 'red', label: 'Red — Not safe alone', color: '#EF4444', emoji: '🔴' },
+  { key: 'purple', label: 'Purple — Crisis/relapse', color: '#8B5CF6', emoji: '🟣' },
 ];
 
 const FIELD_LABELS: { key: keyof VspZoneEntry; label: string; placeholder: string }[] = [
-  { key: 'signals', label: 'Hoe herken ik mezelf?', placeholder: 'Beschrijf je signalen, gedachten en gedrag in deze zone...' },
-  { key: 'whatHelps', label: 'Wat helpt?', placeholder: 'Welke acties en strategieën helpen je in deze zone...' },
-  { key: 'anchorSentence', label: 'Mijn ankerzin', placeholder: 'Eén zin die je herinnert aan wat belangrijk is...' },
+  { key: 'signals', label: 'How do I recognize myself?', placeholder: 'Describe your signals, thoughts, and behavior in this zone...' },
+  { key: 'whatHelps', label: 'What helps?', placeholder: 'What actions and strategies help you in this zone...' },
+  { key: 'anchorSentence', label: 'My anchor sentence', placeholder: 'One sentence that reminds you of what matters...' },
 ];
 
 interface VspSectionEditorProps {
@@ -84,7 +84,7 @@ export function VspSectionEditor({ vspPlan, onSave }: VspSectionEditorProps) {
     };
     await onSave(updated);
     setEditingZone(null);
-    if (Platform.OS !== 'web') Alert.alert('Opgeslagen', 'Je VSP zone is bijgewerkt.');
+    if (Platform.OS !== 'web') Alert.alert('Saved', 'Your safety plan zone has been updated.');
   }, [plan, zoneSignals, zoneWhatHelps, zoneAnchor, onSave]);
 
   const startEditTriggers = useCallback(() => {
@@ -107,7 +107,7 @@ export function VspSectionEditor({ vspPlan, onSave }: VspSectionEditorProps) {
     const updated: VspStructuredPlan = { ...plan, triggers: triggerList };
     await onSave(updated);
     setEditingTriggers(false);
-    if (Platform.OS !== 'web') Alert.alert('Opgeslagen', 'Je triggers zijn bijgewerkt.');
+    if (Platform.OS !== 'web') Alert.alert('Saved', 'Your triggers have been updated.');
   }, [plan, triggerList, onSave]);
 
   const startEditRules = useCallback(() => {
@@ -129,7 +129,7 @@ export function VspSectionEditor({ vspPlan, onSave }: VspSectionEditorProps) {
     const updated: VspStructuredPlan = { ...plan, recoveryRules: rulesList };
     await onSave(updated);
     setEditingRules(false);
-    if (Platform.OS !== 'web') Alert.alert('Opgeslagen', 'Je herstelregels zijn bijgewerkt.');
+    if (Platform.OS !== 'web') Alert.alert('Saved', 'Your recovery rules have been updated.');
   }, [plan, rulesList, onSave]);
 
   const startEditMainAnchor = useCallback(() => {
@@ -155,10 +155,10 @@ export function VspSectionEditor({ vspPlan, onSave }: VspSectionEditorProps) {
       {/* Header */}
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 4 }}>
         <Text style={{ fontSize: 22 }}>{'\u{1F6E1}'}</Text>
-        <Text style={{ fontSize: 16, fontWeight: '700', color: colors.foreground }}>Mijn Veiligheidsplan (VSP)</Text>
+        <Text style={{ fontSize: 16, fontWeight: '700', color: colors.foreground }}>My Safety Plan</Text>
       </View>
       <Text style={{ fontSize: 13, color: colors.muted, marginBottom: 16, lineHeight: 18 }}>
-        Jouw persoonlijk vroegsignaleringsplan per zone. Dit helpt je begeleider om je eigen woorden te gebruiken.
+        Your personal early-warning plan per zone. This helps your companion use your own words.
       </Text>
 
       {/* Progress */}
@@ -235,12 +235,12 @@ export function VspSectionEditor({ vspPlan, onSave }: VspSectionEditorProps) {
                     <View style={{ flexDirection: 'row', gap: 10, marginTop: 4 }}>
                       <Pressable onPress={() => setEditingZone(null)} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1, flex: 1 }]}>
                         <View style={{ backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: 10, paddingVertical: 10, alignItems: 'center' }}>
-                          <Text style={{ color: colors.foreground, fontWeight: '500' }}>Annuleer</Text>
+                          <Text style={{ color: colors.foreground, fontWeight: '500' }}>Cancel</Text>
                         </View>
                       </Pressable>
                       <Pressable onPress={() => saveZone(zone.key)} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1, flex: 1 }]}>
                         <View style={{ backgroundColor: zone.color, borderRadius: 10, paddingVertical: 10, alignItems: 'center' }}>
-                          <Text style={{ color: '#fff', fontWeight: '600' }}>Opslaan</Text>
+                          <Text style={{ color: '#fff', fontWeight: '600' }}>Save</Text>
                         </View>
                       </Pressable>
                     </View>
@@ -249,34 +249,34 @@ export function VspSectionEditor({ vspPlan, onSave }: VspSectionEditorProps) {
                   <View style={{ gap: 10 }}>
                     {entry.signals.trim() && (
                       <View>
-                        <Text style={{ fontSize: 12, fontWeight: '600', color: colors.muted, marginBottom: 2 }}>Herkenning</Text>
+                        <Text style={{ fontSize: 12, fontWeight: '600', color: colors.muted, marginBottom: 2 }}>Recognition</Text>
                         <Text style={{ fontSize: 13, color: colors.foreground, lineHeight: 19 }}>{entry.signals}</Text>
                       </View>
                     )}
                     {entry.whatHelps.trim() && (
                       <View>
-                        <Text style={{ fontSize: 12, fontWeight: '600', color: colors.muted, marginBottom: 2 }}>Wat helpt</Text>
+                        <Text style={{ fontSize: 12, fontWeight: '600', color: colors.muted, marginBottom: 2 }}>What helps</Text>
                         <Text style={{ fontSize: 13, color: colors.foreground, lineHeight: 19 }}>{entry.whatHelps}</Text>
                       </View>
                     )}
                     {entry.anchorSentence.trim() && (
                       <View>
-                        <Text style={{ fontSize: 12, fontWeight: '600', color: zone.color, marginBottom: 2 }}>Ankerzin</Text>
+                        <Text style={{ fontSize: 12, fontWeight: '600', color: zone.color, marginBottom: 2 }}>Anchor sentence</Text>
                         <Text style={{ fontSize: 13, color: colors.foreground, fontStyle: 'italic', lineHeight: 19 }}>{entry.anchorSentence}</Text>
                       </View>
                     )}
                     <Pressable onPress={() => startEditZone(zone.key)} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1, marginTop: 6 }]}>
                       <View style={{ backgroundColor: '#fff', borderWidth: 1, borderColor: colors.border, borderRadius: 10, paddingVertical: 8, alignItems: 'center' }}>
-                        <Text style={{ color: zone.color, fontWeight: '500', fontSize: 13 }}>Bewerk</Text>
+                        <Text style={{ color: zone.color, fontWeight: '500', fontSize: 13 }}>Edit</Text>
                       </View>
                     </Pressable>
                   </View>
                 ) : (
                   <View style={{ alignItems: 'center', paddingVertical: 14 }}>
-                    <Text style={{ color: colors.muted, fontSize: 13, marginBottom: 10 }}>Nog niet ingevuld voor deze zone.</Text>
+                    <Text style={{ color: colors.muted, fontSize: 13, marginBottom: 10 }}>Not yet filled in for this zone.</Text>
                     <Pressable onPress={() => startEditZone(zone.key)} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}>
                       <View style={{ backgroundColor: zone.color, borderRadius: 10, paddingHorizontal: 20, paddingVertical: 10 }}>
-                        <Text style={{ color: '#fff', fontWeight: '600', fontSize: 13 }}>Invullen</Text>
+                        <Text style={{ color: '#fff', fontWeight: '600', fontSize: 13 }}>Fill in</Text>
                       </View>
                     </Pressable>
                   </View>
@@ -302,7 +302,7 @@ export function VspSectionEditor({ vspPlan, onSave }: VspSectionEditorProps) {
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                 <Text style={{ fontSize: 18 }}>{'\u26A1'}</Text>
-                <Text style={{ fontSize: 14, fontWeight: '600', color: colors.foreground }}>Mijn Kerntriggers</Text>
+                <Text style={{ fontSize: 14, fontWeight: '600', color: colors.foreground }}>My Core Triggers</Text>
               </View>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                 {plan.triggers.length > 0 && (
@@ -323,7 +323,7 @@ export function VspSectionEditor({ vspPlan, onSave }: VspSectionEditorProps) {
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                       <View style={{ flex: 1 }}>
                         <Text style={{ fontSize: 13, fontWeight: '600', color: colors.foreground }}>{t.trigger}</Text>
-                        {t.counterThought && <Text style={{ fontSize: 12, color: colors.muted, fontStyle: 'italic', marginTop: 2 }}>Tegenzin: {t.counterThought}</Text>}
+                        {t.counterThought && <Text style={{ fontSize: 12, color: colors.muted, fontStyle: 'italic', marginTop: 2 }}>Counter-thought: {t.counterThought}</Text>}
                       </View>
                       <Pressable onPress={() => removeTrigger(idx)} style={({ pressed }) => [{ opacity: pressed ? 0.5 : 1, padding: 4 }]}>
                         <Text style={{ color: '#EF4444', fontSize: 16 }}>{'\u2715'}</Text>
@@ -334,33 +334,33 @@ export function VspSectionEditor({ vspPlan, onSave }: VspSectionEditorProps) {
                 <View style={{ gap: 8, marginTop: 4 }}>
                   <TextInput
                     style={{ backgroundColor: '#fff', borderWidth: 1, borderColor: colors.border, borderRadius: 10, padding: 10, fontSize: 13, color: colors.foreground }}
-                    placeholder="Trigger (bv. controleverlies)"
+                    placeholder="Trigger (e.g. loss of control)"
                     placeholderTextColor="#9CA3AF"
                     value={newTrigger}
                     onChangeText={setNewTrigger}
                   />
                   <TextInput
                     style={{ backgroundColor: '#fff', borderWidth: 1, borderColor: colors.border, borderRadius: 10, padding: 10, fontSize: 13, color: colors.foreground }}
-                    placeholder="Tegenzin (bv. niet alles moet opgelost worden)"
+                    placeholder="Counter-thought (e.g. not everything needs solving)"
                     placeholderTextColor="#9CA3AF"
                     value={newCounter}
                     onChangeText={setNewCounter}
                   />
                   <Pressable onPress={addTrigger} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}>
                     <View style={{ backgroundColor: '#F59E0B', borderRadius: 8, paddingVertical: 8, alignItems: 'center' }}>
-                      <Text style={{ color: '#fff', fontWeight: '600', fontSize: 13 }}>+ Toevoegen</Text>
+                      <Text style={{ color: '#fff', fontWeight: '600', fontSize: 13 }}>+ Add</Text>
                     </View>
                   </Pressable>
                 </View>
                 <View style={{ flexDirection: 'row', gap: 10, marginTop: 6 }}>
                   <Pressable onPress={() => setEditingTriggers(false)} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1, flex: 1 }]}>
                     <View style={{ backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: 10, paddingVertical: 10, alignItems: 'center' }}>
-                      <Text style={{ color: colors.foreground, fontWeight: '500' }}>Annuleer</Text>
+                      <Text style={{ color: colors.foreground, fontWeight: '500' }}>Cancel</Text>
                     </View>
                   </Pressable>
                   <Pressable onPress={saveTriggers} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1, flex: 1 }]}>
                     <View style={{ backgroundColor: '#F59E0B', borderRadius: 10, paddingVertical: 10, alignItems: 'center' }}>
-                      <Text style={{ color: '#fff', fontWeight: '600' }}>Opslaan</Text>
+                      <Text style={{ color: '#fff', fontWeight: '600' }}>Save</Text>
                     </View>
                   </Pressable>
                 </View>
@@ -370,21 +370,21 @@ export function VspSectionEditor({ vspPlan, onSave }: VspSectionEditorProps) {
                 {plan.triggers.map((t, idx) => (
                   <View key={idx} style={{ backgroundColor: '#fff', borderRadius: 10, padding: 10, borderWidth: 1, borderColor: colors.border }}>
                     <Text style={{ fontSize: 13, fontWeight: '600', color: colors.foreground }}>{t.trigger}</Text>
-                    {t.counterThought && <Text style={{ fontSize: 12, color: colors.muted, fontStyle: 'italic', marginTop: 2 }}>Tegenzin: {t.counterThought}</Text>}
+                    {t.counterThought && <Text style={{ fontSize: 12, color: colors.muted, fontStyle: 'italic', marginTop: 2 }}>Counter-thought: {t.counterThought}</Text>}
                   </View>
                 ))}
                 <Pressable onPress={startEditTriggers} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1, marginTop: 4 }]}>
                   <View style={{ backgroundColor: '#fff', borderWidth: 1, borderColor: colors.border, borderRadius: 10, paddingVertical: 8, alignItems: 'center' }}>
-                    <Text style={{ color: '#F59E0B', fontWeight: '500', fontSize: 13 }}>Bewerk</Text>
+                    <Text style={{ color: '#F59E0B', fontWeight: '500', fontSize: 13 }}>Edit</Text>
                   </View>
                 </Pressable>
               </View>
             ) : (
               <View style={{ alignItems: 'center', paddingVertical: 14 }}>
-                <Text style={{ color: colors.muted, fontSize: 13, marginBottom: 10 }}>Nog geen triggers ingevuld.</Text>
+                <Text style={{ color: colors.muted, fontSize: 13, marginBottom: 10 }}>No triggers added yet.</Text>
                 <Pressable onPress={startEditTriggers} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}>
                   <View style={{ backgroundColor: '#F59E0B', borderRadius: 10, paddingHorizontal: 20, paddingVertical: 10 }}>
-                    <Text style={{ color: '#fff', fontWeight: '600', fontSize: 13 }}>Triggers toevoegen</Text>
+                    <Text style={{ color: '#fff', fontWeight: '600', fontSize: 13 }}>Add triggers</Text>
                   </View>
                 </Pressable>
               </View>
@@ -408,7 +408,7 @@ export function VspSectionEditor({ vspPlan, onSave }: VspSectionEditorProps) {
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                 <Text style={{ fontSize: 18 }}>{'\u{1F4CB}'}</Text>
-                <Text style={{ fontSize: 14, fontWeight: '600', color: colors.foreground }}>Mijn Herstelregels</Text>
+                <Text style={{ fontSize: 14, fontWeight: '600', color: colors.foreground }}>My Recovery Rules</Text>
               </View>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                 {plan.recoveryRules.length > 0 && (
@@ -435,7 +435,7 @@ export function VspSectionEditor({ vspPlan, onSave }: VspSectionEditorProps) {
                 <View style={{ gap: 8, marginTop: 4 }}>
                   <TextInput
                     style={{ backgroundColor: '#fff', borderWidth: 1, borderColor: colors.border, borderRadius: 10, padding: 10, fontSize: 13, color: colors.foreground }}
-                    placeholder="Nieuwe herstelregel..."
+                    placeholder="New recovery rule..."
                     placeholderTextColor="#9CA3AF"
                     value={newRule}
                     onChangeText={setNewRule}
@@ -444,19 +444,19 @@ export function VspSectionEditor({ vspPlan, onSave }: VspSectionEditorProps) {
                   />
                   <Pressable onPress={addRule} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}>
                     <View style={{ backgroundColor: '#6366F1', borderRadius: 8, paddingVertical: 8, alignItems: 'center' }}>
-                      <Text style={{ color: '#fff', fontWeight: '600', fontSize: 13 }}>+ Toevoegen</Text>
+                      <Text style={{ color: '#fff', fontWeight: '600', fontSize: 13 }}>+ Add</Text>
                     </View>
                   </Pressable>
                 </View>
                 <View style={{ flexDirection: 'row', gap: 10, marginTop: 6 }}>
                   <Pressable onPress={() => setEditingRules(false)} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1, flex: 1 }]}>
                     <View style={{ backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: 10, paddingVertical: 10, alignItems: 'center' }}>
-                      <Text style={{ color: colors.foreground, fontWeight: '500' }}>Annuleer</Text>
+                      <Text style={{ color: colors.foreground, fontWeight: '500' }}>Cancel</Text>
                     </View>
                   </Pressable>
                   <Pressable onPress={saveRules} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1, flex: 1 }]}>
                     <View style={{ backgroundColor: '#6366F1', borderRadius: 10, paddingVertical: 10, alignItems: 'center' }}>
-                      <Text style={{ color: '#fff', fontWeight: '600' }}>Opslaan</Text>
+                      <Text style={{ color: '#fff', fontWeight: '600' }}>Save</Text>
                     </View>
                   </Pressable>
                 </View>
@@ -468,16 +468,16 @@ export function VspSectionEditor({ vspPlan, onSave }: VspSectionEditorProps) {
                 ))}
                 <Pressable onPress={startEditRules} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1, marginTop: 6 }]}>
                   <View style={{ backgroundColor: '#fff', borderWidth: 1, borderColor: colors.border, borderRadius: 10, paddingVertical: 8, alignItems: 'center' }}>
-                    <Text style={{ color: '#6366F1', fontWeight: '500', fontSize: 13 }}>Bewerk</Text>
+                    <Text style={{ color: '#6366F1', fontWeight: '500', fontSize: 13 }}>Edit</Text>
                   </View>
                 </Pressable>
               </View>
             ) : (
               <View style={{ alignItems: 'center', paddingVertical: 14 }}>
-                <Text style={{ color: colors.muted, fontSize: 13, marginBottom: 10 }}>Nog geen herstelregels ingevuld.</Text>
+                <Text style={{ color: colors.muted, fontSize: 13, marginBottom: 10 }}>No recovery rules added yet.</Text>
                 <Pressable onPress={startEditRules} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}>
                   <View style={{ backgroundColor: '#6366F1', borderRadius: 10, paddingHorizontal: 20, paddingVertical: 10 }}>
-                    <Text style={{ color: '#fff', fontWeight: '600', fontSize: 13 }}>Regels toevoegen</Text>
+                    <Text style={{ color: '#fff', fontWeight: '600', fontSize: 13 }}>Add rules</Text>
                   </View>
                 </Pressable>
               </View>
@@ -488,12 +488,12 @@ export function VspSectionEditor({ vspPlan, onSave }: VspSectionEditorProps) {
 
       {/* Main Anchor Sentence */}
       <View style={{ backgroundColor: '#fff', borderRadius: 14, padding: 14, borderWidth: 1, borderColor: colors.border, borderLeftWidth: 4, borderLeftColor: '#B39DDB' }}>
-        <Text style={{ fontSize: 12, fontWeight: '600', color: '#B39DDB', marginBottom: 4 }}>Mijn belangrijkste zin</Text>
+        <Text style={{ fontSize: 12, fontWeight: '600', color: '#B39DDB', marginBottom: 4 }}>My most important sentence</Text>
         {editingAnchor ? (
           <View style={{ gap: 8 }}>
             <TextInput
               style={{ backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: 10, padding: 10, fontSize: 14, color: colors.foreground, lineHeight: 20 }}
-              placeholder="De zin die alles samenvat..."
+              placeholder="The sentence that captures everything..."
               placeholderTextColor="#9CA3AF"
               value={mainAnchor}
               onChangeText={setMainAnchor}
@@ -502,12 +502,12 @@ export function VspSectionEditor({ vspPlan, onSave }: VspSectionEditorProps) {
             <View style={{ flexDirection: 'row', gap: 8 }}>
               <Pressable onPress={() => setEditingAnchor(false)} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1, flex: 1 }]}>
                 <View style={{ backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: 8, paddingVertical: 8, alignItems: 'center' }}>
-                  <Text style={{ color: colors.foreground, fontWeight: '500', fontSize: 12 }}>Annuleer</Text>
+                  <Text style={{ color: colors.foreground, fontWeight: '500', fontSize: 12 }}>Cancel</Text>
                 </View>
               </Pressable>
               <Pressable onPress={saveMainAnchor} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1, flex: 1 }]}>
                 <View style={{ backgroundColor: '#B39DDB', borderRadius: 8, paddingVertical: 8, alignItems: 'center' }}>
-                  <Text style={{ color: '#fff', fontWeight: '600', fontSize: 12 }}>Opslaan</Text>
+                  <Text style={{ color: '#fff', fontWeight: '600', fontSize: 12 }}>Save</Text>
                 </View>
               </Pressable>
             </View>
@@ -516,12 +516,12 @@ export function VspSectionEditor({ vspPlan, onSave }: VspSectionEditorProps) {
           <View>
             <Text style={{ fontSize: 14, color: colors.foreground, fontStyle: 'italic', lineHeight: 20 }}>{plan.mainAnchorSentence}</Text>
             <Pressable onPress={startEditMainAnchor} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1, marginTop: 8 }]}>
-              <Text style={{ color: '#B39DDB', fontWeight: '500', fontSize: 12 }}>Bewerk</Text>
+              <Text style={{ color: '#B39DDB', fontWeight: '500', fontSize: 12 }}>Edit</Text>
             </Pressable>
           </View>
         ) : (
           <Pressable onPress={startEditMainAnchor} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}>
-            <Text style={{ fontSize: 13, color: colors.muted }}>Tik om je belangrijkste zin in te vullen...</Text>
+            <Text style={{ fontSize: 13, color: colors.muted }}>Tap to enter your most important sentence...</Text>
           </Pressable>
         )}
       </View>
@@ -529,7 +529,7 @@ export function VspSectionEditor({ vspPlan, onSave }: VspSectionEditorProps) {
       {/* Last updated */}
       {plan.lastUpdated && (
         <Text style={{ fontSize: 11, color: colors.muted, marginTop: 8, textAlign: 'right' }}>
-          Laatst bijgewerkt: {new Date(plan.lastUpdated).toLocaleDateString('nl-BE')}
+          Last updated: {new Date(plan.lastUpdated).toLocaleDateString('en-US')}
         </Text>
       )}
     </View>

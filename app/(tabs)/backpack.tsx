@@ -412,7 +412,7 @@ export default function BackpackScreen() {
                 <Text style={{ fontSize: 20 }}>{"\u{1F4C4}"}</Text>
                 <View style={{ flex: 1 }}>
                   <Text style={{ fontSize: 14, fontWeight: '600', color: colors.foreground }}>VSP Wizard</Text>
-                  <Text style={{ fontSize: 12, color: colors.muted }}>Upload een document of vul stap voor stap in</Text>
+                  <Text style={{ fontSize: 12, color: colors.muted }}>Upload a document or fill in step by step</Text>
                 </View>
                 <Text style={{ fontSize: 14, color: colors.muted }}>{"\u{203A}"}</Text>
               </View>

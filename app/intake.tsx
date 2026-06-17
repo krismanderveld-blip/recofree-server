@@ -37,11 +37,11 @@ const URGENCY_LEVELS: { label: string; value: UrgencyLevel; description: string 
 
 /** Zone colors for Eigen Regie intake options */
 const EIGEN_REGIE_ZONE_COLORS: Record<string, string> = {
-  ROOD: '#EF4444',
-  ORANJE: '#F97316',
-  GEEL: '#F59E0B',
-  'LICHT GROEN': '#84CC16',
-  'DONKER GROEN': '#22C55E',
+  RED: '#EF4444',
+  ORANGE: '#F97316',
+  YELLOW: '#F59E0B',
+  'LIGHT GREEN': '#84CC16',
+  'DARK GREEN': '#22C55E',
 };
 
 /** Animated progress bar segment with width transition */
@@ -338,10 +338,10 @@ export default function IntakeScreen() {
                 {isKim ? (
                   <>
                     <Text style={styles.stepTitle}>
-                      In hoeverre wordt jouw leven momenteel bepaald door de ander?
+                      To what extent is your life currently determined by the other person?
                     </Text>
                     <Text style={styles.stepSubtitle}>
-                      Dit helpt Kim begrijpen hoe je er nu voor staat.
+                      This helps Kim understand where you are right now.
                     </Text>
 
                     <View style={styles.optionsGroup}>
@@ -494,7 +494,7 @@ export default function IntakeScreen() {
           <View style={[styles.optionCard, { backgroundColor: dc.background, borderColor: dc.border, marginHorizontal: 24, maxWidth: 380, width: '90%', padding: 24 }]}>
             <Text style={[styles.heroTitle, { fontSize: 20, marginBottom: 8 }]}>Import backup</Text>
             <Text style={[styles.optionDescription, { marginBottom: 20, textAlign: 'center' }]}>
-              Heb je een eerdere back-up? Importeer je gegevens en ga direct verder.
+              Have a previous backup? Import your data and continue right away.
             </Text>
 
             {/* File picker */}
@@ -506,7 +506,7 @@ export default function IntakeScreen() {
               ]}
             >
               <Text style={{ color: importFile ? dc.textPrimary : dc.textMuted, fontSize: 14 }}>
-                {importFile ? importFile.name : 'Kies .recofree bestand'}
+                {importFile ? importFile.name : 'Choose .recofree file'}
               </Text>
             </Pressable>
 
@@ -516,7 +516,7 @@ export default function IntakeScreen() {
               secureTextEntry
               value={importPassword}
               onChangeText={(t) => { setImportPassword(t); setImportError(null); }}
-              placeholder="Wachtwoord van de back-up"
+              placeholder="Backup password"
               placeholderTextColor={dc.textMuted}
               autoComplete="off"
               returnKeyType="done"
@@ -540,7 +540,7 @@ export default function IntakeScreen() {
               {importLoading ? (
                 <ActivityIndicator color="#fff" size="small" />
               ) : (
-                <Text style={styles.primaryButtonText}>Importeer en ga verder</Text>
+                <Text style={styles.primaryButtonText}>Import and continue</Text>
               )}
             </Pressable>
 
@@ -549,7 +549,7 @@ export default function IntakeScreen() {
               onPress={() => { setShowImportFlow(false); setImportError(null); setImportFile(null); setImportPassword(''); }}
               style={({ pressed }) => [styles.ghostButton, { opacity: pressed ? 0.6 : 1 }]}
             >
-              <Text style={styles.ghostButtonText}>Annuleren</Text>
+              <Text style={styles.ghostButtonText}>Cancel</Text>
             </Pressable>
           </View>
         </View>

@@ -260,7 +260,7 @@ export default function DebugLogScreen() {
         ) : activeTab === 'modules' ? (
           <>
             {/* Module Activation Dashboard */}
-            <Section title="K06 Stabilisatie">
+            <Section title="K06 Stabilization">
               <Row
                 label="Status"
                 value={liveState.k06Status === 'COMPLETE' ? '✅ Complete' : liveState.k06Status === 'IN_PROGRESS' ? '⏳ In Progress' : '❌ Not Run'}
@@ -271,9 +271,9 @@ export default function DebugLogScreen() {
               />
             </Section>
 
-            <Section title="Actieve Modules (P2/P3/P4)">
+            <Section title="Active Modules (P2/P3/P4)">
               {liveState.activeModules.length === 0 ? (
-                <Row label="Status" value="Geen modules actief" />
+                <Row label="Status" value="No active modules" />
               ) : (
                 liveState.activeModules.map((mod: { id: string; confidence: number; mode: string }, i: number) => (
                   <View key={`mod-${i}`} style={[styles.row, { paddingVertical: 6 }]}>
@@ -294,22 +294,22 @@ export default function DebugLogScreen() {
               )}
             </Section>
 
-            <Section title="Module Overzicht">
-              <Row label="BEDR01" value="Bedrog Detectie" />
-              <Row label="VETR01" value="Vertrouwensherstel" />
-              <Row label="GASL01" value="Gaslighting Detectie" />
-              <Row label="CDP01" value="Codependentie Patroon" />
-              <Row label="RNW01" value="Rouw Naaste: Wie Ze Was" />
-              <Row label="PAR01" value="Parentificatie" />
-              <Row label="FIN01" value="Financiële Afhankelijkheid" />
+            <Section title="Module Overview">
+              <Row label="BEDR01" value="Deception Detection" />
+              <Row label="VETR01" value="Trust Restoration" />
+              <Row label="GASL01" value="Gaslighting Detection" />
+              <Row label="CDP01" value="Codependency Pattern" />
+              <Row label="RNW01" value="Grief Loved One: Who They Were" />
+              <Row label="PAR01" value="Parentification" />
+              <Row label="FIN01" value="Financial Dependency" />
             </Section>
 
-            <Section title="Pipeline Volgorde">
-              <Row label="1. K06" value="Stabilisatie (altijd eerst)" />
+            <Section title="Pipeline Order">
+              <Row label="1. K06" value="Stabilization (always first)" />
               <Row label="2. P2" value="BEDR01 > VETR01 > GASL01" />
               <Row label="3. P3" value="CDP01 > RNW01" />
               <Row label="4. P4" value="PAR01 > FIN01" />
-              <Row label="Override" value="Crisis protocol overschrijft altijd" />
+              <Row label="Override" value="Crisis protocol always overrides" />
             </Section>
           </>
         ) : activeTab === 'live' ? (

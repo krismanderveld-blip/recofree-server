@@ -69,10 +69,10 @@ export function PreChatVsp({ onSubmit, userName }: PreChatVspProps) {
       {/* Header */}
       <View style={{ marginBottom: 20, alignItems: 'center' }}>
         <Text style={{ fontSize: 24, fontWeight: '700', color: colors.foreground, textAlign: 'center', marginBottom: 8 }}>
-          Hoe voel je je nu, {userName}?
+          How are you feeling right now, {userName}?
         </Text>
         <Text style={{ fontSize: 14, color: colors.muted, textAlign: 'center', lineHeight: 20 }}>
-          Kies het niveau dat het beste bij je past op dit moment.
+          Choose the level that best matches how you feel right now.
         </Text>
       </View>
 
@@ -181,7 +181,7 @@ export function PreChatVsp({ onSubmit, userName }: PreChatVspProps) {
               }]}
             >
               <Text style={{ color: '#fff', fontSize: 16, fontWeight: '600' }}>
-                Bevestigen
+                Confirm
               </Text>
             </Pressable>
           </View>

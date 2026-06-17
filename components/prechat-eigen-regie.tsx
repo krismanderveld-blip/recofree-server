@@ -72,7 +72,7 @@ export function PreChatEigenRegie({ onSubmit, userName }: PreChatEigenRegieProps
         {/* Header */}
         <View style={{ marginBottom: 32, alignItems: 'center' }}>
           <Text style={{ fontSize: 22, fontWeight: '700', color: colors.foreground, textAlign: 'center', marginBottom: 8 }}>
-            Hoe was je dag, {userName}?
+            How was your day, {userName}?
           </Text>
           <Text style={{ fontSize: 15, color: colors.muted, textAlign: 'center', lineHeight: 22 }}>
             {EIGEN_REGIE_QUESTION}
@@ -153,7 +153,7 @@ export function PreChatEigenRegie({ onSubmit, userName }: PreChatEigenRegieProps
           ]}
         >
           <Text style={{ color: '#FFFFFF', fontSize: 16, fontWeight: '600' }}>
-            Bevestigen
+            Confirm
           </Text>
         </Pressable>
       </ScrollView>

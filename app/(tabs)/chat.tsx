@@ -59,31 +59,31 @@ const SILENCE_TIMEOUT_MS = 180_000; // 180 seconds (3 minutes)
 const POST_DISCLOSURE_TIMEOUT_MS = 90_000; // 90 seconds (Module 58)
 
 const STILTE_RESPONSES_ELIAS = [
-  "Ik ben hier, ook als je even niks zegt.",
-  "Soms zijn woorden moeilijk. Ik blijf.",
-  "Je hoeft niets te forceren. Ik wacht.",
+  "I'm here, even when you have nothing to say.",
+  "Sometimes words are hard. I'll stay.",
+  "You don't have to force anything. I'll wait.",
 ];
 
 const STILTE_RESPONSES_KIM = [
-  "Ik ben hier, ook als jij even stil bent.",
-  "Soms zijn woorden moeilijk. Ik blijf bij je.",
-  "Er mag stilte zijn. Als je weer wil praten, ben ik er.",
+  "I'm here, even when you're quiet.",
+  "Sometimes words are hard. I'll stay with you.",
+  "Silence is okay. When you want to talk again, I'm here.",
 ];
 
 const POST_ONTHULLING_RESPONSE_ELIAS =
-  "Wat je net deelde getuigt van moed. Het is oké om even stil te vallen. Ik ben er nog.";
+  "What you just shared takes courage. It's okay to pause for a moment. I'm still here.";
 
 const POST_ONTHULLING_RESPONSE_KIM =
-  "Je hoeft niet meteen verder. Alles wat je hier deelt, blijft hier.";
+  "You don't have to continue right away. Everything you share here, stays here.";
 
 // Keywords that indicate a deep disclosure (Module 58)
 const DISCLOSURE_KEYWORDS = [
-  'ik schaam me', 'ik schaam mij',
-  'ik heb iets slechts gedaan', 'ik heb iets ergs gedaan',
-  'ik ben bang dat je me verafschuwt', 'je zal me haten',
-  'ik durf het niet te zeggen', 'ik heb iets vreselijks gedaan',
-  'niemand mag dit weten', 'ik voel me vies',
-  'ik walg van mezelf', 'ik ben een slecht mens',
+  'i am ashamed', 'i feel ashamed',
+  'i did something bad', 'i did something terrible',
+  'i\'m afraid you\'ll hate me', 'you\'ll hate me',
+  'i don\'t dare to say it', 'i\'ve done something horrible',
+  'nobody can know this', 'i feel dirty',
+  'i disgust myself', 'i am a bad person',
 ];
 
 type SessionPhase = 'active' | 'ending' | 'completed';
@@ -994,7 +994,7 @@ function ChatScreenInner() {
       const confirmationMsg: ChatMessage = {
         id: `msg_confirm_${Date.now()}`,
         role: 'assistant',
-        content: result.farewell + '\n\nIk heb alles opgeslagen. Je sessie is veilig bewaard. Je kunt de app nu sluiten of teruggaan naar het startscherm.',
+        content: result.farewell + '\n\nEverything has been saved. Your session is safely stored. You can close the app now or go back to the home screen.',
         timestamp: new Date().toISOString(),
       };
       setMessages((prev) => [...prev, confirmationMsg]);
@@ -1028,7 +1028,7 @@ function ChatScreenInner() {
       const fallbackMsg: ChatMessage = {
         id: `msg_fallback_${Date.now()}`,
         role: 'assistant',
-        content: `${userName}, ik heb je sessie opgeslagen. Er ging iets mis tijdens de analyse, maar je gesprek is veilig bewaard. Je kunt de app nu sluiten.`,
+        content: `${userName}, your session has been saved. Something went wrong during analysis, but your conversation is safely stored. You can close the app now.`,
         timestamp: new Date().toISOString(),
       };
       setMessages((prev) => [...prev, fallbackMsg]);

@@ -46,17 +46,17 @@ interface VspWizardScreenProps {
 // ─── Constants ───────────────────────────────────────────────────────────────
 
 const ZONE_CONFIG: { key: ZoneKey; label: string; dutchLabel: string; color: string; emoji: string }[] = [
-  { key: 'green', label: 'Groen', dutchLabel: 'Stabiel & aanwezig', color: '#22C55E', emoji: '🟢' },
-  { key: 'yellow', label: 'Geel', dutchLabel: 'Eerste signalen', color: '#EAB308', emoji: '🟡' },
-  { key: 'orange', label: 'Oranje', dutchLabel: 'Actief ingrijpen', color: '#F97316', emoji: '🟠' },
-  { key: 'red', label: 'Rood', dutchLabel: 'Niet veilig alleen', color: '#EF4444', emoji: '🔴' },
-  { key: 'purple', label: 'Paars', dutchLabel: 'Crisis / herval', color: '#8B5CF6', emoji: '🟣' },
+  { key: 'green', label: 'Green', dutchLabel: 'Stable & present', color: '#22C55E', emoji: '🟢' },
+  { key: 'yellow', label: 'Yellow', dutchLabel: 'First warning signs', color: '#EAB308', emoji: '🟡' },
+  { key: 'orange', label: 'Orange', dutchLabel: 'Active intervention', color: '#F97316', emoji: '🟠' },
+  { key: 'red', label: 'Red', dutchLabel: 'Not safe alone', color: '#EF4444', emoji: '🔴' },
+  { key: 'purple', label: 'Purple', dutchLabel: 'Crisis / relapse', color: '#8B5CF6', emoji: '🟣' },
 ];
 
 const FIELD_CONFIG: { key: keyof VspZoneEntry; label: string; placeholder: string; lines: number }[] = [
-  { key: 'signals', label: 'Hoe herken ik mezelf?', placeholder: 'Beschrijf je signalen, gedachten en gedrag in deze zone...', lines: 4 },
-  { key: 'whatHelps', label: 'Wat helpt?', placeholder: 'Welke acties en strategieën helpen je in deze zone...', lines: 4 },
-  { key: 'anchorSentence', label: 'Mijn ankerzin', placeholder: 'Eén zin die je herinnert aan wat belangrijk is...', lines: 2 },
+  { key: 'signals', label: 'How do I recognize myself?', placeholder: 'Describe your signals, thoughts, and behavior in this zone...', lines: 4 },
+  { key: 'whatHelps', label: 'What helps?', placeholder: 'What actions and strategies help you in this zone...', lines: 4 },
+  { key: 'anchorSentence', label: 'My anchor sentence', placeholder: 'One sentence that reminds you of what matters...', lines: 2 },
 ];
 
 // ─── Component ───────────────────────────────────────────────────────────────
@@ -83,7 +83,7 @@ export function VspWizardScreen({ existingPlan, onSave, onCancel }: VspWizardScr
     }
 
     if (!result.success || !result.vspPlan) {
-      setUploadError(result.error || 'Er ging iets mis bij het verwerken.');
+      setUploadError(result.error || 'Something went wrong while processing.');
       setStep('choose_method');
       return;
     }
@@ -93,7 +93,7 @@ export function VspWizardScreen({ existingPlan, onSave, onCancel }: VspWizardScr
       (z: any) => z && (z.signals || z.whatHelps || z.anchorSentence)
     ).length;
     if (filledZones === 0 && (!result.vspPlan.triggers || result.vspPlan.triggers.length === 0)) {
-      setUploadError('Het document is verwerkt maar er konden geen VSP-velden worden herkend. Probeer handmatig invullen of een ander document.');
+      setUploadError('The document was processed but no safety plan fields could be recognized. Try filling in manually or use a different document.');
       setStep('choose_method');
       return;
     }
@@ -190,7 +190,7 @@ export function VspWizardScreen({ existingPlan, onSave, onCancel }: VspWizardScr
       await onSave(finalPlan);
       setStep('done');
     } catch (err) {
-      if (Platform.OS !== 'web') Alert.alert('Fout', 'Opslaan mislukt. Probeer opnieuw.');
+      if (Platform.OS !== 'web') Alert.alert('Error', 'Save failed. Please try again.');
     } finally {
       setSaving(false);
     }
@@ -203,10 +203,10 @@ export function VspWizardScreen({ existingPlan, onSave, onCancel }: VspWizardScr
       <View style={{ alignItems: 'center', gap: 8, marginBottom: 16 }}>
         <Text style={{ fontSize: 28 }}>{'\u{1F6E1}'}</Text>
         <Text style={{ fontSize: 22, fontWeight: '700', color: colors.foreground, textAlign: 'center' }}>
-          Veiligheidsplan invullen
+          Fill in Safety Plan
         </Text>
         <Text style={{ fontSize: 14, color: colors.muted, textAlign: 'center', lineHeight: 20, maxWidth: 300 }}>
-          Je kunt een bestaand VSP-document uploaden of handmatig invullen. Niet alles hoeft ingevuld — vul in wat je hebt.
+          You can upload an existing safety plan document or fill it in manually. Not everything needs to be filled — enter what you have.
         </Text>
       </View>
 
@@ -230,10 +230,10 @@ export function VspWizardScreen({ existingPlan, onSave, onCancel }: VspWizardScr
             <Text style={{ fontSize: 24 }}>{'\u{1F4C4}'}</Text>
             <View style={{ flex: 1 }}>
               <Text style={{ fontSize: 16, fontWeight: '600', color: colors.foreground }}>
-                Document uploaden
+                Upload document
               </Text>
               <Text style={{ fontSize: 13, color: colors.muted, lineHeight: 18, marginTop: 2 }}>
-                Upload je VSP (PDF, Word of tekst). De velden worden automatisch ingevuld.
+                Upload your safety plan (PDF, Word, or text). Fields will be filled in automatically.
               </Text>
             </View>
           </View>
@@ -254,10 +254,10 @@ export function VspWizardScreen({ existingPlan, onSave, onCancel }: VspWizardScr
             <Text style={{ fontSize: 24 }}>{'\u{270F}\u{FE0F}'}</Text>
             <View style={{ flex: 1 }}>
               <Text style={{ fontSize: 16, fontWeight: '600', color: colors.foreground }}>
-                Zelf invullen
+                Fill in manually
               </Text>
               <Text style={{ fontSize: 13, color: colors.muted, lineHeight: 18, marginTop: 2 }}>
-                Vul je plan stap voor stap in per zone. Je kunt zones overslaan.
+                Fill in your plan step by step per zone. You can skip zones.
               </Text>
             </View>
           </View>
@@ -266,7 +266,7 @@ export function VspWizardScreen({ existingPlan, onSave, onCancel }: VspWizardScr
 
       {/* Cancel */}
       <Pressable onPress={onCancel} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1, alignSelf: 'center', marginTop: 8 }]}>
-        <Text style={{ fontSize: 14, color: colors.muted }}>Annuleren</Text>
+        <Text style={{ fontSize: 14, color: colors.muted }}>Cancel</Text>
       </Pressable>
     </View>
   );
@@ -274,9 +274,9 @@ export function VspWizardScreen({ existingPlan, onSave, onCancel }: VspWizardScr
   const renderUploading = () => (
     <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', gap: 16, padding: 24 }}>
       <ActivityIndicator size="large" color={colors.primary} />
-      <Text style={{ fontSize: 16, fontWeight: '600', color: colors.foreground }}>Document verwerken...</Text>
+      <Text style={{ fontSize: 16, fontWeight: '600', color: colors.foreground }}>Processing document...</Text>
       <Text style={{ fontSize: 13, color: colors.muted, textAlign: 'center', lineHeight: 18 }}>
-        Je document wordt gelezen en de velden worden automatisch ingevuld. Dit kan even duren.
+        Your document is being read and the fields will be filled in automatically. This may take a moment.
       </Text>
     </View>
   );
@@ -343,14 +343,14 @@ export function VspWizardScreen({ existingPlan, onSave, onCancel }: VspWizardScr
           {activeZoneIdx > 0 && (
             <Pressable onPress={prevZone} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1, flex: 1 }]}>
               <View style={{ backgroundColor: colors.surface, borderRadius: 12, padding: 14, alignItems: 'center', borderWidth: 1, borderColor: colors.border }}>
-                <Text style={{ fontSize: 14, fontWeight: '600', color: colors.foreground }}>Vorige</Text>
+                <Text style={{ fontSize: 14, fontWeight: '600', color: colors.foreground }}>Previous</Text>
               </View>
             </Pressable>
           )}
           <Pressable onPress={nextZone} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1, flex: 1 }]}>
             <View style={{ backgroundColor: colors.primary, borderRadius: 12, padding: 14, alignItems: 'center' }}>
               <Text style={{ fontSize: 14, fontWeight: '600', color: '#fff' }}>
-                {activeZoneIdx < ZONE_CONFIG.length - 1 ? 'Volgende zone' : 'Naar triggers'}
+                {activeZoneIdx < ZONE_CONFIG.length - 1 ? 'Next zone' : 'To triggers'}
               </Text>
             </View>
           </Pressable>
@@ -358,7 +358,7 @@ export function VspWizardScreen({ existingPlan, onSave, onCancel }: VspWizardScr
 
         {/* Skip hint */}
         <Text style={{ fontSize: 12, color: colors.muted, textAlign: 'center', marginTop: 12 }}>
-          Geen inhoud voor deze zone? Laat de velden leeg en ga verder.
+          Nothing for this zone? Leave the fields empty and continue.
         </Text>
       </ScrollView>
     );
@@ -367,10 +367,10 @@ export function VspWizardScreen({ existingPlan, onSave, onCancel }: VspWizardScr
   const renderTriggersEditor = () => (
     <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
       <Text style={{ fontSize: 18, fontWeight: '700', color: colors.foreground, marginBottom: 4 }}>
-        Mijn kerntriggers
+        My core triggers
       </Text>
       <Text style={{ fontSize: 13, color: colors.muted, marginBottom: 20, lineHeight: 18 }}>
-        Welke situaties of gevoelens kunnen je uit balans brengen? Voeg een tegenzin toe als anker.
+        What situations or feelings can throw you off balance? Add a counter-thought as an anchor.
       </Text>
 
       {/* Existing triggers */}
@@ -381,7 +381,7 @@ export function VspWizardScreen({ existingPlan, onSave, onCancel }: VspWizardScr
               <Text style={{ fontSize: 14, fontWeight: '600', color: colors.foreground }}>{t.trigger}</Text>
               {t.counterThought ? (
                 <Text style={{ fontSize: 13, color: colors.muted, marginTop: 4, fontStyle: 'italic' }}>
-                  Tegenzin: {t.counterThought}
+                  Counter-thought: {t.counterThought}
                 </Text>
               ) : null}
             </View>
@@ -404,7 +404,7 @@ export function VspWizardScreen({ existingPlan, onSave, onCancel }: VspWizardScr
             fontSize: 14,
             color: colors.foreground,
           }}
-          placeholder="Trigger (bijv. Controleverlies)"
+          placeholder="Trigger (e.g. Loss of control)"
           placeholderTextColor={colors.muted}
           value={newTriggerName}
           onChangeText={setNewTriggerName}
@@ -419,14 +419,14 @@ export function VspWizardScreen({ existingPlan, onSave, onCancel }: VspWizardScr
             fontSize: 14,
             color: colors.foreground,
           }}
-          placeholder="Tegenzin (optioneel)"
+          placeholder="Counter-thought (optional)"
           placeholderTextColor={colors.muted}
           value={newTriggerCounter}
           onChangeText={setNewTriggerCounter}
         />
         <Pressable onPress={addTrigger} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}>
           <View style={{ backgroundColor: colors.primary + '15', borderRadius: 10, padding: 12, alignItems: 'center' }}>
-            <Text style={{ fontSize: 14, fontWeight: '600', color: colors.primary }}>+ Trigger toevoegen</Text>
+            <Text style={{ fontSize: 14, fontWeight: '600', color: colors.primary }}>+ Add trigger</Text>
           </View>
         </Pressable>
       </View>
@@ -434,7 +434,7 @@ export function VspWizardScreen({ existingPlan, onSave, onCancel }: VspWizardScr
       {/* Main anchor sentence */}
       <View style={{ marginTop: 24 }}>
         <Text style={{ fontSize: 14, fontWeight: '600', color: colors.foreground, marginBottom: 6 }}>
-          Mijn belangrijkste zin
+          My most important sentence
         </Text>
         <TextInput
           style={{
@@ -448,7 +448,7 @@ export function VspWizardScreen({ existingPlan, onSave, onCancel }: VspWizardScr
             minHeight: 50,
             textAlignVertical: 'top',
           }}
-          placeholder="Eén zin die alles samenvat..."
+          placeholder="One sentence that captures everything..."
           placeholderTextColor={colors.muted}
           value={plan.mainAnchorSentence}
           onChangeText={(text) => setPlan(prev => ({ ...prev, mainAnchorSentence: text }))}
@@ -460,18 +460,18 @@ export function VspWizardScreen({ existingPlan, onSave, onCancel }: VspWizardScr
       <View style={{ flexDirection: 'row', gap: 12, marginTop: 24 }}>
         <Pressable onPress={() => { setActiveZoneIdx(ZONE_CONFIG.length - 1); setStep('review_zones'); }} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1, flex: 1 }]}>
           <View style={{ backgroundColor: colors.surface, borderRadius: 12, padding: 14, alignItems: 'center', borderWidth: 1, borderColor: colors.border }}>
-            <Text style={{ fontSize: 14, fontWeight: '600', color: colors.foreground }}>Terug</Text>
+            <Text style={{ fontSize: 14, fontWeight: '600', color: colors.foreground }}>Back</Text>
           </View>
         </Pressable>
         <Pressable onPress={() => setStep('review_rules')} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1, flex: 1 }]}>
           <View style={{ backgroundColor: colors.primary, borderRadius: 12, padding: 14, alignItems: 'center' }}>
-            <Text style={{ fontSize: 14, fontWeight: '600', color: '#fff' }}>Naar herstelregels</Text>
+            <Text style={{ fontSize: 14, fontWeight: '600', color: '#fff' }}>To recovery rules</Text>
           </View>
         </Pressable>
       </View>
 
       <Text style={{ fontSize: 12, color: colors.muted, textAlign: 'center', marginTop: 12 }}>
-        Geen triggers? Ga gewoon verder.
+        No triggers? Just continue.
       </Text>
     </ScrollView>
   );
@@ -479,10 +479,10 @@ export function VspWizardScreen({ existingPlan, onSave, onCancel }: VspWizardScr
   const renderRulesEditor = () => (
     <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
       <Text style={{ fontSize: 18, fontWeight: '700', color: colors.foreground, marginBottom: 4 }}>
-        Mijn herstelregels
+        My recovery rules
       </Text>
       <Text style={{ fontSize: 13, color: colors.muted, marginBottom: 20, lineHeight: 18 }}>
-        Persoonlijke regels die je helpen om je herstel te beschermen.
+        Personal rules that help you protect your recovery.
       </Text>
 
       {/* Existing rules */}
@@ -508,7 +508,7 @@ export function VspWizardScreen({ existingPlan, onSave, onCancel }: VspWizardScr
             fontSize: 14,
             color: colors.foreground,
           }}
-          placeholder="Nieuwe herstelregel..."
+          placeholder="New recovery rule..."
           placeholderTextColor={colors.muted}
           value={newRule}
           onChangeText={setNewRule}
@@ -526,7 +526,7 @@ export function VspWizardScreen({ existingPlan, onSave, onCancel }: VspWizardScr
       <View style={{ flexDirection: 'row', gap: 12, marginTop: 24 }}>
         <Pressable onPress={() => setStep('review_triggers')} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1, flex: 1 }]}>
           <View style={{ backgroundColor: colors.surface, borderRadius: 12, padding: 14, alignItems: 'center', borderWidth: 1, borderColor: colors.border }}>
-            <Text style={{ fontSize: 14, fontWeight: '600', color: colors.foreground }}>Terug</Text>
+            <Text style={{ fontSize: 14, fontWeight: '600', color: colors.foreground }}>Back</Text>
           </View>
         </Pressable>
         <Pressable onPress={handleSave} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1, flex: 1 }]}>
@@ -534,14 +534,14 @@ export function VspWizardScreen({ existingPlan, onSave, onCancel }: VspWizardScr
             {saving ? (
               <ActivityIndicator size="small" color="#fff" />
             ) : (
-              <Text style={{ fontSize: 14, fontWeight: '700', color: '#fff' }}>Opslaan</Text>
+              <Text style={{ fontSize: 14, fontWeight: '700', color: '#fff' }}>Save</Text>
             )}
           </View>
         </Pressable>
       </View>
 
       <Text style={{ fontSize: 12, color: colors.muted, textAlign: 'center', marginTop: 12 }}>
-        Geen herstelregels? Sla gewoon op.
+        No recovery rules? Just save.
       </Text>
     </ScrollView>
   );
@@ -549,13 +549,13 @@ export function VspWizardScreen({ existingPlan, onSave, onCancel }: VspWizardScr
   const renderDone = () => (
     <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', gap: 16, padding: 24 }}>
       <Text style={{ fontSize: 48 }}>{'\u2705'}</Text>
-      <Text style={{ fontSize: 20, fontWeight: '700', color: colors.foreground }}>Opgeslagen!</Text>
+      <Text style={{ fontSize: 20, fontWeight: '700', color: colors.foreground }}>Saved!</Text>
       <Text style={{ fontSize: 14, color: colors.muted, textAlign: 'center', lineHeight: 20, maxWidth: 280 }}>
-        Je veiligheidsplan is opgeslagen. Elias gebruikt dit om je beter te begeleiden in je eigen woorden.
+        Your safety plan has been saved. Elias uses this to guide you better in your own words.
       </Text>
       <Pressable onPress={onCancel} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1, marginTop: 16 }]}>
         <View style={{ backgroundColor: colors.primary, borderRadius: 12, paddingHorizontal: 32, paddingVertical: 14 }}>
-          <Text style={{ fontSize: 14, fontWeight: '600', color: '#fff' }}>Sluiten</Text>
+          <Text style={{ fontSize: 14, fontWeight: '600', color: '#fff' }}>Close</Text>
         </View>
       </Pressable>
     </View>
