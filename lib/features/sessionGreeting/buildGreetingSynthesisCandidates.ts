@@ -177,20 +177,26 @@ export function buildGreetingSynthesisCandidates(
     });
   }
 
-  // ─── 4. BACKPACK_RECENT_UPDATE ──────────────────────────────────────────────
-  if (freshness.backpackRecentlyUpdatedUnder24h) {
-    const bpAge = freshness.backpackAgeInHours ?? 24;
-    const baseRelevance = computeRecencyRelevance(bpAge / 24, 1) * 0.70;
-    // Backpack update is neutral
-    const zoneAdjusted = applyZoneModifier(baseRelevance, 'neutral', zoneMods);
+  // ─── 4. BACKPACK_RECENT_UPDATE ("indien gewijzigd": analyzedAt > previousAnalyzedAt) ───
+  if (freshness.backpackAnalysisChanged && userDat?.backpackAnalysisContent) {
+    const ba = userDat.backpackAnalysisContent;
+    // Build full content anchor — NO truncation
+    const parts: string[] = [];
+    if (ba.schemas.length > 0) parts.push(`Schema's: ${ba.schemas.map(s => `${s.name} (${(s.confidence * 100).toFixed(0)}%)`).join(', ')}`);
+    if (ba.modi.length > 0) parts.push(`Modi: ${ba.modi.map(m => `${m.name} (${(m.confidence * 100).toFixed(0)}%)`).join(', ')}`);
+    if (ba.triggers.length > 0) parts.push(`Triggers: ${ba.triggers.join(', ')}`);
+    if (ba.coreBeliefs.length > 0) parts.push(`Kernovertuigingen: ${ba.coreBeliefs.join(', ')}`);
+    if (ba.copingPatterns.length > 0) parts.push(`Copingpatronen: ${ba.copingPatterns.join(', ')}`);
+    const fullContent = parts.join('\n');
+
     candidates.push({
       sourceType: 'BACKPACK_RECENT_UPDATE',
       eligible: true,
-      relevanceScore: zoneAdjusted,
-      reason: `Backpack updated ${bpAge.toFixed(1)}h ago`,
-      safeAnchor: 'je rugzak is recent bijgewerkt',
+      relevanceScore: 0.85, // High relevance — new analysis is always important
+      reason: 'Backpack analysis changed (analyzedAt > previousAnalyzedAt)',
+      safeAnchor: fullContent,
     });
-    if (userDat?.backpackLastUpdatedAt) {
+    if (userDat.backpackLastUpdatedAt) {
       sourceTimestamps.push({ sourceType: 'BACKPACK_RECENT_UPDATE', timestamp: new Date(userDat.backpackLastUpdatedAt).getTime() });
     }
   } else {
@@ -198,7 +204,7 @@ export function buildGreetingSynthesisCandidates(
       sourceType: 'BACKPACK_RECENT_UPDATE',
       eligible: false,
       relevanceScore: 0,
-      reason: 'Backpack not updated in last 24h',
+      reason: 'Backpack analysis not changed since last session',
       safeAnchor: '',
     });
   }

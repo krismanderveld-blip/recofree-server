@@ -1544,3 +1544,4 @@
 - [x] Fix: Remove V3_MAX_SYNTHESIS_SOURCES=3 limit — send ALL eligible sources to GPT
 - [x] Fix: buildContextBriefing outputs full content per source (not one-line summaries)
 - [x] Fix: server ai-chat.ts SESSION_INIT vspStructuredSectionBlock uses hard directive for ALL zones
+- [x] Fix: Backpack "indien gewijzigd" logic — include backpack in greeting when backpackAnalysis.analyzedAt is newer than previousAnalyzedAt in user.dat

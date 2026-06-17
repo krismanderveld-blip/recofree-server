@@ -219,6 +219,17 @@ function adaptUserDat(backpack: Backpack, userDat: UserDat): GreetingUserDatSnap
   // Derive schema rotation state from userDat (stored if previously used)
   const schemaRotationState: GreetingSchemaRotationState | undefined = (userDat as any)._schemaRotationState ?? undefined;
 
+  // Backpack analysis "indien gewijzigd": analyzedAt > previousAnalyzedAt
+  const ba = userDat.backpackAnalysis;
+  const backpackAnalysisChanged = !!(ba && ba.analyzedAt && ba.previousAnalyzedAt && ba.analyzedAt > ba.previousAnalyzedAt);
+  const backpackAnalysisContent = backpackAnalysisChanged && ba ? {
+    schemas: ba.schemas,
+    modi: ba.modi,
+    triggers: ba.triggers,
+    coreBeliefs: ba.coreBeliefs,
+    copingPatterns: ba.copingPatterns,
+  } : undefined;
+
   return {
     userName,
     sessionStats: {
@@ -229,6 +240,8 @@ function adaptUserDat(backpack: Backpack, userDat: UserDat): GreetingUserDatSnap
     },
     schemaTendencies,
     backpackLastUpdatedAt,
+    backpackAnalysisChanged,
+    backpackAnalysisContent,
   };
 }
 

@@ -52,6 +52,8 @@ export interface GreetingFreshnessResult {
   diaryRecentUnder3Days: boolean;
   gratitudeRecentUnder3Days: boolean;
   backpackRecentlyUpdatedUnder24h: boolean;
+  /** True when backpackAnalysis.analyzedAt > previousAnalyzedAt */
+  backpackAnalysisChanged: boolean;
   latestDiaryAgeInDays: number | null;
   latestGratitudeAgeInDays: number | null;
   backpackAgeInHours: number | null;
@@ -135,6 +137,16 @@ export interface GreetingUserDatSnapshot {
   };
   schemaTendencies: GreetingSchemaTendency[];
   backpackLastUpdatedAt?: string;
+  /** True when backpackAnalysis.analyzedAt > previousAnalyzedAt (new analysis since last session) */
+  backpackAnalysisChanged?: boolean;
+  /** Full backpack analysis content — only populated when backpackAnalysisChanged is true */
+  backpackAnalysisContent?: {
+    schemas: Array<{ name: string; confidence: number; evidence: string }>;
+    modi: Array<{ name: string; confidence: number; evidence: string }>;
+    triggers: string[];
+    coreBeliefs: string[];
+    copingPatterns: string[];
+  };
 }
 
 export interface GreetingStateDatSnapshot {

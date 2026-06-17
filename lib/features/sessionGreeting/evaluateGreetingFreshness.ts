@@ -53,12 +53,16 @@ export function evaluateGreetingFreshness(input: EvaluateGreetingFreshnessInput)
     ? isUnderHours(userDat.backpackLastUpdatedAt, nowIso, 24)
     : false;
 
+  // Backpack analysis changed: analyzedAt > previousAnalyzedAt
+  const backpackAnalysisChanged = userDat?.backpackAnalysisChanged ?? false;
+
   return {
     slidersFilledToday,
     moodUsable: slidersFilledToday,
     diaryRecentUnder3Days,
     gratitudeRecentUnder3Days,
     backpackRecentlyUpdatedUnder24h,
+    backpackAnalysisChanged,
     latestDiaryAgeInDays,
     latestGratitudeAgeInDays,
     backpackAgeInHours,

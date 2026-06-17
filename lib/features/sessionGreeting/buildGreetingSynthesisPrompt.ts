@@ -172,8 +172,11 @@ ${vspPersonalContext}
 === EINDE PERSOONLIJKE DATA ===
 
 KERNINSTRUCTIE:
-Je MOET minstens één concreet element uit de bovenstaande persoonlijke data ACTIEF verwerken in je begroeting.
+Je MOET minstens DRIE concrete elementen uit de bovenstaande persoonlijke data ACTIEF verwerken in je begroeting.
 Dit is GEEN optionele context — dit is het DOEL van deze begroeting: de gebruiker laten voelen dat je HEN kent.
+Als er namen, plaatsen, activiteiten of specifieke gevoelens in de data staan, NOEM ze dan bij naam.
+
+${buildMandatoryElements(selectedSources, vspSection, zone)}
 
 HOE:
 - Verweef de persoonlijke data tot ÉÉN vloeiende, menselijke begroeting
@@ -209,6 +212,49 @@ KRITIEK — GEEN HALLUCINATIE:
 
 VOORBEELD (ter illustratie, niet kopiëren):
 ${getZoneExample(userName, zone)}`;
+}
+
+/**
+ * V3.1: Extracts concrete named elements from sources + VSP and lists them as MANDATORY references.
+ * This forces GPT to not cherry-pick but actually name specific people, places, activities.
+ */
+function buildMandatoryElements(sources: SelectedSynthesisSource[], vspSection: GreetingVspSectionSnapshot | undefined, zone: string): string {
+  const elements: string[] = [];
+
+  for (const source of sources) {
+    // Extract proper nouns, activities, and specific feelings from safeAnchor
+    const text = source.safeAnchor;
+    if (!text) continue;
+
+    // Find capitalized words (names/places) that aren't sentence starters
+    const nameMatches = text.match(/(?<=[,.:;!?]\s|\d\)\s)[A-Z][a-z]{2,}/g) || [];
+    elements.push(...nameMatches);
+
+    // Extract key activities/feelings from mood
+    if (source.sourceType === 'TODAY_MOOD') {
+      const cravingMatch = text.match(/[Cc]raving:\s*(\d+)\/10/);
+      if (cravingMatch && parseInt(cravingMatch[1]) >= 4) {
+        elements.push(`craving/trek (${cravingMatch[1]}/10)`);
+      }
+    }
+  }
+
+  // Extract from VSP
+  if (vspSection?.currentZoneEntry) {
+    const entry = vspSection.currentZoneEntry;
+    if (entry.whatHelps?.length) {
+      elements.push(...entry.whatHelps.slice(0, 3));
+    }
+    if (entry.anchorSentence) {
+      elements.push(`ankerzin: "${entry.anchorSentence}"`);
+    }
+  }
+
+  if (elements.length === 0) return '';
+
+  const unique = [...new Set(elements)].slice(0, 6);
+  return `VERPLICHTE ELEMENTEN — noem minstens 3 van deze in je begroeting:
+${unique.map((e, i) => `  ${i + 1}. ${e}`).join('\n')}`;
 }
 
 /**
@@ -287,7 +333,7 @@ function buildContextBriefing(sources: SelectedSynthesisSource[], zone: string):
         parts.push(`DANKBAARHEID (recent — dit noemde de gebruiker ZELF):\n  "${source.safeAnchor}"`);
         break;
       case 'BACKPACK_RECENT_UPDATE':
-        parts.push(`RUGZAK: recent bijgewerkt (de gebruiker heeft actief aan zichzelf gewerkt).`);
+        parts.push(`RUGZAK-ANALYSE (NIEUW SINDS VORIGE SESSIE — VERPLICHT GEBRUIKEN):\n${source.safeAnchor}`);
         break;
       case 'ACTIVE_HOPE_OR_FEAR':
         parts.push(`ACTIEVE ZORG/HOOP (projectie):\n  "${source.safeAnchor}"`);
