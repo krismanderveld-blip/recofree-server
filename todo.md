@@ -1554,3 +1554,9 @@
 - [x] Fix: Check and raise LIVE_MESSAGE token cap if too low
 - [x] Test: Turn 5+ with "veel stress gehad vandaag" → GPT references Melissa + Jan (4/8 score)
 - [x] Test: Turn 5+ with relatie-context → GPT names Melissa + schema (2/5 score)
+
+## Prompt Tuning + Token Logging
+
+- [x] Add "noem minstens 1 VSP-strategie per antwoord" rule to LIVE_MESSAGE prompt
+- [x] Add "spreek de gebruiker ALTIJD bij naam aan" rule to LIVE_MESSAGE identity block
+- [x] Add token usage logging per turn (prompt tokens, completion tokens, total, cumulative per session)

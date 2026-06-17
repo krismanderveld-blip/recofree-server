@@ -285,6 +285,8 @@ interface SessionCache {
   structuredMemory: string;
   // Whether we have structured entities (vs. only text-based extraction)
   hasStructuredEntities: boolean;
+  // Cumulative token usage tracking per session
+  cumulativeTokens: { prompt: number; completion: number; total: number; turnCount: number };
 }
 
 // Single-user cache: one active session per server instance (not multi-user safe)
@@ -328,6 +330,7 @@ function cacheSessionInit(input: ChatRequestInput): void {
     guidanceDepth: input.guidanceDepth ?? 'normal',
     structuredMemory,
     hasStructuredEntities,
+    cumulativeTokens: { prompt: 0, completion: 0, total: 0, turnCount: 0 },
   };
   console.log("[AI Chat] Session cache created for:", input.userName, hasStructuredEntities ? '(structured entities)' : '(text-based)');
 }
@@ -1573,6 +1576,8 @@ ${input.backpackEmpty ? `- You do NOT yet know ${name}'s story. Their backpack i
 - Do NOT pretend to know them. Do NOT reference any life story, triggers, or patterns.` : `- You KNOW ${name}. Use the context above to inform your response.
 - BUT: refer ONLY to what you ACTUALLY know. Fabricate NOTHING. When in doubt: ASK.
 - If ${name} asks about someone you don't know → "I don't know that about you. Tell me more?"`}
+- NAAM-REGEL (ABSOLUUT): Spreek ${name} ALTIJD bij naam aan in ELKE respons. Niet "je" of "jij" als eerste aanspreking — begin met hun naam of gebruik hun naam minstens 1x per antwoord.
+- VSP-STRATEGIE-REGEL (ABSOLUUT): Als er een VSP/veiligheidsplan hierboven staat, MOET je in ELKE respons minstens 1 specifieke strategie uit "wat helpt" noemen wanneer de gebruiker emotioneel beladen taal gebruikt (stress, craving, angst, boosheid, verdriet, overweldiging). Noem de strategie CONCREET (bv. "hardlopen in het park", "bellen met Henk", "ademhaling 4-7-8") — NOOIT generiek ("een wandeling" of "even ademen").
 - Respond in the same language the user writes in
 - Keep responses concise: follow the PACING instruction strictly
 - Never diagnose, never prescribe, never claim to be a professional
@@ -2325,6 +2330,18 @@ export async function generateAIResponse(
     }
     if (tokenUsage.promptTokens > 5000) {
       console.warn(`[CostControl] CRITICAL: Prompt tokens (${tokenUsage.promptTokens}) exceed critical threshold (5000)`);
+    }
+    // Cumulative session tracking
+    if (sessionCache) {
+      sessionCache.cumulativeTokens.prompt += tokenUsage.promptTokens;
+      sessionCache.cumulativeTokens.completion += tokenUsage.completionTokens;
+      sessionCache.cumulativeTokens.total += tokenUsage.totalTokens;
+      sessionCache.cumulativeTokens.turnCount++;
+      const cum = sessionCache.cumulativeTokens;
+      console.log(`[CostControl] Session cumulative: ${cum.total} tokens over ${cum.turnCount} turns (avg ${Math.round(cum.total / cum.turnCount)}/turn)`);
+      if (cum.total > 50000) {
+        console.warn(`[CostControl] SESSION WARNING: Cumulative tokens (${cum.total}) exceed 50k — consider session end`);
+      }
     }
   }
 
