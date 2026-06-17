@@ -65,8 +65,8 @@ describe('Synthesis Prompt Building', () => {
   it('T18: Missing data override prompt invites gently without being mandatory', () => {
     const prompt = buildMissingDataOverridePrompt('Kris');
     expect(prompt).toContain('Kris');
-    expect(prompt).toContain('geen check-in');
-    // The prompt says "NIET dwingend of verplichtend" as instruction
+    expect(prompt).toContain('nog niets ingevuld');
+    // The prompt says "NIET dwingend, NIET verplichtend" as instruction
     expect(prompt).toContain('NIET dwingend');
   });
 });

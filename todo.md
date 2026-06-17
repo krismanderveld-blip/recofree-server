@@ -1499,3 +1499,9 @@
 - [x] Engine: Pattern context block in greeting synthesis prompt
 - [x] Engine: RECURRING_PATTERN added to source selection priority + valence + MISSING_DATA check
 - [x] Tests: 13 new tests for pattern detection + greeting source integration (all passing)
+
+## Bug Fixes (post-deploy)
+
+- [x] Fix: Pipeline error "undefined is not a function" — defensive guard + static import fix (not reproducible in tests; likely Metro bundler require() issue)
+- [x] Fix: T18 and T29 test assertions — updated to match new MISSING_DATA prompt text
+- [x] Full test suite: 1074 passed, 0 failed, 1 skipped (1075 total)

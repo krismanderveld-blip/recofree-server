@@ -783,6 +783,13 @@ function ChatScreenInner() {
       const provider = getAIProvider();
       // FOLLOW-UP MESSAGE: isSessionStart = false, no diary entries
       const result = await processMessage(backpack, processedText, provider, currentUserDat, { isSessionStart: false, diaryEntries: [] });
+      // DEFENSIVE GUARD: if processMessage returns null/undefined (should never happen,
+      // but observed 'undefined is not a function' crash on device — root cause unconfirmed,
+      // likely Metro bundler module resolution issue or stale closure. This guardrail
+      // prevents a hard crash and shows a recoverable error message instead.)
+      if (!result || typeof result.response !== 'string') {
+        throw new Error(`processMessage returned invalid result: ${JSON.stringify(result?.response ?? 'undefined')}`);
+      }
       // Only persist userDat (backpack is NEVER modified)
       await AsyncStorage.setItem(USERDAT_KEY, JSON.stringify(result.updatedUserDat));
       if (result.crisisLevel > 0) setCrisisLevel(result.crisisLevel);
@@ -888,7 +895,7 @@ function ChatScreenInner() {
           if (updatedBuffer) {
             stores.sessionBufferStore.appendMessage(updatedBuffer, {
               role: 'assistant',
-              text: result.response.slice(0, 200),
+              text: (result.response ?? '').slice(0, 200),
               timestampIso: new Date().toISOString(),
             });
           }

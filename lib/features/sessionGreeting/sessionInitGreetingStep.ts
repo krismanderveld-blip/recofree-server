@@ -11,6 +11,7 @@
  */
 
 import type { Backpack, UserDat, DiaryEntry } from '@/lib/ai/types';
+import { detectRecurringPatterns } from './detectRecurringPatterns';
 import type {
   SessionGreetingInitInput,
   GreetingUserDatSnapshot,
@@ -266,7 +267,6 @@ function adaptLogsDat(
   // Cross-session pattern detection
   if (allSessions && allSessions.length >= 3) {
     try {
-      const { detectRecurringPatterns } = require('./detectRecurringPatterns');
       const patternResult = detectRecurringPatterns(allSessions);
       if (patternResult.bestPattern) {
         result.recurringPatternAnchor = patternResult.bestPattern.safeAnchor;

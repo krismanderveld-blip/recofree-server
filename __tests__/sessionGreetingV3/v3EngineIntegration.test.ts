@@ -97,7 +97,7 @@ describe('V3 Engine Integration', () => {
       gratitudeMetadata: null,
     }));
     expect(result.mode).toBe('MISSING_DATA');
-    expect(result.overridePrompt).toContain('geen check-in');
+    expect(result.overridePrompt).toContain('nog niets ingevuld');
   });
 
   it('T30: Synthesis payload contains userName and sources', () => {
