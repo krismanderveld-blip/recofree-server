@@ -1473,3 +1473,10 @@
 - [x] Greeting: FIRST_SESSION prompt rewritten — warm, personal, no therapy-speak, invites to share
 - [x] Greeting: FIRST_SESSION with VSP zone — uses personal signals/whatHelps/anchor from VSP section
 - [x] Greeting: MISSING_DATA prompt rewritten — warmer, no reference to "check-in" or "invullen"
+
+## Export/Import Update
+
+- [x] Export/Import: VSP structured section already included via backpack object (no change needed)
+- [x] Export/Import: VSP analyzer cache (@vsp_backpack_profile, @vsp_backpack_hash) added to derivedCacheStore
+- [x] Export/Import: Import button removed from profile screen (export-only now)
+- [x] Export/Import: All 34 export/import tests passing

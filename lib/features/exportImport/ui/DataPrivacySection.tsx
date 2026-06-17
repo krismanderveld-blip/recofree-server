@@ -1,20 +1,19 @@
 /**
- * DataPrivacySection — Container for Export and Import sections.
+ * DataPrivacySection — Container for Export section in profile.
+ * Import is handled in the intake flow only.
  */
 
 import React from 'react';
 import { View, Text } from 'react-native';
 import { ExportDataSection } from './ExportDataSection';
-import { ImportDataSection } from './ImportDataSection';
 import type { ExportImportStores } from '../services/exportImportStores.types';
 
 interface DataPrivacySectionProps {
   stores: ExportImportStores;
   appVersion: string;
-  onImportSuccess?: () => void;
 }
 
-export function DataPrivacySection({ stores, appVersion, onImportSuccess }: DataPrivacySectionProps) {
+export function DataPrivacySection({ stores, appVersion }: DataPrivacySectionProps) {
   return (
     <View className="gap-8">
       <View className="gap-2">
@@ -26,10 +25,6 @@ export function DataPrivacySection({ stores, appVersion, onImportSuccess }: Data
 
       <View className="bg-surface rounded-2xl p-5 border border-border">
         <ExportDataSection stores={stores} appVersion={appVersion} />
-      </View>
-
-      <View className="bg-surface rounded-2xl p-5 border border-border">
-        <ImportDataSection stores={stores} appVersion={appVersion} onImportSuccess={onImportSuccess} />
       </View>
     </View>
   );

@@ -16,6 +16,8 @@ const KIM_PROJECTION_KEY = '@recofree_projection_kim';
 const EMERGENCY_CONTACTS_KEY = 'emergencyContacts';
 const BACKPACK_HASH_KEY = '@recofree_backpack_hash';
 const EXTRACTED_ENTITIES_KEY = '@recofree_extracted_entities';
+const VSP_PROFILE_KEY = '@vsp_backpack_profile';
+const VSP_HASH_KEY = '@vsp_backpack_hash';
 
 // Memory store keys
 function getUserDatKey(persona: string) { return `recofree_memory/${persona}/user.dat`; }
@@ -172,16 +174,20 @@ export function useExportImportStores(): ExportImportStores {
 
     derivedCacheStore: {
       async exportAll() {
-        const [backpackHash, extractedEntities] = await Promise.all([
+        const [backpackHash, extractedEntities, vspProfile, vspHash] = await Promise.all([
           readJson(BACKPACK_HASH_KEY),
           readJson(EXTRACTED_ENTITIES_KEY),
+          readJson(VSP_PROFILE_KEY),
+          readJson(VSP_HASH_KEY),
         ]);
-        return { backpackHash: backpackHash ?? null, extractedEntities: extractedEntities ?? null };
+        return { backpackHash: backpackHash ?? null, extractedEntities: extractedEntities ?? null, vspProfile: vspProfile ?? null, vspHash: vspHash ?? null };
       },
       async replaceAll(data) {
         await Promise.all([
           writeJson(BACKPACK_HASH_KEY, data.backpackHash),
           writeJson(EXTRACTED_ENTITIES_KEY, data.extractedEntities),
+          writeJson(VSP_PROFILE_KEY, (data as any).vspProfile),
+          writeJson(VSP_HASH_KEY, (data as any).vspHash),
         ]);
       },
     },
@@ -285,11 +291,11 @@ export function createExportImportStoresAdapter(): ExportImportStores {
     },
     derivedCacheStore: {
       async exportAll() {
-        const [backpackHash, extractedEntities] = await Promise.all([readJson(BACKPACK_HASH_KEY), readJson(EXTRACTED_ENTITIES_KEY)]);
-        return { backpackHash: backpackHash ?? null, extractedEntities: extractedEntities ?? null };
+        const [backpackHash, extractedEntities, vspProfile, vspHash] = await Promise.all([readJson(BACKPACK_HASH_KEY), readJson(EXTRACTED_ENTITIES_KEY), readJson(VSP_PROFILE_KEY), readJson(VSP_HASH_KEY)]);
+        return { backpackHash: backpackHash ?? null, extractedEntities: extractedEntities ?? null, vspProfile: vspProfile ?? null, vspHash: vspHash ?? null };
       },
       async replaceAll(data) {
-        await Promise.all([writeJson(BACKPACK_HASH_KEY, data.backpackHash), writeJson(EXTRACTED_ENTITIES_KEY, data.extractedEntities)]);
+        await Promise.all([writeJson(BACKPACK_HASH_KEY, data.backpackHash), writeJson(EXTRACTED_ENTITIES_KEY, data.extractedEntities), writeJson(VSP_PROFILE_KEY, (data as any).vspProfile), writeJson(VSP_HASH_KEY, (data as any).vspHash)]);
       },
     },
   };
