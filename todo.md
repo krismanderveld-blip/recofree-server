@@ -1560,3 +1560,6 @@
 - [x] Add "noem minstens 1 VSP-strategie per antwoord" rule to LIVE_MESSAGE prompt
 - [x] Add "spreek de gebruiker ALTIJD bij naam aan" rule to LIVE_MESSAGE identity block
 - [x] Add token usage logging per turn (prompt tokens, completion tokens, total, cumulative per session)
+- [x] Add ANKERZIN-REGEL: citeer ankerzin letterlijk wanneer gebruiker overweldigd is
+- [x] Add DAGBOEK-REGEL: verwijs naar specifieke dagboek-entries wanneer thema overeenkomt
+- [x] Add STEUNPERSOON-REGEL: noem steunpersoon uit VSP wat-helpt bij emotioneel beladen taal
