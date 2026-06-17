@@ -1,13 +1,12 @@
 /**
- * Session Greeting V3 — Synthesis Prompt Builder (with Absence Awareness)
+ * Session Greeting V3 — Synthesis Prompt Builder (Redesigned)
  *
- * Builds the GPT prompt payload for synthesis mode.
- * GPT receives:
- * - Selected sources (max 3 normal, max 2 for return-after-absence) with safe anchors
- * - Synthesis instruction: "weave these into ONE natural greeting"
- * - Absence context when RETURN_AFTER_ABSENCE mode is active
- * - Forbidden patterns (checklist style, "hoe voel je je", inventory, blame/relapse)
- * - Language rule: grammatically correct, fluent Dutch
+ * REDESIGN: Instead of passing disconnected source snippets to GPT,
+ * we now build a COHERENT CONTEXT BRIEFING with:
+ * 1. Zone framing (GROEN/GEEL/ORANJE sets the emotional tone)
+ * 2. Sources presented as a narrative context, not a numbered list
+ * 3. Zone-specific tone instructions that tell GPT HOW to greet
+ * 4. Anti-hallucination rules remain strict
  *
  * Also provides override prompt builders for CRISIS/FIRST/MISSING/RETURN modes.
  */
@@ -51,6 +50,41 @@ const FORBIDDEN_PATTERNS: string[] = [
   'je bent teruggevallen',
 ];
 
+// ─── Zone Tone Instructions ──────────────────────────────────────────────────
+
+interface ZoneToneConfig {
+  toneInstruction: string;
+  openQuestionStyle: string;
+}
+
+const ZONE_TONE_MAP: Record<string, ZoneToneConfig> = {
+  GROEN: {
+    toneInstruction: 'TOON: Warm, open en uitnodigend. De gebruiker voelt zich stabiel — je mag exploreren en positieve elementen benoemen.',
+    openQuestionStyle: 'Eindig met een open, uitnodigende vraag die aansluit bij wat de gebruiker deelde.',
+  },
+  GEEL: {
+    toneInstruction: 'TOON: Zacht, erkennend en aandachtig. Er speelt iets bij de gebruiker — erken dat zonder te dramatiseren. Wees aanwezig, niet opgewekt. Negeer NIET wat er leeft.',
+    openQuestionStyle: 'Eindig met een zachte, open vraag die ruimte geeft om te delen wat er speelt. Niet pushen, wel uitnodigen.',
+  },
+  ORANJE: {
+    toneInstruction: 'TOON: Direct, grondend en steunend. De gebruiker ervaart spanning — wees concreet en aanwezig. Geen positief-wassing, geen afleiding.',
+    openQuestionStyle: 'Eindig met een concrete vraag over het nu-moment: wat heeft de gebruiker nu nodig?',
+  },
+  ROOD: {
+    toneInstruction: 'TOON: Kalm, direct en veilig. De gebruiker is in een acute fase — bied aanwezigheid zonder paniek.',
+    openQuestionStyle: 'Stel één concrete vraag over het nu-moment.',
+  },
+  PAARS: {
+    toneInstruction: 'TOON: Kalm, direct en veilig. De gebruiker is in een acute fase — bied aanwezigheid zonder paniek.',
+    openQuestionStyle: 'Stel één concrete vraag over het nu-moment.',
+  },
+};
+
+function getZoneTone(vspZone: string | undefined): ZoneToneConfig {
+  const zone = (vspZone ?? 'GROEN').toUpperCase();
+  return ZONE_TONE_MAP[zone] ?? ZONE_TONE_MAP['GROEN'];
+}
+
 // ─── Synthesis Prompt ───────────────────────────────────────────────────────
 
 export interface BuildSynthesisPromptInput {
@@ -58,29 +92,24 @@ export interface BuildSynthesisPromptInput {
   selectedSources: SelectedSynthesisSource[];
   absence: SessionAbsenceResult;
   mode: GreetingSynthesisMode;
+  vspZone?: string;
 }
 
 export function buildGreetingSynthesisPromptPayload(
   input: BuildSynthesisPromptInput,
 ): GreetingSynthesisPromptPayload {
-  const { userName, selectedSources, absence, mode } = input;
-
-  const sourceDescriptions = selectedSources
-    .map((s, i) => `  ${i + 1}. [${s.sourceType}]: "${s.safeAnchor}"`)
-    .join('\n');
+  const { userName, selectedSources, absence, mode, vspZone } = input;
 
   const isReturnMode = mode === 'RETURN_AFTER_ABSENCE';
   const absenceForPrompt: SessionAbsenceResultForPrompt | undefined = isReturnMode
     ? buildAbsenceForPrompt(absence)
     : undefined;
 
-  const synthesisInstruction = isReturnMode
-    ? buildReturnAfterAbsenceInstruction(userName, sourceDescriptions, selectedSources.length, absence)
-    : buildSynthesisInstruction(userName, sourceDescriptions, selectedSources.length);
+  const zoneTone = getZoneTone(vspZone);
 
-  const openQuestionInstruction = isReturnMode
-    ? 'Eindig met een zachte, open vraag die NIET vraagt waarom ze weg waren. Vraag naar het nu-moment of wat ze nodig hebben.'
-    : 'Eindig met een open, uitnodigende vraag die aansluit bij de bronnen.';
+  const synthesisInstruction = isReturnMode
+    ? buildReturnAfterAbsenceInstruction(userName, selectedSources, absence, vspZone)
+    : buildCoherentSynthesisInstruction(userName, selectedSources, vspZone, zoneTone);
 
   return {
     persona: 'elias',
@@ -90,7 +119,7 @@ export function buildGreetingSynthesisPromptPayload(
     selectedSources,
     absence: absenceForPrompt,
     synthesisInstruction,
-    openQuestionInstruction,
+    openQuestionInstruction: zoneTone.openQuestionStyle,
     forbiddenPatterns: FORBIDDEN_PATTERNS,
     languageRule: 'Schrijf grammaticaal correct, vloeiend Nederlands. Geen afkortingen, geen emoji, geen opsommingen.',
   };
@@ -115,23 +144,34 @@ function buildAbsenceForPrompt(absence: SessionAbsenceResult): SessionAbsenceRes
   };
 }
 
-function buildSynthesisInstruction(
+// ─── Coherent Synthesis Instruction (NEW) ─────────────────────────────────────
+
+function buildCoherentSynthesisInstruction(
   userName: string,
-  sourceDescriptions: string,
-  sourceCount: number,
+  selectedSources: SelectedSynthesisSource[],
+  vspZone: string | undefined,
+  zoneTone: ZoneToneConfig,
 ): string {
+  const zone = (vspZone ?? 'GROEN').toUpperCase();
+  const contextBriefing = buildContextBriefing(selectedSources, zone);
+
   return `Je bent Elias. Schrijf een warme, persoonlijke begroeting voor ${userName}.
 
-BRONNEN om te verweven (${sourceCount}):
-${sourceDescriptions}
+ZONE: ${zone}
+${zoneTone.toneInstruction}
+
+CONTEXT (dit is wat je weet over de gebruiker NU):
+${contextBriefing}
 
 INSTRUCTIES:
-- Verweef de bronnen tot ÉÉN vloeiende, menselijke begroeting
+- Verweef de context tot ÉÉN vloeiende, menselijke begroeting
 - Gebruik MAXIMAAL 3-4 zinnen totaal
 - Begin met een persoonlijke opening (gebruik de naam)
-- Eindig met een open, uitnodigende vraag die aansluit bij de bronnen
+- ${zoneTone.openQuestionStyle}
 - De begroeting moet aanvoelen als een warm gesprek, NIET als een samenvatting
+- De TOON moet passen bij zone ${zone}: ${zone === 'GROEN' ? 'open en warm' : zone === 'GEEL' ? 'erkennend en zacht — er speelt iets' : 'direct en grondend'}
 - Noem NOOIT de bronnen expliciet ("ik zie in je dagboek" is verboden)
+- Noem NOOIT de zone of kleuren ("je zit in geel" is verboden)
 - Verwijs indirect en natuurlijk naar de inhoud
 - Geen opsommingen, geen checklist-taal, geen "ten eerste/ten tweede"
 - Grammaticaal correct, vloeiend Nederlands
@@ -145,47 +185,109 @@ VERBODEN ZINNEN:
 - Elke zin die klinkt als een inventarisatie of checklist
 
 KRITIEK — GEEN HALLUCINATIE:
-- Verwijs ALLEEN naar informatie die EXPLICIET in de bronnen hierboven staat
-- Verzin NOOIT sessies, gesprekken of activiteiten die niet in de bronnen staan
-- Als een bron zegt "dagboek van gisteren" mag je ernaar verwijzen; als er GEEN bron over gisteren is, NOEM gisteren dan NIET
-- Zeg NOOIT "fijne dag gisteren" of "sessie van gisteren" tenzij dit LETTERLIJK uit een bron komt
+- Verwijs ALLEEN naar informatie die EXPLICIET in de CONTEXT hierboven staat
+- Verzin NOOIT sessies, gesprekken of activiteiten die niet in de context staan
+- Als de context zegt "dagboek van gisteren" mag je ernaar verwijzen; als er GEEN bron over gisteren is, NOEM gisteren dan NIET
+- Zeg NOOIT "fijne dag gisteren" of "sessie van gisteren" tenzij dit LETTERLIJK uit de context komt
 - Bij twijfel: houd het algemeen en warm zonder specifieke tijdsreferenties
 
-VOORBEELD VAN GOEDE SYNTHESE (ter illustratie, niet kopiëren):
-"${userName}, fijn dat je er bent. Er klinkt iets door van rust in wat je deelde — mooi om te zien. Waar wil je het vandaag over hebben?"`;
+VOORBEELD VAN GOEDE BEGROETING BIJ ZONE ${zone} (ter illustratie, niet kopiëren):
+${getZoneExample(userName, zone)}`;
 }
+
+/**
+ * Builds a coherent narrative context from selected sources instead of a numbered list.
+ */
+function buildContextBriefing(sources: SelectedSynthesisSource[], zone: string): string {
+  if (sources.length === 0) {
+    return '  Geen specifieke context beschikbaar.';
+  }
+
+  const parts: string[] = [];
+
+  for (const source of sources) {
+    switch (source.sourceType) {
+      case 'TODAY_MOOD':
+        parts.push(`De check-in van vandaag laat zien: ${source.safeAnchor}.`);
+        break;
+      case 'RECENT_DIARY':
+        parts.push(`Uit het dagboek (recent): "${source.safeAnchor}".`);
+        break;
+      case 'RECENT_GRATITUDE':
+        parts.push(`Dankbaarheid (recent): "${source.safeAnchor}".`);
+        break;
+      case 'BACKPACK_RECENT_UPDATE':
+        parts.push(`De rugzak is recent bijgewerkt.`);
+        break;
+      case 'ACTIVE_HOPE_OR_FEAR':
+        parts.push(`Actieve zorg: "${source.safeAnchor}".`);
+        break;
+      case 'SCHEMA_ROTATION':
+        parts.push(`Terugkerend thema: ${source.safeAnchor}.`);
+        break;
+      case 'LAST_SESSION_SUMMARY':
+        parts.push(`Vorige sessie: ${source.safeAnchor}.`);
+        break;
+    }
+  }
+
+  return parts.map(p => `  ${p}`).join('\n');
+}
+
+/**
+ * Returns a zone-appropriate example greeting (for illustration in the prompt).
+ */
+function getZoneExample(userName: string, zone: string): string {
+  switch (zone) {
+    case 'GEEL':
+      return `"${userName}, fijn dat je er bent. Het klinkt alsof er iets speelt — dat mag er zijn. Wil je me vertellen wat er op dit moment door je heen gaat?"`;
+    case 'ORANJE':
+      return `"${userName}, ik ben hier. Het klinkt alsof het nu zwaar is. Wat heb je op dit moment het meest nodig?"`;
+    case 'ROOD':
+    case 'PAARS':
+      return `"${userName}, ik ben hier bij je. Vertel me wat er nu speelt."`;
+    default: // GROEN
+      return `"${userName}, fijn dat je er bent. Er klinkt iets door van rust in wat je deelde — mooi om te zien. Waar wil je het vandaag over hebben?"`;
+  }
+}
+
+// ─── Return After Absence Instruction ─────────────────────────────────────────
 
 function buildReturnAfterAbsenceInstruction(
   userName: string,
-  sourceDescriptions: string,
-  sourceCount: number,
+  selectedSources: SelectedSynthesisSource[],
   absence: SessionAbsenceResult,
+  vspZone: string | undefined,
 ): string {
   const days = absence.absenceDaysExact !== null
     ? Math.round(absence.absenceDaysExact)
     : 'enkele';
   const isLongReturn = absence.band === 'LONG_RETURN';
+  const zone = (vspZone ?? 'GROEN').toUpperCase();
+  const zoneTone = getZoneTone(vspZone);
 
   const toneInstruction = isLongReturn
     ? `TOON: Extra zacht en warm. Geen alarm, geen bezorgdheid, geen verwijt. De gebruiker is er weer — dat is het enige dat telt. Behandel de terugkeer als iets positiefs.`
     : `TOON: Warm en verwelkomend. Erken kort dat het even geleden is, zonder er zwaar aan te tillen.`;
 
-  const sourcePart = sourceCount > 0
-    ? `\nOPTIONELE BRONNEN om subtiel te verweven (${sourceCount}):\n${sourceDescriptions}\n- Verweef deze ALLEEN als het natuurlijk past bij de terugkeer-begroeting\n- De afwezigheids-erkenning staat VOOROP, bronnen zijn secundair`
+  const contextBriefing = selectedSources.length > 0
+    ? `\nCONTEXT (optioneel te verweven als het natuurlijk past):\n${buildContextBriefing(selectedSources, zone)}\n- De afwezigheids-erkenning staat VOOROP, context is secundair`
     : '';
 
   return `Je bent Elias. ${userName} is terug na ${days} dagen afwezigheid.
+ZONE: ${zone}
 
 ${toneInstruction}
+${zone !== 'GROEN' ? zoneTone.toneInstruction : ''}
 
 INSTRUCTIES:
 - Begin met een warme erkenning dat ${userName} er weer is
 - Gebruik MAXIMAAL 3-4 zinnen totaal
 - Erken de afwezigheid ZONDER te vragen waarom ze weg waren
 - Maak GEEN aannames over wat er gebeurd is (geen "terugval", geen "moeilijke periode")
-- Eindig met een zachte, open vraag over het nu-moment
+- ${zoneTone.openQuestionStyle}
 - De begroeting moet aanvoelen als een vriend die blij is je te zien
-${sourcePart}
+${contextBriefing}
 
 ABSOLUUT VERBODEN:
 - Vragen waarom ze weg waren ("waar was je?", "waarom ben je weggebleven?")
@@ -197,9 +299,9 @@ ABSOLUUT VERBODEN:
 - Emoji
 
 KRITIEK — GEEN HALLUCINATIE:
-- Verwijs ALLEEN naar informatie die EXPLICIET in de bronnen hierboven staat
-- Verzin NOOIT sessies, gesprekken of activiteiten die niet in de bronnen staan
-- Zeg NOOIT "sessie van gisteren" of "vorige keer" tenzij dit LETTERLIJK uit een bron komt
+- Verwijs ALLEEN naar informatie die EXPLICIET in de CONTEXT hierboven staat
+- Verzin NOOIT sessies, gesprekken of activiteiten die niet in de context staan
+- Zeg NOOIT "sessie van gisteren" of "vorige keer" tenzij dit LETTERLIJK uit de context komt
 - Bij twijfel: houd het algemeen en warm zonder specifieke tijdsreferenties
 
 VOORBEELD (ter illustratie, niet kopiëren):
@@ -208,8 +310,9 @@ VOORBEELD (ter illustratie, niet kopiëren):
 
 // ─── Override Prompt Builders ────────────────────────────────────────────────
 
-export function buildCrisisOverridePrompt(userName: string, craving: number): string {
-  return `Je bent Elias. ${userName} heeft een hoge craving (${craving}/10) ingevuld.
+export function buildCrisisOverridePrompt(userName: string, craving: number, vspZone?: string): string {
+  const zone = (vspZone ?? 'ROOD').toUpperCase();
+  return `Je bent Elias. ${userName} heeft een hoge craving (${craving}/10) ingevuld. Zone: ${zone}.
 
 Schrijf een korte, directe begroeting (2-3 zinnen):
 - Erken dat het zwaar is ZONDER te dramatiseren

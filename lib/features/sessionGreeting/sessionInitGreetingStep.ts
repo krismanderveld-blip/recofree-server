@@ -219,8 +219,8 @@ function adaptStateDat(userDat: UserDat): GreetingStateDatSnapshot {
     ? moodHistory[moodHistory.length - 1]
     : null;
 
-  // Determine VSP zone from the latest mood or default
-  const vspZone = (userDat as any)._currentVspZone ?? 'GROEN';
+  // Determine VSP zone from the latest mood (set by handleVspSubmit)
+  const vspZone = (userDat.currentMood as any)?.vsp ?? 'GROEN';
 
   return {
     currentMood: mood ? {

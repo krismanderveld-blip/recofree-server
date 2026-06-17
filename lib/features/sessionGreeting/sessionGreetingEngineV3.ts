@@ -131,6 +131,7 @@ export function sessionGreetingEngineV3(
         overridePrompt = buildCrisisOverridePrompt(
           userName,
           (override.payload.craving as number) ?? 0,
+          stateDat?.vspZone,
         );
         break;
       case 'FIRST_SESSION':
@@ -179,6 +180,7 @@ export function sessionGreetingEngineV3(
       selectedSources,
       absence,
       mode: 'RETURN_AFTER_ABSENCE',
+      vspZone: stateDat?.vspZone,
     });
 
     return {
@@ -215,6 +217,7 @@ export function sessionGreetingEngineV3(
     selectedSources,
     absence,
     mode: 'SYNTHESIS',
+    vspZone: stateDat?.vspZone,
   });
 
   return {

@@ -1,8 +1,13 @@
 /**
- * Session Greeting V3 — Synthesis Candidate Builder
+ * Session Greeting V3 — Synthesis Candidate Builder (Redesigned)
  *
  * Builds a list of eligible synthesis sources with relevance scores.
- * Each source is scored 0.0 - 1.0 based on freshness, emotional weight, and recency.
+ * 
+ * REDESIGN PRINCIPLES:
+ * 1. Most recent source = heaviest weight (timestamp-based recency bonus)
+ * 2. Every VSP zone has a reference pattern (not just ROOD/PAARS/ORANJE)
+ * 3. Zone modifies source weights: GEEL suppresses positive, boosts negative
+ * 4. Sources are scored on: base relevance × zone modifier × recency rank bonus
  *
  * Source types:
  * - TODAY_MOOD: sliders filled today → mood metric interpretation
@@ -11,6 +16,7 @@
  * - BACKPACK_RECENT_UPDATE: backpack < 24h → generic acknowledgment
  * - ACTIVE_HOPE_OR_FEAR: active projection with decay >= 0.60
  * - SCHEMA_ROTATION: every 4th session, cycle through schemas
+ * - LAST_SESSION_SUMMARY: logs.dat open loops or digest
  */
 
 import type {
@@ -48,24 +54,66 @@ export interface BuildSynthesisCandidatesResult {
   moodMetric: MoodMetricSelection | null;
 }
 
+// ─── Zone Reference Patterns ─────────────────────────────────────────────────
+
+type SourceValence = 'positive' | 'negative' | 'neutral';
+
+interface ZoneModifiers {
+  positiveMultiplier: number;   // applied to positive-valence sources
+  negativeMultiplier: number;   // applied to negative-valence sources
+  neutralMultiplier: number;    // applied to neutral-valence sources
+}
+
+/**
+ * Each zone defines how source weights are modified.
+ * GROEN: balanced, positive welcome
+ * GEEL: suppress positive, boost negative/uncertain — something is brewing
+ * ORANJE/ROOD/PAARS: handled by CRISIS_OVERRIDE, but if reached here, strongly suppress positive
+ */
+const ZONE_MODIFIERS: Record<string, ZoneModifiers> = {
+  GROEN: { positiveMultiplier: 1.0, negativeMultiplier: 1.0, neutralMultiplier: 1.0 },
+  GEEL: { positiveMultiplier: 0.55, negativeMultiplier: 1.25, neutralMultiplier: 1.0 },
+  ORANJE: { positiveMultiplier: 0.35, negativeMultiplier: 1.40, neutralMultiplier: 0.90 },
+  ROOD: { positiveMultiplier: 0.20, negativeMultiplier: 1.50, neutralMultiplier: 0.80 },
+  PAARS: { positiveMultiplier: 0.20, negativeMultiplier: 1.50, neutralMultiplier: 0.80 },
+};
+
+function getZoneModifiers(vspZone: string | undefined): ZoneModifiers {
+  const zone = (vspZone ?? 'GROEN').toUpperCase();
+  return ZONE_MODIFIERS[zone] ?? ZONE_MODIFIERS['GROEN'];
+}
+
+// ─── Main Builder ────────────────────────────────────────────────────────────
+
 export function buildGreetingSynthesisCandidates(
   input: BuildSynthesisCandidatesInput,
 ): BuildSynthesisCandidatesResult {
   const { userDat, stateDat, projectionsDat, logsDat, diaryMetadata, gratitudeMetadata, freshness } = input;
   const candidates: GreetingSynthesisCandidate[] = [];
+  const vspZone = stateDat?.vspZone;
+  const zoneMods = getZoneModifiers(vspZone);
+
+  // Collect timestamps for recency ranking
+  const sourceTimestamps: { sourceType: string; timestamp: number }[] = [];
 
   // ─── 1. TODAY_MOOD ──────────────────────────────────────────────────────────
   const moodMetric = selectMostEmotionallyRelevantMoodMetric(stateDat, freshness.slidersFilledToday);
 
   if (moodMetric) {
-    const moodRelevance = computeMoodRelevance(moodMetric);
+    const baseRelevance = computeMoodRelevance(moodMetric);
+    const valence = getMoodValence(moodMetric);
+    const zoneAdjusted = applyZoneModifier(baseRelevance, valence, zoneMods);
     candidates.push({
       sourceType: 'TODAY_MOOD',
       eligible: true,
-      relevanceScore: moodRelevance,
-      reason: `Mood metric: ${moodMetric.metricName}=${moodMetric.value} (${moodMetric.interpretation})`,
+      relevanceScore: zoneAdjusted,
+      reason: `Mood metric: ${moodMetric.metricName}=${moodMetric.value} (${moodMetric.interpretation}) [zone=${vspZone ?? 'GROEN'}]`,
       safeAnchor: buildMoodSafeAnchor(moodMetric),
     });
+    // Sliders filled today → timestamp is "now" (most recent possible)
+    if (stateDat?.moodLastUpdatedAt) {
+      sourceTimestamps.push({ sourceType: 'TODAY_MOOD', timestamp: new Date(stateDat.moodLastUpdatedAt).getTime() });
+    }
   } else {
     candidates.push({
       sourceType: 'TODAY_MOOD',
@@ -79,14 +127,20 @@ export function buildGreetingSynthesisCandidates(
   // ─── 2. RECENT_DIARY ────────────────────────────────────────────────────────
   if (freshness.diaryRecentUnder3Days && diaryMetadata?.latestSafeAnchor) {
     const diaryAge = freshness.latestDiaryAgeInDays ?? 3;
-    const diaryRelevance = computeRecencyRelevance(diaryAge, 3);
+    const baseRelevance = computeRecencyRelevance(diaryAge, 3);
+    // Diary is contextual — determine valence from content hints
+    const valence = inferDiaryValence(diaryMetadata.latestSafeAnchor);
+    const zoneAdjusted = applyZoneModifier(baseRelevance, valence, zoneMods);
     candidates.push({
       sourceType: 'RECENT_DIARY',
       eligible: true,
-      relevanceScore: diaryRelevance,
-      reason: `Diary ${diaryAge.toFixed(1)} days old`,
+      relevanceScore: zoneAdjusted,
+      reason: `Diary ${diaryAge.toFixed(1)} days old, valence=${valence} [zone=${vspZone ?? 'GROEN'}]`,
       safeAnchor: diaryMetadata.latestSafeAnchor,
     });
+    if (diaryMetadata.latestEntryCreatedAt) {
+      sourceTimestamps.push({ sourceType: 'RECENT_DIARY', timestamp: new Date(diaryMetadata.latestEntryCreatedAt).getTime() });
+    }
   } else {
     candidates.push({
       sourceType: 'RECENT_DIARY',
@@ -100,14 +154,19 @@ export function buildGreetingSynthesisCandidates(
   // ─── 3. RECENT_GRATITUDE ────────────────────────────────────────────────────
   if (freshness.gratitudeRecentUnder3Days && gratitudeMetadata?.latestSafeAnchor) {
     const gratAge = freshness.latestGratitudeAgeInDays ?? 3;
-    const gratRelevance = computeRecencyRelevance(gratAge, 3) * 0.85; // slightly lower weight than diary
+    const baseRelevance = computeRecencyRelevance(gratAge, 3) * 0.85;
+    // Gratitude is always positive valence
+    const zoneAdjusted = applyZoneModifier(baseRelevance, 'positive', zoneMods);
     candidates.push({
       sourceType: 'RECENT_GRATITUDE',
       eligible: true,
-      relevanceScore: gratRelevance,
-      reason: `Gratitude ${gratAge.toFixed(1)} days old`,
+      relevanceScore: zoneAdjusted,
+      reason: `Gratitude ${gratAge.toFixed(1)} days old [zone=${vspZone ?? 'GROEN'}, suppressed=${zoneMods.positiveMultiplier < 1.0}]`,
       safeAnchor: gratitudeMetadata.latestSafeAnchor,
     });
+    if (gratitudeMetadata.latestEntryCreatedAt) {
+      sourceTimestamps.push({ sourceType: 'RECENT_GRATITUDE', timestamp: new Date(gratitudeMetadata.latestEntryCreatedAt).getTime() });
+    }
   } else {
     candidates.push({
       sourceType: 'RECENT_GRATITUDE',
@@ -121,14 +180,19 @@ export function buildGreetingSynthesisCandidates(
   // ─── 4. BACKPACK_RECENT_UPDATE ──────────────────────────────────────────────
   if (freshness.backpackRecentlyUpdatedUnder24h) {
     const bpAge = freshness.backpackAgeInHours ?? 24;
-    const bpRelevance = computeRecencyRelevance(bpAge / 24, 1) * 0.70; // lower base weight
+    const baseRelevance = computeRecencyRelevance(bpAge / 24, 1) * 0.70;
+    // Backpack update is neutral
+    const zoneAdjusted = applyZoneModifier(baseRelevance, 'neutral', zoneMods);
     candidates.push({
       sourceType: 'BACKPACK_RECENT_UPDATE',
       eligible: true,
-      relevanceScore: bpRelevance,
+      relevanceScore: zoneAdjusted,
       reason: `Backpack updated ${bpAge.toFixed(1)}h ago`,
       safeAnchor: 'je rugzak is recent bijgewerkt',
     });
+    if (userDat?.backpackLastUpdatedAt) {
+      sourceTimestamps.push({ sourceType: 'BACKPACK_RECENT_UPDATE', timestamp: new Date(userDat.backpackLastUpdatedAt).getTime() });
+    }
   } else {
     candidates.push({
       sourceType: 'BACKPACK_RECENT_UPDATE',
@@ -146,13 +210,17 @@ export function buildGreetingSynthesisCandidates(
     .sort((a, b) => b.decayScore - a.decayScore)[0] ?? null;
 
   if (activeFear) {
+    const baseRelevance = Math.min(activeFear.decayScore, 0.90);
+    // Fears are negative valence → boosted in GEEL+
+    const zoneAdjusted = applyZoneModifier(baseRelevance, 'negative', zoneMods);
     candidates.push({
       sourceType: 'ACTIVE_HOPE_OR_FEAR',
       eligible: true,
-      relevanceScore: Math.min(activeFear.decayScore, 0.90), // cap at 0.90
-      reason: `Active fear: "${activeFear.label}" (decay=${activeFear.decayScore})`,
+      relevanceScore: zoneAdjusted,
+      reason: `Active fear: "${activeFear.label}" (decay=${activeFear.decayScore}) [zone=${vspZone ?? 'GROEN'}]`,
       safeAnchor: activeFear.label,
     });
+    sourceTimestamps.push({ sourceType: 'ACTIVE_HOPE_OR_FEAR', timestamp: new Date(activeFear.lastReinforcedAt).getTime() });
   } else {
     candidates.push({
       sourceType: 'ACTIVE_HOPE_OR_FEAR',
@@ -172,10 +240,11 @@ export function buildGreetingSynthesisCandidates(
   });
 
   if (schemaResult.selectedSchema) {
+    // Schema rotation is neutral — not boosted or suppressed by zone
     candidates.push({
       sourceType: 'SCHEMA_ROTATION',
       eligible: true,
-      relevanceScore: 0.65, // fixed moderate relevance — it's a rotation, not urgency
+      relevanceScore: 0.65,
       reason: schemaResult.reason,
       safeAnchor: `thema rond ${schemaResult.selectedSchema.schemaName}`,
     });
@@ -191,16 +260,17 @@ export function buildGreetingSynthesisCandidates(
 
   // ─── 7. LAST_SESSION_SUMMARY (from logs.dat) ─────────────────────────────────
   if (logsDat && (logsDat.lastSessionOpenLoops.length > 0 || logsDat.latestLogDigest)) {
-    // High weight: continuity from last session is very relevant for greeting
     const hasOpenLoops = logsDat.lastSessionOpenLoops.length > 0;
-    const relevance = hasOpenLoops ? 0.88 : 0.75;
+    const baseRelevance = hasOpenLoops ? 0.88 : 0.75;
+    // Session continuity is neutral valence
+    const zoneAdjusted = applyZoneModifier(baseRelevance, 'neutral', zoneMods);
     const safeAnchor = hasOpenLoops
       ? `Vorige sessie: ${logsDat.lastSessionOpenLoops.slice(0, 2).join(', ')}`
       : logsDat.latestLogDigest?.slice(0, 100) ?? '';
     candidates.push({
       sourceType: 'LAST_SESSION_SUMMARY',
       eligible: true,
-      relevanceScore: relevance,
+      relevanceScore: zoneAdjusted,
       reason: hasOpenLoops
         ? `${logsDat.lastSessionOpenLoops.length} open loops from last session`
         : 'Last session digest available',
@@ -214,6 +284,22 @@ export function buildGreetingSynthesisCandidates(
       reason: 'No last session data available',
       safeAnchor: '',
     });
+  }
+
+  // ─── Apply Recency Rank Bonus ───────────────────────────────────────────────
+  // Sort timestamps descending (most recent first)
+  // Most recent eligible source gets +0.15, second +0.08, third +0.03
+  const RECENCY_BONUSES = [0.15, 0.08, 0.03];
+  if (sourceTimestamps.length > 0) {
+    const sorted = [...sourceTimestamps].sort((a, b) => b.timestamp - a.timestamp);
+    for (let i = 0; i < Math.min(sorted.length, RECENCY_BONUSES.length); i++) {
+      const bonus = RECENCY_BONUSES[i];
+      const candidate = candidates.find(c => c.sourceType === sorted[i].sourceType && c.eligible);
+      if (candidate) {
+        candidate.relevanceScore = Math.min(candidate.relevanceScore + bonus, 1.0);
+        candidate.reason += ` +recency_rank_${i + 1}(+${bonus})`;
+      }
+    }
   }
 
   return { candidates, moodMetric };
@@ -241,5 +327,53 @@ function computeMoodRelevance(metric: MoodMetricSelection): number {
     case 'positive': return 0.70;
     case 'neutral': return 0.50;
     default: return 0.40;
+  }
+}
+
+/**
+ * Determines the valence of a mood metric for zone weighting.
+ */
+function getMoodValence(metric: MoodMetricSelection): SourceValence {
+  if (metric.interpretation === 'positive') return 'positive';
+  if (metric.interpretation === 'high_alarm' || metric.interpretation === 'elevated') return 'negative';
+  return 'neutral';
+}
+
+/**
+ * Infers diary entry valence from content keywords.
+ * This is a simple heuristic — negative/uncertain words → negative valence.
+ */
+function inferDiaryValence(safeAnchor: string): SourceValence {
+  const lower = safeAnchor.toLowerCase();
+  const negativeIndicators = [
+    'onzeker', 'bang', 'angst', 'moeilijk', 'zwaar', 'verdrietig', 'eenzaam',
+    'moe', 'gefrustreerd', 'boos', 'pijn', 'stress', 'spanning', 'terugval',
+    'craving', 'verlangen', 'twijfel', 'wanhoop', 'somber', 'slecht',
+    'uncertain', 'afraid', 'anxious', 'difficult', 'heavy', 'sad', 'lonely',
+    'tired', 'frustrated', 'angry', 'pain', 'stressed', 'relapse', 'doubt',
+  ];
+  const positiveIndicators = [
+    'blij', 'trots', 'dankbaar', 'rustig', 'goed', 'fijn', 'positief',
+    'happy', 'proud', 'grateful', 'calm', 'good', 'nice', 'positive',
+    'sterk', 'kracht', 'strong', 'progress', 'vooruitgang',
+  ];
+
+  const hasNegative = negativeIndicators.some(word => lower.includes(word));
+  const hasPositive = positiveIndicators.some(word => lower.includes(word));
+
+  if (hasNegative && !hasPositive) return 'negative';
+  if (hasPositive && !hasNegative) return 'positive';
+  if (hasNegative && hasPositive) return 'neutral'; // mixed
+  return 'neutral'; // no clear signal
+}
+
+/**
+ * Applies zone modifier to a base relevance score based on source valence.
+ */
+function applyZoneModifier(baseRelevance: number, valence: SourceValence, mods: ZoneModifiers): number {
+  switch (valence) {
+    case 'positive': return baseRelevance * mods.positiveMultiplier;
+    case 'negative': return baseRelevance * mods.negativeMultiplier;
+    case 'neutral': return baseRelevance * mods.neutralMultiplier;
   }
 }

@@ -81,6 +81,7 @@ export function selectGreetingSynthesisSources(
 const RETURN_RELEVANCE_PRIORITY: GreetingSynthesisSourceType[] = [
   'TODAY_MOOD',
   'RECENT_DIARY',
+  'LAST_SESSION_SUMMARY',
   'RECENT_GRATITUDE',
   'BACKPACK_RECENT_UPDATE',
   'ACTIVE_HOPE_OR_FEAR',
@@ -162,6 +163,10 @@ function getSourceValence(
       return 'negative'; // fears are concerning
 
     case 'RECENT_DIARY':
+      // Diary valence is now inferred in buildGreetingSynthesisCandidates via the reason field
+      // Check if the reason contains 'valence=negative' or 'valence=positive'
+      if (candidate.reason.includes('valence=negative')) return 'negative';
+      if (candidate.reason.includes('valence=positive')) return 'positive';
       return 'neutral'; // diary can be anything
 
     case 'BACKPACK_RECENT_UPDATE':
@@ -169,6 +174,9 @@ function getSourceValence(
 
     case 'SCHEMA_ROTATION':
       return 'neutral'; // schemas are reflective, not positive/negative
+
+    case 'LAST_SESSION_SUMMARY':
+      return 'neutral'; // session continuity is contextual
 
     default:
       return 'neutral';

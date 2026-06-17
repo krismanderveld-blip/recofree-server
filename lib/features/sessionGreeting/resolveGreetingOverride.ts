@@ -82,12 +82,17 @@ export function resolveGreetingOverride(
     };
   }
 
-  // 4. MISSING_DATA — no sliders today AND no recent diary AND no recent gratitude AND no backpack
+  // 4. MISSING_DATA — no sliders today AND no recent diary AND no recent gratitude AND no backpack AND no logs.dat
+  // logs.dat with open loops or a digest counts as valid context (session continuity)
+  const hasLogsDatContext = input.synthesisCandidates.some(
+    c => c.sourceType === 'LAST_SESSION_SUMMARY' && c.eligible
+  );
   const hasAnyFreshData =
     freshness.slidersFilledToday ||
     freshness.diaryRecentUnder3Days ||
     freshness.gratitudeRecentUnder3Days ||
-    freshness.backpackRecentlyUpdatedUnder24h;
+    freshness.backpackRecentlyUpdatedUnder24h ||
+    hasLogsDatContext;
 
   if (!hasAnyFreshData) {
     return {

@@ -1443,3 +1443,13 @@
 - [x] VSP Backpack Analyzer: openai-provider.ts forwards vspBackpackProfile in SESSION_INIT + LIVE_MESSAGE payloads
 - [x] VSP Backpack Analyzer: server ai-chat.ts injects vspBackpackProfileBlock into Elias system prompt
 - [x] VSP Backpack Analyzer: 12 unit tests (all passing)
+
+## Greeting Engine V3 Redesign — Emotionele Coherentie
+
+- [x] Greeting: VSP zone als tone-setter meegeven aan engine input + prompt
+- [x] Greeting: Zone-aware weighting (suppress positive sources when zone >= GEEL)
+- [x] Greeting: Diary emotional urgency boost when negative + zone elevated
+- [x] Greeting: Rewrite prompt builder to coherent context briefing (not disconnected snippets)
+- [x] Greeting: Fix MISSING_DATA override to count logs.dat as valid fresh data
+- [x] Greeting: Wire VSP Backpack Profile into greeting engine
+- [x] Greeting: Update tests for new weighting logic (84 greeting tests + 12 zone-aware tests passing)
