@@ -18,6 +18,7 @@ import type {
   GreetingSynthesisMode,
 } from './sessionGreetingV3.types';
 import type { SessionAbsenceResult } from './calculateSessionAbsence';
+import type { GreetingVspSectionSnapshot } from './sessionGreeting.types';
 
 // ─── Forbidden Patterns ─────────────────────────────────────────────────────
 
@@ -93,12 +94,13 @@ export interface BuildSynthesisPromptInput {
   absence: SessionAbsenceResult;
   mode: GreetingSynthesisMode;
   vspZone?: string;
+  vspSection?: GreetingVspSectionSnapshot;
 }
 
 export function buildGreetingSynthesisPromptPayload(
   input: BuildSynthesisPromptInput,
 ): GreetingSynthesisPromptPayload {
-  const { userName, selectedSources, absence, mode, vspZone } = input;
+  const { userName, selectedSources, absence, mode, vspZone, vspSection } = input;
 
   const isReturnMode = mode === 'RETURN_AFTER_ABSENCE';
   const absenceForPrompt: SessionAbsenceResultForPrompt | undefined = isReturnMode
@@ -109,7 +111,7 @@ export function buildGreetingSynthesisPromptPayload(
 
   const synthesisInstruction = isReturnMode
     ? buildReturnAfterAbsenceInstruction(userName, selectedSources, absence, vspZone)
-    : buildCoherentSynthesisInstruction(userName, selectedSources, vspZone, zoneTone);
+    : buildCoherentSynthesisInstruction(userName, selectedSources, vspZone, zoneTone, vspSection);
 
   return {
     persona: 'elias',
@@ -151,9 +153,11 @@ function buildCoherentSynthesisInstruction(
   selectedSources: SelectedSynthesisSource[],
   vspZone: string | undefined,
   zoneTone: ZoneToneConfig,
+  vspSection?: GreetingVspSectionSnapshot,
 ): string {
   const zone = (vspZone ?? 'GROEN').toUpperCase();
   const contextBriefing = buildContextBriefing(selectedSources, zone);
+  const vspPersonalContext = buildVspPersonalContext(vspSection, zone);
 
   return `Je bent Elias. Schrijf een warme, persoonlijke begroeting voor ${userName}.
 
@@ -161,7 +165,7 @@ ZONE: ${zone}
 ${zoneTone.toneInstruction}
 
 CONTEXT (dit is wat je weet over de gebruiker NU):
-${contextBriefing}
+${contextBriefing}${vspPersonalContext}
 
 INSTRUCTIES:
 - Verweef de context tot ÉÉN vloeiende, menselijke begroeting
@@ -193,6 +197,38 @@ KRITIEK — GEEN HALLUCINATIE:
 
 VOORBEELD VAN GOEDE BEGROETING BIJ ZONE ${zone} (ter illustratie, niet kopiëren):
 ${getZoneExample(userName, zone)}`;
+}
+
+/**
+ * Builds personal VSP context from the user's own structured VSP section.
+ * This gives GPT access to the user's self-described signals, what helps, and anchor sentence
+ * for their current zone — enabling deeply personal, relevant greetings.
+ */
+function buildVspPersonalContext(vspSection: GreetingVspSectionSnapshot | undefined, zone: string): string {
+  if (!vspSection) return '';
+
+  const parts: string[] = [];
+  const entry = vspSection.currentZoneEntry;
+
+  if (entry) {
+    if (entry.signals && entry.signals.length > 0) {
+      parts.push(`\n\nPERSOONLIJKE VSP-SIGNALEN (wat de gebruiker ZELF beschrijft als herkenningspunten in zone ${zone}):\n  ${entry.signals.join('\n  ')}`);
+    }
+    if (entry.whatHelps && entry.whatHelps.length > 0) {
+      parts.push(`\nWAT HELPT (door de gebruiker zelf benoemd voor zone ${zone}):\n  ${entry.whatHelps.join('\n  ')}`);
+    }
+    if (entry.anchorSentence) {
+      parts.push(`\nANKERZIN: "${entry.anchorSentence}"`);
+    }
+  }
+
+  if (vspSection.mainAnchorSentence && !entry?.anchorSentence) {
+    parts.push(`\nALGEMENE ANKERZIN: "${vspSection.mainAnchorSentence}"`);
+  }
+
+  if (parts.length === 0) return '';
+
+  return parts.join('') + `\n\nBELANGRIJK OVER VSP-CONTEXT:\n- Je mag SUBTIEL verwijzen naar wat de gebruiker zelf heeft beschreven als signalen of wat helpt\n- Noem het NOOIT letterlijk ("je hebt in je VSP geschreven dat...") — verweef het natuurlijk\n- Gebruik het als achtergrondkennis om de toon en richting van je vraag te bepalen\n- Als de gebruiker "vertragen" als helpend noemt, kun je bijv. zeggen "neem even de tijd"\n- Als de gebruiker "in mijn hoofd zitten" als signaal noemt, kun je bijv. vragen "wat voel je nu?" (richting lichaam)`;
 }
 
 /**

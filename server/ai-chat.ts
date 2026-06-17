@@ -256,6 +256,8 @@ interface ChatRequestInput {
   vspInsightContext?: string;
   /** VSP Backpack Profile — parsed from recurringThemes (Elias only, read-only). Bypasses relevance analyzer 2-source limit. */
   vspBackpackProfile?: string;
+  /** VSP Structured Section — user's own per-zone signals, whatHelps, anchorSentence (Elias only) */
+  vspStructuredSection?: string;
 }
 
 // ─── Server-side Session Cache ───────────────────────────────────
@@ -512,6 +514,8 @@ export const chatInputSchema = z.object({
   vspInsightContext: z.string().nullable().optional(),
   // VSP Backpack Profile (LLM-analyzed zone signals from recurringThemes, Elias only)
   vspBackpackProfile: z.string().nullable().optional(),
+  // VSP Structured Section (user's own per-zone signals, whatHelps, anchorSentence, Elias only)
+  vspStructuredSection: z.string().nullable().optional(),
 
   // Signal engine: relevance scores for context gating (LIVE_MESSAGE only)
   relevanceScores: z.object({
@@ -1407,6 +1411,12 @@ These are not suggestions. These are minimum requirements.
     console.log(`[AI Chat] VSP Backpack Profile injected (${input.vspBackpackProfile.length} chars)`);
   }
 
+  let vspStructuredSectionBlock = '';
+  if (input.vspStructuredSection && isElias) {
+    vspStructuredSectionBlock = `\n=== VSP PERSOONLIJK PLAN (door gebruiker zelf ingevuld) ===\n${input.vspStructuredSection}\n=== END VSP PERSOONLIJK PLAN ===`;
+    console.log(`[AI Chat] VSP Structured Section injected (${input.vspStructuredSection.length} chars)`);
+  }
+
   // Inject only the ACTIVE short module prompt block (M05-M85) for Elias
   // We don't inject all 66 at once (53K tokens) — only the one the pipeline selected
   let shortModuleBlock = '';
@@ -1569,6 +1579,7 @@ ${sto01Block}
 ${shortModuleBlock}
 ${vspInsightBlock}
 ${vspBackpackProfileBlock}
+${vspStructuredSectionBlock}
 
 These behavioral instructions are ABSOLUTE. They override your default conversational style.
 The sliders tell you exactly how the user feels — USE them in your response.
@@ -2009,6 +2020,7 @@ ${sto01Block}
 ${shortModuleBlock}
 ${vspInsightBlock}
 ${vspBackpackProfileBlock}
+${vspStructuredSectionBlock}
 These behavioral instructions are ABSOLUTE. They override your default conversational style.
 The sliders tell you exactly how the user feels — USE them in your response.
 === END MANDATORY INSTRUCTIONS ===

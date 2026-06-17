@@ -171,7 +171,7 @@ export interface MoodSnapshot {
 }
 
 /** Life-phase section IDs for the Backpack narrative document */
-export type LifePhaseId = 'childhood' | 'adolescence' | 'adulthood' | 'family' | 'themes';
+export type LifePhaseId = 'childhood' | 'adolescence' | 'adulthood' | 'family' | 'themes' | 'vsp';
 
 /** Kim-specific backpack section IDs */
 export type KimBackpackSectionId = 'my_story' | 'the_relationship' | 'the_impact' | 'my_boundaries' | 'my_strength';
@@ -286,10 +286,64 @@ export interface IntakeData {
   initialContext: string;
 }
 
-// ─── BACKPACK (backpack.json) — STABLE IDENTITY ────────────────
+// ─── VSP STRUCTURED PLAN ────────────────────────────────────────────────
 
+/** A single zone entry in the structured VSP */
+export interface VspZoneEntry {
+  /** How the user recognizes themselves in this zone (signals, thoughts, behaviors) */
+  signals: string;
+  /** What helps in this zone (concrete actions, strategies) */
+  whatHelps: string;
+  /** Personal anchor sentence for this zone */
+  anchorSentence: string;
+}
+
+/** A personal trigger with counter-thought */
+export interface VspTrigger {
+  /** The trigger description */
+  trigger: string;
+  /** The counter-thought ("tegenzin") */
+  counterThought: string;
+}
+
+/** The full structured VSP (Veiligheidsplan) */
+export interface VspStructuredPlan {
+  /** Per-zone content */
+  zones: {
+    green: VspZoneEntry;
+    yellow: VspZoneEntry;
+    orange: VspZoneEntry;
+    red: VspZoneEntry;
+    purple: VspZoneEntry;
+  };
+  /** Personal triggers with counter-thoughts */
+  triggers: VspTrigger[];
+  /** Personal recovery rules */
+  recoveryRules: string[];
+  /** The overarching anchor sentence */
+  mainAnchorSentence: string;
+  /** Last updated timestamp */
+  lastUpdated: string | null;
+}
+
+/** Default empty VSP structured plan */
+export const DEFAULT_VSP_STRUCTURED_PLAN: VspStructuredPlan = {
+  zones: {
+    green: { signals: '', whatHelps: '', anchorSentence: '' },
+    yellow: { signals: '', whatHelps: '', anchorSentence: '' },
+    orange: { signals: '', whatHelps: '', anchorSentence: '' },
+    red: { signals: '', whatHelps: '', anchorSentence: '' },
+    purple: { signals: '', whatHelps: '', anchorSentence: '' },
+  },
+  triggers: [],
+  recoveryRules: [],
+  mainAnchorSentence: '',
+  lastUpdated: null,
+};
+
+// ─── BACKPACK (backpack.json) — STABLE IDENTITY ────────────────
 /**
- * Backpack — the anchor of identity.
+ * Backpack — the anchor of identity..
  *
  * RULES:
  * - NEVER auto-modified by the system
@@ -313,6 +367,8 @@ export interface Backpack {
     my_boundaries: string;
     my_strength: string;
   };
+  /** Structured VSP (Veiligheidsplan) — user-written per zone (Elias only) */
+  vspSection?: VspStructuredPlan;
   /** Intake context — captured once at onboarding */
   intakeContext: {
     /** Stage of Change — Elias only */
@@ -660,6 +716,14 @@ export const DEFAULT_BACKPACK_SECTIONS: LifePhaseSection[] = [
     label: 'Recurring Themes',
     ageRange: 'Across all phases',
     prompt: 'Are there recurring themes, beliefs, or inner struggles that you recognize across these life phases?',
+    content: '',
+    lastUpdated: null,
+  },
+  {
+    id: 'vsp',
+    label: 'Safety Plan (VSP)',
+    ageRange: 'Personal signals',
+    prompt: 'Write your safety plan here per zone. Use labels like GROEN:, GEEL:, ORANJE:, ROOD:, PAARS: to describe what you notice in each zone — your signals, thoughts, behaviors, and what helps.',
     content: '',
     lastUpdated: null,
   },
@@ -1096,6 +1160,8 @@ export interface ChatContext {
   vspInsightContext?: string;
   /** VSP profile parsed from backpack recurringThemes section (Elias only, read-only). Bypasses relevance analyzer 2-source limit. */
   vspBackpackProfile?: string;
+  /** VSP Structured Section — user's own per-zone signals, whatHelps, anchorSentence formatted as prompt block (Elias only) */
+  vspStructuredSection?: string;
   /** Structured entities extracted from backpack (persons, events, patterns, contexts). Sent instead of full backpack when unchanged. */
   extractedEntities?: import('../backpack-extractor/types').ExtractedEntities;
   /** Whether backpack content changed since last extraction (forces full backpack resend) */

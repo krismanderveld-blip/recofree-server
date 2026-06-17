@@ -400,10 +400,43 @@ export interface VspBackpackProfile {
  * Extracts sentences per zone (GROEN/GREEN, GEEL/YELLOW, etc.).
  * Read-only: never modifies backpack.
  */
-export function parseVspProfileFromBackpack(sections: LifePhaseSection[]): VspBackpackProfile {
-  const themesSection = sections.find((s) => s.id === 'themes');
+export function parseVspProfileFromBackpack(sections: LifePhaseSection[], vspSection?: import('../ai/types').VspStructuredPlan | null): VspBackpackProfile {
   const profile: VspBackpackProfile = { green: [], yellow: [], orange: [], red: [], purple: [], raw: null };
 
+  // PRIMARY: Use structured vspSection if available (user's own per-zone input)
+  if (vspSection && vspSection.zones) {
+    const zoneMap: Record<string, keyof Omit<VspBackpackProfile, 'raw'>> = {
+      groen: 'green', geel: 'yellow', oranje: 'orange', rood: 'red', paars: 'purple'
+    };
+    for (const [zoneName, entry] of Object.entries(vspSection.zones)) {
+      if (!entry) continue;
+      const key = zoneMap[zoneName];
+      if (!key) continue;
+      const items: string[] = [];
+      if (entry.signals) {
+        // signals is a string (semicolon/newline separated)
+        const signalList = entry.signals.split(/[;\n]+/).map((s: string) => s.trim()).filter((s: string) => s.length > 0);
+        items.push(...signalList);
+      }
+      if (entry.whatHelps) {
+        const helpList = entry.whatHelps.split(/[;\n]+/).map((h: string) => h.trim()).filter((h: string) => h.length > 0);
+        items.push(...helpList.map((h: string) => `[helpt] ${h}`));
+      }
+      if (entry.anchorSentence) items.push(`[anker] ${entry.anchorSentence}`);
+      profile[key] = items;
+    }
+    // Build raw from structured
+    const rawParts: string[] = [];
+    for (const [zoneName, entry] of Object.entries(vspSection.zones)) {
+      if (!entry) continue;
+      rawParts.push(`${zoneName.toUpperCase()}: ${[entry.signals || '', entry.whatHelps || ''].filter(Boolean).join('; ')}`);
+    }
+    if (rawParts.length > 0) profile.raw = rawParts.join('\n');
+    return profile;
+  }
+
+  // FALLBACK: Parse from recurringThemes section (legacy)
+  const themesSection = sections.find((s) => s.id === 'themes');
   if (!themesSection?.content || themesSection.content.trim().length === 0) return profile;
 
   profile.raw = themesSection.content;

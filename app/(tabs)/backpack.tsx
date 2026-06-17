@@ -16,6 +16,7 @@ import { STAGE_OF_CHANGE_OPTIONS, DEFAULT_KIM_BACKPACK_SECTIONS } from '@/lib/ai
 import type { KimBackpackSection } from '@/lib/ai/types';
 import { useColors } from '@/hooks/use-colors';
 import { IconSymbol } from '@/components/ui/icon-symbol';
+import { VspSectionEditor } from '@/components/vsp-section-editor';
 import { colors as dc, spacing, radius, typography, shadows, cardStyles, buttonStyles } from '@/constants/design';
 
 const SECTION_COLORS: Record<LifePhaseId, string> = {
@@ -24,6 +25,7 @@ const SECTION_COLORS: Record<LifePhaseId, string> = {
   adulthood: '#45B7D1',
   family: '#96CEB4',
   themes: '#FFEAA7',
+  vsp: '#B39DDB',
 };
 
 const SECTION_ICONS: Record<LifePhaseId, string> = {
@@ -32,6 +34,7 @@ const SECTION_ICONS: Record<LifePhaseId, string> = {
   adulthood: '\u{1F3E0}',
   family: '\u{1F468}\u200D\u{1F469}\u200D\u{1F467}\u200D\u{1F466}',
   themes: '\u{1F504}',
+  vsp: '\u{1F6E1}',
 };
 
 const STAGE_COLORS: Record<StageOfChange, string> = {
@@ -43,7 +46,7 @@ const STAGE_COLORS: Record<StageOfChange, string> = {
 };
 
 export default function BackpackScreen() {
-  const { state, updateBackpackSection, updateKimBackpackSection, updateStageOfChange } = useUser();
+  const { state, updateBackpackSection, updateKimBackpackSection, updateStageOfChange, updateVspSection } = useUser();
   const colors = useColors();
   const [expandedSection, setExpandedSection] = useState<LifePhaseId | KimBackpackSectionId | null>(null);
   const [editingSection, setEditingSection] = useState<LifePhaseId | KimBackpackSectionId | null>(null);
@@ -398,7 +401,15 @@ export default function BackpackScreen() {
           </View>
         )}
 
-        {/* Sections */}
+        {/* VSP Section (Elias only) */}
+        {!isKim && state.backpack?.userType === 'elias' && (
+          <VspSectionEditor
+            vspPlan={state.backpack?.vspSection}
+            onSave={updateVspSection}
+          />
+        )}
+
+        {/* Life Phase Sections */}
         {isKim
           ? DEFAULT_KIM_BACKPACK_SECTIONS.map(renderKimSection)
           : sections.map(renderEliasSection)}

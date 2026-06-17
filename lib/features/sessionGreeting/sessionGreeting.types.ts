@@ -179,6 +179,24 @@ export interface SessionGreetingInitInput {
   logsDat: GreetingLogsDatSnapshot | null;
   diaryMetadata: GreetingDiaryMetadata | null;
   gratitudeMetadata: GreetingGratitudeMetadata | null;
+  /** Structured VSP section data for zone-specific greeting context */
+  vspSection?: GreetingVspSectionSnapshot | null;
+}
+
+/** Snapshot of the user's structured VSP section for the greeting engine */
+export interface GreetingVspSectionSnapshot {
+  /** The current zone entry (matching stateDat.vspZone) */
+  currentZoneEntry?: {
+    signals: string[];
+    whatHelps: string[];
+    anchorSentence: string;
+  } | null;
+  /** Main anchor sentence across all zones */
+  mainAnchorSentence?: string;
+  /** Recovery rules */
+  recoveryRules?: string[];
+  /** Active triggers with counter-thoughts */
+  triggers?: Array<{ trigger: string; counterThought: string }>;
 }
 
 // ─── Session Init Context ────────────────────────────────────────────────────

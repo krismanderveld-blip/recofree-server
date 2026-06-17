@@ -397,6 +397,7 @@ export class OpenAIProvider implements AIProvider {
         stoaKContext: context.stoaKContext,
         vspInsightContext: context.vspInsightContext,
         vspBackpackProfile: context.vspBackpackProfile,
+        vspStructuredSection: context.vspStructuredSection,
         extractedEntities: context.extractedEntities,
         backpackChanged: context.backpackChanged,
       });
@@ -519,6 +520,8 @@ export class OpenAIProvider implements AIProvider {
           vspInsightContext: gptPayload.vspInsightContext ?? null,
           // VSP Backpack Profile (LLM-analyzed zone signals from recurringThemes, Elias only)
           vspBackpackProfile: (gptPayload as any).vspBackpackProfile ?? null,
+          // VSP Structured Section (user's own per-zone signals, whatHelps, anchorSentence, Elias only)
+          vspStructuredSection: (gptPayload as any).vspStructuredSection ?? null,
 
           // LOOPBLOCKER: cross-session repeating pattern directive
           loopDetected: gptPayload.loopDetected ?? null,
@@ -672,6 +675,8 @@ export class OpenAIProvider implements AIProvider {
           vspInsightContext: gptPayload.vspInsightContext ?? null,
           // VSP Backpack Profile (LLM-analyzed zone signals from recurringThemes, Elias only)
           vspBackpackProfile: (gptPayload as any).vspBackpackProfile ?? null,
+          // VSP Structured Section (user's own per-zone signals, whatHelps, anchorSentence, Elias only)
+          vspStructuredSection: (gptPayload as any).vspStructuredSection ?? null,
           // Signal engine: relevance scores for context gating (threshold 0.3))
           relevanceScores: context.relevanceScores ?? null,
           // Signal engine: compressed context summary (replaces full lifeStorySummary)

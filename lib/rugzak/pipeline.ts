@@ -2260,6 +2260,8 @@ export async function processMessage(
     vspInsightContext: vspInsightResult.active ? vspInsightResult.contextString || undefined : undefined,
     // VSP Backpack Profile — LLM-analyzed from recurringThemes (Elias only, cached in AsyncStorage)
     vspBackpackProfile: vspBackpackProfileBlock,
+    // VSP Structured Section — user's own per-zone signals, whatHelps, anchorSentence (Elias only)
+    vspStructuredSection: backpack.userType === 'elias' ? buildVspStructuredBlock(backpack) : undefined,
     // Backpack entity extraction: send structured entities instead of full backpack when unchanged
     extractedEntities: currentUserDat.extractedEntities ?? undefined,
     backpackChanged: !currentUserDat.extractedEntities || (currentUserDat.extractedEntities.persons.length === 0),
@@ -3791,6 +3793,55 @@ function buildVspBackpackProfileBlock(sections: import('../ai/types').LifePhaseS
   if (profile.red.length) lines.push(`RED signals: ${profile.red.join('; ')}`);
   if (profile.purple.length) lines.push(`PURPLE signals: ${profile.purple.join('; ')}`);
   lines.push('INSTRUCTION: Reference this profile when user discusses zone-related content. Ask what makes them choose their current zone.');
+  return lines.join('\n');
+}
+
+/**
+ * Builds a prompt block from the user's structured VSP section (per-zone signals, whatHelps, anchorSentence).
+ * This is the user's OWN words about their relapse prevention plan, structured per zone.
+ */
+function buildVspStructuredBlock(backpack: import('../ai/types').Backpack): string | undefined {
+  const vspSection = backpack.vspSection;
+  if (!vspSection) return undefined;
+
+  const lines: string[] = ['[USER VSP STRUCTURED PLAN — persoonlijk vroegsignaleringsplan, door de gebruiker zelf ingevuld]'];
+
+  // Get current zone from the most recent mood if available
+  const zones = vspSection.zones;
+  if (zones) {
+    for (const [zoneName, entry] of Object.entries(zones)) {
+      if (!entry) continue;
+      const zoneUpper = zoneName.toUpperCase();
+      if (entry.signals && entry.signals.length > 0) {
+        lines.push(`${zoneUpper} — Herkenning: ${entry.signals.join('; ')}`);
+      }
+      if (entry.whatHelps && entry.whatHelps.length > 0) {
+        lines.push(`${zoneUpper} — Wat helpt: ${entry.whatHelps.join('; ')}`);
+      }
+      if (entry.anchorSentence) {
+        lines.push(`${zoneUpper} — Ankerzin: "${entry.anchorSentence}"`);
+      }
+    }
+  }
+
+  if (vspSection.triggers && vspSection.triggers.length > 0) {
+    lines.push('TRIGGERS:');
+    for (const t of vspSection.triggers) {
+      lines.push(`  - ${t.trigger} → Tegenzin: "${t.counterThought}"`);
+    }
+  }
+
+  if (vspSection.recoveryRules && vspSection.recoveryRules.length > 0) {
+    lines.push(`HERSTELREGELS: ${vspSection.recoveryRules.join('; ')}`);
+  }
+
+  if (vspSection.mainAnchorSentence) {
+    lines.push(`HOOFDANKERZIN: "${vspSection.mainAnchorSentence}"`);
+  }
+
+  if (lines.length <= 1) return undefined;
+
+  lines.push('INSTRUCTIE: Gebruik deze informatie als achtergrondkennis. Verwijs er SUBTIEL naar — noem het nooit letterlijk. Gebruik het om de juiste toon, richting en interventie te kiezen.');
   return lines.join('\n');
 }
 

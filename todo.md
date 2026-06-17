@@ -1453,3 +1453,17 @@
 - [x] Greeting: Fix MISSING_DATA override to count logs.dat as valid fresh data
 - [x] Greeting: Wire VSP Backpack Profile into greeting engine
 - [x] Greeting: Update tests for new weighting logic (84 greeting tests + 12 zone-aware tests passing)
+- [x] Greeting: Logs.dat continuity — detect recurring themes and inject pattern awareness into greeting
+- [x] Greeting: VSP Backpack Profile as greeting source — zone-specific patterns from LLM analysis
+- [x] Greeting: Tighten GEEL balance — dialectic role for gratitude ("maar/tegelijk") when diary is negative in elevated zone
+- [x] Greeting: VSP structured section (per zone: signals + whatHelps + anchorSentence) injected into greeting prompt
+
+## VSP Structured Section in Backpack
+
+- [x] Backpack: Add dedicated VSP section (separate from Recurring Themes)
+- [x] Backpack: VspStructuredPlan type (zones, triggers with counterSentences, recoveryRules)
+- [x] Backpack: VspSectionEditor UI component (per-zone accordion, triggers, recovery rules)
+- [x] Backpack: updateVspSection in user-context.tsx
+- [x] Backpack: Wire VSP structured section into pipeline + ai-chat for ongoing conversation
+- [x] Backpack: Update parseVspProfileFromBackpack to prefer structured section over legacy themes
+- [x] All 1058 tests passing

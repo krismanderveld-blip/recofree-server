@@ -21,6 +21,7 @@ import type {
   GreetingLogsDatSnapshot,
   GreetingSchemaTendency,
   GreetingSchemaRotationState,
+  GreetingVspSectionSnapshot,
 } from './sessionGreeting.types';
 import { sessionGreetingEngineV3, type SessionGreetingV3EngineResult } from './sessionGreetingEngineV3';
 import { enforceGreetingOutputRulesV3 } from './buildGreetingSynthesisPrompt';
@@ -70,6 +71,9 @@ export async function sessionInitGreetingStep(
   const diaryMetadata = adaptDiaryMetadata(diaryEntries);
   const gratitudeMetadata = adaptGratitudeMetadata(diaryEntries);
 
+  // Adapt structured VSP section for the greeting engine
+  const vspSection = adaptVspSection(backpack, greetingStateDat?.vspZone);
+
   const engineInput: SessionGreetingInitInput = {
     nowIso,
     localCalendarDate,
@@ -80,6 +84,7 @@ export async function sessionInitGreetingStep(
     logsDat: greetingLogsDat,
     diaryMetadata,
     gratitudeMetadata,
+    vspSection,
   };
 
   // Run V3 engine (deterministic)
@@ -292,6 +297,36 @@ function adaptGratitudeMetadata(diaryEntries: DiaryEntry[]): GreetingGratitudeMe
   return {
     latestEntryCreatedAt: latest.timestamp,
     latestSafeAnchor: safeAnchor.slice(0, 80).trim(),
+  };
+}
+
+function adaptVspSection(backpack: Backpack, vspZone?: string): GreetingVspSectionSnapshot | null {
+  const vspPlan = (backpack as any).vspSection;
+  if (!vspPlan) return null;
+
+  const zone = (vspZone ?? 'GROEN').toUpperCase();
+  const zoneKey = zone.toLowerCase() as 'groen' | 'geel' | 'oranje' | 'rood' | 'paars';
+  const zoneEntry = vspPlan.zones?.[zoneKey];
+
+  const currentZoneEntry = zoneEntry ? {
+    signals: zoneEntry.signals?.filter((s: string) => s.trim().length > 0) ?? [],
+    whatHelps: zoneEntry.whatHelps?.filter((s: string) => s.trim().length > 0) ?? [],
+    anchorSentence: zoneEntry.anchorSentence ?? '',
+  } : null;
+
+  // Get triggers with counter-thoughts
+  const triggers = (vspPlan.triggers ?? []).filter(
+    (t: any) => t.trigger && t.trigger.trim().length > 0
+  ).map((t: any) => ({
+    trigger: t.trigger,
+    counterThought: t.counterThought ?? '',
+  }));
+
+  return {
+    currentZoneEntry: currentZoneEntry && (currentZoneEntry.signals.length > 0 || currentZoneEntry.whatHelps.length > 0 || currentZoneEntry.anchorSentence) ? currentZoneEntry : null,
+    mainAnchorSentence: vspPlan.mainAnchorSentence || undefined,
+    recoveryRules: vspPlan.recoveryRules?.filter((r: string) => r.trim().length > 0) ?? [],
+    triggers: triggers.length > 0 ? triggers : undefined,
   };
 }
 

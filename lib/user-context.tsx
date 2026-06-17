@@ -87,6 +87,8 @@ interface UserContextValue {
   updateBackpackSection: (sectionId: LifePhaseId, content: string) => Promise<void>;
   /** Update a Kim backpack section (Kim users only) */
   updateKimBackpackSection: (sectionId: import('./ai/types').KimBackpackSectionId, content: string) => Promise<void>;
+  /** Update the structured VSP section (Elias only) */
+  updateVspSection: (vspPlan: import('./ai/types').VspStructuredPlan) => Promise<void>;
   /** Recompute Rugzak influence (call on every message) */
   recomputeInfluence: () => void;
   setCrisisLevel: (level: number) => void;
@@ -650,6 +652,20 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     triggerExtractionIfNeeded(updatedBackpack);
   }, [state.backpack]);
 
+  // ── VSP Structured Plan — USER ACTION ONLY ──
+
+  const updateVspSection = useCallback(async (vspPlan: import('./ai/types').VspStructuredPlan) => {
+    if (!state.backpack) return;
+    const updatedBackpack: Backpack = {
+      ...state.backpack,
+      vspSection: { ...vspPlan, lastUpdated: new Date().toISOString() },
+    };
+    dispatch({ type: 'UPDATE_BACKPACK', payload: updatedBackpack });
+    await persistBackpack(updatedBackpack);
+    // Fire-and-forget: trigger extraction if content changed
+    triggerExtractionIfNeeded(updatedBackpack);
+  }, [state.backpack]);
+
   // ── Stage of Change (user-editable in Backpack screen) ──
 
   const updateStageOfChange = useCallback(async (stage: import('./ai/types').StageOfChange) => {
@@ -916,6 +932,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         updateRugzakSection,
         updateBackpackSection: updateRugzakSection,
         updateKimBackpackSection,
+        updateVspSection,
         updateStageOfChange,
         updateGuidanceDepth,
         getGuidanceDepth,

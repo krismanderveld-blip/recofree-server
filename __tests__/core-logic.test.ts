@@ -257,7 +257,7 @@ describe('Rugzak Engine', () => {
     const rugzak = createTestRugzak();
     expect(rugzak.naam).toBe('TestUser');
     expect(rugzak.userType).toBe('elias');
-    expect(rugzak.sections.length).toBe(5);
+    expect(rugzak.sections.length).toBe(6);
     expect(rugzak.chatHistory).toEqual([]);
     expect(rugzak.moodHistory).toEqual([]);
     expect(rugzak.triggerPatterns).toEqual([]);

@@ -78,6 +78,7 @@ export function sessionGreetingEngineV3(
     gratitudeMetadata,
     nowIso,
     timezone,
+    vspSection,
   } = input;
 
   // ─── Step 1: Evaluate Freshness ─────────────────────────────────────────────
@@ -181,6 +182,7 @@ export function sessionGreetingEngineV3(
       absence,
       mode: 'RETURN_AFTER_ABSENCE',
       vspZone: stateDat?.vspZone,
+      vspSection: vspSection ?? undefined,
     });
 
     return {
@@ -218,6 +220,7 @@ export function sessionGreetingEngineV3(
     absence,
     mode: 'SYNTHESIS',
     vspZone: stateDat?.vspZone,
+    vspSection: vspSection ?? undefined,
   });
 
   return {
