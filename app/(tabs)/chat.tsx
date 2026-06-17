@@ -57,6 +57,7 @@ const DIARY_KEY = '@recofree_diary';
 // ─── Silence Detection (both personas) ───────────────────────────────
 const SILENCE_TIMEOUT_MS = 180_000; // 180 seconds (3 minutes)
 const POST_DISCLOSURE_TIMEOUT_MS = 90_000; // 90 seconds (Module 58)
+const INACTIVITY_AUTO_CLOSE_MS = 600_000; // 10 minutes (600 seconds) — auto-close + full write-back
 
 const STILTE_RESPONSES_ELIAS = [
   "I'm here, even when you have nothing to say.",
@@ -155,6 +156,8 @@ function ChatScreenInner() {
   const silenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const silenceFiredRef = useRef(false);
   const disclosureDetectedRef = useRef(false);
+  const inactivityTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const inactivityEndTriggeredRef = useRef(false);
   const isElias = state.userType === 'elias';
 
   /** Check if the last user message contains disclosure keywords (Module 58) */
@@ -250,7 +253,124 @@ function ChatScreenInner() {
     silenceFiredRef.current = false;
     disclosureDetectedRef.current = false;
     resetSilenceTimer();
+    resetInactivityTimer();
   }, [inputText, resetSilenceTimer]);
+
+  // ── 10-Minute Inactivity Auto-Close Timer ─────────────────────────────
+  // After 10 minutes of no user interaction (no message sent, no typing),
+  // automatically end the session with full write-back to all memory layers
+  // including logs.dat (via lifecycleManager.endSession).
+  const resetInactivityTimer = useCallback(() => {
+    if (inactivityTimerRef.current) {
+      clearTimeout(inactivityTimerRef.current);
+      inactivityTimerRef.current = null;
+    }
+    // Don't start if session is not active or already ended
+    if (sessionPhase !== 'active' || inactivityEndTriggeredRef.current) return;
+    // Only start if there are messages (session has started)
+    if (messages.length <= 1) return;
+
+    inactivityTimerRef.current = setTimeout(async () => {
+      if (inactivityEndTriggeredRef.current || sessionPhase !== 'active') return;
+      inactivityEndTriggeredRef.current = true;
+
+      console.log('[Chat] Inactivity auto-close triggered (10 minutes)');
+      logDebugEvent('session_auto_end', { trigger: 'inactivity_10min', messageCount: messages.length });
+
+      try {
+        // Full session end with analysis + memory write-back
+        const userDatJson = await AsyncStorage.getItem(USERDAT_KEY);
+        const currentUserDat: UserDat = userDatJson ? JSON.parse(userDatJson) : state.userDat!;
+        const backpack = state.backpack!;
+        if (!backpack || !currentUserDat) return;
+
+        const provider = getAIProvider();
+        let diaryForSession: DiaryEntry[] = [];
+        try {
+          const diaryJson = await AsyncStorage.getItem(DIARY_KEY);
+          if (diaryJson) diaryForSession = JSON.parse(diaryJson);
+        } catch (_e) { /* ignore */ }
+        const userDatWithDiary = { ...currentUserDat, _sessionDiaryEntries: diaryForSession } as any;
+
+        // Race: endSession vs 15s timeout (slightly longer than background since we're not being killed)
+        const timeoutPromise = new Promise<null>((resolve) => setTimeout(() => resolve(null), 15_000));
+        const resultOrNull = await Promise.race([
+          endSession(backpack, provider, userDatWithDiary).catch(() => null),
+          timeoutPromise,
+        ]);
+
+        if (resultOrNull && 'updatedUserDat' in resultOrNull) {
+          // Full session end succeeded
+          await AsyncStorage.setItem(USERDAT_KEY, JSON.stringify(resultOrNull.updatedUserDat));
+          await endSessionWithUserDat(resultOrNull.updatedUserDat);
+          await AsyncStorage.removeItem(PENDING_CLOSE_KEY);
+          logDebugEvent('session_auto_end_complete', {
+            trigger: 'inactivity_10min',
+            messageCount: resultOrNull.updatedUserDat.chatHistory.length,
+            summarized: true,
+          });
+        } else {
+          // Timeout: save pending close marker for next session recovery
+          await AsyncStorage.setItem(
+            PENDING_CLOSE_KEY,
+            JSON.stringify({
+              timestamp: new Date().toISOString(),
+              messageCount: messages.length,
+              lastMessage: messages[messages.length - 1]?.content?.slice(0, 100),
+              needsFullAnalysis: true,
+            })
+          );
+        }
+
+        // Memory Lifecycle: end session (writes logs.dat summary)
+        try {
+          const persona = (state.userType === 'elias' ? 'elias' : 'kim') as 'elias' | 'kim';
+          const apiBase = getApiBaseUrl();
+          const lifecycleManager = getSessionLifecycleManager();
+          await lifecycleManager.endSession(persona, apiBase);
+        } catch (_memErr) {
+          console.warn('[Chat] Inactivity auto-close: lifecycle endSession failed (non-critical):', _memErr);
+        }
+
+        // Show auto-close message to user
+        const autoCloseMsg: ChatMessage = {
+          id: `msg_autoclose_${Date.now()}`,
+          role: 'assistant',
+          content: `Your session has been saved after 10 minutes of inactivity. Everything is safely stored. You can start a new conversation anytime.`,
+          timestamp: new Date().toISOString(),
+        };
+        setMessages((prev) => [...prev, autoCloseMsg]);
+        setSessionPhase('completed');
+      } catch (err) {
+        console.error('[Chat] Inactivity auto-close error:', err);
+        // Still mark as completed to prevent stuck state
+        setSessionPhase('completed');
+      }
+    }, INACTIVITY_AUTO_CLOSE_MS);
+  }, [sessionPhase, messages, state.backpack, state.userDat, state.userType, endSessionWithUserDat]);
+
+  // Start/reset inactivity timer when session is active and messages change
+  useEffect(() => {
+    if (sessionPhase === 'active' && messages.length > 1) {
+      resetInactivityTimer();
+    }
+    return () => {
+      if (inactivityTimerRef.current) {
+        clearTimeout(inactivityTimerRef.current);
+        inactivityTimerRef.current = null;
+      }
+    };
+  }, [sessionPhase, messages.length, resetInactivityTimer]);
+
+  // Clean up inactivity timer on unmount
+  useEffect(() => {
+    return () => {
+      if (inactivityTimerRef.current) {
+        clearTimeout(inactivityTimerRef.current);
+        inactivityTimerRef.current = null;
+      }
+    };
+  }, []);
 
   // ── First-chat disclaimer modal (one-time, not skipable) ──
   const [firstChatSeen, setFirstChatSeen] = useState<boolean>(true); // default true to avoid flash
@@ -727,6 +847,25 @@ function ChatScreenInner() {
           greetingEngine: false,
         });
       }
+
+      // ── Initialize Memory Lifecycle Buffer ──────────────────────────
+      // This MUST happen after greeting so that lifecycleManager.endSession()
+      // can write to logs.dat. Without this, endSession returns "no active buffer".
+      try {
+        const persona = (state.userType === 'elias' ? 'elias' : 'kim') as 'elias' | 'kim';
+        const apiBase = getApiBaseUrl();
+        const lifecycleManager = getSessionLifecycleManager();
+        const sessionId = `session_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+        const localUserId = backpack.naam ?? 'anonymous';
+        await lifecycleManager.startSession(persona, sessionId, localUserId, apiBase);
+        console.log(`[Chat] Memory lifecycle buffer initialized: ${sessionId}`);
+      } catch (lifecycleErr) {
+        // Non-critical: session works without lifecycle buffer, but logs.dat won't be written
+        console.warn('[Chat] Memory lifecycle startSession failed (non-critical):', lifecycleErr);
+      }
+
+      // Reset inactivity end flag for new session
+      inactivityEndTriggeredRef.current = false;
     } catch (error) {
       console.error('Greeting error:', error);
       // Show the error to the user so we can debug on device
@@ -753,6 +892,8 @@ function ChatScreenInner() {
       clearTimeout(silenceTimerRef.current);
       silenceTimerRef.current = null;
     }
+    // Reset inactivity timer on user send
+    resetInactivityTimer();
 
     setInputText('');
     Keyboard.dismiss();

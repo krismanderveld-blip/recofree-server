@@ -26,6 +26,7 @@ import type {
 } from './sessionGreeting.types';
 import { sessionGreetingEngineV3, type SessionGreetingV3EngineResult } from './sessionGreetingEngineV3';
 import { enforceGreetingOutputRulesV3 } from './buildGreetingSynthesisPrompt';
+import { detectUserLanguageFromContent, getGreetingLanguageInstruction } from './detectUserLanguage';
 
 export interface SessionInitGreetingInput {
   backpack: Backpack;
@@ -93,8 +94,13 @@ export async function sessionInitGreetingStep(
   // Run V3 engine (deterministic)
   const engineResult: SessionGreetingV3EngineResult = sessionGreetingEngineV3(engineInput);
 
+  // Detect user language from their content (backpack, diary, gratitude, VSP)
+  const langResult = detectUserLanguageFromContent(backpack, diaryEntries);
+  const langInstruction = getGreetingLanguageInstruction(langResult);
+  console.log(`[SessionGreetingV3] Detected language: ${langResult.language} (hasContent=${langResult.hasContent}, confidence=${langResult.confidence})`);
+
   // Build the GPT prompt based on mode
-  const userName = greetingUserDat?.userName ?? 'daar';
+  const userName = greetingUserDat?.userName ?? 'there';
   let systemPrompt: string;
 
   if ((engineResult.mode === 'SYNTHESIS' || engineResult.mode === 'RETURN_AFTER_ABSENCE') && engineResult.synthesisPayload) {
@@ -103,8 +109,11 @@ export async function sessionInitGreetingStep(
     systemPrompt = engineResult.overridePrompt;
   } else {
     // Fallback: generic greeting prompt
-    systemPrompt = `Je bent Elias. Schrijf een warme, korte begroeting voor ${userName}. Max 3 zinnen. Grammaticaal correct Nederlands, geen emoji.`;
+    systemPrompt = `You are Elias. Write a warm, short greeting for ${userName}. Max 3 sentences. No emoji.`;
   }
+
+  // Append language instruction to the prompt — this OVERRIDES any earlier language instructions
+  systemPrompt += `\n\n=== CRITICAL LANGUAGE OVERRIDE ===\nIGNORE any earlier language instructions in this prompt.\n${langInstruction}\nThis is the FINAL and BINDING language rule. All output MUST be in this language.`;
 
   // Call GPT via server endpoint
   let rawGreeting: string;
@@ -112,7 +121,10 @@ export async function sessionInitGreetingStep(
     rawGreeting = await callSessionGreetingEndpoint(apiBaseUrl, systemPrompt, userName, clinicalModeActive, vspInsightContext);
   } catch (error) {
     console.warn('[SessionGreetingV3] GPT call failed, using fallback:', error);
-    rawGreeting = `${userName}, fijn dat je er bent. Waar wil je het vandaag over hebben?`;
+    // Fallback in detected language or English
+    rawGreeting = langResult.hasContent && langResult.language === 'nl'
+      ? `${userName}, fijn dat je er bent. Waar wil je het vandaag over hebben?`
+      : `${userName}, good to see you. What would you like to talk about today?`;
   }
 
   // Apply output safety filter

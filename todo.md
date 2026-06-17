@@ -1512,3 +1512,8 @@
 - [x] Fix crash in buildVspStructuredBlock: .join() called on string instead of array (signals/whatHelps)
 - [x] Fix auto VSP upload returning empty fields after document upload (mammoth DOCX parser + better logging)
 - [x] Translate all remaining Dutch UI text to English (entire app)
+- [x] Auto-detect user language from diary/backpack/gratitude/VSP content and use it for greeting
+- [x] If no user content exists, greeting in English with "you can type in your native language" message
+- [x] Set auto-close/auto-save timer to 10 minutes inactivity
+- [x] Verify write-back to memory layers (incl. logs.dat) triggers on timer expiry
+- [x] Verify auto-close works on app background (not just foreground inactivity)

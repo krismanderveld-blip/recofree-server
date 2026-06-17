@@ -45,7 +45,7 @@ export function registerSessionGreetingRoute(app: Express): void {
           max_tokens: 150,
           messages: [
             { role: 'system', content: systemPrompt },
-            { role: 'user', content: `Genereer een persoonlijke begroeting voor ${userName}.` },
+            { role: 'user', content: `Generate a personal greeting for ${userName}. Follow the language instruction in the system prompt exactly.` },
           ],
         }),
       });

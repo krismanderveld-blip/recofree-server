@@ -8,6 +8,10 @@
 export type DebugEventType =
   | 'session_start'
   | 'session_end'
+  | 'session_auto_end'
+  | 'session_auto_end_complete'
+  | 'memory_write_back'
+  | 'memory_session_end'
   | 'message_processed'
   | 'zone_shift'
   | 'projection_signal'
