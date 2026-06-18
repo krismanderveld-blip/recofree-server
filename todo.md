@@ -1582,3 +1582,19 @@
 - [x] Add psychoEducationContext to LIVE_MESSAGE payload in openai-provider.ts
 - [x] Add psychoEducationContext to Zod chatInputSchema in ai-chat.ts
 - [x] Add psychoEducationContext to GPT payload types (lib/ai/types.ts)
+
+## PAAL01 Steunpilaren + Balkmetafoor
+- [x] Types: eliasSteunpilaren.types.ts + balkmetafoor.types.ts
+- [x] Detector: paal01.detector.ts (4 trigger contexts, NL+EN markers, confidence banding)
+- [x] Memory patch builder: paal01.memoryPatchBuilder.ts (buffer, state.dat, user.dat, logs.dat mandatory; projections.dat conditional on isolation belief)
+- [x] Prompt builder: paal01.promptBuilder.ts (hard directive, turn 5+, no keyword-gating)
+- [x] Marker banks: NL + EN (paal01.markerBank.nl.ts, paal01.markerBank.en.ts)
+- [x] Output safety filter: steunpilarenOutputSafetyFilter.ts
+- [x] Context assembler: eliasSteunpilarenContextAssembler.ts
+- [x] Balkmetafoor UI component: BalkmetafoorCard.tsx
+- [x] Pipeline integration: pipeline.ts step 5e8a3 (after WILSKRACHT01/AUTOPILOT01)
+- [x] Memory write router: paal01Activation → user.dat + state.dat + logs.dat
+- [x] PipelineDetectionBundle + PipelineResult updated with Paal01Activation type
+- [x] memoryIntegration.ts + PipelineResultForMemory updated
+- [x] steunpilarenContext added to ChatContext assembly
+- [x] All 35 PAAL01 tests passing (detector, memory, prompt, safety, balkmetafoor, router)

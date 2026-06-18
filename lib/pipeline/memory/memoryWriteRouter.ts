@@ -118,6 +118,73 @@ export function buildMemoryWritePlan(bundle: PipelineDetectionBundle): MemoryWri
     });
   }
 
+  // PAAL01 Steunpilaren activation → user.dat + logs.dat
+  if (bundle.paal01Activation) {
+    const paal = bundle.paal01Activation;
+    // user.dat: module usage increment
+    patches.push({
+      patchId: createPatchId(ctx.turnId, "user.dat", `steunpilaren.PAAL01`),
+      layer: "user.dat",
+      operation: "INCREMENT",
+      path: "moduleUsage",
+      source: "Steunpilaren_PAAL01",
+      payload: {
+        moduleId: paal.moduleId,
+        lastActivatedAt: ctx.timestampIso,
+        activationCountIncrement: 1,
+        triggerContext: paal.triggerContext,
+        turnId: ctx.turnId,
+        sessionId: ctx.sessionId,
+        timestampIso: ctx.timestampIso,
+        source: "Steunpilaren_PAAL01",
+      },
+      shouldWrite: true,
+      reason: `PAAL01 activated: ${paal.triggerContext} with confidence ${paal.confidence}`,
+    });
+    // state.dat: active therapeutic frame
+    patches.push({
+      patchId: createPatchId(ctx.turnId, "state.dat", `steunpilaren.frame`),
+      layer: "state.dat",
+      operation: "REPLACE_CURRENT",
+      path: "activeTherapeuticFrame",
+      source: "Steunpilaren_PAAL01",
+      payload: {
+        activeTherapeuticFrame: "steunpilaren_inventaris",
+        activeModuleId: "PAAL01",
+        lastActivatedAt: ctx.timestampIso,
+        triggerContext: paal.triggerContext,
+        turnId: ctx.turnId,
+        sessionId: ctx.sessionId,
+        timestampIso: ctx.timestampIso,
+        source: "Steunpilaren_PAAL01",
+      },
+      shouldWrite: true,
+      reason: `PAAL01 frame: steunpilaren_inventaris`,
+    });
+    // logs.dat: encrypted event
+    patches.push({
+      patchId: createPatchId(ctx.turnId, "logs.dat", `steunpilaren.event`),
+      layer: "logs.dat",
+      operation: "ENCRYPTED_APPEND",
+      path: "events",
+      source: "Steunpilaren_PAAL01",
+      payload: {
+        encryptedEventType: "therapeutic_module_activation",
+        moduleId: "PAAL01",
+        triggerContext: paal.triggerContext,
+        matchedMarkers: paal.matchedMarkers,
+        confidence: paal.confidence,
+        turnId: ctx.turnId,
+        sessionId: ctx.sessionId,
+        timestampIso: ctx.timestampIso,
+        source: "Steunpilaren_PAAL01",
+        safeSummary: `PAAL01 activated: ${paal.triggerContext}`,
+      },
+      shouldWrite: true,
+      reason: `PAAL01 event log`,
+    });
+  }
+
   // Collect changed fields for buffer snapshot
   const changedFields = patches
     .filter((p) => p.shouldWrite)

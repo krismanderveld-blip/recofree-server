@@ -21,7 +21,8 @@ export type MemorySource =
   | "ResponseModeRouter_13"
   | "SessionSummaryLLM"
   | "LogsExtractionRouter"
-  | "PsychoEducation_PE";
+  | "PsychoEducation_PE"
+  | "Steunpilaren_PAAL01";
 
 export type MemoryPatchOperation =
   | "UPSERT"
@@ -155,6 +156,14 @@ export interface PipelineDetectionBundle {
   zoneDecision: ZoneDecision | null;
   activeModule: ActiveModuleDecision | null;
   psychoEducationActivation: PsychoEducationActivation | null;
+  paal01Activation: Paal01Activation | null;
+}
+
+export interface Paal01Activation {
+  moduleId: 'PAAL01';
+  triggerContext: string;
+  confidence: number;
+  matchedMarkers: string[];
 }
 
 export interface PsychoEducationActivation {

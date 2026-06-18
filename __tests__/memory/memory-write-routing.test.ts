@@ -62,6 +62,7 @@ function createMinimalBundle(overrides?: Partial<PipelineDetectionBundle>): Pipe
     zoneDecision: null,
     moodState: null,
     psychoEducationActivation: null,
+    paal01Activation: null,
     ...overrides,
   };
 }

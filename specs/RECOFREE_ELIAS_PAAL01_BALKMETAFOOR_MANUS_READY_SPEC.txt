@@ -1,0 +1,1059 @@
+RECOFREE_ELIAS_PAAL01_BALKMETAFOOR_MANUS_READY_SPEC.txt
+
+STATUS:
+MANUS READY TECHNICAL MODULE SPEC
+
+SPEC_ID:
+RECOFREE_ELIAS_PAAL01_BALKMETAFOOR_V1
+
+PROJECT:
+RecoFree
+
+PERSONA:
+Elias only
+
+MODULES_INCLUDED:
+1. PAAL01 - Steunpilaren inventaris
+
+FEATURES_INCLUDED:
+1. Draaglast/Draagkracht balkmetafoor (profielfeature, geen losse module)
+
+SCOPE:
+This specification defines one fully implemented therapeutic module (PAAL01) and one profile feature (Draaglast/Draagkracht balkmetafoor) for the Elias persona in RecoFree. PAAL01 helps users in addiction recovery identify and map their personal support pillars (people, routines, places, beliefs). The balkmetafoor feature provides a qualitative visual balance between what weighs the user down (draaglast) and what holds them up (draagkracht). PAAL01 introduces and explains the balkmetafoor at first use.
+
+OUT_OF_SCOPE:
+- Kim persona activation
+- caregiver support
+- diagnosis
+- numeric scoring of draaglast/draagkracht
+- gamification (no points, badges, streaks, levels)
+- server-side memory
+- OpenAI memory
+- store:true
+- replacing existing modules
+- changing existing crisis or safety logic
+- cosmetic refactoring
+
+CORE_PHILOSOPHY:
+Engine beslist, GPT voert uit.
+
+ARCHITECTURE RULES:
+- The deterministic engine decides module activation.
+- GPT only generates language from a deterministic prompt payload.
+- Crisis protocol overrides always.
+- No diagnoses.
+- No fixed identity labels.
+- No pathologizing.
+- Data remains local on device.
+- store:false for every GPT/provider call.
+- No server-side memory.
+- No cosmetic refactoring.
+- Strict persona separation.
+- Elias-only modules may never activate for Kim.
+- Kim may never read these modules, their memory patches, logs, state, prompt payloads, or derived projections.
+- Elias modules may not read Kim data.
+- Module memory must be written locally through existing deterministic memoryWriteRouter.
+- The memory integration directive is mandatory and active at every relevant turn, not only session start and not only the first 1-2 messages.
+
+NON_NEGOTIABLE SAFETY:
+- Crisis protocol overrides PAAL01.
+- If suicide/self-harm, acute danger, severe intoxication, medical emergency, or imminent relapse appears, route to existing crisis/relapse/safety modules before PAAL01.
+- PAAL01 may bridge back after stabilization.
+- PAAL01 never minimizes consequences of behavior.
+- PAAL01 never excuses harmful behavior.
+- PAAL01 never diagnoses.
+- PAAL01 never pathologizes absence of pillars.
+- PAAL01 never says the user is alone/broken/unsupported as a clinical conclusion.
+- PAAL01 may name the absence of pillars as a current situation that can change, not a fixed state.
+
+============================================================
+MEMORY INTEGRATION PRINCIPLE — BEARGUMENTEERD PER LAAG
+============================================================
+
+PAAL01 is primarily an inventariserend/reflectief module, not a pattern-detection module like ROL01/DRIEREGEL01. Memory layer usage is therefore different:
+
+1. buffer — VERPLICHT
+   Reason: PAAL01 activation status, current intervention type, and turn directive must be available within the same API call for consistent prompt assembly.
+
+2. state.dat — VERPLICHT
+   Reason: The active therapeutic frame (steunpilaren_inventaris) and session-level activation tracking must persist across turns within the same session.
+
+3. user.dat — VERPLICHT
+   Reason: moduleUsage tracking is required for all modules. Additionally, the user's identified steunpilaren are durable cross-session data that must be available for greeting context and later-turn relevance.
+
+4. projections.dat — NIET VERPLICHT (optioneel bij sterke overtuiging)
+   Reason: PAAL01 is inventariserend, not belief-detecting. It does not primarily uncover inner rules or survival assumptions. However, if during steunpilaren reflection a user expresses a strong belief like "ik heb niemand" or "ik kan op niemand rekenen", a single belief MAY be written as a handle/antidote. This is optional, not automatic.
+
+5. logs.dat — VERPLICHT
+   Reason: Encrypted event logging is required for all therapeutic module activations for cross-session continuity and safe summary availability.
+
+MANDATORY LAYERS ON ACTIVATION: buffer, state.dat, user.dat, logs.dat
+OPTIONAL LAYER ON ACTIVATION: projections.dat (only when strong belief detected)
+
+Read/use requirement:
+- At every later relevant turn, the engine must read buffer/state.dat/user.dat/logs.dat.
+- At every later relevant turn across sessions, the engine must read user.dat/logs.dat and, if current state makes it relevant, include a compact memory hint in the GPT prompt.
+- This is not keyword-gated.
+- This is not limited to greeting.
+- This is not limited to the first 1-2 turns.
+- The context assembler must evaluate module relevance every turn using moduleUsage, stored steunpilaren, recent logs, and current message semantics.
+- If relevant, GPT receives a hard directive to reference stored steunpilaren gently.
+- GPT must not expose memory mechanics or say "ik heb opgeslagen".
+
+============================================================
+1. SHARED TYPESCRIPT CONTRACTS
+============================================================
+
+File:
+src/types/eliasSteunpilaren.types.ts
+
+export type EliasSteunpilarenModuleId = "PAAL01";
+
+export type RecoFreePersona = "elias" | "kim";
+
+export type SteunpilarenActivationStatus =
+  | "ACTIVE"
+  | "NOT_ACTIVE"
+  | "BLOCKED_BY_PERSONA"
+  | "BLOCKED_BY_CRISIS"
+  | "BLOCKED_BY_INTAKE"
+  | "DEFER_TO_CRISIS";
+
+export type SteunpilarenMemoryLayer =
+  | "buffer"
+  | "state.dat"
+  | "user.dat"
+  | "projections.dat"
+  | "logs.dat";
+
+export type SteunpilarenLanguage = "nl" | "en" | "fr" | "mixed" | "unknown";
+
+export type SteunpilarenConfidenceBand =
+  | "LOW"
+  | "MEDIUM"
+  | "HIGH"
+  | "VERY_HIGH";
+
+export type SteunpilaarCategory =
+  | "person"
+  | "routine"
+  | "place"
+  | "belief"
+  | "activity"
+  | "pet"
+  | "other";
+
+export type SteunpilarenTriggerContext =
+  | "STABLE_REFLECTION"
+  | "POST_DIFFICULTY_REMINDER"
+  | "FIRST_USE_INTRODUCTION"
+  | "PERIODIC_UPDATE_INVITATION";
+
+export interface SteunpilarenRuntimeInput {
+  persona: RecoFreePersona;
+  intakeCompleted: boolean;
+  userId: string;
+  sessionId: string;
+  turnId: string;
+  turnIndex: number;
+  timestampIso: string;
+  latestUserMessage: string;
+  recentMessages: string[];
+  language: SteunpilarenLanguage;
+  currentZone:
+    | "GROEN"
+    | "GEEL"
+    | "ORANJE"
+    | "ROOD"
+    | "PAARS"
+    | "UNKNOWN";
+  crisisDetected: boolean;
+  suicideSelfHarmDetected: boolean;
+  acuteDangerDetected: boolean;
+  relapseIntentDetected: boolean;
+  severeIntoxicationDetected: boolean;
+  medicalEmergencyDetected: boolean;
+  existingEliasSteunpilarenHints: ExistingEliasSteunpilarenHints;
+  sessionsSinceLastPaal01: number;
+  balkmetafoorInitialized: boolean;
+}
+
+export interface ExistingEliasSteunpilarenHints {
+  storedSteunpilaren: StoredSteunpilaar[];
+  lastActivatedAt: string | null;
+  moduleUsageCount: number;
+  recentLogSafeSummaries: string[];
+  balkmetafoorEntries: {
+    draaglast: string[];
+    draagkracht: string[];
+  };
+}
+
+export interface StoredSteunpilaar {
+  id: string;
+  category: SteunpilaarCategory;
+  label: string;
+  description: string;
+  addedAt: string;
+  lastReferencedAt: string;
+  sourceModuleId: "PAAL01";
+}
+
+export interface SteunpilarenDetectionResult {
+  moduleId: "PAAL01";
+  activationStatus: SteunpilarenActivationStatus;
+  confidenceScore: number;
+  confidenceBand: SteunpilarenConfidenceBand;
+  triggerContext: SteunpilarenTriggerContext;
+  matchedMarkers: string[];
+  reason: string;
+}
+
+export interface SteunpilarenPromptPayload {
+  persona: "elias";
+  moduleId: "PAAL01";
+  compactPrompt: string;
+  fullPrompt: string;
+  triggerContext: SteunpilarenTriggerContext;
+  existingSteunpilaren: StoredSteunpilaar[];
+  balkmetafoorInitialized: boolean;
+  memoryDirective: SteunpilarenMemoryUseDirective;
+  forbiddenOutput: string[];
+  store: false;
+  gptMayDiagnose: false;
+  gptMayUseKimData: false;
+  gptMayOverrideCrisis: false;
+}
+
+export interface SteunpilarenMemoryUseDirective {
+  directiveId: string;
+  appliesToModuleId: "PAAL01";
+  hardDirective: true;
+  useAtSessionGreeting: true;
+  useAtEveryRelevantTurn: true;
+  useAtTurnFivePlus: true;
+  notKeywordGated: true;
+  notLimitedToFirstTwoTurns: true;
+  requiredLayersToRead: SteunpilarenMemoryLayer[];
+  requiredLayersToWriteOnActivation: SteunpilarenMemoryLayer[];
+  userFacingDisclosureAllowed: false;
+  directiveText: string;
+}
+
+export interface SteunpilarenMemoryPatch {
+  persona: "elias";
+  moduleId: "PAAL01";
+  activationTimestampIso: string;
+  sessionId: string;
+  turnId: string;
+  writes: {
+    buffer: SteunpilarenBufferPatch;
+    stateDat: SteunpilarenStateDatPatch;
+    userDat: SteunpilarenUserDatPatch;
+    projectionsDat: SteunpilarenProjectionsDatPatch | null;
+    logsDat: SteunpilarenLogsDatPatch;
+  };
+}
+
+export interface SteunpilarenBufferPatch {
+  activeModuleId: "PAAL01";
+  activeTriggerContext: SteunpilarenTriggerContext;
+  currentTurnDirective: string;
+  expiresAtTurnEnd: boolean;
+}
+
+export interface SteunpilarenStateDatPatch {
+  activeTherapeuticFrame: "steunpilaren_inventaris";
+  activeModuleId: "PAAL01";
+  currentZoneAtActivation:
+    | "GROEN"
+    | "GEEL"
+    | "ORANJE"
+    | "ROOD"
+    | "PAARS"
+    | "UNKNOWN";
+  lastActivatedAt: string;
+  lastActivationTurnId: string;
+  crisisOverrideAtActivation: false;
+}
+
+export interface SteunpilarenUserDatPatch {
+  moduleUsage: {
+    moduleId: "PAAL01";
+    incrementBy: 1;
+    firstDetectedAt: string;
+    lastUpdatedAt: string;
+  };
+  steunpilaren: StoredSteunpilaar[];
+}
+
+export interface SteunpilarenProjectionsDatPatch {
+  upsertBeliefs: Array<{
+    beliefId: string;
+    label: string;
+    normalizedLabel: string;
+    sourceModuleId: "PAAL01";
+    confidence: number;
+    firstDetectedAt: string;
+    lastUpdatedAt: string;
+    mustFrameAsLearnedRule: true;
+  }>;
+  upsertHandles: Array<{
+    handleId: string;
+    label: string;
+    instruction: string;
+    sourceModuleId: "PAAL01";
+    firstDetectedAt: string;
+    lastUpdatedAt: string;
+  }>;
+}
+
+export interface SteunpilarenLogsDatPatch {
+  encryptedEventType: "therapeutic_module_activation";
+  moduleId: "PAAL01";
+  timestampIso: string;
+  sessionId: string;
+  turnId: string;
+  safeSummary: string;
+  matchedMarkers: string[];
+  rawTextStored: false;
+  storePolicy: "local_encrypted_only";
+}
+
+============================================================
+2. DRAAGLAST/DRAAGKRACHT BALKMETAFOOR — PROFIELFEATURE
+============================================================
+
+FEATURE_NAME:
+Draaglast/Draagkracht balkmetafoor
+
+LOCATION:
+Profile screen (app/(tabs)/profile.tsx) — Elias-only section
+
+RELATIONSHIP TO PAAL01:
+- PAAL01 introduces and explains the balkmetafoor at first use (triggerContext = FIRST_USE_INTRODUCTION).
+- After introduction, the user can edit the balkmetafoor independently from the profile screen.
+- PAAL01 may reference existing balkmetafoor entries in later sessions as context.
+- The balkmetafoor is NOT a module — it is a user-editable profile feature.
+
+HOW THIS DIFFERS FROM MOOD SLIDERS:
+- Mood sliders are NUMERIC (0-100 scale) and system-managed.
+- The balkmetafoor is QUALITATIVE (free text/tags) and user-edited.
+- Mood sliders measure current emotional state.
+- The balkmetafoor maps structural life factors (ongoing stressors vs. ongoing supports).
+- Mood sliders update every session via analysis pipeline.
+- The balkmetafoor updates only when the user chooses to edit it.
+- There is NO numeric score derived from the balkmetafoor.
+- There is NO gamification (no progress bars, no levels, no streaks).
+
+2.1 DATA STRUCTURE
+
+File:
+src/types/balkmetafoor.types.ts
+
+export interface BalkmetafoorEntry {
+  id: string;
+  text: string;
+  addedAt: string;
+  lastUpdatedAt: string;
+}
+
+export interface BalkmetafoorData {
+  draaglast: BalkmetafoorEntry[];
+  draagkracht: BalkmetafoorEntry[];
+  lastEditedAt: string | null;
+  initialized: boolean;
+}
+
+Storage location:
+Backpack interface (lib/ai/types.ts) — new field:
+
+export interface Backpack {
+  // ... existing fields ...
+  /** Draaglast/Draagkracht balkmetafoor — qualitative, user-edited (Elias only) */
+  balkmetafoor?: BalkmetafoorData;
+}
+
+Persistence:
+- Stored via existing persistBackpack mechanism in user-context.tsx.
+- User-edited, not system-managed.
+- Local AsyncStorage only.
+- No server sync required.
+
+2.2 UI COMPONENT DESCRIPTION (FUNCTIONAL)
+
+Component:
+components/elias/BalkmetafoorCard.tsx
+
+Functional description:
+- Two-sided visual representation: LEFT = draaglast, RIGHT = draagkracht.
+- Each side shows a vertical list of free-text tags/entries.
+- A simple visual balance indicator between the two sides (e.g., a horizontal bar that tilts based on item count — purely visual, no numeric weight).
+- The tilt is based on ITEM COUNT only, not semantic weight. This is explicitly not a score.
+- Each side has an "add" button to add a new text entry.
+- Each entry can be deleted by the user (swipe or long-press).
+- Entries are short free-text (max 80 characters per entry).
+- Maximum 15 entries per side.
+- Color coding: draaglast side uses a warm/heavy color (e.g., muted orange/amber), draagkracht side uses a supportive color (e.g., soft green).
+- No numeric totals displayed.
+- No percentage or score.
+- Header text: "Wat weegt?" (draaglast) / "Wat draagt?" (draagkracht).
+- Subtitle: "Geen score, geen oordeel — alleen zicht op wat er speelt."
+
+Interaction:
+- Tap "+" to add entry → text input modal (max 80 chars).
+- Swipe left on entry to delete.
+- Tap entry to edit text.
+- Changes persist immediately via updateBackpackSection.
+
+Placement:
+- Profile screen, Elias-only section.
+- Below existing profile content, above emergency contacts.
+- Hidden for Kim users (persona check).
+
+2.3 INITIALIZATION FLOW
+
+- On first PAAL01 activation (moduleUsageCount === 0 for PAAL01), the module uses triggerContext = FIRST_USE_INTRODUCTION.
+- GPT introduces the balkmetafoor concept as part of the steunpilaren conversation.
+- After the introduction turn, the app sets balkmetafoor.initialized = true in Backpack.
+- The BalkmetafoorCard becomes visible on the profile screen only after initialized = true.
+- If the user has never had PAAL01 activated, the card is hidden.
+
+============================================================
+3. PAAL01 MODULE SPEC
+============================================================
+
+MODULE_ID:
+PAAL01
+
+MODULE_NAME:
+Steunpilaren inventaris
+
+PERSONA:
+Elias only
+
+THERAPEUTIC BASIS:
+- Positive psychology: identifying existing strengths and resources
+- Recovery capital framework: mapping what supports recovery
+- ACT values-based living: connecting to what matters
+- MI affirmation: recognizing existing supports
+- Non-diagnostic, non-pathologizing
+- Purely inventariserend (mapping) and reflectief (reflecting)
+
+CLINICAL INTENT:
+Help the user identify and map their personal support pillars — people, routines, places, beliefs, activities — that hold them up during recovery. No scoring, no diagnosis. Pure inventory and gentle reflection.
+
+ACTIVATION:
+Engine detector on contextual triggers:
+1. STABLE_REFLECTION: User is in GROEN/GEEL zone, stable moment, no crisis, no high craving. Engine may offer steunpilaren reflection as a positive intervention.
+2. POST_DIFFICULTY_REMINDER: After a difficult moment (previous session was ORANJE/ROOD, now stabilized to GROEN/GEEL), remind user of existing pillars.
+3. FIRST_USE_INTRODUCTION: First time PAAL01 activates (moduleUsageCount === 0). Introduces concept + balkmetafoor.
+4. PERIODIC_UPDATE_INVITATION: sessionsSinceLastPaal01 >= 14 and zone is GROEN/GEEL. Invite user to review/update their pilaren.
+
+CORE MESSAGE:
+"Recovery does not happen in isolation. You already have things that hold you up — people, routines, places, beliefs. Naming them makes them visible and usable."
+
+FORBIDDEN:
+- never diagnose
+- never pathologize absence of pillars
+- never say "you have no support"
+- never say "you are alone"
+- never say "without these you will relapse"
+- never create dependency on the module
+- never force the user to name pillars
+- never judge quality of pillars
+- never compare to other users
+- never gamify (no scores, badges, streaks)
+- never expose memory mechanics
+- never say "ik heb opgeslagen"
+- never reference Kim data
+- never minimize crisis
+
+============================================================
+3.1 PAAL01 DETECTOR LOGIC
+============================================================
+
+File:
+src/modules/elias/PAAL01/paal01.detector.ts
+
+Required function:
+export function detectPaal01(
+  input: SteunpilarenRuntimeInput
+): SteunpilarenDetectionResult
+
+Hard blocks:
+- if persona != "elias": BLOCKED_BY_PERSONA
+- if intakeCompleted == false: BLOCKED_BY_INTAKE
+- if crisisDetected or suicideSelfHarmDetected or acuteDangerDetected or relapseIntentDetected or severeIntoxicationDetected or medicalEmergencyDetected:
+  BLOCKED_BY_CRISIS
+
+Trigger context determination:
+
+FIRST_USE_INTRODUCTION:
+- moduleUsageCount === 0
+- balkmetafoorInitialized === false
+- zone is GROEN or GEEL
+- no crisis
+- confidence: 0.80 (high priority for first introduction)
+
+PERIODIC_UPDATE_INVITATION:
+- sessionsSinceLastPaal01 >= 14
+- zone is GROEN or GEEL
+- no crisis
+- confidence: 0.60
+
+STABLE_REFLECTION:
+- zone is GROEN or GEEL
+- no active crisis module
+- user message contains reflective/positive markers
+- confidence: based on marker match
+
+POST_DIFFICULTY_REMINDER:
+- previous session zone was ORANJE or ROOD (from logs.dat)
+- current zone is GROEN or GEEL (stabilized)
+- storedSteunpilaren.length >= 1 (has existing pillars to reference)
+- confidence: 0.70
+
+NL markers for STABLE_REFLECTION:
+
+Positive reflection / gratitude:
+- "ik ben dankbaar voor"
+- "gelukkig heb ik"
+- "ik heb steun aan"
+- "wat mij helpt is"
+- "mijn [persoon] helpt mij"
+- "ik heb goede mensen om mij heen"
+- "mijn routine helpt"
+- "wandelen helpt mij"
+- "mijn hond/kat geeft mij rust"
+- "ik voel mij gedragen"
+
+Support seeking / resource awareness:
+- "wie kan ik bellen"
+- "waar kan ik terecht"
+- "wat houdt mij overeind"
+- "wat geeft mij kracht"
+- "ik wil weten wat mij steunt"
+- "ik zoek houvast"
+- "ik wil mijn netwerk in kaart brengen"
+
+Post-difficulty stabilization:
+- "het gaat weer beter"
+- "ik ben er doorheen gekomen"
+- "ik heb het overleefd"
+- "ik sta weer op"
+- "het was zwaar maar ik ben er nog"
+
+EN markers for STABLE_REFLECTION:
+
+Positive reflection / gratitude:
+- "I am grateful for"
+- "luckily I have"
+- "I find support in"
+- "what helps me is"
+- "my [person] helps me"
+- "I have good people around me"
+- "my routine helps"
+- "walking helps me"
+- "my dog/cat gives me peace"
+- "I feel supported"
+
+Support seeking / resource awareness:
+- "who can I call"
+- "where can I go"
+- "what keeps me going"
+- "what gives me strength"
+- "I want to know what supports me"
+- "I am looking for something to hold on to"
+- "I want to map my network"
+
+Post-difficulty stabilization:
+- "it is getting better"
+- "I got through it"
+- "I survived it"
+- "I am back on my feet"
+- "it was hard but I am still here"
+
+Confidence scoring:
+- FIRST_USE_INTRODUCTION (moduleUsageCount === 0, zone GROEN/GEEL): 0.80 fixed
+- POST_DIFFICULTY_REMINDER (stabilized from ORANJE/ROOD, has pilaren): 0.70 fixed
+- PERIODIC_UPDATE_INVITATION (14+ sessions since last): 0.60 fixed
+- STABLE_REFLECTION markers:
+  - direct marker match: +0.30
+  - 2+ markers: +0.20
+  - zone GROEN: +0.10
+  - zone GEEL: +0.05
+  - existing steunpilaren in memory: +0.10
+  - crisis flag: force block
+
+Confidence bands:
+- 0.00-0.39 LOW
+- 0.40-0.64 MEDIUM
+- 0.65-0.79 HIGH
+- 0.80-1.00 VERY_HIGH
+
+Activation threshold:
+- confidence >= 0.60
+- FIRST_USE_INTRODUCTION always activates when conditions met (0.80)
+- POST_DIFFICULTY_REMINDER always activates when conditions met (0.70)
+
+============================================================
+3.2 PAAL01 MEMORY INTEGRATION
+============================================================
+
+File:
+src/modules/elias/PAAL01/paal01.memoryPatchBuilder.ts
+
+Required function:
+export function buildPaal01MemoryPatch(input: {
+  detection: SteunpilarenDetectionResult;
+  runtimeInput: SteunpilarenRuntimeInput;
+  newSteunpilaren?: StoredSteunpilaar[];
+  detectedBelief?: { label: string; normalizedLabel: string } | null;
+}): SteunpilarenMemoryPatch | null
+
+Write trigger:
+- detection.activationStatus == ACTIVE
+- persona == elias
+- no crisis block
+
+Write to buffer:
+- activeModuleId = PAAL01
+- activeTriggerContext = detection.triggerContext
+- currentTurnDirective:
+  "Use steunpilaren-inventaris framing in this turn. Invite reflection on existing supports. Do not diagnose absence. Do not score."
+- expiresAtTurnEnd = true
+
+Write to state.dat:
+- activeTherapeuticFrame = steunpilaren_inventaris
+- activeModuleId = PAAL01
+- currentZoneAtActivation
+- lastActivatedAt
+- lastActivationTurnId
+- crisisOverrideAtActivation = false
+
+Write to user.dat:
+- moduleUsage.PAAL01 increment
+- steunpilaren: append any newly identified pillars (from user response in subsequent turns)
+
+Write to projections.dat (OPTIONAL — only when strong belief detected):
+- If user says "ik heb niemand" or "ik sta er alleen voor":
+  - belief: { label: "ik sta er alleen voor", normalizedLabel: "perceived_isolation", mustFrameAsLearnedRule: true }
+  - handle: { label: "niet_alleen", instruction: "Je hoeft niet alles alleen te dragen. Eén persoon, één routine, één plek kan al een pilaar zijn." }
+- If no strong belief detected: projectionsDat = null
+
+Write to logs.dat:
+- encryptedEventType = therapeutic_module_activation
+- moduleId = PAAL01
+- safeSummary:
+  "PAAL01 active: steunpilaren inventaris offered as [triggerContext]. [N] existing pilaren referenced."
+- matchedMarkers
+- rawTextStored = false
+- storePolicy = local_encrypted_only
+
+Read/use on next session start:
+- greeting engine reads user.dat moduleUsage.PAAL01, storedSteunpilaren, recent logs safeSummary.
+- If relevant to current mood/greeting context, greeting prompt receives compact hint:
+  "Elias-only context: user has identified [N] steunpilaren including [top 2-3 labels]. Reference gently if relevant. Do not expose storage."
+- Example greeting (user has 3 pilaren including "wandelen", "mijn zus", "mijn ochtendstructuur"):
+  "Goed dat je er bent. Hoe gaat het met je ochtendstructuur? Soms is het fijn om even stil te staan bij wat al werkt."
+
+Read/use on later chat turn 5+:
+- Every relevant turn context assembler reads buffer/state.dat/user.dat/logs.dat.
+- If turnIndex >= 5 and user expresses difficulty, prompt may include steunpilaren reminder.
+- Example turn 7 response (user says "ik weet niet hoe ik dit moet volhouden"):
+  "Je hebt eerder benoemd dat wandelen je rust geeft en dat je zus iemand is die je kan bellen. Misschien is dat vandaag genoeg: één ding dat je al kent en dat helpt."
+
+HARD GPT MEMORY DIRECTIVE FOR PAAL01:
+"Use stored PAAL01 data at every relevant Elias turn, including turn 5+ and later sessions. This is not keyword-gated and not limited to session greeting or first 1-2 messages. When relevant, gently reference the user's identified steunpilaren. Never expose storage mechanics, never diagnose, never pathologize absence of support, and never score or gamify."
+
+============================================================
+3.3 PAAL01 INTERVENTION TYPES WITH EXAMPLE OUTPUT
+============================================================
+
+Intervention 1:
+FIRST_USE_INTRODUCTION
+
+Use when:
+- moduleUsageCount === 0, first time PAAL01 activates.
+
+Example:
+"Herstel doe je niet alleen met wat je moet veranderen, maar ook met wat je al hebt. Mensen, routines, plekken, overtuigingen — alles wat je overeind houdt, noemen we een steunpilaar. Ik wil je uitnodigen om die eens in kaart te brengen. Niet om te scoren of te beoordelen, maar om zichtbaar te maken wat er al is. In je profiel vind je straks ook een balans-overzicht: wat weegt aan je, en wat draagt je. Geen cijfers, geen oordeel — alleen zicht."
+
+Intervention 2:
+STABLE_REFLECTION_INVITE
+
+Use when:
+- zone GROEN/GEEL, user is stable, reflective markers detected.
+
+Example:
+"Dit lijkt een rustig moment. Soms is dat precies het goede moment om even stil te staan bij wat je overeind houdt. Wie of wat geeft jou kracht in je herstel? Dat hoeft niet groot te zijn — een wandeling, een persoon, een vaste routine telt ook."
+
+Intervention 3:
+POST_DIFFICULTY_REMINDER
+
+Use when:
+- user stabilized from ORANJE/ROOD, has existing pilaren.
+
+Example:
+"Je hebt een moeilijk moment doorgemaakt en je bent er doorheen gekomen. Eerder heb je benoemd dat [steunpilaar] je helpt. Is dat iets waar je vandaag op kan leunen?"
+
+Intervention 4:
+PERIODIC_UPDATE_INVITE
+
+Use when:
+- 14+ sessions since last PAAL01, zone stable.
+
+Example:
+"Het is een tijdje geleden dat we stilstonden bij wat jou draagt. Kloppen je steunpilaren nog? Is er iets bijgekomen, of iets dat minder steunt dan voorheen?"
+
+Intervention 5:
+PILLAR_ACKNOWLEDGMENT
+
+Use when:
+- user names a new steunpilaar during conversation.
+
+Example:
+"Mooi dat je dat benoemt. [Steunpilaar] klinkt als iets dat je echt draagt. Ik onthoud dat als een van je pilaren — niet als score, maar als herinnering aan wat er al is."
+
+Intervention 6:
+ABSENCE_WITHOUT_PATHOLOGIZING
+
+Use when:
+- user says "ik heb niemand" or "ik sta er alleen voor".
+
+Example:
+"Dat klinkt zwaar. Ik ga dat niet vastzetten als een definitieve waarheid. Soms zijn pilaren kleiner dan we denken — een vaste plek, een routine, een dier, een moment van rust. Misschien is er iets dat je nog niet als steun herkent?"
+
+============================================================
+3.4 PAAL01 GPT PROMPT BLOCK
+============================================================
+
+Compact prompt:
+"PAAL01 active. Elias-only. Steunpilaren inventaris. Invite user to identify or reflect on personal support pillars (people, routines, places, beliefs). No diagnosis, no scoring, no gamification. Reference existing pilaren from memory if available. Introduce balkmetafoor on first use. Crisis override already checked by engine. Use stored PAAL01 memory at every relevant turn, including turn 5+."
+
+Full prompt:
+"You are Elias inside RecoFree. PAAL01 is active. The user is a person in addiction recovery, not a caregiver. The engine has determined this is an appropriate moment to reflect on steunpilaren (support pillars). Your task is to gently invite the user to identify or reflect on what holds them up: people, routines, places, beliefs, activities. Do not diagnose. Do not pathologize absence of support. Do not score or gamify. Do not say the user is alone or broken. If the user names pillars, acknowledge them warmly. If the user says they have nothing, do not confirm that as truth — gently explore whether something small might count. If this is the first activation, introduce the concept of steunpilaren and the balkmetafoor (balance between what weighs and what supports). Reference existing stored pilaren from memory if available and relevant. Use a warm, inviting tone. Ask one open question. Hard memory directive: use stored PAAL01 data at every relevant Elias turn, including turn 5+ and later sessions, not only greeting or first two turns. Do not mention storage or memory mechanics."
+
+============================================================
+3.5 PAAL01 FORBIDDEN OUTPUT
+============================================================
+
+Forbidden:
+- "je hebt geen steun"
+- "je bent alleen"
+- "zonder steunpilaren ga je terugvallen"
+- "je netwerk is te klein"
+- "je moet meer mensen hebben"
+- "score: X/10"
+- "je hebt [N] pilaren, dat is [goed/slecht]"
+- any gamification language (punten, badges, levels, streaks)
+- "ik heb opgeslagen"
+- "in user.dat staat"
+- "Kim"
+- any diagnosis
+- any crisis-minimizing output
+- "je moet dit invullen"
+- "zonder dit werkt herstel niet"
+
+============================================================
+3.6 PAAL01 PIPELINE PLACEMENT
+============================================================
+
+File:
+src/pipeline/eliasModulePriorityResolver.ts
+
+Priority order:
+1. Crisis protocol / acute safety
+2. Relapse intent / active craving safety modules
+3. Medical/severe intoxication safety
+4. VSP zone safety and regulation modules
+5. DRIEREGEL01 / ROL01 (if confidence >= 0.80)
+6. IDEN01 / ROUW01 (if explicit)
+7. WILSKRACHT01 / AUTOPILOT01 (if confidence >= 0.65)
+8. PAAL01 (if confidence >= 0.60 and zone GROEN/GEEL)
+9. Other Elias reflective modules
+
+PAAL01 is a low-urgency positive module. It yields to all safety, crisis, and pattern-recognition modules. It activates only in stable zones (GROEN/GEEL) when no higher-priority module claims the turn.
+
+============================================================
+3.7 PAAL01 TEST CASES
+============================================================
+
+Test 1 - Elias-only persona:
+Input:
+persona = kim
+message = "ik heb steun aan mijn zus"
+Expected:
+PAAL01 activationStatus = BLOCKED_BY_PERSONA
+no memory write
+
+Test 2 - first use introduction:
+Input:
+persona = elias
+moduleUsageCount = 0
+balkmetafoorInitialized = false
+zone = GROEN
+message = "het gaat redelijk goed vandaag"
+Expected:
+PAAL01 ACTIVE
+triggerContext = FIRST_USE_INTRODUCTION
+confidence = 0.80
+
+Test 3 - stable reflection with markers:
+Input:
+persona = elias
+moduleUsageCount = 3
+zone = GROEN
+message = "Gelukkig heb ik mijn ochtendwandeling, dat houdt mij overeind."
+Expected:
+PAAL01 ACTIVE
+triggerContext = STABLE_REFLECTION
+confidence >= 0.60
+
+Test 4 - crisis override:
+Input:
+persona = elias
+zone = GROEN
+message = "Ik heb steun aan mijn zus maar ik wil mezelf iets aandoen."
+suicideSelfHarmDetected = true
+Expected:
+PAAL01 BLOCKED_BY_CRISIS
+crisis protocol route wins
+
+Test 5 - memory writes mandatory layers:
+After PAAL01 activation:
+Expected:
+buffer written (activeModuleId, triggerContext, directive)
+state.dat written (therapeutic frame, zone, timestamps)
+user.dat moduleUsage written
+logs.dat encrypted event written
+projections.dat = null (no strong belief detected)
+
+Test 6 - projections.dat written on strong belief:
+Input:
+message = "Ik heb niemand, ik sta er helemaal alleen voor."
+Expected:
+projections.dat written with belief "perceived_isolation" and handle "niet_alleen"
+
+Test 7 - next session greeting uses stored pilaren:
+Precondition:
+user.dat has PAAL01 with storedSteunpilaren = ["wandelen", "mijn zus"]
+logs.dat recent safe summary exists
+Expected greeting:
+References existing pilaren gently
+No mention of memory storage
+
+Test 8 - turn 5+ uses stored pilaren:
+Precondition:
+turnIndex = 7
+PAAL01 stored pilaren exist
+message = "Ik weet niet hoe ik dit moet volhouden."
+Expected:
+GPT prompt includes PAAL01 memory directive with pilaren reference
+response gently references existing support
+not keyword-only
+
+Test 9 - periodic update invitation:
+Input:
+sessionsSinceLastPaal01 = 16
+zone = GEEL
+moduleUsageCount = 4
+Expected:
+PAAL01 ACTIVE
+triggerContext = PERIODIC_UPDATE_INVITATION
+confidence = 0.60
+
+Test 10 - post-difficulty reminder:
+Precondition:
+Previous session zone = ORANJE (from logs.dat)
+Current zone = GROEN
+storedSteunpilaren.length = 2
+Expected:
+PAAL01 ACTIVE
+triggerContext = POST_DIFFICULTY_REMINDER
+confidence = 0.70
+
+Test 11 - no activation in ROOD zone:
+Input:
+persona = elias
+zone = ROOD
+message = "Gelukkig heb ik mijn wandeling"
+Expected:
+PAAL01 NOT_ACTIVE (zone not GROEN/GEEL)
+
+Test 12 - balkmetafoor initialization:
+After FIRST_USE_INTRODUCTION activation and GPT response:
+Expected:
+balkmetafoor.initialized = true in Backpack
+BalkmetafoorCard becomes visible on profile
+
+============================================================
+4. MANUS IMPLEMENTATION FILES LIST
+============================================================
+
+Add:
+- src/types/eliasSteunpilaren.types.ts
+- src/types/balkmetafoor.types.ts
+- src/modules/elias/PAAL01/paal01.detector.ts
+- src/modules/elias/PAAL01/paal01.memoryPatchBuilder.ts
+- src/modules/elias/PAAL01/paal01.promptBuilder.ts
+- src/modules/elias/PAAL01/paal01.markerBank.nl.ts
+- src/modules/elias/PAAL01/paal01.markerBank.en.ts
+- src/modules/elias/PAAL01/paal01.moduleSpec.ts
+- src/modules/elias/PAAL01/paal01.testCases.ts
+- src/modules/elias/PAAL01/index.ts
+- src/modules/elias/steunpilarenOutputSafetyFilter.ts
+- src/pipeline/memory/eliasSteunpilarenContextAssembler.ts
+- components/elias/BalkmetafoorCard.tsx
+
+Modify:
+- lib/ai/types.ts (add balkmetafoor field to Backpack interface)
+- lib/user-context.tsx (add updateBalkmetafoor helper)
+- app/(tabs)/profile.tsx (add BalkmetafoorCard for Elias users)
+- lib/rugzak/pipeline.ts (add PAAL01 detection step)
+- lib/pipeline/memory/memoryWriteRouter.ts (add PAAL01 patch routing)
+- lib/pipeline/memory/memoryIntegration.ts (add steunpilarenActivation field)
+- server/ai-chat.ts (add steunpilarenContext to conditional context)
+- lib/rugzak/gpt-payload-builder.ts (add steunpilarenContext passthrough)
+
+Tests:
+- src/modules/elias/PAAL01/__tests__/paal01.detector.test.ts
+- src/modules/elias/PAAL01/__tests__/paal01.memoryIntegration.test.ts
+- src/modules/elias/PAAL01/__tests__/paal01.turnFiveMemoryUse.test.ts
+- src/modules/elias/PAAL01/__tests__/paal01.crisisOverride.test.ts
+- src/modules/elias/PAAL01/__tests__/paal01.personaSeparation.test.ts
+- src/modules/elias/__tests__/steunpilarenOutputSafetyFilter.test.ts
+- components/elias/__tests__/BalkmetafoorCard.test.tsx
+
+============================================================
+5. OUTPUT SAFETY FILTER
+============================================================
+
+File:
+src/modules/elias/steunpilarenOutputSafetyFilter.ts
+
+Required function:
+export function enforceSteunpilarenOutputSafety(input: {
+  moduleId: "PAAL01";
+  text: string;
+  persona: RecoFreePersona;
+  crisisDetected: boolean;
+}): string
+
+Rules:
+- If persona != elias, reject.
+- If crisisDetected, reject reflective module output and route to crisis protocol.
+- Reject any diagnosis language.
+- Reject pathologizing absence of support.
+- Reject gamification language.
+- Reject storage disclosure.
+- Reject Kim references.
+
+Reject patterns:
+- "je hebt geen steun"
+- "je bent alleen"
+- "zonder steunpilaren ga je terugvallen"
+- "score"
+- "punten"
+- "level"
+- "badge"
+- "streak"
+- "je moet meer mensen hebben"
+- "ik heb opgeslagen"
+- "Kim"
+
+Fallback:
+"Ik wil niet vastzetten dat je niets hebt. Soms zijn pilaren kleiner dan we denken. Wat is één ding — hoe klein ook — dat je vandaag een beetje draagt?"
+
+============================================================
+6. MEMORY CONTEXT ASSEMBLER
+============================================================
+
+File:
+src/pipeline/memory/eliasSteunpilarenContextAssembler.ts
+
+Required function:
+export function assembleEliasSteunpilarenMemoryContext(input: {
+  persona: RecoFreePersona;
+  sessionId: string;
+  turnId: string;
+  turnIndex: number;
+  latestUserMessage: string;
+  stateDat: unknown;
+  userDat: unknown;
+  logsDat: unknown;
+}): SteunpilarenMemoryUseDirectiveContext | null
+
+export interface SteunpilarenMemoryUseDirectiveContext {
+  persona: "elias";
+  activeModuleHints: ["PAAL01"];
+  storedSteunpilaren: string[];
+  balkmetafoorSummary: { draaglastCount: number; draagkrachtCount: number } | null;
+  recentSafeSummaries: string[];
+  hardDirectiveForGpt: string;
+}
+
+HARD DIRECTIVE:
+At every Elias chat turn, the engine must evaluate whether PAAL01 memory is relevant by reading:
+- buffer for current turn active module context
+- state.dat for current active therapeutic frame
+- user.dat for storedSteunpilaren and moduleUsage
+- logs.dat for encrypted historical event summaries
+
+This directive is not limited to session greeting.
+This directive is not limited to first 1-2 messages.
+This directive must be applied to turn 5+ and any later relevant turn.
+This directive is not keyword-gated.
+If relevant, the GPT prompt payload must include:
+"Use the stored Elias-only steunpilaren data gently in this answer. Do not mention memory, storage, or internal data. Reference the user's named supports naturally when it helps."
+
+Forbidden memory behavior:
+- Do not expose "I remember".
+- Do not expose "stored in user.dat".
+- Do not say "your pillars are".
+- Do not overfit every message to steunpilaren.
+- Do not use Kim memory.
+- Do not write Kim memory.
+
+============================================================
+7. FINAL ACCEPTANCE CRITERIA
+============================================================
+
+Implementation is complete only if:
+
+- PAAL01 is Elias-only.
+- Kim cannot activate, read, or write PAAL01.
+- Crisis protocol overrides PAAL01.
+- PAAL01 has NL and EN markers.
+- PAAL01 activates in GROEN/GEEL zones only.
+- PAAL01 does not activate in ORANJE/ROOD/PAARS zones.
+- PAAL01 introduces balkmetafoor on first use.
+- Balkmetafoor is visible on profile only after initialization.
+- Balkmetafoor is qualitative (text/tags), not numeric.
+- Balkmetafoor has no score, no gamification.
+- Balkmetafoor data is stored in Backpack (user-edited, local).
+- PAAL01 writes to buffer, state.dat, user.dat, logs.dat on activation.
+- PAAL01 writes to projections.dat only when strong belief detected (optional).
+- PAAL01 has explicit read/use logic for next session greeting.
+- PAAL01 has explicit read/use logic for every relevant later turn, including turn 5+.
+- Memory use is a hard directive, not keyword-gated.
+- Memory use is not limited to the first 1-2 messages.
+- Greeting examples exist.
+- Turn 5+ usage examples exist.
+- Tests confirm mandatory layer writes (buffer, state.dat, user.dat, logs.dat).
+- Tests confirm optional projections.dat write on strong belief.
+- Tests confirm next-session greeting use.
+- Tests confirm turn 5+ memory use.
+- Tests confirm crisis override.
+- Tests confirm persona separation.
+- Tests confirm balkmetafoor initialization flow.
+- Tests confirm no activation in ROOD/ORANJE zones.
+- Pipeline priority is specified (after ROL01/DRIEREGEL01/IDEN01/ROUW01/WILSKRACHT01/AUTOPILOT01).
+- No cosmetic refactoring is required.
+- store:false remains enforced.
+- No gamification anywhere.
+
+============================================================
+END OF FILE
+============================================================

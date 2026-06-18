@@ -79,6 +79,8 @@ export interface PipelineResultForMemory {
   moduleActivations?: Array<{ id: string; confidence: number; mode: string }>;
   /** PsychoEducation activation from pipeline */
   psychoEducationActivation?: import('@/lib/types/memory/memoryCore.types').PsychoEducationActivation | null;
+  /** Steunpilaren activation from pipeline (PAAL01) */
+  paal01Activation?: import('@/lib/types/memory/memoryCore.types').Paal01Activation | null;
 }
 
 /**
@@ -217,6 +219,7 @@ export function buildDetectionBundle(input: PipelineResultForMemory): PipelineDe
     zoneDecision,
     activeModule,
     psychoEducationActivation: input.psychoEducationActivation ?? null,
+    paal01Activation: input.paal01Activation ?? null,
   };
 }
 

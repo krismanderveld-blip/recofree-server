@@ -447,6 +447,8 @@ export interface PipelineResult {
   schemaModeResult?: { activated: boolean; modeDecision: any; schemaDecision: any } | null;
   /** PsychoEducation activation result (WILSKRACHT01/AUTOPILOT01) */
   psychoEducationActivation?: PsychoEducationActivation | null;
+  /** Steunpilaren activation result (PAAL01) */
+  paal01Activation?: { moduleId: 'PAAL01'; triggerContext: string; confidence: number; matchedMarkers: string[] } | null;
 }
 
 /** Consolidated log entry for each message exchange */
@@ -1596,6 +1598,56 @@ export async function processMessage(
     }
   }
 
+  // ── STEP 5e8a3: Elias Steunpilaren (PAAL01) ──
+  let paal01Activation: { moduleId: 'PAAL01'; triggerContext: string; confidence: number; matchedMarkers: string[] } | null = null;
+  if (backpack.userType === 'elias' && !!(backpack as any).intake?.startEmotion) {
+    const { detectPaal01 } = require('@/src/modules/elias/PAAL01/paal01.detector');
+    const currentZoneLabel = (sessionBuffer.currentZoneColor?.toUpperCase() ?? 'UNKNOWN') as 'GROEN' | 'GEEL' | 'ORANJE' | 'ROOD' | 'PAARS' | 'UNKNOWN';
+    const storedPilaren = (currentUserDat as any).steunpilaren ?? [];
+    const balkInit = (currentUserDat as any).balkmetafoor?.initialized === true;
+    const paal01Input = {
+      persona: 'elias' as const,
+      intakeCompleted: true,
+      userId: `user_${Date.now()}`,
+      sessionId: `session_${Date.now()}`,
+      turnId: `turn_${Date.now()}`,
+      turnIndex: sessionBuffer.recentMessages.length,
+      timestampIso: new Date().toISOString(),
+      latestUserMessage: userMessage,
+      recentMessages: sessionBuffer.recentMessages.slice(-3).map(m => m.content),
+      language: ((currentUserDat as any).detectedLanguage ?? 'nl') as 'nl' | 'en' | 'fr' | 'mixed' | 'unknown',
+      currentZone: currentZoneLabel,
+      crisisDetected: analysis.riskLevel === 'critical' || analysis.riskLevel === 'high',
+      suicideSelfHarmDetected: analysis.riskLevel === 'critical',
+      acuteDangerDetected: analysis.riskLevel === 'critical',
+      relapseIntentDetected: (currentUserDat as any).relapseActive === true,
+      severeIntoxicationDetected: false,
+      medicalEmergencyDetected: false,
+      existingEliasSteunpilarenHints: {
+        storedSteunpilaren: storedPilaren,
+        lastActivatedAt: (currentUserDat as any).paal01LastActivatedAt ?? null,
+        moduleUsageCount: (currentUserDat as any).paal01UsageCount ?? 0,
+        recentLogSafeSummaries: (currentUserDat as any).paal01RecentLogs ?? [],
+        balkmetafoorEntries: {
+          draaglast: (currentUserDat as any).balkmetafoor?.draaglast?.map((e: any) => e.text) ?? [],
+          draagkracht: (currentUserDat as any).balkmetafoor?.draagkracht?.map((e: any) => e.text) ?? [],
+        },
+      },
+      sessionsSinceLastPaal01: (currentUserDat as any).sessionsSinceLastPaal01 ?? 0,
+      balkmetafoorInitialized: balkInit,
+    };
+    const paal01Result = detectPaal01(paal01Input);
+    if (paal01Result.activationStatus === 'ACTIVE') {
+      paal01Activation = {
+        moduleId: 'PAAL01',
+        triggerContext: paal01Result.triggerContext,
+        confidence: paal01Result.confidenceScore,
+        matchedMarkers: paal01Result.matchedMarkers,
+      };
+      console.log(`[Pipeline] PAAL01: trigger=${paal01Result.triggerContext} confidence=${paal01Result.confidenceScore}`);
+    }
+  }
+
   // ── STEP 5e8b: Kim SLAAP01 ──
   let kimSlaap01Result: KimSLAAP01Result = {
     slaap01Active: false,
@@ -2386,6 +2438,10 @@ export async function processMessage(
     psychoEducationContext: psychoEducationActivation && !psychoEducationActivation.crisisOverride
       ? `[PSYCHO-EDUCATIE ${psychoEducationActivation.moduleId}] mode=${psychoEducationActivation.responseMode} confidence=${psychoEducationActivation.activationConfidence.toFixed(2)} markers=[${psychoEducationActivation.detectedMarkers.join(',')}]${psychoEducationActivation.memoryHints ? ' continuity=active' : ''}`
       : undefined,
+    // Steunpilaren inventaris (PAAL01, Elias only)
+    steunpilarenContext: paal01Activation
+      ? `[STEUNPILAREN PAAL01] trigger=${paal01Activation.triggerContext} confidence=${paal01Activation.confidence.toFixed(2)} markers=[${paal01Activation.matchedMarkers.join(',')}]`
+      : undefined,
     // VSP Insight System — framework selection (MI/MBT/DGT). Never mutates safety core.
     vspInsightContext: vspInsightResult.active ? vspInsightResult.contextString || undefined : undefined,
     // VSP Backpack Profile — LLM-analyzed from recurringThemes (Elias only, cached in AsyncStorage)
@@ -2878,6 +2934,7 @@ export async function processMessage(
       schemaDecision: schemaModeResult.schemaDecision,
     } : null,
     psychoEducationActivation: psychoEducationActivation ?? null,
+    paal01Activation: paal01Activation ?? null,
   };
 }
 
