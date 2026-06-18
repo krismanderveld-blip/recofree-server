@@ -380,6 +380,8 @@ export interface Backpack {
     initialContext: string;
     intakeDate: string;
   };
+  /** Balkmetafoor — qualitative draaglast/draagkracht balance (Elias only) */
+  balkmetafoor?: import('@/src/types/balkmetafoor.types').BalkmetafoorData;
   /** When the backpack was created */
   createdAt: string;
 }

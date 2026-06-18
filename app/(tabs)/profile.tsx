@@ -15,6 +15,9 @@ import { colors as dc, spacing, radius, typography, shadows, cardStyles } from '
 import { DataPrivacySection } from '@/lib/features/exportImport/ui/DataPrivacySection';
 import { useExportImportStores } from '@/lib/features/exportImport/hooks/useExportImportStores';
 import { loadVspInsightProfile, buildPdfPlainText } from '@/src/features/vspInsight';
+import { BalkmetafoorCard } from '@/components/profile/BalkmetafoorCard';
+import { createEmptyBalkmetafoor } from '@/src/types/balkmetafoor.types';
+import type { BalkmetafoorData, BalkmetafoorEntry } from '@/src/types/balkmetafoor.types';
 
 const STAGE_LABELS: Record<string, string> = {
   precontemplation: 'Precontemplation',
@@ -27,7 +30,7 @@ const STAGE_LABELS: Record<string, string> = {
 const APP_VERSION = Constants.expoConfig?.version ?? '1.0.0';
 
 export default function ProfileScreen() {
-  const { state, getUserName, getBackpack, getUserDat, updateGuidanceDepth, getGuidanceDepth, resetUser } = useUser();
+  const { state, getUserName, getBackpack, getUserDat, updateGuidanceDepth, getGuidanceDepth, resetUser, updateBalkmetafoor } = useUser();
   const router = useRouter();
   const userName = getUserName();
   const backpack = getBackpack();
@@ -36,6 +39,65 @@ export default function ProfileScreen() {
 
   const exportImportStores = useExportImportStores();
   const [vspExporting, setVspExporting] = useState(false);
+
+  // Balkmetafoor state (Elias only)
+  const balkmetafoorData: BalkmetafoorData = backpack?.balkmetafoor ?? createEmptyBalkmetafoor();
+
+  const handleAddDraaglast = useCallback(async (text: string) => {
+    const entry: BalkmetafoorEntry = {
+      id: `dl_${Date.now()}`,
+      text: text.trim(),
+      addedAt: new Date().toISOString(),
+      sourceModuleId: 'manual',
+    };
+    const updated: BalkmetafoorData = {
+      ...balkmetafoorData,
+      initialized: true,
+      initializedAt: balkmetafoorData.initializedAt || new Date().toISOString(),
+      lastUpdatedAt: new Date().toISOString(),
+      draaglast: [...balkmetafoorData.draaglast, entry],
+    };
+    await updateBalkmetafoor(updated);
+    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  }, [balkmetafoorData, updateBalkmetafoor]);
+
+  const handleAddDraagkracht = useCallback(async (text: string) => {
+    const entry: BalkmetafoorEntry = {
+      id: `dk_${Date.now()}`,
+      text: text.trim(),
+      addedAt: new Date().toISOString(),
+      sourceModuleId: 'manual',
+    };
+    const updated: BalkmetafoorData = {
+      ...balkmetafoorData,
+      initialized: true,
+      initializedAt: balkmetafoorData.initializedAt || new Date().toISOString(),
+      lastUpdatedAt: new Date().toISOString(),
+      draagkracht: [...balkmetafoorData.draagkracht, entry],
+    };
+    await updateBalkmetafoor(updated);
+    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  }, [balkmetafoorData, updateBalkmetafoor]);
+
+  const handleRemoveDraaglast = useCallback(async (id: string) => {
+    const updated: BalkmetafoorData = {
+      ...balkmetafoorData,
+      lastUpdatedAt: new Date().toISOString(),
+      draaglast: balkmetafoorData.draaglast.filter(e => e.id !== id),
+    };
+    await updateBalkmetafoor(updated);
+    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  }, [balkmetafoorData, updateBalkmetafoor]);
+
+  const handleRemoveDraagkracht = useCallback(async (id: string) => {
+    const updated: BalkmetafoorData = {
+      ...balkmetafoorData,
+      lastUpdatedAt: new Date().toISOString(),
+      draagkracht: balkmetafoorData.draagkracht.filter(e => e.id !== id),
+    };
+    await updateBalkmetafoor(updated);
+    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  }, [balkmetafoorData, updateBalkmetafoor]);
 
   const handleVspExport = useCallback(async () => {
     setVspExporting(true);
@@ -203,6 +265,19 @@ export default function ProfileScreen() {
         {isElias && (
           <View style={{ marginBottom: spacing.lg }}>
             <SoberCounter />
+          </View>
+        )}
+
+        {/* Balkmetafoor — Draaglast/Draagkracht (Elias only) */}
+        {isElias && (
+          <View style={{ marginBottom: spacing.xl }}>
+            <BalkmetafoorCard
+              data={balkmetafoorData}
+              onAddDraaglast={handleAddDraaglast}
+              onAddDraagkracht={handleAddDraagkracht}
+              onRemoveDraaglast={handleRemoveDraaglast}
+              onRemoveDraagkracht={handleRemoveDraagkracht}
+            />
           </View>
         )}
 

@@ -89,6 +89,8 @@ interface UserContextValue {
   updateKimBackpackSection: (sectionId: import('./ai/types').KimBackpackSectionId, content: string) => Promise<void>;
   /** Update the structured VSP section (Elias only) */
   updateVspSection: (vspPlan: import('./ai/types').VspStructuredPlan) => Promise<void>;
+  /** Update the balkmetafoor data (Elias only) */
+  updateBalkmetafoor: (balkmetafoor: import('@/src/types/balkmetafoor.types').BalkmetafoorData) => Promise<void>;
   /** Recompute Rugzak influence (call on every message) */
   recomputeInfluence: () => void;
   setCrisisLevel: (level: number) => void;
@@ -666,6 +668,18 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     triggerExtractionIfNeeded(updatedBackpack);
   }, [state.backpack]);
 
+  // ── Balkmetafoor (Elias only, qualitative draaglast/draagkracht) ──
+
+  const updateBalkmetafoor = useCallback(async (balkmetafoor: import('@/src/types/balkmetafoor.types').BalkmetafoorData) => {
+    if (!state.backpack) return;
+    const updatedBackpack: Backpack = {
+      ...state.backpack,
+      balkmetafoor,
+    };
+    dispatch({ type: 'UPDATE_BACKPACK', payload: updatedBackpack });
+    await persistBackpack(updatedBackpack);
+  }, [state.backpack]);
+
   // ── Stage of Change (user-editable in Backpack screen) ──
 
   const updateStageOfChange = useCallback(async (stage: import('./ai/types').StageOfChange) => {
@@ -933,6 +947,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         updateBackpackSection: updateRugzakSection,
         updateKimBackpackSection,
         updateVspSection,
+        updateBalkmetafoor,
         updateStageOfChange,
         updateGuidanceDepth,
         getGuidanceDepth,

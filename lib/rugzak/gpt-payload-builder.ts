@@ -144,6 +144,12 @@ export interface GPTPayload {
   iso01Context?: string;
   /** PsychoEducation continuity context (WILSKRACHT01/AUTOPILOT01, Elias only) */
   psychoEducationContext?: string;
+  /** Steunpilaren continuity context (PAAL01, Elias only) */
+  steunpilarenContext?: string;
+  /** Self-acceptance cluster continuity context (BLIK01/ONTK01/IKST01/COEX01, Elias only) */
+  selfAcceptanceContext?: string;
+  /** Kim pattern support continuity context (PAAL-K01/BEHE-K01/AANP-K01/CODEP-K01, Kim only) */
+  kimPatternSupportContext?: string;
 
   // ── Loopblocker: cross-session repeating pattern directive ──
   loopDetected?: {
@@ -324,6 +330,12 @@ export interface PayloadBuilderInput {
   iso01Context?: string;
   /** PsychoEducation continuity context (WILSKRACHT01/AUTOPILOT01, Elias only) */
   psychoEducationContext?: string;
+  /** Steunpilaren continuity context (PAAL01, Elias only) */
+  steunpilarenContext?: string;
+  /** Self-acceptance cluster continuity context (BLIK01/ONTK01/IKST01/COEX01, Elias only) */
+  selfAcceptanceContext?: string;
+  /** Kim pattern support continuity context (PAAL-K01/BEHE-K01/AANP-K01/CODEP-K01, Kim only) */
+  kimPatternSupportContext?: string;
   /** Structured entities extracted from backpack (if available, sent instead of full backpack) */
   extractedEntities?: import('../backpack-extractor/types').ExtractedEntities;
   /** Whether backpack changed since last extraction (forces full backpack resend) */
@@ -702,6 +714,15 @@ export function buildGPTPayload(input: PayloadBuilderInput): GPTPayload {
   }
   if (input.psychoEducationContext) {
     payload.psychoEducationContext = input.psychoEducationContext;
+  }
+  if (input.steunpilarenContext) {
+    payload.steunpilarenContext = input.steunpilarenContext;
+  }
+  if (input.selfAcceptanceContext) {
+    payload.selfAcceptanceContext = input.selfAcceptanceContext;
+  }
+  if (input.kimPatternSupportContext) {
+    payload.kimPatternSupportContext = input.kimPatternSupportContext;
   }
 
   // ── Buffer snapshot (from pipeline, per message) ──

@@ -548,6 +548,12 @@ export class OpenAIProvider implements AIProvider {
           // Known user patterns (compact, every turn) — in clinical mode, show ALL candidates
           knownUserPatterns: buildKnownUserPatterns(context.userDat, context.userDat?.clinicalModeActive ?? false),
 
+          // PsychoEducation/Steunpilaren/SelfAcceptance/KimPattern contexts (SESSION_INIT — cached server-side)
+          psychoEducationContext: gptPayload.psychoEducationContext ?? null,
+          steunpilarenContext: gptPayload.steunpilarenContext ?? null,
+          selfAcceptanceContext: gptPayload.selfAcceptanceContext ?? null,
+          kimPatternSupportContext: gptPayload.kimPatternSupportContext ?? null,
+
           // Full data (SESSION_INIT only)
           backpack: gptPayload.backpack,
           userDat: gptPayload.userDat,
@@ -679,6 +685,12 @@ export class OpenAIProvider implements AIProvider {
           vspStructuredSection: (gptPayload as any).vspStructuredSection ?? null,
           // PsychoEducation continuity (WILSKRACHT01/AUTOPILOT01, Elias only)
           psychoEducationContext: gptPayload.psychoEducationContext ?? null,
+          // Steunpilaren continuity (PAAL01, Elias only)
+          steunpilarenContext: gptPayload.steunpilarenContext ?? null,
+          // Self-acceptance cluster continuity (BLIK01/ONTK01/IKST01/COEX01, Elias only)
+          selfAcceptanceContext: gptPayload.selfAcceptanceContext ?? null,
+          // Kim pattern support continuity (PAAL-K01/BEHE-K01/AANP-K01/CODEP-K01, Kim only)
+          kimPatternSupportContext: gptPayload.kimPatternSupportContext ?? null,
           // Signal engine: relevance scores for context gating (threshold 0.3))
           relevanceScores: context.relevanceScores ?? null,
           // Signal engine: compressed context summary (replaces full lifeStorySummary)

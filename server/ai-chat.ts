@@ -261,6 +261,12 @@ interface ChatRequestInput {
 
   /** PsychoEducation continuity context (WILSKRACHT01/AUTOPILOT01, Elias only) */
   psychoEducationContext?: string | null;
+  /** Steunpilaren continuity context (PAAL01, Elias only) */
+  steunpilarenContext?: string | null;
+  /** Self-acceptance cluster continuity context (BLIK01/ONTK01/IKST01/COEX01, Elias only) */
+  selfAcceptanceContext?: string | null;
+  /** Kim pattern support continuity context (PAAL-K01/BEHE-K01/AANP-K01/CODEP-K01, Kim only) */
+  kimPatternSupportContext?: string | null;
 }
 
 // ─── Server-side Session Cache ───────────────────────────────────
@@ -292,6 +298,12 @@ interface SessionCache {
   cumulativeTokens: { prompt: number; completion: number; total: number; turnCount: number };
   // PsychoEducation continuity context (cached at SESSION_INIT, injected every relevant turn)
   psychoEducationContext: string | null;
+  // Steunpilaren continuity context (PAAL01, Elias only)
+  steunpilarenContext: string | null;
+  // Self-acceptance cluster continuity context (BLIK01/ONTK01/IKST01/COEX01, Elias only)
+  selfAcceptanceContext: string | null;
+  // Kim pattern support continuity context (PAAL-K01/BEHE-K01/AANP-K01/CODEP-K01, Kim only)
+  kimPatternSupportContext: string | null;
 }
 
 // Single-user cache: one active session per server instance (not multi-user safe)
@@ -337,6 +349,9 @@ function cacheSessionInit(input: ChatRequestInput): void {
     hasStructuredEntities,
     cumulativeTokens: { prompt: 0, completion: 0, total: 0, turnCount: 0 },
     psychoEducationContext: input.psychoEducationContext ?? null,
+    steunpilarenContext: input.steunpilarenContext ?? null,
+    selfAcceptanceContext: input.selfAcceptanceContext ?? null,
+    kimPatternSupportContext: input.kimPatternSupportContext ?? null,
   };
   console.log("[AI Chat] Session cache created for:", input.userName, hasStructuredEntities ? '(structured entities)' : '(text-based)');
 }
@@ -527,6 +542,12 @@ export const chatInputSchema = z.object({
   vspStructuredSection: z.string().nullable().optional(),
   // PsychoEducation continuity (WILSKRACHT01/AUTOPILOT01, Elias only)
   psychoEducationContext: z.string().nullable().optional(),
+  // Steunpilaren continuity (PAAL01, Elias only)
+  steunpilarenContext: z.string().nullable().optional(),
+  // Self-acceptance cluster continuity (BLIK01/ONTK01/IKST01/COEX01, Elias only)
+  selfAcceptanceContext: z.string().nullable().optional(),
+  // Kim pattern support continuity (PAAL-K01/BEHE-K01/AANP-K01/CODEP-K01, Kim only)
+  kimPatternSupportContext: z.string().nullable().optional(),
 
   // Signal engine: relevance scores for context gating (LIVE_MESSAGE only)
   relevanceScores: z.object({
@@ -872,6 +893,30 @@ function buildSelectiveRelevanceBlock(
     parts.push(`PSYCHO-EDUCATIE CONTINUÏTEIT (ELIAS ONLY):`);
     parts.push(`${peContext}`);
     parts.push(`  → VERPLICHT: Gebruik deze psycho-educatieve context in je antwoord. Bouw voort op eerder besproken inzichten. Herhaal niet vanaf nul.`);
+  }
+
+  // Steunpilaren continuity (PAAL01, Elias only, every relevant turn)
+  const spContext = input.steunpilarenContext ?? (sessionCache?.steunpilarenContext ?? null);
+  if (spContext) {
+    parts.push(`STEUNPILAREN CONTINUÏTEIT (ELIAS ONLY):`);
+    parts.push(`${spContext}`);
+    parts.push(`  → VERPLICHT: Refereer aan bekende steunpilaren wanneer relevant. Noem specifieke namen/plekken/routines die de gebruiker eerder noemde.`);
+  }
+
+  // Self-acceptance cluster continuity (BLIK01/ONTK01/IKST01/COEX01, Elias only)
+  const saContext = input.selfAcceptanceContext ?? (sessionCache?.selfAcceptanceContext ?? null);
+  if (saContext) {
+    parts.push(`ZELFAANVAARDING CONTINUÏTEIT (ELIAS ONLY):`);
+    parts.push(`${saContext}`);
+    parts.push(`  → VERPLICHT: Bouw voort op eerder besproken zelfbeeld-thema's. Confronteer zacht zonder te beschuldigen. Geen diagnoses.`);
+  }
+
+  // Kim pattern support continuity (PAAL-K01/BEHE-K01/AANP-K01/CODEP-K01, Kim only)
+  const kpContext = input.kimPatternSupportContext ?? (sessionCache?.kimPatternSupportContext ?? null);
+  if (kpContext) {
+    parts.push(`PATRONEN-ONDERSTEUNING CONTINUÏTEIT (KIM ONLY):`);
+    parts.push(`${kpContext}`);
+    parts.push(`  → VERPLICHT: Gebruik deze patroon-context. Benoem herkenbare patronen zonder te diagnosticeren. Focus op de naaste, niet op de gebruiker met verslaving.`);
   }
 
   if (parts.length === 0) return "";
