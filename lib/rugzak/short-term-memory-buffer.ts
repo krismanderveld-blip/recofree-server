@@ -310,14 +310,14 @@ function computeTextIntensity(text: string): number {
   const capsWords = (text.match(/\b[A-Z]{3,}\b/g) || []).length;
   score += Math.min(capsWords * 8, 20);
 
-  // Emotional intensity keywords
-  const highIntensity = /\b(no more|can'?t|won'?t|hate|scared|dead|pain|hurt|never|always|hopeless|worthless|desperate)\b/;
+  // Emotional intensity keywords (EN + NL)
+  const highIntensity = /\b(no more|can'?t|won'?t|hate|scared|dead|pain|hurt|never|always|hopeless|worthless|desperate|bang|doodsbang|pijn|haat|nooit|altijd|hopeloos|waardeloos|wanhopig|dood|kapot|niet meer|kan niet meer|wil niet meer)\b/;
   if (highIntensity.test(lower)) score += 20;
 
-  const medIntensity = /\b(difficult|hard|tough|sad|angry|frustrated|tired|exhausted|overwhelmed|stressed)\b/;
+  const medIntensity = /\b(difficult|hard|tough|sad|angry|frustrated|tired|exhausted|overwhelmed|stressed|moeilijk|zwaar|verdrietig|boos|gefrustreerd|moe|uitgeput|overweldigd|gestrest|angst|paniek|drang|verlaten|in de steek|eenzaam)\b/;
   if (medIntensity.test(lower)) score += 10;
 
-  const lowIntensity = /\b(good|better|calm|ok|fine|okay|peaceful|relaxed)\b/;
+  const lowIntensity = /\b(good|better|calm|ok|fine|okay|peaceful|relaxed|goed|beter|rustig|oké|prima|vredig|ontspannen)\b/;
   if (lowIntensity.test(lower)) score -= 10;
 
   // Repetition of words (same word 3+ times)
@@ -368,13 +368,14 @@ function detectTriggerGuess(text: string, userType: UserType): string {
   const lower = text.toLowerCase();
 
   if (userType === 'elias') {
-    if (/\b(craving|urge|longing|want to (drink|use|smoke))\b/.test(lower)) return 'craving';
-    if (/\b(lonely|alone|isolated|no one)\b/.test(lower)) return 'isolation';
-    if (/\b(conflict|fight|argument|clash)\b/.test(lower)) return 'conflict';
-    if (/\b(bored|boredom|emptiness|nothing to do)\b/.test(lower)) return 'boredom';
-    if (/\b(stress|pressure|deadline|work)\b/.test(lower)) return 'stress';
-    if (/\b(sleep|insomnia|nightmare)\b/.test(lower)) return 'sleep_disruption';
-    if (/\b(memory|flashback|past|trauma)\b/.test(lower)) return 'trauma_memory';
+    if (/\b(craving|urge|longing|want to (drink|use|smoke)|trek|drang|zucht|wil (drinken|gebruiken|roken|scoren)|terugval|verlangen)\b/.test(lower)) return 'craving';
+    if (/\b(lonely|alone|isolated|no one|alleen|eenzaam|niemand|in de steek|verlaten|ge[ïi]soleerd)\b/.test(lower)) return 'isolation';
+    if (/\b(conflict|fight|argument|clash|ruzie|botsing|conflict)\b/.test(lower)) return 'conflict';
+    if (/\b(bored|boredom|emptiness|nothing to do|verveling|verveeld|leegte|niets te doen)\b/.test(lower)) return 'boredom';
+    if (/\b(stress|pressure|deadline|work|druk|spanning|werk)\b/.test(lower)) return 'stress';
+    if (/\b(sleep|insomnia|nightmare|slaap|slapeloosheid|nachtmerrie)\b/.test(lower)) return 'sleep_disruption';
+    if (/\b(memory|flashback|past|trauma|herinnering|verleden)\b/.test(lower)) return 'trauma_memory';
+    if (/\b(bang|angst|paniek|scared|afraid|fear|angstig)\b/.test(lower)) return 'fear';
   } else {
     // Kim — delegated to kimEngine relational-signals
     return detectKimTrigger(lower);
@@ -490,6 +491,17 @@ function computeZoneScore(
 
   // Trigger boost
   if (hasTrigger) score += 10;
+
+  // Combination amplification: when BOTH text intensity AND slider distress are
+  // elevated, the risk is compounded (e.g. craving language + high distress sliders).
+  // This addresses the underestimation of combined signals.
+  if (textIntensity >= 30 && sliderDistress >= 40 && hasTrigger) {
+    // Strong combination: emotional text + elevated sliders + active trigger
+    score += 12;
+  } else if (textIntensity >= 30 && sliderDistress >= 40) {
+    // Moderate combination: emotional text + elevated sliders (no trigger word)
+    score += 8;
+  }
 
   // Intent modifiers
   if (intent === 'crisis') score += 25;
