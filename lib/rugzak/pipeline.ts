@@ -1623,6 +1623,12 @@ export async function processMessage(
       relapseIntentDetected: (currentUserDat as any).relapseActive === true,
       severeIntoxicationDetected: false,
       medicalEmergencyDetected: false,
+      activeGroundingNeeded: (currentUserDat as any).activeGroundingNeeded === true,
+      stabilizedEnoughForReflection: currentZoneLabel === 'GROEN' || currentZoneLabel === 'GEEL',
+      existingPillarsCount: storedPilaren.length,
+      existingBalanceItemsCount: ((currentUserDat as any).balkmetafoor?.draaglast?.length ?? 0) + ((currentUserDat as any).balkmetafoor?.draagkracht?.length ?? 0),
+      profileFeatureFirstUse: !balkInit && ((currentUserDat as any).paal01UsageCount ?? 0) === 0,
+      hasRecentDifficultMomentResolved: (currentUserDat as any).hasRecentDifficultMomentResolved === true,
       existingEliasSteunpilarenHints: {
         storedSteunpilaren: storedPilaren,
         lastActivatedAt: (currentUserDat as any).paal01LastActivatedAt ?? null,

@@ -1598,3 +1598,12 @@
 - [x] memoryIntegration.ts + PipelineResultForMemory updated
 - [x] steunpilarenContext added to ChatContext assembly
 - [x] All 35 PAAL01 tests passing (detector, memory, prompt, safety, balkmetafoor, router)
+- [x] Spec alignment V2: DEFER_TO_SAFETY, DEFER_TO_GROUNDING, OFFER_AS_FOLLOWUP statuses
+- [x] Spec alignment V2: 6 intervention types with context-based selection
+- [x] Spec alignment V2: conditional state.dat (only STABLE_REFLECTION/FIRST_USE writes)
+- [x] Spec alignment V2: layerJustification metadata in memory patches
+- [x] Spec alignment V2: output safety filter with all spec forbidden patterns (26 patterns)
+- [x] Spec alignment V2: context assembler NOT keyword-gated, NOT turn-limited
+- [x] Spec alignment V2: all marker groups (balkmetafoorExplicit, profileFeatureRequest, isolationBelief, postDifficultyStabilization)
+- [x] Spec alignment V2: gptMayScoreUser:false in prompt builder
+- [x] All 81 PAAL01 spec-aligned tests passing + 35 WILSKRACHT01/AUTOPILOT01 + 15 memory router = 131 total

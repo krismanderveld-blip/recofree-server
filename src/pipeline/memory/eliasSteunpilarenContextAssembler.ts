@@ -1,6 +1,10 @@
 /**
  * Elias Steunpilaren Context Assembler
  * Evaluates PAAL01 memory relevance at every Elias turn and builds GPT directive.
+ *
+ * SPEC RULE: NOT keyword-gated. NOT limited to first 1-2 turns.
+ * Applies at every relevant turn where user.dat contains PAAL01 data.
+ * Relevance is determined by existence of stored data, not by message keywords.
  */
 
 import type { RecoFreePersona } from "@/src/types/eliasSteunpilaren.types";
@@ -27,12 +31,16 @@ interface AssemblerInput {
 
 /**
  * Assembles PAAL01 memory context for GPT prompt injection.
- * Returns null if not relevant or persona is not Elias.
+ * Returns null only if persona is not Elias or no PAAL01 data exists.
+ *
+ * IMPORTANT: This is NOT keyword-gated. If the user has steunpilaren data,
+ * this directive is included at EVERY Elias turn (including turn 5+, turn 20+, etc.)
+ * so GPT can reference it naturally when relevant.
  */
 export function assembleEliasSteunpilarenMemoryContext(
   input: AssemblerInput
 ): SteunpilarenMemoryUseDirectiveContext | null {
-  // Persona guard
+  // Persona guard — only Elias
   if (input.persona !== "elias") return null;
 
   // Extract steunpilaren from userDat
@@ -68,21 +76,17 @@ export function assembleEliasSteunpilarenMemoryContext(
     .slice(-3)
     .map((l) => l.safeSummary);
 
-  // Check relevance: is the current message related to support/strength/difficulty?
-  const lower = input.latestUserMessage.toLowerCase();
-  const relevanceKeywords = [
-    "steun", "steunpilaar", "pilaar", "kracht", "help", "overeind",
-    "alleen", "niemand", "support", "strength", "pillar",
-    "routine", "wandel", "netwerk", "volhoud",
-    // Also relevant when user expresses difficulty (reminder context)
-    "moeilijk", "zwaar", "niet meer", "opgeven", "difficult", "hard",
-  ];
-  const isRelevant = relevanceKeywords.some((kw) => lower.includes(kw)) || input.turnIndex <= 2;
+  // ─── NO KEYWORD GATING ─────────────────────────────────────
+  // Per spec: if PAAL01 data exists in user.dat, the directive is ALWAYS included.
+  // GPT decides whether to use it based on conversational relevance.
+  // This is NOT limited to turn 1-2, NOT keyword-gated.
 
-  if (!isRelevant) return null;
+  const topPilaren = pilarenLabels.slice(0, 5).join(", ");
+  const balkSummaryText = balkmetafoorSummary
+    ? ` Balance bar: ${balkmetafoorSummary.draaglastCount} draaglast items, ${balkmetafoorSummary.draagkrachtCount} draagkracht items.`
+    : "";
 
-  const topPilaren = pilarenLabels.slice(0, 3).join(", ");
-  const hardDirectiveForGpt = `Elias-only context: user has identified steunpilaren including ${topPilaren}. Use gently if relevant to current message. Do not mention memory, storage, or internal data. Reference naturally when it helps.`;
+  const hardDirectiveForGpt = `[PAAL01 memory directive — hard, every turn] User has identified steunpilaren: ${topPilaren}.${balkSummaryText} Reference gently and naturally when relevant to the current conversation. Do not force. Do not mention storage, memory, or internal data. Do not limit to greeting only.`;
 
   return {
     persona: "elias",

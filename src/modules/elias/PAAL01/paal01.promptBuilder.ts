@@ -1,6 +1,7 @@
 /**
  * PAAL01 — Prompt payload builder
  * Builds the GPT prompt payload for steunpilaren interventions.
+ * Aligned with PAAL01 spec V1.
  */
 
 import type {
@@ -21,11 +22,29 @@ const FORBIDDEN_OUTPUT = [
   "level",
   "badge",
   "streak",
+  "ranking",
+  "je draagkracht is te laag",
+  "je draaglast is te hoog",
+  "je scoort slecht",
+  "je score is",
+  "je balans is negatief",
+  "negatieve balans",
+  "je gaat hervallen",
+  "dit voorspelt",
+  "diagnose",
+  "symptoom",
   "ik heb opgeslagen",
-  "in user.dat staat",
+  "in user.dat",
+  "in logs.dat",
+  "de engine weet",
   "Kim",
   "je moet dit invullen",
   "zonder dit werkt herstel niet",
+  "crisisprotocol hoeft niet",
+  "mood sliders zijn minder belangrijk",
+  "je faalt",
+  "je hebt onvoldoende steun",
+  "je hebt te weinig steunpilaren",
 ];
 
 const COMPACT_PROMPT =
@@ -56,7 +75,7 @@ function buildMemoryDirective(
     notKeywordGated: true,
     notLimitedToFirstTwoTurns: true,
     requiredLayersToRead: ["buffer", "state.dat", "user.dat", "logs.dat"],
-    requiredLayersToWriteOnActivation: ["buffer", "state.dat", "user.dat", "logs.dat"],
+    requiredLayersToWriteOnActivation: ["buffer", "user.dat", "logs.dat"],
     userFacingDisclosureAllowed: false,
     directiveText,
   };
@@ -74,6 +93,7 @@ export function buildPaal01PromptPayload(input: {
   return {
     persona: "elias",
     moduleId: "PAAL01",
+    selectedInterventionType: detection.selectedInterventionType,
     compactPrompt: COMPACT_PROMPT,
     fullPrompt: FULL_PROMPT,
     triggerContext: detection.triggerContext,
@@ -84,6 +104,7 @@ export function buildPaal01PromptPayload(input: {
     store: false,
     gptMayDiagnose: false,
     gptMayUseKimData: false,
+    gptMayScoreUser: false,
     gptMayOverrideCrisis: false,
   };
 }

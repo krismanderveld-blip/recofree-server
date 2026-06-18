@@ -1164,6 +1164,8 @@ export interface ChatContext {
   vspStructuredSection?: string;
   /** PsychoEducation continuity context (WILSKRACHT01/AUTOPILOT01, Elias only). Injected every relevant turn. */
   psychoEducationContext?: string;
+  /** Steunpilaren inventaris context (PAAL01, Elias only). Injected every relevant turn, not keyword-gated. */
+  steunpilarenContext?: string;
   /** Structured entities extracted from backpack (persons, events, patterns, contexts). Sent instead of full backpack when unchanged. */
   extractedEntities?: import('../backpack-extractor/types').ExtractedEntities;
   /** Whether backpack content changed since last extraction (forces full backpack resend) */

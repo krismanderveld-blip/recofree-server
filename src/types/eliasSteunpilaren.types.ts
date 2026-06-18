@@ -1,6 +1,6 @@
 /**
  * PAAL01 — Steunpilaren inventaris
- * Elias-only module types
+ * Elias-only module types — aligned with PAAL01 spec V1
  */
 
 export type EliasSteunpilarenModuleId = "PAAL01";
@@ -13,7 +13,9 @@ export type SteunpilarenActivationStatus =
   | "BLOCKED_BY_PERSONA"
   | "BLOCKED_BY_CRISIS"
   | "BLOCKED_BY_INTAKE"
-  | "DEFER_TO_CRISIS";
+  | "DEFER_TO_SAFETY"
+  | "DEFER_TO_GROUNDING"
+  | "OFFER_AS_FOLLOWUP";
 
 export type SteunpilarenMemoryLayer =
   | "buffer"
@@ -35,15 +37,42 @@ export type SteunpilaarCategory =
   | "routine"
   | "place"
   | "belief"
+  | "value"
+  | "body_care"
+  | "therapy_support"
+  | "project"
+  | "boundary"
+  | "micro_anchor"
+  | "meaning"
   | "activity"
   | "pet"
-  | "other";
+  | "unknown";
 
 export type SteunpilarenTriggerContext =
   | "STABLE_REFLECTION"
   | "POST_DIFFICULTY_REMINDER"
   | "FIRST_USE_INTRODUCTION"
   | "PERIODIC_UPDATE_INVITATION";
+
+export type Paal01InterventionType =
+  | "INTRODUCE_SUPPORT_PILLARS"
+  | "INVENTORY_PEOPLE_ROUTINES_PLACES_BELIEFS"
+  | "REMEMBER_EXISTING_PILLARS"
+  | "POST_DIFFICULT_MOMENT_RECONNECT"
+  | "BALANCE_BAR_INTRODUCTION"
+  | "QUALITATIVE_DRAAGLAST_DRAAGKRACHT_REFLECTION"
+  | "ADD_ONE_SMALL_PILLAR"
+  | "BRIDGE_TO_PROFILE_FEATURE";
+
+export type BalanceItemSource =
+  | "manual_profile_entry"
+  | "paal01_chat"
+  | "diary"
+  | "gratitude"
+  | "backpack"
+  | "vsp"
+  | "greeting"
+  | "logs.dat_safe_summary";
 
 export interface SteunpilarenRuntimeInput {
   persona: RecoFreePersona;
@@ -63,12 +92,18 @@ export interface SteunpilarenRuntimeInput {
     | "ROOD"
     | "PAARS"
     | "UNKNOWN";
+  stabilizedEnoughForReflection: boolean;
   crisisDetected: boolean;
   suicideSelfHarmDetected: boolean;
   acuteDangerDetected: boolean;
   relapseIntentDetected: boolean;
   severeIntoxicationDetected: boolean;
   medicalEmergencyDetected: boolean;
+  activeGroundingNeeded: boolean;
+  existingPillarsCount: number;
+  existingBalanceItemsCount: number;
+  profileFeatureFirstUse: boolean;
+  hasRecentDifficultMomentResolved: boolean;
   existingEliasSteunpilarenHints: ExistingEliasSteunpilarenHints;
   sessionsSinceLastPaal01: number;
   balkmetafoorInitialized: boolean;
@@ -101,6 +136,9 @@ export interface SteunpilarenDetectionResult {
   confidenceScore: number;
   confidenceBand: SteunpilarenConfidenceBand;
   triggerContext: SteunpilarenTriggerContext;
+  selectedInterventionType: Paal01InterventionType;
+  shouldIntroduceBalanceFeature: boolean;
+  shouldWriteBalanceItemSuggestion: boolean;
   matchedMarkers: string[];
   reason: string;
 }
@@ -108,6 +146,7 @@ export interface SteunpilarenDetectionResult {
 export interface SteunpilarenPromptPayload {
   persona: "elias";
   moduleId: "PAAL01";
+  selectedInterventionType: Paal01InterventionType;
   compactPrompt: string;
   fullPrompt: string;
   triggerContext: SteunpilarenTriggerContext;
@@ -118,6 +157,7 @@ export interface SteunpilarenPromptPayload {
   store: false;
   gptMayDiagnose: false;
   gptMayUseKimData: false;
+  gptMayScoreUser: false;
   gptMayOverrideCrisis: false;
 }
 
@@ -136,6 +176,14 @@ export interface SteunpilarenMemoryUseDirective {
   directiveText: string;
 }
 
+export interface Paal01MemoryLayerJustification {
+  buffer: "mandatory_current_turn_context";
+  stateDat?: string;
+  userDat?: string;
+  projectionsDat?: string;
+  logsDat?: string;
+}
+
 export interface SteunpilarenMemoryPatch {
   persona: "elias";
   moduleId: "PAAL01";
@@ -144,22 +192,43 @@ export interface SteunpilarenMemoryPatch {
   turnId: string;
   writes: {
     buffer: SteunpilarenBufferPatch;
-    stateDat: SteunpilarenStateDatPatch;
+    stateDat: SteunpilarenStateDatPatch | null;
     userDat: SteunpilarenUserDatPatch;
     projectionsDat: SteunpilarenProjectionsDatPatch | null;
     logsDat: SteunpilarenLogsDatPatch;
   };
+  layerJustification: Paal01MemoryLayerJustification;
 }
 
 export interface SteunpilarenBufferPatch {
   activeModuleId: "PAAL01";
+  activeInterventionType: Paal01InterventionType;
   activeTriggerContext: SteunpilarenTriggerContext;
   currentTurnDirective: string;
+  candidatePillars: Paal01CandidatePillar[];
+  candidateBalanceItems: BalanceBarCandidateItem[];
   expiresAtTurnEnd: boolean;
 }
 
+export interface Paal01CandidatePillar {
+  label: string;
+  type: SteunpilaarCategory;
+  source: BalanceItemSource;
+  confidence: number;
+}
+
+export interface BalanceBarCandidateItem {
+  side: "draaglast" | "draagkracht";
+  label: string;
+  normalizedLabel: string;
+  tags: string[];
+  source: BalanceItemSource;
+  confidence: number;
+  requiresUserConfirmation: true;
+}
+
 export interface SteunpilarenStateDatPatch {
-  activeTherapeuticFrame: "steunpilaren_inventaris";
+  activeReflectiveFeature: "support_pillars" | "balance_bar";
   activeModuleId: "PAAL01";
   currentZoneAtActivation:
     | "GROEN"
@@ -169,8 +238,7 @@ export interface SteunpilarenStateDatPatch {
     | "PAARS"
     | "UNKNOWN";
   lastActivatedAt: string;
-  lastActivationTurnId: string;
-  crisisOverrideAtActivation: false;
+  stabilizedEnoughForReflection: boolean;
 }
 
 export interface SteunpilarenUserDatPatch {
