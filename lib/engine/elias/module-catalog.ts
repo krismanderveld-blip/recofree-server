@@ -217,6 +217,22 @@ export const ELIAS_THERAPEUTIC_MODULES: readonly EliasTherapeuticModule[] = [
     triggers: [{ type: 'keyword', condition: 'accept|struggle|fight|resist|control' }],
     userType: 'elias',
   },
+  {
+    id: 'WILSKRACHT01', name: 'Wilskracht & Zelfverwijt', category: 'PsychoEducation',
+    description: 'Psycho-educatie over wilskracht, zelfverwijt na terugval, snel impulssysteem vs trage controle',
+    triggers: [
+      { type: 'keyword', condition: 'wilskracht|zwak|gefaald|mijn schuld|sterker moeten|discipline|schaam' },
+    ],
+    userType: 'elias',
+  },
+  {
+    id: 'AUTOPILOT01', name: 'Automatische Piloot & Triggers', category: 'PsychoEducation',
+    description: 'Psycho-educatie over geconditioneerde triggers, approach bias, automatische route naar gebruik',
+    triggers: [
+      { type: 'keyword', condition: 'automatisch|voor ik het wist|route|trek|getrokken|trigger|gewoonte' },
+    ],
+    userType: 'elias',
+  },
 ];
 
 // ─── High Complexity Modules (model routing) ────────────────────

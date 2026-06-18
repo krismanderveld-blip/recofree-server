@@ -258,6 +258,9 @@ interface ChatRequestInput {
   vspBackpackProfile?: string | null;
   /** VSP Structured Section — user's own per-zone signals, whatHelps, anchorSentence (Elias only) */
   vspStructuredSection?: string | null;
+
+  /** PsychoEducation continuity context (WILSKRACHT01/AUTOPILOT01, Elias only) */
+  psychoEducationContext?: string | null;
 }
 
 // ─── Server-side Session Cache ───────────────────────────────────
@@ -287,6 +290,8 @@ interface SessionCache {
   hasStructuredEntities: boolean;
   // Cumulative token usage tracking per session
   cumulativeTokens: { prompt: number; completion: number; total: number; turnCount: number };
+  // PsychoEducation continuity context (cached at SESSION_INIT, injected every relevant turn)
+  psychoEducationContext: string | null;
 }
 
 // Single-user cache: one active session per server instance (not multi-user safe)
@@ -331,6 +336,7 @@ function cacheSessionInit(input: ChatRequestInput): void {
     structuredMemory,
     hasStructuredEntities,
     cumulativeTokens: { prompt: 0, completion: 0, total: 0, turnCount: 0 },
+    psychoEducationContext: input.psychoEducationContext ?? null,
   };
   console.log("[AI Chat] Session cache created for:", input.userName, hasStructuredEntities ? '(structured entities)' : '(text-based)');
 }
@@ -858,6 +864,14 @@ function buildSelectiveRelevanceBlock(
     parts.push(`  → VERPLICHT: Gebruik namen uit deze kaart wanneer je over relaties praat. Noem ALTIJD de specifieke naam, niet "je partner" of "iemand".`);
   }
 
+  // PsychoEducation continuity (Elias only, every relevant turn)
+  const peContext = input.psychoEducationContext ?? (sessionCache?.psychoEducationContext ?? null);
+  if (peContext) {
+    parts.push(`PSYCHO-EDUCATIE CONTINUÏTEIT (ELIAS ONLY):`);
+    parts.push(`${peContext}`);
+    parts.push(`  → VERPLICHT: Gebruik deze psycho-educatieve context in je antwoord. Bouw voort op eerder besproken inzichten. Herhaal niet vanaf nul.`);
+  }
+
   if (parts.length === 0) return "";
 
   return `
@@ -1342,11 +1356,9 @@ These are not suggestions. These are minimum requirements.
   let shortModuleBlock = '';
   if (isElias) {
     const dominantMod = (input.dominantModule || '').toUpperCase();
-    if (/^M\d{2,}$/.test(dominantMod)) {
-      const matchedModule = ELIAS_SHORT_MODULE_PROMPTS.find(m => m.id === dominantMod);
-      if (matchedModule) {
-        shortModuleBlock = `\n\n═══ ACTIVE SHORT MODULE: ${matchedModule.id} — ${matchedModule.name} ═══\n${matchedModule.promptBlock}\n═══ END ACTIVE SHORT MODULE ═══`;
-      }
+    const matchedModule = ELIAS_SHORT_MODULE_PROMPTS.find(m => m.id === dominantMod);
+    if (matchedModule) {
+      shortModuleBlock = `\n\n═══ ACTIVE SHORT MODULE: ${matchedModule.id} — ${matchedModule.name} ═══\n${matchedModule.promptBlock}\n═══ END ACTIVE SHORT MODULE ═══`;
     }
   }
 

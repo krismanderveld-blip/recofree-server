@@ -77,6 +77,8 @@ export interface PipelineResultForMemory {
   moodSliders?: Record<string, number> | null;
   /** Module activations from pipeline */
   moduleActivations?: Array<{ id: string; confidence: number; mode: string }>;
+  /** PsychoEducation activation from pipeline */
+  psychoEducationActivation?: import('@/lib/types/memory/memoryCore.types').PsychoEducationActivation | null;
 }
 
 /**
@@ -214,6 +216,7 @@ export function buildDetectionBundle(input: PipelineResultForMemory): PipelineDe
     moodState,
     zoneDecision,
     activeModule,
+    psychoEducationActivation: input.psychoEducationActivation ?? null,
   };
 }
 

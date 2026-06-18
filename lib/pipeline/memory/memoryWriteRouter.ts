@@ -8,6 +8,7 @@ import type {
   MemoryWritePatch,
 } from "@/lib/types/memory/memoryCore.types";
 import { stableHash } from "@/lib/utils/hash/stableHash";
+import { createPatchId } from "@/lib/utils/hash/createPatchId";
 import {
   buildFearProjectionPatch,
   buildHopeProjectionPatch,
@@ -68,6 +69,53 @@ export function buildMemoryWritePlan(bundle: PipelineDetectionBundle): MemoryWri
   // Mood → state.dat
   if (bundle.moodState) {
     patches.push(buildMoodStatePatch(bundle.moodState, ctx));
+  }
+
+  // PsychoEducation activation → user.dat + projections.dat + logs.dat
+  if (bundle.psychoEducationActivation && !bundle.psychoEducationActivation.crisisOverride) {
+    const peAct = bundle.psychoEducationActivation;
+    // user.dat: module usage increment
+    patches.push({
+      patchId: createPatchId(ctx.turnId, "user.dat", `psychoEducation.${peAct.moduleId}`),
+      layer: "user.dat",
+      operation: "INCREMENT",
+      path: "moduleUsage",
+      source: "PsychoEducation_PE",
+      payload: {
+        moduleId: peAct.moduleId,
+        lastActivatedAt: ctx.timestampIso,
+        activationCountIncrement: 1,
+        turnId: ctx.turnId,
+        sessionId: ctx.sessionId,
+        timestampIso: ctx.timestampIso,
+        source: "PsychoEducation_PE",
+      },
+      shouldWrite: true,
+      reason: `PsychoEducation ${peAct.moduleId} activated with confidence ${peAct.activationConfidence}`,
+    });
+    // projections.dat: belief upsert
+    patches.push({
+      patchId: createPatchId(ctx.turnId, "projections.dat", `psychoEducation.belief.${peAct.moduleId}`),
+      layer: "projections.dat",
+      operation: "DECAY_REFRESH_UPSERT",
+      path: "fears",
+      source: "PsychoEducation_PE",
+      payload: {
+        kind: "fear" as const,
+        label: peAct.moduleId === 'WILSKRACHT01' ? 'willpower_failure_belief' : 'autopilot_no_choice_belief',
+        normalizedLabel: peAct.moduleId === 'WILSKRACHT01' ? 'willpower_failure_belief' : 'autopilot_no_choice_belief',
+        category: peAct.moduleId === 'WILSKRACHT01' ? 'willpower_shame_belief' : 'autopilot_trigger_belief',
+        confidence: peAct.activationConfidence,
+        sourceKind: "PsychoEducation_PE",
+        turnId: ctx.turnId,
+        sessionId: ctx.sessionId,
+        timestampIso: ctx.timestampIso,
+        source: "PsychoEducation_PE",
+        evidenceHash: stableHash(`${peAct.moduleId}_${ctx.turnId}`),
+      },
+      shouldWrite: true,
+      reason: `PsychoEducation belief from ${peAct.moduleId}`,
+    });
   }
 
   // Collect changed fields for buffer snapshot

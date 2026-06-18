@@ -316,6 +316,10 @@ import {
 } from '../engine/kim/kim-module-memory';
 import { applyAutoConfirmation } from '../engine/shared/tendency-confirmation';
 import { runVspInsightLayer, type VspInsightPipelineResult } from '../../src/features/vspInsight/vspInsightPipelineLayer';
+import { detectWilskracht01 } from '../../src/modules/elias/WILSKRACHT01/detector';
+import { detectAutopilot01 } from '../../src/modules/elias/AUTOPILOT01/detector';
+import type { EliasPsychoEducationRuntimeInput, EliasPsychoEducationDetectionResult } from '../../src/types/eliasPsychoEducation.types';
+import type { PsychoEducationActivation } from '../types/memory/memoryCore.types';
 
 // ─── Pattern Marking (post-GPT local state) ─────────────────
 
@@ -441,6 +445,8 @@ export interface PipelineResult {
   candidateSignals?: { fears: any[]; hopes: any[]; goals: any[]; triggers: any[] } | null;
   /** Raw schema/mode detection result */
   schemaModeResult?: { activated: boolean; modeDecision: any; schemaDecision: any } | null;
+  /** PsychoEducation activation result (WILSKRACHT01/AUTOPILOT01) */
+  psychoEducationActivation?: PsychoEducationActivation | null;
 }
 
 /** Consolidated log entry for each message exchange */
@@ -1526,6 +1532,68 @@ export async function processMessage(
       relapseRecentlyOccurred: (currentUserDat as any).relapseActive === true,
       timestampIso: new Date().toISOString(),
     });
+  }
+
+  // ── STEP 5e8a2: Elias PsychoEducation (WILSKRACHT01/AUTOPILOT01) ──
+  let psychoEducationActivation: PsychoEducationActivation | null = null;
+  if (backpack.userType === 'elias' && !!(backpack as any).intake?.startEmotion) {
+    const recentTexts = sessionBuffer.recentMessages.slice(-3).map(m => m.content);
+    const cravingSlider = (currentUserDat.currentMood as any)?.craving ?? null;
+    const peRuntimeInput: EliasPsychoEducationRuntimeInput = {
+      persona: 'elias',
+      intakeCompleted: true,
+      latestUserMessage: userMessage,
+      recentMessages: recentTexts,
+      language: ((currentUserDat as any).detectedLanguage ?? 'nl') as 'nl' | 'en' | 'mixed' | 'unknown',
+      detectedMarkers: (currentUserDat as any).detectedMarkers ?? [],
+      crisisProtocolActive: analysis.riskLevel === 'critical' || analysis.riskLevel === 'high',
+      suicideSelfHarmDetected: analysis.riskLevel === 'critical',
+      acuteDangerDetected: analysis.riskLevel === 'critical',
+      severeIntoxicationDetected: false,
+      relapseIntentDetected: (currentUserDat as any).relapseActive === true,
+      cravingDetected: typeof cravingSlider === 'number' && cravingSlider >= 4,
+      relapseRecentlyOccurred: (currentUserDat as any).relapseActive === true,
+      selfBlameDetected: /(?:mijn schuld|eigen schuld|ik ben zwak|gefaald|had sterker|my fault|i.?m weak|failed)/i.test(userMessage),
+      willpowerLanguageDetected: /(?:wilskracht|doorzettingsvermogen|karakter|discipline|willpower|self.?control)/i.test(userMessage),
+      autopilotLanguageDetected: /(?:autopilot|automatisch|vanzelf|zonder na te denken|automatic|without thinking)/i.test(userMessage),
+      triggerExposureDetected: /(?:trigger|uitlokker|prikkel|cue|aanzet)/i.test(userMessage),
+      approachBiasLanguageDetected: /(?:trok.*naar|bewoog.*richting|drawn to|pulled toward|approach)/i.test(userMessage),
+      attentionalBiasLanguageDetected: /(?:kon.*niet.*stoppen.*kijken|ogen.*gericht|aandacht.*getrokken|couldn.?t.*stop.*looking|eyes.*drawn)/i.test(userMessage),
+      conditionedTriggerLanguageDetected: /(?:altijd.*als|elke.*keer|zodra.*dan|whenever|every.*time.*then)/i.test(userMessage),
+      vspZone: (sessionBuffer.currentZoneColor?.toUpperCase() ?? 'UNKNOWN') as 'GROEN' | 'GEEL' | 'ORANJE' | 'ROOD' | 'PAARS' | 'UNKNOWN',
+      cravingSliderValue: cravingSlider,
+      timestampIso: new Date().toISOString(),
+      sessionId: `session_${Date.now()}`,
+      turnId: `turn_${Date.now()}`,
+      existingMemoryHints: [],
+    };
+
+    // Try WILSKRACHT01 first (self-blame/willpower), then AUTOPILOT01 (craving/trigger)
+    const wilskrachtResult = detectWilskracht01(peRuntimeInput);
+    const autopilotResult = detectAutopilot01(peRuntimeInput);
+
+    // Pick the one with higher confidence if both are active
+    let activeResult: EliasPsychoEducationDetectionResult | null = null;
+    if (wilskrachtResult.activationStatus === 'ACTIVE' && autopilotResult.activationStatus === 'ACTIVE') {
+      activeResult = wilskrachtResult.confidenceScore >= autopilotResult.confidenceScore ? wilskrachtResult : autopilotResult;
+    } else if (wilskrachtResult.activationStatus === 'ACTIVE') {
+      activeResult = wilskrachtResult;
+    } else if (autopilotResult.activationStatus === 'ACTIVE') {
+      activeResult = autopilotResult;
+    }
+
+    if (activeResult) {
+      const isCrisisOverride = analysis.riskLevel === 'critical' || analysis.riskLevel === 'high';
+      psychoEducationActivation = {
+        moduleId: activeResult.moduleId as 'WILSKRACHT01' | 'AUTOPILOT01',
+        detectedMarkers: activeResult.matchedMarkers,
+        activationConfidence: activeResult.confidenceScore,
+        responseMode: isCrisisOverride ? 'CONTINUITY_ONLY' : 'FULL_PSYCHOEDUCATION',
+        crisisOverride: isCrisisOverride,
+        memoryHints: null,
+      };
+      console.log(`[Pipeline] PsychoEducation: module=${activeResult.moduleId} confidence=${activeResult.confidenceScore} mode=${activeResult.responseMode}`);
+    }
   }
 
   // ── STEP 5e8b: Kim SLAAP01 ──
@@ -2805,6 +2873,7 @@ export async function processMessage(
       modeDecision: schemaModeResult.modeDecision,
       schemaDecision: schemaModeResult.schemaDecision,
     } : null,
+    psychoEducationActivation: psychoEducationActivation ?? null,
   };
 }
 

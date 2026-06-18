@@ -1,0 +1,71 @@
+/**
+ * WILSKRACHT01 Dutch marker bank.
+ * Detects self-blame, willpower failure beliefs, and shame after relapse/craving.
+ */
+
+export const WILSKRACHT01_MARKERS_NL = {
+  selfBlame: [
+    "ik had sterker moeten zijn",
+    "ik ben zwak",
+    "ik heb gefaald",
+    "ik heb weer gefaald",
+    "het is mijn eigen schuld",
+    "ik ben een zwakkeling",
+    "ik had het moeten tegenhouden",
+    "ik had nee moeten zeggen",
+    "waarom kan ik niet gewoon stoppen",
+    "ik ben hopeloos",
+    "ik deug niet",
+    "ik ben waardeloos",
+    "ik verdien het niet",
+    "het is mijn schuld",
+    "ik schaam me",
+    "ik schaam me dood",
+    "ik walg van mezelf",
+    "ik haat mezelf",
+    "ik ben een mislukking",
+    "weer dezelfde fout",
+    "ik leer het nooit",
+    "ik kan er niks aan doen maar het is mijn schuld",
+  ],
+  willpowerLanguage: [
+    "wilskracht",
+    "discipline",
+    "karakter",
+    "doorzettingsvermogen",
+    "sterker moeten zijn",
+    "meer controle",
+    "gewoon stoppen",
+    "gewoon niet doen",
+    "als ik maar sterk genoeg was",
+    "als ik meer wilskracht had",
+    "ik moet sterker worden",
+    "ik moet mezelf dwingen",
+    "ik moet harder zijn",
+    "anderen kunnen het wel",
+    "normale mensen hebben dit niet",
+    "iedereen kan stoppen behalve ik",
+  ],
+  shameAfterRelapse: [
+    "weer teruggevallen",
+    "weer gebruikt",
+    "weer gedronken",
+    "weer gerookt",
+    "weer gesnoven",
+    "weer gespoten",
+    "weer gegokt",
+    "ik heb het weer gedaan",
+    "het is weer gebeurd",
+    "na al die tijd",
+    "al die moeite voor niets",
+    "ik ben terug bij af",
+    "clean time kwijt",
+    "nuchter dagen kwijt",
+  ],
+};
+
+export const WILSKRACHT01_MARKER_IDS_NL = {
+  selfBlame: "nl_self_blame_willpower",
+  willpowerLanguage: "nl_willpower_belief_language",
+  shameAfterRelapse: "nl_shame_after_relapse",
+};

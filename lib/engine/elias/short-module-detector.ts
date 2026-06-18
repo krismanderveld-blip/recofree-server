@@ -428,6 +428,26 @@ const TRANSLATION_MAP: Record<string, string[]> = {
   alleenzijnveiliger: ['protective-isolation', 'social-withdrawal'],
   lastzijn: ['burden-fear', 'isolation'],
   angstvooroordeel: ['fear-of-judgment', 'shame-about-talking'],
+  // ── Dutch: WILSKRACHT01 (wilskracht & zelfverwijt) ──
+  wilskracht: ['willpower', 'discipline', 'self-blame'],
+  zwak: ['weak', 'no-backbone', 'pathetic'],
+  sterker: ['stronger', 'not-strong-enough', 'willpower'],
+  discipline: ['discipline', 'willpower', 'self-blame'],
+  karakterfout: ['character-flaw', 'self-blame', 'weak'],
+  zielig: ['pathetic', 'weak', 'self-blame'],
+  mijnschuld: ['my-fault', 'self-blame', 'guilt'],
+  eigenschuld: ['my-fault', 'self-blame', 'guilt'],
+  hadmoeten: ['should-have-known', 'self-blame', 'stronger'],
+  // ── Dutch: AUTOPILOT01 (automatische piloot & triggers) ──
+  autopiloot: ['autopilot', 'automatic', 'habit'],
+  vanzelf: ['automatic', 'went-automatically', 'autopilot'],
+  gewoonte: ['habit', 'conditioned', 'pattern'],
+  getrokken: ['pulled', 'approach-bias', 'craving'],
+  aantrekking: ['approach-bias', 'pulled', 'craving'],
+  reflex: ['reflex', 'automatic', 'conditioned'],
+  voorikhetwist: ['before-i-knew', 'automatic', 'autopilot'],
+  benenliepen: ['legs-walked', 'automatic', 'went-automatically'],
+  geconditioneerd: ['conditioned', 'habit', 'automatic'],
 };
 
 // ─── MODULE KEYWORDS: English concept words per module ───
@@ -521,6 +541,9 @@ const MODULE_KEYWORDS: Record<string, string[]> = {
   FIN01: ['financial-control', 'financial-dependency', 'money-as-power', 'economic-abuse', 'financial-isolation', 'spending-control', 'hidden-debt', 'financial-shame', 'money-manipulation', 'no-own-account'],
   // ── Kim P5 Advanced Modules ──
   ISO01: ['social-withdrawal', 'isolation', 'shame-about-talking', 'burden-fear', 'protective-isolation', 'exhaustion-isolation', 'no-social-contact', 'fear-of-judgment', 'advice-fatigue', 'painful-loneliness'],
+  // ── Elias Psycho-Education Modules ──
+  WILSKRACHT01: ['willpower', 'weak', 'failed', 'self-blame', 'my-fault', 'stronger', 'discipline', 'shame', 'character-flaw', 'not-strong-enough', 'should-have-known', 'gave-in', 'no-backbone', 'pathetic'],
+  AUTOPILOT01: ['automatic', 'autopilot', 'before-i-knew', 'route', 'craving', 'pulled', 'trigger', 'habit', 'conditioned', 'reflex', 'approach-bias', 'went-automatically', 'legs-walked', 'couldnt-stop'],
 };
 
 // ─── DETECTOR LOGIC ───

@@ -1008,6 +1008,7 @@ function ChatScreenInner() {
           } : null,
           moodSliders: result.messageLog?.preGPT?.dominantState ? {} : null,
           moduleActivations: result.moduleActivations,
+          psychoEducationActivation: result.psychoEducationActivation ?? null,
         };
         const bundle = buildDetectionBundle(memoryInput);
         // Build current stores snapshot (in-memory defaults for now)

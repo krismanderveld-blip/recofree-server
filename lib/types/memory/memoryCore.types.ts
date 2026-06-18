@@ -20,7 +20,8 @@ export type MemorySource =
   | "ActiveModuleSelector_12"
   | "ResponseModeRouter_13"
   | "SessionSummaryLLM"
-  | "LogsExtractionRouter";
+  | "LogsExtractionRouter"
+  | "PsychoEducation_PE";
 
 export type MemoryPatchOperation =
   | "UPSERT"
@@ -153,6 +154,19 @@ export interface PipelineDetectionBundle {
   moodState: MoodStateExtraction | null;
   zoneDecision: ZoneDecision | null;
   activeModule: ActiveModuleDecision | null;
+  psychoEducationActivation: PsychoEducationActivation | null;
+}
+
+export interface PsychoEducationActivation {
+  moduleId: 'WILSKRACHT01' | 'AUTOPILOT01';
+  detectedMarkers: string[];
+  activationConfidence: number;
+  responseMode: 'FULL_PSYCHOEDUCATION' | 'REINFORCEMENT' | 'CONTINUITY_ONLY';
+  crisisOverride: boolean;
+  memoryHints: {
+    previousActivations: number;
+    lastDiscussedConcepts: string[];
+  } | null;
 }
 
 export interface MemoryWritePatch {

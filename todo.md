@@ -1563,3 +1563,17 @@
 - [x] Add ANKERZIN-REGEL: citeer ankerzin letterlijk wanneer gebruiker overweldigd is
 - [x] Add DAGBOEK-REGEL: verwijs naar specifieke dagboek-entries wanneer thema overeenkomt
 - [x] Add STEUNPERSOON-REGEL: noem steunpersoon uit VSP wat-helpt bij emotioneel beladen taal
+
+## PsychoEducation: WILSKRACHT01 + AUTOPILOT01 Pipeline Integration
+
+- [x] Connect WILSKRACHT01 detector to pipeline.ts (step 5e8b)
+- [x] Connect AUTOPILOT01 detector to pipeline.ts (step 5e8b)
+- [x] Add psychoEducationActivation to PipelineResult return
+- [x] Add psychoEducationActivation to PipelineDetectionBundle (memoryIntegration.ts)
+- [x] Add psychoEducation patches to memoryWriteRouter.ts (user.dat + projections.dat)
+- [x] Add psychoEducationContext field to ChatRequestInput interface
+- [x] Add psychoEducationContext to SessionCache and cacheSessionInit
+- [x] Inject psychoEducation continuity block in buildSelectiveRelevanceBlock (every relevant turn)
+- [x] Add psychoEducationActivation to chat.tsx memoryInput passthrough
+- [x] Write acceptance test suite (35 tests): persona separation, crisis override, memory write, continuity, output safety, router integration
+- [x] All 35 tests passing
