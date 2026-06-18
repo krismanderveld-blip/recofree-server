@@ -1638,3 +1638,5 @@
 - [x] Fix greeting diary timestamp regression: recentDiary uses toLocaleDateString() without time label, causing GPT to treat yesterday's entries as "vandaag"
 - [x] Fix riskScore underestimation: craving + emotional distress combinations score too low (14-16 instead of ORANJE 41-60)
 - [x] Add Dutch language patterns to detectKimTrigger (grens, schuld, moe, uitgeput, terugval, boos, controleren, etc.)
+- [x] Add control_exhaustion to KIM_PRIORITY_TRIGGERS for same priority as boundary_violation/caregiver_fatigue
+- [x] Live Kim test: control_exhaustion + loved_one_relapse — controle als uitputtend erkend, geen blame, naam correct, coping erkend (4/5 checks pass; terugval partner impliciet maar niet letterlijk benoemd in truncated response)

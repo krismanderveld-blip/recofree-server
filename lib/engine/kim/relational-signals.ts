@@ -41,6 +41,7 @@ export const KIM_PRIORITY_TRIGGERS: readonly string[] = Object.freeze([
   'guilt',
   'caregiver_fatigue',
   'isolation',
+  'control_exhaustion',
 ]);
 
 /**
