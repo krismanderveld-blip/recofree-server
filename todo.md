@@ -1635,3 +1635,4 @@
 - [x] PipelineDetectionBundle + PipelineResult + memoryIntegration updated
 - [x] Combined acceptance tests: 33 tests passing (persona, crisis priority, layers, continuity, safety)
 - [x] Total test suite: 200 tests passing (81 PAAL01 + 35 WILSKRACHT01/AUTOPILOT01 + 36 self-acceptance + 33 Kim pattern + 15 memory router)
+- [x] Fix greeting diary timestamp regression: recentDiary uses toLocaleDateString() without time label, causing GPT to treat yesterday's entries as "vandaag"

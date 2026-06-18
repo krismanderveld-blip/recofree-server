@@ -496,14 +496,21 @@ export function buildGPTPayload(input: PayloadBuilderInput): GPTPayload {
     isSessionStart,
   );
 
-  // ── Diary: last 3 entries ──
+  // ── Diary: last 3 entries (with time-aware labels) ──
+  const nowMs = Date.now();
   const recentDiary = (input.diaryEntries || [])
     .slice(-3)
-    .map((entry) => ({
-      content: entry.content,
-      moodTag: entry.moodTag,
-      date: new Date(entry.timestamp).toLocaleDateString(),
-    }));
+    .map((entry) => {
+      const entryTs = new Date(entry.timestamp).getTime();
+      const hoursAgo = Math.floor((nowMs - entryTs) / (1000 * 60 * 60));
+      const timeLabel = hoursAgo < 1 ? 'net geschreven' : hoursAgo < 24 ? `${hoursAgo}u geleden (vandaag)` : hoursAgo < 48 ? 'gisteren' : `${Math.floor(hoursAgo / 24)} dagen geleden`;
+      const dateStr = new Date(entry.timestamp).toLocaleDateString();
+      return {
+        content: entry.content,
+        moodTag: entry.moodTag,
+        date: `${dateStr} (⏰ ${timeLabel})`,
+      };
+    });
 
   // ── Build base payload (always present) ──
   // Guard against NaN values that would fail server-side Zod validation
