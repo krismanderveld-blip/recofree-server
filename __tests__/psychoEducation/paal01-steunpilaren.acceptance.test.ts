@@ -722,6 +722,7 @@ describe("PAAL01 — Memory Write Router Integration", () => {
         confidence: 0.80,
         matchedMarkers: [],
       },
+      selfAcceptanceActivation: null,
     };
 
     const plan = buildMemoryWritePlan(bundle);
@@ -746,6 +747,7 @@ describe("PAAL01 — Memory Write Router Integration", () => {
       moodState: null,
       psychoEducationActivation: null,
       paal01Activation: null,
+      selfAcceptanceActivation: null,
     };
 
     const plan = buildMemoryWritePlan(bundle);
@@ -778,6 +780,7 @@ describe("PAAL01 — Memory Write Router Integration", () => {
         confidence: 0.65,
         matchedMarkers: ["ik heb steun aan"],
       },
+      selfAcceptanceActivation: null,
     };
 
     const plan = buildMemoryWritePlan(bundle);

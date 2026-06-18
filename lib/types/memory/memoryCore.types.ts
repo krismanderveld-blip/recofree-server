@@ -22,7 +22,11 @@ export type MemorySource =
   | "SessionSummaryLLM"
   | "LogsExtractionRouter"
   | "PsychoEducation_PE"
-  | "Steunpilaren_PAAL01";
+  | "Steunpilaren_PAAL01"
+  | "SelfAcceptance_BLIK01"
+  | "SelfAcceptance_ONTK01"
+  | "SelfAcceptance_IKST01"
+  | "SelfAcceptance_COEX01";
 
 export type MemoryPatchOperation =
   | "UPSERT"
@@ -157,6 +161,7 @@ export interface PipelineDetectionBundle {
   activeModule: ActiveModuleDecision | null;
   psychoEducationActivation: PsychoEducationActivation | null;
   paal01Activation: Paal01Activation | null;
+  selfAcceptanceActivation: SelfAcceptanceActivation | null;
 }
 
 export interface Paal01Activation {
@@ -164,6 +169,14 @@ export interface Paal01Activation {
   triggerContext: string;
   confidence: number;
   matchedMarkers: string[];
+}
+
+export interface SelfAcceptanceActivation {
+  moduleId: 'BLIK01' | 'ONTK01' | 'IKST01' | 'COEX01';
+  confidence: number;
+  matchedMarkers: string[];
+  interventionType: string;
+  patternType?: string;
 }
 
 export interface PsychoEducationActivation {

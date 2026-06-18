@@ -1607,3 +1607,17 @@
 - [x] Spec alignment V2: all marker groups (balkmetafoorExplicit, profileFeatureRequest, isolationBelief, postDifficultyStabilization)
 - [x] Spec alignment V2: gptMayScoreUser:false in prompt builder
 - [x] All 81 PAAL01 spec-aligned tests passing + 35 WILSKRACHT01/AUTOPILOT01 + 15 memory router = 131 total
+
+## Self-Acceptance Cluster: BLIK01, ONTK01, IKST01, COEX01
+- [x] Shared types: eliasSelfAcceptanceCluster.types.ts
+- [x] Shared context assembler: eliasSelfAcceptanceContextAssembler.ts
+- [x] Shared output safety filter: selfAcceptanceClusterOutputSafetyFilter.ts
+- [x] BLIK01: detector, NL+EN markers, memory patch builder, prompt builder, index
+- [x] ONTK01: detector, NL+EN markers, memory patch builder, prompt builder, index
+- [x] IKST01: detector, NL+EN markers, memory patch builder, prompt builder, index
+- [x] COEX01: detector, NL+EN markers, memory patch builder, prompt builder, index
+- [x] Pipeline integration: all 4 modules in pipeline.ts (step 5e8a4)
+- [x] Memory write router: selfAcceptanceActivation routing
+- [x] PipelineDetectionBundle + PipelineResult + memoryIntegration updated
+- [x] Combined acceptance tests: 36 tests passing
+- [x] Total test suite: 167 tests passing (81 PAAL01 + 35 WILSKRACHT01/AUTOPILOT01 + 36 self-acceptance + 15 memory router)

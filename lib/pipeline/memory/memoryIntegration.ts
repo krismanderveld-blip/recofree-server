@@ -81,6 +81,8 @@ export interface PipelineResultForMemory {
   psychoEducationActivation?: import('@/lib/types/memory/memoryCore.types').PsychoEducationActivation | null;
   /** Steunpilaren activation from pipeline (PAAL01) */
   paal01Activation?: import('@/lib/types/memory/memoryCore.types').Paal01Activation | null;
+  /** Self-acceptance cluster activation (BLIK01/ONTK01/IKST01/COEX01) */
+  selfAcceptanceActivation?: import('@/lib/types/memory/memoryCore.types').SelfAcceptanceActivation | null;
 }
 
 /**
@@ -220,6 +222,7 @@ export function buildDetectionBundle(input: PipelineResultForMemory): PipelineDe
     activeModule,
     psychoEducationActivation: input.psychoEducationActivation ?? null,
     paal01Activation: input.paal01Activation ?? null,
+    selfAcceptanceActivation: input.selfAcceptanceActivation ?? null,
   };
 }
 

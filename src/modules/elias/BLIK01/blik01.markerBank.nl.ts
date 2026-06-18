@@ -1,0 +1,45 @@
+/**
+ * BLIK01 - Blikseminslag - NL Marker Bank
+ */
+export const blik01MarkersNL = {
+  suddenShock: [
+    "ineens",
+    "plots",
+    "plotseling",
+    "uit het niets",
+    "het is net gebeurd",
+    "vandaag hoorde ik",
+    "alles viel weg",
+    "mijn houvast is weg",
+    "mijn steun is weg",
+    "de grond onder mijn voeten",
+    "het trok de grond weg",
+  ],
+  specificPillarLoss: [
+    "ik ben ontslagen",
+    "mijn job is weg",
+    "mijn baan is weg",
+    "de relatie is gedaan",
+    "zij heeft het uitgemaakt",
+    "hij heeft het uitgemaakt",
+    "iemand is overleden",
+    "ik heb iemand verloren",
+    "financieel stort het in",
+    "ik kan de huur niet betalen",
+    "ik moet verhuizen",
+    "therapie stopt",
+    "mijn afspraak is weg",
+    "mijn routine is weg",
+    "mijn project valt stil",
+    "contact valt weg",
+    "ik mag mijn kind niet zien",
+  ],
+  supportAnchorLanguage: [
+    "houvast",
+    "steun",
+    "pilaar",
+    "anker",
+    "steunpilaar",
+    "vangnet",
+  ],
+};

@@ -185,6 +185,81 @@ export function buildMemoryWritePlan(bundle: PipelineDetectionBundle): MemoryWri
     });
   }
 
+  // Self-Acceptance Cluster (BLIK01/ONTK01/IKST01/COEX01) → user.dat + state.dat + logs.dat
+  if (bundle.selfAcceptanceActivation) {
+    const sac = bundle.selfAcceptanceActivation;
+    // user.dat: module usage increment
+    patches.push({
+      patchId: createPatchId(ctx.turnId, "user.dat", `selfAcceptance.${sac.moduleId}`),
+      layer: "user.dat",
+      operation: "INCREMENT",
+      path: "moduleUsage",
+      source: `SelfAcceptance_${sac.moduleId}`,
+      payload: {
+        moduleId: sac.moduleId,
+        lastActivatedAt: ctx.timestampIso,
+        activationCountIncrement: 1,
+        interventionType: sac.interventionType,
+        patternType: sac.patternType,
+        turnId: ctx.turnId,
+        sessionId: ctx.sessionId,
+        timestampIso: ctx.timestampIso,
+        source: `SelfAcceptance_${sac.moduleId}`,
+      },
+      shouldWrite: true,
+      reason: `${sac.moduleId} activated: ${sac.interventionType} with confidence ${sac.confidence}`,
+    });
+    // state.dat: active therapeutic frame
+    const frameMap: Record<string, string> = {
+      BLIK01: 'support_pillar_shock',
+      ONTK01: 'denial_pattern_reflection',
+      IKST01: 'ego_strength_recovery',
+      COEX01: 'existential_acceptance',
+    };
+    patches.push({
+      patchId: createPatchId(ctx.turnId, "state.dat", `selfAcceptance.frame`),
+      layer: "state.dat",
+      operation: "REPLACE_CURRENT",
+      path: "activeTherapeuticFrame",
+      source: `SelfAcceptance_${sac.moduleId}`,
+      payload: {
+        activeTherapeuticFrame: frameMap[sac.moduleId] || 'existential_acceptance',
+        activeModuleId: sac.moduleId,
+        lastActivatedAt: ctx.timestampIso,
+        interventionType: sac.interventionType,
+        turnId: ctx.turnId,
+        sessionId: ctx.sessionId,
+        timestampIso: ctx.timestampIso,
+        source: `SelfAcceptance_${sac.moduleId}`,
+      },
+      shouldWrite: true,
+      reason: `${sac.moduleId} frame: ${frameMap[sac.moduleId]}`,
+    });
+    // logs.dat: encrypted event
+    patches.push({
+      patchId: createPatchId(ctx.turnId, "logs.dat", `selfAcceptance.event`),
+      layer: "logs.dat",
+      operation: "ENCRYPTED_APPEND",
+      path: "events",
+      source: `SelfAcceptance_${sac.moduleId}`,
+      payload: {
+        encryptedEventType: "therapeutic_module_activation",
+        moduleId: sac.moduleId,
+        interventionType: sac.interventionType,
+        patternType: sac.patternType,
+        matchedMarkers: sac.matchedMarkers,
+        confidence: sac.confidence,
+        turnId: ctx.turnId,
+        sessionId: ctx.sessionId,
+        timestampIso: ctx.timestampIso,
+        source: `SelfAcceptance_${sac.moduleId}`,
+        safeSummary: `${sac.moduleId} activated: ${sac.interventionType}`,
+      },
+      shouldWrite: true,
+      reason: `${sac.moduleId} event log`,
+    });
+  }
+
   // Collect changed fields for buffer snapshot
   const changedFields = patches
     .filter((p) => p.shouldWrite)

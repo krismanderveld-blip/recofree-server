@@ -449,6 +449,8 @@ export interface PipelineResult {
   psychoEducationActivation?: PsychoEducationActivation | null;
   /** Steunpilaren activation result (PAAL01) */
   paal01Activation?: { moduleId: 'PAAL01'; triggerContext: string; confidence: number; matchedMarkers: string[] } | null;
+  /** Self-acceptance cluster activation (BLIK01/ONTK01/IKST01/COEX01) */
+  selfAcceptanceActivation?: { moduleId: 'BLIK01' | 'ONTK01' | 'IKST01' | 'COEX01'; confidence: number; matchedMarkers: string[]; interventionType: string; patternType?: string } | null;
 }
 
 /** Consolidated log entry for each message exchange */
@@ -1654,6 +1656,67 @@ export async function processMessage(
     }
   }
 
+  // ── STEP 5e8a4: Elias Self-Acceptance Cluster (BLIK01/ONTK01/IKST01/COEX01) ──
+  let selfAcceptanceActivation: { moduleId: 'BLIK01' | 'ONTK01' | 'IKST01' | 'COEX01'; confidence: number; matchedMarkers: string[]; interventionType: string; patternType?: string } | null = null;
+  if (backpack.userType === 'elias' && !!(backpack as any).intake?.startEmotion) {
+    const { detectBlik01 } = require('@/src/modules/elias/BLIK01/blik01.detector');
+    const { detectOntk01 } = require('@/src/modules/elias/ONTK01/ontk01.detector');
+    const { detectIkst01 } = require('@/src/modules/elias/IKST01/ikst01.detector');
+    const { detectCoex01 } = require('@/src/modules/elias/COEX01/coex01.detector');
+    const sacZone = (sessionBuffer.currentZoneColor?.toUpperCase() ?? 'UNKNOWN') as 'GROEN' | 'GEEL' | 'ORANJE' | 'ROOD' | 'PAARS' | 'UNKNOWN';
+    const sacInput = {
+      persona: 'elias' as const,
+      intakeCompleted: true,
+      userId: `user_${Date.now()}`,
+      sessionId: `session_${Date.now()}`,
+      turnId: `turn_${Date.now()}`,
+      turnIndex: sessionBuffer.recentMessages.length,
+      timestampIso: new Date().toISOString(),
+      latestUserMessage: userMessage,
+      recentMessages: sessionBuffer.recentMessages.slice(-3).map(m => m.content),
+      language: ((currentUserDat as any).detectedLanguage ?? 'nl') as 'nl' | 'en' | 'fr' | 'mixed' | 'unknown',
+      currentZone: sacZone,
+      crisisDetected: analysis.riskLevel === 'critical' || analysis.riskLevel === 'high',
+      suicideSelfHarmDetected: analysis.riskLevel === 'critical',
+      acuteDangerDetected: analysis.riskLevel === 'critical',
+      relapseIntentDetected: (currentUserDat as any).relapseActive === true,
+      severeIntoxicationDetected: false,
+      medicalEmergencyDetected: false,
+      stabilizedEnoughForReflection: sacZone === 'GROEN' || sacZone === 'GEEL',
+      paal01Available: paal01Activation !== null,
+      paal01KnownSupportPillars: ((currentUserDat as any).steunpilaren ?? []).map((p: any) => ({ pillarId: p.id || p.pillarId || 'unknown', label: p.label || p.text || '', category: p.category || 'other' })),
+      existingEliasMemoryHints: {
+        recentSafeLogSummaries: (currentUserDat as any).recentSafeLogSummaries ?? [],
+        learnedPatterns: (currentUserDat as any).learnedPatterns ?? [],
+      },
+    };
+
+    const blik01Result = detectBlik01(sacInput);
+    const ontk01Result = detectOntk01(sacInput);
+    const ikst01Result = detectIkst01(sacInput);
+    const coex01Result = detectCoex01(sacInput);
+
+    // Pick highest confidence active module
+    const candidates = [
+      blik01Result.activationStatus === 'ACTIVE' ? blik01Result : null,
+      ontk01Result.activationStatus === 'ACTIVE' ? ontk01Result : null,
+      ikst01Result.activationStatus === 'ACTIVE' ? ikst01Result : null,
+      coex01Result.activationStatus === 'ACTIVE' ? coex01Result : null,
+    ].filter(Boolean) as Array<{ moduleId: string; confidenceScore: number; matchedMarkers: string[]; selectedInterventionType: string; patternType?: string }>;
+
+    if (candidates.length > 0) {
+      const best = candidates.sort((a, b) => b.confidenceScore - a.confidenceScore)[0];
+      selfAcceptanceActivation = {
+        moduleId: best.moduleId as 'BLIK01' | 'ONTK01' | 'IKST01' | 'COEX01',
+        confidence: best.confidenceScore,
+        matchedMarkers: best.matchedMarkers,
+        interventionType: best.selectedInterventionType,
+        patternType: best.patternType,
+      };
+      console.log(`[Pipeline] SelfAcceptance: module=${best.moduleId} confidence=${best.confidenceScore} intervention=${best.selectedInterventionType}`);
+    }
+  }
+
   // ── STEP 5e8b: Kim SLAAP01 ──
   let kimSlaap01Result: KimSLAAP01Result = {
     slaap01Active: false,
@@ -2448,6 +2511,10 @@ export async function processMessage(
     steunpilarenContext: paal01Activation
       ? `[STEUNPILAREN PAAL01] trigger=${paal01Activation.triggerContext} confidence=${paal01Activation.confidence.toFixed(2)} markers=[${paal01Activation.matchedMarkers.join(',')}]`
       : undefined,
+    // Self-acceptance cluster (BLIK01/ONTK01/IKST01/COEX01, Elias only)
+    selfAcceptanceContext: selfAcceptanceActivation
+      ? `[SELF_ACCEPTANCE ${selfAcceptanceActivation.moduleId}] intervention=${selfAcceptanceActivation.interventionType} confidence=${selfAcceptanceActivation.confidence.toFixed(2)} pattern=${selfAcceptanceActivation.patternType ?? 'unknown'} markers=[${selfAcceptanceActivation.matchedMarkers.join(',')}]`
+      : undefined,
     // VSP Insight System — framework selection (MI/MBT/DGT). Never mutates safety core.
     vspInsightContext: vspInsightResult.active ? vspInsightResult.contextString || undefined : undefined,
     // VSP Backpack Profile — LLM-analyzed from recurringThemes (Elias only, cached in AsyncStorage)
@@ -2941,6 +3008,7 @@ export async function processMessage(
     } : null,
     psychoEducationActivation: psychoEducationActivation ?? null,
     paal01Activation: paal01Activation ?? null,
+    selfAcceptanceActivation: selfAcceptanceActivation ?? null,
   };
 }
 
