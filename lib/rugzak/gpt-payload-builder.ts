@@ -142,6 +142,8 @@ export interface GPTPayload {
   par01Context?: string;
   fin01Context?: string;
   iso01Context?: string;
+  /** PsychoEducation continuity context (WILSKRACHT01/AUTOPILOT01, Elias only) */
+  psychoEducationContext?: string;
 
   // ── Loopblocker: cross-session repeating pattern directive ──
   loopDetected?: {
@@ -320,6 +322,8 @@ export interface PayloadBuilderInput {
   par01Context?: string;
   fin01Context?: string;
   iso01Context?: string;
+  /** PsychoEducation continuity context (WILSKRACHT01/AUTOPILOT01, Elias only) */
+  psychoEducationContext?: string;
   /** Structured entities extracted from backpack (if available, sent instead of full backpack) */
   extractedEntities?: import('../backpack-extractor/types').ExtractedEntities;
   /** Whether backpack changed since last extraction (forces full backpack resend) */
@@ -695,6 +699,9 @@ export function buildGPTPayload(input: PayloadBuilderInput): GPTPayload {
   }
   if (input.iso01Context) {
     payload.iso01Context = input.iso01Context;
+  }
+  if (input.psychoEducationContext) {
+    payload.psychoEducationContext = input.psychoEducationContext;
   }
 
   // ── Buffer snapshot (from pipeline, per message) ──

@@ -525,6 +525,8 @@ export const chatInputSchema = z.object({
   vspBackpackProfile: z.string().nullable().optional(),
   // VSP Structured Section (user's own per-zone signals, whatHelps, anchorSentence, Elias only)
   vspStructuredSection: z.string().nullable().optional(),
+  // PsychoEducation continuity (WILSKRACHT01/AUTOPILOT01, Elias only)
+  psychoEducationContext: z.string().nullable().optional(),
 
   // Signal engine: relevance scores for context gating (LIVE_MESSAGE only)
   relevanceScores: z.object({

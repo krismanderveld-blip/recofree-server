@@ -2382,6 +2382,10 @@ export async function processMessage(
     emotionalLossContext: (kimAdvancedP7Result.overridesLowerModules || kimAdvancedP6Result.overridesLowerModules || kimP8Result.active) ? undefined : (kimP9Result.active ? kimP9Result.contextString || undefined : undefined),
     // Kim STOA-K (Stoic Reflective Framework) — lowest reflective priority, suppressed when any higher module active
     stoaKContext: (kimAdvancedP6Result.overridesLowerModules || kimAdvancedP7Result.active || kimP8Result.active || kimP9Result.active) ? undefined : (kimP10Result.active ? kimP10Result.contextString || undefined : undefined),
+    // PsychoEducation continuity (WILSKRACHT01/AUTOPILOT01, Elias only)
+    psychoEducationContext: psychoEducationActivation && !psychoEducationActivation.crisisOverride
+      ? `[PSYCHO-EDUCATIE ${psychoEducationActivation.moduleId}] mode=${psychoEducationActivation.responseMode} confidence=${psychoEducationActivation.activationConfidence.toFixed(2)} markers=[${psychoEducationActivation.detectedMarkers.join(',')}]${psychoEducationActivation.memoryHints ? ' continuity=active' : ''}`
+      : undefined,
     // VSP Insight System — framework selection (MI/MBT/DGT). Never mutates safety core.
     vspInsightContext: vspInsightResult.active ? vspInsightResult.contextString || undefined : undefined,
     // VSP Backpack Profile — LLM-analyzed from recurringThemes (Elias only, cached in AsyncStorage)

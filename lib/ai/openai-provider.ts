@@ -677,6 +677,8 @@ export class OpenAIProvider implements AIProvider {
           vspBackpackProfile: (gptPayload as any).vspBackpackProfile ?? null,
           // VSP Structured Section (user's own per-zone signals, whatHelps, anchorSentence, Elias only)
           vspStructuredSection: (gptPayload as any).vspStructuredSection ?? null,
+          // PsychoEducation continuity (WILSKRACHT01/AUTOPILOT01, Elias only)
+          psychoEducationContext: gptPayload.psychoEducationContext ?? null,
           // Signal engine: relevance scores for context gating (threshold 0.3))
           relevanceScores: context.relevanceScores ?? null,
           // Signal engine: compressed context summary (replaces full lifeStorySummary)

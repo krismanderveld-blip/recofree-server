@@ -1577,3 +1577,8 @@
 - [x] Add psychoEducationActivation to chat.tsx memoryInput passthrough
 - [x] Write acceptance test suite (35 tests): persona separation, crisis override, memory write, continuity, output safety, router integration
 - [x] All 35 tests passing
+- [x] Add psychoEducationContext to GPTPayloadBuilderInput + GPTPayloadOutput (gpt-payload-builder.ts)
+- [x] Add psychoEducationContext string to ChatContext assembly in pipeline.ts (step 2385-2388)
+- [x] Add psychoEducationContext to LIVE_MESSAGE payload in openai-provider.ts
+- [x] Add psychoEducationContext to Zod chatInputSchema in ai-chat.ts
+- [x] Add psychoEducationContext to GPT payload types (lib/ai/types.ts)
