@@ -306,6 +306,7 @@ describe("Self-Acceptance Cluster — Memory Write Router", () => {
         interventionType: "EXTERNAL_GAZE_REFLECTION",
         patternType: "external_judgment_internalized",
       },
+      kimPatternSupportActivation: null,
     };
 
     const plan = buildMemoryWritePlan(bundle);
@@ -334,6 +335,7 @@ describe("Self-Acceptance Cluster — Memory Write Router", () => {
       psychoEducationActivation: null,
       paal01Activation: null,
       selfAcceptanceActivation: null,
+      kimPatternSupportActivation: null,
     };
 
     const plan = buildMemoryWritePlan(bundle);
@@ -375,7 +377,9 @@ describe("Self-Acceptance Cluster — Memory Write Router", () => {
         interventionType: "GENTLE_MIRROR",
         patternType: "minimization",
       },
+      kimPatternSupportActivation: null,
     };
+
 
     const plan = buildMemoryWritePlan(bundle);
     const pePatchIds = plan.patches.filter((p) => p.source === "PsychoEducation_PE").map((p) => p.patchId);

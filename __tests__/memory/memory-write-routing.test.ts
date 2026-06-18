@@ -64,6 +64,7 @@ function createMinimalBundle(overrides?: Partial<PipelineDetectionBundle>): Pipe
     psychoEducationActivation: null,
     paal01Activation: null,
     selfAcceptanceActivation: null,
+      kimPatternSupportActivation: null,
     ...overrides,
   };
 }

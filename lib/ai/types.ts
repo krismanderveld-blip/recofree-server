@@ -1168,6 +1168,7 @@ export interface ChatContext {
   steunpilarenContext?: string;
   /** Self-acceptance cluster context (BLIK01/ONTK01/IKST01/COEX01) */
   selfAcceptanceContext?: string;
+  kimPatternSupportContext?: string;
   /** Structured entities extracted from backpack (persons, events, patterns, contexts). Sent instead of full backpack when unchanged. */
   extractedEntities?: import('../backpack-extractor/types').ExtractedEntities;
   /** Whether backpack content changed since last extraction (forces full backpack resend) */

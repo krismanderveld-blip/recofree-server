@@ -260,6 +260,79 @@ export function buildMemoryWritePlan(bundle: PipelineDetectionBundle): MemoryWri
     });
   }
 
+  // ── Kim Pattern Support (PAAL-K01/BEHE-K01/AANP-K01/CODEP-K01) ──
+  if (bundle.kimPatternSupportActivation) {
+    const kps = bundle.kimPatternSupportActivation;
+    // user.dat: module usage increment
+    patches.push({
+      patchId: createPatchId(ctx.turnId, "user.dat", `kimPatternSupport.${kps.moduleId}`),
+      layer: "user.dat",
+      operation: "INCREMENT",
+      path: "moduleUsage",
+      source: `KimPatternSupport_${kps.moduleId}`,
+      payload: {
+        moduleId: kps.moduleId,
+        lastActivatedAt: ctx.timestampIso,
+        activationCountIncrement: 1,
+        interventionType: kps.interventionType,
+        turnId: ctx.turnId,
+        sessionId: ctx.sessionId,
+        timestampIso: ctx.timestampIso,
+        source: `KimPatternSupport_${kps.moduleId}`,
+      },
+      shouldWrite: true,
+      reason: `${kps.moduleId} activated: ${kps.interventionType} with confidence ${kps.confidence}`,
+    });
+    // state.dat: active Kim reflective frame
+    const kimFrameMap: Record<string, string> = {
+      'PAAL-K01': 'kim_support_pillars',
+      'BEHE-K01': 'caregiver_control_pattern',
+      'AANP-K01': 'caregiver_adaptation_pattern',
+      'CODEP-K01': 'caregiver_codependency_awareness',
+    };
+    patches.push({
+      patchId: createPatchId(ctx.turnId, "state.dat", `kimPatternSupport.frame`),
+      layer: "state.dat",
+      operation: "REPLACE_CURRENT",
+      path: "activeKimReflectiveFrame",
+      source: `KimPatternSupport_${kps.moduleId}`,
+      payload: {
+        activeKimReflectiveFrame: kimFrameMap[kps.moduleId] || 'kim_support_pillars',
+        activeModuleId: kps.moduleId,
+        lastActivatedAt: ctx.timestampIso,
+        interventionType: kps.interventionType,
+        turnId: ctx.turnId,
+        sessionId: ctx.sessionId,
+        timestampIso: ctx.timestampIso,
+        source: `KimPatternSupport_${kps.moduleId}`,
+      },
+      shouldWrite: true,
+      reason: `${kps.moduleId} frame: ${kimFrameMap[kps.moduleId]}`,
+    });
+    // logs.dat: encrypted event
+    patches.push({
+      patchId: createPatchId(ctx.turnId, "logs.dat", `kimPatternSupport.event`),
+      layer: "logs.dat",
+      operation: "ENCRYPTED_APPEND",
+      path: "events",
+      source: `KimPatternSupport_${kps.moduleId}`,
+      payload: {
+        encryptedEventType: "kim_therapeutic_module_activation",
+        moduleId: kps.moduleId,
+        interventionType: kps.interventionType,
+        matchedMarkers: kps.matchedMarkers,
+        confidence: kps.confidence,
+        turnId: ctx.turnId,
+        sessionId: ctx.sessionId,
+        timestampIso: ctx.timestampIso,
+        source: `KimPatternSupport_${kps.moduleId}`,
+        safeSummary: `${kps.moduleId} activated: ${kps.interventionType}`,
+      },
+      shouldWrite: true,
+      reason: `${kps.moduleId} event log`,
+    });
+  }
+
   // Collect changed fields for buffer snapshot
   const changedFields = patches
     .filter((p) => p.shouldWrite)

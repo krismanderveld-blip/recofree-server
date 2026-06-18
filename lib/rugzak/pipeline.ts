@@ -451,6 +451,7 @@ export interface PipelineResult {
   paal01Activation?: { moduleId: 'PAAL01'; triggerContext: string; confidence: number; matchedMarkers: string[] } | null;
   /** Self-acceptance cluster activation (BLIK01/ONTK01/IKST01/COEX01) */
   selfAcceptanceActivation?: { moduleId: 'BLIK01' | 'ONTK01' | 'IKST01' | 'COEX01'; confidence: number; matchedMarkers: string[]; interventionType: string; patternType?: string } | null;
+  kimPatternSupportActivation?: { moduleId: 'PAAL-K01' | 'BEHE-K01' | 'AANP-K01' | 'CODEP-K01'; confidence: number; matchedMarkers: string[]; interventionType: string } | null;
 }
 
 /** Consolidated log entry for each message exchange */
@@ -1717,6 +1718,66 @@ export async function processMessage(
     }
   }
 
+  // ── STEP 5e8a5: Kim Pattern Support (PAAL-K01, BEHE-K01, AANP-K01, CODEP-K01) ──
+  let kimPatternSupportActivation: { moduleId: 'PAAL-K01' | 'BEHE-K01' | 'AANP-K01' | 'CODEP-K01'; confidence: number; matchedMarkers: string[]; interventionType: string } | null = null;
+  if (backpack.userType === 'kim' && !!(backpack as any).intake?.startEmotion) {
+    const { detectPaalK01 } = require('@/src/modules/kim/PAAL-K01/paalK01.detector');
+    const { detectBeheK01 } = require('@/src/modules/kim/BEHE-K01/beheK01.detector');
+    const { detectAanpK01 } = require('@/src/modules/kim/AANP-K01/aanpK01.detector');
+    const { detectCodepK01 } = require('@/src/modules/kim/CODEP-K01/codepK01.detector');
+    const kimZone = (sessionBuffer.currentZoneColor?.toUpperCase() ?? 'UNKNOWN') as 'GROEN' | 'GEEL' | 'ORANJE' | 'ROOD' | 'PAARS' | 'UNKNOWN';
+    const kimPatternInput = {
+      persona: 'kim' as const,
+      intakeCompleted: true,
+      userId: `user_${Date.now()}`,
+      sessionId: `session_${Date.now()}`,
+      turnId: `turn_${Date.now()}`,
+      turnIndex: sessionBuffer.recentMessages.length,
+      timestampIso: new Date().toISOString(),
+      latestUserMessage: userMessage,
+      recentMessages: sessionBuffer.recentMessages.slice(-3).map(m => m.content),
+      language: ((currentUserDat as any).detectedLanguage ?? 'nl') as 'nl' | 'en' | 'fr' | 'mixed' | 'unknown',
+      currentKimZone: kimZone,
+      crisisDetected: analysis.riskLevel === 'critical' || analysis.riskLevel === 'high',
+      selfHarmOrSuicideDetected: analysis.riskLevel === 'critical',
+      acuteDangerDetected: analysis.riskLevel === 'critical',
+      childDangerDetected: (currentUserDat as any).childDangerDetected === true,
+      activeRelapseCrisisDetected: (currentUserDat as any).relapseActive === true,
+      domesticViolenceOrAbuseDetected: (currentUserDat as any).domesticViolenceDetected === true,
+      stabilizedEnoughForReflection: kimZone === 'GROEN' || kimZone === 'GEEL',
+      existingKimMemoryHints: {
+        activeSupportPillarIds: ((currentUserDat as any).kimSteunpilaren ?? []).map((p: any) => p.id || 'unknown'),
+        activeControlPatternIds: ((currentUserDat as any).kimControlPatterns ?? []).map((p: any) => p.id || 'unknown'),
+        activeAdaptationPatternIds: ((currentUserDat as any).kimAdaptationPatterns ?? []).map((p: any) => p.id || 'unknown'),
+        activeCodepPatternIds: ((currentUserDat as any).kimCodepPatterns ?? []).map((p: any) => p.id || 'unknown'),
+        recentSafeLogSummaries: (currentUserDat as any).recentSafeLogSummaries ?? [],
+      },
+    };
+
+    const paalK01Result = detectPaalK01(kimPatternInput);
+    const beheK01Result = detectBeheK01(kimPatternInput);
+    const aanpK01Result = detectAanpK01(kimPatternInput);
+    const codepK01Result = detectCodepK01(kimPatternInput);
+
+    const kimCandidates = [
+      paalK01Result.activationStatus === 'ACTIVE' ? paalK01Result : null,
+      beheK01Result.activationStatus === 'ACTIVE' ? beheK01Result : null,
+      aanpK01Result.activationStatus === 'ACTIVE' ? aanpK01Result : null,
+      codepK01Result.activationStatus === 'ACTIVE' ? codepK01Result : null,
+    ].filter(Boolean) as Array<{ moduleId: string; confidenceScore: number; matchedMarkers: string[]; selectedInterventionType: string }>;
+
+    if (kimCandidates.length > 0) {
+      const best = kimCandidates.sort((a, b) => b.confidenceScore - a.confidenceScore)[0];
+      kimPatternSupportActivation = {
+        moduleId: best.moduleId as 'PAAL-K01' | 'BEHE-K01' | 'AANP-K01' | 'CODEP-K01',
+        confidence: best.confidenceScore,
+        matchedMarkers: best.matchedMarkers,
+        interventionType: best.selectedInterventionType,
+      };
+      console.log(`[Pipeline] KimPatternSupport: module=${best.moduleId} confidence=${best.confidenceScore} intervention=${best.selectedInterventionType}`);
+    }
+  }
+
   // ── STEP 5e8b: Kim SLAAP01 ──
   let kimSlaap01Result: KimSLAAP01Result = {
     slaap01Active: false,
@@ -2515,6 +2576,10 @@ export async function processMessage(
     selfAcceptanceContext: selfAcceptanceActivation
       ? `[SELF_ACCEPTANCE ${selfAcceptanceActivation.moduleId}] intervention=${selfAcceptanceActivation.interventionType} confidence=${selfAcceptanceActivation.confidence.toFixed(2)} pattern=${selfAcceptanceActivation.patternType ?? 'unknown'} markers=[${selfAcceptanceActivation.matchedMarkers.join(',')}]`
       : undefined,
+    // Kim Pattern Support (PAAL-K01/BEHE-K01/AANP-K01/CODEP-K01, Kim only)
+    kimPatternSupportContext: kimPatternSupportActivation
+      ? `[KIM_PATTERN_SUPPORT ${kimPatternSupportActivation.moduleId}] intervention=${kimPatternSupportActivation.interventionType} confidence=${kimPatternSupportActivation.confidence.toFixed(2)} markers=[${kimPatternSupportActivation.matchedMarkers.join(',')}]`
+      : undefined,
     // VSP Insight System — framework selection (MI/MBT/DGT). Never mutates safety core.
     vspInsightContext: vspInsightResult.active ? vspInsightResult.contextString || undefined : undefined,
     // VSP Backpack Profile — LLM-analyzed from recurringThemes (Elias only, cached in AsyncStorage)
@@ -3009,6 +3074,7 @@ export async function processMessage(
     psychoEducationActivation: psychoEducationActivation ?? null,
     paal01Activation: paal01Activation ?? null,
     selfAcceptanceActivation: selfAcceptanceActivation ?? null,
+    kimPatternSupportActivation: kimPatternSupportActivation ?? null,
   };
 }
 

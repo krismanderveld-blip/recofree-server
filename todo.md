@@ -1621,3 +1621,17 @@
 - [x] PipelineDetectionBundle + PipelineResult + memoryIntegration updated
 - [x] Combined acceptance tests: 36 tests passing
 - [x] Total test suite: 167 tests passing (81 PAAL01 + 35 WILSKRACHT01/AUTOPILOT01 + 36 self-acceptance + 15 memory router)
+
+## Kim Pattern Support: PAAL-K01, BEHE-K01, AANP-K01, CODEP-K01
+- [x] Shared types: kimPatternsSupport.types.ts
+- [x] Shared context assembler: kimPatternSupportContextAssembler.ts
+- [x] Shared output safety filter: patternSupportOutputSafetyFilter.ts
+- [x] PAAL-K01: detector, NL+EN markers, memory patch builder, prompt builder, index
+- [x] BEHE-K01: detector, NL+EN markers, memory patch builder, prompt builder, index
+- [x] AANP-K01: detector, NL+EN markers, memory patch builder, prompt builder, index
+- [x] CODEP-K01: detector, NL+EN markers, memory patch builder, prompt builder, index
+- [x] Pipeline integration: all 4 modules in pipeline.ts (step 5e8a5)
+- [x] Memory write router: kimPatternSupportActivation routing
+- [x] PipelineDetectionBundle + PipelineResult + memoryIntegration updated
+- [x] Combined acceptance tests: 33 tests passing (persona, crisis priority, layers, continuity, safety)
+- [x] Total test suite: 200 tests passing (81 PAAL01 + 35 WILSKRACHT01/AUTOPILOT01 + 36 self-acceptance + 33 Kim pattern + 15 memory router)

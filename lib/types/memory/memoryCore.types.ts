@@ -26,7 +26,11 @@ export type MemorySource =
   | "SelfAcceptance_BLIK01"
   | "SelfAcceptance_ONTK01"
   | "SelfAcceptance_IKST01"
-  | "SelfAcceptance_COEX01";
+  | "SelfAcceptance_COEX01"
+  | "KimPatternSupport_PAAL-K01"
+  | "KimPatternSupport_BEHE-K01"
+  | "KimPatternSupport_AANP-K01"
+  | "KimPatternSupport_CODEP-K01";
 
 export type MemoryPatchOperation =
   | "UPSERT"
@@ -162,6 +166,7 @@ export interface PipelineDetectionBundle {
   psychoEducationActivation: PsychoEducationActivation | null;
   paal01Activation: Paal01Activation | null;
   selfAcceptanceActivation: SelfAcceptanceActivation | null;
+  kimPatternSupportActivation: KimPatternSupportActivation | null;
 }
 
 export interface Paal01Activation {
@@ -177,6 +182,13 @@ export interface SelfAcceptanceActivation {
   matchedMarkers: string[];
   interventionType: string;
   patternType?: string;
+}
+
+export interface KimPatternSupportActivation {
+  moduleId: 'PAAL-K01' | 'BEHE-K01' | 'AANP-K01' | 'CODEP-K01';
+  confidence: number;
+  matchedMarkers: string[];
+  interventionType: string;
 }
 
 export interface PsychoEducationActivation {
