@@ -1470,24 +1470,36 @@ Keep it short (3-5 sentences max). Do NOT ask new questions.`;
     // Inject backpackAnalysis context (deep GPT-4o analysis of backpack content)
     let backpackAnalysisContext = '';
     if (input.backpackAnalysis && input.backpackAnalysis.schemas.length > 0) {
-      const schemas = input.backpackAnalysis.schemas
-        .filter(s => s.confidence >= 0.35)
-        .map(s => `${s.name} (${(s.confidence * 100).toFixed(0)}%): ${s.evidence}`)
-        .join('\n  ');
-      const modi = input.backpackAnalysis.modi
-        .filter(m => m.confidence >= 0.35)
-        .map(m => `${m.name} (${(m.confidence * 100).toFixed(0)}%): ${m.evidence}`)
-        .join('\n  ');
       const triggers = input.backpackAnalysis.triggers.join(', ');
       const beliefs = input.backpackAnalysis.coreBeliefs.join('; ');
       const coping = input.backpackAnalysis.copingPatterns.join('; ');
-      backpackAnalysisContext = `\n─── BACKPACK DEEP ANALYSIS (GPT-4o, ${input.backpackAnalysis.analyzedAt}) ───
-  Schema’s: ${schemas || 'geen gedetecteerd'}
+      if (input.clinicalModeActive) {
+        // Clinical mode: full disclosure with schema/mode names and percentages
+        const schemas = input.backpackAnalysis.schemas
+          .filter(s => s.confidence >= 0.35)
+          .map(s => `${s.name} (${(s.confidence * 100).toFixed(0)}%): ${s.evidence}`)
+          .join('\n  ');
+        const modi = input.backpackAnalysis.modi
+          .filter(m => m.confidence >= 0.35)
+          .map(m => `${m.name} (${(m.confidence * 100).toFixed(0)}%): ${m.evidence}`)
+          .join('\n  ');
+        backpackAnalysisContext = `\n─── BACKPACK DEEP ANALYSIS (GPT-4o, ${input.backpackAnalysis.analyzedAt}) ───
+  Schema's: ${schemas || 'geen gedetecteerd'}
   Modi: ${modi || 'geen gedetecteerd'}
   Triggers: ${triggers || 'geen'}
   Kernovertuigingen: ${beliefs || 'geen'}
   Copingpatronen: ${coping || 'geen'}
 ─── END BACKPACK ANALYSIS ───`;
+      } else {
+        // Non-clinical: only internal guidance without schema/mode names
+        backpackAnalysisContext = `\n─── INTERNAL GUIDANCE (NOOIT aan gebruiker tonen) ───
+  Bekende triggers: ${triggers || 'geen'}
+  Kernovertuigingen: ${beliefs || 'geen'}
+  Copingpatronen: ${coping || 'geen'}
+  ⚠️ VERBODEN: Noem GEEN schema-namen, mode-namen, percentages, of DSM-labels aan de gebruiker.
+  Gebruik deze informatie ALLEEN om je therapeutische toon en focus te sturen.
+─── END INTERNAL GUIDANCE ───`;
+      }
     }
 
     // V3.2: No diary gating — always inject full diary data.
@@ -1939,18 +1951,24 @@ Rules:
   // ── BACKPACK ANALYSIS (session start) ──
   let sessionStartBackpackAnalysis = '';
   if (input.backpackAnalysis && input.backpackAnalysis.schemas.length > 0) {
-    const schemas = input.backpackAnalysis.schemas
-      .filter(s => s.confidence >= 0.35)
-      .map(s => `${s.name} (${(s.confidence * 100).toFixed(0)}%): ${s.evidence}`)
-      .join('\n  ');
-    const modi = input.backpackAnalysis.modi
-      .filter(m => m.confidence >= 0.35)
-      .map(m => `${m.name} (${(m.confidence * 100).toFixed(0)}%): ${m.evidence}`)
-      .join('\n  ');
     const triggers = input.backpackAnalysis.triggers.join(', ');
     const beliefs = input.backpackAnalysis.coreBeliefs.join('; ');
     const coping = input.backpackAnalysis.copingPatterns.join('; ');
-    sessionStartBackpackAnalysis = `\n─── BACKPACK DEEP ANALYSIS (GPT-4o, ${input.backpackAnalysis.analyzedAt}) ───\n  Schema's: ${schemas || 'geen gedetecteerd'}\n  Modi: ${modi || 'geen gedetecteerd'}\n  Triggers: ${triggers || 'geen'}\n  Kernovertuigingen: ${beliefs || 'geen'}\n  Copingpatronen: ${coping || 'geen'}\n─── END BACKPACK ANALYSIS ───`;
+    if (input.clinicalModeActive) {
+      // Clinical mode: full disclosure
+      const schemas = input.backpackAnalysis.schemas
+        .filter(s => s.confidence >= 0.35)
+        .map(s => `${s.name} (${(s.confidence * 100).toFixed(0)}%): ${s.evidence}`)
+        .join('\n  ');
+      const modi = input.backpackAnalysis.modi
+        .filter(m => m.confidence >= 0.35)
+        .map(m => `${m.name} (${(m.confidence * 100).toFixed(0)}%): ${m.evidence}`)
+        .join('\n  ');
+      sessionStartBackpackAnalysis = `\n─── BACKPACK DEEP ANALYSIS (GPT-4o, ${input.backpackAnalysis.analyzedAt}) ───\n  Schema's: ${schemas || 'geen gedetecteerd'}\n  Modi: ${modi || 'geen gedetecteerd'}\n  Triggers: ${triggers || 'geen'}\n  Kernovertuigingen: ${beliefs || 'geen'}\n  Copingpatronen: ${coping || 'geen'}\n─── END BACKPACK ANALYSIS ───`;
+    } else {
+      // Non-clinical: internal guidance only
+      sessionStartBackpackAnalysis = `\n─── INTERNAL GUIDANCE (NOOIT aan gebruiker tonen) ───\n  Bekende triggers: ${triggers || 'geen'}\n  Kernovertuigingen: ${beliefs || 'geen'}\n  Copingpatronen: ${coping || 'geen'}\n  ⚠️ VERBODEN: Noem GEEN schema-namen, mode-namen, percentages, of DSM-labels aan de gebruiker.\n  Gebruik deze informatie ALLEEN om je therapeutische toon en focus te sturen.\n─── END INTERNAL GUIDANCE ───`;
+    }
     console.log(`[AI Chat] SESSION_INIT: Backpack analysis injected (${input.backpackAnalysis.schemas.length} schemas, ${input.backpackAnalysis.modi.length} modes)`);
   }
 
