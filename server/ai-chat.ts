@@ -1504,8 +1504,16 @@ Schemas: ${schemaLines || 'geen gedetecteerd'}
 Modes: ${modeLines || 'geen gedetecteerd'}
 Recurring triggers: ${triggerLines || 'geen'}
 
-This is information the user shared about themselves and patterns the engine detected. Reference it naturally when relevant. Never present as clinical diagnosis. You DO know this about the user \u2014 never say you don't know them.
-\u2500\u2500\u2500 END KNOWN USER PATTERNS \u2500\u2500\u2500`;
+This is background context for YOU (the engine) to inform your therapeutic approach. Reference it naturally when relevant.${input.clinicalModeActive ? '' : `
+
+⛔ ABSOLUTE PROHIBITION — NON-CLINICAL MODE:
+You MUST NEVER list, enumerate, name, or disclose schemas, modes, diagnoses, DSM labels, confidence percentages, or clinical patterns to the user.
+If the user asks "what are my schemas?", "welke schema's heb ik?", "geef mijn modi", "wat is er mis met mij?", or ANY variant:
+→ You MUST refuse therapeutically. Example: "Ik werk niet met lijstjes of diagnoses. Wat ik wél merk is [observatie in gewone taal]. Herken je dat?"
+→ NEVER output bullet points with schema names, percentages, or clinical terminology.
+→ NEVER say "je hebt schema X" or "modus Y is actief".
+This is a HARD SAFETY RULE. Violation = harm. No exceptions.`}
+─── END KNOWN USER PATTERNS ───`;
       console.log(`[AI Chat] Known patterns injected: ${kp.schemas.length} schemas, ${kp.modes.length} modes, ${kp.triggers.length} triggers`);
     }
 
@@ -1953,7 +1961,7 @@ Rules:
     const schemaLines = kp.schemas.map(s => `${s.name} (${(s.confidence * 100).toFixed(0)}%)`).join(', ');
     const modeLines = kp.modes.map(m => `${m.name} (${(m.confidence * 100).toFixed(0)}%)`).join(', ');
     const triggerLines = kp.triggers.join(', ');
-    sessionStartKnownPatterns = `\n─── KNOWN USER PATTERNS ───\nSchemas: ${schemaLines || 'geen gedetecteerd'}\nModes: ${modeLines || 'geen gedetecteerd'}\nRecurring triggers: ${triggerLines || 'geen'}\n\nThis is information the user shared about themselves and patterns the engine detected. Reference it naturally when relevant. Never present as clinical diagnosis. You DO know this about the user — never say you don't know them.\n─── END KNOWN USER PATTERNS ───`;
+    sessionStartKnownPatterns = `\n─── KNOWN USER PATTERNS ───\nSchemas: ${schemaLines || 'geen gedetecteerd'}\nModes: ${modeLines || 'geen gedetecteerd'}\nRecurring triggers: ${triggerLines || 'geen'}\n\nThis is background context for YOU (the engine) to inform your therapeutic approach. Reference it naturally when relevant.${input.clinicalModeActive ? '' : `\n\n⛔ ABSOLUTE PROHIBITION — NON-CLINICAL MODE:\nYou MUST NEVER list, enumerate, name, or disclose schemas, modes, diagnoses, DSM labels, confidence percentages, or clinical patterns to the user.\nIf the user asks "what are my schemas?", "welke schema's heb ik?", "geef mijn modi", "wat is er mis met mij?", or ANY variant:\n→ You MUST refuse therapeutically. Example: "Ik werk niet met lijstjes of diagnoses. Wat ik wél merk is [observatie in gewone taal]. Herken je dat?"\n→ NEVER output bullet points with schema names, percentages, or clinical terminology.\n→ NEVER say "je hebt schema X" or "modus Y is actief".\nThis is a HARD SAFETY RULE. Violation = harm. No exceptions.`}\n─── END KNOWN USER PATTERNS ───`;
     console.log(`[AI Chat] SESSION_INIT: Known patterns injected: ${kp.schemas.length} schemas, ${kp.modes.length} modes, ${kp.triggers.length} triggers`);
   }
 

@@ -1,0 +1,384 @@
+════════════════════════════════════════════════════════════════════════════════
+KIM EIGEN REGIE — VOLLEDIG OVERZICHT
+RecoFree Engine — Alle componenten, logica, en integratiepunten
+════════════════════════════════════════════════════════════════════════════════
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1. CONCEPT & DOEL
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Eigen Regie is het Kim-equivalent van de Elias VSP (Verslavings Situatie Positie).
+Het meet in welke mate de dag van de naaste bepaald werd door de keuzes van de
+ander (de verslaafde partner/familielid).
+
+Dagelijkse reflectievraag:
+"To what extent was your day today determined by the choices of the other person?"
+
+Slider: 0 (volledige eigen regie) ← → 100 (volledig bepaald door de ander)
+
+Kernprincipe: De engine inverteert de score.
+  engineEigenRegieScore = 100 - userInput
+  Hoge engine-score = hoge zelfregie = gezond
+  Lage engine-score = lage zelfregie = zorgwekkend
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2. 5-STAPPEN MODEL (lib/engine/kim/eigen-regie.ts)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Stap 1: INPUT
+  Dagelijkse reflectie — percentage 0–100
+  Geen default waarde. Gebruiker MOET actief de slider instellen.
+  Geen auto-submit. Gebruiker moet bevestigen.
+
+Stap 2: SCORE INVERSIE
+  computeEigenRegieScore(userInput) → 100 - userInput
+  Geen middeling. Geen smoothing. Geen trends.
+
+Stap 3: ZONES (5 niveaus op basis van engineScore)
+  ┌──────────────┬─────────────────┬──────────────────────────────────┐
+  │ Engine Score  │ Zone            │ Kleur                            │
+  ├──────────────┼─────────────────┼──────────────────────────────────┤
+  │ 0–20         │ ROOD            │ #EF4444                          │
+  │ 21–40        │ ORANJE          │ #F97316                          │
+  │ 41–60        │ GEEL            │ #F59E0B                          │
+  │ 61–80        │ LICHTGROEN      │ #84CC16                          │
+  │ 81–100       │ GROEN           │ #22C55E                          │
+  └──────────────┴─────────────────┴──────────────────────────────────┘
+
+Stap 4: BETEKENIS (vaste tekst per zone)
+  ROOD:       "I was completely focused on the other person. I felt responsible
+               for their behavior."
+  ORANJE:     "I was mostly occupied with the other person. My own needs barely
+               came up."
+  GEEL:       "I was often thinking about the other person, but also thought
+               about myself briefly."
+  LICHTGROEN: "I considered the other person, but also stayed with myself."
+  GROEN:      "I followed my own plan. I felt free, regardless of what the other
+               person did."
+
+Stap 5: ENGINE IMPACT (Kim-gedrag per zone)
+  ┌──────────────┬─────────────────────────────────────────────────────┐
+  │ Zone         │ Primary Directive      │ Secondary Directive        │
+  ├──────────────┼────────────────────────┼────────────────────────────┤
+  │ ROOD         │ stabilize              │ no confrontation           │
+  │ ORANJE       │ raise awareness        │ light reflection           │
+  │ GEEL         │ deepen insight         │ gentle mirroring           │
+  │ LICHTGROEN   │ strengthen             │ give small direction       │
+  │ GROEN        │ autonomy               │ challenge possible         │
+  └──────────────┴────────────────────────┴────────────────────────────┘
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3. KIM ZONE IMPACT MAP (lib/engine/kim/zone.ts)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Elke zone heeft een deterministische KimImpact:
+
+  ┌──────────────┬─────────────────────┬───────────────┬───────────────┐
+  │ Zone         │ Stabilization Level │ Challenge     │ Autonomy      │
+  ├──────────────┼─────────────────────┼───────────────┼───────────────┤
+  │ ROOD         │ HIGH                │ NONE          │ LOW           │
+  │ ORANJE       │ HIGH                │ LOW           │ LOW           │
+  │ GEEL         │ MEDIUM              │ MEDIUM        │ MEDIUM        │
+  │ LICHTGROEN   │ LOW                 │ MEDIUM        │ HIGH          │
+  │ GROEN        │ NONE                │ HIGH          │ HIGH          │
+  └──────────────┴─────────────────────┴───────────────┴───────────────┘
+
+Zone Labels:
+  ROOD:       "Loss of self-direction"
+  ORANJE:     "Limited self-direction"
+  GEEL:       "Fluctuating self-direction"
+  LICHTGROEN: "Growing self-direction"
+  GROEN:      "Strong self-direction"
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4. CRISIS-DETECTIE (eigenRegie < 10 → isKimCrisis)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Wanneer de gebruiker een eigenRegie userInput < 10 rapporteert:
+  → isKimCrisis = true
+  → Zone wordt geforceerd naar PURPLE (equivalent van Elias PAARS)
+  → Model routing: gpt-4o (in plaats van gpt-4o-mini)
+  → Regulation action: "ground" (stabiliseren, geen exploratie)
+
+Dit is de Kim-specifieke crisis-trigger. Het betekent dat de naaste rapporteert
+dat hun hele dag volledig bepaald werd door de ander — een signaal van ernstig
+verlies van zelfregie.
+
+Grenswaarden:
+  userInput 0–9  → isKimCrisis = true  (PURPLE)
+  userInput 10+  → isKimCrisis = false (normale zone-routing)
+  null (niet ingevuld) → isKimCrisis = false
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+5. KIM DECISION LAYER (lib/engine/kim/decision-layer.ts)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Centraliseert alle Kim-beslissingen in één object:
+
+Input (KimDecisionInput):
+  - analysis: StateAnalysis (risico, emotie, triggers)
+  - dominantState: DominantState (module, richting, toon)
+  - crisis: CrisisAssessment (level, triggers)
+  - moodSliders: KimMoodSliders (stress, boundaryFatigue, emotionalBurden, selfCare, eigenRegie)
+  - currentZoneColor: buffer-berekende zone
+  - currentZoneScore: buffer-score
+  - eigenRegieInput: number | null (dagelijkse reflectie)
+
+Output (KimDecision):
+  - dominantModule: string
+  - crisisLevel: number
+  - zone.calculated: legacy buffer zone (passthrough)
+  - zone.engine: ZoneResult<KimImpact> | null (engine-berekend vanuit Eigen Regie)
+  - tone: ToneDirective
+  - pacing: PacingDirective
+  - interventionDepth: number
+  - challengeLevel: number
+  - eigenRegie: EigenRegieResult | null
+  - isKimCrisis: boolean
+
+Regels:
+  - Pure aggregatie — geen nieuwe logica
+  - Combineert Eigen Regie NIET met andere systemen
+  - Geen inferentie, geen fallback
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+6. PIPELINE INTEGRATIE (lib/rugzak/pipeline.ts)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+De pipeline leest eigenRegie uit currentUserDat.currentMood en voedt het in
+createKimDecision als eigenRegieInput.
+
+Zone-resolutie (na engine decision):
+  1. Als kimDecision.isKimCrisis → PURPLE (geforceerd)
+  2. Als kimDecision.zone.engine.level bestaat:
+     GROEN/LICHTGROEN → GREEN
+     GEEL → YELLOW
+     ORANJE → ORANGE
+     ROOD → RED
+  3. Fallback: buffer-berekende zone
+
+eigenRegieScore wordt ook doorgegeven aan:
+  - Projection Layer (deepening activatie als eigenRegie > 50)
+  - Kim advanced modules (K01–K06)
+  - Greeting context (hasEigenRegie check)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+7. PROJECTION LAYER (lib/rugzak/projection-layer.ts)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Eigen Regie stuurt de projection (toekomstgerichte) laag:
+
+shouldActivateDeepening():
+  Kim: activeert wanneer eigenRegieScore > 50
+  (stabiel genoeg om vooruit te kijken)
+
+KimProjectionSignalInput:
+  - eigenRegieScore: number | null
+  - consecutiveHighRegieSessions: number
+  - distressScore, resilienceScore, zoneImproved
+
+Deepening directive (wanneer actief):
+  "When the moment is right, gently ask about hopes or fears for the future."
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+8. PRE-CHAT GATE (components/prechat-eigen-regie.tsx)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+BLOKKEERT het chatscherm totdat Kim de dagelijkse reflectie invult.
+
+Regels:
+  - Geen default waarde. Slider start op null.
+  - Geen auto-submit. Gebruiker moet actief bevestigen.
+  - Alleen user-keuze vult eigenRegie. Geen systeem-defaults.
+  - Na submit: chatscherm gaat door naar greeting/pipeline.
+
+UI-elementen:
+  - Header: "How was your day, {userName}?"
+  - Vraag: EIGEN_REGIE_QUESTION (canonical)
+  - Slider: 0–100, step 1
+  - Labels: "Full self-direction" ← → "Fully determined by the other"
+  - Zone-kaart: kleur + zone-naam + betekenis (verschijnt na interactie)
+  - Bevestig-knop: disabled tot slider aangeraakt
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+9. PERSISTENTIE (lib/user-context.tsx)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+updateEigenRegie(userInput: number):
+  1. Maakt EigenRegieEntry { userInput, timestamp: ISO string }
+  2. Voegt toe aan userDat.eigenRegieHistory array
+  3. Dual write: currentMood.eigenRegie = userInput (huidige staat)
+  4. Dispatcht UPDATE_USERDAT
+  5. Persisteert naar AsyncStorage
+
+getEigenRegieHistory():
+  Retourneert userDat.eigenRegieHistory ?? []
+
+Data model (EigenRegieEntry):
+  { userInput: number, timestamp: string }
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+10. INTAKE / ONBOARDING (lib/ai/types.ts + app/intake.tsx)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Bij onboarding kiest Kim een initieel Eigen Regie level (1–5):
+
+  ┌───────┬────────────┬────────────────────────────────────────────────────┐
+  │ Level │ Zone       │ Label                                              │
+  ├───────┼────────────┼────────────────────────────────────────────────────┤
+  │ 1     │ RED        │ My life revolves entirely around the other person  │
+  │ 2     │ ORANGE     │ I am mostly focused on the other person            │
+  │ 3     │ YELLOW     │ There is a mix between myself and the other person │
+  │ 4     │ LIGHT GREEN│ I mostly maintain my own direction                 │
+  │ 5     │ DARK GREEN │ I fully live my own life                           │
+  └───────┴────────────┴────────────────────────────────────────────────────┘
+
+Conversie naar 0–100 schaal:
+  Level 1 = 0, Level 2 = 25, Level 3 = 50, Level 4 = 75, Level 5 = 100
+
+Dit wordt opgeslagen als initiële currentMood.eigenRegie waarde.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+11. KIM IDENTITEIT & THERAPEUTISCHE GRONDSLAG (lib/engine/kim/prompt-block.ts)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Kim's identiteit in relatie tot Eigen Regie:
+
+"You are Kim. You are here for the person standing next to the storm.
+You are not neutral. You have chosen a side: the caregiver's.
+Not against the addicted person. For the one who is exhausted from holding
+everything together."
+
+Kim's gedrag wordt direct gestuurd door de Eigen Regie zone:
+  - ROOD: stabiliseren, geen confrontatie
+  - ORANJE: bewustzijn verhogen, lichte reflectie
+  - GEEL: inzicht verdiepen, zachte spiegeling
+  - LICHTGROEN: versterken, kleine richting geven
+  - GROEN: autonomie, uitdaging mogelijk
+
+Therapeutische basis:
+  - Boundary protection: altijd
+  - Self-compassion: altijd
+  - Codependency interruption: wanneer patronen verschijnen
+  - MBT: benoemen wat er gebeurt vóór interpretatie
+  - Schema exhausted caretaker recognition: bij zelfopoffering
+  - DBT distress tolerance: bij hoge nood
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+12. RELATIONAL SIGNALS & TRIGGERS (lib/engine/kim/relational-signals.ts)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Kim-specifieke trigger-detectie (NL + EN):
+
+  ┌──────────────────────┬────────────────────────────────────────────────────┐
+  │ Trigger              │ Patronen (NL)                                      │
+  ├──────────────────────┼────────────────────────────────────────────────────┤
+  │ boundary_violation   │ grens, grenzen, te veel, overschreden, genoeg      │
+  │ repeated_pattern     │ weer, altijd, elke keer, steeds, blijft maar       │
+  │ guilt                │ schuld, schuldig, mijn fout, verantwoordelijk      │
+  │ caregiver_fatigue    │ moe, uitgeput, opgebrand, leeg, op                 │
+  │ isolation            │ eenzaam, alleen, niemand begrijpt, geïsoleerd      │
+  │ loved_one_relapse    │ terugval, teruggevallen, weer gebruiken/drinken    │
+  │ anger_at_situation   │ boos, woedend, kwaad, gefrustreerd, razend         │
+  │ control_exhaustion   │ controleer, controleren, controle, beheersen, grip │
+  └──────────────────────┴────────────────────────────────────────────────────┘
+
+Priority triggers (krijgen voorrang in zone-routing):
+  - boundary_violation
+  - enabling
+  - guilt
+  - caregiver_fatigue
+  - isolation
+  - control_exhaustion
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+13. MOOD SLIDERS — KIM SPECIFIEK
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+KimMoodSliders:
+  - stress: number (0–10)
+  - boundaryFatigue: number (0–10)
+  - emotionalBurden: number (0–10)
+  - selfCare: number (0–10)
+  - eigenRegie: number | null (0–100, dagelijkse reflectie)
+
+eigenRegie is het enige veld dat:
+  1. Verplicht is vóór chat (pre-chat gate)
+  2. Direct crisis kan triggeren (< 10 → isKimCrisis)
+  3. De volledige zone-routing bepaalt (niet de andere sliders)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+14. CRISIS PROTOCOL — KIM SPECIFIEK
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Wanneer isKimCrisis = true:
+
+1. PRESENCE: "Ik ben hier." — geen nummers, geen resources
+2. SAFETY: "Ben je nu veilig?" — wacht op antwoord
+3. CRISIS FOOTER (verplicht):
+   "Je kan ook bellen naar de Zelfmoordlijn: 1813 (24/7, gratis en anoniem),
+    1712 (huiselijk geweld) of 112 bij onmiddellijk gevaar."
+
+Regels:
+  - NOOIT presence overslaan
+  - NOOIT safety check overslaan
+  - ALTIJD crisis footer aan het einde
+  - Kalm, aanwezig, direct. Los NIETS op — wees er gewoon.
+  - Voor Kim: valideer dat HUN pijn ertoe doet, niet alleen die van de ander.
+
+Belgische crisisnummers:
+  - 1813 (Zelfmoordlijn — 24/7, gratis, anoniem)
+  - 1712 (huiselijk geweld — gratis, anoniem)
+  - 107 (Centrum Geestelijke Gezondheidszorg)
+  - 112 (noodgevallen — alleen bij onmiddellijk gevaar)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+15. ARCHITECTUUR SAMENVATTING
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Dataflow:
+
+  [Intake] → eigenRegieLevel (1-5) → currentMood.eigenRegie (0-100)
+       ↓
+  [Pre-Chat Gate] → slider 0-100 → updateEigenRegie() → AsyncStorage
+       ↓
+  [Pipeline] → currentMood.eigenRegie → createKimDecision(eigenRegieInput)
+       ↓
+  [Decision Layer] → processEigenRegie() → zone + impact + isKimCrisis
+       ↓
+  [Zone Resolution] → isKimCrisis? PURPLE : engineZone mapping
+       ↓
+  [Regulation Layer] → action (ground/stabilize/reflect/explore/challenge)
+       ↓
+  [GPT Prompt] → Kim identity + zone directives + crisis protocol (indien actief)
+       ↓
+  [Projection Layer] → deepening alleen als eigenRegie > 50
+
+Bestanden:
+  lib/engine/kim/eigen-regie.ts       — Core 5-stappen model
+  lib/engine/kim/zone.ts              — Zone → KimImpact mapping
+  lib/engine/kim/decision-layer.ts    — Aggregatie + isKimCrisis
+  lib/engine/kim/prompt-block.ts      — Kim identiteit + crisis protocol
+  lib/engine/kim/relational-signals.ts — Trigger detectie (NL/EN)
+  lib/rugzak/pipeline.ts              — Runtime integratie
+  lib/rugzak/projection-layer.ts      — Toekomstgerichte activatie
+  lib/user-context.tsx                — Persistentie + history
+  lib/ai/types.ts                     — Data model + intake opties
+  components/prechat-eigen-regie.tsx   — Pre-chat UI gate
+  app/intake.tsx                       — Onboarding selectie
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+16. DESIGN PRINCIPES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. Geen inferentie — alleen wat de gebruiker expliciet rapporteert
+2. Geen combinatie met andere systemen — Eigen Regie staat op zichzelf
+3. Geen smoothing of middeling — elke dag is een verse meting
+4. Geen fallback — als niet ingevuld, is het null (niet een aanname)
+5. UI toont userInput — engine werkt met geïnverteerde score
+6. Deterministische impact — elke zone heeft exact één vast gedragsprofiel
+7. Crisis-drempel is hard — < 10 is altijd crisis, geen grijs gebied
+
+════════════════════════════════════════════════════════════════════════════════
+EINDE DOCUMENT
+════════════════════════════════════════════════════════════════════════════════
