@@ -417,7 +417,7 @@ export default function BackpackScreen() {
           </View>
         </Pressable>
 
-        {/* VSP Section (Elias only) */}
+        {/* My Safety Plan Section (Elias only) */}
         {!isKim && state.backpack?.userType === 'elias' && (
           <View>
             {/* Wizard button */}
@@ -425,7 +425,7 @@ export default function BackpackScreen() {
               <View style={{ backgroundColor: '#8B5CF620', borderRadius: 12, padding: 14, flexDirection: 'row', alignItems: 'center', gap: 10, borderWidth: 1, borderColor: '#8B5CF640' }}>
                 <Text style={{ fontSize: 20 }}>{"\u{1F4C4}"}</Text>
                 <View style={{ flex: 1 }}>
-                  <Text style={{ fontSize: 14, fontWeight: '600', color: colors.foreground }}>My Safety Plan Wizard</Text>
+                  <Text style={{ fontSize: 14, fontWeight: '600', color: colors.foreground }}>My Safety Plan</Text>
                   <Text style={{ fontSize: 12, color: colors.muted }}>Upload a document or fill in step by step</Text>
                 </View>
                 <Text style={{ fontSize: 14, color: colors.muted }}>{"\u{203A}"}</Text>
@@ -438,10 +438,10 @@ export default function BackpackScreen() {
           </View>
         )}
 
-        {/* Life Phase Sections */}
+        {/* Life Phase Sections (VSP excluded — shown separately above as My Safety Plan) */}
         {isKim
           ? DEFAULT_KIM_BACKPACK_SECTIONS.map(renderKimSection)
-          : sections.map(renderEliasSection)}
+          : sections.filter(s => s.id !== 'vsp').map(renderEliasSection)}
 
         {/* Tip */}
         <View style={{ ...cardStyles.default, marginTop: spacing.sm }}>

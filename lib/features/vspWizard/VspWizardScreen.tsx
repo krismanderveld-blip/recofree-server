@@ -203,7 +203,7 @@ export function VspWizardScreen({ existingPlan, onSave, onCancel }: VspWizardScr
       <View style={{ alignItems: 'center', gap: 8, marginBottom: 16 }}>
         <Text style={{ fontSize: 28 }}>{'\u{1F6E1}'}</Text>
         <Text style={{ fontSize: 22, fontWeight: '700', color: colors.foreground, textAlign: 'center' }}>
-          Fill in Safety Plan
+          My Safety Plan
         </Text>
         <Text style={{ fontSize: 14, color: colors.muted, textAlign: 'center', lineHeight: 20, maxWidth: 300 }}>
           You can upload an existing safety plan document or fill it in manually. Not everything needs to be filled — enter what you have.
