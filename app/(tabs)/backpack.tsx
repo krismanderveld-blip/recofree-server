@@ -411,7 +411,7 @@ export default function BackpackScreen() {
               <View style={{ backgroundColor: '#8B5CF620', borderRadius: 12, padding: 14, flexDirection: 'row', alignItems: 'center', gap: 10, borderWidth: 1, borderColor: '#8B5CF640' }}>
                 <Text style={{ fontSize: 20 }}>{"\u{1F4C4}"}</Text>
                 <View style={{ flex: 1 }}>
-                  <Text style={{ fontSize: 14, fontWeight: '600', color: colors.foreground }}>VSP Wizard</Text>
+                  <Text style={{ fontSize: 14, fontWeight: '600', color: colors.foreground }}>My Safety Plan Wizard</Text>
                   <Text style={{ fontSize: 12, color: colors.muted }}>Upload a document or fill in step by step</Text>
                 </View>
                 <Text style={{ fontSize: 14, color: colors.muted }}>{"\u{203A}"}</Text>
@@ -438,7 +438,7 @@ export default function BackpackScreen() {
         </View>
       </ScrollView>
 
-      {/* VSP Wizard Modal Overlay */}
+      {/* My Safety Plan Wizard Modal Overlay */}
       {showVspWizard && (
         <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: colors.background, zIndex: 100 }}>
           <VspWizardScreen
