@@ -1660,3 +1660,5 @@
 - [x] Wire Backpack wizard into app (intake for new users + settings for existing users)
 - [x] Update export to include all new features (VSP profile, VSP hash, extracted entities, backpack hash)
 - [x] Add "Import backup" button to profile/settings screen (ImportDataSection wired into DataPrivacySection)
+- [x] Wire reloadFromStorage into profile import success callback so UI updates immediately
+- [x] Fix 5 pre-existing e2eChain test failures (clinical mode gating — tests updated to match non-clinical INTERNAL GUIDANCE behavior)

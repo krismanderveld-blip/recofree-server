@@ -187,8 +187,15 @@ describe('E2E Chain: user.dat → Zod → buildSystemPrompt', () => {
       expect(prompt).toContain('werkstress');
     });
 
-    it('C9: GPT prompt contains BACKPACK DEEP ANALYSIS block', () => {
+    it('C9: GPT prompt contains backpack analysis context (INTERNAL GUIDANCE in non-clinical mode)', () => {
       const input = buildChainTestInput({ isSessionStart: true });
+      const prompt = buildSystemPrompt(input as any);
+      // Non-clinical mode uses INTERNAL GUIDANCE header instead of BACKPACK DEEP ANALYSIS
+      expect(prompt).toContain('INTERNAL GUIDANCE');
+    });
+
+    it('C9b: GPT prompt contains BACKPACK DEEP ANALYSIS when clinicalModeActive', () => {
+      const input = { ...buildChainTestInput({ isSessionStart: true }), clinicalModeActive: true };
       const prompt = buildSystemPrompt(input as any);
       expect(prompt).toContain('BACKPACK DEEP ANALYSIS');
     });
@@ -199,10 +206,12 @@ describe('E2E Chain: user.dat → Zod → buildSystemPrompt', () => {
       expect(prompt).toContain('Melissa');
     });
 
-    it('C11: GPT prompt contains "You DO know this about the user" instruction', () => {
+    it('C11: GPT prompt contains backpack analysis data (triggers/beliefs injected)', () => {
       const input = buildChainTestInput({ isSessionStart: true });
       const prompt = buildSystemPrompt(input as any);
-      expect(prompt).toMatch(/you DO know this about the user/i);
+      // In non-clinical mode, the INTERNAL GUIDANCE block contains triggers and beliefs
+      expect(prompt).toContain('Bekende triggers');
+      expect(prompt).toContain('Kernovertuigingen');
     });
 
     it('C12: GPT prompt contains core belief from backpackAnalysis', () => {
@@ -226,8 +235,15 @@ describe('E2E Chain: user.dat → Zod → buildSystemPrompt', () => {
       expect(prompt).toContain('verlating_instabiliteit');
     });
 
-    it('C15: LIVE_MESSAGE prompt contains BACKPACK DEEP ANALYSIS block', () => {
+    it('C15: LIVE_MESSAGE prompt contains backpack analysis context (INTERNAL GUIDANCE in non-clinical mode)', () => {
       const input = buildChainTestInput({ isSessionStart: false });
+      const prompt = buildSystemPrompt(input as any);
+      // Non-clinical mode uses INTERNAL GUIDANCE header
+      expect(prompt).toContain('INTERNAL GUIDANCE');
+    });
+
+    it('C15b: LIVE_MESSAGE prompt contains BACKPACK DEEP ANALYSIS when clinicalModeActive', () => {
+      const input = { ...buildChainTestInput({ isSessionStart: false }), clinicalModeActive: true };
       const prompt = buildSystemPrompt(input as any);
       expect(prompt).toContain('BACKPACK DEEP ANALYSIS');
     });
@@ -249,10 +265,11 @@ describe('E2E Chain: user.dat → Zod → buildSystemPrompt', () => {
       expect(prompt).not.toContain('KNOWN USER PATTERNS');
     });
 
-    it('C18: without backpackAnalysis, prompt does NOT contain BACKPACK DEEP ANALYSIS block', () => {
+    it('C18: without backpackAnalysis, prompt does NOT contain BACKPACK DEEP ANALYSIS or INTERNAL GUIDANCE block', () => {
       const input = buildChainTestInput({ backpackAnalysis: undefined });
       const prompt = buildSystemPrompt(input as any);
       expect(prompt).not.toContain('BACKPACK DEEP ANALYSIS');
+      expect(prompt).not.toContain('INTERNAL GUIDANCE');
     });
 
     it('C19: Zod rejects malformed knownUserPatterns (missing schemas array)', () => {
@@ -293,7 +310,8 @@ describe('E2E Chain: user.dat → Zod → buildSystemPrompt', () => {
       expect(prompt).toContain('verlating_instabiliteit');
       expect(prompt).toContain('kwetsbaar_kind');
       expect(prompt).toContain('werkstress');
-      expect(prompt).toContain('BACKPACK DEEP ANALYSIS');
+      // Non-clinical mode uses INTERNAL GUIDANCE instead of BACKPACK DEEP ANALYSIS
+      expect(prompt).toContain('INTERNAL GUIDANCE');
       expect(prompt).toContain('Melissa');
     });
 
@@ -312,7 +330,8 @@ describe('E2E Chain: user.dat → Zod → buildSystemPrompt', () => {
       // Step 3: Assert chain-critical data is present
       expect(prompt).toContain('KNOWN USER PATTERNS');
       expect(prompt).toContain('verlating_instabiliteit');
-      expect(prompt).toContain('BACKPACK DEEP ANALYSIS');
+      // Non-clinical mode uses INTERNAL GUIDANCE instead of BACKPACK DEEP ANALYSIS
+      expect(prompt).toContain('INTERNAL GUIDANCE');
       expect(prompt).toContain('eenzaamheid');
     });
   });

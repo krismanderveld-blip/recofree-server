@@ -30,7 +30,7 @@ const STAGE_LABELS: Record<string, string> = {
 const APP_VERSION = Constants.expoConfig?.version ?? '1.0.0';
 
 export default function ProfileScreen() {
-  const { state, getUserName, getBackpack, getUserDat, updateGuidanceDepth, getGuidanceDepth, resetUser, updateBalkmetafoor } = useUser();
+  const { state, getUserName, getBackpack, getUserDat, updateGuidanceDepth, getGuidanceDepth, resetUser, updateBalkmetafoor, reloadFromStorage } = useUser();
   const router = useRouter();
   const userName = getUserName();
   const backpack = getBackpack();
@@ -472,7 +472,7 @@ export default function ProfileScreen() {
 
         {/* Data & Privacy — Export / Import */}
         <View style={{ marginBottom: spacing.xl }}>
-          <DataPrivacySection stores={exportImportStores} appVersion={APP_VERSION} />
+          <DataPrivacySection stores={exportImportStores} appVersion={APP_VERSION} onImportSuccess={reloadFromStorage} />
         </View>
 
         {/* Reset All Data */}

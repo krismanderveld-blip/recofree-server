@@ -11,9 +11,10 @@ import type { ExportImportStores } from '../services/exportImportStores.types';
 interface DataPrivacySectionProps {
   stores: ExportImportStores;
   appVersion: string;
+  onImportSuccess?: () => void;
 }
 
-export function DataPrivacySection({ stores, appVersion }: DataPrivacySectionProps) {
+export function DataPrivacySection({ stores, appVersion, onImportSuccess }: DataPrivacySectionProps) {
   return (
     <View className="gap-8">
       <View className="gap-2">
@@ -28,7 +29,7 @@ export function DataPrivacySection({ stores, appVersion }: DataPrivacySectionPro
       </View>
 
       <View className="bg-surface rounded-2xl p-5 border border-border">
-        <ImportDataSection stores={stores} appVersion={appVersion} />
+        <ImportDataSection stores={stores} appVersion={appVersion} onImportSuccess={onImportSuccess} />
       </View>
     </View>
   );
