@@ -165,28 +165,45 @@ export default function IntakeScreen() {
     setImportLoading(true);
     setImportError(null);
     try {
+      console.log('[IMPORT-DIAG] Step 1: Loading modules...');
       const FileSystem = await import('expo-file-system/legacy');
       const { importEncryptedRecoFreeBackup } = await import('@/lib/features/exportImport/services/importDataService');
       const { createExportImportStoresAdapter } = await import('@/lib/features/exportImport/hooks/useExportImportStores');
       const stores = createExportImportStoresAdapter();
 
+      console.log('[IMPORT-DIAG] Step 2: Reading file...');
       const envelopeJson = await FileSystem.readAsStringAsync(importFile.uri, { encoding: FileSystem.EncodingType.UTF8 });
+      console.log(`[IMPORT-DIAG] Step 2 OK: file read, ${envelopeJson.length} chars`);
+
+      console.log('[IMPORT-DIAG] Step 3: Calling importEncryptedRecoFreeBackup...');
       const result = await importEncryptedRecoFreeBackup({
         envelopeJson,
         password: importPassword,
         currentAppVersion: '1.0.0',
         stores,
       });
+      console.log(`[IMPORT-DIAG] Step 3 result: status=${result.status}, errorMessage=${result.errorMessage ?? 'none'}`);
 
       if (result.status === 'SUCCESS') {
+        console.log('[IMPORT-DIAG] Step 4: Import SUCCESS, calling reloadFromStorage...');
         setImportSuccess(true);
-        // Reload stores into memory and navigate to main app
-        await reloadFromStorage();
+        try {
+          await reloadFromStorage();
+          console.log('[IMPORT-DIAG] Step 4 OK: reloadFromStorage completed');
+        } catch (reloadErr: any) {
+          console.error('[IMPORT-DIAG] Step 4 FAILED: reloadFromStorage threw:', reloadErr?.message, reloadErr);
+          setImportError(`Import succeeded but reload failed: ${reloadErr?.message}`);
+          return;
+        }
+        console.log('[IMPORT-DIAG] Step 5: Navigating to /(tabs)...');
         router.replace('/(tabs)' as any);
+        console.log('[IMPORT-DIAG] Step 5 OK: router.replace called');
       } else {
+        console.warn(`[IMPORT-DIAG] Import returned non-SUCCESS: ${result.status} — ${result.errorMessage}`);
         setImportError(result.errorMessage ?? 'Import failed.');
       }
     } catch (err: any) {
+      console.error('[IMPORT-DIAG] UNCAUGHT ERROR in handleImportExecute:', err?.message, err?.stack, err);
       setImportError(err?.safeMessage ?? err?.message ?? 'Import failed.');
     } finally {
       setImportLoading(false);

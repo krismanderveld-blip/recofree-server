@@ -895,14 +895,19 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const reloadFromStorage = useCallback(async () => {
+    console.log('[IMPORT-DIAG] reloadFromStorage: reading BACKPACK_KEY and USERDAT_KEY...');
     const [backpackJson, userDatJson] = await Promise.all([
       readEncrypted(BACKPACK_KEY),
       readEncrypted(USERDAT_KEY),
     ]);
+    console.log(`[IMPORT-DIAG] reloadFromStorage: backpackJson=${backpackJson ? `${backpackJson.length} chars` : 'NULL'}, userDatJson=${userDatJson ? `${userDatJson.length} chars` : 'NULL'}`);
     if (backpackJson && userDatJson) {
       const backpack = migrateBackpack(JSON.parse(backpackJson));
       const userDat = migrateUserDat(JSON.parse(userDatJson), backpack.userType);
+      console.log(`[IMPORT-DIAG] reloadFromStorage: dispatch RESTORE_STORES, userType=${backpack.userType}, naam=${backpack.naam}`);
       dispatch({ type: 'RESTORE_STORES', payload: { backpack, userDat } });
+    } else {
+      console.error('[IMPORT-DIAG] reloadFromStorage: GUARD FAILED — one or both keys are null. Import data was written but cannot be read back. This causes the app to stay on intake screen.');
     }
   }, []);
 

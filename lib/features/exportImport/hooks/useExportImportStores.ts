@@ -50,28 +50,42 @@ function isKeyEncrypted(key: string): boolean {
  */
 async function readJson(key: string): Promise<unknown | null> {
   try {
-    const raw = isKeyEncrypted(key)
+    const encrypted = isKeyEncrypted(key);
+    const raw = encrypted
       ? await readEncrypted(key)
       : await AsyncStorage.getItem(key);
-    return raw ? JSON.parse(raw) : null;
-  } catch { return null; }
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      console.log(`[IMPORT-DIAG] readJson: OK key="${key}" (encrypted=${encrypted}, ${raw.length} chars)`);
+      return parsed;
+    }
+    console.log(`[IMPORT-DIAG] readJson: NULL key="${key}" (encrypted=${encrypted})`);
+    return null;
+  } catch (err: any) {
+    console.error(`[IMPORT-DIAG] readJson: ERROR key="${key}":`, err?.message);
+    return null;
+  }
 }
 
 /**
  * Write a JSON value to storage, routing through encrypted layer when needed.
  */
 async function writeJson(key: string, value: unknown): Promise<void> {
+  const encrypted = isKeyEncrypted(key);
   if (value === null || value === undefined) {
-    if (isKeyEncrypted(key)) {
+    console.log(`[IMPORT-DIAG] writeJson: REMOVE key="${key}" (encrypted=${encrypted})`);
+    if (encrypted) {
       await removeEncrypted(key);
     } else {
       await AsyncStorage.removeItem(key);
     }
   } else {
-    if (isKeyEncrypted(key)) {
-      await writeEncrypted(key, JSON.stringify(value));
+    const serialized = JSON.stringify(value);
+    console.log(`[IMPORT-DIAG] writeJson: WRITE key="${key}" (encrypted=${encrypted}, ${serialized.length} chars)`);
+    if (encrypted) {
+      await writeEncrypted(key, serialized);
     } else {
-      await AsyncStorage.setItem(key, JSON.stringify(value));
+      await AsyncStorage.setItem(key, serialized);
     }
   }
 }

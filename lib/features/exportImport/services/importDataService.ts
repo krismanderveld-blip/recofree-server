@@ -81,19 +81,25 @@ export async function importEncryptedRecoFreeBackup(input: {
   // 8. Create SAFE pre-import snapshot for rollback (FIX #2)
   // Uses key-level snapshot that marks unreadable keys as SNAPSHOT_READ_FAILED
   // so rollback never overwrites existing data with null.
+  console.log('[IMPORT-DIAG] Step 8: Creating safe pre-import snapshot...');
   const safeSnapshot = await createSafePreImportSnapshot();
+  console.log(`[IMPORT-DIAG] Step 8 OK: snapshot has ${safeSnapshot.keys.length} keys`);
 
   // 9. Replace local data
+  console.log('[IMPORT-DIAG] Step 9: Replacing local data from staging...');
   try {
     await replaceLocalDataFromStaging({ stagingPackage, stores });
-  } catch {
+    console.log('[IMPORT-DIAG] Step 9 OK: replaceLocalDataFromStaging completed');
+  } catch (replaceErr: any) {
+    console.error('[IMPORT-DIAG] Step 9 FAILED: replaceLocalDataFromStaging threw:', replaceErr?.message, replaceErr?.stack);
     // Attempt safe rollback — keys marked SNAPSHOT_READ_FAILED are preserved as-is
     try {
       await restoreSafePreImportSnapshot(safeSnapshot);
     } catch { /* best effort */ }
-    return { status: "IMPORT_COMMIT_FAILED", importedAt: nowIso, replacedExistingData: false, errorMessage: "Import failed. Your existing data was kept." };
+    return { status: "IMPORT_COMMIT_FAILED", importedAt: nowIso, replacedExistingData: false, errorMessage: `Import failed at write step: ${replaceErr?.message}. Your existing data was kept.` };
   }
 
+  console.log('[IMPORT-DIAG] Step 10: Import complete, returning SUCCESS');
   return {
     status: "SUCCESS",
     importedAt: nowIso,
