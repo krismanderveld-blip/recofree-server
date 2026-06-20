@@ -164,69 +164,97 @@ export default function IntakeScreen() {
     }
   }, []);
 
+  // Track whether import succeeded so the diag overlay can show "Continue" button
+  const [importNavReady, setImportNavReady] = useState(false);
+
   const handleImportExecute = useCallback(async () => {
     if (!importFile || !importPassword) return;
     setImportLoading(true);
     setImportError(null);
-    setImportDiagLog(null);
     setDiagCopied(false);
+    setImportNavReady(false);
 
-    // Import the diagnostics module
-    const { clearImportDiag, logImportDiag, formatImportDiag } = await import('@/lib/debug/import-diagnostics');
-    clearImportDiag();
+    // Show overlay IMMEDIATELY with initial message (before any async work)
+    setImportDiagLog('• Starting import...\n');
+
+    // Helper to update the on-screen log in real-time
+    const appendDiag = (line: string) => {
+      setImportDiagLog((prev) => (prev ?? '') + line + '\n');
+    };
 
     try {
-      logImportDiag('Loading modules', 'INFO');
+      appendDiag('• Loading modules...');
+      const { clearImportDiag, logImportDiag, formatImportDiag } = await import('@/lib/debug/import-diagnostics');
+      clearImportDiag();
+      logImportDiag('Modules: import-diagnostics loaded', 'OK');
+
       const FileSystem = await import('expo-file-system/legacy');
+      logImportDiag('Modules: expo-file-system loaded', 'OK');
+
       const { importEncryptedRecoFreeBackup } = await import('@/lib/features/exportImport/services/importDataService');
+      logImportDiag('Modules: importDataService loaded', 'OK');
+
       const { createExportImportStoresAdapter } = await import('@/lib/features/exportImport/hooks/useExportImportStores');
       const stores = createExportImportStoresAdapter();
-      logImportDiag('Modules loaded', 'OK');
+      logImportDiag('Modules: stores adapter created', 'OK');
+      appendDiag('✓ Modules loaded');
 
       logImportDiag('Reading file from disk', 'INFO');
+      appendDiag('• Reading file...');
       const envelopeJson = await FileSystem.readAsStringAsync(importFile.uri, { encoding: FileSystem.EncodingType.UTF8 });
       logImportDiag('File read', 'OK', `${envelopeJson.length} chars`);
+      appendDiag(`✓ File read (${envelopeJson.length} chars)`);
 
-      logImportDiag('Decrypting + validating export', 'INFO');
+      logImportDiag('Decrypting + writing to storage', 'INFO');
+      appendDiag('• Decrypting + writing to storage...');
       const result = await importEncryptedRecoFreeBackup({
         envelopeJson,
         password: importPassword,
         currentAppVersion: '1.0.0',
         stores,
       });
-      logImportDiag(`importEncryptedRecoFreeBackup returned`, result.status === 'SUCCESS' ? 'OK' : 'FAIL',
+      logImportDiag('importEncryptedRecoFreeBackup returned', result.status === 'SUCCESS' ? 'OK' : 'FAIL',
         `status=${result.status}${result.errorMessage ? ', error=' + result.errorMessage : ''}`);
 
       if (result.status === 'SUCCESS') {
+        appendDiag(`✓ Import OK (status=${result.status})`);
+        appendDiag('• Calling reloadFromStorage...');
         logImportDiag('Calling reloadFromStorage', 'INFO');
-        setImportSuccess(true);
         try {
           await reloadFromStorage();
           logImportDiag('reloadFromStorage completed', 'OK');
+          appendDiag('✓ reloadFromStorage completed');
         } catch (reloadErr: any) {
           logImportDiag('reloadFromStorage THREW', 'FAIL', reloadErr?.message ?? 'unknown');
-          setImportError(`Import succeeded but reload failed: ${reloadErr?.message}`);
-          setImportDiagLog(formatImportDiag());
-          return;
+          appendDiag(`✗ reloadFromStorage THREW: ${reloadErr?.message ?? 'unknown'}`);
+          appendDiag(`   stack: ${reloadErr?.stack ?? 'none'}`);
         }
-        logImportDiag('Navigating to /(tabs)', 'INFO');
-        router.replace('/(tabs)' as any);
-        logImportDiag('router.replace called', 'OK');
-        // Show diag briefly in case navigation fails
-        setImportDiagLog(formatImportDiag());
+        // Do NOT navigate automatically — let user see the log and press Continue
+        logImportDiag('Import complete — waiting for user to press Continue', 'OK');
+        appendDiag('\n✓ IMPORT COMPLETE — press Continue to proceed');
+        setImportNavReady(true);
       } else {
         logImportDiag('Import returned non-SUCCESS', 'FAIL', result.errorMessage ?? 'no message');
-        setImportError(result.errorMessage ?? 'Import failed.');
-        setImportDiagLog(formatImportDiag());
+        appendDiag(`✗ IMPORT FAILED: ${result.errorMessage ?? 'unknown'}`);
       }
-    } catch (err: any) {
-      logImportDiag('UNCAUGHT ERROR', 'FAIL', `${err?.message ?? 'unknown'}\n${err?.stack ?? ''}`);
-      setImportError(err?.safeMessage ?? err?.message ?? 'Import failed.');
+
+      // Replace the running log with the full formatted diagnostics
       setImportDiagLog(formatImportDiag());
+    } catch (err: any) {
+      const msg = err?.message ?? 'unknown';
+      const stack = err?.stack ?? '';
+      appendDiag(`\n✗ UNCAUGHT ERROR: ${msg}`);
+      appendDiag(`   stack: ${stack}`);
+      setImportError(msg);
+      // Try to get the formatted log if the module was loaded
+      try {
+        const { logImportDiag: log2, formatImportDiag: fmt2 } = await import('@/lib/debug/import-diagnostics');
+        log2('UNCAUGHT ERROR', 'FAIL', `${msg}\n${stack}`);
+        setImportDiagLog(fmt2());
+      } catch {
+        // Module didn't load — keep the appendDiag output which is already showing
+      }
     } finally {
-      // Always show the diagnostic log so it's visible on screen
-      const { formatImportDiag: fmt } = await import('@/lib/debug/import-diagnostics');
-      setImportDiagLog(fmt());
       setImportLoading(false);
     }
   }, [importFile, importPassword, reloadFromStorage, router]);
@@ -601,40 +629,57 @@ export default function IntakeScreen() {
               Import Diagnostic Log
             </Text>
             <Text style={{ color: '#aaa', fontSize: 11, marginBottom: 12 }}>
-              Copy this log and send it for debugging
+              {importNavReady ? 'Import succeeded! Copy log or press Continue.' : 'Copy this log and send it for debugging'}
             </Text>
             <ScrollView style={{ flex: 1, backgroundColor: '#1a1a1a', borderRadius: 8, padding: 12, marginBottom: 12 }}>
               <Text style={{ color: '#e0e0e0', fontSize: 11, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace', lineHeight: 16 }} selectable>
                 {importDiagLog}
               </Text>
             </ScrollView>
-            <View style={{ flexDirection: 'row', gap: 12 }}>
-              <Pressable
-                onPress={async () => {
-                  try {
-                    await Clipboard.setStringAsync(importDiagLog);
-                    setDiagCopied(true);
-                    setTimeout(() => setDiagCopied(false), 2000);
-                  } catch { /* clipboard not available */ }
-                }}
-                style={({ pressed }) => [{
-                  flex: 1, backgroundColor: '#2563eb', borderRadius: 8, paddingVertical: 14, alignItems: 'center' as const,
-                  opacity: pressed ? 0.8 : 1,
-                }]}
-              >
-                <Text style={{ color: '#fff', fontWeight: '600', fontSize: 14 }}>
-                  {diagCopied ? '✓ Copied!' : 'Copy to clipboard'}
-                </Text>
-              </Pressable>
-              <Pressable
-                onPress={() => setImportDiagLog(null)}
-                style={({ pressed }) => [{
-                  flex: 1, backgroundColor: '#333', borderRadius: 8, paddingVertical: 14, alignItems: 'center' as const,
-                  opacity: pressed ? 0.8 : 1,
-                }]}
-              >
-                <Text style={{ color: '#fff', fontWeight: '600', fontSize: 14 }}>Close</Text>
-              </Pressable>
+            <View style={{ gap: 10 }}>
+              {/* Continue button — only shown when import succeeded */}
+              {importNavReady && (
+                <Pressable
+                  onPress={() => {
+                    setImportDiagLog(null);
+                    router.replace('/(tabs)' as any);
+                  }}
+                  style={({ pressed }) => [{
+                    backgroundColor: '#16a34a', borderRadius: 8, paddingVertical: 14, alignItems: 'center' as const,
+                    opacity: pressed ? 0.8 : 1,
+                  }]}
+                >
+                  <Text style={{ color: '#fff', fontWeight: '700', fontSize: 15 }}>Continue to app →</Text>
+                </Pressable>
+              )}
+              <View style={{ flexDirection: 'row', gap: 12 }}>
+                <Pressable
+                  onPress={async () => {
+                    try {
+                      await Clipboard.setStringAsync(importDiagLog);
+                      setDiagCopied(true);
+                      setTimeout(() => setDiagCopied(false), 2000);
+                    } catch { /* clipboard not available */ }
+                  }}
+                  style={({ pressed }) => [{
+                    flex: 1, backgroundColor: '#2563eb', borderRadius: 8, paddingVertical: 14, alignItems: 'center' as const,
+                    opacity: pressed ? 0.8 : 1,
+                  }]}
+                >
+                  <Text style={{ color: '#fff', fontWeight: '600', fontSize: 14 }}>
+                    {diagCopied ? '✓ Copied!' : 'Copy to clipboard'}
+                  </Text>
+                </Pressable>
+                <Pressable
+                  onPress={() => setImportDiagLog(null)}
+                  style={({ pressed }) => [{
+                    flex: 1, backgroundColor: '#333', borderRadius: 8, paddingVertical: 14, alignItems: 'center' as const,
+                    opacity: pressed ? 0.8 : 1,
+                  }]}
+                >
+                  <Text style={{ color: '#fff', fontWeight: '600', fontSize: 14 }}>Close</Text>
+                </Pressable>
+              </View>
             </View>
           </View>
         </Modal>
