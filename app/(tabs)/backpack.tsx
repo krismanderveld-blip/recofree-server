@@ -18,6 +18,7 @@ import { useColors } from '@/hooks/use-colors';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { VspSectionEditor } from '@/components/vsp-section-editor';
 import { VspWizardScreen } from '@/lib/features/vspWizard/VspWizardScreen';
+import { BackpackWizardScreen } from '@/lib/features/backpackWizard/BackpackWizardScreen';
 import { colors as dc, spacing, radius, typography, shadows, cardStyles, buttonStyles } from '@/constants/design';
 
 const SECTION_COLORS: Record<LifePhaseId, string> = {
@@ -54,6 +55,7 @@ export default function BackpackScreen() {
   const [editText, setEditText] = useState('');
 
   const [showVspWizard, setShowVspWizard] = useState(false);
+  const [showBackpackWizard, setShowBackpackWizard] = useState(false);
   const isKim = state.backpack?.userType === 'kim';
   const sections = state.backpack?.sections ?? [];
   const kimData = state.backpack?.kimBackpack;
@@ -403,6 +405,18 @@ export default function BackpackScreen() {
           </View>
         )}
 
+        {/* Backpack Wizard CTA */}
+        <Pressable onPress={() => setShowBackpackWizard(true)} style={({ pressed }) => [{ opacity: pressed ? 0.8 : 1, marginBottom: 16 }]}>
+          <View style={{ backgroundColor: '#3B82F620', borderRadius: 12, padding: 14, flexDirection: 'row', alignItems: 'center', gap: 10, borderWidth: 1, borderColor: '#3B82F640' }}>
+            <Text style={{ fontSize: 20 }}>{"\u{1F4DD}"}</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: 14, fontWeight: '600', color: colors.foreground }}>Fill My Backpack</Text>
+              <Text style={{ fontSize: 12, color: colors.muted }}>Upload a life story document or fill in step by step</Text>
+            </View>
+            <Text style={{ fontSize: 14, color: colors.muted }}>{"\u{203A}"}</Text>
+          </View>
+        </Pressable>
+
         {/* VSP Section (Elias only) */}
         {!isKim && state.backpack?.userType === 'elias' && (
           <View>
@@ -437,6 +451,20 @@ export default function BackpackScreen() {
           </Text>
         </View>
       </ScrollView>
+
+      {/* Backpack Wizard Modal Overlay */}
+      {showBackpackWizard && (
+        <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: colors.background, zIndex: 100 }}>
+          <BackpackWizardScreen
+            existingBackpack={state.backpack ?? undefined}
+            userType={state.backpack?.userType ?? 'elias'}
+            onSave={async () => {
+              setShowBackpackWizard(false);
+            }}
+            onCancel={() => setShowBackpackWizard(false)}
+          />
+        </View>
+      )}
 
       {/* My Safety Plan Wizard Modal Overlay */}
       {showVspWizard && (

@@ -55,8 +55,8 @@ export interface ExportableEmergencyContactsStore {
 // ─── NEW: Derived/Cache Stores ──────────────────────────────────────────────
 
 export interface ExportableDerivedCacheStore {
-  exportAll(): Promise<{ backpackHash?: unknown | null; extractedEntities?: unknown | null }>;
-  replaceAll(data: { backpackHash?: unknown | null; extractedEntities?: unknown | null }): Promise<void>;
+  exportAll(): Promise<{ backpackHash?: unknown | null; extractedEntities?: unknown | null; vspProfile?: unknown | null; vspHash?: unknown | null }>;
+  replaceAll(data: { backpackHash?: unknown | null; extractedEntities?: unknown | null; vspProfile?: unknown | null; vspHash?: unknown | null }): Promise<void>;
 }
 
 // ─── Main Interface ─────────────────────────────────────────────────────────

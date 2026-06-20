@@ -398,6 +398,8 @@ export interface Backpack {
  * - Always sent in full to GPT at session start
  */
 export interface UserDat {
+  /** User's name — backup copy from Backpack (redundant, for import resilience) */
+  naam?: string;
   /** Current mood slider values */
   currentMood: MoodSliders;
   /** Mood snapshots (local within-device memory) */

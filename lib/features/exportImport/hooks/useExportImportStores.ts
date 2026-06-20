@@ -230,7 +230,18 @@ function buildStoresAdapter(): ExportImportStores {
     },
     backpackStore: {
       async exportAllPersonas() {
-        const backpack = await readJson(LEGACY_BACKPACK_KEY);
+        let backpack = await readJson(LEGACY_BACKPACK_KEY);
+        // FIX: If encrypted read returns null, try plain AsyncStorage as fallback
+        // (handles case where backpack was stored before at-rest encryption was added)
+        if (backpack === null) {
+          try {
+            const plainRaw = await AsyncStorage.getItem(LEGACY_BACKPACK_KEY);
+            if (plainRaw) {
+              backpack = JSON.parse(plainRaw);
+              logImportDiag('EXPORT @recofree_backpack', 'WARN', `Encrypted read was null, plain fallback found ${plainRaw.length} chars`);
+            }
+          } catch { /* ignore fallback failure */ }
+        }
         return { elias: backpack ?? null, kim: null };
       },
       async replaceAllPersonas(data) {
@@ -292,8 +303,8 @@ function buildStoresAdapter(): ExportImportStores {
         await Promise.all([
           writeJson(BACKPACK_HASH_KEY, data.backpackHash),
           writeJson(EXTRACTED_ENTITIES_KEY, data.extractedEntities),
-          writeJson(VSP_PROFILE_KEY, (data as any).vspProfile),
-          writeJson(VSP_HASH_KEY, (data as any).vspHash),
+          writeJson(VSP_PROFILE_KEY, data.vspProfile),
+          writeJson(VSP_HASH_KEY, data.vspHash),
         ]);
       },
     },

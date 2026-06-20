@@ -101,6 +101,8 @@ export async function createEncryptedRecoFreeExport(input: {
       derivedCaches: {
         backpackHash: derivedCaches.backpackHash ?? null,
         extractedEntities: derivedCaches.extractedEntities ?? null,
+        vspProfile: derivedCaches.vspProfile ?? null,
+        vspHash: derivedCaches.vspHash ?? null,
       },
     };
 

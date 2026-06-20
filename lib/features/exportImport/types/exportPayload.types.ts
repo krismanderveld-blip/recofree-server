@@ -62,6 +62,8 @@ export interface RecoFreeSharedExportBundle {
   derivedCaches: {
     backpackHash: unknown | null;
     extractedEntities: unknown | null;
+    vspProfile: unknown | null;
+    vspHash: unknown | null;
   };
 }
 

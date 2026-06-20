@@ -8,6 +8,7 @@ import { registerSignalEngineRoute } from "../signal-engine";
 import { registerBackpackAnalysisRoute } from "../backpack-analysis";
 import { registerVspBackpackAnalysisRoute } from "../vsp-backpack-analysis";
 import { registerVspDocumentParseRoute } from "../vsp-document-parse";
+import { registerBackpackDocumentParseRoute } from "../backpack-document-parse";
 import { registerVspTextExtractRoute } from "../vsp-text-extract";
 import { registerSessionGreetingRoute } from "../session-greeting";
 import { appRouter } from "../routers";
@@ -66,6 +67,7 @@ async function startServer() {
   registerVspBackpackAnalysisRoute(app);
   registerVspDocumentParseRoute(app);
   registerVspTextExtractRoute(app);
+  registerBackpackDocumentParseRoute(app);
   registerSessionGreetingRoute(app);
 
   app.get("/api/health", (_req, res) => {

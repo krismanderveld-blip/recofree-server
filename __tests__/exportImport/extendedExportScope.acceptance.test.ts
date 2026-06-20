@@ -29,7 +29,7 @@ function createMockStores(initial?: {
   backpack?: { elias: unknown; kim: unknown };
   personaProjection?: { elias: unknown; kim: unknown };
   emergencyContacts?: unknown[];
-  derivedCaches?: { backpackHash: unknown; extractedEntities: unknown };
+  derivedCaches?: { backpackHash: unknown; extractedEntities: unknown; vspProfile?: unknown; vspHash?: unknown };
 }): ExportImportStores {
   let userDat = initial?.userDat ?? { elias: null, kim: null };
   let stateDat = initial?.stateDat ?? { elias: null, kim: null };
@@ -40,7 +40,7 @@ function createMockStores(initial?: {
   let backpack = initial?.backpack ?? { elias: null, kim: null };
   let personaProjection = initial?.personaProjection ?? { elias: null, kim: null };
   let emergencyContacts = initial?.emergencyContacts ?? [];
-  let derivedCaches = initial?.derivedCaches ?? { backpackHash: null, extractedEntities: null };
+  let derivedCaches = initial?.derivedCaches ?? { backpackHash: null, extractedEntities: null, vspProfile: null, vspHash: null };
 
   return {
     userDatStore: {
@@ -160,6 +160,8 @@ describe('Extended Export Scope', () => {
     const caches = {
       backpackHash: 'abc123hash',
       extractedEntities: { entities: ['fear_of_abandonment'] },
+      vspProfile: null,
+      vspHash: null,
     };
     const stores = createMockStores({
       derivedCaches: caches,
@@ -250,6 +252,8 @@ describe('Extended Export Scope', () => {
     const caches = {
       backpackHash: 'sha256_abc123',
       extractedEntities: { entities: ['verlating', 'controle'], lastUpdated: '2026-06-15' },
+      vspProfile: null,
+      vspHash: null,
     };
     const sourceStores = createMockStores({
       derivedCaches: caches,

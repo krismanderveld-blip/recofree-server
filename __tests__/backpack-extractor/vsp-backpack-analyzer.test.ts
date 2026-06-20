@@ -163,10 +163,10 @@ describe('VSP Backpack Analyzer', () => {
       expect(mockCallAnalysis).toHaveBeenCalledWith(expect.objectContaining({
         themesContent: themes.trim(),
       }));
-      // Verify it was cached
-      expect(mockStorage['@vsp_backpack_profile']).toBeDefined();
-      const parsed = JSON.parse(mockStorage['@vsp_backpack_profile']);
-      expect(parsed.contextBlock).toBe('new analysis block');
+      // Verify it was cached (read through encrypted layer)
+      const cached = await loadCachedVspProfile();
+      expect(cached).not.toBeNull();
+      expect(cached!.contextBlock).toBe('new analysis block');
     });
 
     it('falls back to cached profile when analysis returns null', async () => {

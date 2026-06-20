@@ -1652,3 +1652,11 @@
 - [x] FIX: logs.dat import round-trip correct — export reads encrypted envelope, import writes it back as-is (logs.dat excluded from RF_ENC_V1 layer)
 - [x] FIX: reloadFromStorage reconstructs backpack from userDat when @recofree_backpack is null (import from older exports)
 - [x] FIX: backpackStore.replaceAllPersonas no longer deletes existing backpack when import data is null (preserves existing)
+- [x] FIX: Export fallback — if readEncrypted returns null for backpack, try plain AsyncStorage read as fallback
+- [ ] FIX: Post-import name prompt — if import has no backpack/name, show name input before continuing to app
+- [ ] FIX: Store name redundantly in userDat as backup field (synced on session end + backpack edit)
+- [ ] Build Backpack wizard Route 1: DOCX upload (mammoth parser + GPT extraction + review screen)
+- [ ] Build Backpack wizard Route 2: Step-by-step manual input (section-by-section guided wizard)
+- [ ] Wire Backpack wizard into app (intake for new users + settings for existing users)
+- [x] Update export to include all new features (VSP profile, VSP hash, extracted entities, backpack hash)
+- [x] Add "Import backup" button to profile/settings screen (ImportDataSection wired into DataPrivacySection)

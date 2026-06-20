@@ -1,0 +1,3478 @@
+{
+  "appVersion": "1.1.45",
+  "createdAt": "2026-06-20T08:31:15.155Z",
+  "data": {
+    "personas": {
+      "elias": {
+        "backpackData": null,
+        "diaryEntries": [
+          {
+            "content": "Vandaag naar melissa en papa, fiets halen en terug naar tienen daarna met de trein",
+            "gratitude": {
+              "entry1": "Melissa weerzien",
+              "entry2": "Even bij papa zijn",
+              "entry3": "Gewoon even weg van het domein"
+            },
+            "id": "diary_1781929161049",
+            "moodTag": "Hopeful",
+            "timestamp": "2026-06-20T04:19:21.049Z"
+          },
+          {
+            "content": "Nieuwe mensen op de afdeling, weekend planning is geregeld.\nTaxi naar het station, fiets mee de trein op bij terugkeer naar tienen morgen.",
+            "gratitude": {
+              "entry1": "Dat ik nog leef",
+              "entry2": "Dat ik nog steeds hoog scoor op de raven test",
+              "entry3": "Recofree is bijna klaar"
+            },
+            "id": "diary_1781858737130",
+            "moodTag": "Neutral",
+            "timestamp": "2026-06-19T08:45:37.130Z"
+          },
+          {
+            "content": "",
+            "gratitude": {
+              "entry1": "Maandag starten motivatiegroep",
+              "entry2": "Eindelijk de mogelijkheid om dr peuskens aan te spreken",
+              "entry3": "Kamer blijft alles samen mooi op orde"
+            },
+            "id": "diary_1781788617092",
+            "moodTag": "Neutral",
+            "timestamp": "2026-06-18T13:16:57.092Z"
+          },
+          {
+            "content": "Maandag starten in de motivatiegroep. Goed nieuws dus.",
+            "id": "diary_1781788484130",
+            "moodTag": "Grateful",
+            "timestamp": "2026-06-18T13:14:44.130Z"
+          },
+          {
+            "content": "Veel gewerkt om mijn app terug werkend te krijgen",
+            "id": "diary_1781736331006",
+            "moodTag": "Exhausted",
+            "timestamp": "2026-06-17T22:45:31.006Z"
+          },
+          {
+            "content": "Dagpas goedgekeurd, fijn op wandel geweest in tienen maar veel pijn nog aan de rug.",
+            "gratitude": {
+              "entry1": "Dagpas goedgekeurd",
+              "entry2": "Fijne wandeling in tienen gemaakt",
+              "entry3": "Pijnmedicatie terug opgestart"
+            },
+            "id": "diary_1781717839891",
+            "moodTag": "Neutral",
+            "timestamp": "2026-06-17T17:37:19.891Z"
+          },
+          {
+            "content": "Onzeker of mijn uitgang van vandaag goedgekeurd wordt",
+            "id": "diary_1781676559038",
+            "moodTag": "Anxious",
+            "timestamp": "2026-06-17T06:09:19.038Z"
+          },
+          {
+            "content": "Onzeker of mijn uitgang van vandaag goedgekeurd wordt",
+            "id": "diary_1781674577026",
+            "moodTag": "Neutral",
+            "timestamp": "2026-06-17T05:36:17.026Z"
+          },
+          {
+            "content": "De rust keert terug op de afdeling.",
+            "gratitude": {
+              "entry1": "Rust op de afdeling",
+              "entry2": "Een wandelingetje maken",
+              "entry3": ""
+            },
+            "id": "diary_1781614924323",
+            "moodTag": "Neutral",
+            "timestamp": "2026-06-16T13:02:04.323Z"
+          },
+          {
+            "content": "Herval op de afdeling heeft veel met zich meegebracht bij verschillende mensen",
+            "id": "diary_1781598179522",
+            "moodTag": "Neutral",
+            "timestamp": "2026-06-16T08:22:59.522Z"
+          },
+          {
+            "content": "Veel werk aan recofree voldaan vandaag",
+            "id": "diary_1781556112378",
+            "moodTag": "Neutral",
+            "timestamp": "2026-06-15T20:41:52.378Z"
+          },
+          {
+            "content": "Aangenaam gesprek elvira kaft ter dennen",
+            "id": "diary_1781533606177",
+            "moodTag": "Neutral",
+            "timestamp": "2026-06-15T14:26:46.177Z"
+          },
+          {
+            "content": "Fijne sessies vandaag.",
+            "gratitude": {
+              "entry1": "Fijne sessies vandaag",
+              "entry2": "Pijn dragelijk met maar 1 pijn medicatie",
+              "entry3": "Recofree begint eindelijk te werken zoals bedoelt"
+            },
+            "id": "diary_1781514447885",
+            "moodTag": "Neutral",
+            "timestamp": "2026-06-15T09:07:27.885Z"
+          }
+        ],
+        "gratitudeEntries": [
+          {
+            "content": "Vandaag naar melissa en papa, fiets halen en terug naar tienen daarna met de trein",
+            "gratitude": {
+              "entry1": "Melissa weerzien",
+              "entry2": "Even bij papa zijn",
+              "entry3": "Gewoon even weg van het domein"
+            },
+            "id": "diary_1781929161049",
+            "moodTag": "Hopeful",
+            "timestamp": "2026-06-20T04:19:21.049Z"
+          },
+          {
+            "content": "Nieuwe mensen op de afdeling, weekend planning is geregeld.\nTaxi naar het station, fiets mee de trein op bij terugkeer naar tienen morgen.",
+            "gratitude": {
+              "entry1": "Dat ik nog leef",
+              "entry2": "Dat ik nog steeds hoog scoor op de raven test",
+              "entry3": "Recofree is bijna klaar"
+            },
+            "id": "diary_1781858737130",
+            "moodTag": "Neutral",
+            "timestamp": "2026-06-19T08:45:37.130Z"
+          },
+          {
+            "content": "",
+            "gratitude": {
+              "entry1": "Maandag starten motivatiegroep",
+              "entry2": "Eindelijk de mogelijkheid om dr peuskens aan te spreken",
+              "entry3": "Kamer blijft alles samen mooi op orde"
+            },
+            "id": "diary_1781788617092",
+            "moodTag": "Neutral",
+            "timestamp": "2026-06-18T13:16:57.092Z"
+          },
+          {
+            "content": "Dagpas goedgekeurd, fijn op wandel geweest in tienen maar veel pijn nog aan de rug.",
+            "gratitude": {
+              "entry1": "Dagpas goedgekeurd",
+              "entry2": "Fijne wandeling in tienen gemaakt",
+              "entry3": "Pijnmedicatie terug opgestart"
+            },
+            "id": "diary_1781717839891",
+            "moodTag": "Neutral",
+            "timestamp": "2026-06-17T17:37:19.891Z"
+          },
+          {
+            "content": "De rust keert terug op de afdeling.",
+            "gratitude": {
+              "entry1": "Rust op de afdeling",
+              "entry2": "Een wandelingetje maken",
+              "entry3": ""
+            },
+            "id": "diary_1781614924323",
+            "moodTag": "Neutral",
+            "timestamp": "2026-06-16T13:02:04.323Z"
+          },
+          {
+            "content": "Fijne sessies vandaag.",
+            "gratitude": {
+              "entry1": "Fijne sessies vandaag",
+              "entry2": "Pijn dragelijk met maar 1 pijn medicatie",
+              "entry3": "Recofree begint eindelijk te werken zoals bedoelt"
+            },
+            "id": "diary_1781514447885",
+            "moodTag": "Neutral",
+            "timestamp": "2026-06-15T09:07:27.885Z"
+          }
+        ],
+        "logsDat": null,
+        "persona": "elias",
+        "personaProjection": {
+          "entries": [],
+          "lastUpdatedAt": "2026-06-20T08:30:33.507Z",
+          "sessionSignalCount": 0,
+          "userType": "elias"
+        },
+        "projectionsDat": null,
+        "stateDat": null,
+        "userDat": {
+          "_sessionDiaryEntries": [
+            {
+              "content": "Vandaag naar melissa en papa, fiets halen en terug naar tienen daarna met de trein",
+              "gratitude": {
+                "entry1": "Melissa weerzien",
+                "entry2": "Even bij papa zijn",
+                "entry3": "Gewoon even weg van het domein"
+              },
+              "id": "diary_1781929161049",
+              "moodTag": "Hopeful",
+              "timestamp": "2026-06-20T04:19:21.049Z"
+            },
+            {
+              "content": "Nieuwe mensen op de afdeling, weekend planning is geregeld.\nTaxi naar het station, fiets mee de trein op bij terugkeer naar tienen morgen.",
+              "gratitude": {
+                "entry1": "Dat ik nog leef",
+                "entry2": "Dat ik nog steeds hoog scoor op de raven test",
+                "entry3": "Recofree is bijna klaar"
+              },
+              "id": "diary_1781858737130",
+              "moodTag": "Neutral",
+              "timestamp": "2026-06-19T08:45:37.130Z"
+            },
+            {
+              "content": "",
+              "gratitude": {
+                "entry1": "Maandag starten motivatiegroep",
+                "entry2": "Eindelijk de mogelijkheid om dr peuskens aan te spreken",
+                "entry3": "Kamer blijft alles samen mooi op orde"
+              },
+              "id": "diary_1781788617092",
+              "moodTag": "Neutral",
+              "timestamp": "2026-06-18T13:16:57.092Z"
+            },
+            {
+              "content": "Maandag starten in de motivatiegroep. Goed nieuws dus.",
+              "id": "diary_1781788484130",
+              "moodTag": "Grateful",
+              "timestamp": "2026-06-18T13:14:44.130Z"
+            },
+            {
+              "content": "Veel gewerkt om mijn app terug werkend te krijgen",
+              "id": "diary_1781736331006",
+              "moodTag": "Exhausted",
+              "timestamp": "2026-06-17T22:45:31.006Z"
+            },
+            {
+              "content": "Dagpas goedgekeurd, fijn op wandel geweest in tienen maar veel pijn nog aan de rug.",
+              "gratitude": {
+                "entry1": "Dagpas goedgekeurd",
+                "entry2": "Fijne wandeling in tienen gemaakt",
+                "entry3": "Pijnmedicatie terug opgestart"
+              },
+              "id": "diary_1781717839891",
+              "moodTag": "Neutral",
+              "timestamp": "2026-06-17T17:37:19.891Z"
+            },
+            {
+              "content": "Onzeker of mijn uitgang van vandaag goedgekeurd wordt",
+              "id": "diary_1781676559038",
+              "moodTag": "Anxious",
+              "timestamp": "2026-06-17T06:09:19.038Z"
+            },
+            {
+              "content": "Onzeker of mijn uitgang van vandaag goedgekeurd wordt",
+              "id": "diary_1781674577026",
+              "moodTag": "Neutral",
+              "timestamp": "2026-06-17T05:36:17.026Z"
+            },
+            {
+              "content": "De rust keert terug op de afdeling.",
+              "gratitude": {
+                "entry1": "Rust op de afdeling",
+                "entry2": "Een wandelingetje maken",
+                "entry3": ""
+              },
+              "id": "diary_1781614924323",
+              "moodTag": "Neutral",
+              "timestamp": "2026-06-16T13:02:04.323Z"
+            },
+            {
+              "content": "Herval op de afdeling heeft veel met zich meegebracht bij verschillende mensen",
+              "id": "diary_1781598179522",
+              "moodTag": "Neutral",
+              "timestamp": "2026-06-16T08:22:59.522Z"
+            },
+            {
+              "content": "Veel werk aan recofree voldaan vandaag",
+              "id": "diary_1781556112378",
+              "moodTag": "Neutral",
+              "timestamp": "2026-06-15T20:41:52.378Z"
+            },
+            {
+              "content": "Aangenaam gesprek elvira kaft ter dennen",
+              "id": "diary_1781533606177",
+              "moodTag": "Neutral",
+              "timestamp": "2026-06-15T14:26:46.177Z"
+            },
+            {
+              "content": "Fijne sessies vandaag.",
+              "gratitude": {
+                "entry1": "Fijne sessies vandaag",
+                "entry2": "Pijn dragelijk met maar 1 pijn medicatie",
+                "entry3": "Recofree begint eindelijk te werken zoals bedoelt"
+              },
+              "id": "diary_1781514447885",
+              "moodTag": "Neutral",
+              "timestamp": "2026-06-15T09:07:27.885Z"
+            }
+          ],
+          "actProgress": {
+            "lastACTProcessUsed": null,
+            "lastACTSessionDate": null,
+            "preferredTools": [],
+            "repeatedFusionPatterns": [],
+            "successfulDefusionCount": 0,
+            "successfulGroundingCount": 0,
+            "successfulUrgeSurfingCount": 0,
+            "userValues": [],
+            "valuesBasedActionsCompleted": 0
+          },
+          "archivedSessions": [
+            {
+              "endDate": "2026-06-17T20:28:26.125Z",
+              "messageCount": 15,
+              "preview": "Einde chat",
+              "sessionNumber": 78,
+              "startDate": "2026-06-17T15:02:09.202Z",
+              "themes": [],
+              "userMessageCount": 5
+            }
+          ],
+          "backpackAnalysis": {
+            "analysisVersion": 1,
+            "analyzedAt": "2023-10-06T12:00:00Z",
+            "copingPatterns": [
+              "vermijden van confrontaties",
+              "gebruik van alcohol als ontsnapping",
+              "opbouwen van muren om zichzelf te beschermen",
+              "zoeken naar goedkeuring van anderen",
+              "impulsief handelen in stressvolle situaties"
+            ],
+            "coreBeliefs": [
+              "Ik ben niet goed genoeg",
+              "Ik moet mezelf beschermen tegen pijn",
+              "Ik kan anderen niet vertrouwen",
+              "Ik ben verantwoordelijk voor het geluk van anderen",
+              "Ik heb geen controle over mijn leven"
+            ],
+            "modi": [
+              {
+                "confidence": 0.9,
+                "evidence": "muur opgetrokken om zichzelf te beschermen",
+                "name": "onthechte beschermer"
+              },
+              {
+                "confidence": 0.8,
+                "evidence": "gevoel dat ik mezelf kwijt ben",
+                "name": "kwetsbare kind"
+              },
+              {
+                "confidence": 0.7,
+                "evidence": "controle verlies is iets waar ik veel moeite mee heb",
+                "name": "straffende ouder"
+              },
+              {
+                "confidence": 0.8,
+                "evidence": "drinken had geen limiet meer",
+                "name": "impulsieve kind"
+              },
+              {
+                "confidence": 0.6,
+                "evidence": "beslissing gemaakt om dit eens juist en eerlijk te doen",
+                "name": "gezonde volwassene"
+              },
+              {
+                "confidence": 0.7,
+                "evidence": "zeer veel moeite met onrecht/onmacht",
+                "name": "boze kind"
+              },
+              {
+                "confidence": 0.6,
+                "evidence": "nooit geleerd me te verdedigen",
+                "name": "gehoorzame overgave"
+              }
+            ],
+            "previousAnalyzedAt": null,
+            "schemas": [
+              {
+                "confidence": 0.9,
+                "evidence": "definitieve breuk met Vanessa, muur opgetrokken om zichzelf te beschermen",
+                "name": "verlating/instabiliteit"
+              },
+              {
+                "confidence": 0.8,
+                "evidence": "moeder heeft nooit geleerd hoe te troosten",
+                "name": "emotionele deprivatie"
+              },
+              {
+                "confidence": 0.7,
+                "evidence": "moeder gebruikt soms manipulatie als verdediging",
+                "name": "wantrouwen/misbruik"
+              },
+              {
+                "confidence": 0.8,
+                "evidence": "gevoel dat ik mezelf kwijt ben of eigenlijk nooit echt mezelf gevonden heb",
+                "name": "minderwaardigheid/schaamte"
+              },
+              {
+                "confidence": 0.9,
+                "evidence": "drankgebruik begon fors toe te nemen",
+                "name": "onvoldoende zelfcontrole"
+              },
+              {
+                "confidence": 0.7,
+                "evidence": "Melissa heeft ondanks herhaaldelijk vragen nooit willen opgeven",
+                "name": "zelfopoffering"
+              },
+              {
+                "confidence": 0.8,
+                "evidence": "teruggetrokken kind, speelde vooral met lego op zichzelf",
+                "name": "sociale isolatie"
+              },
+              {
+                "confidence": 0.8,
+                "evidence": "school verlaten zonder diploma",
+                "name": "mislukking"
+              },
+              {
+                "confidence": 0.7,
+                "evidence": "nooit echt geleerd heb begon de schoolverwaarlozing",
+                "name": "afhankelijkheid/incompetentie"
+              },
+              {
+                "confidence": 0.6,
+                "evidence": "ik werkte toen gemiddeld 10-11u per dag",
+                "name": "verhoogde normen/meedogenloosheid"
+              },
+              {
+                "confidence": 0.7,
+                "evidence": "het interesseerde mij niet meer of ik me dood dronk",
+                "name": "negativiteit/pessimisme"
+              }
+            ],
+            "triggers": [
+              "pesten op school",
+              "verraad door Vanessa",
+              "moeilijkheden met Ellen",
+              "juridische strijd om Jules",
+              "herval in alcoholgebruik",
+              "moeilijkheden met controleverlies"
+            ]
+          },
+          "cgtProgress": {
+            "avoidanceLoopsIdentified": [],
+            "lastCBTProcessUsed": null,
+            "lastCBTSessionDate": null,
+            "preferredTools": [],
+            "recurringDistortions": [],
+            "relapsePatternCount": 0,
+            "safetyBehaviorsIdentified": [],
+            "successfulExperiments": 0,
+            "successfulReframes": 0
+          },
+          "chatHistory": [
+            {
+              "content": "Kris, ik hoor je. Het voelt alsof de druk nu bijna te veel wordt. Dat is een zwaar gevecht. Laten we eerst even samen stabiliseren. Je bent hier, en dat is al een stap. \n\nLaten we één kleine stap zetten om die drang te doorbreken. Misschien iets simpels zoals een vriend bellen of even naar buiten voor frisse lucht. Jij bepaalt wat werkt.\n\n<clinical>Method: DBT distress tolerance\nObservation: Kris is experiencing a strong urge to relapse.\nIntervention: Validation of Kris's current struggle and suggestion of a small actionable step.\nSignals: fear of relapse +3 (projections.dat), loss of control +3 (projections.dat)</clinical>",
+              "id": "msg_1781728106126",
+              "modulesUsed": [
+                "E05"
+              ],
+              "role": "assistant",
+              "timestamp": "2026-06-17T20:28:26.125Z"
+            },
+            {
+              "content": "Kris, ik voel dat je vandaag een heldere focus hebt, dat is mooi. Je hebt een fijne wandeling in Tienen gemaakt, maar ik merk ook dat de pijn aan je rug nog aanwezig is. Vergeet niet dat oranje geen moment voor karakter is; het is een moment voor structuur. Heb je al even buiten gelopen of iets stevigs vastgehouden om te aarden?\n<clinical>\nVSP-Framework: MI\nThe greeting strategy utilized the user's recent diary entry, mood check-in, and gratitude list to create a personalized and supportive message. The tone was appropriately direct, grounding, and supportive, aligning with the user's current state of tension and need for structure. The greeting acknowledged both the user's achievements and ongoing challenges, such as back pain, without resorting to positive-washing. There are no risk flags present in the greeting. The greeting complied with the engine instructions by addressing the user's current mood and physical state while suggesting grounding activities.</clinical>",
+              "id": "msg_greeting_1781733241531",
+              "role": "assistant",
+              "timestamp": "2026-06-17T21:54:01.531Z"
+            },
+            {
+              "content": "Gewoon even veel stress gehad",
+              "id": "msg_1781733482775",
+              "role": "user",
+              "timestamp": "2026-06-17T21:58:02.775Z"
+            },
+            {
+              "content": "Dat klinkt zwaar, Kris. Stress kan echt overweldigend zijn. Het lijkt alsof het je nu flink onder druk zet. Misschien kunnen we samen kijken naar een manier om die spanning iets te verlichten. Een korte wandeling of even je gedachten opschrijven kan soms helpen om wat ruimte te maken in je hoofd. Jij bepaalt wat je nu nodig hebt.\n\n<clinical>Method: DBT distress tolerance\nObservation: Kris is experiencing significant stress.\nIntervention: Validation of Kris's stress and suggestion of a small, manageable action to alleviate it.\nSignals: stress +3 (state.dat), desire for change +2 (projections.dat)</clinical>",
+              "id": "msg_1781733482776",
+              "modulesUsed": [
+                "E02"
+              ],
+              "role": "assistant",
+              "timestamp": "2026-06-17T21:58:02.775Z"
+            },
+            {
+              "content": "Kris, fijn dat je er bent. Je hebt veel gewerkt om je app weer werkend te krijgen, en dat kan best wat druk met zich meebrengen. Het klinkt alsof je soms in je hoofd blijft hangen, en dat je behoefte hebt aan vertraging om alles een plek te geven. Heb je al even buiten gelopen of iets gegeten om jezelf weer terug naar het moment te halen?\n<clinical>\nVSP-Framework: MI\nThe greeting strategy utilized the user's recent diary entry about working on their app, mood check-in indicating a stable craving level, and gratitude expressions. The tone was soft, acknowledging, and attentive, aligning with the user's current state in the yellow zone, where they tend to be more in their head. The greeting appropriately recognized the user's need for grounding activities like walking or eating. There are no immediate risk flags, as the user is stable. The greeting complied with the engine instructions by acknowledging the user's current situation without dramatizing and suggesting grounding activities.</clinical>",
+              "id": "msg_greeting_1781736363449",
+              "role": "assistant",
+              "timestamp": "2026-06-17T22:46:03.449Z"
+            },
+            {
+              "content": "Het is genoeg geweest voor vandaag, slaaptijd nu",
+              "id": "msg_1781736471985",
+              "role": "user",
+              "timestamp": "2026-06-17T22:47:51.985Z"
+            },
+            {
+              "content": "Kris, dat klinkt als een goede beslissing. Het is belangrijk om te luisteren naar je lichaam en geest. Je hebt vandaag veel gedaan, en nu is het tijd om te rusten. Probeer jezelf de ruimte te geven om te ontspannen en tot rust te komen. \n\nNeem de tijd die je nodig hebt. Jij bepaalt het tempo.\n\n<clinical>Method: Validation and Encouragement\nObservation: The user expressed a need to stop the session and go to sleep.\nIntervention: The therapist validated the user's decision to rest and encouraged them to listen to their body and mind.\nSignals: none</clinical>",
+              "id": "msg_1781736471986",
+              "modulesUsed": [
+                "SLAAP01"
+              ],
+              "role": "assistant",
+              "timestamp": "2026-06-17T22:47:51.985Z"
+            },
+            {
+              "content": "Slaapwel",
+              "id": "msg_1781736515193",
+              "role": "user",
+              "timestamp": "2026-06-17T22:48:35.193Z"
+            },
+            {
+              "content": "Dank je, Kris. Jij ook, slaap lekker. Neem de tijd om goed te rusten. Tot de volgende keer.\n\n<clinical>Method: Supportive therapy\nObservation: The user is withdrawing from the conversation with a brief farewell.\nIntervention: The therapist acknowledges the farewell and encourages rest, promoting a sense of closure and care.\nSignals: intent-withdrawing +1 (buffer)</clinical>",
+              "id": "msg_1781736515194",
+              "modulesUsed": [
+                "E02"
+              ],
+              "role": "assistant",
+              "timestamp": "2026-06-17T22:48:35.193Z"
+            },
+            {
+              "content": "Kris, wat fijn om je hier te zien. Het klinkt alsof je hard hebt gewerkt om je app weer aan de praat te krijgen — dat vraagt om doorzettingsvermogen. Mooi dat je ook tijd hebt genomen voor een fijne wandeling in Tienen en je pijnmedicatie hebt terug opgestart. Hoe gaat het met de basisstructuur die je zo belangrijk vindt?\n<clinical>\nVSP-Framework: MI\nThe greeting strategy utilized the user's recent diary entry about working on their app, gratitude for a day pass, a walk in Tienen, and restarting pain medication. The tone was warm, open, and inviting, aligning with the user's stable mood and the green zone of their safety plan. No risk flags were identified, as the user is stable and able to engage with important people without losing themselves. The greeting complied with the engine instructions by incorporating personal data and maintaining an appropriate tone for the user's current state.</clinical>",
+              "id": "msg_greeting_1781779154791",
+              "role": "assistant",
+              "timestamp": "2026-06-18T10:39:14.791Z"
+            },
+            {
+              "content": "Kris, dat is helemaal goed. Het is belangrijk om te doen wat goed voelt voor jou. Je hebt vandaag weer stappen gezet en dat verdient erkenning. Deze sessie is opgeslagen, en ik moedig je aan om de tijd te nemen die je nodig hebt. Tot de volgende keer.\n\n<clinical>\nMethod: Positive reinforcement\nObservation: The user indicated the end of the session.\nIntervention: The therapist acknowledged the user's progress and encouraged self-care.\nSignals: none\n</clinical>",
+              "id": "msg_1781779381044",
+              "role": "assistant",
+              "timestamp": "2026-06-18T10:43:01.044Z"
+            },
+            {
+              "content": "Kris, fijn dat je er bent. Het klinkt alsof je hard hebt gewerkt om je app weer werkend te krijgen, dat is echt bewonderenswaardig. Ik vind het ook mooi om te horen dat je een fijne wandeling in Tienen hebt gemaakt en dat je je pijnmedicatie weer hebt opgestart. Hoe voelt het voor jou om vandaag te weten dat je niet alles tegelijk hoeft op te lossen?\n<clinical>\nVSP-Framework: MI\nThe greeting for Kris was informed by the user's recent diary entry about working on their app, expressions of gratitude, and mood check-in indicating stability. The tone was warm, open, and inviting, aligning with the user's stable state and the engine's instructions. There were no risk flags present, as the user is in the green zone and able to maintain important social connections. The greeting complied with the engine's instructions by incorporating personal data and encouraging reflection on the user's current state without overwhelming them.</clinical>",
+              "id": "msg_greeting_1781786497251",
+              "role": "assistant",
+              "timestamp": "2026-06-18T12:41:37.251Z"
+            },
+            {
+              "content": "Ik heb goed nieuws gehad vandaag, ik mag doorschuiven naar de volgende groep",
+              "id": "msg_1781786732318",
+              "role": "user",
+              "timestamp": "2026-06-18T12:45:32.318Z"
+            },
+            {
+              "content": "Kris, dat is geweldig nieuws! Je hebt je best gedaan en dit is een belangrijke stap voor je. Het laat zien dat je vooruitgang boekt. Hoe voel je je bij deze verandering?\n\n<clinical>Method: Positive reinforcement\nObservation: The user shared positive news about progressing to the next group.\nIntervention: The therapist acknowledged the user's achievement and encouraged reflection on their feelings about the change.\nSignals: doorschuiven naar de volgende groep +3 (projections.dat)</clinical>",
+              "id": "msg_1781786732319",
+              "modulesUsed": [
+                "E02"
+              ],
+              "role": "assistant",
+              "timestamp": "2026-06-18T12:45:32.318Z"
+            },
+            {
+              "content": "Opgelucht dat ik het goed doe precies",
+              "id": "msg_1781786772380",
+              "role": "user",
+              "timestamp": "2026-06-18T12:46:12.380Z"
+            },
+            {
+              "content": "Kris, dat is goed om te horen. Opluchting is een krachtige emotie, vooral als je zo hard hebt gewerkt. Het laat zien dat je jezelf blijft bewijzen en vooruitgang boekt. Wat betekent deze overgang naar de volgende groep voor jou?\n\n<clinical>Method: Positive reinforcement\nObservation: The user expresses relief and a sense of accomplishment.\nIntervention: The therapist acknowledges the user's progress and encourages reflection on the significance of their achievements.\nSignals: fear of relapse +3 (projections.dat), motivation to stay clean +3 (projections.dat), desire for change +3 (projections.dat)</clinical>",
+              "id": "msg_1781786772382",
+              "modulesUsed": [
+                "E01"
+              ],
+              "role": "assistant",
+              "timestamp": "2026-06-18T12:46:12.381Z"
+            },
+            {
+              "content": "Vooruitgang vooral",
+              "id": "msg_1781786803990",
+              "role": "user",
+              "timestamp": "2026-06-18T12:46:43.990Z"
+            },
+            {
+              "content": "Dat klopt, Kris. Vooruitgang is cruciaal en het is geweldig dat je dat zo duidelijk voelt. Het laat zien dat je in staat bent om door te zetten, zelfs als het moeilijk is. Wat zijn de dingen die je nu wilt aanpakken of verder wilt ontwikkelen in deze nieuwe groep?\n\n<clinical>Method: Motivational Interviewing\nObservation: The user expresses a sense of progress and motivation.\nIntervention: The therapist acknowledges the user's progress and encourages further exploration of goals.\nSignals: fear of relapse +3 (projections.dat), crisis +3 (projections.dat), shame +2 (projections.dat), motivation to stay clean +3 (projections.dat), desire for change +3 (projections.dat), positive goals +3 (projections.dat), internal unrest +2 (user.dat), hopelessness for the future +2 (user.dat), stress +2 (user.dat)</clinical>",
+              "id": "msg_1781786803991",
+              "modulesUsed": [
+                "E06"
+              ],
+              "role": "assistant",
+              "timestamp": "2026-06-18T12:46:43.990Z"
+            },
+            {
+              "content": "De groep het de motivatiegroep, nu zit ik in observatie groep 2.",
+              "id": "msg_1781786873930",
+              "role": "user",
+              "timestamp": "2026-06-18T12:47:53.930Z"
+            },
+            {
+              "content": "Dat klinkt als een spannende stap, Kris. De overgang naar de motivatiegroep kan je helpen om je doelen nog scherper te stellen en je vastberadenheid te versterken. Het lijkt erop dat je klaar bent om dieper in te gaan op wat jou drijft en hoe je dat kunt gebruiken om verder te groeien. Wat hoop je uit deze nieuwe groep te halen?\n\n<clinical>Method: Motivational Interviewing\nObservation: The user is transitioning from an observation group to a motivation group, indicating readiness for deeper engagement.\nIntervention: The therapist acknowledges the user's transition and encourages exploration of expectations and goals for the new group.\nSignals: motivation to stay clean +3 (projections.dat), desire for change +3 (projections.dat), positive goals +3 (projections.dat), recovery milestones +2 (projections.dat)</clinical>",
+              "id": "msg_1781786873931",
+              "modulesUsed": [
+                "E03"
+              ],
+              "role": "assistant",
+              "timestamp": "2026-06-18T12:47:53.930Z"
+            },
+            {
+              "content": "De afdeling is dubbele diagnose, dus adhd-testing, autisme-testing, borderline-testing en wat de psycho diagnostische testing nog naar voor bracht, daar heb ik nog geen verslag van gehad.",
+              "id": "msg_1781786999067",
+              "role": "user",
+              "timestamp": "2026-06-18T12:49:59.067Z"
+            },
+            {
+              "content": "Kris, dat klinkt als een intensieve en belangrijke fase voor je. Het ondergaan van deze testen kan veel informatie opleveren over wie je bent en hoe je het beste kunt omgaan met de uitdagingen die je tegenkomt. Het kan ook helpen om meer inzicht te krijgen in je ervaringen en emoties. Hoe voel je je over het wachten op die verslagen?\n\n<clinical>Method: Motivational Interviewing\nObservation: The user is awaiting results from multiple psychological tests, indicating a period of uncertainty and potential anxiety.\nIntervention: The therapist acknowledges the significance of the testing phase and invites the user to express their feelings about waiting for the results.\nSignals: none</clinical>",
+              "id": "msg_1781786999068",
+              "modulesUsed": [
+                "MI02"
+              ],
+              "role": "assistant",
+              "timestamp": "2026-06-18T12:49:59.067Z"
+            },
+            {
+              "content": "Ik weet dat ik adhd heb, autisme mss ook maar dan maar zeer licht, bonderline zou kunnen, zou in elk geval veel verklaren.",
+              "id": "msg_1781787092244",
+              "role": "user",
+              "timestamp": "2026-06-18T12:51:32.245Z"
+            },
+            {
+              "content": "Kris, het klinkt alsof je al veel hebt nagedacht over wat deze diagnoses voor jou kunnen betekenen. Het idee dat een diagnose zoals borderline veel zou kunnen verklaren, geeft aan dat je op zoek bent naar begrip en duidelijkheid over je ervaringen. Dat kan zowel verhelderend als uitdagend zijn. Hoe ga je om met de mogelijkheid van deze nieuwe inzichten?\n\n<clinical>Method: Motivational Interviewing\nObservation: The user is contemplating potential diagnoses and their implications, seeking understanding of personal experiences.\nIntervention: The therapist acknowledges the user's reflections on potential diagnoses and invites exploration of their emotional response to these possibilities.\nSignals: none</clinical>",
+              "id": "msg_1781787092246",
+              "modulesUsed": [
+                "E04"
+              ],
+              "role": "assistant",
+              "timestamp": "2026-06-18T12:51:32.245Z"
+            },
+            {
+              "content": "Je kent mijn schemas en modi?",
+              "id": "msg_1781787150618",
+              "role": "user",
+              "timestamp": "2026-06-18T12:52:30.618Z"
+            },
+            {
+              "content": "Ja, Kris, ik ben bekend met je schema's en modi. Je hebt sterke patronen van verlating en instabiliteit, evenals gevoelens van minderwaardigheid en emotionele deprivatie. Dit kan een grote impact hebben op hoe je jezelf en je relaties ervaart. Je onthechte beschermer is ook heel aanwezig, wat aangeeft dat je jezelf probeert te beschermen tegen pijn. Hoe voel je je over deze patronen en hoe ze jouw leven beïnvloeden?\n\n<clinical>Method: Schema Therapy\nObservation: The user is inquiring about their schemas and modes, indicating awareness of their psychological patterns.\nIntervention: The therapist acknowledges the user's schemas and modes, and invites reflection on their impact on the user's life.\nSignals: fear of relapse +3 (projections.dat), loss of control +2 (projections.dat), shame +2 (projections.dat), desire for change +3 (projections.dat), motivation to stay clean +2 (projections.dat), positive goals +2 (projections.dat), stress +3 (user.dat), loneliness +2 (user.dat), conflict +2 (user.dat)</clinical>",
+              "id": "msg_1781787150619",
+              "modulesUsed": [
+                "E05"
+              ],
+              "role": "assistant",
+              "timestamp": "2026-06-18T12:52:30.618Z"
+            },
+            {
+              "content": "Kris, fijn dat je er bent. Het klinkt alsof je met de start van de motivatiegroep op maandag een mooie stap zet — goed nieuws! Ik kan me voorstellen dat er veel in je hoofd omgaat, vooral met de behoefte om alles onder controle te krijgen. Vergeet niet dat vertragen je kan helpen om de dingen helder te zien. Hoe voelt het voor jou om deze nieuwe mogelijkheid te omarmen?\n<clinical>\nVSP-Framework: MI\nThe greeting strategy utilized the user's recent diary entry, gratitude expressions, and mood check-in to create a personalized and supportive message. The tone was appropriately soft, acknowledging, and attentive, aligning with the user's current state in the yellow zone, which indicates some underlying concerns. The greeting recognized the user's progress and potential stress without dramatizing, providing a sense of presence and encouragement. There are no immediate risk flags as the greeting is supportive and acknowledges the user's achievements and focus. The greeting complied with the engine instructions by addressing the user's current experiences and emotions.</clinical>",
+              "id": "msg_greeting_1781788715020",
+              "role": "assistant",
+              "timestamp": "2026-06-18T13:18:35.020Z"
+            },
+            {
+              "content": "Een beetje nerveus want dan kan ik dr peuskens maandag ook aanspreken over deze app (ik heb dit gebouwd)",
+              "id": "msg_1781788788748",
+              "role": "user",
+              "timestamp": "2026-06-18T13:19:48.748Z"
+            },
+            {
+              "content": "Kris, dat is een grote stap. Het feit dat je dit hebt gebouwd, zegt veel over jouw vaardigheden en doorzettingsvermogen. Het kan nerveus maken om je werk te delen, vooral met iemand die je respecteert. Maar onthoud dat je dit hebt gedaan vanuit een plek van ervaring en inzicht. Wat hoop je te bereiken in dat gesprek met Dr. Peuskens?\n\n<clinical>Method: Cognitive Behavioral Therapy (CBT)\nObservation: The user expresses nervousness about discussing their app with Dr. Peuskens, indicating anxiety about sharing their work.\nIntervention: The therapist acknowledges the user's achievement and encourages reflection on their goals for the upcoming conversation.\nSignals: fear of relapse +3 (projections.dat), loss of control +2 (projections.dat), shame +2 (projections.dat), desire for change +2 (projections.dat), motivation to stay clean +2 (projections.dat), positive goals +2 (projections.dat), concrete intentions +2 (projections.dat), recovery milestones +2 (projections.dat), behavioral changes +2 (projections.dat), stress +2 (user.dat), loneliness +2 (user.dat), conflict +2 (user.dat)</clinical>",
+              "id": "msg_1781788788749",
+              "modulesUsed": [
+                "E02"
+              ],
+              "role": "assistant",
+              "timestamp": "2026-06-18T13:19:48.748Z"
+            },
+            {
+              "content": "Kris, wat fijn om je hier te zien! Het is goed om te horen dat je komende maandag kunt starten in de motivatiegroep — dat klinkt als een mooie stap vooruit. Je hebt al zoveel positieve elementen in je leven, zoals het netjes houden van je kamer en het contact dat je kunt hebben met mensen die belangrijk voor je zijn. Hoe kijk je uit naar het gesprek met dr. Peuskens?\n<clinical>\nVSP-Framework: MI\nThe greeting strategy utilized personal data from the user's diary, gratitude list, and mood check-in to craft a warm and encouraging message. The tone was appropriately warm, open, and inviting, aligning with the user's stable mood and positive outlook. There are no risk flags present, as the user is in the green zone and exhibits signs of stability and motivation. The greeting complied with the engine instructions by incorporating personal elements and focusing on positive aspects of the user's current situation, such as starting the motivation group and maintaining a tidy living space.</clinical>",
+              "id": "msg_greeting_1781806956631",
+              "role": "assistant",
+              "timestamp": "2026-06-18T18:22:36.631Z"
+            },
+            {
+              "content": "Kris, wat fijn om je weer te zien! Het klinkt alsof je met goede moed begint aan de motivatiegroep maandag — een mooie stap voorwaarts. Je hebt ook een prachtige basisstructuur voor jezelf opgebouwd, dat zal je zeker helpen. En het lijkt me geweldig dat je nu de kans hebt om Dr. Peuskens aan te spreken. Wat hoop je het meest uit die ontmoeting te halen?\n<clinical>\nVSP-Framework: MI\nThe greeting for Kris was informed by their recent diary entry about starting a motivation group, expressions of gratitude, and today's mood check-in indicating a high level of focus. The tone is appropriately warm, open, and inviting, aligning with Kris's stable mood in the green zone. There are no risk flags present, as the user is in a positive and stable state. The greeting complies with the engine instructions by incorporating personal data and maintaining a supportive and exploratory tone, encouraging Kris to reflect on their upcoming meeting with Dr. Peuskens.</clinical>",
+              "id": "msg_greeting_1781812521067",
+              "role": "assistant",
+              "timestamp": "2026-06-18T19:55:21.067Z"
+            },
+            {
+              "content": "Kris, wat fijn om je hier te zien. Het klinkt alsof je met de motivatiegroep een mooie stap zet richting je doelen — goed nieuws! Het is ook bijzonder dat je eindelijk de mogelijkheid hebt om dr. Peuskens aan te spreken. Hoe gaat het met de structuur in je dagen? Blijf vooral trouw aan wat jou veilig houdt, zoals je zegt: \"Ik moet vandaag niet mijn hele leven herstellen.\"\n<clinical>\nVSP-Framework: MI\nThe greeting strategy utilized Kris's recent diary entry, mood check-in, and gratitude statements to craft a personalized and supportive message. The tone was appropriately warm, open, and inviting, aligning with the user's stable mood and readiness to explore positive elements. There are no risk flags present, as the user is in the green zone and expressing positive developments. The greeting complied with the engine instructions by incorporating personal data and maintaining a focus on safety and progress, encouraging Kris to stay true to their personal safety plan.</clinical>",
+              "id": "msg_greeting_1781844667869",
+              "role": "assistant",
+              "timestamp": "2026-06-19T04:51:07.869Z"
+            },
+            {
+              "content": "Ik vergeet soms te ontbijten  maar voor de rest gaat het wel. Vooral veel te vroeg wakker elke dag.",
+              "id": "msg_1781844765861",
+              "role": "user",
+              "timestamp": "2026-06-19T04:52:45.861Z"
+            },
+            {
+              "content": "Kris, ik zie dat je soms moeite hebt met ontbijten en vroeg wakker worden. Dat kan een uitdaging zijn, vooral als je probeert structuur aan te brengen in je dagen. Het is goed om te horen dat het verder wel gaat. Hoe voelt het voor jou om zo vroeg wakker te zijn? Heeft dat invloed op je dag?\n\n<clinical>Method: Cognitive Behavioral Therapy (CBT)\nObservation: The user reports occasionally forgetting to eat breakfast and consistently waking up too early, indicating potential disruptions in daily routine.\nIntervention: The therapist acknowledges the user's challenges with routine and invites them to explore the emotional impact of waking up early.\nSignals: fear of relapse +3 (projections.dat), loss of control +2 (projections.dat), desire for change +2 (projections.dat), behavioral changes +2 (projections.dat), stress +2 (user.dat), loneliness +2 (user.dat)</clinical>",
+              "id": "msg_1781844765863",
+              "modulesUsed": [
+                "M08"
+              ],
+              "role": "assistant",
+              "timestamp": "2026-06-19T04:52:45.862Z"
+            },
+            {
+              "content": "Niet zo heel veel hoor. Dat valt wel mee 😅",
+              "id": "msg_1781844898862",
+              "role": "user",
+              "timestamp": "2026-06-19T04:54:58.862Z"
+            },
+            {
+              "content": "Kris, dat is goed om te horen. Het klinkt alsof je het vroeg wakker worden kunt relativeren en dat het niet te veel invloed op je heeft. Dat geeft aan dat je een zekere veerkracht hebt. Wat helpt jou om die vroege ochtenden toch goed door te komen?\n\n<clinical>Method: Cognitive Behavioral Therapy\nObservation: The user downplays the impact of waking up early, suggesting it is manageable.\nIntervention: The therapist acknowledges the user's resilience and encourages reflection on coping strategies.\nSignals: none</clinical>",
+              "id": "msg_1781844898863",
+              "modulesUsed": [
+                "E02"
+              ],
+              "role": "assistant",
+              "timestamp": "2026-06-19T04:54:58.862Z"
+            },
+            {
+              "content": "Dat het dan al bijna 7u smorgens is en ik bijna mag gaan roken 😆",
+              "id": "msg_1781844963069",
+              "role": "user",
+              "timestamp": "2026-06-19T04:56:03.069Z"
+            },
+            {
+              "content": "Kris, dat klinkt als een klein lichtpuntje in de vroege ochtend. Het lijkt erop dat die routine je helpt om de dag op gang te brengen. Hoe voelt het voor jou om zo'n vast moment in je ochtend te hebben?\n\n<clinical>Method: Reflective Listening\nObservation: The user finds comfort in the routine of having a cigarette in the morning.\nIntervention: The therapist acknowledges this routine as a positive anchor and invites further reflection.\nSignals: positive goals +2 (projections.dat), stress +1 (user.dat)</clinical>",
+              "id": "msg_1781844963070",
+              "modulesUsed": [
+                "E01"
+              ],
+              "role": "assistant",
+              "timestamp": "2026-06-19T04:56:03.069Z"
+            },
+            {
+              "content": "Kris, dat is helemaal goed. We hebben vandaag gesproken over je ochtendroutine en hoe je daarmee omgaat. Je hebt laten zien dat je veerkrachtig bent, en dat is belangrijk. Deze sessie is opgeslagen. Neem de tijd die je nodig hebt, en ik kijk ernaar uit om de volgende keer weer met je te praten.\n\n<clinical>\nMethod: Supportive therapy\nObservation: The user indicated the end of the session.\nIntervention: The therapist provided positive reinforcement and summarized the session's focus.\nSignals: none\n</clinical>",
+              "id": "msg_1781846633981",
+              "role": "assistant",
+              "timestamp": "2026-06-19T05:23:53.981Z"
+            },
+            {
+              "content": "Kris, wat fijn om je te zien! Het klinkt alsof je met veel motivatie aan de nieuwe groep begint maandag — dat is goed nieuws. Je heldere focus vandaag is een mooie basis om op voort te bouwen. Hoe gaat het met de structuur die je voor jezelf hebt neergezet?",
+              "id": "msg_greeting_1781848243471",
+              "role": "assistant",
+              "timestamp": "2026-06-19T05:50:43.471Z"
+            },
+            {
+              "content": "Kris, wat fijn om je weer te spreken! Het klinkt alsof je je goed voorbereidt op de motivatiegroep die maandag van start gaat — dat is echt geweldig nieuws. Je focus voelt helder vandaag en dat is een mooie basis om verder te bouwen. Blijf vooral in gedachten houden dat je vandaag niet je hele leven hoeft te herstellen; het is prima om stap voor stap te werken aan wat jou veilig houdt. Heb je al een momentje voor jezelf genomen om te ontspannen of iets leuks te doen?",
+              "id": "msg_greeting_1781855122033",
+              "role": "assistant",
+              "timestamp": "2026-06-19T07:45:22.033Z"
+            },
+            {
+              "content": "Wat zijn mijn schemad en modi?",
+              "id": "msg_1781855152951",
+              "role": "user",
+              "timestamp": "2026-06-19T07:45:52.951Z"
+            },
+            {
+              "content": "Kris, je hebt verschillende schema's en modi die een rol spelen in je leven. Hier zijn ze:\n\n**Schema's:**\n- **Verlating/instabiliteit (90%)**: Dit schema kan je gevoel van onveiligheid beïnvloeden, vooral in relaties.\n- **Emotionele deprivatie (80%)**: Dit komt voort uit het gebrek aan emotionele steun in je jeugd.\n- **Wantrouwen/misbruik (70%)**: Dit schema kan je moeilijkheden met vertrouwen in anderen verklaren.\n- **Minderwaardigheid/schaamte (80%)**: Dit kan bijdragen aan het gevoel dat je jezelf kwijt bent.\n- **Onvoldoende zelfcontrole (90%)**: Dit is zichtbaar in je struggles met alcoholgebruik.\n\n**Modi:**\n- **Onthechte beschermer (90%)**: Deze modus helpt je om jezelf te beschermen door afstand te houden.\n- **Kwetsbare kind (80%)**: Dit deel van jou voelt zich vaak verloren of kwetsbaar.\n- **Straffende ouder (70%)**: Je hebt moeite met controleverlies, wat deze modus versterkt.\n- **Impulsieve kind (80%)**: Deze modus kan leiden tot impulsief gedrag, zoals overmatig drinken.\n\nHet herkennen van deze patronen is een belangrijke stap. Hoe voel je je bij het horen van deze informatie?",
+              "id": "msg_1781855152952",
+              "modulesUsed": [
+                "E02"
+              ],
+              "role": "assistant",
+              "timestamp": "2026-06-19T07:45:52.951Z"
+            },
+            {
+              "content": "Kris, dat is helemaal goed. We hebben vandaag gesproken over je motivatie en de stappen die je neemt richting de groep. Je hebt veel moed getoond in deze sessie. Deze sessie is opgeslagen. Neem de tijd die je nodig hebt, en ik kijk ernaar uit om de volgende keer weer met je te praten.\n\n<engine_signals>\n{\n  \"persons\": [],\n  \"triggers\": [],\n  \"schemas\": [],\n  \"emotionalShift\": \"none\",\n  \"topicProgression\": \"sessie afsluiting\",\n  \"therapeuticMove\": \"supportive therapy\",\n  \"moduleRelevance\": []\n}\n</engine_signals>",
+              "id": "msg_1781857064573",
+              "role": "assistant",
+              "timestamp": "2026-06-19T08:17:44.573Z"
+            },
+            {
+              "content": "Kris, dat is helemaal goed. We hebben vandaag gesproken over je motivatie en de stappen die je neemt richting de groep. Je hebt veel moed getoond in deze sessie. Deze sessie is opgeslagen. Neem de tijd die je nodig hebt, en ik kijk ernaar uit om de volgende keer weer met je te praten.\n\n<engine_signals>\n{\n  \"persons\": [],\n  \"triggers\": [],\n  \"schemas\": [],\n  \"emotionalShift\": \"none\",\n  \"topicProgression\": \"sessie afsluiting\",\n  \"therapeuticMove\": \"supportive therapy\",\n  \"moduleRelevance\": []\n}\n</engine_signals>",
+              "id": "msg_1781858400386",
+              "role": "assistant",
+              "timestamp": "2026-06-19T08:40:00.386Z"
+            },
+            {
+              "content": "Kris, fijn dat je hier bent. Het klinkt alsof je vandaag wat tijd hebt kunnen doorbrengen met Melissa en je papa — dat moet goed hebben gedaan! Je focus lijkt helder en dat is een mooie basis om verder te bouwen. Hoe voel je je bij het idee om je fiets weer in gebruik te nemen?",
+              "id": "msg_greeting_1781930115750",
+              "role": "assistant",
+              "timestamp": "2026-06-20T04:35:15.750Z"
+            },
+            {
+              "content": "Eerlijk gezegd een beetje nerveus want ik moet toch een 30min fietsen en het wordt 33° vandaag 😅",
+              "id": "msg_1781930188522",
+              "role": "user",
+              "timestamp": "2026-06-20T04:36:28.522Z"
+            },
+            {
+              "content": "Kris, dat is begrijpelijk. Fietsen in die hitte kan best uitdagend zijn. Het is goed dat je je bewust bent van de omstandigheden. Misschien kun je het tempo rustig aanhouden en jezelf wat pauzes gunnen als dat nodig is? Je hoeft het niet perfect te doen; gewoon gaan en genieten van de rit kan al genoeg zijn. Wat denk je?",
+              "id": "msg_1781930188523",
+              "modulesUsed": [
+                "E02"
+              ],
+              "role": "assistant",
+              "timestamp": "2026-06-20T04:36:28.522Z"
+            },
+            {
+              "content": "Het is een elektrische fiets 😆",
+              "id": "msg_1781930233080",
+              "role": "user",
+              "timestamp": "2026-06-20T04:37:13.080Z"
+            },
+            {
+              "content": "Ah, dat maakt het een stuk makkelijker! Met een elektrische fiets kun je jezelf wat meer ontlasten, vooral in die hitte. Dat geeft je de kans om te genieten van de rit zonder jezelf helemaal uit te putten. Hoe voelt dat voor je? Heb je al plannen voor onderweg?",
+              "id": "msg_1781930233081",
+              "modulesUsed": [
+                "E01"
+              ],
+              "role": "assistant",
+              "timestamp": "2026-06-20T04:37:13.080Z"
+            },
+            {
+              "content": "Vooral de app een beetje uitproberen",
+              "id": "msg_1781930266442",
+              "role": "user",
+              "timestamp": "2026-06-20T04:37:46.442Z"
+            },
+            {
+              "content": "Dat klinkt als een goed plan, Kris. Het geeft je de kans om de app op een ontspannen manier te verkennen terwijl je onderweg bent. En misschien ontdek je nog nieuwe dingen die je kunnen helpen. Hoe voelt het om deze tijd voor jezelf te nemen en iets nieuws uit te proberen?",
+              "id": "msg_1781930266443",
+              "modulesUsed": [
+                "E03"
+              ],
+              "role": "assistant",
+              "timestamp": "2026-06-20T04:37:46.442Z"
+            },
+            {
+              "content": "Ik ben meer een ratio mens, want dan moet ik bewust minder voelen",
+              "id": "msg_1781930362905",
+              "role": "user",
+              "timestamp": "2026-06-20T04:39:22.905Z"
+            },
+            {
+              "content": "Kris, ik hoor dat je vaak op je verstand vertrouwt om minder te voelen. Dat kan een manier zijn om jezelf te beschermen tegen overweldigende emoties. Maar soms kan het ook betekenen dat je jezelf afsluit van wat er echt speelt. Hoe is het voor jou om die balans te vinden tussen denken en voelen?",
+              "id": "msg_1781930362906",
+              "modulesUsed": [
+                "E04"
+              ],
+              "role": "assistant",
+              "timestamp": "2026-06-20T04:39:22.905Z"
+            },
+            {
+              "content": "Zeet moeilijk. Ik ben iemand heel emotioneel en passioneel, maar dat overspoelt mij soms wel, dus houdt ik het ratio hoger dan normaal en zo mag ik minder voelen",
+              "id": "msg_1781930470940",
+              "role": "user",
+              "timestamp": "2026-06-20T04:41:10.940Z"
+            },
+            {
+              "content": "Ik zie het, Kris. Je hebt een sterke emotionele kant, maar die kan ook overweldigend zijn. Het is begrijpelijk dat je dan naar de ratio grijpt om jezelf te beschermen. Maar dat kan ook betekenen dat je belangrijke gevoelens en ervaringen mist. Hoe zou het voelen om af en toe een beetje ruimte te geven aan die emoties, zonder dat ze je overspoelen?",
+              "id": "msg_1781930470941",
+              "modulesUsed": [
+                "E05"
+              ],
+              "role": "assistant",
+              "timestamp": "2026-06-20T04:41:10.940Z"
+            },
+            {
+              "content": "Dat zou heel fijn zijn  maar meestal overspoelt het sneller dan ik besef",
+              "id": "msg_1781930542712",
+              "role": "user",
+              "timestamp": "2026-06-20T04:42:22.712Z"
+            },
+            {
+              "content": "Dat herken ik, Kris. Het kan echt snel gaan als emoties de overhand nemen. Het lijkt alsof je soms niet eens de kans krijgt om te reageren voordat je al in die golf zit. Misschien is het helpen om te kijken naar kleine momenten waarop je jezelf kunt herinneren aan wat je voelt, voordat het te overweldigend wordt. Wat zou een eerste stap kunnen zijn om dat te proberen?",
+              "id": "msg_1781930542713",
+              "modulesUsed": [
+                "E06"
+              ],
+              "role": "assistant",
+              "timestamp": "2026-06-20T04:42:22.712Z"
+            },
+            {
+              "content": "Kris, fijn dat je er bent. Het klinkt alsof je een drukke dag achter de rug hebt met het ophalen van de fiets en het bezoek aan Melissa en je papa. Dat je even weg was van het domein lijkt me een waardevolle onderbreking. Ik merk dat je vandaag een helderder focus hebt, maar als er iets speelt, weet dat het oké is om dat te delen. Wat helpt jou nu om te vertragen en bij jezelf te blijven?",
+              "id": "msg_greeting_1781941926453",
+              "role": "assistant",
+              "timestamp": "2026-06-20T07:52:06.453Z"
+            },
+            {
+              "content": "Kris, dat is helemaal goed. We hebben gesproken over hoe je emoties je soms kunnen overspoelen en de balans tussen voelen en denken. Het vergt moed om daarover te reflecteren. Deze sessie is opgeslagen, en ik moedig je aan om er in de toekomst verder op terug te komen. Zorg goed voor jezelf. Tot de volgende keer! \n\n<engine_signals>\n{\n  \"persons\": [],\n  \"triggers\": [],\n  \"schemas\": [],\n  \"emotionalShift\": \"none\",\n  \"topicProgression\": \"emotional balance\",\n  \"therapeuticMove\": \"reflective listening\",\n  \"moduleRelevance\": []\n}\n</engine_signals>",
+              "id": "msg_1781944233507",
+              "role": "assistant",
+              "timestamp": "2026-06-20T08:30:33.507Z"
+            }
+          ],
+          "clinicalModeActive": false,
+          "consecutiveSessionsWithoutEngagement": 0,
+          "currentMood": {
+            "craving": 0,
+            "despondency": 1,
+            "focus": 9,
+            "frustration": 1,
+            "vsp": null,
+            "vspScore": 2
+          },
+          "dgtProgress": {
+            "boundarySkillSuccess": [],
+            "caregiverOverloadPatterns": [],
+            "effectiveValidationDepth": null,
+            "groundingPreference": [],
+            "lastDGTProcessUsed": null,
+            "lastDGTSessionDate": null,
+            "relapseInterruptionPatterns": [],
+            "successfulSkills": [],
+            "triggerPatterns": []
+          },
+          "eigenRegieHistory": [],
+          "gdprAccepted": true,
+          "gdprAcceptedAt": "2026-06-17T19:35:06.311Z",
+          "gdprVersion": "1.0",
+          "gratitudeStreak": 1,
+          "guidanceDepth": "deep",
+          "k01Progress": {
+            "boundaryPracticeCount": 0,
+            "boundaryRepairAttempts": 0,
+            "boundaryStabilityTrend": "unknown",
+            "lastInterventionType": null,
+            "lastSessionDate": null,
+            "sessionsWithAbandonmentFear": 0,
+            "sessionsWithBoundaryFatigue": 0,
+            "sessionsWithCollapse": 0,
+            "sessionsWithGuiltAfterBoundary": 0
+          },
+          "k02Progress": {
+            "awarenessLevel": "none",
+            "dominantFlags": [],
+            "guiltIntensity": "low",
+            "lastSessionDate": null,
+            "microboundaryAttempted": false,
+            "selfLossLevel": "low",
+            "sessionCount": 0
+          },
+          "k03Progress": {
+            "consecutiveLowCare": 0,
+            "k06ReferralsMade": 0,
+            "lastInterventionMode": "none",
+            "lastResponseLevel": "level_1",
+            "lastShadowPart": "none",
+            "sessionsActivated": 0,
+            "sessionsAtLevel3": 0,
+            "sessionsWithShadow": 0,
+            "shadowPartsDetected": []
+          },
+          "k04Progress": {
+            "burnoutIndicatorCount": 0,
+            "emotionalStabilityTrend": "unknown",
+            "lastMicrotoolUsed": null,
+            "sessionsWithAnger": 0,
+            "sessionsWithFear": 0,
+            "sessionsWithGuilt": 0,
+            "sessionsWithNumbness": 0,
+            "sessionsWithOverwhelm": 0
+          },
+          "k04s4Progress": {
+            "cyclicPatternCount": 0,
+            "lastResponseMode": "none",
+            "sessionsWithBoundaryGuilt": 0,
+            "sessionsWithChildConcern": 0,
+            "sessionsWithHopeExhaustion": 0,
+            "sessionsWithHypervigilance": 0,
+            "sessionsWithIsolation": 0,
+            "sessionsWithTrustErosion": 0,
+            "trustRecoveryTrend": "unknown"
+          },
+          "k05Progress": {
+            "communicationTriggersDetected": [],
+            "escalationPatternsDetected": 0,
+            "lastCommunicationMode": null,
+            "lastSessionDate": null,
+            "repairPatternsUsed": [],
+            "timingViolationCount": 0
+          },
+          "k06Progress": {
+            "blindSpotsReflected": [],
+            "consecutiveCollapseRisk": 0,
+            "lastResponseMode": "none",
+            "lastState": "none",
+            "sessionsInCollapse": 0,
+            "sessionsInControlMode": 0,
+            "sessionsInExhaustion": 0,
+            "sessionsInRebuild": 0,
+            "sessionsInRecovery": 0,
+            "sessionsWithGuiltLoop": 0,
+            "sessionsWithHypervigilance": 0,
+            "sessionsWithRelapseStress": 0,
+            "sessionsWithSelfLoss": 0,
+            "sustainabilityTrend": "unknown"
+          },
+          "ko1Progress": {
+            "burnoutSignalCount": 0,
+            "lastPatternDetected": null,
+            "lastSessionDate": null,
+            "reassuranceLoopCount": 0,
+            "repairPatterns": [],
+            "validationPreferences": []
+          },
+          "lastGratitudeDate": "2026-06-20",
+          "lastMilestoneShown": "2026-06-20",
+          "lastRelationalPattern": null,
+          "lastSessionDate": "2026-06-20",
+          "mbtProgress": {
+            "boundaryProtectionsUsed": 0,
+            "dominantMentalizingPattern": null,
+            "lastMBTProcessUsed": null,
+            "lastMBTSessionDate": null,
+            "preferredResponseModes": [],
+            "recurringCollapsePatterns": [],
+            "successfulRegulations": 0,
+            "successfulRepairs": 0
+          },
+          "modeTendencies": [
+            {
+              "confidence": 0.9,
+              "confirmed": true,
+              "confirmedAt": "2026-06-16T19:23:31.105Z",
+              "effectiveInterventions": [],
+              "firstDetectedAt": "2026-06-15T09:04:15.021Z",
+              "frequency": 2.3601885300000003,
+              "lastSeen": "2026-06-17T19:35:04.144Z",
+              "lastUpdatedAt": "2026-06-17T19:35:04.144Z",
+              "modeId": "onthechte_beschermer"
+            },
+            {
+              "confidence": 0.833,
+              "confirmed": true,
+              "confirmedAt": "2026-06-16T19:23:31.105Z",
+              "effectiveInterventions": [],
+              "firstDetectedAt": "2026-06-15T09:04:15.021Z",
+              "frequency": 2.3601885300000003,
+              "lastSeen": "2026-06-17T19:35:04.144Z",
+              "lastUpdatedAt": "2026-06-17T19:35:04.144Z",
+              "modeId": "kwetsbare_kind"
+            },
+            {
+              "confidence": 0.745,
+              "confirmed": true,
+              "confirmedAt": "2026-06-16T19:23:31.105Z",
+              "effectiveInterventions": [],
+              "firstDetectedAt": "2026-06-15T09:04:15.021Z",
+              "frequency": 2.3601885300000003,
+              "lastSeen": "2026-06-17T19:35:04.144Z",
+              "lastUpdatedAt": "2026-06-17T19:35:04.144Z",
+              "modeId": "straffende_ouder"
+            },
+            {
+              "confidence": 0.824,
+              "confirmed": true,
+              "confirmedAt": "2026-06-16T19:23:31.105Z",
+              "effectiveInterventions": [],
+              "firstDetectedAt": "2026-06-15T09:04:15.021Z",
+              "frequency": 2.3601885300000003,
+              "lastSeen": "2026-06-17T19:35:04.144Z",
+              "lastUpdatedAt": "2026-06-17T19:35:04.144Z",
+              "modeId": "impulsieve_kind"
+            },
+            {
+              "confidence": 0.621,
+              "effectiveInterventions": [],
+              "firstDetectedAt": "2026-06-15T09:04:15.021Z",
+              "frequency": 2.3601885300000003,
+              "lastSeen": "2026-06-17T19:35:04.144Z",
+              "lastUpdatedAt": "2026-06-17T19:35:04.144Z",
+              "modeId": "gezonde_volwassene"
+            },
+            {
+              "confidence": 0.712,
+              "confirmed": true,
+              "confirmedAt": "2026-06-16T19:23:31.105Z",
+              "effectiveInterventions": [],
+              "firstDetectedAt": "2026-06-15T09:04:15.021Z",
+              "frequency": 2.3601885300000003,
+              "lastSeen": "2026-06-17T19:35:04.144Z",
+              "lastUpdatedAt": "2026-06-17T19:35:04.144Z",
+              "modeId": "boze_kind"
+            },
+            {
+              "confidence": 0.645,
+              "effectiveInterventions": [],
+              "firstDetectedAt": "2026-06-15T09:04:15.021Z",
+              "frequency": 2.3601885300000003,
+              "lastSeen": "2026-06-17T19:35:04.144Z",
+              "lastUpdatedAt": "2026-06-17T19:35:04.144Z",
+              "modeId": "gehoorzame_overgave"
+            },
+            {
+              "effectiveInterventions": [],
+              "frequency": 0.47829690000000014,
+              "lastSeen": "2026-06-15T17:08:18.322Z",
+              "modeId": "RELAPSE_SEEKING"
+            }
+          ],
+          "moduleMemory": {
+            "blockedDominance": [],
+            "dominantModuleWindow": [],
+            "lastSessionContext": {
+              "dominantModuleId": null,
+              "sessionId": "session_79",
+              "therapeuticTheme": "positive_progress",
+              "userStateSummary": "stable"
+            },
+            "moduleUsage": [],
+            "persona": "elias",
+            "repeatingModulePatterns": [],
+            "sessions": [
+              {
+                "contextOnlyModuleIds": [],
+                "crisisProtocolActivated": false,
+                "dominantModuleId": null,
+                "endedAt": "2026-06-20T08:30:33.511Z",
+                "persona": "elias",
+                "responseModes": [],
+                "secondaryModuleIds": [],
+                "sessionId": "session_79",
+                "startedAt": "2026-06-20",
+                "storagePatchApplied": true
+              }
+            ]
+          },
+          "moduleUsage": [
+            {
+              "context": "Eerlijk gezegd een beetje nerveus want ik moet toc",
+              "count": 20,
+              "moduleId": "E02",
+              "usedAt": "2026-06-20T04:36:28.522Z"
+            },
+            {
+              "context": "Het is een elektrische fiets 😆",
+              "count": 7,
+              "moduleId": "E01",
+              "usedAt": "2026-06-20T04:37:13.080Z"
+            },
+            {
+              "context": "Ik wil gebruiken",
+              "count": 1,
+              "moduleId": "M75",
+              "usedAt": "2026-06-15T17:06:55.229Z"
+            },
+            {
+              "context": "Veel interne onrust, beetje hopeloos voor de toeko",
+              "count": 1,
+              "moduleId": "M34",
+              "usedAt": "2026-06-15T17:07:38.374Z"
+            },
+            {
+              "context": "Het bespreken van het herval van een patiënt op de",
+              "count": 1,
+              "moduleId": "IDEN01",
+              "usedAt": "2026-06-16T10:03:45.639Z"
+            },
+            {
+              "context": "Ja graag, geef eens al mijn schemas en modi in een",
+              "count": 1,
+              "moduleId": "M25",
+              "usedAt": "2026-06-16T10:07:59.014Z"
+            },
+            {
+              "context": "Vooral de app een beetje uitproberen",
+              "count": 3,
+              "moduleId": "E03",
+              "usedAt": "2026-06-20T04:37:46.442Z"
+            },
+            {
+              "context": "Dus save en afsluiten",
+              "count": 1,
+              "moduleId": "M56",
+              "usedAt": "2026-06-17T17:49:29.723Z"
+            },
+            {
+              "context": "Zeet moeilijk. Ik ben iemand heel emotioneel en pa",
+              "count": 4,
+              "moduleId": "E05",
+              "usedAt": "2026-06-20T04:41:10.941Z"
+            },
+            {
+              "context": "Het is genoeg geweest voor vandaag, slaaptijd nu",
+              "count": 1,
+              "moduleId": "SLAAP01",
+              "usedAt": "2026-06-17T22:47:51.985Z"
+            },
+            {
+              "context": "Dat zou heel fijn zijn  maar meestal overspoelt he",
+              "count": 2,
+              "moduleId": "E06",
+              "usedAt": "2026-06-20T04:42:22.713Z"
+            },
+            {
+              "context": "De afdeling is dubbele diagnose, dus adhd-testing,",
+              "count": 1,
+              "moduleId": "MI02",
+              "usedAt": "2026-06-18T12:49:59.068Z"
+            },
+            {
+              "context": "Ik ben meer een ratio mens, want dan moet ik bewus",
+              "count": 2,
+              "moduleId": "E04",
+              "usedAt": "2026-06-20T04:39:22.905Z"
+            },
+            {
+              "context": "Ik vergeet soms te ontbijten  maar voor de rest ga",
+              "count": 1,
+              "moduleId": "M08",
+              "usedAt": "2026-06-19T04:52:45.862Z"
+            }
+          ],
+          "moodHistory": [
+            {
+              "sliders": {
+                "craving": 1,
+                "despondency": 1,
+                "focus": 8,
+                "frustration": 1
+              },
+              "timestamp": "2026-06-15T09:07:43.875Z"
+            },
+            {
+              "sliders": {
+                "craving": 1,
+                "despondency": 1,
+                "focus": 8,
+                "frustration": 1,
+                "vspScore": 1
+              },
+              "timestamp": "2026-06-15T17:08:18.321Z"
+            },
+            {
+              "sliders": {
+                "craving": 0,
+                "despondency": 0,
+                "focus": 7,
+                "frustration": 0,
+                "vspScore": 1
+              },
+              "timestamp": "2026-06-15T20:41:05.903Z"
+            },
+            {
+              "sliders": {
+                "craving": 1,
+                "despondency": 0,
+                "focus": 9,
+                "frustration": 2,
+                "vspScore": 1
+              },
+              "timestamp": "2026-06-16T08:19:57.100Z"
+            },
+            {
+              "sliders": {
+                "craving": 1,
+                "despondency": 0,
+                "focus": 10,
+                "frustration": 2,
+                "vspScore": 1
+              },
+              "timestamp": "2026-06-16T10:00:22.546Z"
+            },
+            {
+              "sliders": {
+                "craving": 1,
+                "despondency": 0,
+                "focus": 9,
+                "frustration": 1,
+                "vspScore": 1
+              },
+              "timestamp": "2026-06-16T12:55:00.703Z"
+            },
+            {
+              "sliders": {
+                "craving": 1,
+                "despondency": 0,
+                "focus": 9,
+                "frustration": 1,
+                "vspScore": 1
+              },
+              "timestamp": "2026-06-16T13:42:24.921Z"
+            },
+            {
+              "sliders": {
+                "craving": 1,
+                "despondency": 0,
+                "focus": 9,
+                "frustration": 1,
+                "vspScore": 1
+              },
+              "timestamp": "2026-06-16T14:17:26.053Z"
+            },
+            {
+              "sliders": {
+                "craving": 1,
+                "despondency": 0,
+                "focus": 9,
+                "frustration": 1,
+                "vspScore": 2
+              },
+              "timestamp": "2026-06-17T14:28:56.410Z"
+            },
+            {
+              "sliders": {
+                "craving": 1,
+                "despondency": 1,
+                "focus": 8,
+                "frustration": 1,
+                "vspScore": 1
+              },
+              "timestamp": "2026-06-17T17:40:48.193Z"
+            },
+            {
+              "sliders": {
+                "craving": 1,
+                "despondency": 1,
+                "focus": 8,
+                "frustration": 1,
+                "vspScore": 3
+              },
+              "timestamp": "2026-06-17T18:52:41.460Z"
+            },
+            {
+              "sliders": {
+                "craving": 8,
+                "despondency": 6,
+                "focus": 3,
+                "frustration": 7,
+                "vspScore": 4
+              },
+              "timestamp": "2026-06-17T19:35:52.897Z"
+            },
+            {
+              "sliders": {
+                "craving": 2,
+                "despondency": 2,
+                "focus": 8,
+                "frustration": 2,
+                "vspScore": 4
+              },
+              "timestamp": "2026-06-17T20:03:48.625Z"
+            },
+            {
+              "sliders": {
+                "craving": 2,
+                "despondency": 2,
+                "focus": 6,
+                "frustration": 2,
+                "vspScore": 3
+              },
+              "timestamp": "2026-06-17T22:45:53.318Z"
+            },
+            {
+              "sliders": {
+                "craving": 2,
+                "despondency": 2,
+                "focus": 6,
+                "frustration": 2,
+                "vspScore": 1
+              },
+              "timestamp": "2026-06-18T10:43:01.049Z"
+            },
+            {
+              "sliders": {
+                "craving": 1,
+                "despondency": 1,
+                "focus": 7,
+                "frustration": 1,
+                "vspScore": 1
+              },
+              "timestamp": "2026-06-18T13:13:59.626Z"
+            },
+            {
+              "sliders": {
+                "craving": 1,
+                "despondency": 1,
+                "focus": 9,
+                "frustration": 1,
+                "vspScore": 2
+              },
+              "timestamp": "2026-06-18T18:22:21.652Z"
+            },
+            {
+              "sliders": {
+                "craving": 0,
+                "despondency": 1,
+                "focus": 8,
+                "frustration": 2,
+                "vspScore": 1
+              },
+              "timestamp": "2026-06-19T04:48:44.525Z"
+            },
+            {
+              "sliders": {
+                "craving": 0,
+                "despondency": 1,
+                "focus": 8,
+                "frustration": 2,
+                "vspScore": 1
+              },
+              "timestamp": "2026-06-19T05:23:53.984Z"
+            },
+            {
+              "sliders": {
+                "craving": 0,
+                "despondency": 1,
+                "focus": 8,
+                "frustration": 2,
+                "vspScore": 1
+              },
+              "timestamp": "2026-06-19T05:24:26.647Z"
+            },
+            {
+              "sliders": {
+                "craving": 0,
+                "despondency": 1,
+                "focus": 8,
+                "frustration": 2,
+                "vspScore": 1
+              },
+              "timestamp": "2026-06-19T08:17:44.576Z"
+            },
+            {
+              "sliders": {
+                "craving": 0,
+                "despondency": 1,
+                "focus": 8,
+                "frustration": 2,
+                "vspScore": 1
+              },
+              "timestamp": "2026-06-19T08:40:00.391Z"
+            },
+            {
+              "sliders": {
+                "craving": 0,
+                "despondency": 1,
+                "focus": 9,
+                "frustration": 1,
+                "vspScore": 1
+              },
+              "timestamp": "2026-06-20T04:17:05.388Z"
+            },
+            {
+              "sliders": {
+                "craving": 0,
+                "despondency": 1,
+                "focus": 9,
+                "frustration": 1,
+                "vspScore": 2
+              },
+              "timestamp": "2026-06-20T08:30:33.510Z"
+            }
+          ],
+          "relationalAnchors": [],
+          "repeatingPatterns": [
+            {
+              "firstSeenSession": "2026-06-19T05:23:53.987Z",
+              "lastSeenSession": "2026-06-20T08:30:33.511Z",
+              "loopNamed": false,
+              "progressionDetected": false,
+              "sessionCount": 4,
+              "theme": "positive_progress"
+            }
+          ],
+          "schemaTendencies": [
+            {
+              "confidence": 0.9,
+              "confirmed": true,
+              "confirmedAt": "2026-06-16T19:23:31.105Z",
+              "copingStyle": null,
+              "domain": "unknown",
+              "firstDetectedAt": "2026-06-15T09:04:15.021Z",
+              "frequency": 2.3601885300000003,
+              "lastSeen": "2026-06-17T19:35:04.144Z",
+              "lastUpdatedAt": "2026-06-17T19:35:04.144Z",
+              "schemaId": "verlating_instabiliteit"
+            },
+            {
+              "confidence": 0.8,
+              "confirmed": true,
+              "confirmedAt": "2026-06-16T19:23:31.105Z",
+              "copingStyle": null,
+              "domain": "unknown",
+              "firstDetectedAt": "2026-06-15T09:04:15.021Z",
+              "frequency": 2.3601885300000003,
+              "lastSeen": "2026-06-17T19:35:04.144Z",
+              "lastUpdatedAt": "2026-06-17T19:35:04.144Z",
+              "schemaId": "emotionele_deprivatie"
+            },
+            {
+              "confidence": 0.736,
+              "confirmed": true,
+              "confirmedAt": "2026-06-16T19:23:31.105Z",
+              "copingStyle": null,
+              "domain": "unknown",
+              "firstDetectedAt": "2026-06-15T09:04:15.021Z",
+              "frequency": 2.3601885300000003,
+              "lastSeen": "2026-06-17T19:35:04.144Z",
+              "lastUpdatedAt": "2026-06-17T19:35:04.144Z",
+              "schemaId": "wantrouwen_misbruik"
+            },
+            {
+              "confidence": 0.821,
+              "confirmed": true,
+              "confirmedAt": "2026-06-16T19:23:31.105Z",
+              "copingStyle": null,
+              "domain": "unknown",
+              "firstDetectedAt": "2026-06-15T09:04:15.021Z",
+              "frequency": 2.3601885300000003,
+              "lastSeen": "2026-06-17T19:35:04.144Z",
+              "lastUpdatedAt": "2026-06-17T19:35:04.144Z",
+              "schemaId": "minderwaardigheid_schaamte"
+            },
+            {
+              "confidence": 0.9,
+              "confirmed": true,
+              "confirmedAt": "2026-06-16T19:23:31.105Z",
+              "copingStyle": null,
+              "domain": "unknown",
+              "firstDetectedAt": "2026-06-15T09:04:15.021Z",
+              "frequency": 2.3601885300000003,
+              "lastSeen": "2026-06-17T19:35:04.144Z",
+              "lastUpdatedAt": "2026-06-17T19:35:04.144Z",
+              "schemaId": "onvoldoende_zelfcontrole"
+            },
+            {
+              "confidence": 0.7,
+              "confirmed": true,
+              "confirmedAt": "2026-06-16T19:23:31.105Z",
+              "copingStyle": null,
+              "domain": "unknown",
+              "firstDetectedAt": "2026-06-15T09:04:15.021Z",
+              "frequency": 2.3601885300000003,
+              "lastSeen": "2026-06-17T19:35:04.144Z",
+              "lastUpdatedAt": "2026-06-17T19:35:04.144Z",
+              "schemaId": "zelfopoffering"
+            },
+            {
+              "confidence": 0.788,
+              "confirmed": true,
+              "confirmedAt": "2026-06-16T19:23:31.105Z",
+              "copingStyle": null,
+              "domain": "unknown",
+              "firstDetectedAt": "2026-06-15T09:04:15.021Z",
+              "frequency": 2.3601885300000003,
+              "lastSeen": "2026-06-17T19:35:04.144Z",
+              "lastUpdatedAt": "2026-06-17T19:35:04.144Z",
+              "schemaId": "sociale_isolatie"
+            },
+            {
+              "confidence": 0.8,
+              "confirmed": true,
+              "confirmedAt": "2026-06-16T19:23:31.105Z",
+              "copingStyle": null,
+              "domain": "unknown",
+              "firstDetectedAt": "2026-06-15T09:04:15.021Z",
+              "frequency": 2.3601885300000003,
+              "lastSeen": "2026-06-17T19:35:04.144Z",
+              "lastUpdatedAt": "2026-06-17T19:35:04.144Z",
+              "schemaId": "mislukking"
+            },
+            {
+              "confidence": 0.7,
+              "confirmed": true,
+              "confirmedAt": "2026-06-16T19:23:31.105Z",
+              "copingStyle": null,
+              "domain": "unknown",
+              "firstDetectedAt": "2026-06-15T09:04:15.021Z",
+              "frequency": 2.3601885300000003,
+              "lastSeen": "2026-06-17T19:35:04.144Z",
+              "lastUpdatedAt": "2026-06-17T19:35:04.144Z",
+              "schemaId": "afhankelijkheid_incompetentie"
+            },
+            {
+              "confidence": 0.757,
+              "confirmed": true,
+              "confirmedAt": "2026-06-16T19:23:31.105Z",
+              "copingStyle": null,
+              "domain": "unknown",
+              "firstDetectedAt": "2026-06-15T09:04:15.021Z",
+              "frequency": 2.3601885300000003,
+              "lastSeen": "2026-06-17T19:35:04.144Z",
+              "lastUpdatedAt": "2026-06-17T19:35:04.144Z",
+              "schemaId": "negativiteit_pessimisme"
+            }
+          ],
+          "sessionAnalyses": [
+            {
+              "date": "2026-06-15T17:08:18.321Z",
+              "dominantEmotion": "stable",
+              "durationMinutes": 1028,
+              "endRiskLevel": "low",
+              "messageCount": 20,
+              "modulesUsed": [
+                "E02",
+                "E01",
+                "M75",
+                "M34"
+              ],
+              "moodDelta": {
+                "distressChange": 0,
+                "resilienceChange": 0
+              },
+              "newTriggers": [
+                "craving",
+                "hopelessness"
+              ],
+              "sessionNumber": 12,
+              "themes": [
+                "craving",
+                "hopelessness"
+              ]
+            },
+            {
+              "date": "2026-06-17T14:28:56.410Z",
+              "dominantEmotion": "stable",
+              "durationMinutes": 868,
+              "endRiskLevel": "low",
+              "messageCount": 57,
+              "modulesUsed": [
+                "E02",
+                "E01",
+                "M75",
+                "M34",
+                "IDEN01",
+                "M25",
+                "E03"
+              ],
+              "moodDelta": {
+                "distressChange": -0.33333333333333337,
+                "resilienceChange": 1
+              },
+              "newTriggers": [
+                "craving",
+                "hopelessness"
+              ],
+              "sessionNumber": 39,
+              "themes": [
+                "craving",
+                "hopelessness"
+              ]
+            },
+            {
+              "date": "2026-06-17T18:52:41.460Z",
+              "dominantEmotion": "stable",
+              "durationMinutes": 1132,
+              "endRiskLevel": "low",
+              "messageCount": 67,
+              "modulesUsed": [
+                "E02",
+                "E01",
+                "M75",
+                "M34",
+                "IDEN01",
+                "M25",
+                "E03",
+                "M56"
+              ],
+              "moodDelta": {
+                "distressChange": 0,
+                "resilienceChange": 0
+              },
+              "newTriggers": [
+                "craving",
+                "hopelessness"
+              ],
+              "sessionNumber": 46,
+              "themes": [
+                "craving",
+                "hopelessness"
+              ]
+            },
+            {
+              "date": "2026-06-18T10:43:01.049Z",
+              "dominantEmotion": "stable",
+              "durationMinutes": 642,
+              "endRiskLevel": "low",
+              "messageCount": 75,
+              "modulesUsed": [
+                "E02",
+                "M75",
+                "M34",
+                "IDEN01",
+                "M25",
+                "E01",
+                "E03",
+                "M56",
+                "E05",
+                "SLAAP01"
+              ],
+              "moodDelta": {
+                "distressChange": 1,
+                "resilienceChange": -2
+              },
+              "newTriggers": [
+                "craving",
+                "hopelessness"
+              ],
+              "sessionNumber": 57,
+              "themes": [
+                "craving",
+                "hopelessness"
+              ]
+            },
+            {
+              "date": "2026-06-19T05:23:53.985Z",
+              "dominantEmotion": "stable",
+              "durationMinutes": 323,
+              "endRiskLevel": "low",
+              "messageCount": 87,
+              "modulesUsed": [
+                "IDEN01",
+                "E02",
+                "M25",
+                "E01",
+                "E03",
+                "M56",
+                "E05",
+                "SLAAP01",
+                "E06",
+                "MI02",
+                "E04",
+                "M08"
+              ],
+              "moodDelta": {
+                "distressChange": 0,
+                "resilienceChange": 0
+              },
+              "newTriggers": [],
+              "sessionNumber": 67,
+              "themes": [
+                "positive_progress"
+              ]
+            },
+            {
+              "date": "2026-06-19T08:17:44.576Z",
+              "dominantEmotion": "stable",
+              "durationMinutes": 497,
+              "endRiskLevel": "low",
+              "messageCount": 64,
+              "modulesUsed": [
+                "E03",
+                "E02",
+                "M56",
+                "E01",
+                "E05",
+                "SLAAP01",
+                "E06",
+                "MI02",
+                "E04",
+                "M08"
+              ],
+              "moodDelta": {
+                "distressChange": 0,
+                "resilienceChange": 0
+              },
+              "newTriggers": [],
+              "sessionNumber": 74,
+              "themes": [
+                "positive_progress"
+              ]
+            },
+            {
+              "date": "2026-06-19T08:40:00.391Z",
+              "dominantEmotion": "stable",
+              "durationMinutes": 3,
+              "endRiskLevel": "low",
+              "messageCount": 60,
+              "modulesUsed": [
+                "E02",
+                "M56",
+                "E01",
+                "E05",
+                "SLAAP01",
+                "E06",
+                "E03",
+                "MI02",
+                "E04",
+                "M08"
+              ],
+              "moodDelta": {
+                "distressChange": 0,
+                "resilienceChange": 0
+              },
+              "newTriggers": [],
+              "sessionNumber": 75,
+              "themes": [
+                "positive_progress"
+              ]
+            },
+            {
+              "date": "2026-06-20T08:30:33.510Z",
+              "dominantEmotion": "stable",
+              "durationMinutes": 510,
+              "endRiskLevel": "low",
+              "messageCount": 74,
+              "modulesUsed": [
+                "E02",
+                "M56",
+                "E01",
+                "E05",
+                "SLAAP01",
+                "E06",
+                "E03",
+                "MI02",
+                "E04",
+                "M08"
+              ],
+              "moodDelta": {
+                "distressChange": -0.33333333333333337,
+                "resilienceChange": 1
+              },
+              "newTriggers": [],
+              "sessionNumber": 78,
+              "themes": [
+                "positive_progress"
+              ]
+            }
+          ],
+          "sobrietyDate": "2026-05-22",
+          "stageOfChange": "action",
+          "sto01Progress": {
+            "interventionsUsedAllTime": [],
+            "lastInterventionUsed": null,
+            "lastPrincipleUsed": null,
+            "principlesUsedAllTime": [],
+            "sessionsWithStoicism": 0,
+            "totalActivations": 0
+          },
+          "stoaSessionsUsed": [
+            {
+              "sessionId": 12,
+              "usedAtSession": 12
+            }
+          ],
+          "sw01Progress": {
+            "journalPromptsGiven": 0,
+            "lastActiveLoop": null,
+            "lastInterventionMode": null,
+            "loopsIdentified": [],
+            "projectionsProcessed": 0,
+            "sessionsWithShadowWork": 0
+          },
+          "totalSessions": 78,
+          "triggerPatterns": [
+            {
+              "count": 1,
+              "firstDetectedAt": "2026-06-15T09:04:15.021Z",
+              "firstSeen": "2026-06-15T09:04:15.021Z",
+              "lastSeen": "2026-06-15T09:04:15.021Z",
+              "lastUpdatedAt": "2026-06-15T09:04:15.021Z",
+              "trigger": "betrayal",
+              "weight": 10
+            },
+            {
+              "count": 1,
+              "firstDetectedAt": "2026-06-15T09:04:15.021Z",
+              "firstSeen": "2026-06-15T09:04:15.021Z",
+              "lastSeen": "2026-06-15T09:04:15.021Z",
+              "lastUpdatedAt": "2026-06-15T09:04:15.021Z",
+              "trigger": "loss of control",
+              "weight": 10
+            },
+            {
+              "count": 1,
+              "firstDetectedAt": "2026-06-15T09:04:15.021Z",
+              "firstSeen": "2026-06-15T09:04:15.021Z",
+              "lastSeen": "2026-06-15T09:04:15.021Z",
+              "lastUpdatedAt": "2026-06-15T09:04:15.021Z",
+              "trigger": "substance availability",
+              "weight": 10
+            },
+            {
+              "count": 1,
+              "firstDetectedAt": "2026-06-15T09:04:15.021Z",
+              "firstSeen": "2026-06-15T09:04:15.021Z",
+              "lastSeen": "2026-06-15T09:04:15.021Z",
+              "lastUpdatedAt": "2026-06-15T09:04:15.021Z",
+              "trigger": "relationship conflicts",
+              "weight": 10
+            },
+            {
+              "count": 1,
+              "firstDetectedAt": "2026-06-15T09:04:15.021Z",
+              "firstSeen": "2026-06-15T09:04:15.021Z",
+              "lastSeen": "2026-06-15T09:04:15.021Z",
+              "lastUpdatedAt": "2026-06-15T09:04:15.021Z",
+              "trigger": "parental expectations",
+              "weight": 10
+            },
+            {
+              "count": 1,
+              "firstDetectedAt": "2026-06-15T14:22:55.786Z",
+              "firstSeen": "2026-06-15T14:22:55.786Z",
+              "lastSeen": "2026-06-15T14:22:55.786Z",
+              "lastUpdatedAt": "2026-06-15T14:22:55.786Z",
+              "trigger": "pesten",
+              "weight": 10
+            },
+            {
+              "count": 2,
+              "firstDetectedAt": "2026-06-15T14:22:55.786Z",
+              "firstSeen": "2026-06-15T14:22:55.786Z",
+              "lastSeen": "2026-06-16T19:23:31.105Z",
+              "lastUpdatedAt": "2026-06-16T19:23:31.105Z",
+              "trigger": "verlating",
+              "weight": 10
+            },
+            {
+              "count": 2,
+              "firstDetectedAt": "2026-06-15T14:22:55.786Z",
+              "firstSeen": "2026-06-15T14:22:55.786Z",
+              "lastSeen": "2026-06-16T19:23:31.105Z",
+              "lastUpdatedAt": "2026-06-16T19:23:31.105Z",
+              "trigger": "onrecht",
+              "weight": 10
+            },
+            {
+              "count": 2,
+              "firstDetectedAt": "2026-06-15T14:22:55.786Z",
+              "firstSeen": "2026-06-15T14:22:55.786Z",
+              "lastSeen": "2026-06-16T19:23:31.105Z",
+              "lastUpdatedAt": "2026-06-16T19:23:31.105Z",
+              "trigger": "controleverlies",
+              "weight": 10
+            },
+            {
+              "count": 1,
+              "firstDetectedAt": "2026-06-15T14:22:55.786Z",
+              "firstSeen": "2026-06-15T14:22:55.786Z",
+              "lastSeen": "2026-06-15T14:22:55.786Z",
+              "lastUpdatedAt": "2026-06-15T14:22:55.786Z",
+              "trigger": "relatieproblemen",
+              "weight": 10
+            },
+            {
+              "count": 1,
+              "firstDetectedAt": "2026-06-15T14:22:55.786Z",
+              "firstSeen": "2026-06-15T14:22:55.786Z",
+              "lastSeen": "2026-06-15T14:22:55.786Z",
+              "lastUpdatedAt": "2026-06-15T14:22:55.786Z",
+              "trigger": "familiedruk",
+              "weight": 10
+            },
+            {
+              "count": 2,
+              "firstDetectedAt": "2026-06-15T14:24:24.972Z",
+              "firstSeen": "2026-06-15T14:24:24.972Z",
+              "lastSeen": "2026-06-17T19:35:04.144Z",
+              "lastUpdatedAt": "2026-06-17T19:35:04.144Z",
+              "trigger": "pesten op school",
+              "weight": 10
+            },
+            {
+              "count": 1,
+              "firstDetectedAt": "2026-06-15T14:24:24.972Z",
+              "firstSeen": "2026-06-15T14:24:24.972Z",
+              "lastSeen": "2026-06-15T14:24:24.972Z",
+              "lastUpdatedAt": "2026-06-15T14:24:24.972Z",
+              "trigger": "breuk met vanessa",
+              "weight": 10
+            },
+            {
+              "count": 2,
+              "firstDetectedAt": "2026-06-15T14:24:24.972Z",
+              "firstSeen": "2026-06-15T14:24:24.972Z",
+              "lastSeen": "2026-06-17T19:35:04.144Z",
+              "lastUpdatedAt": "2026-06-17T19:35:04.144Z",
+              "trigger": "moeilijkheden met ellen",
+              "weight": 10
+            },
+            {
+              "count": 2,
+              "firstDetectedAt": "2026-06-15T14:24:24.972Z",
+              "firstSeen": "2026-06-15T14:24:24.972Z",
+              "lastSeen": "2026-06-17T19:35:04.144Z",
+              "lastUpdatedAt": "2026-06-17T19:35:04.144Z",
+              "trigger": "juridische strijd om jules",
+              "weight": 10
+            },
+            {
+              "count": 2,
+              "firstDetectedAt": "2026-06-15T14:24:24.972Z",
+              "firstSeen": "2026-06-15T14:24:24.972Z",
+              "lastSeen": "2026-06-17T19:35:04.144Z",
+              "lastUpdatedAt": "2026-06-17T19:35:04.144Z",
+              "trigger": "herval in alcoholgebruik",
+              "weight": 10
+            },
+            {
+              "count": 1,
+              "firstDetectedAt": "2026-06-16T19:23:31.105Z",
+              "firstSeen": "2026-06-16T19:23:31.105Z",
+              "lastSeen": "2026-06-16T19:23:31.105Z",
+              "lastUpdatedAt": "2026-06-16T19:23:31.105Z",
+              "trigger": "machteloosheid",
+              "weight": 10
+            },
+            {
+              "count": 1,
+              "firstDetectedAt": "2026-06-16T19:23:31.105Z",
+              "firstSeen": "2026-06-16T19:23:31.105Z",
+              "lastSeen": "2026-06-16T19:23:31.105Z",
+              "lastUpdatedAt": "2026-06-16T19:23:31.105Z",
+              "trigger": "verlies van verbinding",
+              "weight": 10
+            },
+            {
+              "count": 1,
+              "firstDetectedAt": "2026-06-16T19:23:31.105Z",
+              "firstSeen": "2026-06-16T19:23:31.105Z",
+              "lastSeen": "2026-06-16T19:23:31.105Z",
+              "lastUpdatedAt": "2026-06-16T19:23:31.105Z",
+              "trigger": "te snel willen gaan",
+              "weight": 10
+            },
+            {
+              "count": 1,
+              "firstDetectedAt": "2026-06-16T19:23:31.105Z",
+              "firstSeen": "2026-06-16T19:23:31.105Z",
+              "lastSeen": "2026-06-16T19:23:31.105Z",
+              "lastUpdatedAt": "2026-06-16T19:23:31.105Z",
+              "trigger": "schaamte na fouten",
+              "weight": 10
+            },
+            {
+              "count": 1,
+              "firstDetectedAt": "2026-06-17T19:35:04.144Z",
+              "firstSeen": "2026-06-17T19:35:04.144Z",
+              "lastSeen": "2026-06-17T19:35:04.144Z",
+              "lastUpdatedAt": "2026-06-17T19:35:04.144Z",
+              "trigger": "verraad door vanessa",
+              "weight": 10
+            },
+            {
+              "count": 1,
+              "firstDetectedAt": "2026-06-17T19:35:04.144Z",
+              "firstSeen": "2026-06-17T19:35:04.144Z",
+              "lastSeen": "2026-06-17T19:35:04.144Z",
+              "lastUpdatedAt": "2026-06-17T19:35:04.144Z",
+              "trigger": "moeilijkheden met controleverlies",
+              "weight": 10
+            },
+            {
+              "count": 5,
+              "firstSeen": "2026-06-15T17:06:55.229Z",
+              "lastSeen": "2026-06-18T10:43:01.049Z",
+              "trigger": "craving"
+            },
+            {
+              "count": 5,
+              "firstSeen": "2026-06-15T17:07:38.374Z",
+              "lastSeen": "2026-06-18T10:43:01.049Z",
+              "trigger": "hopelessness"
+            }
+          ]
+        }
+      }
+    },
+    "shared": {
+      "derivedCaches": {
+        "backpackHash": {
+          "combinedHash": "fb8c6a23",
+          "computedAt": "2026-06-17T18:50:10.971Z",
+          "sections": [
+            {
+              "computedAt": "2026-06-17T18:50:10.971Z",
+              "hash": "ae4bc19b",
+              "sectionId": "childhood"
+            },
+            {
+              "computedAt": "2026-06-17T18:50:10.971Z",
+              "hash": "8d381d61",
+              "sectionId": "adolescence"
+            },
+            {
+              "computedAt": "2026-06-17T18:50:10.971Z",
+              "hash": "fd2c8b32",
+              "sectionId": "adulthood"
+            },
+            {
+              "computedAt": "2026-06-17T18:50:10.971Z",
+              "hash": "6d9621cd",
+              "sectionId": "family"
+            },
+            {
+              "computedAt": "2026-06-17T18:50:10.971Z",
+              "hash": "01010661",
+              "sectionId": "themes"
+            }
+          ]
+        },
+        "extractedEntities": {
+          "contexts": [
+            {
+              "description": "Vader was niet veel thuis door zijn werk.",
+              "relevance": "Vaderlijke afwezigheid in kindertijd.",
+              "sourceSection": "Childhood",
+              "type": "social"
+            },
+            {
+              "description": "Alcohol is in mijn familie altijd aanwezig geweest waardoor ik ook lang het idee had dat dit de normaalste zaak van de wereld was.",
+              "relevance": "Familiaire normalisering van alcoholgebruik, beïnvloeding van eigen perceptie en gedrag.",
+              "sourceSection": "Childhood",
+              "type": "social"
+            },
+            {
+              "description": "Schoolverwaarlozing al in een stroomversnelling",
+              "relevance": "Negatieve academische prestaties, gebrek aan motivatie voor studie.",
+              "sourceSection": "Adolescence",
+              "type": "work"
+            },
+            {
+              "description": "Veel vrienden op school door 'flauwe plezante' rol",
+              "relevance": "Oppervlakkige sociale connecties, gebaseerd op een persona.",
+              "sourceSection": "Adolescence",
+              "type": "social"
+            },
+            {
+              "description": "School verlaten zonder diploma om te gaan werken",
+              "relevance": "Vroege beëindiging van formele opleiding, overgang naar arbeidsmarkt.",
+              "sourceSection": "Adolescence",
+              "type": "work"
+            },
+            {
+              "description": "Werkte voor een studiebureel, daarna in de wegenbouw",
+              "relevance": "Vroege werkervaringen, begin van carrière.",
+              "sourceSection": "Adulthood",
+              "type": "work"
+            },
+            {
+              "description": "Verdiende redelijk mooi in de wegenbouw",
+              "relevance": "Financiële stabiliteit die mogelijk bijdroeg aan middelen voor drugs.",
+              "sourceSection": "Adulthood",
+              "type": "financial"
+            },
+            {
+              "description": "Alcohol was bij Vanessa thuis ook de normaalste zaak van de wereld",
+              "relevance": "Omgeving die alcoholgebruik normaliseert, mogelijk versterkend voor eigen gebruik.",
+              "sourceSection": "Adulthood",
+              "type": "social"
+            },
+            {
+              "description": "Eerste woning gekocht en verbouwd op 28-jarige leeftijd",
+              "relevance": "Belangrijke levensgebeurtenis, investering, maar leidde tot minder tijd voor relatie.",
+              "sourceSection": "Adulthood",
+              "type": "living"
+            },
+            {
+              "description": "Opwerken naar een bureau job op de asfaltcentralen, werkte 10-11u per dag",
+              "relevance": "Carrièreontwikkeling en hoge werkdruk.",
+              "sourceSection": "Adulthood",
+              "type": "work"
+            },
+            {
+              "description": "Woonde Charlotte in Roeselare (West-Vlaanderen), Ellen in Oordegem (Oost-Vlaanderen)",
+              "relevance": "Geografische spreiding van relaties, logistieke uitdagingen.",
+              "sourceSection": "Adulthood",
+              "type": "living"
+            },
+            {
+              "description": "Haar moeder (Ellen's) was tegen de relatie",
+              "relevance": "Externe druk op de relatie, bemoeienis van schoonfamilie.",
+              "sourceSection": "Adulthood",
+              "type": "social"
+            },
+            {
+              "description": "Haar ouders (Ellen's) kwamen bijna nooit op bezoek",
+              "relevance": "Gebrek aan steun of acceptatie van schoonfamilie.",
+              "sourceSection": "Adulthood",
+              "type": "social"
+            },
+            {
+              "description": "Werkte 2 jobs, 11u per dag op de bureau, 2 dagen in het weekend zwart voor extra inkomsten",
+              "relevance": "Extreme werkdruk en financiële noodzaak, mogelijk bijdragend aan stress en uitputting.",
+              "sourceSection": "Adulthood",
+              "type": "work"
+            },
+            {
+              "description": "Verhuizing naar Oost-Vlaanderen overwogen/gebeurd (voor Ellen)",
+              "relevance": "Grote levensverandering, opoffering van eigen huis en werk voor partner.",
+              "sourceSection": "Adulthood",
+              "type": "living"
+            },
+            {
+              "description": "Huis dat ik zelf gebouwd had verkocht, werk waar ik bijna 20 jaar was opgegeven, nieuwe gerenoveerde woning in Aalst gekocht",
+              "relevance": "Grote financiële en persoonlijke opofferingen, verandering van woon- en werksituatie.",
+              "sourceSection": "Adulthood",
+              "type": "living"
+            },
+            {
+              "description": "Lange juridische strijd over Jules",
+              "relevance": "Uitputtende en stressvolle periode, impact op welzijn en financiën.",
+              "sourceSection": "Adulthood",
+              "type": "legal"
+            },
+            {
+              "description": "Wekelijkse bloedproeven om co-ouderschap te bekomen",
+              "relevance": "Voorwaarde voor juridische regeling, bewijs van nuchterheid.",
+              "sourceSection": "Adulthood",
+              "type": "legal"
+            },
+            {
+              "description": "Covid-19 pandemie, scholen dicht, opvang sloot, lockdown",
+              "relevance": "Wereldwijde crisis die persoonlijke omstandigheden en conflicten verergerde.",
+              "sourceSection": "Adulthood",
+              "type": "social"
+            },
+            {
+              "description": "Essentieel beroep tijdens Covid-19, Ellen lerares kon thuis blijven",
+              "relevance": "Verschillende omstandigheden tijdens lockdown, leidde tot conflict over Jules.",
+              "sourceSection": "Adulthood",
+              "type": "work"
+            },
+            {
+              "description": "Gebrek van kennis over stoppen met alprazolam",
+              "relevance": "Oorzaak van paniekaanval, gebrek aan medische begeleiding bij medicatieafbouw.",
+              "sourceSection": "Adulthood",
+              "type": "health"
+            },
+            {
+              "description": "Ziekenkas op en drinken bijna continue om te vluchten in comadrinken",
+              "relevance": "Ernstige verslavingsproblematiek, medische complicaties door alcohol.",
+              "sourceSection": "Adulthood",
+              "type": "health"
+            },
+            {
+              "description": "Opname in PAAZ in Hasselt",
+              "relevance": "Eerste formele klinische behandeling voor psychische problemen.",
+              "sourceSection": "Adulthood",
+              "type": "health"
+            },
+            {
+              "description": "Medicatie op PAAZ, val van de trap, ziekenhuisopname, sleutelbeen, ribben, hersenbloeding, gehoorschade",
+              "relevance": "Ernstige fysieke trauma's en medische complicaties, mogelijk door bijwerkingen van medicatie.",
+              "sourceSection": "Adulthood",
+              "type": "health"
+            },
+            {
+              "description": "Asster (revalidatiecentrum)",
+              "relevance": "Ervaringen met revalidatie, leidde tot verlies van geloof in therapie.",
+              "sourceSection": "Adulthood",
+              "type": "health"
+            },
+            {
+              "description": "Melissa krijgt borstkanker, chemische menopauze",
+              "relevance": "Ernstige ziekte van partner, grote impact op relatie en welzijn.",
+              "sourceSection": "Adulthood",
+              "type": "health"
+            },
+            {
+              "description": "Appartement gehuurd in Diepenbeek",
+              "relevance": "Tijdelijke woonoplossing na vertrek bij Melissa.",
+              "sourceSection": "Adulthood",
+              "type": "living"
+            },
+            {
+              "description": "Munsterbilzen (revalidatiecentrum)",
+              "relevance": "Nieuwe revalidatie-ervaring, herstel van geloof in therapie.",
+              "sourceSection": "Adulthood",
+              "type": "health"
+            },
+            {
+              "description": "Daghospitalisatie voor DGT training in Rekem",
+              "relevance": "Voorgestelde behandeling, gespecialiseerde therapie.",
+              "sourceSection": "Adulthood",
+              "type": "health"
+            },
+            {
+              "description": "Stiefouderadoptie voorgesteld door Ellen",
+              "relevance": "Juridische poging om ouderlijke rechten te beïnvloeden, grote emotionele impact.",
+              "sourceSection": "Adulthood",
+              "type": "legal"
+            },
+            {
+              "description": "Vrederechter ingeschakeld, vonnis 40 dagen gedwongen opname in Tienen",
+              "relevance": "Gedwongen opname, juridische interventie in herstelproces.",
+              "sourceSection": "Adulthood",
+              "type": "legal"
+            },
+            {
+              "description": "Traject dubbeldiagnose in Tienen van 9 maanden",
+              "relevance": "Huidige intensieve behandeling voor verslaving en onderliggende problematiek.",
+              "sourceSection": "Adulthood",
+              "type": "health"
+            },
+            {
+              "description": "Ouderlijk gezin: Nico Manderveld (vader, ingenieus), Marie Louise Steegmans (moeder, zelfstandige/huismoeder, overleden), Els Manderveld (zus, verpleegkundige), Katrien Manderveld (zus, kinderpsycholoog)",
+              "relevance": "Overzicht van familieleden en hun beroepen, context van opvoeding.",
+              "sourceSection": "Family",
+              "type": "social"
+            },
+            {
+              "description": "Woont half bij ouders en half bij partner Melissa",
+              "relevance": "Huidige woon- en leefsituatie, duidt op instabiliteit of overgangsfase.",
+              "sourceSection": "Family",
+              "type": "living"
+            },
+            {
+              "description": "Zoon Jules woont bij de mama, Ellen, in Oost-Vlaanderen",
+              "relevance": "Woonsituatie van zoon, geografische afstand tot Kris.",
+              "sourceSection": "Family",
+              "type": "living"
+            },
+            {
+              "description": "Nuchter: sterk, steunend, begripvol, berekend, slim",
+              "relevance": "Zelfperceptie in nuchtere toestand, positieve eigenschappen.",
+              "sourceSection": "Recurring Themes",
+              "type": "other"
+            },
+            {
+              "description": "Onder invloed: persoon waar ik nuchter niets mee te maken zou willen hebben, weinig echte herinneringen",
+              "relevance": "Zelfperceptie onder invloed, negatieve eigenschappen, geheugenverlies.",
+              "sourceSection": "Recurring Themes",
+              "type": "other"
+            },
+            {
+              "description": "Conditie en veel breuken door te vallen onder invloed",
+              "relevance": "Fysieke gevolgen van alcoholgebruik, zelfverwaarlozing.",
+              "sourceSection": "Recurring Themes",
+              "type": "health"
+            },
+            {
+              "description": "Beweging en eetpatroon hebben werk nodig",
+              "relevance": "Gebrek aan gezonde leefgewoonten, noodzaak tot verbetering.",
+              "sourceSection": "Recurring Themes",
+              "type": "health"
+            },
+            {
+              "description": "Slaappatroon normaal ok, maar momenteel verstoord door benzo afbouw",
+              "relevance": "Impact van medicatieafbouw op slaap, medische context.",
+              "sourceSection": "Recurring Themes",
+              "type": "health"
+            },
+            {
+              "description": "Seksualiteit tevreden over, maar onder invloed gebeurt dit niet",
+              "relevance": "Impact van alcohol op intieme relaties en functioneren.",
+              "sourceSection": "Recurring Themes",
+              "type": "health"
+            },
+            {
+              "description": "School nooit afgemaakt, maar veel ervaring opgedaan, goeie cv",
+              "relevance": "Informele leercurve, praktische vaardigheden ondanks gebrek aan diploma.",
+              "sourceSection": "Recurring Themes",
+              "type": "work"
+            },
+            {
+              "description": "Meestal als mechanieker, mechanisch en deels electrisch, lasser, monteur, technische dienst",
+              "relevance": "Diverse technische beroepen, brede vaardigheden.",
+              "sourceSection": "Recurring Themes",
+              "type": "work"
+            },
+            {
+              "description": "Komt over het algemeen goed overeen met collega's",
+              "relevance": "Positieve sociale interacties in werkomgeving.",
+              "sourceSection": "Recurring Themes",
+              "type": "social"
+            },
+            {
+              "description": "Hoopt op termijn terug bij Melissa te kunnen gaan samenwonen",
+              "relevance": "Toekomstplannen voor woon- en relatiesituatie.",
+              "sourceSection": "Recurring Themes",
+              "type": "living"
+            },
+            {
+              "description": "Beter met geld omgaan, minder impulsief handelen",
+              "relevance": "Noodzaak tot verbetering van financiële managementvaardigheden.",
+              "sourceSection": "Recurring Themes",
+              "type": "financial"
+            },
+            {
+              "description": "Contactregeling uitwerken over Jules",
+              "relevance": "Toekomstige juridische stappen voor ouderlijk contact.",
+              "sourceSection": "Recurring Themes",
+              "type": "legal"
+            },
+            {
+              "description": "Rijverbod artikel 42, haarstalen vereist om het terug te krijgen",
+              "relevance": "Juridische gevolgen van alcoholgebruik, beperking van mobiliteit.",
+              "sourceSection": "Recurring Themes",
+              "type": "legal"
+            }
+          ],
+          "events": [
+            {
+              "description": "Vader was niet veel thuis door werk",
+              "emotionalImpact": "Indirecte impact, bijgedragen aan teruggetrokken kind",
+              "isTriggerSource": false,
+              "peopleInvolved": [
+                "Mijn vader"
+              ],
+              "sourceSection": "Childhood",
+              "timePeriod": "Childhood",
+              "type": "neglect"
+            },
+            {
+              "description": "Moeder was een verwaarloosd kind en heeft nooit geleerd hoe te troosten",
+              "emotionalImpact": "Impact op opvoeding en emotionele beschikbaarheid van moeder",
+              "isTriggerSource": false,
+              "peopleInvolved": [
+                "Mijn moeder"
+              ],
+              "sourceSection": "Childhood",
+              "timePeriod": "Childhood (of mother)",
+              "type": "trauma"
+            },
+            {
+              "description": "Pesten op lagere school",
+              "emotionalImpact": "Niet geleerd zich te verdedigen, moeite met onrecht/onmacht later",
+              "isTriggerSource": true,
+              "peopleInvolved": [],
+              "sourceSection": "Childhood",
+              "timePeriod": "Lagere school",
+              "type": "abuse"
+            },
+            {
+              "description": "Pesten op middelbare school",
+              "emotionalImpact": "Ontwikkeling van 'masker' en schoolverwaarlozing",
+              "isTriggerSource": true,
+              "peopleInvolved": [],
+              "sourceSection": "Adolescence",
+              "timePeriod": "Middelbare school",
+              "type": "abuse"
+            },
+            {
+              "description": "Beginnen met roken",
+              "emotionalImpact": "Neutral",
+              "isTriggerSource": false,
+              "peopleInvolved": [],
+              "sourceSection": "Adolescence",
+              "timePeriod": "Rond 16e",
+              "type": "other"
+            },
+            {
+              "description": "School verlaten zonder diploma",
+              "emotionalImpact": "Neutral, begon te werken",
+              "isTriggerSource": false,
+              "peopleInvolved": [],
+              "sourceSection": "Adolescence",
+              "timePeriod": "18e",
+              "type": "turning_point"
+            },
+            {
+              "description": "Eerste contact met weed en alcohol",
+              "emotionalImpact": "Neutral",
+              "isTriggerSource": false,
+              "peopleInvolved": [],
+              "sourceSection": "Adolescence",
+              "timePeriod": "Rond 17e",
+              "type": "other"
+            },
+            {
+              "description": "Echt beginnen met gebruiken (weed en alcohol)",
+              "emotionalImpact": "Negatief, begin van verslaving",
+              "isTriggerSource": true,
+              "peopleInvolved": [],
+              "sourceSection": "Adolescence",
+              "timePeriod": "19e",
+              "type": "turning_point"
+            },
+            {
+              "description": "Werken voor een studiebureel",
+              "emotionalImpact": "Neutral",
+              "isTriggerSource": false,
+              "peopleInvolved": [],
+              "sourceSection": "Adulthood",
+              "timePeriod": "Half jaar na schoolstop",
+              "type": "other"
+            },
+            {
+              "description": "Beginnen in de wegenbouw",
+              "emotionalImpact": "Neutral, verdiende goed",
+              "isTriggerSource": false,
+              "peopleInvolved": [],
+              "sourceSection": "Adulthood",
+              "timePeriod": "Na studiebureel",
+              "type": "other"
+            },
+            {
+              "description": "Ruzie binnen vriendenkring en stoppen met omgaan met hen",
+              "emotionalImpact": "Positief, stopte met drugsgebruik",
+              "isTriggerSource": false,
+              "peopleInvolved": [
+                "Vriendenkring"
+              ],
+              "sourceSection": "Adulthood",
+              "timePeriod": "Rond 21e",
+              "type": "conflict"
+            },
+            {
+              "description": "Volledig stoppen met drugsgebruik",
+              "emotionalImpact": "Positief",
+              "isTriggerSource": false,
+              "peopleInvolved": [],
+              "sourceSection": "Adulthood",
+              "timePeriod": "Rond 21e",
+              "type": "achievement"
+            },
+            {
+              "description": "Meer beginnen te drinken (na stoppen drugs)",
+              "emotionalImpact": "Negatief, verschuiving van verslaving",
+              "isTriggerSource": true,
+              "peopleInvolved": [],
+              "sourceSection": "Adulthood",
+              "timePeriod": "Rond 21e",
+              "type": "relapse"
+            },
+            {
+              "description": "Leren kennen van Vanessa",
+              "emotionalImpact": "Positief, relatie verliep goed",
+              "isTriggerSource": false,
+              "peopleInvolved": [
+                "vanessa"
+              ],
+              "sourceSection": "Adulthood",
+              "timePeriod": "Rond 21e",
+              "type": "other"
+            },
+            {
+              "description": "Eerste woning gekocht en verbouwd",
+              "emotionalImpact": "Positief, maar leidde tot minder tijd voor relatie",
+              "isTriggerSource": false,
+              "peopleInvolved": [],
+              "sourceSection": "Adulthood",
+              "timePeriod": "28e",
+              "type": "achievement"
+            },
+            {
+              "description": "Opwerken naar een bureau job op de asfaltcentralen",
+              "emotionalImpact": "Positief",
+              "isTriggerSource": false,
+              "peopleInvolved": [],
+              "sourceSection": "Adulthood",
+              "timePeriod": "Tijdens verbouwing huis",
+              "type": "achievement"
+            },
+            {
+              "description": "Korte breuk met Vanessa",
+              "emotionalImpact": "Negatief, maar snel hersteld",
+              "isTriggerSource": false,
+              "peopleInvolved": [
+                "vanessa"
+              ],
+              "sourceSection": "Adulthood",
+              "timePeriod": "Tijdens afbreken huis",
+              "type": "conflict"
+            },
+            {
+              "description": "Ontdekking dat Vanessa vreemdging",
+              "emotionalImpact": "Zeer negatief, definitieve breuk, 'muur opgetrokken'",
+              "isTriggerSource": true,
+              "peopleInvolved": [
+                "vanessa"
+              ],
+              "sourceSection": "Adulthood",
+              "timePeriod": "Een jaar na korte breuk, op dag dat hij haar ten huwelijk wilde vragen",
+              "type": "trauma"
+            },
+            {
+              "description": "Definitieve breuk met Vanessa",
+              "emotionalImpact": "Zeer negatief",
+              "isTriggerSource": true,
+              "peopleInvolved": [
+                "vanessa"
+              ],
+              "sourceSection": "Adulthood",
+              "timePeriod": "Na ontdekking vreemdgaan",
+              "type": "loss"
+            },
+            {
+              "description": "Drankgebruik fors toegenomen (enkel 's avonds)",
+              "emotionalImpact": "Negatief",
+              "isTriggerSource": true,
+              "peopleInvolved": [],
+              "sourceSection": "Adulthood",
+              "timePeriod": "Na breuk met Vanessa",
+              "type": "relapse"
+            },
+            {
+              "description": "Ellen verhuist bij Kris wonen",
+              "emotionalImpact": "Positief, maar leidde tot nieuwe spanningen",
+              "isTriggerSource": false,
+              "peopleInvolved": [
+                "ellen"
+              ],
+              "sourceSection": "Adulthood",
+              "timePeriod": "Na periode met Charlotte en Ellen",
+              "type": "turning_point"
+            },
+            {
+              "description": "Moeite met zwanger worden",
+              "emotionalImpact": "Zwaar voor Ellen, spanning op relatie",
+              "isTriggerSource": false,
+              "peopleInvolved": [
+                "ellen"
+              ],
+              "sourceSection": "Adulthood",
+              "timePeriod": "Tijdens relatie met Ellen",
+              "type": "other"
+            },
+            {
+              "description": "Ellen zwanger",
+              "emotionalImpact": "Positief, ouders van Ellen veranderden",
+              "isTriggerSource": false,
+              "peopleInvolved": [
+                "ellen"
+              ],
+              "sourceSection": "Adulthood",
+              "timePeriod": "Tijdens relatie met Ellen",
+              "type": "achievement"
+            },
+            {
+              "description": "Ellen begint te dissociëren",
+              "emotionalImpact": "Negatief, 'gekke dingen kon doen en zeggen'",
+              "isTriggerSource": false,
+              "peopleInvolved": [
+                "ellen"
+              ],
+              "sourceSection": "Adulthood",
+              "timePeriod": "Rond de tijd van Jules' geboorte",
+              "type": "other"
+            },
+            {
+              "description": "Geboorte van Jules",
+              "emotionalImpact": "Positief, maar gepaard met moeilijke periode",
+              "isTriggerSource": false,
+              "peopleInvolved": [
+                "Jules",
+                "ellen"
+              ],
+              "sourceSection": "Adulthood",
+              "timePeriod": "Ongeveer 1 jaar voor verhuizing naar Oost-Vlaanderen",
+              "type": "achievement"
+            },
+            {
+              "description": "Ruzie met Ellen over eten en verspilling",
+              "emotionalImpact": "Zeer negatief, liep uit de hand, leidde tot breuk",
+              "isTriggerSource": true,
+              "peopleInvolved": [
+                "ellen"
+              ],
+              "sourceSection": "Adulthood",
+              "timePeriod": "Vrijdagavond, na vloer en keuken gekocht",
+              "type": "conflict"
+            },
+            {
+              "description": "Ellen verlaat huis, neemt Jules mee, komt terug",
+              "emotionalImpact": "Zeer negatief, liep helemaal uit de hand",
+              "isTriggerSource": true,
+              "peopleInvolved": [
+                "ellen",
+                "Jules"
+              ],
+              "sourceSection": "Adulthood",
+              "timePeriod": "Vrijdagavond, na ruzie",
+              "type": "conflict"
+            },
+            {
+              "description": "Ellen stelt time-out voor en verblijft bij ouders",
+              "emotionalImpact": "Negatief, Kris had moeite met controleverlies",
+              "isTriggerSource": false,
+              "peopleInvolved": [
+                "ellen"
+              ],
+              "sourceSection": "Adulthood",
+              "timePeriod": "Na ruzie",
+              "type": "conflict"
+            },
+            {
+              "description": "Ontdekking dat Ellen appartementen zoekt met haar moeder",
+              "emotionalImpact": "Negatief, besef dat Ellen niet terugkomt",
+              "isTriggerSource": true,
+              "peopleInvolved": [
+                "ellen",
+                "haar moeder"
+              ],
+              "sourceSection": "Adulthood",
+              "timePeriod": "Een week na time-out",
+              "type": "loss"
+            },
+            {
+              "description": "Juridische strijd met Ellen over Jules",
+              "emotionalImpact": "Zeer negatief, 'bijna gebroken'",
+              "isTriggerSource": true,
+              "peopleInvolved": [
+                "ellen",
+                "Jules"
+              ],
+              "sourceSection": "Adulthood",
+              "timePeriod": "Na verhuizing naar Aalst",
+              "type": "conflict"
+            },
+            {
+              "description": "Winnen van juridische strijd en co-ouderschap toegewezen",
+              "emotionalImpact": "Positief",
+              "isTriggerSource": false,
+              "peopleInvolved": [
+                "Jules"
+              ],
+              "sourceSection": "Adulthood",
+              "timePeriod": "Na twee en een half jaar",
+              "type": "achievement"
+            },
+            {
+              "description": "4 maanden gestopt met drinken en wekelijkse bloedproeven",
+              "emotionalImpact": "Positief, om co-ouderschap te bekomen",
+              "isTriggerSource": false,
+              "peopleInvolved": [],
+              "sourceSection": "Adulthood",
+              "timePeriod": "Na winnen juridische strijd",
+              "type": "achievement"
+            },
+            {
+              "description": "Drankgebruik zeer hard toegenomen, ook 's morgens",
+              "emotionalImpact": "Zeer negatief, begin van ernstig probleem",
+              "isTriggerSource": true,
+              "peopleInvolved": [],
+              "sourceSection": "Adulthood",
+              "timePeriod": "Na 4 maanden nuchter",
+              "type": "relapse"
+            },
+            {
+              "description": "Covid-19 pandemie en lockdown",
+              "emotionalImpact": "Negatief, leidde tot nieuwe strijd en paniekaanval",
+              "isTriggerSource": true,
+              "peopleInvolved": [],
+              "sourceSection": "Adulthood",
+              "timePeriod": "Toen Covid-19 naar België kwam",
+              "type": "other"
+            },
+            {
+              "description": "Strijd met Ellen over Jules tijdens lockdown",
+              "emotionalImpact": "Negatief, 'weer een strijd', 'mezelf kwijt'",
+              "isTriggerSource": true,
+              "peopleInvolved": [
+                "ellen",
+                "Jules"
+              ],
+              "sourceSection": "Adulthood",
+              "timePeriod": "Eerste weekend lockdown",
+              "type": "conflict"
+            },
+            {
+              "description": "Eerste paniekaanval",
+              "emotionalImpact": "Zeer negatief, 'ergste gevoel ooit ervaren', 'begin van het einde'",
+              "isTriggerSource": true,
+              "peopleInvolved": [],
+              "sourceSection": "Adulthood",
+              "timePeriod": "Na een week strijd over Jules tijdens lockdown",
+              "type": "trauma"
+            },
+            {
+              "description": "Opname in PAAZ in Hasselt",
+              "emotionalImpact": "Positief, begin van behandeling",
+              "isTriggerSource": false,
+              "peopleInvolved": [
+                "Melissa",
+                "Mijn vader"
+              ],
+              "sourceSection": "Adulthood",
+              "timePeriod": "Na paniekaanval",
+              "type": "turning_point"
+            },
+            {
+              "description": "Val van de trap door medicatie en ziekenhuisopname",
+              "emotionalImpact": "Zeer negatief, ernstige verwondingen, hersenbloeding, gehoorschade",
+              "isTriggerSource": true,
+              "peopleInvolved": [],
+              "sourceSection": "Adulthood",
+              "timePeriod": "Na PAAZ-opname",
+              "type": "trauma"
+            },
+            {
+              "description": "Eerste herval in alcohol na ziekenhuisopname",
+              "emotionalImpact": "Negatief",
+              "isTriggerSource": true,
+              "peopleInvolved": [],
+              "sourceSection": "Adulthood",
+              "timePeriod": "Zeer snel na ziekenhuisopname",
+              "type": "relapse"
+            },
+            {
+              "description": "Eerste keer naar Asster, vertrokken na paar dagen (geen sessies door corona)",
+              "emotionalImpact": "Negatief, geen hulp ontvangen",
+              "isTriggerSource": false,
+              "peopleInvolved": [],
+              "sourceSection": "Adulthood",
+              "timePeriod": "Na eerste herval",
+              "type": "other"
+            },
+            {
+              "description": "Terug naar Asster en volledig traject gedaan",
+              "emotionalImpact": "Negatief, verlies van geloof in therapie",
+              "isTriggerSource": false,
+              "peopleInvolved": [],
+              "sourceSection": "Adulthood",
+              "timePeriod": "Een half jaar later",
+              "type": "other"
+            },
+            {
+              "description": "Huis in Aalst verkocht",
+              "emotionalImpact": "Neutral, maar leidde tot conflict met Ellen",
+              "isTriggerSource": false,
+              "peopleInvolved": [],
+              "sourceSection": "Adulthood",
+              "timePeriod": "Rond die tijd (na Asster traject)",
+              "type": "other"
+            },
+            {
+              "description": "Geld gegeven aan Ellen om van haar af te zijn",
+              "emotionalImpact": "Negatief, uit frustratie",
+              "isTriggerSource": false,
+              "peopleInvolved": [
+                "ellen"
+              ],
+              "sourceSection": "Adulthood",
+              "timePeriod": "Na verkoop huis in Aalst",
+              "type": "conflict"
+            },
+            {
+              "description": "Terug werken en 2 maanden nuchter",
+              "emotionalImpact": "Positief",
+              "isTriggerSource": false,
+              "peopleInvolved": [],
+              "sourceSection": "Adulthood",
+              "timePeriod": "Na verkoop huis in Aalst",
+              "type": "achievement"
+            },
+            {
+              "description": "Melissa krijgt borstkanker",
+              "emotionalImpact": "Zeer negatief, woog zwaar op relatie",
+              "isTriggerSource": true,
+              "peopleInvolved": [
+                "Melissa"
+              ],
+              "sourceSection": "Adulthood",
+              "timePeriod": "Tijdens 2 maanden nuchterheid",
+              "type": "trauma"
+            },
+            {
+              "description": "Kort herval (alcohol) na nieuws Melissa's kanker",
+              "emotionalImpact": "Negatief",
+              "isTriggerSource": true,
+              "peopleInvolved": [],
+              "sourceSection": "Adulthood",
+              "timePeriod": "Na nieuws Melissa's kanker",
+              "type": "relapse"
+            },
+            {
+              "description": "Zichzelf herpakt en nuchter geworden om Melissa te steunen",
+              "emotionalImpact": "Positief",
+              "isTriggerSource": false,
+              "peopleInvolved": [
+                "Melissa"
+              ],
+              "sourceSection": "Adulthood",
+              "timePeriod": "Na kort herval",
+              "type": "achievement"
+            },
+            {
+              "description": "Niet meer houdbaar om bij Melissa te wonen (door chemische menopauze)",
+              "emotionalImpact": "Negatief, 'elkaar gaandeweg kwijtgeraakt'",
+              "isTriggerSource": false,
+              "peopleInvolved": [
+                "Melissa"
+              ],
+              "sourceSection": "Adulthood",
+              "timePeriod": "4 maanden na nieuws kanker",
+              "type": "loss"
+            },
+            {
+              "description": "Appartement gehuurd in Diepenbeek",
+              "emotionalImpact": "Neutral",
+              "isTriggerSource": false,
+              "peopleInvolved": [],
+              "sourceSection": "Adulthood",
+              "timePeriod": "Na vertrek bij Melissa",
+              "type": "other"
+            },
+            {
+              "description": "Naar Munsterbilzen gegaan (revalidatie)",
+              "emotionalImpact": "Positief, geloof in therapie teruggevonden",
+              "isTriggerSource": false,
+              "peopleInvolved": [],
+              "sourceSection": "Adulthood",
+              "timePeriod": "Toen relatie met Melissa niet meer lukte",
+              "type": "turning_point"
+            },
+            {
+              "description": "Einde traject Munsterbilzen, voorstel daghospitalisatie",
+              "emotionalImpact": "Negatief, voelde zich niet klaar, voelde zich genegeerd",
+              "isTriggerSource": false,
+              "peopleInvolved": [],
+              "sourceSection": "Adulthood",
+              "timePeriod": "Einde traject Munsterbilzen",
+              "type": "other"
+            },
+            {
+              "description": "Vertrek uit Munsterbilzen",
+              "emotionalImpact": "Negatief, leidde tot herval",
+              "isTriggerSource": false,
+              "peopleInvolved": [],
+              "sourceSection": "Adulthood",
+              "timePeriod": "Na einde traject",
+              "type": "other"
+            },
+            {
+              "description": "Snel terug in oude gewoonten hervallen (alcohol)",
+              "emotionalImpact": "Negatief",
+              "isTriggerSource": true,
+              "peopleInvolved": [],
+              "sourceSection": "Adulthood",
+              "timePeriod": "Na vertrek uit Munsterbilzen",
+              "type": "relapse"
+            },
+            {
+              "description": "Zwaar in de fout gegaan door te drinken toen Jules bij hem was",
+              "emotionalImpact": "Zeer negatief, 'heel moeilijk mee', 'drinken had geen limiet meer'",
+              "isTriggerSource": true,
+              "peopleInvolved": [
+                "Jules"
+              ],
+              "sourceSection": "Adulthood",
+              "timePeriod": "Na vertrek uit Munsterbilzen",
+              "type": "relapse"
+            },
+            {
+              "description": "Jules wil 5 maanden niet praten",
+              "emotionalImpact": "Zeer negatief, dieptepunt",
+              "isTriggerSource": true,
+              "peopleInvolved": [
+                "Jules"
+              ],
+              "sourceSection": "Adulthood",
+              "timePeriod": "Na drinken met Jules",
+              "type": "loss"
+            },
+            {
+              "description": "Op crisis naar Asster gegaan",
+              "emotionalImpact": "Positief, zoektocht naar hulp",
+              "isTriggerSource": false,
+              "peopleInvolved": [],
+              "sourceSection": "Adulthood",
+              "timePeriod": "Na paar weken niet praten met Jules",
+              "type": "turning_point"
+            },
+            {
+              "description": "Hervallen door externe factoren",
+              "emotionalImpact": "Negatief",
+              "isTriggerSource": true,
+              "peopleInvolved": [],
+              "sourceSection": "Adulthood",
+              "timePeriod": "Voor afspraak naar de zee met Jules",
+              "type": "relapse"
+            },
+            {
+              "description": "Afspraak naar de zee met Jules, Noah en Melissa niet nakomen",
+              "emotionalImpact": "Negatief, leidde tot reactie van Ellen",
+              "isTriggerSource": true,
+              "peopleInvolved": [
+                "Jules",
+                "Noah",
+                "Melissa"
+              ],
+              "sourceSection": "Adulthood",
+              "timePeriod": "Na herval",
+              "type": "conflict"
+            },
+            {
+              "description": "Ellen stelt stiefouderadoptie voor",
+              "emotionalImpact": "Zeer negatief, 'helemaal niet mee om kunnen'",
+              "isTriggerSource": true,
+              "peopleInvolved": [
+                "ellen",
+                "Jules",
+                "haar partner"
+              ],
+              "sourceSection": "Adulthood",
+              "timePeriod": "Na niet nakomen afspraak naar de zee",
+              "type": "conflict"
+            },
+            {
+              "description": "Bellen met Jules onder invloed",
+              "emotionalImpact": "Zeer negatief, 'absoluut dieptepunt ooit'",
+              "isTriggerSource": true,
+              "peopleInvolved": [
+                "Jules"
+              ],
+              "sourceSection": "Adulthood",
+              "timePeriod": "Na voorstel stiefouderadoptie",
+              "type": "relapse"
+            },
+            {
+              "description": "Nuchter bellen met Jules en verontschuldigen",
+              "emotionalImpact": "Ambitieus, maar Jules reageert afwijzend",
+              "isTriggerSource": false,
+              "peopleInvolved": [
+                "Jules"
+              ],
+              "sourceSection": "Adulthood",
+              "timePeriod": "Na dieptepunt",
+              "type": "achievement"
+            },
+            {
+              "description": "Vrederechter ingeschakeld door vader",
+              "emotionalImpact": "Positief, leidde tot gedwongen opname",
+              "isTriggerSource": false,
+              "peopleInvolved": [
+                "Mijn vader"
+              ],
+              "sourceSection": "Adulthood",
+              "timePeriod": "Na dieptepunt en reactie Jules",
+              "type": "turning_point"
+            },
+            {
+              "description": "40 dagen gedwongen opname in Tienen",
+              "emotionalImpact": "Positief, kon het ombuigen naar iets positiefs",
+              "isTriggerSource": false,
+              "peopleInvolved": [],
+              "sourceSection": "Adulthood",
+              "timePeriod": "Na vrederechter",
+              "type": "turning_point"
+            },
+            {
+              "description": "Start traject dubbeldiagnose in Tienen (9 maanden)",
+              "emotionalImpact": "Positief, bewuste keuze voor herstel",
+              "isTriggerSource": false,
+              "peopleInvolved": [],
+              "sourceSection": "Adulthood",
+              "timePeriod": "Na 40 dagen opname",
+              "type": "achievement"
+            },
+            {
+              "description": "Overlijden Marie Louise Steegmans",
+              "emotionalImpact": "Neutral (as written, but loss of mother)",
+              "isTriggerSource": false,
+              "peopleInvolved": [
+                "Marie Louise Steegmans"
+              ],
+              "sourceSection": "Family",
+              "timePeriod": "September 2025 (likely typo for 2015 or current year)",
+              "type": "loss"
+            }
+          ],
+          "extractedAt": "2026-06-17T18:51:27.999Z",
+          "patterns": [
+            {
+              "description": "Teruggetrokken kind, speelde op zichzelf",
+              "frequency": "chronic",
+              "peopleInvolved": [],
+              "schemaHypothesis": "Avoidance of social interaction, possibly due to early experiences or temperament.",
+              "sourceSection": "Childhood",
+              "type": "behavioral"
+            },
+            {
+              "description": "Moeite met onrecht/onmacht",
+              "frequency": "chronic",
+              "peopleInvolved": [],
+              "schemaHypothesis": "Hypersensitivity to injustice, possibly stemming from unresolved bullying experiences and inability to defend self.",
+              "sourceSection": "Childhood",
+              "type": "emotional"
+            },
+            {
+              "description": "Dragen van een masker als oplossing voor pesten",
+              "frequency": "recurring",
+              "peopleInvolved": [],
+              "schemaHypothesis": "Maladaptive coping mechanism to avoid vulnerability and social rejection, leading to inauthenticity.",
+              "sourceSection": "Adolescence",
+              "type": "coping"
+            },
+            {
+              "description": "Schoolverwaarlozing door niet hoeven/leren studeren",
+              "frequency": "recurring",
+              "peopleInvolved": [],
+              "schemaHypothesis": "Lack of discipline or engagement in academic tasks due to early success without effort, leading to avoidance of challenge.",
+              "sourceSection": "Adolescence",
+              "type": "behavioral"
+            },
+            {
+              "description": "De flauwe plezante uithangen, veel buiten de klas staan",
+              "frequency": "recurring",
+              "peopleInvolved": [],
+              "schemaHypothesis": "Attention-seeking behavior or acting out, possibly to gain social acceptance or avoid academic demands.",
+              "sourceSection": "Adolescence",
+              "type": "behavioral"
+            },
+            {
+              "description": "Veel van school wisselen omdat 'niet meer welkom'",
+              "frequency": "recurring",
+              "peopleInvolved": [],
+              "schemaHypothesis": "Pattern of conflict or inability to conform to rules, leading to repeated disruptions in education.",
+              "sourceSection": "Adolescence",
+              "type": "behavioral"
+            },
+            {
+              "description": "Verkeerde vrienden en escalatie van drugsgebruik",
+              "frequency": "recurring",
+              "peopleInvolved": [
+                "Verkeerde vrienden"
+              ],
+              "schemaHypothesis": "Seeking out peer groups that reinforce problematic behaviors, potentially due to low self-esteem or desire for belonging.",
+              "sourceSection": "Adulthood",
+              "type": "relational"
+            },
+            {
+              "description": "Opgetrokken muur ter zelfbescherming na trauma",
+              "frequency": "recurring",
+              "peopleInvolved": [],
+              "schemaHypothesis": "Emotional numbing or detachment as a defense mechanism against future hurt and betrayal.",
+              "sourceSection": "Adulthood",
+              "type": "coping"
+            },
+            {
+              "description": "Veel losse relaties met verschillende vrouwen tegelijkertijd",
+              "frequency": "recurring",
+              "peopleInvolved": [
+                "Verschillende vrouwen",
+                "vanessa"
+              ],
+              "schemaHypothesis": "Avoidance of deep emotional intimacy, possibly as a reaction to past betrayal or fear of commitment.",
+              "sourceSection": "Adulthood",
+              "type": "relational"
+            },
+            {
+              "description": "Moeite met controleverlies, maakt foute keuzes",
+              "frequency": "recurring",
+              "peopleInvolved": [],
+              "schemaHypothesis": "Compulsive need for control, possibly stemming from early experiences of powerlessness (bullying, parental dynamics), leading to impulsive decisions when control is threatened.",
+              "sourceSection": "Adulthood",
+              "type": "behavioral"
+            },
+            {
+              "description": "Zoekt gezelschap op om eenzaamheid op te vullen",
+              "frequency": "recurring",
+              "peopleInvolved": [
+                "Melissa"
+              ],
+              "schemaHypothesis": "Avoidance of solitude and underlying feelings of loneliness, leading to seeking external validation or company.",
+              "sourceSection": "Adulthood",
+              "type": "behavioral"
+            },
+            {
+              "description": "Drinkt om te vluchten in comadrinken",
+              "frequency": "recurring",
+              "peopleInvolved": [],
+              "schemaHypothesis": "Maladaptive coping mechanism for emotional distress, seeking oblivion to escape difficult feelings or reality.",
+              "sourceSection": "Adulthood",
+              "type": "coping"
+            },
+            {
+              "description": "Verlies van geloof in therapie na ervaringen in Asster",
+              "frequency": "recurring",
+              "peopleInvolved": [],
+              "schemaHypothesis": "Disillusionment with formal help-seeking due to negative experiences, leading to self-reliance or avoidance of professional support.",
+              "sourceSection": "Adulthood",
+              "type": "emotional"
+            },
+            {
+              "description": "Drang om het zelf onder controle te krijgen (verslaving)",
+              "frequency": "recurring",
+              "peopleInvolved": [],
+              "schemaHypothesis": "Compulsive need for self-control, potentially hindering acceptance of external help or structured recovery programs.",
+              "sourceSection": "Adulthood",
+              "type": "behavioral"
+            },
+            {
+              "description": "Altijd veel te snel willen gaan en controle zoeken",
+              "frequency": "chronic",
+              "peopleInvolved": [],
+              "schemaHypothesis": "Impulsivity and an overcompensating need for control, possibly rooted in early experiences of powerlessness or a drive for achievement.",
+              "sourceSection": "Adulthood, Recurring Themes",
+              "type": "behavioral"
+            },
+            {
+              "description": "Gevoel zichzelf kwijt te zijn of nooit echt gevonden te hebben",
+              "frequency": "chronic",
+              "peopleInvolved": [],
+              "schemaHypothesis": "Identity confusion or lack of stable self-concept, exacerbated by substance use and coping mechanisms like 'mask-wearing'.",
+              "sourceSection": "Recurring Themes",
+              "type": "emotional"
+            },
+            {
+              "description": "Onder invloed niet weten wie hij is",
+              "frequency": "recurring",
+              "peopleInvolved": [],
+              "schemaHypothesis": "Dissociation from self or loss of identity under the influence of substances, reinforcing the feeling of being lost.",
+              "sourceSection": "Recurring Themes",
+              "type": "emotional"
+            },
+            {
+              "description": "Zwaar verwaarloosd van fysieke gezondheid door gebruik",
+              "frequency": "chronic",
+              "peopleInvolved": [],
+              "schemaHypothesis": "Self-neglect stemming from addiction, prioritizing substance use over basic self-care and well-being.",
+              "sourceSection": "Recurring Themes",
+              "type": "behavioral"
+            },
+            {
+              "description": "Moeite om vast werk te houden door dikwijls hervallen",
+              "frequency": "recurring",
+              "peopleInvolved": [],
+              "schemaHypothesis": "Impact of addiction on professional stability, despite good skills and work ethic.",
+              "sourceSection": "Recurring Themes",
+              "type": "behavioral"
+            },
+            {
+              "description": "Te snel willen beginnen werken na herval",
+              "frequency": "recurring",
+              "peopleInvolved": [],
+              "schemaHypothesis": "Impulsivity and a drive to regain normalcy or prove capability, potentially leading to premature return to work and increased risk of relapse.",
+              "sourceSection": "Recurring Themes",
+              "type": "behavioral"
+            },
+            {
+              "description": "Moeilijk omgaan met emoties",
+              "frequency": "chronic",
+              "peopleInvolved": [],
+              "schemaHypothesis": "Lack of emotional regulation skills, possibly stemming from early childhood experiences where comfort and emotional processing were not modeled.",
+              "sourceSection": "Recurring Themes",
+              "type": "emotional"
+            },
+            {
+              "description": "Moeilijk om los te laten",
+              "frequency": "chronic",
+              "peopleInvolved": [],
+              "schemaHypothesis": "Difficulty with acceptance and relinquishing control, potentially contributing to cycles of trying to 'fix' situations or people.",
+              "sourceSection": "Recurring Themes",
+              "type": "emotional"
+            },
+            {
+              "description": "Minder impulsief handelen met financiën",
+              "frequency": "recurring",
+              "peopleInvolved": [],
+              "schemaHypothesis": "Impulsive spending or financial mismanagement, possibly linked to broader impulsivity patterns or addiction-related behaviors.",
+              "sourceSection": "Recurring Themes",
+              "type": "behavioral"
+            },
+            {
+              "description": "Loyaliteitsconflict bij kinderen door partners met drankprobleem",
+              "frequency": "recurring",
+              "peopleInvolved": [
+                "Jules",
+                "Noah",
+                "Melissa's vader"
+              ],
+              "schemaHypothesis": "Children caught between parents, forced to take sides or navigate conflicting loyalties due to parental issues.",
+              "sourceSection": "Adulthood",
+              "type": "relational"
+            }
+          ],
+          "persons": [
+            {
+              "age": null,
+              "context": "Niet veel thuis door werk; sterk en gevoelig, laat dit zelden zien; meer laten zien door mijn gebruik; tankte mij constant bij (alcohol); ingegrepen bij gedwongen opname; woont de ene week bij hem; belde met hem over Jules.",
+              "emotionalValence": "neutral",
+              "livingSituation": null,
+              "name": "Mijn vader",
+              "relationship": "Father",
+              "relationshipNL": "Vader",
+              "sourceSection": "Childhood, Adulthood, Family"
+            },
+            {
+              "age": null,
+              "context": "Verwaarloosd kind, nooit geleerd hoe te troosten; deed altijd haar best en speelde met ons; voelt zich snel aangevallen, gebruikt manipulatie als verdediging; laat gevoelens niet makkelijk toe; woont de andere week bij haar.",
+              "emotionalValence": "ambivalent",
+              "livingSituation": null,
+              "name": "Mijn moeder",
+              "relationship": "Mother",
+              "relationshipNL": "Moeder",
+              "sourceSection": "Childhood, Adulthood"
+            },
+            {
+              "age": null,
+              "context": "Speelde niet zoveel mee.",
+              "emotionalValence": "neutral",
+              "livingSituation": null,
+              "name": "2 oudere zussen",
+              "relationship": "Sisters",
+              "relationshipNL": "Zussen",
+              "sourceSection": "Childhood"
+            },
+            {
+              "age": null,
+              "context": "Eerste liefde; drank was bij haar thuis normaal; kon veel verzetten (alcohol); relatie verliep goed en bevredigend; korte breuk; bedroog mij 8 maanden; onderdeel van losse relaties na breuk.",
+              "emotionalValence": "negative",
+              "livingSituation": null,
+              "name": "vanessa",
+              "relationship": "First love / Ex-partner",
+              "relationshipNL": "Eerste liefde / Ex-partner",
+              "sourceSection": "Adulthood"
+            },
+            {
+              "age": null,
+              "context": "Tegelijkertijd samen met Ellen; had haar waarschijnlijk nooit mogen laten gaan; gevoelens zaten bij Ellen.",
+              "emotionalValence": "neutral",
+              "livingSituation": "Roeselare, West-Vlaanderen",
+              "name": "charlotte",
+              "relationship": "Partner",
+              "relationshipNL": "Partner",
+              "sourceSection": "Adulthood"
+            },
+            {
+              "age": null,
+              "context": "Gaf een gevoel dat ik nooit gekend had; aan- en uitrelatie door haar moeder; verhuisde bij mij wonen; haar moeder was tegen de relatie; moest elke dag bellen met haar moeder; haar vader tankte mij bij (alcohol); ouders kwamen bijna nooit op bezoek; moeite met zwanger worden; dissocieerde en werd kinderlijk; vroeg om te verhuizen naar Oost-Vlaanderen; ruzie over eten en verspilling; nam Jules mee; zocht appartementen; vond verhuizing naar Aalst een goed idee; weigerde mij Jules te laten ophalen; begon lange juridische strijd; rook geld bij verkoop huis in Aalst; wist van mijn probleem; verhoogde kans op onbegrip bij daghospitalisatie; reageerde begripvol op herval; kwam met stiefouderadoptie; reageerde anders na opzoeken.",
+              "emotionalValence": "negative",
+              "livingSituation": "Oost-Vlaanderen (with Jules)",
+              "name": "ellen",
+              "relationship": "Ex-partner / Mother of child",
+              "relationshipNL": "Ex-partner / Moeder van kind",
+              "sourceSection": "Adulthood, Family"
+            },
+            {
+              "age": null,
+              "context": "Zorgde voor aan- en uitrelatie tussen Kris en Ellen; was tegen de relatie van Kris en Ellen; stond erop dat Ellen elke dag belde; veranderde na zwangerschap van Ellen; Ellen zocht appartementen met haar.",
+              "emotionalValence": "negative",
+              "livingSituation": null,
+              "name": "haar moeder",
+              "relationship": "Mother of Ellen",
+              "relationshipNL": "Moeder van Ellen",
+              "sourceSection": "Adulthood"
+            },
+            {
+              "age": null,
+              "context": "Tankte mij constant bij (alcohol); kwam bijna nooit op bezoek; begon te helpen in huis na zwangerschap van Ellen.",
+              "emotionalValence": "negative",
+              "livingSituation": null,
+              "name": "haar vader",
+              "relationship": "Father of Ellen",
+              "relationshipNL": "Vader van Ellen",
+              "sourceSection": "Adulthood"
+            },
+            {
+              "age": "paar weken oud (toen Ellen dissocieerde)",
+              "context": "Paar weken oud toen Ellen dissocieerde; Ellen nam hem mee na ruzie; Ellen weigerde mij hem te laten ophalen; lange juridische strijd voor hem; co-ouderschap toegewezen; contact verliep redelijk goed; zwaar in de fout gegaan door te drinken toen hij bij mij was; wilde 5 maanden niet praten; kans op onbegrip bij daghospitalisatie; afspraak naar de zee niet nakomen; stiefouderadoptie; belde onder invloed met hem; belde nuchter om te verontschuldigen; zei dat het minstens 7 maanden tot een jaar zou duren voor contact; contact verloopt momenteel niet zo goed; bellen voor Vaderdag was aangenaam; contactregeling uitwerken.",
+              "emotionalValence": "ambivalent",
+              "livingSituation": "Woont bij zijn moeder Ellen in Oost-Vlaanderen",
+              "name": "Jules",
+              "relationship": "Son",
+              "relationshipNL": "Zoon",
+              "sourceSection": "Adulthood, Family, Recurring Themes"
+            },
+            {
+              "age": null,
+              "context": "Leren kennen na breuk met Ellen; afspraak geen fysieke/emotionele relatie; groeide naar fysieke relatie; altijd eerlijk geweest over niet in Limburg blijven; deed meer moeite dan welke vrouw dan ook; regelde opname in PAAZ; kreeg borstkanker; chemische menopauze; niet meer houdbaar om bij haar te wonen; relatie kreeg weer vorm; haar vader spiegelt en steekt alles op mij; besloten dat ik alleen zou komen als Noah er niet was; ingeschakeld door Kris' ouders; afspraak naar de zee niet nakomen; steunt me steeds; contact tussen haar en haar kinderen loopt goed; hoop op termijn weer samen te wonen.",
+              "emotionalValence": "positive",
+              "livingSituation": "Woont half bij haar",
+              "name": "Melissa",
+              "relationship": "Partner",
+              "relationshipNL": "Partner",
+              "sourceSection": "Adulthood, Family, Recurring Themes"
+            },
+            {
+              "age": null,
+              "context": "Leren kennen in Munsterbilzen; moest vertrekken en kon nergens naartoe; Kris nam hem tijdelijk in huis.",
+              "emotionalValence": "neutral",
+              "livingSituation": "Tijdelijk bij Kris",
+              "name": "Albert",
+              "relationship": "Acquaintance from rehab",
+              "relationshipNL": "Kennis uit revalidatie",
+              "sourceSection": "Adulthood"
+            },
+            {
+              "age": null,
+              "context": "Mijn psycholoog.",
+              "emotionalValence": "neutral",
+              "livingSituation": null,
+              "name": "Demi Vaes",
+              "relationship": "Psychologist",
+              "relationshipNL": "Psycholoog",
+              "sourceSection": "Adulthood"
+            },
+            {
+              "age": null,
+              "context": "Zoon van Melissa; in loyaliteitsconflict naar mij toe; Kris en Melissa besloten dat Kris alleen zou komen als Noah er niet was; afspraak naar de zee met hem.",
+              "emotionalValence": "neutral",
+              "livingSituation": null,
+              "name": "Noah",
+              "relationship": "Son of Melissa",
+              "relationshipNL": "Zoon van Melissa",
+              "sourceSection": "Adulthood"
+            },
+            {
+              "age": null,
+              "context": "Ingenieus.",
+              "emotionalValence": "neutral",
+              "livingSituation": null,
+              "name": "Nico Manderveld",
+              "relationship": "Father",
+              "relationshipNL": "Vader",
+              "sourceSection": "Family"
+            },
+            {
+              "age": null,
+              "context": "Zelfstandige/huismoeder; overleden september 2025 (future date, likely a typo for 2015 or current year).",
+              "emotionalValence": "neutral",
+              "livingSituation": null,
+              "name": "Marie Louise Steegmans",
+              "relationship": "Mother",
+              "relationshipNL": "Moeder",
+              "sourceSection": "Family"
+            },
+            {
+              "age": null,
+              "context": "Verpleegkundige.",
+              "emotionalValence": "neutral",
+              "livingSituation": null,
+              "name": "Els Manderveld",
+              "relationship": "Sister",
+              "relationshipNL": "Zus",
+              "sourceSection": "Family"
+            },
+            {
+              "age": null,
+              "context": "Kinderpsycholoog.",
+              "emotionalValence": "neutral",
+              "livingSituation": null,
+              "name": "Katrien Manderveld",
+              "relationship": "Sister",
+              "relationshipNL": "Zus",
+              "sourceSection": "Family"
+            },
+            {
+              "age": null,
+              "context": "Haalde Jules van school; Ellen's partner voor wie stiefouderadoptie werd voorgesteld.",
+              "emotionalValence": "negative",
+              "livingSituation": null,
+              "name": "haar partner",
+              "relationship": "Partner of Ellen",
+              "relationshipNL": "Partner van Ellen",
+              "sourceSection": "Adulthood"
+            }
+          ],
+          "schemaVersion": 1,
+          "sourceHash": "fb8c6a23"
+        }
+      },
+      "emergencyContacts": [
+        {
+          "name": "Papa",
+          "number": "0475232233"
+        },
+        {
+          "name": "Melissa",
+          "number": "+32486663024"
+        }
+      ]
+    }
+  },
+  "exportScope": {
+    "includesBackpackData": true,
+    "includesDerivedCaches": true,
+    "includesDiaryEntries": true,
+    "includesEliasPersona": true,
+    "includesEmergencyContacts": true,
+    "includesGratitudeEntries": true,
+    "includesKimPersona": false,
+    "includesLogsDat": true,
+    "includesPersonaProjections": true,
+    "includesProjectionsDat": true,
+    "includesStateDat": true,
+    "includesUserDat": true
+  },
+  "integrity": {
+    "datasetCounts": {
+      "elias": {
+        "diaryEntries": 13,
+        "gratitudeEntries": 6,
+        "hasBackpackData": false,
+        "hasLogsDat": false,
+        "hasPersonaProjection": true,
+        "hasProjectionsDat": false,
+        "hasStateDat": false,
+        "hasUserDat": true
+      }
+    },
+    "plaintextSha256Base64": "sghhJjALR5oF05G2eB7s/z1Id1dKOLeqPVLHn9wvAhw="
+  },
+  "payloadVersion": "recofree.export.payload.v1",
+  "sourceDevice": {
+    "expoSdkVersion": "54",
+    "platform": "android"
+  }
+}

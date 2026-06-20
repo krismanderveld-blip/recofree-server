@@ -864,9 +864,12 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       clinicalModeActive: state.userDat?.clinicalModeActive ?? false,
       consecutiveSessionsWithoutEngagement: state.userDat?.consecutiveSessionsWithoutEngagement ?? 0,
     };
-    dispatch({ type: 'END_SESSION', payload: updatedUserDat });
-    await persistUserDat(updatedUserDat);
-  }, [state.userDat]);
+    // Backup naam from backpack into userDat for import resilience
+    const naamBackup = state.backpack?.naam ?? state.userDat?.naam;
+    const finalUserDat: UserDat = { ...updatedUserDat, ...(naamBackup ? { naam: naamBackup } : {}) };
+    dispatch({ type: 'END_SESSION', payload: finalUserDat });
+    await persistUserDat(finalUserDat);
+  }, [state.userDat, state.backpack]);
 
   // ── End Session (new: accepts UserDat directly) ──
 
@@ -879,10 +882,12 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     if ('eigenRegie' in resetMood) {
       (resetMood as any).eigenRegie = null;
     }
-    const finalUserDat: UserDat = { ...updatedUserDat, currentMood: resetMood };
+    // Backup naam from backpack into userDat for import resilience
+    const naam = state.backpack?.naam ?? updatedUserDat.naam;
+    const finalUserDat: UserDat = { ...updatedUserDat, currentMood: resetMood, ...(naam ? { naam } : {}) };
     dispatch({ type: 'END_SESSION', payload: finalUserDat });
     await persistUserDat(finalUserDat);
-  }, []);
+  }, [state.backpack]);
 
   // ── Reset ──
 

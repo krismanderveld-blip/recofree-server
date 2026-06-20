@@ -166,6 +166,9 @@ export default function IntakeScreen() {
 
   // Track whether import succeeded so the diag overlay can show "Continue" button
   const [importNavReady, setImportNavReady] = useState(false);
+  // Name prompt after import when backpack has no name
+  const [importNamePrompt, setImportNamePrompt] = useState(false);
+  const [importName, setImportName] = useState('');
 
   const handleImportExecute = useCallback(async () => {
     if (!importFile || !importPassword) return;
@@ -224,6 +227,14 @@ export default function IntakeScreen() {
           await reloadFromStorage();
           logImportDiag('reloadFromStorage completed', 'OK');
           appendDiag('✓ reloadFromStorage completed');
+          // Check if naam is missing — show prompt
+          const { readEncrypted } = await import('@/lib/crypto/storage-encryption');
+          const bpRaw = await readEncrypted('@recofree_backpack');
+          const bpNaam = bpRaw ? JSON.parse(bpRaw)?.naam : '';
+          if (!bpNaam) {
+            setImportNamePrompt(true);
+            appendDiag('⚠ Name missing — prompting user');
+          }
         } catch (reloadErr: any) {
           logImportDiag('reloadFromStorage THREW', 'FAIL', reloadErr?.message ?? 'unknown');
           appendDiag(`✗ reloadFromStorage THREW: ${reloadErr?.message ?? 'unknown'}`);
@@ -637,16 +648,56 @@ export default function IntakeScreen() {
               </Text>
             </ScrollView>
             <View style={{ gap: 10 }}>
+              {/* Name prompt — shown when import succeeded but name is empty */}
+              {importNavReady && importNamePrompt && (
+                <View style={{ marginBottom: 12 }}>
+                  <Text style={{ color: '#fbbf24', fontSize: 13, fontWeight: '600', marginBottom: 6 }}>
+                    Your backup didn't include your name. Please enter it:
+                  </Text>
+                  <TextInput
+                    style={{ backgroundColor: '#2a2a2a', color: '#fff', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10, fontSize: 15, borderWidth: 1, borderColor: '#444' }}
+                    value={importName}
+                    onChangeText={setImportName}
+                    placeholder="Your first name"
+                    placeholderTextColor="#666"
+                    autoFocus
+                    returnKeyType="done"
+                  />
+                </View>
+              )}
               {/* Continue button — only shown when import succeeded */}
               {importNavReady && (
                 <Pressable
-                  onPress={() => {
+                  onPress={async () => {
+                    // Save name if provided
+                    if (importName.trim()) {
+                      try {
+                        const { readEncrypted, writeEncrypted } = await import('@/lib/crypto/storage-encryption');
+                        const bpRaw = await readEncrypted('@recofree_backpack');
+                        if (bpRaw) {
+                          const bp = JSON.parse(bpRaw);
+                          bp.naam = importName.trim();
+                          await writeEncrypted('@recofree_backpack', JSON.stringify(bp));
+                        }
+                        // Also update userDat naam backup
+                        const udRaw = await readEncrypted('@recofree_userdat');
+                        if (udRaw) {
+                          const ud = JSON.parse(udRaw);
+                          ud.naam = importName.trim();
+                          await writeEncrypted('@recofree_userdat', JSON.stringify(ud));
+                        }
+                        // Reload to pick up the name
+                        await reloadFromStorage();
+                      } catch { /* best effort */ }
+                    }
                     setImportDiagLog(null);
                     router.replace('/(tabs)' as any);
                   }}
+                  disabled={importNamePrompt && !importName.trim()}
                   style={({ pressed }) => [{
-                    backgroundColor: '#16a34a', borderRadius: 8, paddingVertical: 14, alignItems: 'center' as const,
-                    opacity: pressed ? 0.8 : 1,
+                    backgroundColor: (importNamePrompt && !importName.trim()) ? '#555' : '#16a34a',
+                    borderRadius: 8, paddingVertical: 14, alignItems: 'center' as const,
+                    opacity: (importNamePrompt && !importName.trim()) ? 0.5 : pressed ? 0.8 : 1,
                   }]}
                 >
                   <Text style={{ color: '#fff', fontWeight: '700', fontSize: 15 }}>Continue to app →</Text>

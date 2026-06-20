@@ -22,7 +22,7 @@ export async function buildImportStagingPackage(input: {
   return {
     payloadVersion: payload.payloadVersion,
     personas: payload.data.personas,
-    shared: payload.data.shared ?? { emergencyContacts: [], derivedCaches: { backpackHash: null, extractedEntities: null } },
+    shared: payload.data.shared ?? { emergencyContacts: [], derivedCaches: { backpackHash: null, extractedEntities: null, vspProfile: null, vspHash: null } },
     integrity: payload.integrity,
   };
 }
@@ -116,8 +116,8 @@ export async function replaceLocalDataFromStaging(input: {
   const emergencyContacts = stagingPackage.shared?.emergencyContacts ?? [];
   await stores.emergencyContactsStore.replaceAll(emergencyContacts);
 
-  // Derived caches
-  const derivedCaches = stagingPackage.shared?.derivedCaches ?? { backpackHash: null, extractedEntities: null };
+  // Derived caches (includes VSP profile and hash)
+  const derivedCaches = stagingPackage.shared?.derivedCaches ?? { backpackHash: null, extractedEntities: null, vspProfile: null, vspHash: null };
   await stores.derivedCacheStore.replaceAll(derivedCaches);
 }
 
