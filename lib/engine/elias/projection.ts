@@ -108,7 +108,9 @@ export const GOAL_MARKERS = [
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// ─── AsyncStorage Persistence (local within-device memory) ─────
+// ─── AsyncStorage Persistence (local within-device memory, AES-256-GCM encrypted) ─────
+
+import { readEncrypted, writeEncrypted, removeEncrypted } from '@/lib/crypto/storage-encryption';
 
 const ELIAS_PROJECTION_STORAGE_KEY = '@recofree_projection_elias';
 
@@ -118,7 +120,7 @@ const ELIAS_PROJECTION_STORAGE_KEY = '@recofree_projection_elias';
  */
 export async function loadEliasProjection(): Promise<EliasProjection> {
   try {
-    const raw = await AsyncStorage.getItem(ELIAS_PROJECTION_STORAGE_KEY);
+    const raw = await readEncrypted(ELIAS_PROJECTION_STORAGE_KEY);
     if (!raw) {
       return createEmptyEliasProjection();
     }
@@ -146,7 +148,7 @@ export async function loadEliasProjection(): Promise<EliasProjection> {
  */
 export async function saveEliasProjection(projection: EliasProjection): Promise<void> {
   try {
-    await AsyncStorage.setItem(ELIAS_PROJECTION_STORAGE_KEY, JSON.stringify(projection));
+    await writeEncrypted(ELIAS_PROJECTION_STORAGE_KEY, JSON.stringify(projection));
   } catch (error) {
     console.error('[Projection/Elias] Failed to save to AsyncStorage:', error);
   }
@@ -158,7 +160,7 @@ export async function saveEliasProjection(projection: EliasProjection): Promise<
  */
 export async function clearEliasProjection(): Promise<void> {
   try {
-    await AsyncStorage.removeItem(ELIAS_PROJECTION_STORAGE_KEY);
+    await removeEncrypted(ELIAS_PROJECTION_STORAGE_KEY);
     currentProjection = createEmptyEliasProjection();
   } catch (error) {
     console.error('[Projection/Elias] Failed to clear AsyncStorage:', error);

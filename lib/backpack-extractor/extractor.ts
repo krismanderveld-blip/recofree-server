@@ -11,6 +11,7 @@
  */
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { readEncrypted, writeEncrypted } from '@/lib/crypto/storage-encryption';
 import { computeBackpackHash, hasBackpackChanged } from './hash';
 import type { BackpackHashState, ExtractedEntities } from './types';
 import { BACKPACK_HASH_KEY, EXTRACTION_SCHEMA_VERSION as CURRENT_SCHEMA_VERSION } from './types';
@@ -39,7 +40,7 @@ export async function saveBackpackHash(hash: BackpackHashState): Promise<void> {
 
 export async function loadExtractedEntities(): Promise<ExtractedEntities | null> {
   try {
-    const json = await AsyncStorage.getItem(EXTRACTED_ENTITIES_KEY);
+    const json = await readEncrypted(EXTRACTED_ENTITIES_KEY);
     return json ? JSON.parse(json) : null;
   } catch {
     return null;
@@ -47,7 +48,7 @@ export async function loadExtractedEntities(): Promise<ExtractedEntities | null>
 }
 
 export async function saveExtractedEntities(entities: ExtractedEntities): Promise<void> {
-  await AsyncStorage.setItem(EXTRACTED_ENTITIES_KEY, JSON.stringify(entities));
+  await writeEncrypted(EXTRACTED_ENTITIES_KEY, JSON.stringify(entities));
 }
 
 // ─── Main Extraction Orchestrator ──────────────────────────────

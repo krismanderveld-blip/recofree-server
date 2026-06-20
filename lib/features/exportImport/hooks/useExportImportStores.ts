@@ -5,6 +5,7 @@
 
 import { useMemo } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { readEncrypted, writeEncrypted, removeEncrypted, SENSITIVE_KEYS } from '@/lib/crypto/storage-encryption';
 import type { ExportImportStores } from '../services/exportImportStores.types';
 
 // AsyncStorage keys used by the app
@@ -27,16 +28,28 @@ function getLogsDatKey(persona: string) { return `recofree_memory/${persona}/log
 
 async function readJson(key: string): Promise<unknown | null> {
   try {
-    const raw = await AsyncStorage.getItem(key);
+    const isSensitive = (SENSITIVE_KEYS as readonly string[]).includes(key);
+    const raw = isSensitive
+      ? await readEncrypted(key)
+      : await AsyncStorage.getItem(key);
     return raw ? JSON.parse(raw) : null;
   } catch { return null; }
 }
 
 async function writeJson(key: string, value: unknown): Promise<void> {
+  const isSensitive = (SENSITIVE_KEYS as readonly string[]).includes(key);
   if (value === null || value === undefined) {
-    await AsyncStorage.removeItem(key);
+    if (isSensitive) {
+      await removeEncrypted(key);
+    } else {
+      await AsyncStorage.removeItem(key);
+    }
   } else {
-    await AsyncStorage.setItem(key, JSON.stringify(value));
+    if (isSensitive) {
+      await writeEncrypted(key, JSON.stringify(value));
+    } else {
+      await AsyncStorage.setItem(key, JSON.stringify(value));
+    }
   }
 }
 

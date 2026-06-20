@@ -47,7 +47,9 @@ export interface KimProjection {
   readonly sessionSignalCount: number;
 }
 
-// ─── AsyncStorage Persistence (local within-device memory) ─────
+// ─── AsyncStorage Persistence (local within-device memory, AES-256-GCM encrypted) ─────
+
+import { readEncrypted, writeEncrypted, removeEncrypted } from '@/lib/crypto/storage-encryption';
 
 const KIM_PROJECTION_STORAGE_KEY = '@recofree_projection_kim';
 
@@ -57,7 +59,7 @@ const KIM_PROJECTION_STORAGE_KEY = '@recofree_projection_kim';
  */
 export async function loadKimProjection(): Promise<KimProjection> {
   try {
-    const raw = await AsyncStorage.getItem(KIM_PROJECTION_STORAGE_KEY);
+    const raw = await readEncrypted(KIM_PROJECTION_STORAGE_KEY);
     if (!raw) {
       return createEmptyKimProjection();
     }
@@ -85,7 +87,7 @@ export async function loadKimProjection(): Promise<KimProjection> {
  */
 export async function saveKimProjection(projection: KimProjection): Promise<void> {
   try {
-    await AsyncStorage.setItem(KIM_PROJECTION_STORAGE_KEY, JSON.stringify(projection));
+    await writeEncrypted(KIM_PROJECTION_STORAGE_KEY, JSON.stringify(projection));
   } catch (error) {
     console.error('[Projection/Kim] Failed to save to AsyncStorage:', error);
   }
@@ -97,7 +99,7 @@ export async function saveKimProjection(projection: KimProjection): Promise<void
  */
 export async function clearKimProjection(): Promise<void> {
   try {
-    await AsyncStorage.removeItem(KIM_PROJECTION_STORAGE_KEY);
+    await removeEncrypted(KIM_PROJECTION_STORAGE_KEY);
     currentProjection = createEmptyKimProjection();
   } catch (error) {
     console.error('[Projection/Kim] Failed to clear AsyncStorage:', error);

@@ -21,6 +21,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { readEncrypted, writeEncrypted } from '@/lib/crypto/storage-encryption';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useUser } from '@/lib/user-context';
 import { fixUnicode } from '@/lib/utils';
@@ -279,7 +280,7 @@ function ChatScreenInner() {
 
       try {
         // Full session end with analysis + memory write-back
-        const userDatJson = await AsyncStorage.getItem(USERDAT_KEY);
+        const userDatJson = await readEncrypted(USERDAT_KEY);
         const currentUserDat: UserDat = userDatJson ? JSON.parse(userDatJson) : state.userDat!;
         const backpack = state.backpack!;
         if (!backpack || !currentUserDat) return;
@@ -287,7 +288,7 @@ function ChatScreenInner() {
         const provider = getAIProvider();
         let diaryForSession: DiaryEntry[] = [];
         try {
-          const diaryJson = await AsyncStorage.getItem(DIARY_KEY);
+          const diaryJson = await readEncrypted(DIARY_KEY);
           if (diaryJson) diaryForSession = JSON.parse(diaryJson);
         } catch (_e) { /* ignore */ }
         const userDatWithDiary = { ...currentUserDat, _sessionDiaryEntries: diaryForSession } as any;
@@ -301,7 +302,7 @@ function ChatScreenInner() {
 
         if (resultOrNull && 'updatedUserDat' in resultOrNull) {
           // Full session end succeeded
-          await AsyncStorage.setItem(USERDAT_KEY, JSON.stringify(resultOrNull.updatedUserDat));
+          await writeEncrypted(USERDAT_KEY, JSON.stringify(resultOrNull.updatedUserDat));
           await endSessionWithUserDat(resultOrNull.updatedUserDat);
           await AsyncStorage.removeItem(PENDING_CLOSE_KEY);
           logDebugEvent('session_auto_end_complete', {
@@ -384,7 +385,7 @@ function ChatScreenInner() {
     setFirstChatSeen(true);
     const ud = await getUserDat();
     const updated = { ...ud, firstChatSeen: true } as UserDat;
-    await AsyncStorage.setItem(USERDAT_KEY, JSON.stringify(updated));
+    await writeEncrypted(USERDAT_KEY, JSON.stringify(updated));
   }, [getUserDat]);
 
   // ── Pre-chat gate: VSP/Eigen Regie ALWAYS shown at every chat start ──
@@ -437,13 +438,13 @@ function ChatScreenInner() {
           // Run deferred analysis if the previous session needs it
           if (pendingData.needsFullAnalysis) {
             try {
-              const bpJson = await AsyncStorage.getItem(BACKPACK_KEY);
-              const udJson = await AsyncStorage.getItem(USERDAT_KEY);
+              const bpJson = await readEncrypted(BACKPACK_KEY);
+              const udJson = await readEncrypted(USERDAT_KEY);
               if (bpJson && udJson) {
                 const backpack = JSON.parse(bpJson);
                 const userDat = JSON.parse(udJson);
                 const analyzedUserDat = runDeferredSessionAnalysis(backpack, userDat);
-                await AsyncStorage.setItem(USERDAT_KEY, JSON.stringify(analyzedUserDat));
+                await writeEncrypted(USERDAT_KEY, JSON.stringify(analyzedUserDat));
                 console.log('[Chat] Deferred session analysis completed for previous session');
               }
             } catch (analysisErr) {
@@ -477,14 +478,14 @@ function ChatScreenInner() {
         // Auto-end the session silently in the background with 10s timeout
         autoEndTriggeredRef.current = true;
         const endSessionWithTimeout = async () => {
-          const userDatJson = await AsyncStorage.getItem(USERDAT_KEY);
+          const userDatJson = await readEncrypted(USERDAT_KEY);
           const currentUserDat: UserDat = userDatJson ? JSON.parse(userDatJson) : state.userDat!;
           const backpack = state.backpack!;
           const provider = getAIProvider();
           // Attach diary entries for gratitude streak calculation
           let diaryForSession: DiaryEntry[] = [];
           try {
-            const diaryJson = await AsyncStorage.getItem(DIARY_KEY);
+            const diaryJson = await readEncrypted(DIARY_KEY);
             if (diaryJson) diaryForSession = JSON.parse(diaryJson);
           } catch (_e) { /* ignore */ }
           const userDatWithDiary = { ...currentUserDat, _sessionDiaryEntries: diaryForSession } as any;
@@ -496,7 +497,7 @@ function ChatScreenInner() {
           ]);
           if (resultOrNull && 'updatedUserDat' in resultOrNull) {
             // Full session end succeeded within 10s
-            await AsyncStorage.setItem(USERDAT_KEY, JSON.stringify(resultOrNull.updatedUserDat));
+            await writeEncrypted(USERDAT_KEY, JSON.stringify(resultOrNull.updatedUserDat));
             await endSessionWithUserDat(resultOrNull.updatedUserDat);
             await AsyncStorage.removeItem(PENDING_CLOSE_KEY);
             logDebugEvent('session_auto_end', {
@@ -578,7 +579,7 @@ function ChatScreenInner() {
   useEffect(() => {
     (async () => {
       try {
-        const udJson = await AsyncStorage.getItem(USERDAT_KEY);
+        const udJson = await readEncrypted(USERDAT_KEY);
         if (udJson) {
           const ud = JSON.parse(udJson);
           const history: ChatMessage[] = ud.chatHistory ?? [];
@@ -655,8 +656,8 @@ function ChatScreenInner() {
     let backpack: Backpack | null = null;
     let userDat: UserDat | null = null;
     try {
-      const bpJson = await AsyncStorage.getItem(BACKPACK_KEY);
-      const udJson = await AsyncStorage.getItem(USERDAT_KEY);
+      const bpJson = await readEncrypted(BACKPACK_KEY);
+      const udJson = await readEncrypted(USERDAT_KEY);
       if (bpJson) backpack = JSON.parse(bpJson);
       if (udJson) userDat = JSON.parse(udJson);
     } catch (e) {
@@ -672,7 +673,7 @@ function ChatScreenInner() {
       // Load diary entries for session-start context
       let diaryEntries: DiaryEntry[] = [];
       try {
-        const diaryJson = await AsyncStorage.getItem(DIARY_KEY);
+        const diaryJson = await readEncrypted(DIARY_KEY);
         if (diaryJson) {
           const allEntries: DiaryEntry[] = JSON.parse(diaryJson);
           // Send last 10 diary entries (most recent first)
@@ -825,7 +826,7 @@ function ChatScreenInner() {
         userDat.chatHistory = [...(userDat.chatHistory || []), greetingMsg];
         userDat.totalSessions = (userDat.totalSessions ?? 0) + 1;
         userDat.lastSessionDate = new Date().toISOString().slice(0, 10);
-        await AsyncStorage.setItem(USERDAT_KEY, JSON.stringify(userDat));
+        await writeEncrypted(USERDAT_KEY, JSON.stringify(userDat));
         setMessages([greetingMsg]);
         logDebugEvent('session_start', {
           userType: state.userType ?? 'unknown',
@@ -836,7 +837,7 @@ function ChatScreenInner() {
         // Fallback: use existing pipeline greeting
         const result = await generateGreeting(backpack, provider, userDat, diaryEntries);
         // Only persist userDat (backpack is NEVER modified by the system)
-        await AsyncStorage.setItem(USERDAT_KEY, JSON.stringify(result.updatedUserDat));
+        await writeEncrypted(USERDAT_KEY, JSON.stringify(result.updatedUserDat));
         // Only show the greeting message (last item in chatHistory), not old session messages
         const greeting = result.updatedUserDat.chatHistory.slice(-1);
         setMessages(greeting);
@@ -911,12 +912,12 @@ function ChatScreenInner() {
       const preprocessed = await preprocessInput(rawText);
       const processedText = preprocessed.processedText;
       // Load latest userDat from storage (may have been updated by greeting)
-      const userDatJson = await AsyncStorage.getItem(USERDAT_KEY);
+      const userDatJson = await readEncrypted(USERDAT_KEY);
       const currentUserDat: UserDat = userDatJson ? JSON.parse(userDatJson) : state.userDat!;
       // Read backpack from AsyncStorage to ensure latest version (avoids stale closure)
       let backpack: Backpack = state.backpack!;
       try {
-        const bpJson = await AsyncStorage.getItem(BACKPACK_KEY);
+        const bpJson = await readEncrypted(BACKPACK_KEY);
         if (bpJson) backpack = JSON.parse(bpJson);
       } catch (e) {
         console.warn('Could not read backpack from AsyncStorage, using state:', e);
@@ -932,7 +933,7 @@ function ChatScreenInner() {
         throw new Error(`processMessage returned invalid result: ${JSON.stringify(result?.response ?? 'undefined')}`);
       }
       // Only persist userDat (backpack is NEVER modified)
-      await AsyncStorage.setItem(USERDAT_KEY, JSON.stringify(result.updatedUserDat));
+      await writeEncrypted(USERDAT_KEY, JSON.stringify(result.updatedUserDat));
       if (result.crisisLevel > 0) setCrisisLevel(result.crisisLevel);
       if (result.showEmergency) setShowEmergency(true);
       // Show only current session messages: append the new user+assistant pair to existing messages
@@ -1117,20 +1118,20 @@ function ChatScreenInner() {
     };
     setMessages((prev) => [...prev, analyzingMsg]);
     try {
-      const userDatJson = await AsyncStorage.getItem(USERDAT_KEY);
+      const userDatJson = await readEncrypted(USERDAT_KEY);
       const currentUserDat: UserDat = userDatJson ? JSON.parse(userDatJson) : state.userDat!;
       const backpack = state.backpack!;
       const provider = getAIProvider();
       // Attach diary entries for gratitude streak calculation
       let diaryForSession: DiaryEntry[] = [];
       try {
-        const diaryJson = await AsyncStorage.getItem(DIARY_KEY);
+        const diaryJson = await readEncrypted(DIARY_KEY);
         if (diaryJson) diaryForSession = JSON.parse(diaryJson);
       } catch (_e) { /* ignore */ }
       const userDatWithDiary = { ...currentUserDat, _sessionDiaryEntries: diaryForSession } as any;
       const result = await endSession(backpack, provider, userDatWithDiary);
       // Only persist userDat (backpack is NEVER modified)
-      await AsyncStorage.setItem(USERDAT_KEY, JSON.stringify(result.updatedUserDat));
+      await writeEncrypted(USERDAT_KEY, JSON.stringify(result.updatedUserDat));
       await endSessionWithUserDat(result.updatedUserDat);
       await AsyncStorage.removeItem(PENDING_CLOSE_KEY);
       const confirmationMsg: ChatMessage = {

@@ -19,6 +19,7 @@ import type { EdgeInsets, Metrics, Rect } from "react-native-safe-area-context";
 import { trpc, createTRPCClient } from "@/lib/trpc";
 import { initManusRuntime, subscribeSafeAreaInsets } from "@/lib/_core/manus-runtime";
 import { UserProvider } from "@/lib/user-context";
+import { migrateAllToEncrypted } from "@/lib/crypto/storage-encryption";
 
 import type { ReactNode } from "react";
 
@@ -86,6 +87,17 @@ export default function RootLayout() {
   // Initialize Manus runtime for cookie injection from parent container
   useEffect(() => {
     initManusRuntime();
+  }, []);
+
+  // Migrate legacy plain-text sensitive data to AES-256-GCM encrypted storage
+  useEffect(() => {
+    migrateAllToEncrypted().then((res) => {
+      if (res.migrated.length > 0) {
+        console.log('[StorageEncryption] Migrated keys:', res.migrated);
+      }
+    }).catch((err) => {
+      console.warn('[StorageEncryption] Migration error (non-blocking):', err);
+    });
   }, []);
 
   const handleSafeAreaUpdate = useCallback((metrics: Metrics) => {

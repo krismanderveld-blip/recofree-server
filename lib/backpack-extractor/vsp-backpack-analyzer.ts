@@ -13,6 +13,7 @@
  */
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { readEncrypted, writeEncrypted } from '@/lib/crypto/storage-encryption';
 
 const VSP_PROFILE_KEY = "@vsp_backpack_profile";
 const VSP_HASH_KEY = "@vsp_backpack_hash";
@@ -63,7 +64,7 @@ export async function checkAndAnalyzeVspProfile(
     const result = await callAnalysis({ themesContent: themesContent.trim(), sourceHash: currentHash });
 
     if (result) {
-      await AsyncStorage.setItem(VSP_PROFILE_KEY, JSON.stringify(result));
+      await writeEncrypted(VSP_PROFILE_KEY, JSON.stringify(result));
       await AsyncStorage.setItem(VSP_HASH_KEY, currentHash);
       console.log('[VspBackpackAnalyzer] Analysis complete, cached');
       return result.contextBlock;
@@ -81,7 +82,7 @@ export async function checkAndAnalyzeVspProfile(
 // ─── Cache Access ──────────────────────────────────────────────
 export async function loadCachedVspProfile(): Promise<VspBackpackProfileCached | null> {
   try {
-    const raw = await AsyncStorage.getItem(VSP_PROFILE_KEY);
+    const raw = await readEncrypted(VSP_PROFILE_KEY);
     return raw ? JSON.parse(raw) : null;
   } catch {
     return null;

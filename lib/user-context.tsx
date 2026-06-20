@@ -137,6 +137,8 @@ interface UserContextValue {
 
 // ─── Storage Keys ───────────────────────────────────────────────
 
+import { readEncrypted, writeEncrypted } from '@/lib/crypto/storage-encryption';
+
 const BACKPACK_KEY = '@recofree_backpack';
 const USERDAT_KEY = '@recofree_userdat';
 /** Legacy key — used for migration from monolithic rugzak */
@@ -160,11 +162,11 @@ const initialState: UserState = {
 // ─── Persist ────────────────────────────────────────────────────
 
 async function persistBackpack(backpack: Backpack) {
-  await AsyncStorage.setItem(BACKPACK_KEY, JSON.stringify(backpack));
+  await writeEncrypted(BACKPACK_KEY, JSON.stringify(backpack));
 }
 
 async function persistUserDat(userDat: UserDat) {
-  await AsyncStorage.setItem(USERDAT_KEY, JSON.stringify(userDat));
+  await writeEncrypted(USERDAT_KEY, JSON.stringify(userDat));
 }
 
 // ─── Compose helper ─────────────────────────────────────────────
@@ -292,8 +294,8 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       try {
         // Try loading the new dual-store format first
         const [backpackJson, userDatJson] = await Promise.all([
-          AsyncStorage.getItem(BACKPACK_KEY),
-          AsyncStorage.getItem(USERDAT_KEY),
+          readEncrypted(BACKPACK_KEY),
+          readEncrypted(USERDAT_KEY),
         ]);
 
         if (backpackJson && userDatJson) {
@@ -894,8 +896,8 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
   const reloadFromStorage = useCallback(async () => {
     const [backpackJson, userDatJson] = await Promise.all([
-      AsyncStorage.getItem(BACKPACK_KEY),
-      AsyncStorage.getItem(USERDAT_KEY),
+      readEncrypted(BACKPACK_KEY),
+      readEncrypted(USERDAT_KEY),
     ]);
     if (backpackJson && userDatJson) {
       const backpack = migrateBackpack(JSON.parse(backpackJson));
