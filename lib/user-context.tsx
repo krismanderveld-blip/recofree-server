@@ -138,6 +138,7 @@ interface UserContextValue {
 // ─── Storage Keys ───────────────────────────────────────────────
 
 import { readEncrypted, writeEncrypted } from '@/lib/crypto/storage-encryption';
+import { logImportDiag } from '@/lib/debug/import-diagnostics';
 
 const BACKPACK_KEY = '@recofree_backpack';
 const USERDAT_KEY = '@recofree_userdat';
@@ -895,19 +896,22 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const reloadFromStorage = useCallback(async () => {
-    console.log('[IMPORT-DIAG] reloadFromStorage: reading BACKPACK_KEY and USERDAT_KEY...');
+    logImportDiag('reloadFromStorage: reading keys', 'INFO');
     const [backpackJson, userDatJson] = await Promise.all([
       readEncrypted(BACKPACK_KEY),
       readEncrypted(USERDAT_KEY),
     ]);
-    console.log(`[IMPORT-DIAG] reloadFromStorage: backpackJson=${backpackJson ? `${backpackJson.length} chars` : 'NULL'}, userDatJson=${userDatJson ? `${userDatJson.length} chars` : 'NULL'}`);
+    logImportDiag('reloadFromStorage: keys read', backpackJson && userDatJson ? 'OK' : 'FAIL',
+      `backpack=${backpackJson ? `${backpackJson.length} chars` : 'NULL'}, userDat=${userDatJson ? `${userDatJson.length} chars` : 'NULL'}`);
     if (backpackJson && userDatJson) {
       const backpack = migrateBackpack(JSON.parse(backpackJson));
       const userDat = migrateUserDat(JSON.parse(userDatJson), backpack.userType);
-      console.log(`[IMPORT-DIAG] reloadFromStorage: dispatch RESTORE_STORES, userType=${backpack.userType}, naam=${backpack.naam}`);
+      logImportDiag('reloadFromStorage: dispatch RESTORE_STORES', 'OK',
+        `userType=${backpack.userType}, naam=${backpack.naam}, intakeCompleted will be TRUE`);
       dispatch({ type: 'RESTORE_STORES', payload: { backpack, userDat } });
     } else {
-      console.error('[IMPORT-DIAG] reloadFromStorage: GUARD FAILED — one or both keys are null. Import data was written but cannot be read back. This causes the app to stay on intake screen.');
+      logImportDiag('reloadFromStorage: GUARD FAILED', 'FAIL',
+        'One or both keys are null. Import data was written but cannot be read back. App stays on intake.');
     }
   }, []);
 

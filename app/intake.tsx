@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import * as Clipboard from 'expo-clipboard';
 import {
   Text,
   View,
@@ -10,6 +11,7 @@ import {
   StyleSheet,
   Modal,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
 
 import { useRouter } from 'expo-router';
@@ -79,6 +81,8 @@ export default function IntakeScreen() {
   const [importLoading, setImportLoading] = useState(false);
   const [importError, setImportError] = useState<string | null>(null);
   const [importSuccess, setImportSuccess] = useState(false);
+  const [importDiagLog, setImportDiagLog] = useState<string | null>(null);
+  const [diagCopied, setDiagCopied] = useState(false);
 
   // Pulse animation for submit button
   const pulseAnim = useSharedValue(1);
@@ -164,48 +168,65 @@ export default function IntakeScreen() {
     if (!importFile || !importPassword) return;
     setImportLoading(true);
     setImportError(null);
+    setImportDiagLog(null);
+    setDiagCopied(false);
+
+    // Import the diagnostics module
+    const { clearImportDiag, logImportDiag, formatImportDiag } = await import('@/lib/debug/import-diagnostics');
+    clearImportDiag();
+
     try {
-      console.log('[IMPORT-DIAG] Step 1: Loading modules...');
+      logImportDiag('Loading modules', 'INFO');
       const FileSystem = await import('expo-file-system/legacy');
       const { importEncryptedRecoFreeBackup } = await import('@/lib/features/exportImport/services/importDataService');
       const { createExportImportStoresAdapter } = await import('@/lib/features/exportImport/hooks/useExportImportStores');
       const stores = createExportImportStoresAdapter();
+      logImportDiag('Modules loaded', 'OK');
 
-      console.log('[IMPORT-DIAG] Step 2: Reading file...');
+      logImportDiag('Reading file from disk', 'INFO');
       const envelopeJson = await FileSystem.readAsStringAsync(importFile.uri, { encoding: FileSystem.EncodingType.UTF8 });
-      console.log(`[IMPORT-DIAG] Step 2 OK: file read, ${envelopeJson.length} chars`);
+      logImportDiag('File read', 'OK', `${envelopeJson.length} chars`);
 
-      console.log('[IMPORT-DIAG] Step 3: Calling importEncryptedRecoFreeBackup...');
+      logImportDiag('Decrypting + validating export', 'INFO');
       const result = await importEncryptedRecoFreeBackup({
         envelopeJson,
         password: importPassword,
         currentAppVersion: '1.0.0',
         stores,
       });
-      console.log(`[IMPORT-DIAG] Step 3 result: status=${result.status}, errorMessage=${result.errorMessage ?? 'none'}`);
+      logImportDiag(`importEncryptedRecoFreeBackup returned`, result.status === 'SUCCESS' ? 'OK' : 'FAIL',
+        `status=${result.status}${result.errorMessage ? ', error=' + result.errorMessage : ''}`);
 
       if (result.status === 'SUCCESS') {
-        console.log('[IMPORT-DIAG] Step 4: Import SUCCESS, calling reloadFromStorage...');
+        logImportDiag('Calling reloadFromStorage', 'INFO');
         setImportSuccess(true);
         try {
           await reloadFromStorage();
-          console.log('[IMPORT-DIAG] Step 4 OK: reloadFromStorage completed');
+          logImportDiag('reloadFromStorage completed', 'OK');
         } catch (reloadErr: any) {
-          console.error('[IMPORT-DIAG] Step 4 FAILED: reloadFromStorage threw:', reloadErr?.message, reloadErr);
+          logImportDiag('reloadFromStorage THREW', 'FAIL', reloadErr?.message ?? 'unknown');
           setImportError(`Import succeeded but reload failed: ${reloadErr?.message}`);
+          setImportDiagLog(formatImportDiag());
           return;
         }
-        console.log('[IMPORT-DIAG] Step 5: Navigating to /(tabs)...');
+        logImportDiag('Navigating to /(tabs)', 'INFO');
         router.replace('/(tabs)' as any);
-        console.log('[IMPORT-DIAG] Step 5 OK: router.replace called');
+        logImportDiag('router.replace called', 'OK');
+        // Show diag briefly in case navigation fails
+        setImportDiagLog(formatImportDiag());
       } else {
-        console.warn(`[IMPORT-DIAG] Import returned non-SUCCESS: ${result.status} — ${result.errorMessage}`);
+        logImportDiag('Import returned non-SUCCESS', 'FAIL', result.errorMessage ?? 'no message');
         setImportError(result.errorMessage ?? 'Import failed.');
+        setImportDiagLog(formatImportDiag());
       }
     } catch (err: any) {
-      console.error('[IMPORT-DIAG] UNCAUGHT ERROR in handleImportExecute:', err?.message, err?.stack, err);
+      logImportDiag('UNCAUGHT ERROR', 'FAIL', `${err?.message ?? 'unknown'}\n${err?.stack ?? ''}`);
       setImportError(err?.safeMessage ?? err?.message ?? 'Import failed.');
+      setImportDiagLog(formatImportDiag());
     } finally {
+      // Always show the diagnostic log so it's visible on screen
+      const { formatImportDiag: fmt } = await import('@/lib/debug/import-diagnostics');
+      setImportDiagLog(fmt());
       setImportLoading(false);
     }
   }, [importFile, importPassword, reloadFromStorage, router]);
@@ -571,6 +592,53 @@ export default function IntakeScreen() {
           </View>
         </View>
       </Modal>
+
+      {/* ─── IMPORT DIAGNOSTICS OVERLAY ─── */}
+      {importDiagLog && (
+        <Modal visible={true} transparent animationType="fade">
+          <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.85)', padding: 16, paddingTop: 60 }}>
+            <Text style={{ color: '#fff', fontSize: 16, fontWeight: 'bold', marginBottom: 4 }}>
+              Import Diagnostic Log
+            </Text>
+            <Text style={{ color: '#aaa', fontSize: 11, marginBottom: 12 }}>
+              Copy this log and send it for debugging
+            </Text>
+            <ScrollView style={{ flex: 1, backgroundColor: '#1a1a1a', borderRadius: 8, padding: 12, marginBottom: 12 }}>
+              <Text style={{ color: '#e0e0e0', fontSize: 11, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace', lineHeight: 16 }} selectable>
+                {importDiagLog}
+              </Text>
+            </ScrollView>
+            <View style={{ flexDirection: 'row', gap: 12 }}>
+              <Pressable
+                onPress={async () => {
+                  try {
+                    await Clipboard.setStringAsync(importDiagLog);
+                    setDiagCopied(true);
+                    setTimeout(() => setDiagCopied(false), 2000);
+                  } catch { /* clipboard not available */ }
+                }}
+                style={({ pressed }) => [{
+                  flex: 1, backgroundColor: '#2563eb', borderRadius: 8, paddingVertical: 14, alignItems: 'center' as const,
+                  opacity: pressed ? 0.8 : 1,
+                }]}
+              >
+                <Text style={{ color: '#fff', fontWeight: '600', fontSize: 14 }}>
+                  {diagCopied ? '✓ Copied!' : 'Copy to clipboard'}
+                </Text>
+              </Pressable>
+              <Pressable
+                onPress={() => setImportDiagLog(null)}
+                style={({ pressed }) => [{
+                  flex: 1, backgroundColor: '#333', borderRadius: 8, paddingVertical: 14, alignItems: 'center' as const,
+                  opacity: pressed ? 0.8 : 1,
+                }]}
+              >
+                <Text style={{ color: '#fff', fontWeight: '600', fontSize: 14 }}>Close</Text>
+              </Pressable>
+            </View>
+          </View>
+        </Modal>
+      )}
     </ScreenContainer>
   );
 }

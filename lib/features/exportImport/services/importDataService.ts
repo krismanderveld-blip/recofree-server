@@ -23,6 +23,7 @@ import {
   createSafePreImportSnapshot,
   restoreSafePreImportSnapshot,
 } from '../hooks/useExportImportStores';
+import { logImportDiag } from '@/lib/debug/import-diagnostics';
 
 // ─── Public API ──────────────────────────────────────────────────────────────
 
@@ -79,27 +80,28 @@ export async function importEncryptedRecoFreeBackup(input: {
   }
 
   // 8. Create SAFE pre-import snapshot for rollback (FIX #2)
-  // Uses key-level snapshot that marks unreadable keys as SNAPSHOT_READ_FAILED
-  // so rollback never overwrites existing data with null.
-  console.log('[IMPORT-DIAG] Step 8: Creating safe pre-import snapshot...');
+  logImportDiag('Creating pre-import snapshot', 'INFO');
   const safeSnapshot = await createSafePreImportSnapshot();
-  console.log(`[IMPORT-DIAG] Step 8 OK: snapshot has ${safeSnapshot.keys.length} keys`);
+  logImportDiag('Snapshot created', 'OK', `${safeSnapshot.keys.length} keys captured`);
 
   // 9. Replace local data
-  console.log('[IMPORT-DIAG] Step 9: Replacing local data from staging...');
+  logImportDiag('Writing imported data to storage', 'INFO');
   try {
     await replaceLocalDataFromStaging({ stagingPackage, stores });
-    console.log('[IMPORT-DIAG] Step 9 OK: replaceLocalDataFromStaging completed');
+    logImportDiag('All data written to storage', 'OK');
   } catch (replaceErr: any) {
-    console.error('[IMPORT-DIAG] Step 9 FAILED: replaceLocalDataFromStaging threw:', replaceErr?.message, replaceErr?.stack);
+    logImportDiag('Write to storage FAILED', 'FAIL', replaceErr?.message ?? 'unknown');
     // Attempt safe rollback — keys marked SNAPSHOT_READ_FAILED are preserved as-is
     try {
       await restoreSafePreImportSnapshot(safeSnapshot);
-    } catch { /* best effort */ }
+      logImportDiag('Rollback completed', 'OK');
+    } catch (rollbackErr: any) {
+      logImportDiag('Rollback also failed', 'FAIL', rollbackErr?.message ?? 'unknown');
+    }
     return { status: "IMPORT_COMMIT_FAILED", importedAt: nowIso, replacedExistingData: false, errorMessage: `Import failed at write step: ${replaceErr?.message}. Your existing data was kept.` };
   }
 
-  console.log('[IMPORT-DIAG] Step 10: Import complete, returning SUCCESS');
+  logImportDiag('Import complete — returning SUCCESS', 'OK');
   return {
     status: "SUCCESS",
     importedAt: nowIso,

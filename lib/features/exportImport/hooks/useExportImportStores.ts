@@ -12,6 +12,7 @@
 import { useMemo } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { readEncrypted, writeEncrypted, removeEncrypted, SENSITIVE_KEYS, MEMORY_STORE_KEYS } from '@/lib/crypto/storage-encryption';
+import { logImportDiag } from '@/lib/debug/import-diagnostics';
 import type { ExportImportStores } from '../services/exportImportStores.types';
 
 // AsyncStorage keys used by the app
@@ -55,14 +56,14 @@ async function readJson(key: string): Promise<unknown | null> {
       ? await readEncrypted(key)
       : await AsyncStorage.getItem(key);
     if (raw) {
-      const parsed = JSON.parse(raw);
-      console.log(`[IMPORT-DIAG] readJson: OK key="${key}" (encrypted=${encrypted}, ${raw.length} chars)`);
-      return parsed;
+      JSON.parse(raw); // validate
+      logImportDiag(`READ ${key}`, 'OK', `encrypted=${encrypted}, ${raw.length} chars`);
+      return JSON.parse(raw);
     }
-    console.log(`[IMPORT-DIAG] readJson: NULL key="${key}" (encrypted=${encrypted})`);
+    logImportDiag(`READ ${key}`, 'INFO', `NULL (encrypted=${encrypted})`);
     return null;
   } catch (err: any) {
-    console.error(`[IMPORT-DIAG] readJson: ERROR key="${key}":`, err?.message);
+    logImportDiag(`READ ${key}`, 'FAIL', err?.message ?? 'unknown error');
     return null;
   }
 }
@@ -73,7 +74,7 @@ async function readJson(key: string): Promise<unknown | null> {
 async function writeJson(key: string, value: unknown): Promise<void> {
   const encrypted = isKeyEncrypted(key);
   if (value === null || value === undefined) {
-    console.log(`[IMPORT-DIAG] writeJson: REMOVE key="${key}" (encrypted=${encrypted})`);
+    logImportDiag(`WRITE ${key}`, 'INFO', `REMOVE (encrypted=${encrypted})`);
     if (encrypted) {
       await removeEncrypted(key);
     } else {
@@ -81,7 +82,7 @@ async function writeJson(key: string, value: unknown): Promise<void> {
     }
   } else {
     const serialized = JSON.stringify(value);
-    console.log(`[IMPORT-DIAG] writeJson: WRITE key="${key}" (encrypted=${encrypted}, ${serialized.length} chars)`);
+    logImportDiag(`WRITE ${key}`, 'OK', `encrypted=${encrypted}, ${serialized.length} chars`);
     if (encrypted) {
       await writeEncrypted(key, serialized);
     } else {
