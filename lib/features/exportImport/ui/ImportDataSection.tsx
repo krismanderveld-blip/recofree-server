@@ -1,6 +1,9 @@
 /**
  * ImportDataSection — UI for importing encrypted .recofree backup.
  * 
+ * After a successful import, checks if the imported backpack has a name.
+ * If not, shows a name input prompt before completing.
+ * 
  * IMPORTANT: expo-document-picker and expo-file-system are loaded dynamically (lazy)
  * to avoid crashing on APK builds that were compiled before these packages were added.
  */
@@ -28,6 +31,10 @@ export function ImportDataSection({ stores, appVersion, onImportSuccess }: Impor
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+
+  // Post-import name prompt state
+  const [showNamePrompt, setShowNamePrompt] = useState(false);
+  const [importedName, setImportedName] = useState('');
 
   const canImport = !!selectedFile && password.length >= 1 && !loading;
 
@@ -74,10 +81,21 @@ export function ImportDataSection({ stores, appVersion, onImportSuccess }: Impor
       });
 
       if (result.status === "SUCCESS") {
-        setSuccess(true);
-        setPassword('');
-        setSelectedFile(null);
-        onImportSuccess?.();
+        // Check if the imported backpack has a name
+        const { readEncrypted } = await import('@/lib/crypto/storage-encryption');
+        const bpRaw = await readEncrypted('@recofree_backpack');
+        const bpNaam = bpRaw ? JSON.parse(bpRaw)?.naam : '';
+
+        if (!bpNaam) {
+          // Name is missing — show prompt before completing
+          setShowNamePrompt(true);
+        } else {
+          // Name exists — complete immediately
+          setSuccess(true);
+          setPassword('');
+          setSelectedFile(null);
+          onImportSuccess?.();
+        }
       } else {
         setError(result.errorMessage ?? "Something went wrong.");
       }
@@ -87,6 +105,37 @@ export function ImportDataSection({ stores, appVersion, onImportSuccess }: Impor
       setLoading(false);
     }
   }, [selectedFile, password, appVersion, stores, onImportSuccess]);
+
+  const handleNameSave = useCallback(async () => {
+    if (!importedName.trim()) return;
+
+    try {
+      const { readEncrypted, writeEncrypted } = await import('@/lib/crypto/storage-encryption');
+
+      // Write name to backpack
+      const bpRaw = await readEncrypted('@recofree_backpack');
+      if (bpRaw) {
+        const bp = JSON.parse(bpRaw);
+        bp.naam = importedName.trim();
+        await writeEncrypted('@recofree_backpack', JSON.stringify(bp));
+      }
+
+      // Also update userDat naam backup
+      const udRaw = await readEncrypted('@recofree_userdat');
+      if (udRaw) {
+        const ud = JSON.parse(udRaw);
+        ud.naam = importedName.trim();
+        await writeEncrypted('@recofree_userdat', JSON.stringify(ud));
+      }
+    } catch { /* best effort */ }
+
+    setShowNamePrompt(false);
+    setImportedName('');
+    setSuccess(true);
+    setPassword('');
+    setSelectedFile(null);
+    onImportSuccess?.();
+  }, [importedName, onImportSuccess]);
 
   return (
     <View className="gap-4">
@@ -164,6 +213,38 @@ export function ImportDataSection({ stores, appVersion, onImportSuccess }: Impor
                 <Text className="text-background font-semibold">Replace local data</Text>
               </TouchableOpacity>
             </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Post-import Name Prompt Modal */}
+      <Modal visible={showNamePrompt} transparent animationType="fade">
+        <View className="flex-1 justify-center items-center" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <View className="bg-background rounded-2xl p-6 mx-6 max-w-sm w-full gap-4">
+            <Text className="text-lg font-semibold text-foreground">What's your name?</Text>
+            <Text className="text-sm text-muted leading-relaxed">
+              Your backup didn't include a name. Please enter your first name so the app can address you personally.
+            </Text>
+            <TextInput
+              className="bg-surface border border-border rounded-lg px-4 py-3 text-foreground"
+              value={importedName}
+              onChangeText={setImportedName}
+              placeholder="Your first name"
+              placeholderTextColor="#9BA1A6"
+              autoFocus
+              returnKeyType="done"
+              onSubmitEditing={handleNameSave}
+            />
+            <TouchableOpacity
+              className={`rounded-lg py-3 px-4 items-center ${importedName.trim() ? 'bg-primary' : 'bg-border'}`}
+              onPress={handleNameSave}
+              disabled={!importedName.trim()}
+              activeOpacity={0.7}
+            >
+              <Text className={`font-semibold ${importedName.trim() ? 'text-background' : 'text-muted'}`}>
+                Save & continue
+              </Text>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
