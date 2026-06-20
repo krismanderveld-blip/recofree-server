@@ -405,10 +405,10 @@ export default function DebugLogScreen() {
               <Row label="User Type" value={liveState.userType} />
             </Section>
 
-            <Section title="VSP / Eigen Regie">
+            <Section title="VSP / Self-Direction">
               <Row label="VSP (Elias)" value={liveState.vsp ?? '—'} />
               <Row
-                label="Eigen Regie (Kim)"
+                label="Self-Direction (Kim)"
                 value={
                   liveState.eigenRegieLatest
                     ? `${liveState.eigenRegieLatest.userInput}/100 (${liveState.eigenRegieLatest.timestamp.split('T')[0]})`

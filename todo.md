@@ -1643,3 +1643,7 @@
 - [x] CRITICAL SAFETY: Fix GPT outputting schema/modi diagnoses to users when clinical mode is OFF — must add hard anti-diagnosis directive to system prompt
 - [x] Hide feeling tags (Calm, Sad, etc.) on diary main view — only show when actively writing a new entry
 - [x] Implement AES-256-GCM encryption for all persistent sensitive data (userDat, projections, backpack) with expo-secure-store key management and plain JSON migration
+- [x] Add ZONE_DISPLAY_LABELS mapping in eigen-regie.ts (English labels for UI, internal keys unchanged)
+- [x] Translate zone names in prechat-eigen-regie.tsx UI from Dutch (ROOD/ORANJE/GEEL/LICHTGROEN/GROEN) to English display labels
+- [x] Translate zone names in mood.tsx UI from Dutch to English display labels
+- [x] Translate "Eigen Regie" section title to "Self-Direction" in mood.tsx UI

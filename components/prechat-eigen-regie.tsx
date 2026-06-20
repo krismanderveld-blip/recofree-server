@@ -20,6 +20,7 @@ import { useColors } from '@/hooks/use-colors';
 import {
   EIGEN_REGIE_QUESTION,
   EIGEN_REGIE_SLIDER_LABELS,
+  ZONE_DISPLAY_LABELS,
   processEigenRegie,
   type EigenRegieZone,
 } from '@/lib/engine/kim/eigen-regie';
@@ -126,7 +127,7 @@ export function PreChatEigenRegie({ onSubmit, userName }: PreChatEigenRegieProps
                 }}
               />
               <Text style={{ fontSize: 14, fontWeight: '600', color: colors.foreground }}>
-                {result.zone}
+                {ZONE_DISPLAY_LABELS[result.zone]}
               </Text>
             </View>
             <Text style={{ fontSize: 14, color: colors.muted, lineHeight: 20 }}>

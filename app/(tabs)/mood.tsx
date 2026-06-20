@@ -16,6 +16,7 @@ import {
   processEigenRegie,
   EIGEN_REGIE_QUESTION,
   EIGEN_REGIE_SLIDER_LABELS,
+  ZONE_DISPLAY_LABELS,
   type EigenRegieZone,
 } from '@/lib/engine/kim/eigen-regie';
 import { colors as dc, spacing, radius, typography, shadows, cardStyles, buttonStyles } from '@/constants/design';
@@ -168,7 +169,7 @@ export default function MoodScreen() {
     return buildKimMoodTrendChartData({ persona: 'kim', range: moodTrendRange, nowIso, stateDat });
   }, [userType, moodHistory, moodTrendRange]);
 
-  // Eigen Regie (Kim only)
+  // Self-Direction (Kim only)
   const isKim = userType === 'kim';
   const [eigenRegieInput, setEigenRegieInput] = useState(() => {
     if (isKim && currentMood && 'eigenRegie' in currentMood && currentMood.eigenRegie != null) {
@@ -328,10 +329,10 @@ export default function MoodScreen() {
           </View>
         </Pressable>
 
-        {/* Eigen Regie (Kim only) */}
+        {/* Self-Direction (Kim only) */}
         {isKim && eigenRegieResult && (
           <View style={{ marginTop: 40 }}>
-            <Text style={{ fontSize: 18, fontWeight: '700', color: colors.foreground, marginBottom: 8 }}>Eigen Regie</Text>
+            <Text style={{ fontSize: 18, fontWeight: '700', color: colors.foreground, marginBottom: 8 }}>Self-Direction</Text>
             <Text style={{ fontSize: 13, color: colors.muted, marginBottom: 16 }}>{EIGEN_REGIE_QUESTION}</Text>
 
             <View style={{ backgroundColor: '#fff', borderRadius: 16, padding: 20, borderWidth: 1, borderColor: colors.border }}>
@@ -356,7 +357,7 @@ export default function MoodScreen() {
 
             <View style={{ borderRadius: 16, padding: 20, marginTop: 12, backgroundColor: EIGEN_REGIE_ZONE_COLORS[eigenRegieResult.zone] + '12', borderWidth: 1, borderColor: EIGEN_REGIE_ZONE_COLORS[eigenRegieResult.zone] + '40' }}>
               <Text style={{ fontSize: 13, fontWeight: '600', color: EIGEN_REGIE_ZONE_COLORS[eigenRegieResult.zone], marginBottom: 4 }}>
-                {eigenRegieResult.zone}
+                {ZONE_DISPLAY_LABELS[eigenRegieResult.zone]}
               </Text>
               <Text style={{ fontSize: 13, color: colors.muted, lineHeight: 18 }}>
                 {eigenRegieResult.meaning}

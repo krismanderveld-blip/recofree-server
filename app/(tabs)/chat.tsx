@@ -388,7 +388,7 @@ function ChatScreenInner() {
     await writeEncrypted(USERDAT_KEY, JSON.stringify(updated));
   }, [getUserDat]);
 
-  // ── Pre-chat gate: VSP/Eigen Regie ALWAYS shown at every chat start ──
+  // ── Pre-chat gate: VSP/Self-Direction ALWAYS shown at every chat start ──
   // The thermometer is both engine-input and a self-reflection mirror for the user.
   // It must appear at the start of every new session, regardless of prior submissions.
   const [preChatDone, setPreChatDone] = useState<boolean>(false);

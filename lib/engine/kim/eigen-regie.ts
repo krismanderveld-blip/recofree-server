@@ -165,6 +165,22 @@ export function processEigenRegie(userInput: number): EigenRegieResult {
   };
 }
 
+// ─── UI Display Labels ─────────────────────────────────────
+
+/**
+ * Human-readable English labels for each zone.
+ * Used in UI only — engine/pipeline always uses the internal zone keys.
+ * When language selection is added later, this mapping can be swapped per locale
+ * without touching the pipeline or modules.
+ */
+export const ZONE_DISPLAY_LABELS: Readonly<Record<EigenRegieZone, string>> = Object.freeze({
+  ROOD: 'Red',
+  ORANJE: 'Orange',
+  GEEL: 'Yellow',
+  LICHTGROEN: 'Light Green',
+  GROEN: 'Green',
+});
+
 // ─── Reflection Question ────────────────────────────────────
 
 /**
