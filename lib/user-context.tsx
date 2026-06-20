@@ -125,6 +125,8 @@ interface UserContextValue {
   updateVsp: (level: import('./engine/elias/vsp').VspLevel) => Promise<void>;
   /** Get current VSP level (null if not yet submitted this session) */
   getVsp: () => import('./engine/elias/vsp').VspLevel | null;
+  /** Replace the entire backpack (used by Backpack Wizard after upload/manual fill) */
+  replaceBackpack: (backpack: Backpack) => Promise<void>;
   /** Convenience getters */
   getUserName: () => string;
   getMood: () => MoodSliders;
@@ -683,6 +685,21 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     await persistBackpack(updatedBackpack);
   }, [state.backpack]);
 
+  // ── Replace Entire Backpack (Wizard save) ──
+
+  const replaceBackpack = useCallback(async (newBackpack: Backpack) => {
+    dispatch({ type: 'UPDATE_BACKPACK', payload: newBackpack });
+    await persistBackpack(newBackpack);
+    // Fire-and-forget: trigger extraction for the new content
+    triggerExtractionIfNeeded(newBackpack);
+    // Also sync name to userDat backup field
+    if (state.userDat && newBackpack.naam) {
+      const updatedUserDat = { ...state.userDat, nameBackup: newBackpack.naam };
+      dispatch({ type: 'UPDATE_USERDAT', payload: updatedUserDat });
+      await persistUserDat(updatedUserDat);
+    }
+  }, [state.userDat]);
+
   // ── Stage of Change (user-editable in Backpack screen) ──
 
   const updateStageOfChange = useCallback(async (stage: import('./ai/types').StageOfChange) => {
@@ -1018,6 +1035,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         toggleClinicalMode,
         updateVsp,
         getVsp,
+        replaceBackpack,
       }}
     >
       {children}

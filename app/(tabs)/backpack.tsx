@@ -48,7 +48,7 @@ const STAGE_COLORS: Record<StageOfChange, string> = {
 };
 
 export default function BackpackScreen() {
-  const { state, updateBackpackSection, updateKimBackpackSection, updateStageOfChange, updateVspSection } = useUser();
+  const { state, updateBackpackSection, updateKimBackpackSection, updateStageOfChange, updateVspSection, replaceBackpack } = useUser();
   const colors = useColors();
   const [expandedSection, setExpandedSection] = useState<LifePhaseId | KimBackpackSectionId | null>(null);
   const [editingSection, setEditingSection] = useState<LifePhaseId | KimBackpackSectionId | null>(null);
@@ -458,7 +458,8 @@ export default function BackpackScreen() {
           <BackpackWizardScreen
             existingBackpack={state.backpack ?? undefined}
             userType={state.backpack?.userType ?? 'elias'}
-            onSave={async () => {
+            onSave={async (newBackpack) => {
+              await replaceBackpack(newBackpack);
               setShowBackpackWizard(false);
             }}
             onCancel={() => setShowBackpackWizard(false)}
