@@ -60,10 +60,11 @@ export default function BackpackScreen() {
   const sections = state.backpack?.sections ?? [];
   const kimData = state.backpack?.kimBackpack;
 
+  const narrativeSections = sections.filter((s) => s.id !== 'vsp');
   const filledCount = isKim
     ? DEFAULT_KIM_BACKPACK_SECTIONS.filter((s) => (kimData?.[s.id] ?? '').trim().length > 0).length
-    : sections.filter((s) => s.content.trim().length > 0).length;
-  const totalCount = isKim ? DEFAULT_KIM_BACKPACK_SECTIONS.length : sections.length;
+    : narrativeSections.filter((s) => s.content.trim().length > 0).length;
+  const totalCount = isKim ? DEFAULT_KIM_BACKPACK_SECTIONS.length : narrativeSections.length;
 
   const currentStage: StageOfChange = state.backpack?.intakeContext?.stageOfChange ?? 'contemplation';
 
@@ -342,7 +343,7 @@ export default function BackpackScreen() {
                     }}
                   />
                 ))
-              : sections.map((s) => (
+              : narrativeSections.map((s) => (
                   <View
                     key={s.id}
                     style={{
@@ -417,9 +418,14 @@ export default function BackpackScreen() {
           </View>
         </Pressable>
 
-        {/* My Safety Plan Section (Elias only) */}
+        {/* Life Phase Sections (VSP excluded — shown separately below as My Safety Plan) */}
+        {isKim
+          ? DEFAULT_KIM_BACKPACK_SECTIONS.map(renderKimSection)
+          : sections.filter(s => s.id !== 'vsp').map(renderEliasSection)}
+
+        {/* My Safety Plan Section (Elias only) — placed after life story sections */}
         {!isKim && state.backpack?.userType === 'elias' && (
-          <View>
+          <View style={{ marginTop: 16 }}>
             {/* Wizard button */}
             <Pressable onPress={() => setShowVspWizard(true)} style={({ pressed }) => [{ opacity: pressed ? 0.8 : 1, marginBottom: 12 }]}>
               <View style={{ backgroundColor: '#8B5CF620', borderRadius: 12, padding: 14, flexDirection: 'row', alignItems: 'center', gap: 10, borderWidth: 1, borderColor: '#8B5CF640' }}>
@@ -437,11 +443,6 @@ export default function BackpackScreen() {
             />
           </View>
         )}
-
-        {/* Life Phase Sections (VSP excluded — shown separately above as My Safety Plan) */}
-        {isKim
-          ? DEFAULT_KIM_BACKPACK_SECTIONS.map(renderKimSection)
-          : sections.filter(s => s.id !== 'vsp').map(renderEliasSection)}
 
         {/* Tip */}
         <View style={{ ...cardStyles.default, marginTop: spacing.sm }}>

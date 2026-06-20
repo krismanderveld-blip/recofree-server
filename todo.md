@@ -1665,3 +1665,5 @@
 - [x] BUG FIX: Backpack wizard extracts data correctly but fails to persist lifeStory sections to backpack (onSave callback was empty, now uses replaceBackpack)
 - [x] Remove duplicate VSP section from life phases list (VSP already shown as separate "My Safety Plan" section above)
 - [x] Rename all "VSP" references in UI to "My Safety Plan" (no abbreviations)
+- [x] Fix progress bar to only count 5 narrative sections (exclude VSP from count)
+- [x] Move "My Safety Plan" section below life phase sections (story first, then plan)
