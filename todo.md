@@ -1641,3 +1641,4 @@
 - [x] Add control_exhaustion to KIM_PRIORITY_TRIGGERS for same priority as boundary_violation/caregiver_fatigue
 - [x] Live Kim test: control_exhaustion + loved_one_relapse — controle als uitputtend erkend, geen blame, naam correct, coping erkend (4/5 checks pass; terugval partner impliciet maar niet letterlijk benoemd in truncated response)
 - [x] CRITICAL SAFETY: Fix GPT outputting schema/modi diagnoses to users when clinical mode is OFF — must add hard anti-diagnosis directive to system prompt
+- [x] Hide feeling tags (Calm, Sad, etc.) on diary main view — only show when actively writing a new entry

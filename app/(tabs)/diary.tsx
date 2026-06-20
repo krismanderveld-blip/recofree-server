@@ -305,21 +305,7 @@ export default function DiaryScreen() {
         </View>
       )}
 
-      {/* Mood Tags (Journal tab) */}
-      {activeTab === 'journal' && (
-        <View style={{ marginBottom: 16 }}>
-          <Text style={{ fontSize: 12, fontWeight: '600', color: colors.muted, marginBottom: 10, letterSpacing: 0.5 }}>
-            HOW ARE YOU FEELING?
-          </Text>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-            {MOOD_TAGS.map((tag) => (
-              <View key={tag} style={{ borderRadius: 20, borderWidth: 1, borderColor: MOOD_TAG_COLORS[tag] || colors.border, paddingHorizontal: 12, paddingVertical: 6 }}>
-                <Text style={{ fontSize: 13, color: MOOD_TAG_COLORS[tag] || colors.foreground, fontWeight: '500' }}>{tag}</Text>
-              </View>
-            ))}
-          </View>
-        </View>
-      )}
+
 
       {/* Search Bar */}
       <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12, backgroundColor: '#fff', borderRadius: 12, borderWidth: 1, borderColor: colors.border, paddingHorizontal: 12 }}>
