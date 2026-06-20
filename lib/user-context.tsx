@@ -901,17 +901,45 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       readEncrypted(BACKPACK_KEY),
       readEncrypted(USERDAT_KEY),
     ]);
-    logImportDiag('reloadFromStorage: keys read', backpackJson && userDatJson ? 'OK' : 'FAIL',
+    logImportDiag('reloadFromStorage: keys read',
+      userDatJson ? 'OK' : 'FAIL',
       `backpack=${backpackJson ? `${backpackJson.length} chars` : 'NULL'}, userDat=${userDatJson ? `${userDatJson.length} chars` : 'NULL'}`);
+
     if (backpackJson && userDatJson) {
+      // Both keys present — normal path
       const backpack = migrateBackpack(JSON.parse(backpackJson));
       const userDat = migrateUserDat(JSON.parse(userDatJson), backpack.userType);
       logImportDiag('reloadFromStorage: dispatch RESTORE_STORES', 'OK',
         `userType=${backpack.userType}, naam=${backpack.naam}, intakeCompleted will be TRUE`);
       dispatch({ type: 'RESTORE_STORES', payload: { backpack, userDat } });
+    } else if (userDatJson && !backpackJson) {
+      // FIX: backpack is null but userDat exists (e.g. import from older export without backpackData).
+      // Reconstruct a minimal backpack from the userDat and persist it.
+      logImportDiag('reloadFromStorage: backpack NULL, reconstructing from userDat', 'WARN');
+      const rawUserDat = JSON.parse(userDatJson);
+      const reconstructedBackpack: Backpack = {
+        naam: rawUserDat.naam ?? rawUserDat.name ?? '',
+        userType: rawUserDat.userType ?? 'elias',
+        sections: DEFAULT_BACKPACK_SECTIONS.map((s: any) => ({ ...s })),
+        intakeContext: {
+          stageOfChange: rawUserDat.stageOfChange ?? 'contemplation' as const,
+          startEmotion: '',
+          urgency: 'midden' as const,
+          initialContext: '',
+          intakeDate: new Date().toISOString(),
+        },
+        createdAt: new Date().toISOString(),
+      };
+      const backpack = migrateBackpack(reconstructedBackpack);
+      const userDat = migrateUserDat(rawUserDat, backpack.userType);
+      // Persist the reconstructed backpack so future loads work normally
+      await persistBackpack(backpack);
+      logImportDiag('reloadFromStorage: reconstructed backpack persisted', 'OK',
+        `userType=${backpack.userType}, naam=${backpack.naam}`);
+      dispatch({ type: 'RESTORE_STORES', payload: { backpack, userDat } });
     } else {
       logImportDiag('reloadFromStorage: GUARD FAILED', 'FAIL',
-        'One or both keys are null. Import data was written but cannot be read back. App stays on intake.');
+        'userDat is null — cannot restore. App stays on intake.');
     }
   }, []);
 

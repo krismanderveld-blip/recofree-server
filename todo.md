@@ -1650,3 +1650,5 @@
 - [x] FIX: Extend isSensitive check in useExportImportStores adapter with MEMORY_STORE_KEYS so memory store keys are read/written through encrypted layer
 - [x] FIX: Make pre-import snapshot safe — if reading encrypted data fails, read raw value as fallback so rollback never restores null (dataverlies-preventie)
 - [x] FIX: logs.dat import round-trip correct — export reads encrypted envelope, import writes it back as-is (logs.dat excluded from RF_ENC_V1 layer)
+- [x] FIX: reloadFromStorage reconstructs backpack from userDat when @recofree_backpack is null (import from older exports)
+- [x] FIX: backpackStore.replaceAllPersonas no longer deletes existing backpack when import data is null (preserves existing)

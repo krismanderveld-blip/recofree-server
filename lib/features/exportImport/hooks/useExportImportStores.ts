@@ -234,7 +234,15 @@ function buildStoresAdapter(): ExportImportStores {
         return { elias: backpack ?? null, kim: null };
       },
       async replaceAllPersonas(data) {
-        await writeJson(LEGACY_BACKPACK_KEY, data.elias ?? data.kim ?? null);
+        // FIX: Only write if we actually have backpack data to write.
+        // If both elias and kim are null, do NOT delete the existing backpack —
+        // this handles exports from older builds where backpackData wasn't included.
+        const backpackData = data.elias ?? data.kim ?? null;
+        if (backpackData !== null) {
+          await writeJson(LEGACY_BACKPACK_KEY, backpackData);
+        } else {
+          logImportDiag('WRITE @recofree_backpack', 'WARN', 'SKIPPED — import has no backpack data, preserving existing');
+        }
       },
     },
 
