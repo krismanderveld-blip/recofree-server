@@ -1647,3 +1647,6 @@
 - [x] Translate zone names in prechat-eigen-regie.tsx UI from Dutch (ROOD/ORANJE/GEEL/LICHTGROEN/GROEN) to English display labels
 - [x] Translate zone names in mood.tsx UI from Dutch to English display labels
 - [x] Translate "Eigen Regie" section title to "Self-Direction" in mood.tsx UI
+- [x] FIX: Extend isSensitive check in useExportImportStores adapter with MEMORY_STORE_KEYS so memory store keys are read/written through encrypted layer
+- [x] FIX: Make pre-import snapshot safe — if reading encrypted data fails, read raw value as fallback so rollback never restores null (dataverlies-preventie)
+- [x] FIX: logs.dat import round-trip correct — export reads encrypted envelope, import writes it back as-is (logs.dat excluded from RF_ENC_V1 layer)

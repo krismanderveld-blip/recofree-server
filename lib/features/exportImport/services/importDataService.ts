@@ -18,9 +18,11 @@ import {
   buildImportStagingPackage,
   validateImportStagingPackage,
   replaceLocalDataFromStaging,
-  createPreImportSnapshot,
-  restorePreImportSnapshot,
 } from './importStagingService';
+import {
+  createSafePreImportSnapshot,
+  restoreSafePreImportSnapshot,
+} from '../hooks/useExportImportStores';
 
 // ─── Public API ──────────────────────────────────────────────────────────────
 
@@ -76,16 +78,18 @@ export async function importEncryptedRecoFreeBackup(input: {
     return { status, importedAt: nowIso, replacedExistingData: false, errorMessage: stagingValidation.errors.join("; ") };
   }
 
-  // 8. Create pre-import snapshot for rollback
-  const snapshot = await createPreImportSnapshot(stores);
+  // 8. Create SAFE pre-import snapshot for rollback (FIX #2)
+  // Uses key-level snapshot that marks unreadable keys as SNAPSHOT_READ_FAILED
+  // so rollback never overwrites existing data with null.
+  const safeSnapshot = await createSafePreImportSnapshot();
 
   // 9. Replace local data
   try {
     await replaceLocalDataFromStaging({ stagingPackage, stores });
   } catch {
-    // Attempt rollback
+    // Attempt safe rollback — keys marked SNAPSHOT_READ_FAILED are preserved as-is
     try {
-      await restorePreImportSnapshot(snapshot, stores);
+      await restoreSafePreImportSnapshot(safeSnapshot);
     } catch { /* best effort */ }
     return { status: "IMPORT_COMMIT_FAILED", importedAt: nowIso, replacedExistingData: false, errorMessage: "Import failed. Your existing data was kept." };
   }

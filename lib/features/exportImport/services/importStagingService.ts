@@ -1,6 +1,11 @@
 /**
  * Import Staging Service for RecoFree Encrypted Export/Import.
  * Validates and stages imported data before replacing local data.
+ *
+ * NOTE: Pre-import snapshot and rollback are now handled by the safe snapshot API
+ * in useExportImportStores.ts (createSafePreImportSnapshot / restoreSafePreImportSnapshot).
+ * The old store-based snapshot functions are kept for backward compatibility but
+ * are no longer used by importDataService.
  */
 
 import type { RecoFreeExportPlaintextPayload, RecoFreePersonaExportBundle } from '../types/exportPayload.types';
@@ -101,22 +106,23 @@ export async function replaceLocalDataFromStaging(input: {
     kim: kim?.backpackData ?? null,
   });
 
-  // NEW: Persona projections
+  // Persona projections
   await stores.personaProjectionStore.replaceAllPersonas({
     elias: elias?.personaProjection ?? null,
     kim: kim?.personaProjection ?? null,
   });
 
-  // NEW: Emergency contacts
+  // Emergency contacts
   const emergencyContacts = stagingPackage.shared?.emergencyContacts ?? [];
   await stores.emergencyContactsStore.replaceAll(emergencyContacts);
 
-  // NEW: Derived caches
+  // Derived caches
   const derivedCaches = stagingPackage.shared?.derivedCaches ?? { backpackHash: null, extractedEntities: null };
   await stores.derivedCacheStore.replaceAll(derivedCaches);
 }
 
-// ─── Pre-Import Snapshot ─────────────────────────────────────────────────────
+// ─── Legacy Pre-Import Snapshot (kept for backward compatibility) ────────────
+// NOTE: importDataService now uses createSafePreImportSnapshot instead.
 
 export async function createPreImportSnapshot(stores: ExportImportStores): Promise<PreImportSnapshot> {
   const [userDat, stateDat, projectionsDat, logsDat, diary, gratitude, backpack, personaProjection, emergencyContacts, derivedCaches] = await Promise.all([

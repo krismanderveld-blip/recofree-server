@@ -25,6 +25,8 @@ vi.mock('@react-native-async-storage/async-storage', () => ({
   },
 }));
 
+import { readEncrypted } from '../lib/crypto/storage-encryption';
+
 import {
   loadEliasProjection,
   saveEliasProjection,
@@ -241,9 +243,12 @@ describe('Projection Persistence — Decay Before Save', () => {
     const sessionEnd = new Date().toISOString();
     const result = await applyProjectionDecay(sessionEnd);
 
-    // Verify it was saved to storage
+    // Verify it was saved to storage (encrypted with RF_ENC_V1 prefix)
     expect(mockStorage['@recofree_projection_elias']).toBeDefined();
-    const savedData = JSON.parse(mockStorage['@recofree_projection_elias']);
+    // Data is now encrypted at rest — read through the encryption layer
+    const decryptedRaw = await readEncrypted('@recofree_projection_elias');
+    expect(decryptedRaw).not.toBeNull();
+    const savedData = JSON.parse(decryptedRaw!);
     expect(savedData.userType).toBe('elias');
     expect(savedData.lastUpdatedAt).toBe(sessionEnd);
     // Entries should reflect decayed state
@@ -270,9 +275,12 @@ describe('Projection Persistence — Decay Before Save', () => {
     const sessionEnd = new Date().toISOString();
     const result = await applyKimProjectionDecay(sessionEnd);
 
-    // Verify it was saved to storage
+    // Verify it was saved to storage (encrypted with RF_ENC_V1 prefix)
     expect(mockStorage['@recofree_projection_kim']).toBeDefined();
-    const savedData = JSON.parse(mockStorage['@recofree_projection_kim']);
+    // Data is now encrypted at rest — read through the encryption layer
+    const decryptedRaw = await readEncrypted('@recofree_projection_kim');
+    expect(decryptedRaw).not.toBeNull();
+    const savedData = JSON.parse(decryptedRaw!);
     expect(savedData.userType).toBe('kim');
     expect(savedData.lastUpdatedAt).toBe(sessionEnd);
     // Entries should reflect decayed state
