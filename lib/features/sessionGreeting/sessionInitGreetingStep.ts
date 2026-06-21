@@ -48,6 +48,8 @@ export interface SessionInitGreetingInput {
   allSessions?: import('@/lib/types/memory/logsDat.types').SessionLogSummary[];
   /** VSP Insight context string (for clinical annotation injection) */
   vspInsightContext?: string | null;
+  /** Raw previous session messages (from chatHistory) — fallback when logs.dat is empty */
+  previousSessionMessages?: Array<{ role: string; content: string; timestamp?: string }>;
 }
 
 export interface SessionInitGreetingOutput {
@@ -71,7 +73,7 @@ export async function sessionInitGreetingStep(
   const greetingUserDat = adaptUserDat(backpack, userDat);
   const greetingStateDat = adaptStateDat(userDat);
   const greetingProjectionsDat = adaptProjectionsDat();
-  const greetingLogsDat = adaptLogsDat(input.lastSessionSummary, input.allSessions);
+  const greetingLogsDat = adaptLogsDat(input.lastSessionSummary, input.allSessions, input.previousSessionMessages);
   const diaryMetadata = adaptDiaryMetadata(diaryEntries);
   const gratitudeMetadata = adaptGratitudeMetadata(diaryEntries);
 
@@ -274,6 +276,7 @@ function adaptProjectionsDat(): GreetingProjectionsDatSnapshot {
 function adaptLogsDat(
   lastSessionSummary?: SessionInitGreetingInput['lastSessionSummary'],
   allSessions?: import('@/lib/types/memory/logsDat.types').SessionLogSummary[],
+  previousSessionMessages?: SessionInitGreetingInput['previousSessionMessages'],
 ): GreetingLogsDatSnapshot {
   const result: GreetingLogsDatSnapshot = { lastSessionOpenLoops: [] };
 
@@ -290,15 +293,47 @@ function adaptLogsDat(
       : undefined;
   }
 
+  // V3.2: Inject raw previous session messages (last 5) as PRIMARY context.
+  // These are the actual messages shown on screen — most recent, most concrete.
+  // They supplement (or replace) logs.dat summary when available.
+  if (previousSessionMessages && previousSessionMessages.length > 0) {
+    const last5 = previousSessionMessages.slice(-5);
+    const rawTranscript = last5.map(m => `${m.role === 'user' ? 'Gebruiker' : 'Elias'}: ${m.content}`).join('\n');
+    // If logs.dat had no narrative, use raw messages as the digest
+    if (!result.latestLogDigest) {
+      result.latestLogDigest = rawTranscript;
+    }
+    // Always create a recentSessionDigests entry from raw messages (highest priority)
+    const lastMsgTimestamp = last5[last5.length - 1]?.timestamp || new Date().toISOString();
+    const rawDigest = {
+      narrative: rawTranscript,
+      topics: [],
+      openEndpoints: [],
+      endedAt: lastMsgTimestamp,
+    };
+    // Prepend raw messages digest as most recent (before any logs.dat digests)
+    if (result.recentSessionDigests) {
+      result.recentSessionDigests.unshift(rawDigest);
+    } else {
+      result.recentSessionDigests = [rawDigest];
+    }
+  }
+
   // Include last 3 session digests for continuity (most recent first)
   if (allSessions && allSessions.length > 0) {
     const recent = allSessions.slice(-3).reverse();
-    result.recentSessionDigests = recent.map(s => ({
+    const logsDigests = recent.map(s => ({
       narrative: s.compressedNarrative || '',
       topics: s.discussedTopics || [],
       openEndpoints: (s.openEndpoints || []).map(ep => ep.label),
       endedAt: s.endedAt || s.createdAt || '',
     }));
+    // Append logs.dat digests AFTER raw messages (raw messages have priority)
+    if (result.recentSessionDigests) {
+      result.recentSessionDigests.push(...logsDigests);
+    } else {
+      result.recentSessionDigests = logsDigests;
+    }
   }
 
   // Cross-session pattern detection

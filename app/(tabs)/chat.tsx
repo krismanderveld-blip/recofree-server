@@ -689,6 +689,26 @@ function ChatScreenInner() {
             console.warn('[Chat] VSP Insight for greeting failed:', vspErr);
           }
 
+          // Load previous session messages for greeting context (last 5)
+          let prevMsgsForGreeting: Array<{ role: string; content: string; timestamp?: string }> = [];
+          try {
+            const udJsonForPrev = await readEncrypted(USERDAT_KEY);
+            if (udJsonForPrev) {
+              const udPrev = JSON.parse(udJsonForPrev);
+              const history: ChatMessage[] = udPrev.chatHistory ?? [];
+              const lastSessionDate = udPrev.lastSessionDate;
+              if (history.length > 0 && lastSessionDate) {
+                const prevMsgs = history.filter((m: ChatMessage) => {
+                  const msgDate = m.timestamp?.slice(0, 10);
+                  return msgDate && msgDate <= lastSessionDate;
+                });
+                prevMsgsForGreeting = prevMsgs.slice(-5).map(m => ({ role: m.role, content: m.content, timestamp: m.timestamp }));
+              }
+            }
+          } catch (prevErr) {
+            console.warn('[Chat] Could not load previous msgs for greeting:', prevErr);
+          }
+
           const greetingResult = await sessionInitGreetingStep({
             backpack,
             userDat,
@@ -699,6 +719,7 @@ function ChatScreenInner() {
             lastSessionSummary,
             allSessions,
             vspInsightContext: vspInsightCtx,
+            previousSessionMessages: prevMsgsForGreeting,
           });
           greetingText = greetingResult.greeting;
           console.log(greetingResult.debugLog);

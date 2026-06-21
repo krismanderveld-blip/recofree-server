@@ -1754,3 +1754,6 @@
 - [x] Fix: RETURN_AFTER_ABSENCE priority: LAST_SESSION_SUMMARY nu boven RECENT_DIARY
 - [x] Fix: logs.dat endedAt timestamp toegevoegd aan sourceTimestamps voor recency bonus
 - [x] Fix: RECENT_DIARY base relevance gecapped op 0.85 zodat het nooit boven sessie-samenvatting scoort
+- [x] Fix: previousSessionMessages (laatste 5) direct als bron in greeting engine geïnjecteerd via adaptLogsDat
+- [x] Fix: chat.tsx laadt nu previousSessionMessages en geeft ze door aan sessionInitGreetingStep
+- [x] Fix: RETURN_AFTER_ABSENCE prompt behandelt sessie-inhoud als VERPLICHT (niet optioneel)

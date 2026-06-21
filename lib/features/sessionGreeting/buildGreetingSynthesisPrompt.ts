@@ -389,24 +389,33 @@ function buildReturnAfterAbsenceInstruction(
     ? `TOON: Extra zacht en warm. Geen alarm, geen bezorgdheid, geen verwijt. De gebruiker is er weer — dat is het enige dat telt. Behandel de terugkeer als iets positiefs.`
     : `TOON: Warm en verwelkomend. Erken kort dat het even geleden is, zonder er zwaar aan te tillen.`;
 
-  const contextBriefing = selectedSources.length > 0
-    ? `\nCONTEXT (optioneel te verweven als het natuurlijk past):\n${buildContextBriefing(selectedSources, zone)}\n- De afwezigheids-erkenning staat VOOROP, context is secundair`
-    : '';
+  // V3.2: Split sources into mandatory (session content) and optional (diary/gratitude)
+  const sessionSources = selectedSources.filter(s => s.sourceType === 'LAST_SESSION_SUMMARY' || s.sourceType === 'RECURRING_PATTERN');
+  const otherSources = selectedSources.filter(s => s.sourceType !== 'LAST_SESSION_SUMMARY' && s.sourceType !== 'RECURRING_PATTERN');
+
+  let contextBriefing = '';
+  if (sessionSources.length > 0) {
+    contextBriefing += `\n=== VORIGE SESSIE-INHOUD (VERPLICHT TE GEBRUIKEN) ===\n${buildContextBriefing(sessionSources, zone)}\n=== EINDE SESSIE-INHOUD ===\nJe MOET minstens ÉÉN concreet element uit de vorige sessie-inhoud verwerken in je begroeting.\nDit is wat jullie ECHT besproken hebben — dit weegt zwaarder dan dagboek of mood.\n`;
+  }
+  if (otherSources.length > 0) {
+    contextBriefing += `\nOVERIGE CONTEXT (optioneel te verweven als het natuurlijk past):\n${buildContextBriefing(otherSources, zone)}`;
+  }
 
   return `Je bent Elias. ${userName} is terug na ${days} dagen afwezigheid.
 ZONE: ${zone}
 
 ${toneInstruction}
 ${zone !== 'GROEN' ? zoneTone.toneInstruction : ''}
+${contextBriefing}
 
 INSTRUCTIES:
 - Begin met een warme erkenning dat ${userName} er weer is
 - Gebruik MAXIMAAL 3-4 zinnen totaal
 - Erken de afwezigheid ZONDER te vragen waarom ze weg waren
 - Maak GEEN aannames over wat er gebeurd is (geen "terugval", geen "moeilijke periode")
+- Als er VORIGE SESSIE-INHOUD beschikbaar is: verwijs naar wat jullie besproken hebben (thema's, frustraties, doorbraken) — dit maakt de begroeting persoonlijk
 - ${zoneTone.openQuestionStyle}
-- De begroeting moet aanvoelen als een vriend die blij is je te zien
-${contextBriefing}
+- De begroeting moet aanvoelen als een vriend die blij is je te zien EN die onthoudt waar jullie het over hadden
 
 ABSOLUUT VERBODEN:
 - Vragen waarom ze weg waren ("waar was je?", "waarom ben je weggebleven?")
