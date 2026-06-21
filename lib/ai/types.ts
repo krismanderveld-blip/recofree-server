@@ -259,6 +259,15 @@ export interface ChatMessage {
   content: string;
   timestamp: string;
   modulesUsed?: string[];
+  /** Engine decision metadata for clinical mode dropdown (populated locally, no GPT dependency) */
+  clinicalInfo?: {
+    module: string;
+    zone: string;
+    model: string;
+    regulation?: string;
+    riskScore?: number;
+    source?: string;
+  };
 }
 
 /** Intake data collected during onboarding */

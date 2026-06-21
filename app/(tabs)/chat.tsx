@@ -667,6 +667,12 @@ function ChatScreenInner() {
     if (!backpack) backpack = getBackpack();
     if (!userDat) userDat = getUserDat();
     if (!backpack || !userDat) return;
+    // Override clinicalModeActive from React state (avoids race condition where
+    // storage write hasn't completed yet but React state is already updated)
+    const reactUserDat = getUserDat();
+    if (reactUserDat?.clinicalModeActive && !userDat.clinicalModeActive) {
+      userDat = { ...userDat, clinicalModeActive: true };
+    }
     console.log('[Chat] sendGreeting — backpack sections:', backpack.sections?.length, 'filled:', backpack.sections?.filter((s: any) => s.content?.trim().length > 0).length);
     setIsTyping(true);
     try {
@@ -821,6 +827,12 @@ function ChatScreenInner() {
           role: 'assistant',
           content: greetingText,
           timestamp: new Date().toISOString(),
+          clinicalInfo: {
+            module: 'SESSION_GREETING_V3',
+            zone: 'SESSION_START',
+            model: 'gpt-4o-mini',
+            source: 'greeting-engine',
+          },
         };
         // Append to chatHistory and persist
         userDat.chatHistory = [...(userDat.chatHistory || []), greetingMsg];
@@ -1194,8 +1206,13 @@ function ChatScreenInner() {
   const renderMessage = useCallback(({ item }: { item: ChatMessage }) => {
     const isUser = item.role === 'user';
     const isElias = state.userType === 'elias';
-    // Parse clinical tag from assistant messages
+    // Parse clinical tag from assistant messages (GPT-generated, may be absent)
     const { visibleContent, clinicalAnnotation } = parseClinicalTag(item.content, isUser);
+    // Build clinical display: prefer local engine metadata (clinicalInfo), fallback to GPT tag
+    const showClinical = !isUser && state.userDat?.clinicalModeActive;
+    const clinicalDisplay = item.clinicalInfo
+      ? `Module: ${item.clinicalInfo.module}\nZone: ${item.clinicalInfo.zone}\nModel: ${item.clinicalInfo.model}${item.clinicalInfo.regulation ? `\nRegulation: ${item.clinicalInfo.regulation}` : ''}${item.clinicalInfo.riskScore != null ? `\nRisk: ${item.clinicalInfo.riskScore}` : ''}${item.clinicalInfo.source ? `\nSource: ${item.clinicalInfo.source}` : ''}`
+      : clinicalAnnotation;
 
     const bubbleStyle = isUser
       ? {
@@ -1239,8 +1256,8 @@ function ChatScreenInner() {
           >
             {visibleContent}
           </Text>
-          {clinicalAnnotation && state.userDat?.clinicalModeActive && (
-            <ClinicalTag annotation={clinicalAnnotation} />
+          {showClinical && clinicalDisplay && (
+            <ClinicalTag annotation={clinicalDisplay} />
           )}
         </View>
         <Text style={{ ...typography.micro, color: dc.textMuted, marginTop: 4, textAlign: isUser ? 'right' : 'left', marginHorizontal: 4 }}>
@@ -1248,7 +1265,7 @@ function ChatScreenInner() {
         </Text>
       </View>
     );
-  }, [companionName, state.userType]);
+  }, [companionName, state.userType, state.userDat?.clinicalModeActive]);
 
   const scrollToEnd = useCallback(() => {
     if (isUserScrolledUp.current) return;
@@ -1380,6 +1397,7 @@ function ChatScreenInner() {
           data={messages}
           renderItem={renderMessage}
           keyExtractor={(item) => item.id}
+          extraData={state.userDat?.clinicalModeActive}
           contentContainerStyle={{
             padding: 16,
             paddingBottom: 8,

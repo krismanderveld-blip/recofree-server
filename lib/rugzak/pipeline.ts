@@ -2704,6 +2704,14 @@ export async function processMessage(
     content: response,
     timestamp: new Date().toISOString(),
     modulesUsed: [activeDecision ? activeDecision.dominantModule : preGPTDominantState.dominantModule],
+    clinicalInfo: {
+      module: activeDecision ? activeDecision.dominantModule : preGPTDominantState.dominantModule,
+      zone: sessionBuffer.currentZoneColor ?? 'unknown',
+      model: selectedModel ?? 'unknown',
+      regulation: regulationResult.action !== 'reflect' ? `${regulationResult.action} (depth=${regulationResult.effectiveDepth})` : undefined,
+      riskScore: preGPTDominantState.riskScore,
+      source: preGPTDominantState.sourceLayer,
+    },
   };
   updatedUserDat = {
     ...updatedUserDat,

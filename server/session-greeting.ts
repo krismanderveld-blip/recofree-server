@@ -91,8 +91,12 @@ export function registerSessionGreetingRoute(app: Express): void {
             console.log(`[SessionGreeting] Minimal clinical tag with VSP-Framework: ${fw}`);
           }
         } catch (clinicalErr) {
-          console.warn('[SessionGreeting] Clinical annotation failed, sending greeting without it:', clinicalErr);
-          // Still return the greeting without annotation rather than failing
+          console.warn('[SessionGreeting] Clinical annotation failed, using fallback:', clinicalErr);
+          // Always include a clinical tag in clinical mode — even on failure
+          const fw = vspInsightContext
+            ? ((vspInsightContext as string).match(/Framework: (\w+)/)?.[1] ?? 'MI')
+            : 'MI';
+          greeting = `${greeting}\n<clinical>\nVSP-Framework: ${fw}\nMethod: Therapeutic greeting\nObservation: Session start (annotation call failed)\nIntervention: Warm opening + open question</clinical>`;
         }
       }
 
