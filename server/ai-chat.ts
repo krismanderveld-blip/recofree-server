@@ -370,6 +370,12 @@ function cacheSessionInit(input: ChatRequestInput): void {
     kimPatternSupportContext: input.kimPatternSupportContext ?? null,
   };
   console.log("[AI Chat] Session cache created for:", input.userName, hasStructuredEntities ? '(structured entities)' : '(text-based)');
+  // Log PERSONEN-LOOKUP for debugging person recognition
+  if (sessionCache!.relationshipMap) {
+    console.log("[AI Chat] PERSONEN-LOOKUP:\n" + sessionCache!.relationshipMap);
+  } else {
+    console.log("[AI Chat] PERSONEN-LOOKUP: EMPTY (no persons extracted from backpack)");
+  }
 }
 
 function incrementMessageCount(): void {
@@ -1564,6 +1570,11 @@ Keep it short (3-5 sentences max). Do NOT ask new questions.`;
     if (conditional.stageOfChange) included.push('stage');
     if (conditional.relationshipMap) included.push('relationMap');
     console.log(`[AI Chat] Follow-up selective injection: [${included.join(', ') || 'none'}]`);
+    if (conditional.relationshipMap) {
+      console.log(`[AI Chat] Follow-up PERSONEN-LOOKUP active (${conditional.relationshipMap.split('•').length - 1} persons)`);
+    } else {
+      console.log(`[AI Chat] Follow-up PERSONEN-LOOKUP: EMPTY`);
+    }
 
     // V3.2: ALWAYS inject full context — no relevance gating, no token savings.
     // The user's personal data is ALWAYS available to GPT on every turn.
@@ -1933,6 +1944,9 @@ Rules:
     );
     if (relationMap) {
       identityMemory += `\n${relationMap}`;
+      console.log(`[AI Chat] Session-start PERSONEN-LOOKUP injected (${relationMap.split('•').length - 1} persons)`);
+    } else {
+      console.log(`[AI Chat] Session-start PERSONEN-LOOKUP: EMPTY (no persons found in backpack text)`);
     }
 
     if (backpack.lifeStory.some((s) => s.content.trim().length > 0)) {
