@@ -1208,11 +1208,14 @@ function ChatScreenInner() {
     const isElias = state.userType === 'elias';
     // Parse clinical tag from assistant messages (GPT-generated, may be absent)
     const { visibleContent, clinicalAnnotation } = parseClinicalTag(item.content, isUser);
-    // Build clinical display: prefer local engine metadata (clinicalInfo), fallback to GPT tag
+    // Build clinical display: prefer GPT annotation (rich), fallback to local engine metadata
     const showClinical = !isUser && state.userDat?.clinicalModeActive;
-    const clinicalDisplay = item.clinicalInfo
-      ? `Module: ${item.clinicalInfo.module}\nZone: ${item.clinicalInfo.zone}\nModel: ${item.clinicalInfo.model}${item.clinicalInfo.regulation ? `\nRegulation: ${item.clinicalInfo.regulation}` : ''}${item.clinicalInfo.riskScore != null ? `\nRisk: ${item.clinicalInfo.riskScore}` : ''}${item.clinicalInfo.source ? `\nSource: ${item.clinicalInfo.source}` : ''}${item.clinicalInfo.triggers ? `\nTriggers: ${item.clinicalInfo.triggers}` : ''}${item.clinicalInfo.projection ? `\nProjection: ${item.clinicalInfo.projection}` : ''}${item.clinicalInfo.intervention ? `\nIntervention: ${item.clinicalInfo.intervention}` : ''}${item.clinicalInfo.buffer ? `\nBuffer: ${item.clinicalInfo.buffer}` : ''}`
-      : clinicalAnnotation;
+    const localInfo = item.clinicalInfo
+      ? `\n---\nModule: ${item.clinicalInfo.module} | Zone: ${item.clinicalInfo.zone} | Model: ${item.clinicalInfo.model}${item.clinicalInfo.regulation ? ` | Reg: ${item.clinicalInfo.regulation}` : ''}${item.clinicalInfo.riskScore != null ? ` | Risk: ${item.clinicalInfo.riskScore}` : ''}${item.clinicalInfo.source ? `\nSource: ${item.clinicalInfo.source}` : ''}${item.clinicalInfo.triggers ? `\nTriggers: ${item.clinicalInfo.triggers}` : ''}${item.clinicalInfo.projection ? `\nProjection: ${item.clinicalInfo.projection}` : ''}${item.clinicalInfo.intervention ? `\nIntervention: ${item.clinicalInfo.intervention}` : ''}${item.clinicalInfo.buffer ? `\nBuffer: ${item.clinicalInfo.buffer}` : ''}`
+      : '';
+    const clinicalDisplay = clinicalAnnotation
+      ? clinicalAnnotation + localInfo
+      : localInfo || null;
 
     const bubbleStyle = isUser
       ? {
