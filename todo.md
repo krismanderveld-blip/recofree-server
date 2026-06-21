@@ -1685,3 +1685,10 @@
 - [x] Punt 3b: Display dual-path storage key visibility in debug-log.tsx (shows both paths write to DIFFERENT stores)
 - [x] Add "Buffer → sessionAnalyses Transfer (5-point)" section to debug-log.tsx Live tab
 - [x] Remove __DEV__ guard from memory_session_end logDebugEvent so it fires on device APK
+
+## Fix: logs.dat schrijven herstellen
+- [x] Fix missing turnId in appendMessage calls (chat.tsx lines 1059/1066) — was causing TS errors
+- [x] Fix sessionEndSummarizer.ts type mismatch — was producing objects incompatible with SessionLogSummary type (9 TS errors)
+- [x] Rewrite sessionEndSummarizer to produce valid SessionLogSummary with all required fields (summaryId, createdAt, summaryModel, etc.)
+- [x] Update greeting read path to use correct SessionLogSummary field names (openEndpoints, emotionalThemes instead of old fields)
+- [x] Vitest verification: 3 tests pass (write+read, empty buffer error, multi-session accumulation)

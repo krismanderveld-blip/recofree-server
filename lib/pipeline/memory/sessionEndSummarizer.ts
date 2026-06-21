@@ -43,13 +43,48 @@ ${detections}
 
 Retourneer ALLEEN geldige JSON in dit formaat:
 {
-  "dominantThemes": ["string - max 5 dominante thema's"],
-  "emotionalArc": "string - korte beschrijving van emotioneel verloop",
-  "keyInsights": ["string - max 3 belangrijke inzichten"],
-  "unresolvedTensions": ["string - max 3 onopgeloste spanningen"],
-  "therapeuticProgress": "string - korte beschrijving van therapeutische voortgang",
+  "compressedNarrative": "string - korte samenvatting van de sessie (max 200 woorden)",
+  "discussedTopics": ["string - max 5 besproken thema's"],
+  "emotionalThemes": [{"label": "string", "intensity": 0.0-1.0}],
+  "breakthroughs": [{"label": "string", "description": "string", "confidence": 0.0-1.0}],
+  "relapseOrRiskEvents": [{"eventType": "none|relapse|near_relapse|craving_spike|caregiver_overload|crisis", "description": "string", "severity": 0-10}],
+  "openEndpoints": [{"label": "string", "category": "unresolved_question|follow_up|risk_monitor|emotion_unfinished|other"}],
   "suggestedFollowUp": ["string - max 3 suggesties voor volgende sessie"]
 }`;
+}
+
+/**
+ * Build a minimal but valid SessionLogSummary (used as fallback or when GPT is unreachable).
+ */
+function buildMinimalSummary(request: SessionSummaryRequest, narrative: string): SessionLogSummary {
+  const now = new Date().toISOString();
+  return {
+    summaryId: `summary_${request.sessionId}_${Date.now()}`,
+    sessionId: request.sessionId,
+    persona: request.persona,
+    startedAt: request.buffer.startedAt,
+    endedAt: now,
+    createdAt: now,
+    summaryModel: "gpt-4o-mini",
+    summarySchemaVersion: "session_summary.v1",
+    compressedNarrative: narrative,
+    discussedTopics: [],
+    emotionalThemes: [],
+    breakthroughs: [],
+    relapseOrRiskEvents: [{ eventType: "none", description: "", severity: 0 }],
+    openEndpoints: [],
+    extractedCandidates: {
+      fears: [],
+      hopes: [],
+      triggers: [],
+      schemaTendencies: [],
+      modeTendencies: [],
+    },
+    moduleTrace: [],
+    zoneTrace: [],
+    inputTokenEstimate: 0,
+    outputTokenEstimate: 0,
+  };
 }
 
 /**
@@ -85,22 +120,47 @@ export async function generateSessionSummary(
     const data = await response.json();
     const rawOutput = JSON.stringify(data);
 
-    // Parse GPT output
+    // Parse GPT output into valid SessionLogSummary
     const parsed = parseSessionSummaryOutput(data);
+    const now = new Date().toISOString();
 
     const summary: SessionLogSummary = {
+      summaryId: `summary_${request.sessionId}_${Date.now()}`,
       sessionId: request.sessionId,
       persona: request.persona,
       startedAt: request.buffer.startedAt,
-      endedAt: new Date().toISOString(),
-      turnCount: request.buffer.turnSnapshots.length,
-      messageCount: request.buffer.compactMessages.length,
-      dominantThemes: parsed.dominantThemes || [],
-      emotionalArc: parsed.emotionalArc || "onbekend",
-      keyInsights: parsed.keyInsights || [],
-      unresolvedTensions: parsed.unresolvedTensions || [],
-      therapeuticProgress: parsed.therapeuticProgress || "niet bepaald",
-      suggestedFollowUp: parsed.suggestedFollowUp || [],
+      endedAt: now,
+      createdAt: now,
+      summaryModel: "gpt-4o-mini",
+      summarySchemaVersion: "session_summary.v1",
+      compressedNarrative: parsed.compressedNarrative || `Sessie met ${request.buffer.compactMessages.length} berichten`,
+      discussedTopics: parsed.discussedTopics || [],
+      emotionalThemes: parsed.emotionalThemes || [],
+      breakthroughs: parsed.breakthroughs || [],
+      relapseOrRiskEvents: parsed.relapseOrRiskEvents || [{ eventType: "none", description: "", severity: 0 }],
+      openEndpoints: parsed.openEndpoints || [],
+      extractedCandidates: {
+        fears: [],
+        hopes: [],
+        triggers: [],
+        schemaTendencies: [],
+        modeTendencies: [],
+      },
+      moduleTrace: request.buffer.turnSnapshots
+        .filter((s) => s.activeModule)
+        .map((s) => ({
+          moduleId: s.activeModule!.moduleId,
+          responseMode: s.activeModule!.responseMode || "default",
+          count: 1,
+        })),
+      zoneTrace: request.buffer.turnSnapshots
+        .filter((s) => s.zone)
+        .map((s) => ({
+          zone: s.zone!.zone,
+          count: 1,
+        })),
+      inputTokenEstimate: estimateTokens(prompt),
+      outputTokenEstimate: estimateTokens(rawOutput),
     };
 
     return {
@@ -110,20 +170,8 @@ export async function generateSessionSummary(
     };
   } catch (err) {
     // Graceful fallback — minimal summary without GPT
-    const fallbackSummary: SessionLogSummary = {
-      sessionId: request.sessionId,
-      persona: request.persona,
-      startedAt: request.buffer.startedAt,
-      endedAt: new Date().toISOString(),
-      turnCount: request.buffer.turnSnapshots.length,
-      messageCount: request.buffer.compactMessages.length,
-      dominantThemes: [],
-      emotionalArc: "sessie beëindigd zonder samenvatting (GPT niet bereikbaar)",
-      keyInsights: [],
-      unresolvedTensions: [],
-      therapeuticProgress: "niet bepaald",
-      suggestedFollowUp: [],
-    };
+    const narrative = `Sessie beëindigd (${request.buffer.compactMessages.length} berichten). GPT-samenvatting niet beschikbaar: ${err instanceof Error ? err.message : String(err)}`;
+    const fallbackSummary = buildMinimalSummary(request, narrative);
 
     return {
       summary: fallbackSummary,
@@ -133,24 +181,37 @@ export async function generateSessionSummary(
   }
 }
 
-function parseSessionSummaryOutput(data: any): Partial<SessionLogSummary> {
-  // The signal-engine endpoint returns fears/hopes/goals/triggers
-  // We need to adapt this to our summary format
+interface ParsedSummaryFields {
+  compressedNarrative?: string;
+  discussedTopics?: string[];
+  emotionalThemes?: Array<{ label: string; intensity: number }>;
+  breakthroughs?: Array<{ label: string; description: string; confidence: number }>;
+  relapseOrRiskEvents?: Array<{ eventType: "relapse" | "near_relapse" | "craving_spike" | "caregiver_overload" | "crisis" | "none"; description: string; severity: number }>;
+  openEndpoints?: Array<{ label: string; category: "unresolved_question" | "follow_up" | "risk_monitor" | "emotion_unfinished" | "other" }>;
+  suggestedFollowUp?: string[];
+}
+
+function parseSessionSummaryOutput(data: any): ParsedSummaryFields {
   try {
     if (typeof data === "object" && data !== null) {
       // If the response has our expected format directly
-      if (data.dominantThemes) return data;
+      if (data.compressedNarrative) return data as ParsedSummaryFields;
       // If it's the signal-engine format, adapt
       return {
-        dominantThemes: [
+        compressedNarrative: data.fears?.length > 0
+          ? `Sessie met focus op angst/spanning: ${(data.fears || []).slice(0, 3).join(", ")}`
+          : "Sessie verwerkt via signaalanalyse",
+        discussedTopics: [
           ...(data.fears || []).slice(0, 2),
           ...(data.hopes || []).slice(0, 2),
         ].slice(0, 5),
-        emotionalArc: data.fears?.length > data.hopes?.length ? "overwegend angstig" : "gemengd",
-        keyInsights: data.goals || [],
-        unresolvedTensions: data.triggers || [],
-        therapeuticProgress: "bepaald via signaalanalyse",
-        suggestedFollowUp: [],
+        emotionalThemes: [],
+        breakthroughs: [],
+        relapseOrRiskEvents: [{ eventType: "none" as const, description: "", severity: 0 }],
+        openEndpoints: (data.triggers || []).slice(0, 3).map((t: string) => ({
+          label: t,
+          category: "risk_monitor" as const,
+        })),
       };
     }
   } catch {

@@ -753,15 +753,14 @@ function ChatScreenInner() {
             const persona = (state.userType === 'elias' ? 'elias' : 'kim') as any;
             const logsDat = await stores.logsDatStore.load(persona);
             if (logsDat && logsDat.sessions.length > 0) {
-              // Runtime shape from sessionEndSummarizer has fields not in TS type
-              const lastSession = logsDat.sessions[logsDat.sessions.length - 1] as any;
+              const lastSession = logsDat.sessions[logsDat.sessions.length - 1];
               lastSessionSummary = {
                 compressedNarrative: lastSession.compressedNarrative ?? '',
-                discussedTopics: lastSession.discussedTopics ?? lastSession.dominantThemes ?? [],
-                unresolvedTensions: lastSession.unresolvedTensions ?? [],
-                suggestedFollowUp: lastSession.suggestedFollowUp ?? [],
-                emotionalArc: lastSession.emotionalArc ?? undefined,
-                turnCount: lastSession.turnCount ?? undefined,
+                discussedTopics: lastSession.discussedTopics ?? [],
+                unresolvedTensions: (lastSession.openEndpoints ?? []).map((ep) => ep.label),
+                suggestedFollowUp: (lastSession.openEndpoints ?? []).filter((ep) => ep.category === 'follow_up').map((ep) => ep.label),
+                emotionalArc: (lastSession.emotionalThemes ?? []).map((t) => t.label).join(', ') || undefined,
+                turnCount: lastSession.moduleTrace?.reduce((sum, m) => sum + m.count, 0) ?? undefined,
               };
               // Pass all sessions for cross-session pattern detection
               allSessions = logsDat.sessions;
@@ -1056,7 +1055,9 @@ function ChatScreenInner() {
         // Update session buffer with turn snapshot
         const buffer = stores.sessionBufferStore.getBuffer();
         if (buffer) {
+          const turnId = bundle.context.turnId;
           stores.sessionBufferStore.appendMessage(buffer, {
+            turnId,
             role: 'user',
             text: processedText,
             timestampIso: new Date().toISOString(),
@@ -1064,6 +1065,7 @@ function ChatScreenInner() {
           const updatedBuffer = stores.sessionBufferStore.getBuffer();
           if (updatedBuffer) {
             stores.sessionBufferStore.appendMessage(updatedBuffer, {
+              turnId,
               role: 'assistant',
               text: (result.response ?? '').slice(0, 200),
               timestampIso: new Date().toISOString(),
