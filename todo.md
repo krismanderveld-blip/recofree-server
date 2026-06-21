@@ -1729,3 +1729,8 @@
 - [x] Backpack alleen bij wijziging meesturen (per-sectie change detection, niet elke sessie)
 - [x] Elias/Kim specifieke GPT prompts (andere schema-focus per persona)
 - [ ] Fix: volledige backpack-tekst moet GPT system prompt bereiken bij session-start
+
+## Bug: GPT herkent geen personen uit de rugzak
+- [x] Probleem: Rugzak gaat wél mee naar GPT, schema's/modi worden herkend, maar persoonsnamen (bijv. "Melissa") worden niet herkend
+- [x] Oorzaak: extractRelationshipMap was generieke Engelse instructie zonder concrete namen; anti-hallucination regel te agressief ("I don't know")
+- [x] Fix: extractRelationshipMap herschreven als concrete PERSONEN-LOOKUP tabel (uit extractedEntities of regex); anti-hallucination regel verwijst nu naar lookup-tabel voordat "ik weet niet" gezegd mag worden; Nederlandse relatietermen toegevoegd

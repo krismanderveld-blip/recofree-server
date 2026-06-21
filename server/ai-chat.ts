@@ -347,7 +347,7 @@ function cacheSessionInit(input: ChatRequestInput): void {
     recentDiary: input.recentDiary ?? [],
     stageOfChange: input.stageOfChange ?? null,
     relationshipMap: input.backpack
-      ? extractRelationshipMap(input.backpack.lifeStory, input.backpack.intakeContext.initialContext)
+      ? extractRelationshipMap(input.backpack.lifeStory, input.backpack.intakeContext.initialContext, input.extractedEntities)
       : "",
     lifeStorySummary: hasStructuredEntities
       ? structuredMemory  // Use structured entities (only when backpack NOT changed)
@@ -712,10 +712,28 @@ function buildStructuredMemoryBlock(entities: NonNullable<ChatRequestInput['extr
 
 // ─── Relationship Map Extractor ──────────────────────────────────
 
+/**
+ * Extracts a CONCRETE person lookup table from the backpack text.
+ * Instead of a generic instruction, this generates an explicit list of
+ * every person mentioned with their relationship — so GPT can do a
+ * simple lookup instead of "mentally extracting" from long text.
+ */
 function extractRelationshipMap(
   lifeStory: Array<{ label: string; content: string }>,
-  intakeContext: string
+  intakeContext: string,
+  extractedEntities?: ChatRequestInput['extractedEntities'],
 ): string {
+  // Strategy 1: Use structured entities if available (most reliable)
+  if (extractedEntities && extractedEntities.persons.length > 0) {
+    const personLines = extractedEntities.persons.map(p => {
+      let line = `  • ${p.name} = ${p.relationshipNL || p.relationship}`;
+      if (p.context) line += ` — ${p.context}`;
+      return line;
+    });
+    return buildPersonLookupBlock(personLines);
+  }
+
+  // Strategy 2: Regex extraction from raw text (fallback)
   const allText = [
     ...lifeStory.map((s) => s.content),
     intakeContext,
@@ -725,19 +743,84 @@ function extractRelationshipMap(
 
   if (!allText || allText.trim().length < 20) return "";
 
+  // Dutch + English relationship patterns
+  const patterns = [
+    // Dutch patterns
+    /(?:mijn|m'n)\s+(zoon|dochter|vrouw|vriendin|vriend|partner|man|moeder|mama|vader|papa|zus|broer|oma|opa|ex|baas|collega|buurman|buurvrouw|therapeut|hulpverlener|stiefvader|stiefmoeder|schoonmoeder|schoonvader|neef|nicht|oom|tante)\s+([A-Z][a-zéèëïöüà]+)/g,
+    // "[Name], mijn [relation]"
+    /([A-Z][a-zéèëïöüà]+),?\s+(?:mijn|m'n)\s+(zoon|dochter|vrouw|vriendin|vriend|partner|man|moeder|mama|vader|papa|zus|broer|oma|opa|ex|baas|collega|buurman|buurvrouw|therapeut|hulpverlener|stiefvader|stiefmoeder|schoonmoeder|schoonvader|neef|nicht|oom|tante)/g,
+    // English patterns
+    /(?:my)\s+(son|daughter|wife|girlfriend|boyfriend|partner|husband|mother|mom|father|dad|sister|brother|grandmother|grandfather|friend|colleague|neighbor|ex|boss|therapist|stepfather|stepmother)\s+([A-Z][a-zéèëïöüà]+)/g,
+    // "[Name], my [relation]"
+    /([A-Z][a-zéèëïöüà]+),?\s+(?:my)\s+(son|daughter|wife|girlfriend|boyfriend|partner|husband|mother|mom|father|dad|sister|brother|grandmother|grandfather|friend|colleague|neighbor|ex|boss|therapist|stepfather|stepmother)/g,
+    // "[Name] is mijn [relation]" / "[Name] was mijn [relation]"
+    /([A-Z][a-zéèëïöüà]+)\s+(?:is|was)\s+(?:mijn|m'n)\s+(zoon|dochter|vrouw|vriendin|vriend|partner|man|moeder|mama|vader|papa|zus|broer|oma|opa|ex|baas|collega|buurman|buurvrouw|therapeut|hulpverlener|stiefvader|stiefmoeder)/g,
+  ];
+
+  const foundPersons = new Map<string, string>(); // name → relationship
+
+  for (const pattern of patterns) {
+    let match;
+    while ((match = pattern.exec(allText)) !== null) {
+      // Determine which group is name and which is relationship
+      const groups = match.slice(1);
+      let name: string;
+      let relation: string;
+      
+      // If first group starts with uppercase, it's the name
+      if (groups[0] && /^[A-Z]/.test(groups[0])) {
+        name = groups[0];
+        relation = groups[1];
+      } else {
+        relation = groups[0];
+        name = groups[1];
+      }
+      
+      if (name && relation && !foundPersons.has(name)) {
+        foundPersons.set(name, relation);
+      }
+    }
+  }
+
+  if (foundPersons.size === 0) {
+    // Fallback: return a bilingual instruction without concrete names
+    return `
+─── PERSONEN-HERKENNING (NL/EN) ───
+De rugzak van de gebruiker bevat persoonlijke namen en relaties.
+Voordat je zegt "ik weet niet wie [naam] is", MOET je EERST de volledige tekst hierboven doorzoeken.
+Als een naam voorkomt in de PERSONAL MEMORY of STRUCTURED MEMORY hierboven, dan KEN je die persoon.
+Zoek op Nederlandse relatietermen: zoon, dochter, vrouw, vriendin, vriend, partner, man, moeder, vader, zus, broer, oma, opa, ex, collega, buurman, therapeut.
+─── EINDE PERSONEN-HERKENNING ───`;
+  }
+
+  const personLines = Array.from(foundPersons.entries()).map(
+    ([name, relation]) => `  • ${name} = ${relation}`
+  );
+  return buildPersonLookupBlock(personLines);
+}
+
+/**
+ * Builds the final person lookup block that is injected into the system prompt.
+ * This is a HARD lookup table — GPT must use it before claiming ignorance.
+ */
+function buildPersonLookupBlock(personLines: string[]): string {
   return `
-─── RELATIONSHIP EXTRACTION INSTRUCTION ───
-Below is context about the user's relationships. Before responding, you MUST mentally extract every person mentioned and their EXACT relationship as stated by the user. For example:
-- If the user wrote "my son Jules" → Jules = son
-- If the user wrote "my girlfriend Melissa" → Melissa = girlfriend/partner
+╔══════════════════════════════════════════════════════════════╗
+║  PERSONEN-LOOKUP (ABSOLUUT — ALTIJD RAADPLEGEN)              ║
+╚══════════════════════════════════════════════════════════════╝
 
-You must ONLY use the relationship as the user described it. NEVER guess or invent a relationship.
+Dit zijn de personen die de gebruiker ZELF heeft genoemd in hun rugzak:
 
-Common relationship words:
-son, daughter, wife, girlfriend, partner, husband, boyfriend,
-mother, mom, father, dad, sister, brother, grandmother, grandfather,
-friend, colleague, neighbor, ex, boss, therapist
-─── END RELATIONSHIP INSTRUCTION ───`;
+${personLines.join('\n')}
+
+⚠️ VERPLICHTE REGEL:
+Als de gebruiker vraagt "wie is [naam]?" of een naam noemt die in deze lijst staat:
+→ Je KENT die persoon. Antwoord met hun relatie en context.
+→ Zeg NOOIT "ik weet niet wie [naam] is" als de naam hierboven staat.
+→ Zoek EERST in deze lijst + de PERSONAL MEMORY/STRUCTURED MEMORY hierboven.
+→ Alleen als de naam NERGENS voorkomt, mag je vragen wie het is.
+
+─── EINDE PERSONEN-LOOKUP ───`;
 }
 
 /**
@@ -1103,11 +1186,14 @@ This is the MOST IMPORTANT rule of your entire existence:
    - Do not assign roles to people that are not EXACTLY described as such.
 
 2. If a person, relationship, event, or fact is NOT known:
-   → Say honestly: "I don't know that about you. Would you like to tell me more?"
+   → FIRST: Check the PERSONEN-LOOKUP table, STRUCTURED MEMORY, and LIFE STORY sections above.
+   → If the name appears ANYWHERE in those sections, you KNOW that person. Do NOT claim ignorance.
+   → ONLY if the name is truly absent from ALL sections above: say "Ik weet niet wie [naam] is in jouw leven. Zou je me meer over hen kunnen vertellen?"
    → NEVER fabricate an answer. NEVER.
 
 3. If you are unsure about a relationship or fact:
-   → ASK. "I want to be sure — who is [name] to you?"
+   → FIRST: Re-read the PERSONEN-LOOKUP and LIFE STORY above.
+   → If still unclear: ASK. "Ik wil zeker zijn — wie is [naam] voor jou?"
    → NEVER guess.
 
 4. QUALITY CONTROL (Module 033):
@@ -1670,7 +1756,7 @@ RESPONSE RULES:
 ${input.backpackEmpty ? `- You do NOT yet know ${name}'s story. Their backpack is empty.
 - Do NOT pretend to know them. Do NOT reference any life story, triggers, or patterns.` : `- You KNOW ${name}. Use the context above to inform your response.
 - BUT: refer ONLY to what you ACTUALLY know. Fabricate NOTHING. When in doubt: ASK.
-- If ${name} asks about someone you don't know → "I don't know that about you. Tell me more?"`}
+- If ${name} asks about someone: FIRST check the PERSONEN-LOOKUP table and STRUCTURED MEMORY above. If the name appears there, you KNOW them — answer with their relationship and context. ONLY if truly absent from all sections: "Ik weet niet wie dat is in jouw leven. Vertel me meer?"`}
 - NAAM-REGEL (ABSOLUUT): Spreek ${name} ALTIJD bij naam aan in ELKE respons. Niet "je" of "jij" als eerste aanspreking — begin met hun naam of gebruik hun naam minstens 1x per antwoord.
 - VSP-STRATEGIE-REGEL (ABSOLUUT): Als er een VSP/veiligheidsplan hierboven staat, MOET je in ELKE respons minstens 1 specifieke strategie uit "wat helpt" noemen wanneer de gebruiker emotioneel beladen taal gebruikt (stress, craving, angst, boosheid, verdriet, overweldiging). Noem de strategie CONCREET (bv. "hardlopen in het park", "bellen met Henk", "ademhaling 4-7-8") — NOOIT generiek ("een wandeling" of "even ademen").
 - ANKERZIN-REGEL (ABSOLUUT): Als er een ankerzin in het VSP staat EN de gebruiker is overweldigd, in paniek, of zegt "ik weet niet meer wat ik moet doen" / "ik kan niet meer" / "het is te veel" → CITEER de ankerzin LETTERLIJK in je antwoord. Verweef het natuurlijk, bv: "Weet je nog wat je zelf hebt opgeschreven? '[ankerzin]'. Dat geldt nu ook."
@@ -1834,7 +1920,8 @@ Rules:
 
     const relationMap = extractRelationshipMap(
       backpack.lifeStory,
-      backpack.intakeContext.initialContext
+      backpack.intakeContext.initialContext,
+      input.extractedEntities
     );
     if (relationMap) {
       identityMemory += `\n${relationMap}`;
