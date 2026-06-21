@@ -315,10 +315,14 @@ function cacheSessionInit(input: ChatRequestInput): void {
   let structuredMemory = '';
   let hasStructuredEntities = false;
 
-  if (input.extractedEntities && input.extractedEntities.persons.length > 0) {
+  // Only use structured entities if backpack was NOT recently changed
+  // When backpackChanged=true, always prefer full backpack text (most up-to-date)
+  if (!input.backpackChanged && input.extractedEntities && input.extractedEntities.persons.length > 0) {
     hasStructuredEntities = true;
     structuredMemory = buildStructuredMemoryBlock(input.extractedEntities);
     console.log(`[AI Chat] Using structured entities: ${input.extractedEntities.persons.length} persons, ${input.extractedEntities.events.length} events, ${input.extractedEntities.patterns.length} patterns`);
+  } else if (input.backpackChanged) {
+    console.log(`[AI Chat] Backpack changed — using full backpack text instead of stale entities`);
   }
 
   sessionCache = {
@@ -334,7 +338,7 @@ function cacheSessionInit(input: ChatRequestInput): void {
       ? extractRelationshipMap(input.backpack.lifeStory, input.backpack.intakeContext.initialContext)
       : "",
     lifeStorySummary: hasStructuredEntities
-      ? structuredMemory  // Use structured entities instead of text summary
+      ? structuredMemory  // Use structured entities (only when backpack NOT changed)
       : (input.backpack
         ? buildCompactLifeStorySummary(input.backpack.lifeStory, input.backpack.intakeContext.initialContext, input.userName, input.backpack.kimBackpack)
         : ""),

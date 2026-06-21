@@ -150,7 +150,7 @@ describe("logs.dat write + read verification", () => {
     const endResult = await manager.endSession("elias", "http://localhost:3000");
 
     expect(endResult.summarized).toBe(false);
-    expect(endResult.error).toBe("no active buffer");
+    expect(endResult.error).toBe("no active buffer and no chatHistory fallback");
   });
 
   it("multiple sessions accumulate in logs.dat", async () => {

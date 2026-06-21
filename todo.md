@@ -1717,3 +1717,5 @@
 - [x] Add Dutch IMPLICIT_ROLE_WORDS to relational-anchor-detector.ts
 - [x] Add Dutch EMOTIONAL_PATTERNS to relational-anchor-detector.ts (mis, verdriet, boos, bang, pijn, etc.)
 - [x] Reset extractedEntities in userDat when wizard saves backpack → forces full backpack send at next session
+- [x] Fix server ai-chat.ts: when backpackChanged=true, use full backpack text (not stale extractedEntities)
+- [x] Fix gpt-payload-builder.ts: always send full backpack at session-start (remove compact/empty lifeStory mode)
