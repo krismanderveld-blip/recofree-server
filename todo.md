@@ -1699,3 +1699,6 @@
 - [x] Refactor inactivity auto-end to use full endSession chain (all 5 memory layers)
 - [x] Refactor background auto-end to use full endSession chain (all 5 memory layers)
 - [x] Remove any separate lightweight/pending-close path — one path to session-end
+- [x] Remove PENDING_CLOSE_KEY recovery logic (deferred analysis) — no longer needed
+- [x] Remove runDeferredSessionAnalysis import
+- [x] Remove PENDING_CLOSE_KEY constant and all references

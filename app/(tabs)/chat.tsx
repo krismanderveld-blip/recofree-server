@@ -27,7 +27,7 @@ import { useUser } from '@/lib/user-context';
 import { fixUnicode } from '@/lib/utils';
 import { getAIProvider } from '@/lib/ai';
 import { preprocessInput } from '@/lib/ai/preprocessor';
-import { processMessage, generateGreeting, endSession, runDeferredSessionAnalysis } from '@/lib/rugzak/pipeline';
+import { processMessage, generateGreeting, endSession } from '@/lib/rugzak/pipeline';
 import { EmergencyCard } from '@/components/emergency-card';
 import type { ChatMessage, Rugzak, Backpack, UserDat, DiaryEntry } from '@/lib/ai/types';
 import { composeRugzak } from '@/lib/ai/types';
@@ -52,7 +52,7 @@ import { colors as dc, spacing, radius, typography, shadows } from '@/constants/
 
 const BACKPACK_KEY = '@recofree_backpack';
 const USERDAT_KEY = '@recofree_userdat';
-const PENDING_CLOSE_KEY = '@recofree_pending_close';
+// PENDING_CLOSE_KEY removed — no longer needed (one path to session-end, no fallback markers)
 const DIARY_KEY = '@recofree_diary';
 
 // ─── Silence Detection (both personas) ───────────────────────────────
@@ -360,43 +360,9 @@ function ChatScreenInner() {
     };
   }, []);
 
-  // ── Check for pending close on mount ──
-  // If the previous session was saved with needsFullAnalysis: true (timeout fallback),
-  // run the deferred session-end analysis on the previous chatHistory before the new greeting.
-  useEffect(() => {
-    (async () => {
-      try {
-        const pending = await AsyncStorage.getItem(PENDING_CLOSE_KEY);
-        if (pending) {
-          const pendingData = JSON.parse(pending);
-          await AsyncStorage.removeItem(PENDING_CLOSE_KEY);
-
-          // Run deferred analysis if the previous session needs it
-          if (pendingData.needsFullAnalysis) {
-            try {
-              const bpJson = await readEncrypted(BACKPACK_KEY);
-              const udJson = await readEncrypted(USERDAT_KEY);
-              if (bpJson && udJson) {
-                const backpack = JSON.parse(bpJson);
-                const userDat = JSON.parse(udJson);
-                const analyzedUserDat = runDeferredSessionAnalysis(backpack, userDat);
-                await writeEncrypted(USERDAT_KEY, JSON.stringify(analyzedUserDat));
-                console.log('[Chat] Deferred session analysis completed for previous session');
-              }
-            } catch (analysisErr) {
-              console.warn('[Chat] Deferred analysis failed (non-blocking):', analysisErr);
-            }
-          }
-
-          // Show non-intrusive toast
-          setShowRestoreToast(true);
-          setTimeout(() => setShowRestoreToast(false), 3500);
-        }
-      } catch (e) {
-        console.error('Error checking pending close:', e);
-      }
-    })();
-  }, []);
+  // ── Pending close recovery removed ──
+  // No longer needed: inactivity + background now run the full endSession chain.
+  // No PENDING_CLOSE_KEY markers are written, so nothing to recover.
 
   // ── Auto-end session when app goes to background ──
   // Uses the EXACT SAME full endSession chain. No timeout race, no pending-close
@@ -1036,7 +1002,6 @@ function ChatScreenInner() {
       // Only persist userDat (backpack is NEVER modified)
       await writeEncrypted(USERDAT_KEY, JSON.stringify(result.updatedUserDat));
       await endSessionWithUserDat(result.updatedUserDat);
-      await AsyncStorage.removeItem(PENDING_CLOSE_KEY);
       const confirmationMsg: ChatMessage = {
         id: `msg_confirm_${Date.now()}`,
         role: 'assistant',
