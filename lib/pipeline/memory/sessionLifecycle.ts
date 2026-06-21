@@ -14,6 +14,7 @@ import { createProjectionsDatStore, type ProjectionsDatStore } from "@/lib/stora
 import { createLogsDatStore, type LogsDatStore } from "@/lib/storage/memory/logsDatStore";
 import { buildSessionInitContext, type SessionInitContext } from "./sessionInitContextBuilder";
 import { generateSessionSummary } from "./sessionEndSummarizer";
+import { logDebugEvent } from "@/lib/debug/session-logger";
 
 /**
  * Feature flag: when true, uses logs.dat for session init context.
@@ -114,6 +115,16 @@ export function createSessionLifecycleManager(): SessionLifecycleManager {
 
         // Append to logs.dat (encrypted)
         await stores.logsDatStore.appendSessionSummary(persona, summary);
+
+        // ── Transfer Diagnostic Point 3: logs.dat write completed ──
+        logDebugEvent('transfer_3_logsdat_write', {
+          success: true,
+          persona,
+          sessionId,
+          storageKey: `recofree_memory/${persona}/logs.dat`,
+          summaryHasNarrative: !!(summary as any).compressedNarrative,
+          summaryTopics: (summary as any).discussedTopics?.length ?? 0,
+        });
 
         // Clear buffer
         stores.sessionBufferStore.clear();

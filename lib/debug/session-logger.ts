@@ -17,7 +17,13 @@ export type DebugEventType =
   | 'projection_signal'
   | 'crisis_detected'
   | 'model_selected'
-  | 'chat_crash';
+  | 'chat_crash'
+  // 5-point buffer→sessionAnalyses transfer diagnostic
+  | 'transfer_1_session_end_detected'
+  | 'transfer_2_buffer_status'
+  | 'transfer_3_logsdat_write'
+  | 'transfer_4_lifecycle_result'
+  | 'transfer_5_greeting_read';
 
 export interface DebugEvent {
   id: number;

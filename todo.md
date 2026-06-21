@@ -1674,3 +1674,14 @@
 - [x] Home screen serves as navigation hub (cards link to each section)
 - [x] Add home button on each sub-screen (mood, diary, backpack, chat, profile)
 - [x] Reduce spacing between chat input field and emergency numbers
+
+## Debug Snapshot: 5-point buffer→sessionAnalyses transfer diagnostic
+- [x] Add 5 new DebugEventType values (transfer_1 through transfer_5) to session-logger.ts
+- [x] Point 1 (session-end detected): log in chat.tsx with trigger, messageCount, sessionAnalysesCountBefore, writtenTo
+- [x] Point 2 (buffer status): log buffer existence and compactMessages count before lifecycleManager.endSession()
+- [x] Point 3 (logs.dat write): log in sessionLifecycle.ts after appendSessionSummary succeeds
+- [x] Point 4 (lifecycle result): log endSession result without __DEV__ guard (works on APK)
+- [x] Point 5 (greeting read): log logs.dat session count at greeting time, note separate store
+- [x] Punt 3b: Display dual-path storage key visibility in debug-log.tsx (shows both paths write to DIFFERENT stores)
+- [x] Add "Buffer → sessionAnalyses Transfer (5-point)" section to debug-log.tsx Live tab
+- [x] Remove __DEV__ guard from memory_session_end logDebugEvent so it fires on device APK

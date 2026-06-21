@@ -69,6 +69,11 @@ export default function DebugLogScreen() {
     const k06Status = (lastMsgEvent?.data as any)?.k06Status ?? (userDat as any)?.k06StabilizationStatus ?? 'NOT_RUN';
     const crisisProtocolActive = (lastMsgEvent?.data as any)?.crisisProtocolActive ?? false;
 
+    // Transfer diagnostic events (5-point chain)
+    const transferEvents = events.filter((e) =>
+      e.type.startsWith('transfer_') || e.type === 'memory_session_end'
+    );
+
     return {
       userType: state.userType ?? 'unknown',
       guidanceDepth,
@@ -87,6 +92,7 @@ export default function DebugLogScreen() {
       k06Status,
       crisisProtocolActive,
       sessionAnalyses: userDat?.sessionAnalyses ?? [],
+      transferEvents,
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [refreshKey, state.userType]);
@@ -424,6 +430,43 @@ export default function DebugLogScreen() {
               <Row label="Turns Active" value={liveState.intervention?.turnsActive ?? '—'} />
               <Row label="Effectiveness" value={liveState.intervention?.effectivenessScore ?? '—'} />
               <Row label="Last Response" value={liveState.intervention?.lastUserResponse ?? '—'} />
+            </Section>
+
+            <Section title="Buffer → sessionAnalyses Transfer (5-point)">
+              {/* PUNT 3b: Dual-path storage key visibility */}
+              <View style={{ paddingVertical: 6, borderBottomWidth: 0.5, borderBottomColor: colors.border, marginBottom: 8 }}>
+                <Text style={{ fontSize: 11, fontWeight: '700', color: colors.warning, marginBottom: 4 }}>PUNT 3b: TWEE GESCHEIDEN PADEN</Text>
+                <Text style={{ fontSize: 10, color: colors.foreground, lineHeight: 14 }}>
+                  {'PAD A (pipeline endSession):\n  schrijft → @recofree_userdat → sessionAnalyses[]\n  gelezen door: per-message GPT (gpt-payload-builder)'}
+                </Text>
+                <Text style={{ fontSize: 10, color: colors.foreground, lineHeight: 14, marginTop: 4 }}>
+                  {'PAD B (lifecycleManager.endSession):\n  schrijft → recofree_memory/{persona}/logs.dat\n  gelezen door: greeting (sessionInitGreetingStep)'}
+                </Text>
+                <Text style={{ fontSize: 10, color: colors.error, marginTop: 4, fontWeight: '600' }}>
+                  {'Greeting leest NIET uit sessionAnalyses.\nsessionAnalyses leest NIET uit logs.dat.\n→ Twee aparte stores, twee aparte ketens.'}
+                </Text>
+              </View>
+
+              {/* 5-point transfer events */}
+              {liveState.transferEvents.length === 0 ? (
+                <Row label="Status" value="Geen transfer events (nog geen sessie beëindigd)" />
+              ) : (
+                liveState.transferEvents.map((evt: any, i: number) => {
+                  const time = evt.timestamp?.split('T')[1]?.split('.')[0] ?? '';
+                  const pointLabel = evt.type.replace('transfer_', 'P').replace('memory_session_end', 'P4-legacy');
+                  const isError = evt.data?.error || evt.data?.success === false;
+                  return (
+                    <View key={`transfer-${i}`} style={{ paddingVertical: 4, borderTopWidth: i > 0 ? 0.5 : 0, borderTopColor: colors.border }}>
+                      <Text style={{ fontSize: 11, fontWeight: '700', color: isError ? colors.error : colors.success }}>
+                        {pointLabel} [{time}] {isError ? '✗' : '✓'}
+                      </Text>
+                      <Text style={{ fontSize: 10, color: colors.foreground }} numberOfLines={3}>
+                        {Object.entries(evt.data || {}).map(([k, v]) => `${k}=${String(v)}`).join(' | ')}
+                      </Text>
+                    </View>
+                  );
+                })
+              )}
             </Section>
 
             <Section title="sessionAnalyses / logs.dat">

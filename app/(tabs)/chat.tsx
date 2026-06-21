@@ -766,8 +766,23 @@ function ChatScreenInner() {
               // Pass all sessions for cross-session pattern detection
               allSessions = logsDat.sessions;
             }
+            // ── Transfer Diagnostic Point 5: Greeting read from logs.dat ──
+            logDebugEvent('transfer_5_greeting_read', {
+              success: true,
+              logsDatSessionCount: logsDat?.sessions?.length ?? 0,
+              hasLastSessionSummary: lastSessionSummary !== null,
+              readFrom: `recofree_memory/${(state.userType === 'elias' ? 'elias' : 'kim')}/logs.dat`,
+              sessionAnalysesCount: '(separate store: @recofree_userdat — NOT read here)',
+            });
           } catch (logsErr) {
             console.warn('[Chat] Could not load logs.dat for greeting context:', logsErr);
+            logDebugEvent('transfer_5_greeting_read', {
+              success: false,
+              error: logsErr instanceof Error ? logsErr.message : String(logsErr),
+              logsDatSessionCount: 0,
+              readFrom: `recofree_memory/${(state.userType === 'elias' ? 'elias' : 'kim')}/logs.dat`,
+              sessionAnalysesCount: '(separate store: @recofree_userdat)',
+            });
           }
 
           // Generate VSP Insight context for clinical annotation
@@ -1159,24 +1174,50 @@ function ChatScreenInner() {
         messageCount: result.updatedUserDat.chatHistory.length,
         durationMs: 0, // not tracked currently
       });
+      // ── Transfer Diagnostic Point 1: Session-end detected ──
+      logDebugEvent('transfer_1_session_end_detected', {
+        trigger: 'manual',
+        messageCount: result.updatedUserDat.chatHistory.length,
+        sessionAnalysesCountBefore: (result.updatedUserDat.sessionAnalyses || []).length,
+        writtenTo: '@recofree_userdat → sessionAnalyses[]',
+      });
       // ── Memory Lifecycle: End Session ──────────────────────────────────
       // Generates session summary via GPT-4o-mini and appends to logs.dat (encrypted)
       try {
         const persona = (state.userType === 'elias' ? 'elias' : 'kim') as 'elias' | 'kim';
         const apiBase = getApiBaseUrl();
         const lifecycleManager = getSessionLifecycleManager();
+        // ── Transfer Diagnostic Point 2: Buffer status before endSession ──
+        const bufferBeforeEnd = lifecycleManager.getStores().sessionBufferStore.getBuffer();
+        logDebugEvent('transfer_2_buffer_status', {
+          bufferExists: bufferBeforeEnd !== null,
+          bufferMessageCount: bufferBeforeEnd?.compactMessages?.length ?? 0,
+          bufferSessionId: bufferBeforeEnd?.sessionId ?? 'none',
+        });
         const endResult = await lifecycleManager.endSession(persona, apiBase);
-        if (__DEV__) {
-          console.log(`[SessionLifecycle] endSession result: summarized=${endResult.summarized}, sessionId=${endResult.sessionId}`);
-          logDebugEvent('memory_session_end', {
-            sessionId: endResult.sessionId,
-            summarized: endResult.summarized,
-            error: endResult.error ?? null,
-          });
-        }
+        // ── Transfer Diagnostic Point 4: Lifecycle result ──
+        // (no __DEV__ guard — works on device APK)
+        console.log(`[SessionLifecycle] endSession result: summarized=${endResult.summarized}, sessionId=${endResult.sessionId}`);
+        logDebugEvent('memory_session_end', {
+          sessionId: endResult.sessionId,
+          summarized: endResult.summarized,
+          error: endResult.error ?? null,
+        });
+        logDebugEvent('transfer_4_lifecycle_result', {
+          sessionId: endResult.sessionId,
+          summarized: endResult.summarized,
+          error: endResult.error ?? null,
+          writtenTo: `recofree_memory/${persona}/logs.dat`,
+        });
       } catch (lifecycleErr) {
         // Non-critical: session ends even if memory lifecycle fails
         console.warn('[SessionLifecycle] endSession error (non-critical):', lifecycleErr);
+        logDebugEvent('transfer_4_lifecycle_result', {
+          sessionId: 'unknown',
+          summarized: false,
+          error: lifecycleErr instanceof Error ? lifecycleErr.message : String(lifecycleErr),
+          writtenTo: 'FAILED',
+        });
       }
     } catch (error) {
       console.error('End session error:', error);
