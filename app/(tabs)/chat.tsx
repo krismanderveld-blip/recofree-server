@@ -328,9 +328,36 @@ function ChatScreenInner() {
           const persona = (state.userType === 'elias' ? 'elias' : 'kim') as 'elias' | 'kim';
           const apiBase = getApiBaseUrl();
           const lifecycleManager = getSessionLifecycleManager();
-          await lifecycleManager.endSession(persona, apiBase);
+          // ── Transfer Diagnostic Point 1: Session-end detected (inactivity) ──
+          logDebugEvent('transfer_1_session_end_detected', {
+            trigger: 'inactivity_10min',
+            messageCount: messages.length,
+            sessionAnalysesCountBefore: (currentUserDat.sessionAnalyses || []).length,
+            writtenTo: '@recofree_userdat → sessionAnalyses[]',
+          });
+          // ── Transfer Diagnostic Point 2: Buffer status before endSession ──
+          const bufferBeforeEnd = lifecycleManager.getStores().sessionBufferStore.getBuffer();
+          logDebugEvent('transfer_2_buffer_status', {
+            bufferExists: bufferBeforeEnd !== null,
+            bufferMessageCount: bufferBeforeEnd?.compactMessages?.length ?? 0,
+            bufferSessionId: bufferBeforeEnd?.sessionId ?? 'none',
+          });
+          const endResult = await lifecycleManager.endSession(persona, apiBase);
+          // ── Transfer Diagnostic Point 4: Lifecycle result ──
+          logDebugEvent('transfer_4_lifecycle_result', {
+            sessionId: endResult.sessionId,
+            summarized: endResult.summarized,
+            error: endResult.error ?? null,
+            writtenTo: `recofree_memory/${persona}/logs.dat`,
+          });
         } catch (_memErr) {
           console.warn('[Chat] Inactivity auto-close: lifecycle endSession failed (non-critical):', _memErr);
+          logDebugEvent('transfer_4_lifecycle_result', {
+            sessionId: 'unknown',
+            summarized: false,
+            error: _memErr instanceof Error ? _memErr.message : String(_memErr),
+            writtenTo: 'FAILED',
+          });
         }
 
         // Show auto-close message to user
@@ -509,9 +536,36 @@ function ChatScreenInner() {
               const persona = (state.userType === 'elias' ? 'elias' : 'kim') as 'elias' | 'kim';
               const apiBase = getApiBaseUrl();
               const lifecycleManager = getSessionLifecycleManager();
-              await lifecycleManager.endSession(persona, apiBase);
+              // ── Transfer Diagnostic Point 1: Session-end detected (background) ──
+              logDebugEvent('transfer_1_session_end_detected', {
+                trigger: 'app_background',
+                messageCount: resultOrNull.updatedUserDat.chatHistory.length,
+                sessionAnalysesCountBefore: (resultOrNull.updatedUserDat.sessionAnalyses || []).length,
+                writtenTo: '@recofree_userdat → sessionAnalyses[]',
+              });
+              // ── Transfer Diagnostic Point 2: Buffer status before endSession ──
+              const bufferBeforeEnd = lifecycleManager.getStores().sessionBufferStore.getBuffer();
+              logDebugEvent('transfer_2_buffer_status', {
+                bufferExists: bufferBeforeEnd !== null,
+                bufferMessageCount: bufferBeforeEnd?.compactMessages?.length ?? 0,
+                bufferSessionId: bufferBeforeEnd?.sessionId ?? 'none',
+              });
+              const endResult = await lifecycleManager.endSession(persona, apiBase);
+              // ── Transfer Diagnostic Point 4: Lifecycle result ──
+              logDebugEvent('transfer_4_lifecycle_result', {
+                sessionId: endResult.sessionId,
+                summarized: endResult.summarized,
+                error: endResult.error ?? null,
+                writtenTo: `recofree_memory/${persona}/logs.dat`,
+              });
             } catch (_memErr) {
               // Non-critical
+              logDebugEvent('transfer_4_lifecycle_result', {
+                sessionId: 'unknown',
+                summarized: false,
+                error: _memErr instanceof Error ? _memErr.message : String(_memErr),
+                writtenTo: 'FAILED',
+              });
             }
           } else {
             // Timeout or error: lightweight local save (pending close marker)

@@ -1692,3 +1692,5 @@
 - [x] Rewrite sessionEndSummarizer to produce valid SessionLogSummary with all required fields (summaryId, createdAt, summaryModel, etc.)
 - [x] Update greeting read path to use correct SessionLogSummary field names (openEndpoints, emotionalThemes instead of old fields)
 - [x] Vitest verification: 3 tests pass (write+read, empty buffer error, multi-session accumulation)
+- [x] Add 5-point transfer diagnostic to inactivity auto-end path
+- [x] Add 5-point transfer diagnostic to background auto-end path
