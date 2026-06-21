@@ -692,9 +692,13 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     await persistBackpack(newBackpack);
     // Fire-and-forget: trigger extraction for the new content
     triggerExtractionIfNeeded(newBackpack);
-    // Also sync name to userDat backup field
-    if (state.userDat && newBackpack.naam) {
-      const updatedUserDat = { ...state.userDat, nameBackup: newBackpack.naam };
+    // Reset extractedEntities so next session sends full backpack (not stale entities)
+    // This ensures backpackChanged=true until new extraction completes
+    if (state.userDat) {
+      const updatedUserDat = {
+        ...state.userDat,
+        extractedEntities: undefined,
+      };
       dispatch({ type: 'UPDATE_USERDAT', payload: updatedUserDat });
       await persistUserDat(updatedUserDat);
     }

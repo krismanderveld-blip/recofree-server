@@ -89,7 +89,45 @@ const ROLE_PATTERNS: RolePattern[] = [
   { pattern: /\bmy\s+neighbor\s+(\w+)/gi, roleEN: 'neighbor', baseWeight: 2 },
   { pattern: /\bmy\s+friend\s+(\w+)/gi, roleEN: 'friend', baseWeight: 2 },
 
-  // Patterns without name (role only)
+  // ── Dutch patterns with name capture ("mijn [role] [Name]") ──
+  { pattern: /\bmijn\s+zoon\s+(\w+)/gi, roleEN: 'son', baseWeight: 5 },
+  { pattern: /\bmijn\s+dochter\s+(\w+)/gi, roleEN: 'daughter', baseWeight: 5 },
+  { pattern: /\bmijn\s+vrouw\s+(\w+)/gi, roleEN: 'wife', baseWeight: 5 },
+  { pattern: /\bmijn\s+man\s+(\w+)/gi, roleEN: 'husband', baseWeight: 5 },
+  { pattern: /\bmijn\s+vriendin\s+(\w+)/gi, roleEN: 'partner', baseWeight: 5 },
+  { pattern: /\bmijn\s+vriend\s+(\w+)/gi, roleEN: 'partner', baseWeight: 4 },
+  { pattern: /\bmijn\s+partner\s+(\w+)/gi, roleEN: 'partner', baseWeight: 5 },
+  { pattern: /\bmijn\s+ex(?:-vriendin|-vriend|-vrouw|-man|-partner)?\s+(\w+)/gi, roleEN: 'ex', baseWeight: 4 },
+  { pattern: /\bmijn\s+moeder\s+(\w+)/gi, roleEN: 'mother', baseWeight: 4 },
+  { pattern: /\bmijn\s+vader\s+(\w+)/gi, roleEN: 'father', baseWeight: 4 },
+  { pattern: /\bmijn\s+mama\s+(\w+)/gi, roleEN: 'mother', baseWeight: 4 },
+  { pattern: /\bmijn\s+papa\s+(\w+)/gi, roleEN: 'father', baseWeight: 4 },
+  { pattern: /\bmijn\s+zus\s+(\w+)/gi, roleEN: 'sister', baseWeight: 3 },
+  { pattern: /\bmijn\s+broer\s+(\w+)/gi, roleEN: 'brother', baseWeight: 3 },
+  { pattern: /\bmijn\s+oma\s+(\w+)/gi, roleEN: 'grandmother', baseWeight: 3 },
+  { pattern: /\bmijn\s+opa\s+(\w+)/gi, roleEN: 'grandfather', baseWeight: 3 },
+  { pattern: /\bmijn\s+collega\s+(\w+)/gi, roleEN: 'colleague', baseWeight: 2 },
+  { pattern: /\bmijn\s+baas\s+(\w+)/gi, roleEN: 'boss', baseWeight: 3 },
+  { pattern: /\bmijn\s+therapeut\s+(\w+)/gi, roleEN: 'therapist', baseWeight: 3 },
+  { pattern: /\bmijn\s+buurman\s+(\w+)/gi, roleEN: 'neighbor', baseWeight: 2 },
+  { pattern: /\bmijn\s+buurvrouw\s+(\w+)/gi, roleEN: 'neighbor', baseWeight: 2 },
+
+  // ── Dutch patterns without name (role only) ──
+  { pattern: /\bmijn\s+(zoon)\b/gi, roleEN: 'son', baseWeight: 5 },
+  { pattern: /\bmijn\s+(dochter)\b/gi, roleEN: 'daughter', baseWeight: 5 },
+  { pattern: /\bmijn\s+(vrouw)\b/gi, roleEN: 'wife', baseWeight: 5 },
+  { pattern: /\bmijn\s+(man)\b/gi, roleEN: 'husband', baseWeight: 5 },
+  { pattern: /\bmijn\s+(vriendin|vriend)\b/gi, roleEN: 'partner', baseWeight: 5 },
+  { pattern: /\bmijn\s+(partner)\b/gi, roleEN: 'partner', baseWeight: 5 },
+  { pattern: /\bmijn\s+(moeder|mama|ma)\b/gi, roleEN: 'mother', baseWeight: 4 },
+  { pattern: /\bmijn\s+(vader|papa|pa)\b/gi, roleEN: 'father', baseWeight: 4 },
+  { pattern: /\bmijn\s+(zus)\b/gi, roleEN: 'sister', baseWeight: 3 },
+  { pattern: /\bmijn\s+(broer)\b/gi, roleEN: 'brother', baseWeight: 3 },
+  { pattern: /\bmijn\s+(oma)\b/gi, roleEN: 'grandmother', baseWeight: 3 },
+  { pattern: /\bmijn\s+(opa)\b/gi, roleEN: 'grandfather', baseWeight: 3 },
+  { pattern: /\bmijn\s+(ex)\b/gi, roleEN: 'ex', baseWeight: 4 },
+
+  // Patterns without name (role only) — English
   { pattern: /\bmy\s+(son)\b/gi, roleEN: 'son', baseWeight: 5 },
   { pattern: /\bmy\s+(daughter)\b/gi, roleEN: 'daughter', baseWeight: 5 },
   { pattern: /\bmy\s+(wife)\b/gi, roleEN: 'wife', baseWeight: 5 },
@@ -117,12 +155,22 @@ const EMOTIONAL_PATTERNS = [
   /\b(hurt|pain|wounded|sad|sorrow)\b/i,
   /\b(proud|grateful|happy)\b/i,
   /\b(disappointed|betrayed)\b/i,
+  // Dutch emotional patterns
+  /\b(mis|missen|verloren|weg|dood|overleden|rouw|verdriet)\b/i,
+  /\b(liefde|houden van|zorgen)\b/i,
+  /\b(boos|woedend|kwaad|gefrustreerd)\b/i,
+  /\b(schuld|schaamte|sorry|spijt)\b/i,
+  /\b(bang|angstig|angst|bezorgd|ongerust)\b/i,
+  /\b(pijn|gekwetst|verdrietig|droevig)\b/i,
+  /\b(trots|dankbaar|blij|gelukkig)\b/i,
+  /\b(teleurgesteld|verraden)\b/i,
 ];
 
 /**
  * Role words (without "my") for implicit mention detection.
  */
 const IMPLICIT_ROLE_WORDS: Record<string, string> = {
+  // English
   'son': 'son', 'daughter': 'daughter', 'wife': 'wife', 'husband': 'husband',
   'girlfriend': 'partner', 'boyfriend': 'partner', 'partner': 'partner', 'ex': 'ex',
   'mother': 'mother', 'mom': 'mother', 'father': 'father', 'dad': 'father',
@@ -130,6 +178,14 @@ const IMPLICIT_ROLE_WORDS: Record<string, string> = {
   'grandfather': 'grandfather', 'grandma': 'grandmother', 'grandpa': 'grandfather',
   'cousin': 'cousin', 'colleague': 'colleague', 'boss': 'boss',
   'therapist': 'therapist', 'doctor': 'doctor', 'neighbor': 'neighbor', 'friend': 'friend',
+  // Dutch
+  'zoon': 'son', 'dochter': 'daughter', 'vrouw': 'wife', 'man': 'husband',
+  'vriendin': 'partner', 'vriend': 'partner', 'echtgenoot': 'husband', 'echtgenote': 'wife',
+  'moeder': 'mother', 'mama': 'mother', 'ma': 'mother',
+  'vader': 'father', 'papa': 'father', 'pa': 'father',
+  'zus': 'sister', 'broer': 'brother', 'oma': 'grandmother', 'opa': 'grandfather',
+  'collega': 'colleague', 'baas': 'boss', 'therapeut': 'therapist',
+  'buurman': 'neighbor', 'buurvrouw': 'neighbor', 'maat': 'friend', 'maatje': 'friend',
 };
 
 // ─── Extraction ───────────────────────────────────────────────────

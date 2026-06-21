@@ -69,14 +69,14 @@ const TRIGGER_KEYWORDS: Record<string, string[]> = {
 // ─── Relationship Detection ────────────────────────────────────
 
 const RELATIONSHIP_ROLES: Record<string, string[]> = {
-  father: ['father', 'dad', 'papa'],
-  mother: ['mother', 'mom', 'mama'],
-  son: ['son', 'boy'],
-  daughter: ['daughter'],
-  partner: ['partner', 'wife', 'husband', 'girlfriend', 'boyfriend'],
-  ex: ['ex', 'ex-partner', 'ex-wife', 'ex-husband', 'ex-girlfriend', 'ex-boyfriend'],
-  sibling: ['brother', 'sister'],
-  friend: ['friend', 'best friend'],
+  father: ['father', 'dad', 'papa', 'vader', 'pa'],
+  mother: ['mother', 'mom', 'mama', 'moeder', 'ma', 'mam'],
+  son: ['son', 'boy', 'zoon'],
+  daughter: ['daughter', 'dochter'],
+  partner: ['partner', 'wife', 'husband', 'girlfriend', 'boyfriend', 'vrouw', 'man', 'vriendin', 'vriend', 'echtgenoot', 'echtgenote'],
+  ex: ['ex', 'ex-partner', 'ex-wife', 'ex-husband', 'ex-girlfriend', 'ex-boyfriend', 'ex-vriendin', 'ex-vriend', 'ex-vrouw', 'ex-man'],
+  sibling: ['brother', 'sister', 'broer', 'zus'],
+  friend: ['friend', 'best friend', 'vriend', 'vriendin', 'beste vriend', 'beste vriendin', 'maat', 'maatje'],
 };
 
 // ─── Core Wound Detection ──────────────────────────────────────

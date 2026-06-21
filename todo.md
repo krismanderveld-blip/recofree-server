@@ -1710,3 +1710,10 @@
 - [x] Issue 4: Rugzak not recognized since wizard — root cause = endSession never ran → tendencies never persisted (fixed by issues 1+2)
 - [x] Issue 5: End-session button added in header + background timeout set to 10min
 - [x] Greeting now includes last 3 session narratives from logs.dat (recentSessionDigests)
+
+## Fix: Rugzak/backpack content not recognized (Melissa issue)
+- [x] Add Dutch relationship terms to RELATIONSHIP_ROLES in backpack-relevance-analyzer.ts (vriendin, vriend, moeder, vader, zoon, dochter, zus, broer, etc.)
+- [x] Add Dutch ROLE_PATTERNS to relational-anchor-detector.ts (mijn vriendin X, mijn zoon X, etc.)
+- [x] Add Dutch IMPLICIT_ROLE_WORDS to relational-anchor-detector.ts
+- [x] Add Dutch EMOTIONAL_PATTERNS to relational-anchor-detector.ts (mis, verdriet, boos, bang, pijn, etc.)
+- [x] Reset extractedEntities in userDat when wizard saves backpack → forces full backpack send at next session
