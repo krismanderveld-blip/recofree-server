@@ -86,6 +86,7 @@ export default function DebugLogScreen() {
       activeModules,
       k06Status,
       crisisProtocolActive,
+      sessionAnalyses: userDat?.sessionAnalyses ?? [],
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [refreshKey, state.userType]);
@@ -423,6 +424,31 @@ export default function DebugLogScreen() {
               <Row label="Turns Active" value={liveState.intervention?.turnsActive ?? '—'} />
               <Row label="Effectiveness" value={liveState.intervention?.effectivenessScore ?? '—'} />
               <Row label="Last Response" value={liveState.intervention?.lastUserResponse ?? '—'} />
+            </Section>
+
+            <Section title="sessionAnalyses / logs.dat">
+              {liveState.sessionAnalyses.length === 0 ? (
+                <Row label="Entries" value="0 entries (leeg)" />
+              ) : (
+                <>
+                  <Row label="Total entries" value={liveState.sessionAnalyses.length} />
+                  <Row
+                    label="Most recent"
+                    value={liveState.sessionAnalyses[liveState.sessionAnalyses.length - 1]?.date ?? '—'}
+                  />
+                  {liveState.sessionAnalyses.slice(-3).reverse().map((sa: any, i: number) => (
+                    <View key={`sa-${i}`} style={{ paddingVertical: 4, borderTopWidth: i > 0 ? 0.5 : 0, borderTopColor: colors.border }}>
+                      <Text style={{ fontSize: 11, color: colors.muted }}>{sa.date} (session #{sa.sessionNumber})</Text>
+                      <Text style={{ fontSize: 12, color: colors.foreground }}>
+                        Zone: {sa.endRiskLevel ?? '—'} | Module: {(sa.modulesUsed || []).join(', ') || '—'}
+                      </Text>
+                      <Text style={{ fontSize: 11, color: colors.muted }}>
+                        Triggers: {(sa.newTriggers || []).join(', ') || 'none'} | Themes: {(sa.themes || []).slice(0, 2).join(', ') || '—'}
+                      </Text>
+                    </View>
+                  ))}
+                </>
+              )}
             </Section>
           </>
         ) : null}
