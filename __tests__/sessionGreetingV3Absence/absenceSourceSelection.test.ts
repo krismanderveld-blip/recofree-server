@@ -39,17 +39,17 @@ describe('Absence Source Selection (Return After Absence)', () => {
     expect(result.length).toBeLessThanOrEqual(2);
   });
 
-  it('C2: Selects by priority order (TODAY_MOOD > RECENT_DIARY > RECENT_GRATITUDE)', () => {
+  it('C2: Selects by priority order (TODAY_MOOD > LAST_SESSION_SUMMARY > RECENT_DIARY)', () => {
     const candidates: GreetingSynthesisCandidate[] = [
-      makeCandidate('RECENT_GRATITUDE', 0.9, 'Dankbaar'),
+      makeCandidate('RECENT_DIARY', 0.9, 'Vandaag was moeilijk'),
       makeCandidate('TODAY_MOOD', 0.5, 'mood'),
-      makeCandidate('RECENT_DIARY', 0.3, 'diary'),
+      makeCandidate('LAST_SESSION_SUMMARY', 0.3, 'Vorige sessie: frustraties over investering'),
     ];
     const result = selectReturnAfterAbsenceSources({ candidates, absence: defaultAbsence });
     expect(result.length).toBe(2);
-    // Priority order: TODAY_MOOD (idx 0) > RECENT_DIARY (idx 1) > RECENT_GRATITUDE (idx 2)
+    // V3.2 Priority order: TODAY_MOOD (idx 0) > LAST_SESSION_SUMMARY (idx 1) > RECENT_DIARY (idx 2)
     expect(result[0].sourceType).toBe('TODAY_MOOD');
-    expect(result[1].sourceType).toBe('RECENT_DIARY');
+    expect(result[1].sourceType).toBe('LAST_SESSION_SUMMARY');
   });
 
   it('C3: Returns empty array when no eligible candidates', () => {

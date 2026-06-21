@@ -127,7 +127,9 @@ export function buildGreetingSynthesisCandidates(
   // ─── 2. RECENT_DIARY ────────────────────────────────────────────────────────
   if (freshness.diaryRecentUnder3Days && diaryMetadata?.latestSafeAnchor) {
     const diaryAge = freshness.latestDiaryAgeInDays ?? 3;
-    const baseRelevance = computeRecencyRelevance(diaryAge, 3);
+    // V3.2: Cap diary base relevance at 0.85 so it never outscores LAST_SESSION_SUMMARY (0.93-0.96).
+    // Diary is supplementary context; the actual conversation content is the primary continuity source.
+    const baseRelevance = Math.min(computeRecencyRelevance(diaryAge, 3), 0.85);
     // Diary is contextual — determine valence from content hints
     const valence = inferDiaryValence(diaryMetadata.latestSafeAnchor);
     const zoneAdjusted = applyZoneModifier(baseRelevance, valence, zoneMods);
@@ -265,10 +267,13 @@ export function buildGreetingSynthesisCandidates(
   }
 
   // ─── 7. LAST_SESSION_SUMMARY (from logs.dat — last 3 sessions for continuity) ──
+  // PRIORITY FIX: Session continuity is the MOST important context for greeting.
+  // Recent conversation content (what we actually talked about) must outweigh diary entries.
   if (logsDat && (logsDat.lastSessionOpenLoops.length > 0 || logsDat.latestLogDigest || (logsDat.recentSessionDigests && logsDat.recentSessionDigests.length > 0))) {
     const hasOpenLoops = logsDat.lastSessionOpenLoops.length > 0;
     const hasRecent = logsDat.recentSessionDigests && logsDat.recentSessionDigests.length > 0;
-    const baseRelevance = hasOpenLoops ? 0.88 : hasRecent ? 0.82 : 0.75;
+    // V3.2: Raised base scores — session content is PRIMARY context, always above diary (which maxes at ~0.85-1.0)
+    const baseRelevance = hasOpenLoops ? 0.96 : hasRecent ? 0.93 : 0.85;
     const zoneAdjusted = applyZoneModifier(baseRelevance, 'neutral', zoneMods);
 
     // Build rich safeAnchor with last 3 session narratives
@@ -299,6 +304,10 @@ export function buildGreetingSynthesisCandidates(
           : 'Last session digest available',
       safeAnchor,
     });
+    // V3.2: Add timestamp for recency bonus — use endedAt from most recent session digest
+    if (hasRecent && logsDat.recentSessionDigests![0].endedAt) {
+      sourceTimestamps.push({ sourceType: 'LAST_SESSION_SUMMARY', timestamp: new Date(logsDat.recentSessionDigests![0].endedAt).getTime() });
+    }
   } else {
     candidates.push({
       sourceType: 'LAST_SESSION_SUMMARY',

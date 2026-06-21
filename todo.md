@@ -1745,3 +1745,12 @@
 - [x] Probleem 2: extractThemes uitgebreid met Nederlandse termen (ruzie, woordenwisseling, vriendin, etc.) zodat sessie-inhoud correct wordt opgeslagen
 - [x] Add /api/debug/prompt endpoint (dev mode only) — GET /api/debug/prompt toont volledige system prompt, session cache, PERSONEN-LOOKUP
 - [x] Fix 5 TS errors: user-context.tsx (userName→naam, domain→name, label→string[]), kimCluster4MemoryPatch.ts, kst01-router.ts
+
+## Bug: Greeting engine gebruikt dagboek als primaire context i.p.v. recente sessie-inhoud
+- [x] Root cause 1: LAST_SESSION_SUMMARY base score (0.82-0.88) lager dan RECENT_DIARY (tot 1.0) → verhoogd naar 0.93-0.96
+- [x] Root cause 2: RETURN_AFTER_ABSENCE hardcoded priority: RECENT_DIARY stond boven LAST_SESSION_SUMMARY → omgedraaid
+- [x] Root cause 3: logs.dat had geen sourceTimestamp entry → nu endedAt als timestamp voor recency bonus
+- [x] Fix: LAST_SESSION_SUMMARY base score verhoogd naar 0.96 (open loops) / 0.93 (recent digests) / 0.85 (alleen digest)
+- [x] Fix: RETURN_AFTER_ABSENCE priority: LAST_SESSION_SUMMARY nu boven RECENT_DIARY
+- [x] Fix: logs.dat endedAt timestamp toegevoegd aan sourceTimestamps voor recency bonus
+- [x] Fix: RECENT_DIARY base relevance gecapped op 0.85 zodat het nooit boven sessie-samenvatting scoort
