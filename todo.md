@@ -1732,5 +1732,10 @@
 
 ## Bug: GPT herkent geen personen uit de rugzak
 - [x] Probleem: Rugzak gaat wél mee naar GPT, schema's/modi worden herkend, maar persoonsnamen (bijv. "Melissa") worden niet herkend
-- [x] Oorzaak: extractRelationshipMap was generieke Engelse instructie zonder concrete namen; anti-hallucination regel te agressief ("I don't know")
-- [x] Fix: extractRelationshipMap herschreven als concrete PERSONEN-LOOKUP tabel (uit extractedEntities of regex); anti-hallucination regel verwijst nu naar lookup-tabel voordat "ik weet niet" gezegd mag worden; Nederlandse relatietermen toegevoegd
+- [x] Oorzaak 1: Prompt ORDERING — antiHallucination stond BOVEN personal data, GPT-4o-mini prioriteert eerdere instructies
+- [x] Oorzaak 2: Regex EXTRACTION — alleen "mijn [role] [Name]" patroon, maar user schrijft "Melissa, partner sinds 2019"
+- [x] Fix 1: antiHallucination verplaatst ONDER identityMemory/lifeStoryContext in session-start + follow-up prompt
+- [x] Fix 2: Free-text regex patronen toegevoegd: "[Name], [role]", "[Name] ([role])", "[Role]: [Name]"
+- [x] Fix 3: antiHallucination regel herschreven met concreet voorbeeld en "SCAN ALL TEXT ABOVE"
+- [x] Fix 4: relational-anchor-detector.ts uitgebreid met dezelfde free-text patronen
+- [x] Skill: prompt-data-injection-audit bijgewerkt met prompt-ordering en regex-failure lessen

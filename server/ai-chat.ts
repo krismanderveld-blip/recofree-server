@@ -755,6 +755,12 @@ function extractRelationshipMap(
     /([A-Z][a-zéèëïöüà]+),?\s+(?:my)\s+(son|daughter|wife|girlfriend|boyfriend|partner|husband|mother|mom|father|dad|sister|brother|grandmother|grandfather|friend|colleague|neighbor|ex|boss|therapist|stepfather|stepmother)/g,
     // "[Name] is mijn [relation]" / "[Name] was mijn [relation]"
     /([A-Z][a-zéèëïöüà]+)\s+(?:is|was)\s+(?:mijn|m'n)\s+(zoon|dochter|vrouw|vriendin|vriend|partner|man|moeder|mama|vader|papa|zus|broer|oma|opa|ex|baas|collega|buurman|buurvrouw|therapeut|hulpverlener|stiefvader|stiefmoeder)/g,
+    // FREE-TEXT: "[Name], [role]" (e.g., "Melissa, partner sinds 2019")
+    /([A-Z][a-zéèëïöüà]+),?\s+(zoon|dochter|vrouw|vriendin|vriend|partner|man|moeder|mama|vader|papa|zus|broer|oma|opa|ex|collega|baas|buurman|buurvrouw|therapeut|stiefvader|stiefmoeder|son|daughter|wife|girlfriend|boyfriend|husband|mother|father|sister|brother|friend|colleague)\b/g,
+    // FREE-TEXT: "[Name] ([role], ...)" (e.g., "Jules (zoon, 4 jaar)")
+    /([A-Z][a-zéèëïöüà]+)\s*\((zoon|dochter|vrouw|vriendin|vriend|partner|man|moeder|mama|vader|papa|zus|broer|oma|opa|ex|collega|baas|therapeut|son|daughter|wife|girlfriend|boyfriend|husband|mother|father|sister|brother|friend|colleague)[^)]*\)/g,
+    // FREE-TEXT: "[Role]: [Name]" (e.g., "Partner: Melissa")
+    /(zoon|dochter|vrouw|vriendin|vriend|partner|man|moeder|mama|vader|papa|zus|broer|oma|opa|ex|collega|baas|therapeut|son|daughter|wife|girlfriend|boyfriend|husband|mother|father|sister|brother|friend|colleague):\s*([A-Z][a-zéèëïöüà]+)/g,
   ];
 
   const foundPersons = new Map<string, string>(); // name → relationship
@@ -1185,10 +1191,11 @@ This is the MOST IMPORTANT rule of your entire existence:
    - Do not invent relationships. Do not invent background stories.
    - Do not assign roles to people that are not EXACTLY described as such.
 
-2. If a person, relationship, event, or fact is NOT known:
-   → FIRST: Check the PERSONEN-LOOKUP table, STRUCTURED MEMORY, and LIFE STORY sections above.
-   → If the name appears ANYWHERE in those sections, you KNOW that person. Do NOT claim ignorance.
-   → ONLY if the name is truly absent from ALL sections above: say "Ik weet niet wie [naam] is in jouw leven. Zou je me meer over hen kunnen vertellen?"
+2. When the user mentions a person's name:
+   → SCAN ALL TEXT ABOVE THIS BLOCK: the BACKPACK, LIFE STORY, PERSONAL MEMORY, STRUCTURED MEMORY, and DIARY sections.
+   → If the name appears ANYWHERE in those sections — even without "mijn" before it — you KNOW that person. State their relationship as written.
+   → Example: if above text says "Melissa, partner sinds 2019" and user asks "wie is Melissa?" → you answer: "Melissa is je partner, sinds 2019."
+   → ONLY if the name is truly ABSENT from ALL text above: say "Ik weet niet wie [naam] is in jouw leven. Zou je me meer over hen kunnen vertellen?"
    → NEVER fabricate an answer. NEVER.
 
 3. If you are unsure about a relationship or fact:
@@ -1633,13 +1640,14 @@ This is a HARD SAFETY RULE. Violation = harm. No exceptions.`}
 
     return `${identity}
 
-${antiHallucination}
 ${conditional.relationshipMap}
 ${lifeStoryContext}
 ${backpackAnalysisContext}
 ${knownPatternsBlock}
 
 The user's name is ${name}. Address them by name occasionally.
+
+${antiHallucination}
 
 ${selectiveRelevance}
 
@@ -2090,7 +2098,6 @@ Rules:
   // ASSEMBLE FULL SESSION-START PROMPT
   // ══════════════════════════════════════════════════════════════
   return `${identity}
-${antiHallucination}
 ${schemaRecognition}
 
 The user's name is ${name}. Address them by name occasionally.
@@ -2099,6 +2106,9 @@ ${diaryMemory}
 ${sessionMemory}
 ${sessionStartBackpackAnalysis}
 ${sessionStartKnownPatterns}
+
+${antiHallucination}
+
 ${relevanceContext}
 
 === MANDATORY BEHAVIORAL INSTRUCTIONS ===

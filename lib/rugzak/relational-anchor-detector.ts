@@ -112,6 +112,14 @@ const ROLE_PATTERNS: RolePattern[] = [
   { pattern: /\bmijn\s+buurman\s+(\w+)/gi, roleEN: 'neighbor', baseWeight: 2 },
   { pattern: /\bmijn\s+buurvrouw\s+(\w+)/gi, roleEN: 'neighbor', baseWeight: 2 },
 
+  // ── Free-text patterns: "[Name], [role]" or "[Name] ([role])" ──
+  // Catches: "Melissa, partner sinds 2019", "Jules (zoon, 4 jaar)", "Anja, moeder"
+  { pattern: /\b([A-Z][a-zéèëïöüà]+),?\s+(zoon|dochter|vrouw|vriendin|vriend|partner|man|moeder|mama|vader|papa|zus|broer|oma|opa|ex|collega|baas|buurman|buurvrouw|therapeut|stiefvader|stiefmoeder|schoonmoeder|schoonvader|neef|nicht|oom|tante|son|daughter|wife|girlfriend|boyfriend|husband|mother|father|sister|brother|friend|colleague|ex-partner)\b/gi, roleEN: 'partner', baseWeight: 4 },
+  // "[Name] ([role], ...)"
+  { pattern: /\b([A-Z][a-zéèëïöüà]+)\s*\((zoon|dochter|vrouw|vriendin|vriend|partner|man|moeder|mama|vader|papa|zus|broer|oma|opa|ex|collega|baas|therapeut|son|daughter|wife|girlfriend|boyfriend|husband|mother|father|sister|brother|friend|colleague)[^)]*\)/gi, roleEN: 'unknown', baseWeight: 4 },
+  // "[Role]: [Name]" (e.g., "Partner: Melissa")
+  { pattern: /\b(zoon|dochter|vrouw|vriendin|vriend|partner|man|moeder|mama|vader|papa|zus|broer|oma|opa|ex|collega|baas|therapeut|son|daughter|wife|girlfriend|boyfriend|husband|mother|father|sister|brother|friend|colleague):\s*([A-Z][a-zéèëïöüà]+)/gi, roleEN: 'unknown', baseWeight: 4 },
+
   // ── Dutch patterns without name (role only) ──
   { pattern: /\bmijn\s+(zoon)\b/gi, roleEN: 'son', baseWeight: 5 },
   { pattern: /\bmijn\s+(dochter)\b/gi, roleEN: 'daughter', baseWeight: 5 },
