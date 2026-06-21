@@ -418,7 +418,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       ? Object.entries(updatedBackpack.kimBackpack).map(([k, v]) => `${k}: ${v}`).join('\n')
       : '';
     const fullText = kimText ? `${backpackText}\n\n--- Kim ---\n${kimText}` : backpackText;
-    const userId = state.userDat?.userName || 'anonymous';
+    const userId = state.userDat?.naam || 'anonymous';
 
     callBackpackAnalysis(userId, fullText).then((analysis) => {
       if (analysis && state.userDat) {
@@ -450,7 +450,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
               // New schema tendency
               existingTendencies.push({
                 schemaId,
-                domain: schema.domain || 'unknown',
+                domain: 'unknown',
                 frequency: 1,
                 lastSeen: now,
                 copingStyle: null,
@@ -501,7 +501,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         if (triggers.length > 0) {
           const existingTriggers = [...(updatedUserDat.triggerPatterns || [])];
           for (const triggerLabel of triggers) {
-            const normalized = (typeof triggerLabel === 'string' ? triggerLabel : triggerLabel.label || '').toLowerCase().trim();
+            const normalized = (typeof triggerLabel === 'string' ? triggerLabel : String(triggerLabel)).toLowerCase().trim();
             if (!normalized) continue;
             const existingIdx = existingTriggers.findIndex((t) => t.trigger.toLowerCase() === normalized);
             if (existingIdx >= 0) {

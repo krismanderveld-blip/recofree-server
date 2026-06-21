@@ -5,22 +5,30 @@
 
 import type {
   KimCluster4DetectionResult,
-  KimCluster4MemoryPatchEntry,
+  KimCluster4MemoryPatch,
 } from './kimCluster4.types';
 
 export function buildKimCluster4MemoryPatch(
   result: KimCluster4DetectionResult,
   timestamp: string
-): KimCluster4MemoryPatchEntry {
+): KimCluster4MemoryPatch {
   return {
-    timestamp,
-    moduleId: result.moduleId,
-    activationStatus: result.activationStatus,
-    confidenceScore: result.confidenceScore,
-    themes: result.themes,
-    responseMode: result.responseMode,
-    matchedMarkerCount: result.matchedMarkers.length,
-    crisisNumbersShown: result.crisisNumbersToShow,
     persona: 'kim',
+    moduleId: result.moduleId,
+    userDat: {
+      triggerPatterns: result.themes,
+      lastUpdatedAt: timestamp,
+      frequency: 1,
+      sourceModuleId: result.moduleId,
+    },
+    projectionsDat: [],
+    logsDat: {
+      moduleId: result.moduleId,
+      themes: result.themes,
+      responseMode: result.responseMode,
+      timestamp,
+      encrypted: true,
+      rawText: false,
+    },
   };
 }

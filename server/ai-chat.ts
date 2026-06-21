@@ -304,11 +304,53 @@ interface SessionCache {
   selfAcceptanceContext: string | null;
   // Kim pattern support continuity context (PAAL-K01/BEHE-K01/AANP-K01/CODEP-K01, Kim only)
   kimPatternSupportContext: string | null;
+  // Previous session analyses summary (cached at SESSION_INIT, injected in follow-up for continuity)
+  sessionAnalysesSummary: string;
 }
 
 // Single-user cache: one active session per server instance (not multi-user safe)
 // Must be replaced with a session-keyed map before any multi-user deployment.
 let sessionCache: SessionCache | null = null;
+
+/** Getter for debug endpoint */
+export function getSessionCache(): SessionCache | null {
+  return sessionCache;
+}
+
+/**
+ * Build a compact summary of previous session analyses for follow-up injection.
+ * Only includes the last 3 sessions to keep token usage low.
+ * Focuses on themes, triggers, and emotional arc — the content GPT needs to reference.
+ */
+function buildSessionAnalysesSummary(sessionAnalyses: Array<{
+  sessionNumber: number;
+  date: string;
+  messageCount: number;
+  durationMinutes: number;
+  dominantEmotion: string;
+  themes: string[];
+  newTriggers: string[];
+  modulesUsed: string[];
+  moodDelta: { distressChange: number; resilienceChange: number };
+  endRiskLevel: string;
+}>): string {
+  if (!sessionAnalyses || sessionAnalyses.length === 0) return '';
+
+  // Take the last 3 sessions (most recent first)
+  const recent = sessionAnalyses.slice(-3).reverse();
+  let summary = '\n─── VORIGE SESSIES (kort) ───';
+  for (const sa of recent) {
+    summary += `\nSessie #${sa.sessionNumber} (${sa.date}):`;
+    if (sa.themes.length > 0) summary += ` Thema's: ${sa.themes.join(', ')}.`;
+    if (sa.newTriggers.length > 0) summary += ` Triggers: ${sa.newTriggers.join(', ')}.`;
+    summary += ` Emotie: ${sa.dominantEmotion}.`;
+    const distressDir = sa.moodDelta.distressChange > 0 ? '↑' : sa.moodDelta.distressChange < 0 ? '↓' : '→';
+    summary += ` Distress${distressDir}.`;
+    summary += ` Risico: ${sa.endRiskLevel}.`;
+  }
+  summary += '\n─── EINDE VORIGE SESSIES ───';
+  return summary;
+}
 
 function cacheSessionInit(input: ChatRequestInput): void {
   // Build structured memory from extractedEntities if available (compact, no full backpack needed)
@@ -368,6 +410,7 @@ function cacheSessionInit(input: ChatRequestInput): void {
     steunpilarenContext: input.steunpilarenContext ?? null,
     selfAcceptanceContext: input.selfAcceptanceContext ?? null,
     kimPatternSupportContext: input.kimPatternSupportContext ?? null,
+    sessionAnalysesSummary: buildSessionAnalysesSummary(input.userDat?.sessionAnalyses ?? []),
   };
   console.log("[AI Chat] Session cache created for:", input.userName, hasStructuredEntities ? '(structured entities)' : '(text-based)');
   // Log PERSONEN-LOOKUP for debugging person recognition
@@ -1649,10 +1692,14 @@ This is a HARD SAFETY RULE. Violation = harm. No exceptions.`}
       console.log(`[AI Chat] Known patterns injected: ${kp.schemas.length} schemas, ${kp.modes.length} modes, ${kp.triggers.length} triggers`);
     }
 
+    // Inject previous session summary (compact, from cache)
+    const sessionHistoryBlock = sessionCache?.sessionAnalysesSummary || '';
+
     return `${identity}
 
 ${conditional.relationshipMap}
 ${lifeStoryContext}
+${sessionHistoryBlock}
 ${backpackAnalysisContext}
 ${knownPatternsBlock}
 

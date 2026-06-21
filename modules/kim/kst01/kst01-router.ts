@@ -53,8 +53,7 @@ function determineNextRoute(detection: KST01DetectionResult): KimModuleRouteTarg
   }
 
   // If boundary planning is needed (boundary_love_conflict trigger present)
-  if (detection.triggers.includes('BOUNDARY_LOVE_CONFLICT') &&
-      detection.recommendedMode !== 'CONNECTED_NOT_CONSUMED') {
+  if (detection.triggers.includes('BOUNDARY_LOVE_CONFLICT')) {
     return 'KBR01_BOUNDARY_RESTORATION';
   }
 

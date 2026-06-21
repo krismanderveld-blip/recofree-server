@@ -11,6 +11,8 @@ import { registerVspDocumentParseRoute } from "../vsp-document-parse";
 import { registerBackpackDocumentParseRoute } from "../backpack-document-parse";
 import { registerVspTextExtractRoute } from "../vsp-text-extract";
 import { registerSessionGreetingRoute } from "../session-greeting";
+import { registerDebugPromptRoute, setSessionCacheGetter } from "../debug-prompt";
+import { getSessionCache } from "../ai-chat";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 
@@ -69,6 +71,8 @@ async function startServer() {
   registerVspTextExtractRoute(app);
   registerBackpackDocumentParseRoute(app);
   registerSessionGreetingRoute(app);
+  registerDebugPromptRoute(app);
+  setSessionCacheGetter(getSessionCache);
 
   app.get("/api/health", (_req, res) => {
     res.json({ ok: true, timestamp: Date.now() });

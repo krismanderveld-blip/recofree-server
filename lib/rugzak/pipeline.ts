@@ -4099,12 +4099,17 @@ function extractThemes(signals: InputSignals, text: string): string[] {
   if (signals.selfHarm) themes.push('self_harm');
 
   const lower = text.toLowerCase();
-  if (/\b(family|parent|mother|father|sibling|brother|sister)\b/.test(lower)) themes.push('family');
-  if (/\b(work|job|boss|colleague|career)\b/.test(lower)) themes.push('work');
-  if (/\b(relationship|partner|spouse|boyfriend|girlfriend)\b/.test(lower)) themes.push('relationships');
-  if (/\b(sleep|insomnia|nightmare|tired|exhausted)\b/.test(lower)) themes.push('sleep');
-  if (/\b(anger|angry|rage|furious|frustrated)\b/.test(lower)) themes.push('anger');
-  if (/\b(guilt|shame|ashamed|regret)\b/.test(lower)) themes.push('guilt_shame');
+  // English + Dutch terms for theme detection
+  if (/\b(family|parent|mother|father|sibling|brother|sister|familie|ouder|moeder|vader|broer|zus|mama|papa)\b/.test(lower)) themes.push('family');
+  if (/\b(work|job|boss|colleague|career|werk|baan|baas|collega|carri[eè]re)\b/.test(lower)) themes.push('work');
+  if (/\b(relationship|partner|spouse|boyfriend|girlfriend|relatie|vriendin|vriend|echtgeno[ot]|man|vrouw)\b/.test(lower)) themes.push('relationships');
+  if (/\b(sleep|insomnia|nightmare|tired|exhausted|slaap|slapen|nachtmerrie|moe|uitgeput|vermoeid)\b/.test(lower)) themes.push('sleep');
+  if (/\b(anger|angry|rage|furious|frustrated|boos|woede|kwaad|woedend|gefrustreerd|frustratie|ruzie|woordenwisseling)\b/.test(lower)) themes.push('anger');
+  if (/\b(guilt|shame|ashamed|regret|schuld|schaamte|schaam|spijt|berouw)\b/.test(lower)) themes.push('guilt_shame');
+  // Dutch-specific themes
+  if (/\b(terugval|gebruik|zuipen|drinken|drugs|verslaving|clean|nuchter)\b/.test(lower)) themes.push('substance_use');
+  if (/\b(eenzaam|alleen|afgezonderd|niemand|isolatie)\b/.test(lower) && !themes.includes('isolation')) themes.push('isolation');
+  if (/\b(grens|grenzen|boundary|boundaries|nee\s+zeggen)\b/.test(lower)) themes.push('boundaries');
 
   return [...new Set(themes)];
 }

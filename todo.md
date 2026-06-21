@@ -1739,3 +1739,9 @@
 - [x] Fix 3: antiHallucination regel herschreven met concreet voorbeeld en "SCAN ALL TEXT ABOVE"
 - [x] Fix 4: relational-anchor-detector.ts uitgebreid met dezelfde free-text patronen
 - [x] Skill: prompt-data-injection-audit bijgewerkt met prompt-ordering en regex-failure lessen
+
+## Bug: Conversation history niet compleet + sessie-logs niet meegegeven
+- [x] Probleem 1: sessionAnalysesSummary (laatste 3 sessies) nu gecached bij SESSION_INIT en geïnjecteerd in elk follow-up prompt
+- [x] Probleem 2: extractThemes uitgebreid met Nederlandse termen (ruzie, woordenwisseling, vriendin, etc.) zodat sessie-inhoud correct wordt opgeslagen
+- [x] Add /api/debug/prompt endpoint (dev mode only) — GET /api/debug/prompt toont volledige system prompt, session cache, PERSONEN-LOOKUP
+- [x] Fix 5 TS errors: user-context.tsx (userName→naam, domain→name, label→string[]), kimCluster4MemoryPatch.ts, kst01-router.ts
