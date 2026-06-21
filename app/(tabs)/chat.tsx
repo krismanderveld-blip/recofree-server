@@ -49,6 +49,7 @@ import { createEmptyStateDat } from '@/lib/types/memory/stateDat.types';
 import { createEmptyProjectionsDat } from '@/lib/types/memory/projectionsDat.types';
 import { ChatErrorBoundary } from '@/components/chat-error-boundary';
 import { colors as dc, spacing, radius, typography, shadows } from '@/constants/design';
+import { triggerBackpackAnalysisIfNeeded } from '@/lib/backpack-analysis/schema-mode-trigger';
 
 const BACKPACK_KEY = '@recofree_backpack';
 const USERDAT_KEY = '@recofree_userdat';
@@ -503,6 +504,18 @@ function ChatScreenInner() {
             }
           } catch (e) {
             console.error('[Chat] Failed to restore projection state, continuing with empty projection:', e);
+          }
+          // Fire-and-forget: trigger GPT backpack analysis for changed sections
+          // Non-blocking — runs in background, persists results to userDat
+          if (state.backpack && state.userDat) {
+            triggerBackpackAnalysisIfNeeded(state.backpack, state.userDat)
+              .then(async (result) => {
+                if (result) {
+                  await writeEncrypted(USERDAT_KEY, JSON.stringify(result.updatedUserDat));
+                  console.log('[Chat] Backpack schema/mode analysis completed for sections:', result.analyzedSectionIds);
+                }
+              })
+              .catch((err) => console.warn('[Chat] Backpack analysis failed (non-blocking):', err));
           }
           sendGreetingViaP();
         })();

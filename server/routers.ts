@@ -5,6 +5,7 @@ import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router } from "./_core/trpc";
 import { chatInputSchema, generateAIResponse } from "./ai-chat";
 import { extractionInputSchema, extractEntitiesFromBackpack } from "./backpack-extractor";
+import { analyzeBackpackInputSchema, analyzeBackpackForSchemas } from "./backpack-analyzer";
 
 export const appRouter = router({
   // if you need to use socket.io, read and register route in server/_core/index.ts, all api should start with '/api/' so that the gateway can route correctly
@@ -61,6 +62,25 @@ export const appRouter = router({
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : String(error);
           console.error(`[ROUTER ERROR] extractEntities:`, errorMessage);
+          throw new TRPCError({
+            code: 'INTERNAL_SERVER_ERROR',
+            message: errorMessage,
+          });
+        }
+      }),
+
+    // Backpack Schema/Mode Analysis — called ONLY when backpack sections changed
+    // One-time GPT analysis per section change to detect schema/mode candidates
+    analyzeBackpack: publicProcedure
+      .input(analyzeBackpackInputSchema)
+      .mutation(async ({ input }) => {
+        console.log('[ROUTER] analyzeBackpack for:', input.userName, input.userType, 'changed:', input.changedSectionIds);
+        try {
+          const analysis = await analyzeBackpackForSchemas(input);
+          return { success: true, analysis };
+        } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          console.error(`[ROUTER ERROR] analyzeBackpack:`, errorMessage);
           throw new TRPCError({
             code: 'INTERNAL_SERVER_ERROR',
             message: errorMessage,

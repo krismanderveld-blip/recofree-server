@@ -447,6 +447,10 @@ export interface UserDat {
   modeTendencies?: Array<{ modeId: string; frequency: number; lastSeen: string; effectiveInterventions: string[]; /** ISO — first detection, never overwritten */ firstDetectedAt?: string; /** ISO — last confidence update */ lastUpdatedAt?: string; confidence?: number; /** Confirmed = safe to present as known pattern to GPT. Auto-confirmed when frequency≥5 AND confidence≥0.7, or via clinical/user acknowledgment */ confirmed?: boolean; /** ISO — when confirmation occurred */ confirmedAt?: string }>;
   /** Schema/Mode: recurring schema tendencies (hybrid persistence — patterns only, never diagnosis) */
   schemaTendencies?: Array<{ schemaId: string; domain: string; frequency: number; lastSeen: string; copingStyle: string | null; /** ISO — first detection, never overwritten */ firstDetectedAt?: string; /** ISO — last confidence update */ lastUpdatedAt?: string; confidence?: number; /** Confirmed = safe to present as known pattern to GPT. Auto-confirmed when frequency≥5 AND confidence≥0.7, or via clinical/user acknowledgment */ confirmed?: boolean; /** ISO — when confirmation occurred */ confirmedAt?: string }>;
+  /** Backpack analysis timestamps — tracks which sections have been analyzed by GPT and when.
+   * Key = sectionId (e.g. 'childhood', 'my_story'), value = ISO timestamp of last GPT analysis.
+   * Used to determine if a section needs re-analysis (section.lastUpdated > this timestamp). */
+  backpackAnalysisTimestamps?: Record<string, string>;
   /** ACT: progress tracking (values, preferred tools, fusion patterns, success counts) */
   actProgress?: {
     userValues: string[];

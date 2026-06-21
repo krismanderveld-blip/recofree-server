@@ -325,6 +325,18 @@ function cacheSessionInit(input: ChatRequestInput): void {
     console.log(`[AI Chat] Backpack changed — using full backpack text instead of stale entities`);
   }
 
+  // === DIAGNOSTIC: Log exactly what backpack data arrives ===
+  console.log(`[AI Chat DIAG] backpackChanged=${input.backpackChanged}, hasBackpack=${!!input.backpack}, hasEntities=${!!input.extractedEntities}`);
+  if (input.backpack) {
+    const ls = input.backpack.lifeStory || [];
+    console.log(`[AI Chat DIAG] lifeStory sections: ${ls.length}`);
+    ls.forEach((s: any, i: number) => {
+      console.log(`[AI Chat DIAG]   [${i}] id=${s.id}, label=${s.label}, content=${(s.content || '').substring(0, 80)}...`);
+    });
+  } else {
+    console.log(`[AI Chat DIAG] NO backpack received at session-start!`);
+  }
+
   sessionCache = {
     userName: input.userName,
     userType: input.userType,

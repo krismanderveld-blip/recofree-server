@@ -1719,3 +1719,13 @@
 - [x] Reset extractedEntities in userDat when wizard saves backpack → forces full backpack send at next session
 - [x] Fix server ai-chat.ts: when backpackChanged=true, use full backpack text (not stale extractedEntities)
 - [x] Fix gpt-payload-builder.ts: always send full backpack at session-start (remove compact/empty lifeStory mode)
+
+## Feature: GPT backpack analysis (eenmalig bij wijziging)
+- [x] Server endpoint: ai.analyzeBackpack (tRPC) — GPT ontleedt rugzak-secties voor schema/mode kandidaten (server/backpack-analyzer.ts)
+- [x] Output schema: per sectie schema-kandidaten + mode-kandidaten met confidence, evidence, sourceSectionId
+- [x] Timestamp tracking: backpackAnalysisTimestamps (Record<string, string>) in userDat
+- [x] Client trigger: bij sessie-start check of section.lastUpdated > lastAnalysisTimestamp → call analyse (lib/backpack-analysis/schema-mode-trigger.ts)
+- [x] Write GPT output direct naar userDat.schemaTendencies + modeTendencies (moving average merge)
+- [x] Backpack alleen bij wijziging meesturen (per-sectie change detection, niet elke sessie)
+- [x] Elias/Kim specifieke GPT prompts (andere schema-focus per persona)
+- [ ] Fix: volledige backpack-tekst moet GPT system prompt bereiken bij session-start
