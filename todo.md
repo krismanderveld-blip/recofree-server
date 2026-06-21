@@ -1702,3 +1702,11 @@
 - [x] Remove PENDING_CLOSE_KEY recovery logic (deferred analysis) — no longer needed
 - [x] Remove runDeferredSessionAnalysis import
 - [x] Remove PENDING_CLOSE_KEY constant and all references
+
+## Bug fixes batch (21 juni)
+- [x] Issue 1: Chat resets after ~20 seconds — fixed: background auto-end now waits 10min (was immediate)
+- [x] Issue 2: Session not saving to logs.dat — fixed: chatHistory fallback in endSession + robust buffer handling
+- [x] Issue 3: Schema/modi not recognized — fixed: field name mapping (observationCount→frequency, lastSeenAt→lastSeen)
+- [x] Issue 4: Rugzak not recognized since wizard — root cause = endSession never ran → tendencies never persisted (fixed by issues 1+2)
+- [x] Issue 5: End-session button added in header + background timeout set to 10min
+- [x] Greeting now includes last 3 session narratives from logs.dat (recentSessionDigests)

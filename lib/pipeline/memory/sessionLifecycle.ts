@@ -24,7 +24,7 @@ export const USE_LOGS_DAT_CONTEXT = true;
 
 export interface SessionLifecycleManager {
   startSession(persona: RecoFreePersona, sessionId: string, localUserId: string, apiBaseUrl: string): Promise<SessionStartResult>;
-  endSession(persona: RecoFreePersona, apiBaseUrl: string): Promise<SessionEndResult>;
+  endSession(persona: RecoFreePersona, apiBaseUrl: string, chatHistoryFallback?: Array<{role: string; content: string; timestamp?: string}>): Promise<SessionEndResult>;
   getStores(): SessionStores;
 }
 
@@ -96,10 +96,28 @@ export function createSessionLifecycleManager(): SessionLifecycleManager {
       };
     },
 
-    async endSession(persona, apiBaseUrl) {
-      const buffer = stores.sessionBufferStore.getBuffer();
+    async endSession(persona, apiBaseUrl, chatHistoryFallback?: Array<{role: string; content: string; timestamp?: string}>) {
+      let buffer = stores.sessionBufferStore.getBuffer();
+      
+      // If buffer is null but we have chatHistory, build a synthetic buffer
+      // This ensures logs.dat ALWAYS gets written even if startSession was missed
+      if (!buffer && chatHistoryFallback && chatHistoryFallback.length > 0) {
+        const sessionId = `session_recovered_${Date.now()}`;
+        buffer = stores.sessionBufferStore.initialize(persona, sessionId);
+        // Populate buffer from chatHistory
+        for (const msg of chatHistoryFallback.slice(-20)) {
+          buffer = stores.sessionBufferStore.appendMessage(buffer, {
+            turnId: `turn_recovered_${Date.now()}_${Math.random().toString(36).slice(2,6)}`,
+            role: msg.role as 'user' | 'assistant',
+            text: (msg.content || '').slice(0, 300),
+            timestampIso: msg.timestamp || new Date().toISOString(),
+          });
+        }
+        console.log(`[SessionLifecycle] Buffer recovered from chatHistory (${chatHistoryFallback.length} msgs)`);
+      }
+      
       if (!buffer) {
-        return { sessionId: "unknown", summarized: false, error: "no active buffer" };
+        return { sessionId: "unknown", summarized: false, error: "no active buffer and no chatHistory fallback" };
       }
 
       const sessionId = buffer.sessionId;

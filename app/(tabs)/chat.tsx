@@ -364,12 +364,14 @@ function ChatScreenInner() {
   // No longer needed: inactivity + background now run the full endSession chain.
   // No PENDING_CLOSE_KEY markers are written, so nothing to recover.
 
-  // ── Auto-end session when app goes to background ──
-  // Uses the EXACT SAME full endSession chain. No timeout race, no pending-close
-  // fallback. One path to session-end, background is just a trigger.
+  // ── Auto-end session when app stays in background for 10 minutes ──
+  // NOT immediate. Starts a 10-min timer when going to background.
+  // If user returns before 10 min, timer is cancelled. Same full endSession chain.
   const autoEndTriggeredRef = useRef(false);
+  const backgroundTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
     const subscription = AppState.addEventListener('change', async (nextState: AppStateStatus) => {
+      // Going to background: start 10-min timer
       if (
         appStateRef.current === 'active' &&
         (nextState === 'background' || nextState === 'inactive') &&
@@ -379,36 +381,54 @@ function ChatScreenInner() {
         state.backpack &&
         state.userDat
       ) {
-        autoEndTriggeredRef.current = true;
-        console.log('[Chat] Background auto-close triggered — running full endSession chain');
-        logDebugEvent('session_auto_end', { trigger: 'app_background', messageCount: messages.length });
+        // Start delayed auto-end (10 minutes)
+        if (!backgroundTimerRef.current) {
+          backgroundTimerRef.current = setTimeout(async () => {
+            backgroundTimerRef.current = null;
+            if (autoEndTriggeredRef.current) return;
+            autoEndTriggeredRef.current = true;
+            console.log('[Chat] Background auto-close triggered (10 min in background) — running full endSession chain');
+            logDebugEvent('session_auto_end', { trigger: 'app_background_10min', messageCount: messages.length });
 
-        // Call the exact same handleEndConversation logic via ref
-        if (handleEndConversationRef.current) {
-          await handleEndConversationRef.current();
+            if (handleEndConversationRef.current) {
+              await handleEndConversationRef.current();
+            }
+          }, INACTIVITY_AUTO_CLOSE_MS); // 10 minutes
         }
       }
-      // When app returns to foreground after auto-end, reset for fresh session
+      // Returning to foreground: cancel timer if not yet fired, or reset if already ended
       if (
         (appStateRef.current === 'background' || appStateRef.current === 'inactive') &&
-        nextState === 'active' &&
-        autoEndTriggeredRef.current
+        nextState === 'active'
       ) {
-        autoEndTriggeredRef.current = false;
-        greetingSent.current = false;
-        setPreChatDone(false);
-        setSessionPhase('active');
-        setMessages([]);
-        setShowEmergency(false);
-        silenceFiredRef.current = false;
-        disclosureDetectedRef.current = false;
-        // Show restore toast
-        setShowRestoreToast(true);
-        setTimeout(() => setShowRestoreToast(false), 3500);
+        // Cancel pending background timer
+        if (backgroundTimerRef.current) {
+          clearTimeout(backgroundTimerRef.current);
+          backgroundTimerRef.current = null;
+        }
+        // If session already ended while in background, reset for fresh session
+        if (autoEndTriggeredRef.current) {
+          autoEndTriggeredRef.current = false;
+          greetingSent.current = false;
+          setPreChatDone(false);
+          setSessionPhase('active');
+          setMessages([]);
+          setShowEmergency(false);
+          silenceFiredRef.current = false;
+          disclosureDetectedRef.current = false;
+          setShowRestoreToast(true);
+          setTimeout(() => setShowRestoreToast(false), 3500);
+        }
       }
       appStateRef.current = nextState;
     });
-    return () => subscription.remove();
+    return () => {
+      subscription.remove();
+      if (backgroundTimerRef.current) {
+        clearTimeout(backgroundTimerRef.current);
+        backgroundTimerRef.current = null;
+      }
+    };
   }, [sessionPhase, messages, state.backpack, state.userDat]);
 
   // Load previous session messages on mount (collapsed, for continuity)
@@ -1035,7 +1055,11 @@ function ChatScreenInner() {
           bufferMessageCount: bufferBeforeEnd?.compactMessages?.length ?? 0,
           bufferSessionId: bufferBeforeEnd?.sessionId ?? 'none',
         });
-        const endResult = await lifecycleManager.endSession(persona, apiBase);
+        // Pass current messages as fallback in case buffer was never initialized
+        const chatHistoryForFallback = messages
+          .filter(m => m.role === 'user' || m.role === 'assistant')
+          .map(m => ({ role: m.role, content: m.content, timestamp: m.timestamp }));
+        const endResult = await lifecycleManager.endSession(persona, apiBase, chatHistoryForFallback);
         // ── Transfer Diagnostic Point 4: Lifecycle result ──
         // (no __DEV__ guard — works on device APK)
         console.log(`[SessionLifecycle] endSession result: summarized=${endResult.summarized}, sessionId=${endResult.sessionId}`);
@@ -1256,6 +1280,28 @@ function ChatScreenInner() {
               </Text>
             </View>
           </View>
+          {/* End Session button — forces full protocol */}
+          {sessionPhase === 'active' && messages.length > 1 && (
+            <Pressable
+              onPress={() => {
+                if (Platform.OS !== 'web') {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                }
+                handleEndConversation();
+              }}
+              style={({ pressed }) => [{
+                opacity: pressed ? 0.6 : 1,
+                backgroundColor: 'rgba(255,255,255,0.2)',
+                paddingHorizontal: 12,
+                paddingVertical: 6,
+                borderRadius: 16,
+                borderWidth: 1,
+                borderColor: 'rgba(255,255,255,0.4)',
+              }]}
+            >
+              <Text style={{ fontSize: 13, color: dc.textInverse, fontWeight: '600' }}>End</Text>
+            </Pressable>
+          )}
         </View>
       </View>
 

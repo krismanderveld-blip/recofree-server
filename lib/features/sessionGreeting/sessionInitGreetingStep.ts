@@ -290,6 +290,17 @@ function adaptLogsDat(
       : undefined;
   }
 
+  // Include last 3 session digests for continuity (most recent first)
+  if (allSessions && allSessions.length > 0) {
+    const recent = allSessions.slice(-3).reverse();
+    result.recentSessionDigests = recent.map(s => ({
+      narrative: s.compressedNarrative || '',
+      topics: s.discussedTopics || [],
+      openEndpoints: (s.openEndpoints || []).map(ep => ep.label),
+      endedAt: s.endedAt || s.createdAt || '',
+    }));
+  }
+
   // Cross-session pattern detection
   if (allSessions && allSessions.length >= 3) {
     try {

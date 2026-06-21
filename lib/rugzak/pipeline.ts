@@ -891,8 +891,8 @@ export async function processMessage(
       vspLevel: vspLevel ?? null,
       sliders: currentUserDat.currentMood as unknown as Record<string, number>,
       activeProjections: smActiveProjections,
-      modeTendencies: (currentUserDat.modeTendencies ?? []).map(t => ({ modeId: t.modeId, frequency: t.frequency, lastSeen: t.lastSeen })),
-      schemaTendencies: (currentUserDat.schemaTendencies ?? []).map(t => ({ schemaId: t.schemaId, frequency: t.frequency, lastSeen: t.lastSeen })),
+      modeTendencies: (currentUserDat.modeTendencies ?? []).map((t: any) => ({ modeId: t.modeId, frequency: t.observationCount ?? t.frequency ?? 0, lastSeen: t.lastSeenAt ?? t.lastSeen ?? '' })),
+      schemaTendencies: (currentUserDat.schemaTendencies ?? []).map((t: any) => ({ schemaId: t.schemaId, frequency: t.observationCount ?? t.frequency ?? 0, lastSeen: t.lastSeenAt ?? t.lastSeen ?? '' })),
       isCrisis: analysis.riskLevel === 'critical' || analysis.riskLevel === 'high',
       messageCount: sessionBuffer.messageCount,
     });

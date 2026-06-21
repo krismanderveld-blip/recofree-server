@@ -264,22 +264,39 @@ export function buildGreetingSynthesisCandidates(
     });
   }
 
-  // ─── 7. LAST_SESSION_SUMMARY (from logs.dat) ─────────────────────────────────
-  if (logsDat && (logsDat.lastSessionOpenLoops.length > 0 || logsDat.latestLogDigest)) {
+  // ─── 7. LAST_SESSION_SUMMARY (from logs.dat — last 3 sessions for continuity) ──
+  if (logsDat && (logsDat.lastSessionOpenLoops.length > 0 || logsDat.latestLogDigest || (logsDat.recentSessionDigests && logsDat.recentSessionDigests.length > 0))) {
     const hasOpenLoops = logsDat.lastSessionOpenLoops.length > 0;
-    const baseRelevance = hasOpenLoops ? 0.88 : 0.75;
-    // Session continuity is neutral valence
+    const hasRecent = logsDat.recentSessionDigests && logsDat.recentSessionDigests.length > 0;
+    const baseRelevance = hasOpenLoops ? 0.88 : hasRecent ? 0.82 : 0.75;
     const zoneAdjusted = applyZoneModifier(baseRelevance, 'neutral', zoneMods);
-    const safeAnchor = hasOpenLoops
-      ? `Vorige sessie: ${logsDat.lastSessionOpenLoops.slice(0, 2).join(', ')}`
-      : logsDat.latestLogDigest?.slice(0, 100) ?? '';
+
+    // Build rich safeAnchor with last 3 session narratives
+    let safeAnchor = '';
+    if (hasRecent) {
+      const digests = logsDat.recentSessionDigests!;
+      const parts = digests.map((d, i) => {
+        const label = i === 0 ? 'Laatste sessie' : i === 1 ? 'Sessie daarvoor' : 'Eerdere sessie';
+        const topics = d.topics.length > 0 ? ` (thema's: ${d.topics.join(', ')})` : '';
+        const open = d.openEndpoints.length > 0 ? ` [open: ${d.openEndpoints.join(', ')}]` : '';
+        return `${label}: ${d.narrative}${topics}${open}`;
+      });
+      safeAnchor = parts.join('\n');
+    } else if (hasOpenLoops) {
+      safeAnchor = `Vorige sessie: ${logsDat.lastSessionOpenLoops.slice(0, 2).join(', ')}`;
+    } else {
+      safeAnchor = logsDat.latestLogDigest ?? '';
+    }
+
     candidates.push({
       sourceType: 'LAST_SESSION_SUMMARY',
       eligible: true,
       relevanceScore: zoneAdjusted,
-      reason: hasOpenLoops
-        ? `${logsDat.lastSessionOpenLoops.length} open loops from last session`
-        : 'Last session digest available',
+      reason: hasRecent
+        ? `${logsDat.recentSessionDigests!.length} recent sessions available for continuity`
+        : hasOpenLoops
+          ? `${logsDat.lastSessionOpenLoops.length} open loops from last session`
+          : 'Last session digest available',
       safeAnchor,
     });
   } else {

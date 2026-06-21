@@ -186,6 +186,13 @@ export interface GreetingLogsDatSnapshot {
   lastSessionEmotionalArc?: string;
   /** Suggested follow-up from last session */
   lastSessionFollowUp?: string[];
+  /** Last 3 session narratives for continuity context (most recent first) */
+  recentSessionDigests?: Array<{
+    narrative: string;
+    topics: string[];
+    openEndpoints: string[];
+    endedAt: string;
+  }>;
   /** Cross-session recurring pattern detected from logs.dat history */
   recurringPatternAnchor?: string;
   recurringPatternConfidence?: number;
