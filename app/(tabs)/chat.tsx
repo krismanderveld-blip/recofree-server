@@ -1211,7 +1211,7 @@ function ChatScreenInner() {
     // Build clinical display: prefer local engine metadata (clinicalInfo), fallback to GPT tag
     const showClinical = !isUser && state.userDat?.clinicalModeActive;
     const clinicalDisplay = item.clinicalInfo
-      ? `Module: ${item.clinicalInfo.module}\nZone: ${item.clinicalInfo.zone}\nModel: ${item.clinicalInfo.model}${item.clinicalInfo.regulation ? `\nRegulation: ${item.clinicalInfo.regulation}` : ''}${item.clinicalInfo.riskScore != null ? `\nRisk: ${item.clinicalInfo.riskScore}` : ''}${item.clinicalInfo.source ? `\nSource: ${item.clinicalInfo.source}` : ''}`
+      ? `Module: ${item.clinicalInfo.module}\nZone: ${item.clinicalInfo.zone}\nModel: ${item.clinicalInfo.model}${item.clinicalInfo.regulation ? `\nRegulation: ${item.clinicalInfo.regulation}` : ''}${item.clinicalInfo.riskScore != null ? `\nRisk: ${item.clinicalInfo.riskScore}` : ''}${item.clinicalInfo.source ? `\nSource: ${item.clinicalInfo.source}` : ''}${item.clinicalInfo.triggers ? `\nTriggers: ${item.clinicalInfo.triggers}` : ''}${item.clinicalInfo.projection ? `\nProjection: ${item.clinicalInfo.projection}` : ''}${item.clinicalInfo.intervention ? `\nIntervention: ${item.clinicalInfo.intervention}` : ''}${item.clinicalInfo.buffer ? `\nBuffer: ${item.clinicalInfo.buffer}` : ''}`
       : clinicalAnnotation;
 
     const bubbleStyle = isUser

@@ -267,6 +267,10 @@ export interface ChatMessage {
     regulation?: string;
     riskScore?: number;
     source?: string;
+    triggers?: string;
+    projection?: string;
+    intervention?: string;
+    buffer?: string;
   };
 }
 

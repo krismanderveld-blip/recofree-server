@@ -2711,6 +2711,10 @@ export async function processMessage(
       regulation: regulationResult.action !== 'reflect' ? `${regulationResult.action} (depth=${regulationResult.effectiveDepth})` : undefined,
       riskScore: preGPTDominantState.riskScore,
       source: preGPTDominantState.sourceLayer,
+      triggers: relevance.triggers.length > 0 ? relevance.triggers.map(t => `${t.trigger}(${t.score})`).join(', ') : undefined,
+      projection: projectionResult.hasActiveEntries ? `+${projectionResult.newEntriesCount} active (${projectionResult.injectionBlock?.slice(0, 60) ?? ''})` : undefined,
+      intervention: interventionContinuity ? `${interventionContinuity.lastInterventionType} (goal=${interventionContinuity.interventionGoal}, turns=${interventionContinuity.turnsActive}, eff=${interventionContinuity.effectivenessScore})` : undefined,
+      buffer: `msg#${sessionBuffer.messageCount} zone=${sessionBuffer.currentZoneColor}(${sessionBuffer.currentZoneScore}) intent=${(sessionBuffer as any).liveIntent ?? 'none'}`,
     },
   };
   updatedUserDat = {
