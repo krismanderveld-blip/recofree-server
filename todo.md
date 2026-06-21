@@ -1694,3 +1694,8 @@
 - [x] Vitest verification: 3 tests pass (write+read, empty buffer error, multi-session accumulation)
 - [x] Add 5-point transfer diagnostic to inactivity auto-end path
 - [x] Add 5-point transfer diagnostic to background auto-end path
+
+## Refactor: Inactivity = exact same endSession chain as manual close
+- [x] Refactor inactivity auto-end to use full endSession chain (all 5 memory layers)
+- [x] Refactor background auto-end to use full endSession chain (all 5 memory layers)
+- [x] Remove any separate lightweight/pending-close path — one path to session-end

@@ -159,6 +159,7 @@ function ChatScreenInner() {
   const disclosureDetectedRef = useRef(false);
   const inactivityTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const inactivityEndTriggeredRef = useRef(false);
+  const handleEndConversationRef = useRef<(() => Promise<void>) | null>(null);
   const isElias = state.userType === 'elias';
 
   /** Check if the last user message contains disclosure keywords (Module 58) */
@@ -258,9 +259,9 @@ function ChatScreenInner() {
   }, [inputText, resetSilenceTimer]);
 
   // ── 10-Minute Inactivity Auto-Close Timer ─────────────────────────────
-  // After 10 minutes of no user interaction (no message sent, no typing),
-  // automatically end the session with full write-back to all memory layers
-  // including logs.dat (via lifecycleManager.endSession).
+  // After 10 minutes of no user interaction, trigger the EXACT SAME full
+  // endSession chain as a normal close. No timeout race, no pending-close
+  // fallback. One path to session-end, inactivity is just a trigger.
   const resetInactivityTimer = useCallback(() => {
     if (inactivityTimerRef.current) {
       clearTimeout(inactivityTimerRef.current);
@@ -275,107 +276,15 @@ function ChatScreenInner() {
       if (inactivityEndTriggeredRef.current || sessionPhase !== 'active') return;
       inactivityEndTriggeredRef.current = true;
 
-      console.log('[Chat] Inactivity auto-close triggered (10 minutes)');
+      console.log('[Chat] Inactivity auto-close triggered (10 minutes) — running full endSession chain');
       logDebugEvent('session_auto_end', { trigger: 'inactivity_10min', messageCount: messages.length });
 
-      try {
-        // Full session end with analysis + memory write-back
-        const userDatJson = await readEncrypted(USERDAT_KEY);
-        const currentUserDat: UserDat = userDatJson ? JSON.parse(userDatJson) : state.userDat!;
-        const backpack = state.backpack!;
-        if (!backpack || !currentUserDat) return;
-
-        const provider = getAIProvider();
-        let diaryForSession: DiaryEntry[] = [];
-        try {
-          const diaryJson = await readEncrypted(DIARY_KEY);
-          if (diaryJson) diaryForSession = JSON.parse(diaryJson);
-        } catch (_e) { /* ignore */ }
-        const userDatWithDiary = { ...currentUserDat, _sessionDiaryEntries: diaryForSession } as any;
-
-        // Race: endSession vs 15s timeout (slightly longer than background since we're not being killed)
-        const timeoutPromise = new Promise<null>((resolve) => setTimeout(() => resolve(null), 15_000));
-        const resultOrNull = await Promise.race([
-          endSession(backpack, provider, userDatWithDiary).catch(() => null),
-          timeoutPromise,
-        ]);
-
-        if (resultOrNull && 'updatedUserDat' in resultOrNull) {
-          // Full session end succeeded
-          await writeEncrypted(USERDAT_KEY, JSON.stringify(resultOrNull.updatedUserDat));
-          await endSessionWithUserDat(resultOrNull.updatedUserDat);
-          await AsyncStorage.removeItem(PENDING_CLOSE_KEY);
-          logDebugEvent('session_auto_end_complete', {
-            trigger: 'inactivity_10min',
-            messageCount: resultOrNull.updatedUserDat.chatHistory.length,
-            summarized: true,
-          });
-        } else {
-          // Timeout: save pending close marker for next session recovery
-          await AsyncStorage.setItem(
-            PENDING_CLOSE_KEY,
-            JSON.stringify({
-              timestamp: new Date().toISOString(),
-              messageCount: messages.length,
-              lastMessage: messages[messages.length - 1]?.content?.slice(0, 100),
-              needsFullAnalysis: true,
-            })
-          );
-        }
-
-        // Memory Lifecycle: end session (writes logs.dat summary)
-        try {
-          const persona = (state.userType === 'elias' ? 'elias' : 'kim') as 'elias' | 'kim';
-          const apiBase = getApiBaseUrl();
-          const lifecycleManager = getSessionLifecycleManager();
-          // ── Transfer Diagnostic Point 1: Session-end detected (inactivity) ──
-          logDebugEvent('transfer_1_session_end_detected', {
-            trigger: 'inactivity_10min',
-            messageCount: messages.length,
-            sessionAnalysesCountBefore: (currentUserDat.sessionAnalyses || []).length,
-            writtenTo: '@recofree_userdat → sessionAnalyses[]',
-          });
-          // ── Transfer Diagnostic Point 2: Buffer status before endSession ──
-          const bufferBeforeEnd = lifecycleManager.getStores().sessionBufferStore.getBuffer();
-          logDebugEvent('transfer_2_buffer_status', {
-            bufferExists: bufferBeforeEnd !== null,
-            bufferMessageCount: bufferBeforeEnd?.compactMessages?.length ?? 0,
-            bufferSessionId: bufferBeforeEnd?.sessionId ?? 'none',
-          });
-          const endResult = await lifecycleManager.endSession(persona, apiBase);
-          // ── Transfer Diagnostic Point 4: Lifecycle result ──
-          logDebugEvent('transfer_4_lifecycle_result', {
-            sessionId: endResult.sessionId,
-            summarized: endResult.summarized,
-            error: endResult.error ?? null,
-            writtenTo: `recofree_memory/${persona}/logs.dat`,
-          });
-        } catch (_memErr) {
-          console.warn('[Chat] Inactivity auto-close: lifecycle endSession failed (non-critical):', _memErr);
-          logDebugEvent('transfer_4_lifecycle_result', {
-            sessionId: 'unknown',
-            summarized: false,
-            error: _memErr instanceof Error ? _memErr.message : String(_memErr),
-            writtenTo: 'FAILED',
-          });
-        }
-
-        // Show auto-close message to user
-        const autoCloseMsg: ChatMessage = {
-          id: `msg_autoclose_${Date.now()}`,
-          role: 'assistant',
-          content: `Your session has been saved after 10 minutes of inactivity. Everything is safely stored. You can start a new conversation anytime.`,
-          timestamp: new Date().toISOString(),
-        };
-        setMessages((prev) => [...prev, autoCloseMsg]);
-        setSessionPhase('completed');
-      } catch (err) {
-        console.error('[Chat] Inactivity auto-close error:', err);
-        // Still mark as completed to prevent stuck state
-        setSessionPhase('completed');
+      // Call the exact same handleEndConversation logic via ref
+      if (handleEndConversationRef.current) {
+        await handleEndConversationRef.current();
       }
     }, INACTIVITY_AUTO_CLOSE_MS);
-  }, [sessionPhase, messages, state.backpack, state.userDat, state.userType, endSessionWithUserDat]);
+  }, [sessionPhase, messages]);
 
   // Start/reset inactivity timer when session is active and messages change
   useEffect(() => {
@@ -490,6 +399,8 @@ function ChatScreenInner() {
   }, []);
 
   // ── Auto-end session when app goes to background ──
+  // Uses the EXACT SAME full endSession chain. No timeout race, no pending-close
+  // fallback. One path to session-end, background is just a trigger.
   const autoEndTriggeredRef = useRef(false);
   useEffect(() => {
     const subscription = AppState.addEventListener('change', async (nextState: AppStateStatus) => {
@@ -502,104 +413,13 @@ function ChatScreenInner() {
         state.backpack &&
         state.userDat
       ) {
-        // Auto-end the session silently in the background with 10s timeout
         autoEndTriggeredRef.current = true;
-        const endSessionWithTimeout = async () => {
-          const userDatJson = await readEncrypted(USERDAT_KEY);
-          const currentUserDat: UserDat = userDatJson ? JSON.parse(userDatJson) : state.userDat!;
-          const backpack = state.backpack!;
-          const provider = getAIProvider();
-          // Attach diary entries for gratitude streak calculation
-          let diaryForSession: DiaryEntry[] = [];
-          try {
-            const diaryJson = await readEncrypted(DIARY_KEY);
-            if (diaryJson) diaryForSession = JSON.parse(diaryJson);
-          } catch (_e) { /* ignore */ }
-          const userDatWithDiary = { ...currentUserDat, _sessionDiaryEntries: diaryForSession } as any;
-          // Race: endSession vs 10s timeout
-          const timeoutPromise = new Promise<null>((resolve) => setTimeout(() => resolve(null), 10_000));
-          const resultOrNull = await Promise.race([
-            endSession(backpack, provider, userDatWithDiary).catch(() => null),
-            timeoutPromise,
-          ]);
-          if (resultOrNull && 'updatedUserDat' in resultOrNull) {
-            // Full session end succeeded within 10s
-            await writeEncrypted(USERDAT_KEY, JSON.stringify(resultOrNull.updatedUserDat));
-            await endSessionWithUserDat(resultOrNull.updatedUserDat);
-            await AsyncStorage.removeItem(PENDING_CLOSE_KEY);
-            logDebugEvent('session_auto_end', {
-              trigger: 'app_background',
-              messageCount: resultOrNull.updatedUserDat.chatHistory.length,
-            });
-            // Memory Lifecycle: end session on background
-            try {
-              const persona = (state.userType === 'elias' ? 'elias' : 'kim') as 'elias' | 'kim';
-              const apiBase = getApiBaseUrl();
-              const lifecycleManager = getSessionLifecycleManager();
-              // ── Transfer Diagnostic Point 1: Session-end detected (background) ──
-              logDebugEvent('transfer_1_session_end_detected', {
-                trigger: 'app_background',
-                messageCount: resultOrNull.updatedUserDat.chatHistory.length,
-                sessionAnalysesCountBefore: (resultOrNull.updatedUserDat.sessionAnalyses || []).length,
-                writtenTo: '@recofree_userdat → sessionAnalyses[]',
-              });
-              // ── Transfer Diagnostic Point 2: Buffer status before endSession ──
-              const bufferBeforeEnd = lifecycleManager.getStores().sessionBufferStore.getBuffer();
-              logDebugEvent('transfer_2_buffer_status', {
-                bufferExists: bufferBeforeEnd !== null,
-                bufferMessageCount: bufferBeforeEnd?.compactMessages?.length ?? 0,
-                bufferSessionId: bufferBeforeEnd?.sessionId ?? 'none',
-              });
-              const endResult = await lifecycleManager.endSession(persona, apiBase);
-              // ── Transfer Diagnostic Point 4: Lifecycle result ──
-              logDebugEvent('transfer_4_lifecycle_result', {
-                sessionId: endResult.sessionId,
-                summarized: endResult.summarized,
-                error: endResult.error ?? null,
-                writtenTo: `recofree_memory/${persona}/logs.dat`,
-              });
-            } catch (_memErr) {
-              // Non-critical
-              logDebugEvent('transfer_4_lifecycle_result', {
-                sessionId: 'unknown',
-                summarized: false,
-                error: _memErr instanceof Error ? _memErr.message : String(_memErr),
-                writtenTo: 'FAILED',
-              });
-            }
-          } else {
-            // Timeout or error: lightweight local save (pending close marker)
-            // Full analysis will happen at next session start
-            await AsyncStorage.setItem(
-              PENDING_CLOSE_KEY,
-              JSON.stringify({
-                timestamp: new Date().toISOString(),
-                messageCount: messages.length,
-                lastMessage: messages[messages.length - 1]?.content?.slice(0, 100),
-                needsFullAnalysis: true,
-              })
-            );
-            logDebugEvent('session_auto_end', {
-              trigger: 'app_background_timeout_fallback',
-              messageCount: messages.length,
-            });
-          }
-        };
-        try {
-          await endSessionWithTimeout();
-        } catch (e) {
-          console.error('[Chat] Auto-end session error (background):', e);
-          try {
-            await AsyncStorage.setItem(
-              PENDING_CLOSE_KEY,
-              JSON.stringify({
-                timestamp: new Date().toISOString(),
-                messageCount: messages.length,
-                lastMessage: messages[messages.length - 1]?.content?.slice(0, 100),
-                needsFullAnalysis: true,
-              })
-            );
-          } catch (_e2) { /* ignore */ }
+        console.log('[Chat] Background auto-close triggered — running full endSession chain');
+        logDebugEvent('session_auto_end', { trigger: 'app_background', messageCount: messages.length });
+
+        // Call the exact same handleEndConversation logic via ref
+        if (handleEndConversationRef.current) {
+          await handleEndConversationRef.current();
         }
       }
       // When app returns to foreground after auto-end, reset for fresh session
@@ -623,7 +443,7 @@ function ChatScreenInner() {
       appStateRef.current = nextState;
     });
     return () => subscription.remove();
-  }, [sessionPhase, messages, state.backpack, state.userDat, endSessionWithUserDat]);
+  }, [sessionPhase, messages, state.backpack, state.userDat]);
 
   // Load previous session messages on mount (collapsed, for continuity)
   // Only the PREVIOUS session is shown — older sessions are archived.
@@ -1287,6 +1107,9 @@ function ChatScreenInner() {
       setSessionPhase('completed');
     }
   }, [state.backpack, state.userDat, sessionPhase, userName, endSessionWithUserDat]);
+
+  // Keep ref in sync so inactivity/background timers can call the same function
+  handleEndConversationRef.current = handleEndConversation;
 
   const handleBackToHome = useCallback(() => {
     // Reset session state so next Chat tab focus triggers a fresh greeting
