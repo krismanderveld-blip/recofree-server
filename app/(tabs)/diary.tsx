@@ -19,6 +19,7 @@ import { useUser } from '@/lib/user-context';
 import { fixUnicode } from '@/lib/utils';
 import * as Haptics from 'expo-haptics';
 import { colors as dc, spacing, radius, typography, shadows, cardStyles } from '@/constants/design';
+import { HomeButton } from '@/components/home-button';
 
 interface GratitudeData {
   entry1: string;
@@ -258,6 +259,9 @@ export default function DiaryScreen() {
 
   return (
     <ScreenContainer containerClassName="bg-backgroundWarm">
+      <View style={{ paddingHorizontal: spacing.screenHorizontal, paddingTop: spacing.screenTop }}>
+        <HomeButton />
+      </View>
       {/* Tab Selector */}
       <TabSelector activeTab={activeTab} onTabChange={setActiveTab} colors={colors} />
 

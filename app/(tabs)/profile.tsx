@@ -12,6 +12,7 @@ import Constants from 'expo-constants';
 import { SoberCounter } from '@/components/sober-counter';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { colors as dc, spacing, radius, typography, shadows, cardStyles } from '@/constants/design';
+import { HomeButton } from '@/components/home-button';
 import { DataPrivacySection } from '@/lib/features/exportImport/ui/DataPrivacySection';
 import { useExportImportStores } from '@/lib/features/exportImport/hooks/useExportImportStores';
 import { loadVspInsightProfile, buildPdfPlainText } from '@/src/features/vspInsight';
@@ -234,6 +235,7 @@ export default function ProfileScreen() {
   return (
     <ScreenContainer containerClassName="bg-backgroundWarm">
       <ScrollView contentContainerStyle={{ paddingBottom: 120, paddingHorizontal: spacing.screenHorizontal, paddingTop: spacing.screenTop }} showsVerticalScrollIndicator={false}>
+        <HomeButton />
         <Text style={{ ...typography.titleLarge, color: dc.textPrimary, marginBottom: spacing.lg }}>Profile</Text>
 
         {/* User Card */}

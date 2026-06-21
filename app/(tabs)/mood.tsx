@@ -20,6 +20,7 @@ import {
   type EigenRegieZone,
 } from '@/lib/engine/kim/eigen-regie';
 import { colors as dc, spacing, radius, typography, shadows, cardStyles, buttonStyles } from '@/constants/design';
+import { HomeButton } from '@/components/home-button';
 
 // ─── Constants ──────────────────────────────────────────────────
 
@@ -241,6 +242,7 @@ export default function MoodScreen() {
   return (
     <ScreenContainer containerClassName="bg-backgroundWarm">
       <ScrollView contentContainerStyle={{ paddingBottom: 120, paddingHorizontal: spacing.screenHorizontal, paddingTop: spacing.screenTop }} showsVerticalScrollIndicator={false}>
+        <HomeButton />
         <Text style={{ ...typography.titleLarge, color: dc.textPrimary, marginBottom: spacing.lg }}>How are you?</Text>
         {/* Intervention Alerts */}
         {severeAlerts.length > 0 && (

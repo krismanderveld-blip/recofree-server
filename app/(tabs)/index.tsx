@@ -131,7 +131,6 @@ export default function HomeScreen() {
 
   const isElias = state.userType === 'elias';
   const companionName = isElias ? 'Elias' : 'Kim';
-  const sliderConfig = getSliderConfig(state.userType ?? 'elias');
   const isClinicalActive = userDat?.clinicalModeActive ?? false;
 
   // Sober counter (Elias only, when sobrietyDate is set)
@@ -142,40 +141,43 @@ export default function HomeScreen() {
     );
   })();
 
-  const handleStartChat = () => {
-    router.push('/(tabs)/chat' as Href);
-  };
-
   return (
     <ScreenContainer containerClassName="bg-backgroundWarm">
       <ScrollView
-        contentContainerStyle={{ paddingTop: spacing.screenTop, paddingBottom: 120 }}
+        contentContainerStyle={{ paddingTop: spacing.screenTop, paddingBottom: 40 }}
         showsVerticalScrollIndicator={false}
         style={{ paddingHorizontal: spacing.screenHorizontal }}
       >
-        {/* Header */}
-        <View style={{ marginBottom: spacing.lg }}>
-          <Pressable onPress={handleCompanionNameTap}>
-            <Text style={styles.greeting}>
-              {getTimeGreeting()}, {fixUnicode(userName)}
-            </Text>
-          </Pressable>
-          <Text style={styles.subtitle}>
-            {getSubtitle(isElias, mood)}
-          </Text>
-          {isClinicalActive && (
-            <Pressable onPress={() => setShowClinicalModal(true)}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8 }}>
-                <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: dc.success, marginRight: 6 }} />
-                <Text style={{ fontSize: 11, color: dc.success, fontWeight: '700', letterSpacing: 0.5 }}>
-                  CLINICAL MODE
-                </Text>
-              </View>
+        {/* Header with greeting + notification bell */}
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: spacing.lg }}>
+          <View style={{ flex: 1 }}>
+            <Pressable onPress={handleCompanionNameTap}>
+              <Text style={styles.greeting}>
+                {getTimeGreeting()}, {fixUnicode(userName)}
+              </Text>
             </Pressable>
-          )}
+            <Text style={styles.subtitle}>
+              {getSubtitle(isElias, mood)}
+            </Text>
+            {isClinicalActive && (
+              <Pressable onPress={() => setShowClinicalModal(true)}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8 }}>
+                  <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: dc.success, marginRight: 6 }} />
+                  <Text style={{ fontSize: 11, color: dc.success, fontWeight: '700', letterSpacing: 0.5 }}>
+                    CLINICAL MODE
+                  </Text>
+                </View>
+              </Pressable>
+            )}
+          </View>
+          {/* Notification bell (visual only, no functionality yet) */}
+          <View style={styles.bellContainer}>
+            <Text style={{ fontSize: 22 }}>🔔</Text>
+            <View style={styles.bellDot} />
+          </View>
         </View>
 
-        {/* Milestone Card (inline, above hero) */}
+        {/* Milestone Card */}
         {activeMilestone && (
           <MilestoneCard
             persona={activeMilestone.persona}
@@ -189,52 +191,26 @@ export default function HomeScreen() {
           />
         )}
 
-        {/* Hero Card */}
-        <View style={[styles.heroCard, { backgroundColor: isElias ? dc.surfaceBlue : dc.surfaceKim }]}>
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.heroTitle}>
-                {companionName} is here.
-              </Text>
-              <Text style={styles.heroBody}>
-                {isElias
-                  ? 'Start with what is true right now.'
-                  : 'Start with what you are carrying.'}
-              </Text>
-              <Pressable
-                onPress={handleStartChat}
-                style={({ pressed }) => [
-                  isElias ? styles.ctaElias : styles.ctaKim,
-                  { opacity: pressed ? 0.88 : 1, transform: [{ scale: pressed ? 0.97 : 1 }], marginTop: 16 },
-                ]}
-              >
-                <Text style={styles.ctaText}>
-                  Talk to {companionName}
-                </Text>
-              </Pressable>
-            </View>
-            <Image
-              source={isElias
-                ? require('../../assets/images/elias_avatar.jpg')
-                : require('../../assets/images/kim_avatar.jpg')
-              }
-              style={styles.heroAvatar}
-            />
-          </View>
-        </View>
-
-        {/* Sober Counter Card (Elias only) */}
+        {/* Sobriety Counter Card (Elias only) */}
         {isElias && sobrietyDays !== null && (
           <View style={styles.soberCard}>
-            <Text style={styles.soberDays}>
-              {sobrietyDays}
-            </Text>
-            <Text style={styles.soberLabel}>
-              {sobrietyDays === 1 ? 'day since last use' : 'days since last use'}
-            </Text>
-            <Text style={styles.soberMessage}>
-              {getSoberMessage(sobrietyDays)}
-            </Text>
+            <View style={styles.soberCircle}>
+              <Text style={styles.soberDaysNumber}>{sobrietyDays}</Text>
+              <Text style={styles.soberDaysLabel}>days</Text>
+            </View>
+            <View style={{ flex: 1, marginLeft: 20 }}>
+              <Text style={styles.soberTitle}>
+                {sobrietyDays} days clean {sobrietyDays >= 30 ? '🔥' : ''}
+              </Text>
+              <Text style={styles.soberMessage}>
+                {getSoberMessage(sobrietyDays)}
+              </Text>
+              <View style={styles.soberCta}>
+                <Text style={{ fontSize: 14, color: dc.primary, fontWeight: '600' }}>
+                  Keep going, {fixUnicode(userName)}
+                </Text>
+              </View>
+            </View>
           </View>
         )}
 
@@ -255,46 +231,92 @@ export default function HomeScreen() {
           </Pressable>
         )}
 
-        {/* Mood Summary */}
-        <View style={{ marginBottom: spacing.sectionGap }}>
-          <Text style={styles.sectionTitle}>How is your system today?</Text>
-          <View style={styles.moodRow}>
-            {sliderConfig.map((slider) => {
-              const value = (mood as any)[slider.key] ?? 0;
-              return (
-                <MoodMini
-                  key={slider.key}
-                  label={slider.label}
-                  value={value}
-                  max={slider.max}
-                  invert={slider.key !== 'focus' && slider.key !== 'selfCare'}
-                />
-              );
-            })}
+        {/* Two cards side by side: Mood + Chat */}
+        <View style={styles.dualRow}>
+          {/* Mood Card */}
+          <Pressable
+            onPress={() => router.push('/(tabs)/mood' as Href)}
+            style={({ pressed }) => [styles.dualCard, styles.dualCardLeft, { opacity: pressed ? 0.85 : 1 }]}
+          >
+            <View style={styles.dualCardIcon}>
+              <Text style={{ fontSize: 28 }}>😊</Text>
+            </View>
+            <Text style={styles.dualCardTitle}>Mood</Text>
+            <Text style={styles.dualCardBody}>How are you feeling right now?</Text>
+            <View style={[styles.dualCardCta, { backgroundColor: dc.success }]}>
+              <Text style={styles.dualCardCtaText}>Check in  →</Text>
+            </View>
+          </Pressable>
+
+          {/* Chat Card */}
+          <Pressable
+            onPress={() => router.push('/(tabs)/chat' as Href)}
+            style={({ pressed }) => [styles.dualCard, styles.dualCardRight, { opacity: pressed ? 0.85 : 1 }]}
+          >
+            <Image
+              source={isElias
+                ? require('../../assets/images/elias_avatar.jpg')
+                : require('../../assets/images/kim_avatar.jpg')
+              }
+              style={styles.dualCardAvatar}
+            />
+            <Text style={styles.dualCardTitle}>{companionName} is here</Text>
+            <Text style={styles.dualCardBody}>Talk or get support whenever you need it.</Text>
+            <View style={[styles.dualCardCta, { backgroundColor: dc.eliasAccent }]}>
+              <Text style={styles.dualCardCtaText}>Talk to {companionName}  →</Text>
+            </View>
+          </Pressable>
+        </View>
+
+        {/* My Diary Card */}
+        <Pressable
+          onPress={() => router.push('/(tabs)/diary' as Href)}
+          style={({ pressed }) => [styles.navCard, { backgroundColor: dc.diaryAccentSoft, borderColor: dc.secondaryMuted, opacity: pressed ? 0.85 : 1 }]}
+        >
+          <View style={[styles.navCardIcon, { backgroundColor: '#FFF3E0' }]}>
+            <Text style={{ fontSize: 22 }}>✏️</Text>
           </View>
-        </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.navCardTitle}>My Diary</Text>
+            <Text style={styles.navCardBody}>Write freely. Reflect. Gain clarity.</Text>
+            <Text style={[styles.navCardCta, { color: dc.diaryAccent }]}>Write a new entry</Text>
+          </View>
+          <Text style={styles.navCardChevron}>›</Text>
+        </Pressable>
 
-        {/* Quick Actions */}
-        <View style={{ marginBottom: spacing.sectionGap }}>
-          <Pressable
-            onPress={() => router.push('/(tabs)/diary' as Href)}
-            style={({ pressed }) => [styles.actionCard, { opacity: pressed ? 0.85 : 1 }]}
-          >
-            <Text style={styles.actionTitle}>Write one honest sentence</Text>
-            <Text style={styles.actionBody}>Your diary is waiting.</Text>
-          </Pressable>
+        {/* My Backpack Card */}
+        <Pressable
+          onPress={() => router.push('/(tabs)/backpack' as Href)}
+          style={({ pressed }) => [styles.navCard, { backgroundColor: dc.backpackAccentSoft, borderColor: dc.eliasAccentMuted, opacity: pressed ? 0.85 : 1 }]}
+        >
+          <View style={[styles.navCardIcon, { backgroundColor: '#E8E0F0' }]}>
+            <Text style={{ fontSize: 22 }}>🎒</Text>
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.navCardTitle}>My Backpack</Text>
+            <Text style={styles.navCardBody}>Your plan, tools and insights all in one place.</Text>
+            <Text style={[styles.navCardCta, { color: dc.backpackAccent }]}>Open my Backpack</Text>
+          </View>
+          <Text style={styles.navCardChevron}>›</Text>
+        </Pressable>
 
-          <Pressable
-            onPress={() => router.push('/(tabs)/backpack' as Href)}
-            style={({ pressed }) => [styles.actionCard, { opacity: pressed ? 0.85 : 1, marginTop: spacing.cardGap }]}
-          >
-            <Text style={styles.actionTitle}>Open your Backpack</Text>
-            <Text style={styles.actionBody}>Your life story is your identity anchor.</Text>
-          </Pressable>
-        </View>
+        {/* My Profile Card */}
+        <Pressable
+          onPress={() => router.push('/(tabs)/profile' as Href)}
+          style={({ pressed }) => [styles.navCard, { backgroundColor: dc.surface, borderColor: dc.borderSoft, opacity: pressed ? 0.85 : 1 }]}
+        >
+          <View style={[styles.navCardIcon, { backgroundColor: dc.backgroundWarm }]}>
+            <Text style={{ fontSize: 18, fontWeight: '700', color: dc.textSecondary }}>
+              {(userName ?? 'U').charAt(0).toUpperCase()}
+            </Text>
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.navCardTitle}>My Profile</Text>
+            <Text style={styles.navCardBody}>Recovery settings, contacts and data.</Text>
+          </View>
+          <Text style={styles.navCardChevron}>›</Text>
+        </Pressable>
       </ScrollView>
-
-
 
       {/* Clinical Mode Modal */}
       <Modal visible={showClinicalModal} transparent animationType="fade" onRequestClose={() => setShowClinicalModal(false)}>
@@ -355,106 +377,179 @@ const styles = StyleSheet.create({
     color: dc.textSecondary,
     marginTop: 6,
   },
-  heroCard: {
-    borderRadius: radius.xl,
-    padding: spacing.xl,
-    marginBottom: spacing.sectionGap,
-    minHeight: 176,
-    borderWidth: 1,
-    borderColor: dc.borderSoft,
-  },
-  heroTitle: {
-    ...typography.titleMedium,
-    color: dc.textPrimary,
-    marginBottom: 6,
-  },
-  heroBody: {
-    ...typography.bodyMedium,
-    color: dc.textSecondary,
-  },
-  heroAvatar: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
-    marginLeft: 16,
-  },
-  ctaElias: {
-    minHeight: 48,
-    borderRadius: 18,
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    backgroundColor: dc.eliasAccent,
+  bellContainer: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: dc.surface,
     alignItems: 'center',
     justifyContent: 'center',
-    alignSelf: 'flex-start',
+    ...shadows.soft,
+    marginTop: 4,
   },
-  ctaKim: {
-    minHeight: 48,
-    borderRadius: 18,
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    backgroundColor: dc.kimAccent,
-    alignItems: 'center',
-    justifyContent: 'center',
-    alignSelf: 'flex-start',
+  bellDot: {
+    position: 'absolute',
+    top: 8,
+    right: 10,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: dc.success,
+    borderWidth: 1.5,
+    borderColor: dc.surface,
   },
-  ctaText: {
-    ...typography.button,
-    color: dc.textInverse,
-  },
+  // Sobriety card
   soberCard: {
-    ...cardStyles.elias,
+    ...cardStyles.large,
+    flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 28,
     marginBottom: spacing.sectionGap,
   },
-  soberDays: {
-    fontSize: 48,
+  soberCircle: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    borderWidth: 6,
+    borderColor: dc.primarySoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: dc.surface,
+  },
+  soberDaysNumber: {
+    fontSize: 36,
     fontWeight: '800',
     color: dc.primary,
-    letterSpacing: -2,
+    letterSpacing: -1,
   },
-  soberLabel: {
-    ...typography.bodyMedium,
-    color: dc.primary,
+  soberDaysLabel: {
+    fontSize: 13,
     fontWeight: '600',
-    marginTop: 2,
+    color: dc.primary,
+    marginTop: -2,
+  },
+  soberTitle: {
+    ...typography.titleSmall,
+    color: dc.textPrimary,
+    marginBottom: 4,
   },
   soberMessage: {
     ...typography.bodySmall,
     color: dc.textSecondary,
-    marginTop: 12,
-    textAlign: 'center',
     lineHeight: 20,
+    marginBottom: 12,
+  },
+  soberCta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    backgroundColor: dc.primarySoft,
+    borderRadius: radius.sm,
+    alignSelf: 'flex-start',
   },
   promptCard: {
     ...cardStyles.default,
     alignItems: 'center',
     marginBottom: spacing.sectionGap,
   },
-  sectionTitle: {
-    ...typography.titleSmall,
-    color: dc.textPrimary,
-    marginBottom: spacing.sm,
-  },
-  moodRow: {
-    ...cardStyles.default,
+  // Dual card row (Mood + Chat)
+  dualRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 16,
+    gap: spacing.cardGap,
+    marginBottom: spacing.sectionGap,
   },
-  actionCard: {
-    ...cardStyles.default,
+  dualCard: {
+    flex: 1,
+    borderRadius: radius.xl,
+    padding: spacing.cardPadding,
+    borderWidth: 1,
+    ...shadows.soft,
   },
-  actionTitle: {
+  dualCardLeft: {
+    backgroundColor: dc.moodGreenSoft,
+    borderColor: dc.secondaryMuted,
+  },
+  dualCardRight: {
+    backgroundColor: dc.eliasAccentSoft,
+    borderColor: dc.eliasAccentMuted,
+  },
+  dualCardIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: dc.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+  },
+  dualCardAvatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    marginBottom: 12,
+  },
+  dualCardTitle: {
     ...typography.bodyLarge,
+    fontWeight: '700',
     color: dc.textPrimary,
-    fontWeight: '600',
     marginBottom: 4,
   },
-  actionBody: {
+  dualCardBody: {
     ...typography.bodySmall,
     color: dc.textSecondary,
+    marginBottom: 14,
+    lineHeight: 19,
+  },
+  dualCardCta: {
+    borderRadius: radius.sm,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    alignSelf: 'flex-start',
+  },
+  dualCardCtaText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: dc.textInverse,
+  },
+  // Full-width nav cards
+  navCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: radius.xl,
+    padding: spacing.cardPadding,
+    borderWidth: 1,
+    marginBottom: spacing.cardGap,
+    ...shadows.soft,
+  },
+  navCardIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 14,
+  },
+  navCardTitle: {
+    ...typography.bodyLarge,
+    fontWeight: '700',
+    color: dc.textPrimary,
+    marginBottom: 2,
+  },
+  navCardBody: {
+    ...typography.bodySmall,
+    color: dc.textSecondary,
+    lineHeight: 19,
+  },
+  navCardCta: {
+    fontSize: 13,
+    fontWeight: '700',
+    marginTop: 6,
+  },
+  navCardChevron: {
+    fontSize: 28,
+    color: dc.textTertiary,
+    fontWeight: '300',
+    marginLeft: 8,
   },
   modalCard: {
     backgroundColor: dc.surface,
@@ -470,33 +565,14 @@ const styles = StyleSheet.create({
 function getSoberMessage(days: number): string {
   if (days === 0) return 'Today is day zero. Tomorrow is day one.';
   if (days === 1) return 'The hardest day. You showed up.';
-  if (days < 7) return 'Every single day counts. Keep going.';
+  if (days < 7) return 'Every single day counts.';
   if (days < 14) return 'One week behind you. You chose yourself.';
-  if (days < 30) return 'Building momentum.\nThis is you, doing the work.';
+  if (days < 30) return 'A month of choosing yourself, every single day.';
   if (days < 60) return 'A month of choosing yourself, every single day.';
   if (days < 90) return 'Two months. The fog is lifting.';
   if (days < 180) return 'This is real. You rebuilt something.';
-  if (days < 365) return 'Half a year of showing up. Look how far you came.';
-  return 'One year and beyond. Remember who you were. Look who you are now.';
-}
-
-function MoodMini({ label, value, max = 10, invert = false }: { label: string; value: number; max?: number; invert?: boolean }) {
-  const displayValue = Math.round(value);
-  const normalized = invert ? max - value : value;
-  const ratio = normalized / max;
-  const dotColor = ratio >= 0.7 ? dc.moodGreen : ratio >= 0.4 ? dc.moodYellow : dc.moodRed;
-
-  return (
-    <View style={{ alignItems: 'center', flex: 1 }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
-        <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: dotColor, marginRight: 4 }} />
-        <Text style={{ fontSize: 18, fontWeight: '700', color: dc.textPrimary }}>
-          {displayValue}
-        </Text>
-      </View>
-      <Text style={{ ...typography.micro, color: dc.textTertiary, textAlign: 'center' }}>{label}</Text>
-    </View>
-  );
+  if (days < 365) return 'Half a year of showing up.';
+  return 'One year and beyond. Look who you are now.';
 }
 
 function getTimeGreeting(): string {

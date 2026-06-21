@@ -20,6 +20,7 @@ import { VspSectionEditor } from '@/components/vsp-section-editor';
 import { VspWizardScreen } from '@/lib/features/vspWizard/VspWizardScreen';
 import { BackpackWizardScreen } from '@/lib/features/backpackWizard/BackpackWizardScreen';
 import { colors as dc, spacing, radius, typography, shadows, cardStyles, buttonStyles } from '@/constants/design';
+import { HomeButton } from '@/components/home-button';
 
 const SECTION_COLORS: Record<LifePhaseId, string> = {
   childhood: '#FF6B6B',
@@ -309,6 +310,7 @@ export default function BackpackScreen() {
   return (
     <ScreenContainer containerClassName="bg-backgroundWarm">
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 120, paddingHorizontal: spacing.screenHorizontal, paddingTop: spacing.screenTop }}>
+        <HomeButton />
         <Text style={{ ...typography.titleLarge, color: dc.textPrimary, marginBottom: spacing.lg }}>Your Story</Text>
         {/* Description Card */}
         <View style={{ ...cardStyles.default, marginBottom: spacing.lg, flexDirection: 'row', alignItems: 'flex-start', gap: 12 }}>

@@ -22,7 +22,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { readEncrypted, writeEncrypted } from '@/lib/crypto/storage-encryption';
-import { useRouter, useFocusEffect } from 'expo-router';
+import { useRouter, useFocusEffect, type Href } from 'expo-router';
 import { useUser } from '@/lib/user-context';
 import { fixUnicode } from '@/lib/utils';
 import { getAIProvider } from '@/lib/ai';
@@ -1300,9 +1300,8 @@ function ChatScreenInner() {
     }
   }, []);
 
-  // Tab bar height calculation
-  const bottomTabPadding = Platform.OS === 'web' ? 12 : Math.max(insets.bottom, 8);
-  const tabBarHeight = 56 + bottomTabPadding;
+  // Bottom padding (no tab bar anymore)
+  const bottomPadding = Platform.OS === 'web' ? 12 : Math.max(insets.bottom, 8);
 
   /**
    * KEYBOARD STRATEGY:
@@ -1356,15 +1355,22 @@ function ChatScreenInner() {
             backgroundColor: isElias ? dc.eliasAccent : dc.kimAccentDeep,
           }}
         >
-          <View>
-            <Text style={{ ...typography.titleSmall, color: dc.textInverse }}>
-              {companionName}
-            </Text>
-            <Text style={{ ...typography.micro, color: 'rgba(255,255,255,0.7)', marginTop: 2 }}>
-              {isTyping ? 'Typing...' : 'Online'}
-            </Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <Pressable
+              onPress={() => router.push('/(tabs)/' as Href)}
+              style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1, marginRight: 14 }]}
+            >
+              <Text style={{ fontSize: 20, color: dc.textInverse, fontWeight: '600' }}>←</Text>
+            </Pressable>
+            <View>
+              <Text style={{ ...typography.titleSmall, color: dc.textInverse }}>
+                {companionName}
+              </Text>
+              <Text style={{ ...typography.micro, color: 'rgba(255,255,255,0.7)', marginTop: 2 }}>
+                {isTyping ? 'Typing...' : 'Online'}
+              </Text>
+            </View>
           </View>
-          {/* End button removed — session auto-ends when app goes to background */}
         </View>
       </View>
 
@@ -1552,7 +1558,7 @@ function ChatScreenInner() {
               // On Android with softwareKeyboardLayoutMode:resize, the system shrinks the window.
               // When keyboard is open, the tab bar is hidden, so we only need small padding.
               // When closed, we need tabBarHeight to clear the tab bar.
-              paddingBottom: Platform.OS === 'android' && keyboardVisible ? 8 : tabBarHeight,
+              paddingBottom: Platform.OS === 'android' && keyboardVisible ? 8 : bottomPadding + 8,
               backgroundColor: colors.background,
               borderTopWidth: 0.5,
               borderTopColor: colors.border,
@@ -1610,7 +1616,7 @@ function ChatScreenInner() {
         )}
 
         {/* Fixed crisis disclaimer at bottom */}
-        <Text style={{ fontSize: 12, color: '#999', textAlign: 'center', paddingTop: 8, paddingBottom: insets.bottom + 90, paddingHorizontal: 16 }}>
+        <Text style={{ fontSize: 12, color: '#999', textAlign: 'center', paddingTop: 6, paddingBottom: insets.bottom + 12, paddingHorizontal: 16 }}>
           RecoFree is geen vervanging voor professionele hulp.{' '}
           <Text
             style={{ color: '#E53935', fontWeight: 'bold', textDecorationLine: 'underline' }}
@@ -1685,7 +1691,7 @@ function ChatScreenInner() {
     <KeyboardAvoidingView
       style={{ flex: 1 }}
       behavior="padding"
-      keyboardVerticalOffset={isIOS ? 0 : -tabBarHeight}
+      keyboardVerticalOffset={isIOS ? 0 : -bottomPadding}
     >
       {chatContent}
     </KeyboardAvoidingView>

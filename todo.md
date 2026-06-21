@@ -1668,3 +1668,9 @@
 - [x] Fix progress bar to only count 5 narrative sections (exclude VSP from count)
 - [x] Move "My Safety Plan" section below life phase sections (story first, then plan)
 - [x] BUG FIX: Dropdown menu missing in clinical mode on chat screen — fixed: now uses local engine metadata (clinicalInfo) on ChatMessage instead of relying on GPT-generated <clinical> tag
+
+## UI Update: Remove tab bar, home-based navigation
+- [x] Remove bottom tab bar entirely
+- [x] Home screen serves as navigation hub (cards link to each section)
+- [x] Add home button on each sub-screen (mood, diary, backpack, chat, profile)
+- [x] Reduce spacing between chat input field and emergency numbers
