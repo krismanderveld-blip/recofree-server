@@ -186,6 +186,7 @@ export function sessionGreetingEngineV3(
       mode: 'RETURN_AFTER_ABSENCE',
       vspZone: stateDat?.vspZone,
       vspSection: vspSection ?? undefined,
+      previousSessionZone: _logsDat?.previousSessionZone,
     });
 
     return {
@@ -224,6 +225,7 @@ export function sessionGreetingEngineV3(
     mode: 'SYNTHESIS',
     vspZone: stateDat?.vspZone,
     vspSection: vspSection ?? undefined,
+    previousSessionZone: _logsDat?.previousSessionZone,
   });
 
   return {

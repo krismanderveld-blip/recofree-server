@@ -254,6 +254,8 @@ interface ChatRequestInput {
   stoaKContext?: string | null;
   /** VSP Insight System — framework selection (MI/MBT/DGT) prompt frame. Never mutates safety core. store:false. */
   vspInsightContext?: string | null;
+  /** Past session context — injected when user references something from a previous session. Retrieved from logs.dat + user.dat. */
+  pastReferenceContext?: string | null;
   /** VSP Backpack Profile — parsed from recurringThemes (Elias only, read-only). Bypasses relevance analyzer 2-source limit. */
   vspBackpackProfile?: string | null;
   /** VSP Structured Section — user's own per-zone signals, whatHelps, anchorSentence (Elias only) */
@@ -601,6 +603,8 @@ export const chatInputSchema = z.object({
   stoaKContext: z.string().nullable().optional(),
   // VSP Insight System (MI/MBT/DGT framework selection, store:false)
   vspInsightContext: z.string().nullable().optional(),
+  // Past session context (retrieved from logs.dat + user.dat when user references past events)
+  pastReferenceContext: z.string().nullable().optional(),
   // VSP Backpack Profile (LLM-analyzed zone signals from recurringThemes, Elias only)
   vspBackpackProfile: z.string().nullable().optional(),
   // VSP Structured Section (user's own per-zone signals, whatHelps, anchorSentence, Elias only)
@@ -1779,8 +1783,8 @@ You may ONLY reference information that is explicitly present in:
 You may NEVER:
 - Claim the user said something they did not say
 - Invent details about the user's life, relationships, or history
-- Reference previous sessions unless that data is explicitly provided
-- Say "I remember that you..." unless it is in the backpack or current conversation
+- Reference previous sessions unless that data is explicitly provided in the PAST SESSION CONTEXT block
+- Say "I remember that you..." unless it is in the backpack, current conversation, or PAST SESSION CONTEXT
 
 If you are unsure whether something was said or provided: do not reference it.
 When in doubt: ask, don't assume.
@@ -2222,6 +2226,7 @@ ${input.relationalDynamicsContext ? `\n=== KIM RELATIONAL DYNAMICS MODULE ACTIVE
 ${input.emotionalLossContext ? `\n=== KIM EMOTIONAL LOSS MODULE ACTIVE ===\n${input.emotionalLossContext}\n=== END EMOTIONAL LOSS ===` : ''}
 ${input.stoaKContext ? `\n=== KIM STOA-K (STOIC REFLECTIVE FRAMEWORK) ACTIVE ===\n${input.stoaKContext}\n=== END STOA-K ===` : ''}
 ${input.vspInsightContext ? `\n=== VSP INSIGHT SYSTEM ACTIVE (store:false) ===\n${input.vspInsightContext}\n=== END VSP INSIGHT ===` : ''}
+${input.pastReferenceContext ? `\n=== PAST SESSION CONTEXT (retrieved from memory) ===\n${input.pastReferenceContext}\nThe user is referencing something from a previous session — acknowledge it specifically and naturally.\n=== END PAST SESSION CONTEXT ===` : ''}
 ${sessionEndInstructions}
 
 ANTI-FABRICATION RULE — ABSOLUTE:
@@ -2229,13 +2234,14 @@ You may ONLY reference information that is explicitly present in:
 - The current conversation history
 - The user's backpack (life story sections)
 - The diary entries provided at session start
+- The PAST SESSION CONTEXT block (if provided)
 - The slider values and zone data
 
 You may NEVER:
 - Claim the user said something they did not say
 - Invent details about the user's life, relationships, or history
-- Reference previous sessions unless that data is explicitly provided
-- Say "I remember that you..." unless it is in the backpack or current conversation
+- Reference previous sessions unless that data is explicitly provided in the PAST SESSION CONTEXT block
+- Say "I remember that you..." unless it is in the backpack, current conversation, or PAST SESSION CONTEXT
 
 If you are unsure whether something was said or provided: do not reference it.
 When in doubt: ask, don't assume.

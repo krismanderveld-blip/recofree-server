@@ -320,6 +320,7 @@ import { detectWilskracht01 } from '../../src/modules/elias/WILSKRACHT01/detecto
 import { detectAutopilot01 } from '../../src/modules/elias/AUTOPILOT01/detector';
 import type { EliasPsychoEducationRuntimeInput, EliasPsychoEducationDetectionResult } from '../../src/types/eliasPsychoEducation.types';
 import type { PsychoEducationActivation } from '../types/memory/memoryCore.types';
+import { searchPastReferences } from '../pipeline/memory/pastReferenceSearch';
 
 // ─── Pattern Marking (post-GPT local state) ─────────────────
 
@@ -503,7 +504,7 @@ export async function processMessage(
   userMessage: string,
   provider: AIProvider,
   userDat?: UserDat,
-  options?: { isSessionStart?: boolean; diaryEntries?: import('../ai/types').DiaryEntry[] }
+  options?: { isSessionStart?: boolean; diaryEntries?: import('../ai/types').DiaryEntry[]; logsSessions?: import('../types/memory/logsDat.types').SessionLogSummary[] }
 ): Promise<PipelineResult> {
   // Resolve the two stores
   let backpack: Backpack;
@@ -2472,6 +2473,20 @@ export async function processMessage(
     }
   }
 
+  // ── PRE-GPT STEP 6b: Past-Reference Search (logs.dat + user.dat) ──
+  // Detects when user references something from a previous session and injects relevant context.
+  let pastReferenceContext: string | undefined;
+  if (options?.logsSessions && options.logsSessions.length > 0) {
+    const searchResult = searchPastReferences(
+      userMessage,
+      options.logsSessions,
+      currentUserDat,
+    );
+    if (searchResult.found && searchResult.contextForGPT) {
+      pastReferenceContext = searchResult.contextForGPT;
+    }
+  }
+
   const context: ChatContext = {
     userType: backpack.userType,
     userName: backpack.naam,
@@ -2613,6 +2628,8 @@ export async function processMessage(
       }
       return undefined;
     })(),
+    // PAST_REFERENCE: inject context from logs.dat/user.dat when user references past events
+    pastReferenceContext,
   };
 
   let response: string;

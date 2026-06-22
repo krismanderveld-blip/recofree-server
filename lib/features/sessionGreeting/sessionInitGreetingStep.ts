@@ -336,6 +336,16 @@ function adaptLogsDat(
     }
   }
 
+  // Derive previous session dominant zone from zoneTrace
+  if (allSessions && allSessions.length > 0) {
+    const lastSession = allSessions[allSessions.length - 1];
+    if (lastSession.zoneTrace && lastSession.zoneTrace.length > 0) {
+      // Pick the zone with the highest count (dominant zone of that session)
+      const sorted = [...lastSession.zoneTrace].sort((a, b) => b.count - a.count);
+      result.previousSessionZone = sorted[0].zone;
+    }
+  }
+
   // Cross-session pattern detection
   if (allSessions && allSessions.length >= 3) {
     try {

@@ -1210,6 +1210,8 @@ export interface ChatContext {
     delta: number;
     instruction: string;
   };
+  /** PAST_REFERENCE: context from logs.dat/user.dat when user references something from the past */
+  pastReferenceContext?: string;
 }
 
 /**

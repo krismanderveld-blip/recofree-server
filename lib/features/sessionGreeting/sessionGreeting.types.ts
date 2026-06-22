@@ -193,6 +193,8 @@ export interface GreetingLogsDatSnapshot {
     openEndpoints: string[];
     endedAt: string;
   }>;
+  /** Dominant zone from the previous session (derived from zoneTrace) */
+  previousSessionZone?: string;
   /** Cross-session recurring pattern detected from logs.dat history */
   recurringPatternAnchor?: string;
   recurringPatternConfidence?: number;

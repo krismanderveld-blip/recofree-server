@@ -385,3 +385,109 @@ describe('User scenario: GEEL + diary "onzeker over uitgang"', () => {
     expect(selected[0].sourceType).not.toBe('RECENT_GRATITUDE');
   });
 });
+
+// ─── Test 7: Zone Chronology Block ──────────────────────────────────────────
+
+import { buildZoneChronologyBlock } from '@/lib/features/sessionGreeting/buildGreetingSynthesisPrompt';
+
+describe('Zone chronology block (zone transition between sessions)', () => {
+  it('T13: ROOD→GROEN improvement produces positive acknowledgment', () => {
+    const block = buildZoneChronologyBlock('GROEN', 'ROOD');
+    expect(block).toContain('ZONE-OVERGANG');
+    expect(block).toContain('verbetering');
+    expect(block).toContain('ROOD→GROEN');
+    expect(block).toContain('positief');
+    // Must NOT literally name colors as instruction to GPT
+    expect(block).toContain('NOEM de kleuren NIET letterlijk');
+  });
+
+  it('T14: GROEN→ROOD deterioration produces gentle acknowledgment', () => {
+    const block = buildZoneChronologyBlock('ROOD', 'GROEN');
+    expect(block).toContain('ZONE-OVERGANG');
+    expect(block).toContain('verslechtering');
+    expect(block).toContain('GROEN→ROOD');
+    expect(block).toContain('zonder alarm');
+  });
+
+  it('T15: Same zone (GEEL→GEEL) returns empty string', () => {
+    const block = buildZoneChronologyBlock('GEEL', 'GEEL');
+    expect(block).toBe('');
+  });
+
+  it('T16: Missing previousSessionZone returns empty string', () => {
+    const block = buildZoneChronologyBlock('GROEN', undefined);
+    expect(block).toBe('');
+  });
+
+  it('T17: Missing currentZone returns empty string', () => {
+    const block = buildZoneChronologyBlock(undefined, 'ROOD');
+    expect(block).toBe('');
+  });
+
+  it('T18: ORANJE→GEEL improvement is detected correctly', () => {
+    const block = buildZoneChronologyBlock('GEEL', 'ORANJE');
+    expect(block).toContain('verbetering');
+    expect(block).toContain('ORANJE→GEEL');
+  });
+
+  it('T19: GEEL→PAARS deterioration is detected correctly', () => {
+    const block = buildZoneChronologyBlock('PAARS', 'GEEL');
+    expect(block).toContain('verslechtering');
+    expect(block).toContain('GEEL→PAARS');
+  });
+
+  it('T20: Zone chronology block is included in SYNTHESIS prompt when zones differ', () => {
+    const sources = [
+      { sourceType: 'LAST_SESSION_SUMMARY' as const, safeAnchor: 'bespraken frustraties', relevanceScore: 0.95 },
+    ];
+
+    const payload = buildGreetingSynthesisPromptPayload({
+      userName: 'Kris',
+      selectedSources: sources,
+      absence: { isReturnAfterAbsence: false, band: 'NONE' as any, absenceDaysExact: 0.5, absenceHoursExact: 12, lastSessionStartedAt: '2026-06-16T19:30:00.000Z', thresholdDays: 3, reason: 'within threshold' },
+      mode: 'SYNTHESIS',
+      vspZone: 'GROEN',
+      previousSessionZone: 'ROOD',
+    });
+
+    expect(payload.synthesisInstruction).toContain('ZONE-OVERGANG');
+    expect(payload.synthesisInstruction).toContain('verbetering');
+    expect(payload.synthesisInstruction).toContain('ROOD→GROEN');
+  });
+
+  it('T21: Zone chronology block is NOT included when zones are the same', () => {
+    const sources = [
+      { sourceType: 'LAST_SESSION_SUMMARY' as const, safeAnchor: 'bespraken frustraties', relevanceScore: 0.95 },
+    ];
+
+    const payload = buildGreetingSynthesisPromptPayload({
+      userName: 'Kris',
+      selectedSources: sources,
+      absence: { isReturnAfterAbsence: false, band: 'NONE' as any, absenceDaysExact: 0.5, absenceHoursExact: 12, lastSessionStartedAt: '2026-06-16T19:30:00.000Z', thresholdDays: 3, reason: 'within threshold' },
+      mode: 'SYNTHESIS',
+      vspZone: 'GEEL',
+      previousSessionZone: 'GEEL',
+    });
+
+    expect(payload.synthesisInstruction).not.toContain('ZONE-OVERGANG');
+  });
+
+  it('T22: Zone chronology block is included in RETURN_AFTER_ABSENCE prompt when zones differ', () => {
+    const sources = [
+      { sourceType: 'LAST_SESSION_SUMMARY' as const, safeAnchor: 'bespraken frustraties over werk', relevanceScore: 0.95 },
+    ];
+
+    const payload = buildGreetingSynthesisPromptPayload({
+      userName: 'Kris',
+      selectedSources: sources,
+      absence: { isReturnAfterAbsence: true, band: 'SHORT_RETURN' as any, absenceDaysExact: 4, absenceHoursExact: 96, lastSessionStartedAt: '2026-06-13T07:30:00.000Z', thresholdDays: 3, reason: 'absence exceeds threshold' },
+      mode: 'RETURN_AFTER_ABSENCE',
+      vspZone: 'ORANJE',
+      previousSessionZone: 'GROEN',
+    });
+
+    expect(payload.synthesisInstruction).toContain('ZONE-OVERGANG');
+    expect(payload.synthesisInstruction).toContain('verslechtering');
+    expect(payload.synthesisInstruction).toContain('GROEN→ORANJE');
+  });
+});

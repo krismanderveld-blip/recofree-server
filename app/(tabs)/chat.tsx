@@ -162,6 +162,7 @@ function ChatScreenInner() {
   const inactivityTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const inactivityEndTriggeredRef = useRef(false);
   const handleEndConversationRef = useRef<(() => Promise<void>) | null>(null);
+  const logsDatSessionsRef = useRef<any[]>([]);
   const isElias = state.userType === 'elias';
 
   /** Check if the last user message contains disclosure keywords (Module 58) */
@@ -667,6 +668,7 @@ function ChatScreenInner() {
               };
               // Pass all sessions for cross-session pattern detection
               allSessions = logsDat.sessions;
+              logsDatSessionsRef.current = logsDat.sessions;
             }
             // ── Transfer Diagnostic Point 5: Greeting read from logs.dat ──
             logDebugEvent('transfer_5_greeting_read', {
@@ -874,7 +876,7 @@ function ChatScreenInner() {
       }
       const provider = getAIProvider();
       // FOLLOW-UP MESSAGE: isSessionStart = false, no diary entries
-      const result = await processMessage(backpack, processedText, provider, currentUserDat, { isSessionStart: false, diaryEntries: [] });
+      const result = await processMessage(backpack, processedText, provider, currentUserDat, { isSessionStart: false, diaryEntries: [], logsSessions: logsDatSessionsRef.current });
       // DEFENSIVE GUARD: if processMessage returns null/undefined (should never happen,
       // but observed 'undefined is not a function' crash on device — root cause unconfirmed,
       // likely Metro bundler module resolution issue or stale closure. This guardrail

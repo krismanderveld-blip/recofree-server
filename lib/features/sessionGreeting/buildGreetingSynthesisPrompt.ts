@@ -95,12 +95,14 @@ export interface BuildSynthesisPromptInput {
   mode: GreetingSynthesisMode;
   vspZone?: string;
   vspSection?: GreetingVspSectionSnapshot;
+  /** Dominant zone from the previous session (from logs.dat zoneTrace) */
+  previousSessionZone?: string;
 }
 
 export function buildGreetingSynthesisPromptPayload(
   input: BuildSynthesisPromptInput,
 ): GreetingSynthesisPromptPayload {
-  const { userName, selectedSources, absence, mode, vspZone, vspSection } = input;
+  const { userName, selectedSources, absence, mode, vspZone, vspSection, previousSessionZone } = input;
 
   const isReturnMode = mode === 'RETURN_AFTER_ABSENCE';
   const absenceForPrompt: SessionAbsenceResultForPrompt | undefined = isReturnMode
@@ -109,9 +111,11 @@ export function buildGreetingSynthesisPromptPayload(
 
   const zoneTone = getZoneTone(vspZone);
 
+  const zoneChronologyBlock = buildZoneChronologyBlock(vspZone, previousSessionZone);
+
   const synthesisInstruction = isReturnMode
-    ? buildReturnAfterAbsenceInstruction(userName, selectedSources, absence, vspZone)
-    : buildCoherentSynthesisInstruction(userName, selectedSources, vspZone, zoneTone, vspSection);
+    ? buildReturnAfterAbsenceInstruction(userName, selectedSources, absence, vspZone, zoneChronologyBlock)
+    : buildCoherentSynthesisInstruction(userName, selectedSources, vspZone, zoneTone, vspSection, zoneChronologyBlock);
 
   return {
     persona: 'elias',
@@ -146,6 +150,47 @@ function buildAbsenceForPrompt(absence: SessionAbsenceResult): SessionAbsenceRes
   };
 }
 
+// ─── Zone Chronology Block ────────────────────────────────────────────────────
+
+/**
+ * Builds a zone-transition instruction block when the user's zone changed since last session.
+ * Returns empty string if either zone is missing or zones are the same.
+ */
+export function buildZoneChronologyBlock(
+  currentZone?: string,
+  previousSessionZone?: string,
+): string {
+  if (!currentZone || !previousSessionZone) return '';
+  const cur = currentZone.toUpperCase();
+  const prev = previousSessionZone.toUpperCase();
+  if (cur === prev) return '';
+
+  // Determine direction: improvement or deterioration
+  const ZONE_SEVERITY: Record<string, number> = {
+    GROEN: 1,
+    GEEL: 2,
+    ORANJE: 3,
+    ROOD: 4,
+    PAARS: 5,
+  };
+  const curSeverity = ZONE_SEVERITY[cur] ?? 0;
+  const prevSeverity = ZONE_SEVERITY[prev] ?? 0;
+
+  let directionHint: string;
+  if (curSeverity < prevSeverity) {
+    directionHint = `Dit is een verbetering (${prev}→${cur}): erken dit positief ("mooi om te zien dat het beter gaat", "fijn dat er iets verschoven is"). Houd het subtiel en warm.`;
+  } else {
+    directionHint = `Dit is een verslechtering (${prev}→${cur}): erken dit zacht zonder alarm. Geen paniek, geen verwijt. Benoem dat je merkt dat het anders voelt dan vorige keer.`;
+  }
+
+  return `
+ZONE-OVERGANG: De gebruiker zat vorige sessie in een andere zone dan nu.
+${directionHint}
+Verweef dit SUBTIEL in de begroeting als het natuurlijk past — NOEM de kleuren NIET letterlijk.
+Gebruik gevoelstaal ("het lijkt rustiger", "het voelt zwaarder") in plaats van zone-namen.
+`;
+}
+
 // ─── Coherent Synthesis Instruction (NEW) ─────────────────────────────────────
 
 function buildCoherentSynthesisInstruction(
@@ -154,6 +199,7 @@ function buildCoherentSynthesisInstruction(
   vspZone: string | undefined,
   zoneTone: ZoneToneConfig,
   vspSection?: GreetingVspSectionSnapshot,
+  zoneChronologyBlock?: string,
 ): string {
   const zone = (vspZone ?? 'GROEN').toUpperCase();
   const contextBriefing = buildContextBriefing(selectedSources, zone);
@@ -163,7 +209,7 @@ function buildCoherentSynthesisInstruction(
 
 ZONE: ${zone}
 ${zoneTone.toneInstruction}
-
+${zoneChronologyBlock || ''}
 === PERSOONLIJKE DATA VAN DE GEBRUIKER (VERPLICHT TE GEBRUIKEN) ===
 
 ${contextBriefing}
@@ -377,6 +423,7 @@ function buildReturnAfterAbsenceInstruction(
   selectedSources: SelectedSynthesisSource[],
   absence: SessionAbsenceResult,
   vspZone: string | undefined,
+  zoneChronologyBlock?: string,
 ): string {
   const days = absence.absenceDaysExact !== null
     ? Math.round(absence.absenceDaysExact)
@@ -406,6 +453,7 @@ ZONE: ${zone}
 
 ${toneInstruction}
 ${zone !== 'GROEN' ? zoneTone.toneInstruction : ''}
+${zoneChronologyBlock || ''}
 ${contextBriefing}
 
 INSTRUCTIES:

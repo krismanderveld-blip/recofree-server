@@ -1768,3 +1768,15 @@
 - [x] Export/import backward compatibility met oude sessionAnalyses structuur (importStagingService auto-migratie)
 - [x] Greeting engine leest uit unified logs.dat (previousSessionMessages als fallback)
 - [x] Auto-end + handmatige End roepen beide sessionLifecycle.endSession() aan met legacySessionData
+
+## Fase 2: Zone-chronologie, logs.dat per-bericht leesmoment, verleden-tijd-lookup
+- [x] Onderdeel 3 (basis): Standalone search functie voor logs.dat + user.dat (discussedTopics, compressedNarrative, triggerPatterns, schemaTendencies)
+- [x] Onderdeel 3: Unit tests voor search functie (bekende + onbekende zoektermen)
+- [x] Onderdeel 2: Wire search functie in per-bericht pipeline als verleden-tijd-trigger
+- [x] Onderdeel 2: GPT krijgt context "gevonden" of "onbekend onderwerp" mee
+- [x] Onderdeel 1: Zone-chronologie-regel in greeting engine (vergelijk vorige vs huidige zone)
+- [x] Onderdeel 1: ROOD-poort: crisis-routing neemt voorrang, geen chronologie-toevoeging (handled by override priority in V3 engine)
+- [x] Onderdeel 1: Verbetering (vorige slechter → nu beter): bekrachtigende incheck
+- [x] Onderdeel 1: Verslechtering (vorige beter → nu slechter, geel): zorgzame incheck
+- [x] Onderdeel 1: Geen verandering: geen speciale toevoeging
+- [x] Onderdeel 1: Unit tests voor zone-chronologie scenarios (10 tests in zoneAwareGreeting.test.ts T13-T22)
