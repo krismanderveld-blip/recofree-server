@@ -1790,3 +1790,9 @@
 - [x] Fix 5: endSession() now uses upsertCurrentSession (upgrades raw entry with GPT summary, no duplicate)
 - [ ] Verify on device: greeting no longer says "uitstellen" after correction
 - [ ] Verify on device: debug log shows current session immediately after first message
+
+## PAR01 NL trigger patterns (additief)
+- [x] NL regex patronen toegevoegd voor alle 9 MARKER_PATTERNS categorieën (role-reversal, responsibility-overload, own-needs-suppressed, guilt-when-stepping-back, identity-as-caretaker, childhood-pattern, exhaustion-denial, emotional-labor, boundary-inability)
+- [x] Bestaande EN patronen ongewijzigd gelaten
+- [x] 26 unit tests geschreven en geslaagd (18 NL + 4 EN regression + 2 safety gates + 2 combined)
+- [x] Volledige testsuite: 1354 passed, 1 pre-existing failure (inactivityAutoClose EN message — niet gerelateerd)
