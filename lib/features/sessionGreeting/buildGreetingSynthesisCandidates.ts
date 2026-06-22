@@ -127,9 +127,9 @@ export function buildGreetingSynthesisCandidates(
   // ─── 2. RECENT_DIARY ────────────────────────────────────────────────────────
   if (freshness.diaryRecentUnder3Days && diaryMetadata?.latestSafeAnchor) {
     const diaryAge = freshness.latestDiaryAgeInDays ?? 3;
-    // V3.2: Cap diary base relevance at 0.85 so it never outscores LAST_SESSION_SUMMARY (0.93-0.96).
-    // Diary is supplementary context; the actual conversation content is the primary continuity source.
-    const baseRelevance = Math.min(computeRecencyRelevance(diaryAge, 3), 0.85);
+    // V3.3: No artificial cap — timestamp-based recency bonus determines which source dominates.
+    // All historical sources get fair base scores; the most recent timestamp wins via RECENCY_BONUSES.
+    const baseRelevance = computeRecencyRelevance(diaryAge, 3);
     // Diary is contextual — determine valence from content hints
     const valence = inferDiaryValence(diaryMetadata.latestSafeAnchor);
     const zoneAdjusted = applyZoneModifier(baseRelevance, valence, zoneMods);
@@ -156,7 +156,8 @@ export function buildGreetingSynthesisCandidates(
   // ─── 3. RECENT_GRATITUDE ────────────────────────────────────────────────────
   if (freshness.gratitudeRecentUnder3Days && gratitudeMetadata?.latestSafeAnchor) {
     const gratAge = freshness.latestGratitudeAgeInDays ?? 3;
-    const baseRelevance = computeRecencyRelevance(gratAge, 3) * 0.85;
+    // V3.3: No artificial suppression — recency bonus determines dominance.
+    const baseRelevance = computeRecencyRelevance(gratAge, 3);
     // Gratitude is always positive valence
     const zoneAdjusted = applyZoneModifier(baseRelevance, 'positive', zoneMods);
     candidates.push({
@@ -272,8 +273,9 @@ export function buildGreetingSynthesisCandidates(
   if (logsDat && (logsDat.lastSessionOpenLoops.length > 0 || logsDat.latestLogDigest || (logsDat.recentSessionDigests && logsDat.recentSessionDigests.length > 0))) {
     const hasOpenLoops = logsDat.lastSessionOpenLoops.length > 0;
     const hasRecent = logsDat.recentSessionDigests && logsDat.recentSessionDigests.length > 0;
-    // V3.2: Raised base scores — session content is PRIMARY context, always above diary (which maxes at ~0.85-1.0)
-    const baseRelevance = hasOpenLoops ? 0.96 : hasRecent ? 0.93 : 0.85;
+    // V3.3: Equalized base scores — no fixed hierarchy. Timestamp recency bonus determines dominance.
+    // All historical sources start at the same base; the most recent one wins via RECENCY_BONUSES.
+    const baseRelevance = hasOpenLoops ? 0.90 : hasRecent ? 0.88 : 0.85;
     const zoneAdjusted = applyZoneModifier(baseRelevance, 'neutral', zoneMods);
 
     // Build rich safeAnchor with last 3 session narratives
@@ -341,9 +343,9 @@ export function buildGreetingSynthesisCandidates(
   }
 
   // ─── Apply Recency Rank Bonus ───────────────────────────────────────────────
-  // Sort timestamps descending (most recent first)
-  // Most recent eligible source gets +0.15, second +0.08, third +0.03
-  const RECENCY_BONUSES = [0.15, 0.08, 0.03];
+  // V3.3: Recency dominance — the most recent source gets a decisive bonus.
+  // With equalized base scores (~0.85-0.90), the +0.20 bonus guarantees the newest source wins.
+  const RECENCY_BONUSES = [0.20, 0.08, 0.02];
   if (sourceTimestamps.length > 0) {
     const sorted = [...sourceTimestamps].sort((a, b) => b.timestamp - a.timestamp);
     for (let i = 0; i < Math.min(sorted.length, RECENCY_BONUSES.length); i++) {
@@ -375,12 +377,15 @@ function computeRecencyRelevance(ageInUnits: number, maxAgeInUnits: number): num
  * Computes mood relevance based on interpretation.
  */
 function computeMoodRelevance(metric: MoodMetricSelection): number {
+  // V3.3: Normalized base scores — recency bonus determines dominance.
+  // high_alarm stays elevated (safety signal), but others are in the same ~0.85-0.90 range
+  // as diary/gratitude/session so that timestamp comparison works fairly.
   switch (metric.interpretation) {
-    case 'high_alarm': return 0.95;
-    case 'elevated': return 0.80;
-    case 'positive': return 0.70;
-    case 'neutral': return 0.50;
-    default: return 0.40;
+    case 'high_alarm': return 0.95; // Safety exception: alarm always surfaces
+    case 'elevated': return 0.88;
+    case 'positive': return 0.85;
+    case 'neutral': return 0.75;
+    default: return 0.70;
   }
 }
 

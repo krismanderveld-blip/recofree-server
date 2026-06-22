@@ -1796,3 +1796,16 @@
 - [x] Bestaande EN patronen ongewijzigd gelaten
 - [x] 26 unit tests geschreven en geslaagd (18 NL + 4 EN regression + 2 safety gates + 2 combined)
 - [x] Volledige testsuite: 1354 passed, 1 pre-existing failure (inactivityAutoClose EN message — niet gerelateerd)
+
+## V3.3 Greeting source selection: timestamp-based dominance (replaces fixed hierarchy)
+- [x] Remove artificial 0.85 cap on diary base score
+- [x] Remove artificial 0.85 multiplier on gratitude base score
+- [x] Lower session base score from 0.93-0.96 to 0.88-0.90 (equalized with diary/gratitude)
+- [x] Normalize mood base scores (elevated 0.88, positive 0.85) to same range
+- [x] Increase recency bonus rank 1 from +0.15 to +0.20 (decisive)
+- [x] Change return-after-absence sort to use relevanceScore instead of fixed priority index
+- [x] Keep high_alarm mood at 0.95 as safety exception
+- [x] Write timestamp dominance tests (A: diary>session, B: session>diary, C: mood>both, D: gratitude>diary, E: high_alarm safety)
+- [x] Update C2 absence test to reflect V3.3 score-based ordering
+- [x] All 1359 tests pass (1 pre-existing failure unrelated)
+- [x] Created selectMostRecentGreetingSource.ts utility (standalone, for future use)

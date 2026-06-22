@@ -78,15 +78,14 @@ export function selectGreetingSynthesisSources(
 // ─── Return After Absence Source Selection ────────────────────────────────────
 
 /** Priority order for return-after-absence source selection */
-// V3.2: LAST_SESSION_SUMMARY now ranks ABOVE RECENT_DIARY.
-// Rationale: what we actually discussed in the previous session is more relevant
-// for greeting continuity than a diary entry the user wrote separately.
+// V3.3: No fixed hierarchy between diary/gratitude/session — recency bonus already
+// determined the relevanceScore. TODAY_MOOD keeps explicit top priority (it's "now").
 const RETURN_RELEVANCE_PRIORITY: GreetingSynthesisSourceType[] = [
   'TODAY_MOOD',
   'LAST_SESSION_SUMMARY',
   'RECENT_DIARY',
-  'RECURRING_PATTERN',
   'RECENT_GRATITUDE',
+  'RECURRING_PATTERN',
   'BACKPACK_RECENT_UPDATE',
   'ACTIVE_HOPE_OR_FEAR',
   'SCHEMA_ROTATION',
@@ -127,8 +126,13 @@ export function selectReturnAfterAbsenceSources(
     }
   }
 
-  // Sort by return relevance priority
+  // V3.3: Sort by relevanceScore descending (which already includes recency bonus).
+  // This ensures the most recent source wins, regardless of source type.
+  // Fallback to RETURN_RELEVANCE_PRIORITY only as tiebreaker.
   const sorted = [...eligible].sort((a, b) => {
+    const scoreDiff = b.relevanceScore - a.relevanceScore;
+    if (Math.abs(scoreDiff) > 0.01) return scoreDiff;
+    // Tiebreaker: use priority list
     const aIdx = RETURN_RELEVANCE_PRIORITY.indexOf(a.sourceType);
     const bIdx = RETURN_RELEVANCE_PRIORITY.indexOf(b.sourceType);
     const aPriority = aIdx === -1 ? 999 : aIdx;
