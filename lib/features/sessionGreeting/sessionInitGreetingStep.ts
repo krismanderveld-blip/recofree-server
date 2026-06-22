@@ -280,8 +280,35 @@ function adaptLogsDat(
 ): GreetingLogsDatSnapshot {
   const result: GreetingLogsDatSnapshot = { lastSessionOpenLoops: [] };
 
-  if (lastSessionSummary) {
-    // V3.1: Send FULL narrative — no truncation. GPT needs the complete picture.
+  // V3.3 FIX: Raw previous session messages are the SINGLE SOURCE OF TRUTH.
+  // logs.dat compressedNarrative is a GPT-generated summary that can be stale/wrong
+  // (e.g., it may say "uitstellen" when the user actually said "afspraak over 9 dagen").
+  // When raw messages are available, they REPLACE all logs.dat narrative content.
+  const hasRawMessages = previousSessionMessages && previousSessionMessages.length > 0;
+
+  if (hasRawMessages) {
+    // RAW MESSAGES PATH: Use ONLY the actual chat messages as context.
+    // Do NOT mix in logs.dat compressedNarrative — it may contradict the raw messages.
+    const last5 = previousSessionMessages!.slice(-5);
+    const rawTranscript = last5.map(m => `${m.role === 'user' ? 'Gebruiker' : 'Elias'}: ${m.content}`).join('\n');
+    result.latestLogDigest = rawTranscript;
+    const lastMsgTimestamp = last5[last5.length - 1]?.timestamp || new Date().toISOString();
+    result.recentSessionDigests = [{
+      narrative: rawTranscript,
+      topics: [],
+      openEndpoints: lastSessionSummary?.unresolvedTensions ?? [],
+      endedAt: lastMsgTimestamp,
+    }];
+    // Preserve open loops and follow-up from logs.dat (these are structural, not narrative)
+    result.lastSessionOpenLoops = lastSessionSummary?.unresolvedTensions ?? [];
+    result.lastSessionFollowUp = lastSessionSummary?.suggestedFollowUp?.length
+      ? lastSessionSummary.suggestedFollowUp
+      : undefined;
+    result.lastSessionEmotionalArc = lastSessionSummary?.emotionalArc || undefined;
+    // DO NOT include logs.dat session digests — they contain stale GPT summaries
+    // that may contradict the actual messages the user sent.
+  } else if (lastSessionSummary) {
+    // FALLBACK PATH: No raw messages available, use logs.dat summary.
     result.latestLogDigest = lastSessionSummary.compressedNarrative || undefined;
     result.lastSessionOpenLoops = lastSessionSummary.unresolvedTensions ?? [];
     result.lastSessionTopics = lastSessionSummary.discussedTopics?.length > 0
@@ -291,48 +318,15 @@ function adaptLogsDat(
     result.lastSessionFollowUp = lastSessionSummary.suggestedFollowUp?.length > 0
       ? lastSessionSummary.suggestedFollowUp
       : undefined;
-  }
-
-  // V3.2: Inject raw previous session messages (last 5) as PRIMARY context.
-  // These are the actual messages shown on screen — most recent, most concrete.
-  // They supplement (or replace) logs.dat summary when available.
-  if (previousSessionMessages && previousSessionMessages.length > 0) {
-    const last5 = previousSessionMessages.slice(-5);
-    const rawTranscript = last5.map(m => `${m.role === 'user' ? 'Gebruiker' : 'Elias'}: ${m.content}`).join('\n');
-    // If logs.dat had no narrative, use raw messages as the digest
-    if (!result.latestLogDigest) {
-      result.latestLogDigest = rawTranscript;
-    }
-    // Always create a recentSessionDigests entry from raw messages (highest priority)
-    const lastMsgTimestamp = last5[last5.length - 1]?.timestamp || new Date().toISOString();
-    const rawDigest = {
-      narrative: rawTranscript,
-      topics: [],
-      openEndpoints: [],
-      endedAt: lastMsgTimestamp,
-    };
-    // Prepend raw messages digest as most recent (before any logs.dat digests)
-    if (result.recentSessionDigests) {
-      result.recentSessionDigests.unshift(rawDigest);
-    } else {
-      result.recentSessionDigests = [rawDigest];
-    }
-  }
-
-  // Include last 3 session digests for continuity (most recent first)
-  if (allSessions && allSessions.length > 0) {
-    const recent = allSessions.slice(-3).reverse();
-    const logsDigests = recent.map(s => ({
-      narrative: s.compressedNarrative || '',
-      topics: s.discussedTopics || [],
-      openEndpoints: (s.openEndpoints || []).map(ep => ep.label),
-      endedAt: s.endedAt || s.createdAt || '',
-    }));
-    // Append logs.dat digests AFTER raw messages (raw messages have priority)
-    if (result.recentSessionDigests) {
-      result.recentSessionDigests.push(...logsDigests);
-    } else {
-      result.recentSessionDigests = logsDigests;
+    // Include logs.dat digests only when we have no raw messages
+    if (allSessions && allSessions.length > 0) {
+      const recent = allSessions.slice(-3).reverse();
+      result.recentSessionDigests = recent.map(s => ({
+        narrative: s.compressedNarrative || '',
+        topics: s.discussedTopics || [],
+        openEndpoints: (s.openEndpoints || []).map(ep => ep.label),
+        endedAt: s.endedAt || s.createdAt || '',
+      }));
     }
   }
 

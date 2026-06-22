@@ -1780,3 +1780,13 @@
 - [x] Onderdeel 1: Verslechtering (vorige beter → nu slechter, geel): zorgzame incheck
 - [x] Onderdeel 1: Geen verandering: geen speciale toevoeging
 - [x] Onderdeel 1: Unit tests voor zone-chronologie scenarios (10 tests in zoneAwareGreeting.test.ts T13-T22)
+
+## Greeting stale-data fix (logs.dat immediate write)
+- [x] Root cause: greeting used stale compressedNarrative from logs.dat (GPT-generated "uitstellen") instead of raw chatHistory messages
+- [x] Fix 1: adaptLogsDat now excludes logs.dat digests when raw previousSessionMessages are available (sessionInitGreetingStep.ts)
+- [x] Fix 2: Prompt label changed to "LETTERLIJKE BERICHTEN" + anti-parafraseer-regel added (buildGreetingSynthesisPrompt.ts)
+- [x] Fix 3: logsDatStore.upsertCurrentSession() method added — upserts by sessionId instead of blind append
+- [x] Fix 4: Incremental logs.dat write after every turn in chat.tsx — raw messages written immediately, no GPT needed
+- [x] Fix 5: endSession() now uses upsertCurrentSession (upgrades raw entry with GPT summary, no duplicate)
+- [ ] Verify on device: greeting no longer says "uitstellen" after correction
+- [ ] Verify on device: debug log shows current session immediately after first message

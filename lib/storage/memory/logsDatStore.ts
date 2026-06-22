@@ -18,6 +18,13 @@ export interface LogsDatStore {
   save(persona: RecoFreePersona, data: LogsDatPlaintext): Promise<void>;
   appendSessionSummary(persona: RecoFreePersona, summary: SessionLogSummary): Promise<void>;
   appendRoutingAudit(persona: RecoFreePersona, audit: LogsRoutingAuditEntry): Promise<void>;
+  /**
+   * Upsert the current (in-progress) session into logs.dat with raw messages.
+   * Called after every turn so data is never lost even if endSession never runs.
+   * If a session with the same sessionId already exists, it is REPLACED (updated).
+   * This is the "0-3 maanden" strategy: raw berichten, geen GPT-samenvatting nodig.
+   */
+  upsertCurrentSession(persona: RecoFreePersona, summary: SessionLogSummary): Promise<void>;
 }
 
 export function createLogsDatStore(): LogsDatStore {
@@ -55,6 +62,19 @@ export function createLogsDatStore(): LogsDatStore {
     async appendSessionSummary(persona, summary) {
       const data = await this.load(persona);
       data.sessions.push(summary);
+      data.updatedAt = new Date().toISOString();
+      await this.save(persona, data);
+    },
+
+    async upsertCurrentSession(persona, summary) {
+      const data = await this.load(persona);
+      // Find existing entry with same sessionId and REPLACE it
+      const existingIdx = data.sessions.findIndex(s => s.sessionId === summary.sessionId);
+      if (existingIdx >= 0) {
+        data.sessions[existingIdx] = summary;
+      } else {
+        data.sessions.push(summary);
+      }
       data.updatedAt = new Date().toISOString();
       await this.save(persona, data);
     },

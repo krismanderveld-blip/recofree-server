@@ -150,8 +150,10 @@ export function createSessionLifecycleManager(): SessionLifecycleManager {
         legacySessionData,
       });
 
-      // Append to logs.dat (encrypted)
-      await stores.logsDatStore.appendSessionSummary(persona, writeResult.summary);
+      // Upsert to logs.dat (encrypted) — upgrades the incremental raw entry
+      // that was written during the session with the full GPT summary.
+      // Uses upsert (not append) to avoid duplicates with the per-turn writes.
+      await stores.logsDatStore.upsertCurrentSession(persona, writeResult.summary);
 
       // ── Transfer Diagnostic Point 3: logs.dat write completed ──
       logDebugEvent('transfer_3_logsdat_write', {

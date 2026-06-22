@@ -251,9 +251,11 @@ VERBODEN (HARD — elke overtreding maakt de output ONGELDIG):
 TAALREGEL:
 - Grammaticaal correct Nederlands, geen emoji
 
-KRITIEK — GEEN HALLUCINATIE:
+KRITIEK — GEEN HALLUCINATIE / GEEN HERINTERPRETERING:
 - Verwijs ALLEEN naar informatie die EXPLICIET in de persoonlijke data hierboven staat
 - Verzin NOOIT sessies, gesprekken of activiteiten die niet in de data staan
+- PARAFRASEER NIET: als de gebruiker zei "ik heb een afspraak over 9 dagen", zeg dan NIET "je hebt uitgesteld" of "je hebt besloten om uit te stellen" — gebruik de EIGEN WOORDEN van de gebruiker
+- Als VORIGE SESSIE data beschikbaar is, gebruik dan LETTERLIJK wat daar staat. Voeg geen interpretatie toe.
 - Bij twijfel: houd het concreet maar algemeen, zonder specifieke tijdsreferenties
 
 VOORBEELD (ter illustratie, niet kopiëren):
@@ -388,7 +390,7 @@ function buildContextBriefing(sources: SelectedSynthesisSource[], zone: string):
         parts.push(`TERUGKEREND SCHEMA/THEMA:\n  ${source.safeAnchor}`);
         break;
       case 'LAST_SESSION_SUMMARY':
-        parts.push(`VORIGE SESSIE (samenvatting):\n  ${source.safeAnchor}`);
+        parts.push(`VORIGE SESSIE (LETTERLIJKE BERICHTEN — dit is wat de gebruiker ECHT zei, gebruik ALLEEN deze tekst als bron):\n  ${source.safeAnchor}`);
         break;
       case 'RECURRING_PATTERN':
         parts.push(`TERUGKEREND PATROON (meerdere sessies):\n  ${source.safeAnchor}`);

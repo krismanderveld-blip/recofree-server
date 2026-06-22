@@ -1013,6 +1013,48 @@ function ChatScreenInner() {
             changedFields: writeResult.commitResult.changedFields,
           });
         }
+        // ── INCREMENTAL LOGS.DAT WRITE (after every turn) ──────────────
+        // Write raw session messages to logs.dat IMMEDIATELY so data is never
+        // lost even if endSession() never runs (app killed, crash, etc.).
+        // This is the "0-3 maanden" strategy: raw berichten, geen GPT nodig.
+        try {
+          const currentBuffer = stores.sessionBufferStore.getBuffer();
+          if (currentBuffer && currentBuffer.compactMessages.length > 0) {
+            const rawMsgs = currentBuffer.compactMessages
+              .filter(m => m.role === 'user')
+              .slice(-10)
+              .map(m => m.text.slice(0, 300));
+            const rawNarrative = rawMsgs.length > 0
+              ? `Sessie-inhoud (${currentBuffer.compactMessages.length} berichten): ${rawMsgs.join(' | ')}`
+              : `Sessie met ${currentBuffer.compactMessages.length} berichten`;
+            const incrementalSummary: any = {
+              summaryId: `incremental_${currentBuffer.sessionId}`,
+              sessionId: currentBuffer.sessionId,
+              persona,
+              startedAt: currentBuffer.startedAt,
+              endedAt: new Date().toISOString(),
+              createdAt: currentBuffer.startedAt,
+              summaryModel: 'gpt-4o-mini',
+              summarySchemaVersion: 'session_summary.v1',
+              compressedNarrative: rawNarrative.slice(0, 1500),
+              discussedTopics: [],
+              emotionalThemes: [],
+              breakthroughs: [],
+              relapseOrRiskEvents: [{eventType: 'none', description: '', severity: 0}],
+              openEndpoints: [],
+              extractedCandidates: { fears: [], hopes: [], triggers: [], schemaTendencies: [], modeTendencies: [] },
+              moduleTrace: [],
+              zoneTrace: [],
+              inputTokenEstimate: 0,
+              outputTokenEstimate: 0,
+            };
+            await stores.logsDatStore.upsertCurrentSession(persona, incrementalSummary as any);
+          }
+        } catch (incrErr) {
+          // Non-critical: if incremental write fails, endSession will still try
+          console.warn('[IncrementalLogsDat] Write failed (non-critical):', incrErr);
+        }
+
         // Debug log
         if (__DEV__) {
           console.log(writeResult.debugLog);
