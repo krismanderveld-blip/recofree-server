@@ -13,7 +13,9 @@ import { createStateDatStore, type StateDatStore } from "@/lib/storage/memory/st
 import { createProjectionsDatStore, type ProjectionsDatStore } from "@/lib/storage/memory/projectionsDatStore";
 import { createLogsDatStore, type LogsDatStore } from "@/lib/storage/memory/logsDatStore";
 import { buildSessionInitContext, type SessionInitContext } from "./sessionInitContextBuilder";
+import { applyRetentionToLogsDat } from "./logsDatRetention";
 import { generateSessionSummary } from "./sessionEndSummarizer";
+import { writeUnifiedSessionEnd, isSessionAlreadyClosed, resetSessionCloseLock } from "./unifiedSessionEndWriter";
 import { logDebugEvent } from "@/lib/debug/session-logger";
 
 /**
@@ -24,7 +26,7 @@ export const USE_LOGS_DAT_CONTEXT = true;
 
 export interface SessionLifecycleManager {
   startSession(persona: RecoFreePersona, sessionId: string, localUserId: string, apiBaseUrl: string): Promise<SessionStartResult>;
-  endSession(persona: RecoFreePersona, apiBaseUrl: string, chatHistoryFallback?: Array<{role: string; content: string; timestamp?: string}>): Promise<SessionEndResult>;
+  endSession(persona: RecoFreePersona, apiBaseUrl: string, chatHistoryFallback?: Array<{role: string; content: string; timestamp?: string}>, legacySessionData?: { themes?: string[]; dominantEmotion?: string; modulesUsed?: string[]; messageCount?: number; durationMinutes?: number }): Promise<SessionEndResult>;
   getStores(): SessionStores;
 }
 
@@ -76,6 +78,16 @@ export function createSessionLifecycleManager(): SessionLifecycleManager {
       if (USE_LOGS_DAT_CONTEXT) {
         try {
           const logsDat = await stores.logsDatStore.load(persona);
+
+          // ── Retention policy: compress old entries, prune >6mo ──
+          if (logsDat.sessions.length > 0) {
+            const retentionResult = applyRetentionToLogsDat(logsDat);
+            if (retentionResult.compressed > 0 || retentionResult.pruned > 0) {
+              await stores.logsDatStore.save(persona, logsDat);
+              console.log(`[SessionLifecycle] Retention applied: kept=${retentionResult.keptFull}, compressed=${retentionResult.compressed}, pruned=${retentionResult.pruned}`);
+            }
+          }
+
           initContext = buildSessionInitContext(userDat, stateDat, projectionsDat, logsDat);
         } catch {
           // Graceful: no context if logs.dat fails
@@ -96,7 +108,7 @@ export function createSessionLifecycleManager(): SessionLifecycleManager {
       };
     },
 
-    async endSession(persona, apiBaseUrl, chatHistoryFallback?: Array<{role: string; content: string; timestamp?: string}>) {
+    async endSession(persona, apiBaseUrl, chatHistoryFallback?: Array<{role: string; content: string; timestamp?: string}>, legacySessionData?: { themes?: string[]; dominantEmotion?: string; modulesUsed?: string[]; messageCount?: number; durationMinutes?: number }) {
       let buffer = stores.sessionBufferStore.getBuffer();
       
       // If buffer is null but we have chatHistory, build a synthetic buffer
@@ -122,40 +134,42 @@ export function createSessionLifecycleManager(): SessionLifecycleManager {
 
       const sessionId = buffer.sessionId;
 
-      try {
-        // Generate session summary via GPT-4o-mini
-        const { summary } = await generateSessionSummary({
-          persona,
-          sessionId,
-          buffer,
-          apiBaseUrl,
-        });
-
-        // Append to logs.dat (encrypted)
-        await stores.logsDatStore.appendSessionSummary(persona, summary);
-
-        // ── Transfer Diagnostic Point 3: logs.dat write completed ──
-        logDebugEvent('transfer_3_logsdat_write', {
-          success: true,
-          persona,
-          sessionId,
-          storageKey: `recofree_memory/${persona}/logs.dat`,
-          summaryHasNarrative: !!(summary as any).compressedNarrative,
-          summaryTopics: (summary as any).discussedTopics?.length ?? 0,
-        });
-
-        // Clear buffer
+      // ── Concurrency check: skip if already closed ──
+      if (isSessionAlreadyClosed(sessionId)) {
+        console.log(`[SessionLifecycle] Session ${sessionId} already closed (concurrency guard)`);
         stores.sessionBufferStore.clear();
-
-        console.log(`[SessionLifecycle] Session ended: ${sessionId} (summarized=true)`);
-        return { sessionId, summarized: true };
-      } catch (err) {
-        // Graceful: session ends even if summary fails
-        stores.sessionBufferStore.clear();
-        const errorMsg = err instanceof Error ? err.message : String(err);
-        console.error(`[SessionLifecycle] Session end error: ${errorMsg}`);
-        return { sessionId, summarized: false, error: errorMsg };
+        return { sessionId, summarized: true, error: "already_closed" };
       }
+
+      // ── Unified writer: ALWAYS writes to logs.dat (GPT or fallback) ──
+      const writeResult = await writeUnifiedSessionEnd({
+        persona,
+        sessionId,
+        buffer,
+        apiBaseUrl,
+        legacySessionData,
+      });
+
+      // Append to logs.dat (encrypted)
+      await stores.logsDatStore.appendSessionSummary(persona, writeResult.summary);
+
+      // ── Transfer Diagnostic Point 3: logs.dat write completed ──
+      logDebugEvent('transfer_3_logsdat_write', {
+        success: writeResult.success,
+        persona,
+        sessionId,
+        storageKey: `recofree_memory/${persona}/logs.dat`,
+        source: writeResult.source,
+        summaryHasNarrative: !!writeResult.summary.compressedNarrative,
+        summaryTopics: writeResult.summary.discussedTopics?.length ?? 0,
+        error: writeResult.error ?? null,
+      });
+
+      // Clear buffer
+      stores.sessionBufferStore.clear();
+
+      console.log(`[SessionLifecycle] Session ended: ${sessionId} (source=${writeResult.source})`);
+      return { sessionId, summarized: writeResult.source === "gpt_summarized" };
     },
 
     getStores() {

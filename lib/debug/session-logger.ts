@@ -23,7 +23,11 @@ export type DebugEventType =
   | 'transfer_2_buffer_status'
   | 'transfer_3_logsdat_write'
   | 'transfer_4_lifecycle_result'
-  | 'transfer_5_greeting_read';
+  | 'transfer_5_greeting_read'
+  // Unified session end writer
+  | 'unified_session_end_skipped'
+  | 'unified_session_end_success'
+  | 'unified_session_end_fallback';
 
 export interface DebugEvent {
   id: number;

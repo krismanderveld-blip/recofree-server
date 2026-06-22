@@ -47,6 +47,7 @@ import type { MemoryStoresSnapshot } from '@/lib/pipeline/memory/memoryCommitSer
 import { createEmptyUserDat } from '@/lib/types/memory/userDat.types';
 import { createEmptyStateDat } from '@/lib/types/memory/stateDat.types';
 import { createEmptyProjectionsDat } from '@/lib/types/memory/projectionsDat.types';
+import { migrateSessionAnalysesToLogsDat } from '@/lib/pipeline/memory/migrateSessionAnalysesToLogsDat';
 import { ChatErrorBoundary } from '@/components/chat-error-boundary';
 import { colors as dc, spacing, radius, typography, shadows } from '@/constants/design';
 import { triggerBackpackAnalysisIfNeeded } from '@/lib/backpack-analysis/schema-mode-trigger';
@@ -436,6 +437,32 @@ function ChatScreenInner() {
   // Only the PREVIOUS session is shown — older sessions are archived.
   const [previousSessionMessages, setPreviousSessionMessages] = useState<ChatMessage[]>([]);
   const [showPreviousSession, setShowPreviousSession] = useState(false);
+  const [migrationTaps, setMigrationTaps] = useState<number[]>([]);
+
+  const handleMigrationTrigger = async () => {
+    try {
+      const persona = (state.userType === 'elias' ? 'elias' : 'kim') as 'elias' | 'kim';
+      const udJson = await readEncrypted(USERDAT_KEY);
+      if (!udJson) {
+        Alert.alert('Migration', 'Geen userDat gevonden.');
+        return;
+      }
+      const ud = JSON.parse(udJson);
+      const sessionAnalyses = ud.sessionAnalyses || [];
+      if (sessionAnalyses.length === 0) {
+        Alert.alert('Migration', 'Geen sessionAnalyses om te migreren.');
+        return;
+      }
+      const result = await migrateSessionAnalysesToLogsDat(persona, sessionAnalyses);
+      if (result.alreadyDone) {
+        Alert.alert('Migration', 'Migratie was al voltooid.');
+      } else {
+        Alert.alert('Migration', `Klaar: ${result.migrated} gemigreerd, ${result.skipped} overgeslagen.`);
+      }
+    } catch (err) {
+      Alert.alert('Migration Error', err instanceof Error ? err.message : String(err));
+    }
+  };
 
   useEffect(() => {
     (async () => {
@@ -1093,7 +1120,15 @@ function ChatScreenInner() {
         const chatHistoryForFallback = messages
           .filter(m => m.role === 'user' || m.role === 'assistant')
           .map(m => ({ role: m.role, content: m.content, timestamp: m.timestamp }));
-        const endResult = await lifecycleManager.endSession(persona, apiBase, chatHistoryForFallback);
+        // Pass PAD A legacy data so unified writer can enrich fallback
+        const legacySessionData = result.sessionSummary ? {
+          themes: result.sessionSummary.themes,
+          dominantEmotion: result.sessionSummary.dominantEmotion,
+          modulesUsed: result.sessionSummary.modulesUsed,
+          messageCount: result.sessionSummary.messageCount,
+          durationMinutes: result.sessionSummary.durationMinutes,
+        } : undefined;
+        const endResult = await lifecycleManager.endSession(persona, apiBase, chatHistoryForFallback, legacySessionData);
         // ── Transfer Diagnostic Point 4: Lifecycle result ──
         // (no __DEV__ guard — works on device APK)
         console.log(`[SessionLifecycle] endSession result: summarized=${endResult.summarized}, sessionId=${endResult.sessionId}`);
@@ -1305,14 +1340,26 @@ function ChatScreenInner() {
             >
               <Text style={{ fontSize: 20, color: dc.textInverse, fontWeight: '600' }}>←</Text>
             </Pressable>
-            <View>
+            <Pressable
+              onPress={() => {
+                const now = Date.now();
+                const newTaps = migrationTaps.filter(t => now - t < 3000);
+                newTaps.push(now);
+                setMigrationTaps(newTaps);
+                if (newTaps.length >= 5) {
+                  setMigrationTaps([]);
+                  handleMigrationTrigger();
+                }
+              }}
+              style={({ pressed }) => [{ opacity: pressed ? 0.9 : 1 }]}
+            >
               <Text style={{ ...typography.titleSmall, color: dc.textInverse }}>
                 {companionName}
               </Text>
               <Text style={{ ...typography.micro, color: 'rgba(255,255,255,0.7)', marginTop: 2 }}>
                 {isTyping ? 'Typing...' : 'Online'}
               </Text>
-            </View>
+            </Pressable>
           </View>
           {/* End Session button — forces full protocol */}
           {sessionPhase === 'active' && messages.length > 1 && (

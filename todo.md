@@ -1757,3 +1757,14 @@
 - [x] Fix: previousSessionMessages (laatste 5) direct als bron in greeting engine geïnjecteerd via adaptLogsDat
 - [x] Fix: chat.tsx laadt nu previousSessionMessages en geeft ze door aan sessionInitGreetingStep
 - [x] Fix: RETURN_AFTER_ABSENCE prompt behandelt sessie-inhoud als VERPLICHT (niet optioneel)
+
+## Unified logs.dat — PAD A + PAD B samenvoeging
+- [x] Nieuwe logs.dat schema: unifiedSessionEndWriter.ts met timestamp, zone, dominantModule, triggers, compressedNarrative, discussedTopics, source
+- [x] Eén schrijffunctie voor sessie-einde (handmatig + auto-end) — writeUnifiedSessionEnd()
+- [x] GPT-fail fallback: altijd entry schrijven met buffer-data als GPT faalt (buildFallbackSessionSummary)
+- [x] Concurrency lock: sessie kan maar één keer worden afgesloten (sessionEndLock Map)
+- [x] Retentie: 0-3mo volledig, 3-6mo gecomprimeerd, >6mo verwijderd (logsDatRetention.ts, runs at startSession)
+- [x] Hidden migration feature: 5x tikken op persona naam in chat header (migrateSessionAnalysesToLogsDat.ts)
+- [x] Export/import backward compatibility met oude sessionAnalyses structuur (importStagingService auto-migratie)
+- [x] Greeting engine leest uit unified logs.dat (previousSessionMessages als fallback)
+- [x] Auto-end + handmatige End roepen beide sessionLifecycle.endSession() aan met legacySessionData

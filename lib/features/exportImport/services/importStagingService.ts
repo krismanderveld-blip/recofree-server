@@ -86,9 +86,13 @@ export async function replaceLocalDataFromStaging(input: {
     kim: kim?.projectionsDat ?? null,
   });
 
+  // If old export has no logsDat but userDat has sessionAnalyses, build logsDat from them
+  const elisasLogsDat = elias?.logsDat ?? buildLogsDatFromSessionAnalyses(elias?.userDat, 'elias');
+  const kimsLogsDat = kim?.logsDat ?? buildLogsDatFromSessionAnalyses(kim?.userDat, 'kim');
+
   await stores.logsDatStore.replaceAllPersonasRaw({
-    elias: elias?.logsDat ?? null,
-    kim: kim?.logsDat ?? null,
+    elias: elisasLogsDat,
+    kim: kimsLogsDat,
   });
 
   await stores.diaryStore.replaceAllPersonas({
@@ -183,4 +187,55 @@ function validatePersonaBundle(bundle: RecoFreePersonaExportBundle, persona: str
   if (!('userDat' in bundle)) {
     errors.push(`${persona} missing userDat key`);
   }
+}
+
+/**
+ * Build a minimal logsDat structure from legacy sessionAnalyses in userDat.
+ * Used when importing old exports that have no logsDat but do have sessionAnalyses.
+ * Returns null if no sessionAnalyses are available.
+ */
+function buildLogsDatFromSessionAnalyses(userDat: unknown | null | undefined, persona: string): unknown | null {
+  if (!userDat || typeof userDat !== 'object') return null;
+  const ud = userDat as Record<string, unknown>;
+  const analyses = ud.sessionAnalyses as Array<Record<string, unknown>> | undefined;
+  if (!analyses || !Array.isArray(analyses) || analyses.length === 0) return null;
+
+  const sessions = analyses.map((a, i) => ({
+    summaryId: `imported_${persona}_${i}_${Date.now()}`,
+    sessionId: `legacy_imported_${i}`,
+    persona,
+    startedAt: (a.date as string) || new Date().toISOString(),
+    endedAt: (a.date as string) || new Date().toISOString(),
+    createdAt: new Date().toISOString(),
+    summaryModel: "migration",
+    summarySchemaVersion: "session_summary.v1",
+    compressedNarrative: buildImportNarrative(a),
+    discussedTopics: ((a.themes as string[]) || []).slice(0, 5),
+    emotionalThemes: a.dominantEmotion ? [{ label: a.dominantEmotion, intensity: 0.6 }] : [],
+    breakthroughs: [],
+    relapseOrRiskEvents: [{ eventType: "none", description: "", severity: 0 }],
+    openEndpoints: [],
+    extractedCandidates: { fears: [], hopes: [], triggers: [], schemaTendencies: [], modeTendencies: [] },
+    moduleTrace: ((a.modulesUsed as string[]) || []).map((m: string) => ({ moduleId: m, responseMode: "default", count: 1 })),
+    zoneTrace: [],
+    inputTokenEstimate: 0,
+    outputTokenEstimate: 0,
+  }));
+
+  return {
+    persona,
+    schemaVersion: "logs.dat.v1",
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    sessions,
+  };
+}
+
+function buildImportNarrative(a: Record<string, unknown>): string {
+  const parts: string[] = [];
+  if (a.messageCount) parts.push(`${a.messageCount} berichten`);
+  if (a.durationMinutes) parts.push(`${a.durationMinutes} min`);
+  if (a.dominantEmotion) parts.push(`Emotie: ${a.dominantEmotion}`);
+  if (a.themes && Array.isArray(a.themes)) parts.push(`Thema's: ${(a.themes as string[]).join(', ')}`);
+  return parts.length > 0 ? parts.join('. ') + '.' : 'Gemigreerde sessie.';
 }
