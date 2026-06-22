@@ -60,6 +60,22 @@ export async function migrateSessionAnalysesToLogsDat(
     return { migrated: 0, skipped: 0, alreadyDone: false };
   }
 
+  // Guard: check if crypto is available (required for encrypted logsDat store)
+  const cryptoAvailable = (() => {
+    try {
+      const ExpoCrypto = require('expo-crypto');
+      if (ExpoCrypto && typeof ExpoCrypto.getRandomValues === 'function') return true;
+    } catch { /* ignore */ }
+    if (typeof globalThis !== 'undefined' && globalThis.crypto && typeof globalThis.crypto.subtle !== 'undefined') return true;
+    return false;
+  })();
+
+  if (!cryptoAvailable) {
+    console.warn('[Migration] crypto not available — skipping migration (will retry next session)');
+    return { migrated: 0, skipped: sessionAnalyses.length, alreadyDone: false, error: 'crypto not available' };
+  }
+
+  try {
   const store = createLogsDatStore();
   const logsDat = await store.load(persona);
 
@@ -131,6 +147,10 @@ export async function migrateSessionAnalysesToLogsDat(
   console.log(`[Migration] sessionAnalyses → logs.dat: migrated=${migrated}, skipped=${skipped}`);
 
   return { migrated, skipped, alreadyDone: false };
+  } catch (err: any) {
+    console.error('[Migration] Failed:', err?.message || err);
+    return { migrated: 0, skipped: sessionAnalyses.length, alreadyDone: false, error: err?.message || 'Unknown migration error' };
+  }
 }
 
 function buildMigrationNarrative(analysis: LegacySessionAnalysis): string {

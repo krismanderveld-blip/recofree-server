@@ -1,6 +1,6 @@
 /**
  * AES-256-GCM encryption/decryption for logs.dat.
- * Uses Web Crypto API (available in React Native via expo-crypto polyfill and web).
+ * Uses @noble/ciphers (pure JS, works on all platforms including React Native).
  */
 import type { RecoFreePersona } from "@/lib/types/memory/memoryCore.types";
 import type { LogsDatEncryptedEnvelope } from "@/lib/types/memory/logsDat.types";
@@ -10,6 +10,7 @@ import {
   base64ToUint8Array,
   generateRandomBytes,
 } from "./secureKeyStore";
+import { gcm } from '@noble/ciphers/aes.js';
 
 /**
  * Encrypt a JSON-serializable value with AES-256-GCM.
@@ -28,26 +29,13 @@ export async function encryptJsonAes256Gcm<T>(
   // 96-bit random IV (never reuse with same key)
   const iv = generateRandomBytes(12);
 
-  // Import key for Web Crypto
-  const cryptoKey = await crypto.subtle.importKey(
-    "raw",
-    keyBytes,
-    { name: "AES-GCM" },
-    false,
-    ["encrypt"]
-  );
+  // Encrypt using @noble/ciphers (pure JS, no Web Crypto needed)
+  const cipher = gcm(keyBytes, iv);
+  const ciphertextWithTag = cipher.encrypt(data);
 
-  // Encrypt
-  const encrypted = await crypto.subtle.encrypt(
-    { name: "AES-GCM", iv, tagLength: 128 },
-    cryptoKey,
-    data
-  );
-
-  // Web Crypto appends auth tag to ciphertext
-  const encryptedArray = new Uint8Array(encrypted);
-  const ciphertext = encryptedArray.slice(0, encryptedArray.length - 16);
-  const authTag = encryptedArray.slice(encryptedArray.length - 16);
+  // @noble/ciphers appends 16-byte auth tag at the end
+  const ciphertext = ciphertextWithTag.slice(0, ciphertextWithTag.length - 16);
+  const authTag = ciphertextWithTag.slice(ciphertextWithTag.length - 16);
 
   const now = new Date().toISOString();
 
@@ -77,28 +65,16 @@ export async function decryptJsonAes256Gcm<T>(
   const ciphertext = base64ToUint8Array(envelope.ciphertextBase64);
   const authTag = base64ToUint8Array(envelope.encryption.authTagBase64);
 
-  // Reconstruct combined buffer (ciphertext + authTag) for Web Crypto
+  // Reconstruct combined buffer (ciphertext + authTag) for @noble/ciphers
   const combined = new Uint8Array(ciphertext.length + authTag.length);
   combined.set(ciphertext, 0);
   combined.set(authTag, ciphertext.length);
 
-  // Import key
-  const cryptoKey = await crypto.subtle.importKey(
-    "raw",
-    keyBytes,
-    { name: "AES-GCM" },
-    false,
-    ["decrypt"]
-  );
-
-  // Decrypt
-  const decrypted = await crypto.subtle.decrypt(
-    { name: "AES-GCM", iv, tagLength: 128 },
-    cryptoKey,
-    combined
-  );
+  // Decrypt using @noble/ciphers (pure JS, no Web Crypto needed)
+  const decipher = gcm(keyBytes, iv);
+  const plaintextBytes = decipher.decrypt(combined);
 
   const decoder = new TextDecoder();
-  const plaintext = decoder.decode(decrypted);
+  const plaintext = decoder.decode(plaintextBytes);
   return JSON.parse(plaintext) as T;
 }

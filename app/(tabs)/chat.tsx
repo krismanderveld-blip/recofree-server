@@ -456,11 +456,14 @@ function ChatScreenInner() {
       const result = await migrateSessionAnalysesToLogsDat(persona, sessionAnalyses);
       if (result.alreadyDone) {
         Alert.alert('Migration', 'Migratie was al voltooid.');
+      } else if (result.error) {
+        Alert.alert('Migration', `Niet gelukt: ${result.error}. Probeer opnieuw na app herstart.`);
       } else {
         Alert.alert('Migration', `Klaar: ${result.migrated} gemigreerd, ${result.skipped} overgeslagen.`);
       }
     } catch (err) {
-      Alert.alert('Migration Error', err instanceof Error ? err.message : String(err));
+      console.error('[Migration] Unexpected error:', err);
+      Alert.alert('Migration', 'Niet gelukt. Probeer opnieuw na app herstart.');
     }
   };
 
