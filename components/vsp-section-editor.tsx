@@ -1,25 +1,12 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { Text, View, TextInput, Pressable, Alert, Platform, ScrollView } from 'react-native';
 import type { VspStructuredPlan, VspZoneEntry, VspTrigger } from '@/lib/ai/types';
 import { DEFAULT_VSP_STRUCTURED_PLAN } from '@/lib/ai/types';
 import { useColors } from '@/hooks/use-colors';
-import { useTranslation, tStatic } from '@/lib/i18n';
+import { useTranslation } from '@/lib/i18n';
 
 type ZoneKey = 'green' | 'yellow' | 'orange' | 'red' | 'purple';
-
-const ZONE_CONFIG: { key: ZoneKey; label: string; color: string; emoji: string }[] = [
-  { key: 'green', label: tStatic('vsp_section_editor.zone_config.green.label'), color: '#22C55E', emoji: tStatic('vsp_section_editor.zone_config.green.emoji') },
-  { key: 'yellow', label: tStatic('vsp_section_editor.zone_config.yellow.label'), color: '#EAB308', emoji: tStatic('vsp_section_editor.zone_config.yellow.emoji') },
-  { key: 'orange', label: tStatic('vsp_section_editor.zone_config.orange.label'), color: '#F97316', emoji: tStatic('vsp_section_editor.zone_config.orange.emoji') },
-  { key: 'red', label: tStatic('vsp_section_editor.zone_config.red.label'), color: '#EF4444', emoji: tStatic('vsp_section_editor.zone_config.red.emoji') },
-  { key: 'purple', label: tStatic('vsp_section_editor.zone_config.purple.label'), color: '#8B5CF6', emoji: tStatic('vsp_section_editor.zone_config.purple.emoji') },
-];
-
-const FIELD_LABELS: { key: keyof VspZoneEntry; label: string; placeholder: string }[] = [
-  { key: 'signals', label: tStatic('vsp_section_editor.field_labels.signals.label'), placeholder: tStatic('vsp_section_editor.field_labels.signals.placeholder') },
-  { key: 'whatHelps', label: tStatic('vsp_section_editor.field_labels.what_helps.label'), placeholder: tStatic('vsp_section_editor.field_labels.what_helps.placeholder') },
-  { key: 'anchorSentence', label: tStatic('vsp_section_editor.field_labels.anchor_sentence.label'), placeholder: tStatic('vsp_section_editor.field_labels.anchor_sentence.placeholder') },
-];
+// zoneConfig and fieldLabels moved inside component as useMemo
 
 interface VspSectionEditorProps {
   vspPlan: VspStructuredPlan | undefined;
@@ -53,6 +40,20 @@ export function VspSectionEditor({ vspPlan, onSave }: VspSectionEditorProps) {
   // Main anchor editing state
   const [mainAnchor, setMainAnchor] = useState('');
   const { t } = useTranslation();
+
+  const zoneConfig = useMemo(() => [
+    { key: 'green' as ZoneKey, label: t('vsp_section_editor.zone_config.green.label'), color: '#22C55E', emoji: t('vsp_section_editor.zone_config.green.emoji') },
+    { key: 'yellow' as ZoneKey, label: t('vsp_section_editor.zone_config.yellow.label'), color: '#EAB308', emoji: t('vsp_section_editor.zone_config.yellow.emoji') },
+    { key: 'orange' as ZoneKey, label: t('vsp_section_editor.zone_config.orange.label'), color: '#F97316', emoji: t('vsp_section_editor.zone_config.orange.emoji') },
+    { key: 'red' as ZoneKey, label: t('vsp_section_editor.zone_config.red.label'), color: '#EF4444', emoji: t('vsp_section_editor.zone_config.red.emoji') },
+    { key: 'purple' as ZoneKey, label: t('vsp_section_editor.zone_config.purple.label'), color: '#8B5CF6', emoji: t('vsp_section_editor.zone_config.purple.emoji') },
+  ], [t]);
+
+  const fieldLabels = useMemo(() => [
+    { key: 'signals' as keyof VspZoneEntry, label: t('vsp_section_editor.field_labels.signals.label'), placeholder: t('vsp_section_editor.field_labels.signals.placeholder') },
+    { key: 'whatHelps' as keyof VspZoneEntry, label: t('vsp_section_editor.field_labels.what_helps.label'), placeholder: t('vsp_section_editor.field_labels.what_helps.placeholder') },
+    { key: 'anchorSentence' as keyof VspZoneEntry, label: t('vsp_section_editor.field_labels.anchor_sentence.label'), placeholder: t('vsp_section_editor.field_labels.anchor_sentence.placeholder') },
+  ], [t]);
 
   const handleExpandZone = useCallback((zone: ZoneKey | 'triggers' | 'rules') => {
     if (expandedZone === zone) {
@@ -150,7 +151,7 @@ export function VspSectionEditor({ vspPlan, onSave }: VspSectionEditorProps) {
     return e.signals.trim() || e.whatHelps.trim() || e.anchorSentence.trim();
   };
 
-  const filledZones = ZONE_CONFIG.filter(z => hasZoneContent(z.key)).length;
+  const filledZones = zoneConfig.filter(z => hasZoneContent(z.key)).length;
 
   return (
     <View style={{ marginBottom: 24 }}>
@@ -160,18 +161,18 @@ export function VspSectionEditor({ vspPlan, onSave }: VspSectionEditorProps) {
         <Text style={{ fontSize: 16, fontWeight: '700', color: colors.foreground }}>{t('vsp_section_editor.header.title')}</Text>
       </View>
       <Text style={{ fontSize: 13, color: colors.muted, marginBottom: 16, lineHeight: 18 }}>
-        Your personal early-warning plan per zone. This helps your companion use your own words.
+        {t('vsp_section_editor.header.description')}
       </Text>
 
       {/* Progress */}
       <View style={{ flexDirection: 'row', gap: 4, marginBottom: 16 }}>
-        {ZONE_CONFIG.map(z => (
+        {zoneConfig.map(z => (
           <View key={z.key} style={{ flex: 1, height: 6, borderRadius: 3, backgroundColor: hasZoneContent(z.key) ? z.color : colors.border }} />
         ))}
       </View>
 
       {/* Zone Accordions */}
-      {ZONE_CONFIG.map(zone => {
+      {zoneConfig.map(zone => {
         const isExpanded = expandedZone === zone.key;
         const isEditing = editingZone === zone.key;
         const entry = plan.zones[zone.key];
@@ -210,7 +211,7 @@ export function VspSectionEditor({ vspPlan, onSave }: VspSectionEditorProps) {
               <View style={{ backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderTopWidth: 0, borderBottomLeftRadius: 14, borderBottomRightRadius: 14, padding: 14, marginTop: -4 }}>
                 {isEditing ? (
                   <View style={{ gap: 14 }}>
-                    {FIELD_LABELS.map(field => (
+                    {fieldLabels.map(field => (
                       <View key={field.key}>
                         <Text style={{ fontSize: 13, fontWeight: '600', color: colors.foreground, marginBottom: 6 }}>{field.label}</Text>
                         <TextInput
@@ -325,7 +326,7 @@ export function VspSectionEditor({ vspPlan, onSave }: VspSectionEditorProps) {
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                       <View style={{ flex: 1 }}>
                         <Text style={{ fontSize: 13, fontWeight: '600', color: colors.foreground }}>{trig.trigger}</Text>
-                        {trig.counterThought && <Text style={{ fontSize: 12, color: colors.muted, fontStyle: 'italic', marginTop: 2 }}>Counter-thought: {trig.counterThought}</Text>}
+                        {trig.counterThought && <Text style={{ fontSize: 12, color: colors.muted, fontStyle: 'italic', marginTop: 2 }}>{t('vsp_section_editor.triggers.counter_thought_label')}{trig.counterThought}</Text>}
                       </View>
                       <Pressable onPress={() => removeTrigger(idx)} style={({ pressed }) => [{ opacity: pressed ? 0.5 : 1, padding: 4 }]}>
                         <Text style={{ color: '#EF4444', fontSize: 16 }}>{t('vsp_section_editor.rules.remove')}</Text>
@@ -372,7 +373,7 @@ export function VspSectionEditor({ vspPlan, onSave }: VspSectionEditorProps) {
                 {plan.triggers.map((trig, idx) => (
                   <View key={idx} style={{ backgroundColor: '#fff', borderRadius: 10, padding: 10, borderWidth: 1, borderColor: colors.border }}>
                     <Text style={{ fontSize: 13, fontWeight: '600', color: colors.foreground }}>{trig.trigger}</Text>
-                    {trig.counterThought && <Text style={{ fontSize: 12, color: colors.muted, fontStyle: 'italic', marginTop: 2 }}>Counter-thought: {trig.counterThought}</Text>}
+                    {trig.counterThought && <Text style={{ fontSize: 12, color: colors.muted, fontStyle: 'italic', marginTop: 2 }}>{t('vsp_section_editor.triggers.counter_thought_label')}{trig.counterThought}</Text>}
                   </View>
                 ))}
                 <Pressable onPress={startEditTriggers} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1, marginTop: 4 }]}>
@@ -531,7 +532,7 @@ export function VspSectionEditor({ vspPlan, onSave }: VspSectionEditorProps) {
       {/* Last updated */}
       {plan.lastUpdated && (
         <Text style={{ fontSize: 11, color: colors.muted, marginTop: 8, textAlign: 'right' }}>
-          Last updated: {new Date(plan.lastUpdated).toLocaleDateString('en-US')}
+          {t('vsp_section_editor.last_updated_prefix')}{new Date(plan.lastUpdated).toLocaleDateString()}
         </Text>
       )}
     </View>

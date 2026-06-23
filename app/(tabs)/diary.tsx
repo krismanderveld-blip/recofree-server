@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import {
   Text,
   View,
@@ -20,7 +20,7 @@ import { fixUnicode } from '@/lib/utils';
 import * as Haptics from 'expo-haptics';
 import { colors as dc, spacing, radius, typography, shadows, cardStyles } from '@/constants/design';
 import { HomeButton } from '@/components/home-button';
-import { useTranslation, tStatic } from '@/lib/i18n';
+import { useTranslation } from '@/lib/i18n';
 
 interface GratitudeData {
   entry1: string;
@@ -38,7 +38,7 @@ interface DiaryEntry {
 
 type DiaryTab = 'journal' | 'gratitude';
 
-const MOOD_TAGS = [tStatic('diary.mood.calm'), tStatic('diary.mood.sad'), tStatic('diary.mood.anxious'), tStatic('diary.mood.angry'), tStatic('diary.mood.hopeful'), tStatic('diary.mood.exhausted'), tStatic('diary.mood.grateful'), tStatic('diary.mood.neutral')];
+// MOOD_TAGS moved inside component as useMemo
 
 const MOOD_TAG_COLORS: Record<string, string> = {
   Calm: '#3B82F6',
@@ -53,35 +53,7 @@ const MOOD_TAG_COLORS: Record<string, string> = {
 
 const STORAGE_KEY = '@recofree_diary';
 
-const STOIC_QUOTES = [
-  { text: tStatic('diary.quote.1.text'), author: tStatic('diary.quote.15.author') },
-  { text: tStatic('diary.quote.2.text'), author: tStatic('diary.quote.12.author') },
-  { text: tStatic('diary.quote.3.text'), author: tStatic('diary.quote.14.author') },
-  { text: tStatic('diary.quote.4.text'), author: tStatic('diary.quote.13.author') },
-  { text: tStatic('diary.quote.5.text'), author: tStatic('diary.quote.10.author') },
-  { text: tStatic('diary.quote.6.text'), author: tStatic('diary.quote.9.author') },
-  { text: tStatic('diary.quote.7.text'), author: tStatic('diary.quote.11.author') },
-  { text: tStatic('diary.quote.8.text'), author: tStatic('diary.quote.8.author') },
-  { text: tStatic('diary.quote.9.text'), author: tStatic('diary.quote.6.author') },
-  { text: tStatic('diary.quote.10.text'), author: tStatic('diary.quote.5.author') },
-  { text: tStatic('diary.quote.11.text'), author: tStatic('diary.quote.7.author') },
-  { text: tStatic('diary.quote.12.text'), author: tStatic('diary.quote.2.author') },
-  { text: tStatic('diary.quote.13.text'), author: tStatic('diary.quote.4.author') },
-  { text: tStatic('diary.quote.14.text'), author: tStatic('diary.quote.3.author') },
-  { text: tStatic('diary.quote.15.text'), author: tStatic('diary.quote.1.author') },
-];
-
-function getDailyQuote(): { text: string; author: string } {
-  const now = new Date();
-  const dayIndex = Math.floor(now.getTime() / (1000 * 60 * 60 * 24)) % STOIC_QUOTES.length;
-  return STOIC_QUOTES[dayIndex];
-}
-
-const JOURNAL_EXPLANATION =
-  tStatic('diary.journal_explanation');
-
-const GRATITUDE_EXPLANATION =
-  tStatic('diary.gratitude_explanation');
+// STOIC_QUOTES, getDailyQuote, JOURNAL_EXPLANATION, GRATITUDE_EXPLANATION moved inside component as useMemo
 
 function TabSelector({ activeTab, onTabChange, colors }: { activeTab: DiaryTab; onTabChange: (tab: DiaryTab) => void; colors: any }) {
   return (
@@ -145,6 +117,38 @@ export default function DiaryScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchActive, setIsSearchActive] = useState(false);
   const { t } = useTranslation();
+
+  const moodTags = useMemo(() => [
+    t('diary.mood.calm'), t('diary.mood.sad'), t('diary.mood.anxious'), t('diary.mood.angry'),
+    t('diary.mood.hopeful'), t('diary.mood.exhausted'), t('diary.mood.grateful'), t('diary.mood.neutral'),
+  ], [t]);
+
+  const stoicQuotes = useMemo(() => [
+    { text: t('diary.quote.1.text'), author: t('diary.quote.15.author') },
+    { text: t('diary.quote.2.text'), author: t('diary.quote.12.author') },
+    { text: t('diary.quote.3.text'), author: t('diary.quote.14.author') },
+    { text: t('diary.quote.4.text'), author: t('diary.quote.13.author') },
+    { text: t('diary.quote.5.text'), author: t('diary.quote.10.author') },
+    { text: t('diary.quote.6.text'), author: t('diary.quote.9.author') },
+    { text: t('diary.quote.7.text'), author: t('diary.quote.11.author') },
+    { text: t('diary.quote.8.text'), author: t('diary.quote.8.author') },
+    { text: t('diary.quote.9.text'), author: t('diary.quote.6.author') },
+    { text: t('diary.quote.10.text'), author: t('diary.quote.5.author') },
+    { text: t('diary.quote.11.text'), author: t('diary.quote.7.author') },
+    { text: t('diary.quote.12.text'), author: t('diary.quote.2.author') },
+    { text: t('diary.quote.13.text'), author: t('diary.quote.4.author') },
+    { text: t('diary.quote.14.text'), author: t('diary.quote.3.author') },
+    { text: t('diary.quote.15.text'), author: t('diary.quote.1.author') },
+  ], [t]);
+
+  const getDailyQuote = useCallback((): { text: string; author: string } => {
+    const now = new Date();
+    const dayIndex = Math.floor(now.getTime() / (1000 * 60 * 60 * 24)) % stoicQuotes.length;
+    return stoicQuotes[dayIndex];
+  }, [stoicQuotes]);
+
+  const journalExplanation = useMemo(() => t('diary.journal_explanation'), [t]);
+  const gratitudeExplanation = useMemo(() => t('diary.gratitude_explanation'), [t]);
 
   useEffect(() => {
     (async () => {
@@ -231,7 +235,7 @@ export default function DiaryScreen() {
     return (
       <View style={{ ...cardStyles.default, marginBottom: spacing.cardGap }}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-          <Text style={{ ...typography.micro, color: dc.textTertiary }}>{t('diary.entry.datetime_format')}</Text>
+          <Text style={{ ...typography.micro, color: dc.textTertiary }}>{t('diary.entry.datetime_format', { dateStr, timeStr })}</Text>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
             {hasGratitude && (
               <View style={{ backgroundColor: '#DCFCE7', borderRadius: 12, paddingHorizontal: 8, paddingVertical: 3 }}>
@@ -257,7 +261,7 @@ export default function DiaryScreen() {
         ) : null}
       </View>
     );
-  }, [activeTab, colors]);
+  }, [activeTab, colors, t]);
 
   return (
     <ScreenContainer containerClassName="bg-backgroundWarm">
@@ -270,12 +274,12 @@ export default function DiaryScreen() {
       {/* Daily Quote (Journal tab only) */}
       {activeTab === 'journal' && (
         <View style={{ flexDirection: 'row', marginBottom: 16, paddingLeft: 4 }}>
-          <Text style={{ fontSize: 28, color: colors.primary, marginRight: 10, marginTop: -4 }}>{"\u201C"}</Text>
+          <Text style={{ fontSize: 28, color: colors.primary, marginRight: 10, marginTop: -4 }}>{"“"}</Text>
           <View style={{ flex: 1 }}>
             <Text style={{ fontSize: 13, color: colors.foreground, fontStyle: 'italic', lineHeight: 18 }}>
               {getDailyQuote().text}
             </Text>
-            <Text style={{ fontSize: 12, color: colors.muted, marginTop: 4 }}>{t('diary.editor.quote.author_prefix')}</Text>
+            <Text style={{ fontSize: 12, color: colors.muted, marginTop: 4 }}>{t('diary.editor.quote.author_prefix', { author: getDailyQuote().author })}</Text>
           </View>
         </View>
       )}
@@ -298,7 +302,7 @@ export default function DiaryScreen() {
       {activeTab === 'journal' && (
         <View style={{ marginBottom: 16 }}>
           <Text style={{ fontSize: 14, color: colors.foreground, lineHeight: 20, marginBottom: 12 }}>
-            {JOURNAL_EXPLANATION}
+            {journalExplanation}
           </Text>
           <Pressable
             onPress={() => { setEditorTab('journal'); setShowEditor(true); }}
@@ -341,7 +345,7 @@ export default function DiaryScreen() {
         contentContainerStyle={{ paddingBottom: 24, flexGrow: 1 }}
         ListEmptyComponent={
           <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 40 }}>
-            <Text style={{ fontSize: 32, marginBottom: 12 }}>{activeTab === 'journal' ? '\u{1F4DD}' : '\u{1F64F}'}</Text>
+            <Text style={{ fontSize: 32, marginBottom: 12 }}>{activeTab === 'journal' ? '📝' : '🙏'}</Text>
             <Text style={{ fontSize: 16, fontWeight: '600', color: colors.foreground, marginBottom: 4 }}>
               {activeTab === 'journal' ? t('diary.empty.journal.title') : t('diary.empty.gratitude.title')}
             </Text>
@@ -410,11 +414,11 @@ export default function DiaryScreen() {
                     <Text style={{ fontSize: 13, color: colors.foreground, fontStyle: 'italic', lineHeight: 18 }}>
                       {getDailyQuote().text}
                     </Text>
-                    <Text style={{ fontSize: 12, color: colors.muted, marginTop: 8 }}>{t('diary.quote.author_prefix')}</Text>
+                    <Text style={{ fontSize: 12, color: colors.muted, marginTop: 8 }}>{t('diary.quote.author_prefix', { author: getDailyQuote().author })}</Text>
                   </View>
 
                   <Text style={{ fontSize: 13, color: colors.muted, lineHeight: 18, marginBottom: 16 }}>
-                    {JOURNAL_EXPLANATION}
+                    {journalExplanation}
                   </Text>
 
                   <TextInput
@@ -444,7 +448,7 @@ export default function DiaryScreen() {
                   <View style={{ marginTop: 16 }}>
                     <Text style={{ fontSize: 11, fontWeight: '600', color: colors.muted, marginBottom: 10, letterSpacing: 0.5 }}>{t('diary.editor.mood.title')}</Text>
                     <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-                      {MOOD_TAGS.map((tag) => (
+                      {moodTags.map((tag) => (
                         <Pressable
                           key={tag}
                           onPress={() => {
@@ -480,7 +484,7 @@ export default function DiaryScreen() {
                 <View>
                   <View style={{ backgroundColor: colors.surface, borderRadius: 16, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: colors.border }}>
                     <Text style={{ fontSize: 13, color: colors.foreground, lineHeight: 18 }}>
-                      {GRATITUDE_EXPLANATION}
+                      {gratitudeExplanation}
                     </Text>
                   </View>
 

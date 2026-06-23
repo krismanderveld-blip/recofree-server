@@ -243,9 +243,41 @@ export async function isKeyEncrypted(key: string): Promise<boolean> {
 }
 
 /**
- * Force-migrate all sensitive keys to encrypted format.
- * Call this once at app startup to ensure all legacy data is encrypted.
+ * Export the current at-rest encryption key as base64.
+ * Used to include the key in encrypted backups so data can be restored on any device.
+ * Returns null if no key exists yet (should not happen after first write).
  */
+export async function exportStorageKey(): Promise<string | null> {
+  if (Platform.OS === 'web') {
+    return typeof window !== 'undefined'
+      ? window.localStorage.getItem(ENCRYPTION_KEY_ALIAS)
+      : null;
+  }
+  return await SecureStore.getItemAsync(ENCRYPTION_KEY_ALIAS);
+}
+
+/**
+ * Import (restore) an at-rest encryption key from a backup.
+ * Overwrites the current key in SecureStore/localStorage and clears the in-memory cache.
+ * MUST be called BEFORE reading any encrypted data after import.
+ */
+export async function importStorageKey(keyBase64: string): Promise<void> {
+  if (!keyBase64 || keyBase64.length < 10) {
+    throw new Error('[StorageEncryption] Invalid key for import');
+  }
+  if (Platform.OS === 'web') {
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem(ENCRYPTION_KEY_ALIAS, keyBase64);
+    }
+  } else {
+    await SecureStore.setItemAsync(ENCRYPTION_KEY_ALIAS, keyBase64, {
+      keychainAccessible: SecureStore.AFTER_FIRST_UNLOCK,
+    });
+  }
+  // Clear cached key so next read picks up the restored key
+  cachedKey = null;
+}
+
 export async function migrateAllToEncrypted(): Promise<{ migrated: string[]; alreadyEncrypted: string[]; missing: string[] }> {
   const result = { migrated: [] as string[], alreadyEncrypted: [] as string[], missing: [] as string[] };
 

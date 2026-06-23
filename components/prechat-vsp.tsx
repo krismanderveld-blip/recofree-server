@@ -39,11 +39,11 @@ const VSP_DESCRIPTIONS: Record<VspLevel, string> = {
 };
 
 const VSP_ICONS: Record<VspLevel, string> = {
-  GROEN: '\u{1F7E2}',
-  GEEL: '\u{1F7E1}',
-  ORANJE: '\u{1F7E0}',
-  ROOD: '\u{1F534}',
-  PAARS: '\u{1F7E3}',
+  GROEN: '🟢',
+  GEEL: '🟡',
+  ORANJE: '🟠',
+  ROOD: '🔴',
+  PAARS: '🟣',
 };
 
 export function PreChatVsp({ onSubmit, userName }: PreChatVspProps) {

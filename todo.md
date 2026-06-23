@@ -1842,3 +1842,25 @@
 - [x] Updated sessionInitGreetingStep to prefer locale over content detection
 - [x] Fixed greeting fallback to use locale-based language selection (NL/EN/FR)
 - [x] Added locale/setLocale aliases to I18nContextValue for pipeline compatibility
+
+## Bug fixes — i18n issues found on device
+- [x] Unicode escape sequences (\u{1F6E1}, \u26A1, \u{1F4CB}, \u25BC) fixed in locale files (actual emoji now)
+- [x] VSP screen: subtitle, tip text, counter-thought, last-updated translated
+- [x] Backpack: tip text and last-updated translated
+- [x] Diary: {dateStr} om {timeStr} showing as raw text — fixed: renderEntry useCallback now includes t in deps
+- [x] Diary: {getDailyQuote().author} — fixed: STOIC_QUOTES moved to useMemo with t() inside component
+- [x] Chat: previous session — already uses t('chat.history.show', { count }) correctly
+- [x] Backpack: logs.dat — fixed by encryption key in backup (key was lost after reset)
+- [x] tStatic: converted all critical module-level tStatic arrays to useMemo with t() (diary, vsp-section-editor, intake)
+
+## Fix: Include encryption key in backup for reliable restore
+- [x] Export: include at-rest encryption key (from SecureStore) in the encrypted backup payload
+- [x] Import: restore the encryption key to SecureStore before writing data
+- [x] Fix chat previous messages not loading after import (useEffect dependency on state.userDat)
+
+## Intake flow restructure: Land → Taal → Intake
+- [x] Add Land (country) selection as first intake screen (step 0, for emergency numbers)
+- [x] Add Taal (language) selection as second intake screen (step 1)
+- [x] Keep existing intake flow (with import) as step 2-4
+- [x] All hardcoded English strings in intake replaced with t() calls
+- [x] Unicode escapes in source code replaced with actual emoji characters

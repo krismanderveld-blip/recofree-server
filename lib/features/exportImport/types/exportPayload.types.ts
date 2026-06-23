@@ -65,6 +65,8 @@ export interface RecoFreeSharedExportBundle {
     vspProfile: unknown | null;
     vspHash: unknown | null;
   };
+  /** At-rest encryption key (base64). Included so import can restore data readability. */
+  storageKeyBase64?: string | null;
 }
 
 export interface ExportPayloadIntegrity {

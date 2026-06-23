@@ -24,6 +24,7 @@ import {
   restoreSafePreImportSnapshot,
 } from '../hooks/useExportImportStores';
 import { logImportDiag } from '@/lib/debug/import-diagnostics';
+import { importStorageKey } from '@/lib/crypto/storage-encryption';
 
 // ─── Public API ──────────────────────────────────────────────────────────────
 
@@ -79,12 +80,28 @@ export async function importEncryptedRecoFreeBackup(input: {
     return { status, importedAt: nowIso, replacedExistingData: false, errorMessage: stagingValidation.errors.join("; ") };
   }
 
-  // 8. Create SAFE pre-import snapshot for rollback (FIX #2)
+  // 8. Restore at-rest encryption key from backup (if present)
+  // This MUST happen BEFORE writing encrypted data so the key matches what was used at export time.
+  const backupStorageKey = payload.data.shared?.storageKeyBase64;
+  if (backupStorageKey && typeof backupStorageKey === 'string' && backupStorageKey.length > 10) {
+    logImportDiag('Restoring at-rest encryption key from backup', 'INFO');
+    try {
+      await importStorageKey(backupStorageKey);
+      logImportDiag('At-rest encryption key restored', 'OK');
+    } catch (keyErr: any) {
+      logImportDiag('Failed to restore encryption key', 'FAIL', keyErr?.message ?? 'unknown');
+      // Continue anyway — data will be written with a new key (fresh encryption)
+    }
+  } else {
+    logImportDiag('No storage key in backup (older export) — data will be re-encrypted with current device key', 'INFO');
+  }
+
+  // 9. Create SAFE pre-import snapshot for rollback (FIX #2)
   logImportDiag('Creating pre-import snapshot', 'INFO');
   const safeSnapshot = await createSafePreImportSnapshot();
   logImportDiag('Snapshot created', 'OK', `${safeSnapshot.keys.length} keys captured`);
 
-  // 9. Replace local data
+  // 10. Replace local data
   logImportDiag('Writing imported data to storage', 'INFO');
   try {
     await replaceLocalDataFromStaging({ stagingPackage, stores });

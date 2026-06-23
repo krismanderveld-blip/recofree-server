@@ -56,6 +56,7 @@ export function I18nProvider({ children }: I18nProviderProps) {
         ]);
         if (storedLang && (storedLang === 'nl' || storedLang === 'en' || storedLang === 'fr')) {
           setLanguageState(storedLang);
+          setGlobalLanguage(storedLang);
         }
         if (storedCountry && ['NL', 'BE', 'FR', 'UK', 'US'].includes(storedCountry)) {
           setCountryState(storedCountry as SupportedCountry);
@@ -69,6 +70,7 @@ export function I18nProvider({ children }: I18nProviderProps) {
 
   const setLanguage = useCallback((lang: SupportedLanguage) => {
     setLanguageState(lang);
+    setGlobalLanguage(lang);
     AsyncStorage.setItem(LANGUAGE_STORAGE_KEY, lang).catch(() => {});
   }, []);
 

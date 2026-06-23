@@ -15,6 +15,7 @@ import type {
   ExportSourceDeviceMetadata,
 } from '../types/exportPayload.types';
 import { encryptExportPayload, sha256Base64 } from '../crypto/exportImportCrypto';
+import { exportStorageKey } from '@/lib/crypto/storage-encryption';
 import { RECOFREE_EXPORT_PAYLOAD_VERSION } from '../version/exportImportVersion';
 import { ExportImportError } from '../errors/exportImportErrors';
 import { stableStringify } from '@/lib/utils/json/stableStringify';
@@ -95,6 +96,9 @@ export async function createEncryptedRecoFreeExport(input: {
       );
     }
 
+    // 2b. Read at-rest encryption key for backup portability
+    const storageKeyBase64 = await exportStorageKey();
+
     // 3. Build shared bundle
     const shared: RecoFreeSharedExportBundle = {
       emergencyContacts: emergencyContacts ?? [],
@@ -104,6 +108,7 @@ export async function createEncryptedRecoFreeExport(input: {
         vspProfile: derivedCaches.vspProfile ?? null,
         vspHash: derivedCaches.vspHash ?? null,
       },
+      storageKeyBase64: storageKeyBase64 ?? null,
     };
 
     // 4. Build scope metadata

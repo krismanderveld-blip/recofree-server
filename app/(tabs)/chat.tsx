@@ -470,6 +470,9 @@ function ChatScreenInner() {
     }
   };
 
+  // Load previous session messages from storage.
+  // Re-runs when state.userDat changes (e.g. after import restores data).
+  const userDatRef = state.userDat;
   useEffect(() => {
     (async () => {
       try {
@@ -478,18 +481,12 @@ function ChatScreenInner() {
           const ud = JSON.parse(udJson);
           const history: ChatMessage[] = ud.chatHistory ?? [];
           if (history.length > 0) {
-            // Find the session boundary: the last greeting (first assistant message after a gap)
-            // Simple heuristic: find the last assistant message that looks like a greeting
-            // Better: use lastSessionDate to split
             const lastSessionDate = ud.lastSessionDate;
             if (lastSessionDate) {
-              // Previous session = messages from the last completed session
-              // These are messages that occurred before today's session start
               const prevMsgs = history.filter((m: ChatMessage) => {
                 const msgDate = m.timestamp?.slice(0, 10);
                 return msgDate && msgDate <= lastSessionDate;
               });
-              // Keep only the last 30 messages from previous session to limit memory
               setPreviousSessionMessages(prevMsgs.slice(-30));
             }
           }
@@ -498,7 +495,7 @@ function ChatScreenInner() {
         console.warn('[Chat] Could not load previous session:', e);
       }
     })();
-  }, []);
+  }, [userDatRef]);
 
   // Start session and send greeting ONLY when Chat tab gains focus.
   // This prevents the greeting from firing during intake/backpack fill
@@ -1500,7 +1497,7 @@ function ChatScreenInner() {
                     }]}
                   >
                     <Text style={{ fontSize: 12, color: colors.muted, fontWeight: '500' }}>
-                      {showPreviousSession ? t('chat.history.hide') : t('chat.history.show')}
+                      {showPreviousSession ? t('chat.history.hide') : t('chat.history.show', { count: previousSessionMessages.length })}
                     </Text>
                   </Pressable>
                   {showPreviousSession && (
@@ -1714,17 +1711,17 @@ function ChatScreenInner() {
               <Text style={{ color: colors.foreground, lineHeight: 22 }}>
                 {companionName} is an AI companion, not a therapist or doctor.
                 {'\n\n'}
-                {'\u2022'} RecoFree does not replace professional mental health care.
+                {'•'} RecoFree does not replace professional mental health care.
                 {'\n'}
-                {'\u2022'} RecoFree never provides diagnoses or medical advice.
+                {'•'} RecoFree never provides diagnoses or medical advice.
                 {'\n'}
-                {'\u2022'} RecoFree is not a replacement for a psychologist or psychiatrist.
+                {'•'} RecoFree is not a replacement for a psychologist or psychiatrist.
                 {'\n'}
-                {'\u2022'} Sometimes professional help is the better choice — and that is okay.
+                {'•'} Sometimes professional help is the better choice — and that is okay.
                 {'\n'}
-                {'\u2022'} In case of crisis, always contact a professional or call 1813.
+                {'•'} In case of crisis, always contact a professional or call 1813.
                 {'\n'}
-                {'\u2022'} Your conversations are private and stay on your device.
+                {'•'} Your conversations are private and stay on your device.
               </Text>
             </RNScrollView>
             <TouchableOpacity

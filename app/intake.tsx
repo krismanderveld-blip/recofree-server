@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import * as Clipboard from 'expo-clipboard';
 import {
   Text,
@@ -28,15 +28,11 @@ import Animated, {
   withSequence,
   Easing,
 } from 'react-native-reanimated';
-import { useTranslation, tStatic } from '@/lib/i18n';
+import { useTranslation } from '@/lib/i18n';
 
-type IntakeStep = 0 | 1 | 2 | 3;
+type IntakeStep = 0 | 1 | 2 | 3 | 4;
 
-const URGENCY_LEVELS: { label: string; value: UrgencyLevel; description: string }[] = [
-  { label: tStatic('intake.urgency.low.label'), value: 'laag', description: tStatic('intake.urgency.low.description') },
-  { label: tStatic('intake.urgency.medium.label'), value: 'midden', description: tStatic('intake.urgency.medium.description') },
-  { label: tStatic('intake.urgency.high.label'), value: 'hoog', description: tStatic('intake.urgency.high.description') },
-];
+// Urgency levels are computed inside the component using t() for proper reactivity
 
 /** Zone colors for Eigen Regie intake options */
 const EIGEN_REGIE_ZONE_COLORS: Record<string, string> = {
@@ -75,6 +71,7 @@ export default function IntakeScreen() {
   const [stageOfChange, setStageOfChange] = useState<StageOfChange | null>(null);
   const [eigenRegieLevel, setEigenRegieLevel] = useState<EigenRegieLevel | null>(null);
   const [urgency, setUrgency] = useState<UrgencyLevel | null>(null);
+  const [selectedCountry, setSelectedCountry] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showImportFlow, setShowImportFlow] = useState(false);
   const [importFile, setImportFile] = useState<{ uri: string; name: string } | null>(null);
@@ -108,8 +105,10 @@ export default function IntakeScreen() {
   }));
 
   const isKim = selectedType === 'kim';
-  const canProceedStep1 = name.trim().length >= 2 && selectedType !== null;
-  const canProceedStep2 = isKim ? eigenRegieLevel !== null : stageOfChange !== null;
+  const canProceedStep0 = selectedCountry !== null;
+  const canProceedStep1 = true; // Language always has a default
+  const canProceedStep2 = name.trim().length >= 2 && selectedType !== null;
+  const canProceedStep3 = isKim ? eigenRegieLevel !== null : stageOfChange !== null;
   const canSubmit = urgency !== null;
 
   // Animation shared values
@@ -137,7 +136,7 @@ export default function IntakeScreen() {
   };
 
   const handleNext = () => {
-    if (step < 3) {
+    if (step < 4) {
       animateTransition('forward', () => setStep((step + 1) as IntakeStep));
     }
   };
@@ -161,16 +160,22 @@ export default function IntakeScreen() {
       setImportFile({ uri: asset.uri, name: asset.name });
       setImportError(null);
     } catch {
-      setImportError(tStatic('intake.import.error.file_picker'));
+      setImportError(t('intake.import.error.file_picker'));
     }
-  }, []);
+  }, [t]);
 
   // Track whether import succeeded so the diag overlay can show "Continue" button
   const [importNavReady, setImportNavReady] = useState(false);
   // Name prompt after import when backpack has no name
   const [importNamePrompt, setImportNamePrompt] = useState(false);
   const [importName, setImportName] = useState('');
-  const { t, language, setLanguage } = useTranslation();
+  const { t, language, setLanguage, setCountry } = useTranslation();
+
+  const urgencyLevels = useMemo(() => [
+    { label: t('intake.urgency.low.label'), value: 'laag' as UrgencyLevel, description: t('intake.urgency.low.description') },
+    { label: t('intake.urgency.medium.label'), value: 'midden' as UrgencyLevel, description: t('intake.urgency.medium.description') },
+    { label: t('intake.urgency.high.label'), value: 'hoog' as UrgencyLevel, description: t('intake.urgency.high.description') },
+  ], [t]);
 
   const handleImportExecute = useCallback(async () => {
     if (!importFile || !importPassword) return;
@@ -309,10 +314,10 @@ export default function IntakeScreen() {
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.container}>
-            {/* Progress Indicator — hidden on language step */}
-            {step > 0 && (
+            {/* Progress Indicator — hidden on country/language steps */}
+            {step > 1 && (
               <View style={styles.progressRow}>
-                {[1, 2, 3].map((s) => (
+                {[2, 3, 4].map((s) => (
                   <View key={s} style={styles.progressBarTrack}>
                     <AnimatedProgressBar active={s <= step} />
                   </View>
@@ -320,8 +325,57 @@ export default function IntakeScreen() {
               </View>
             )}
 
-            {/* Step 0: Language Selection */}
+            {/* Step 0: Country Selection */}
             {step === 0 && (
+              <Animated.View style={[styles.flex1, animatedStepStyle]}>
+                <View style={styles.heroSection}>
+                  <Text style={styles.heroEmoji}>📍</Text>
+                  <Text style={styles.heroTitle}>{t('intake.country.title')}</Text>
+                  <Text style={styles.heroSubtitle}>{t('intake.country.subtitle')}</Text>
+                </View>
+
+                <View style={styles.optionsGroup}>
+                  {(['BE', 'NL', 'FR', 'UK', 'US'] as const).map((c) => (
+                    <Pressable
+                      key={c}
+                      onPress={() => { setSelectedCountry(c); setCountry(c); }}
+                      style={({ pressed }) => [
+                        { opacity: pressed ? 0.85 : 1, transform: [{ scale: pressed ? 0.98 : 1 }] },
+                      ]}
+                    >
+                      <View
+                        style={[
+                          styles.optionCard,
+                          selectedCountry === c && styles.optionCardSelectedElias,
+                        ]}
+                      >
+                        <Text style={styles.optionTitle}>
+                          {c === 'BE' ? '🇧🇪' : c === 'NL' ? '🇳🇱' : c === 'FR' ? '🇫🇷' : c === 'UK' ? '🇬🇧' : '🇺🇸'}{' '}
+                          {t(`intake.country.option.${c}`)}
+                        </Text>
+                      </View>
+                    </Pressable>
+                  ))}
+                </View>
+
+                <View style={styles.bottomActions}>
+                  <Pressable
+                    onPress={handleNext}
+                    disabled={!canProceedStep0}
+                    style={({ pressed }) => [
+                      styles.primaryButton,
+                      { opacity: !canProceedStep0 ? 0.4 : pressed ? 0.85 : 1 },
+                      pressed && canProceedStep0 && { transform: [{ scale: 0.97 }] },
+                    ]}
+                  >
+                    <Text style={styles.primaryButtonText}>{t('intake.country.button.continue')}</Text>
+                  </Pressable>
+                </View>
+              </Animated.View>
+            )}
+
+            {/* Step 1: Language Selection */}
+            {step === 1 && (
               <Animated.View style={[styles.flex1, animatedStepStyle]}>
                 <View style={styles.heroSection}>
                   <Text style={styles.heroEmoji}>🌍</Text>
@@ -364,18 +418,21 @@ export default function IntakeScreen() {
                   >
                     <Text style={styles.primaryButtonText}>{t('intake.lang.button.continue')}</Text>
                   </Pressable>
+                  <Pressable onPress={handleBack} style={styles.ghostButton}>
+                    <Text style={styles.ghostButtonText}>{t('intake.step3.button.back')}</Text>
+                  </Pressable>
                 </View>
               </Animated.View>
             )}
 
-            {/* Step 1: Name + User Type */}
-            {step === 1 && (
+            {/* Step 2: Name + User Type */}
+            {step === 2 && (
               <Animated.View style={[styles.flex1, animatedStepStyle]}>
                 <View style={styles.heroSection}>
                   <Text style={styles.heroEmoji}>{t('intake.step1.hero.emoji')}</Text>
                   <Text style={styles.heroTitle}>{t('intake.step1.hero.title')}</Text>
                   <Text style={styles.heroSubtitle}>
-                    A safe space for recovery and growth
+                    {t('intake.step1.hero.subtitle')}
                   </Text>
                 </View>
 
@@ -410,7 +467,7 @@ export default function IntakeScreen() {
                     >
                       <Text style={styles.optionTitle}>{t('intake.step1.type.elias.title')}</Text>
                       <Text style={styles.optionDescription}>
-                        You'll be supported by Elias — direct, honest support for your recovery — from someone who gets it.
+                        {t('intake.step1.type.elias.description')}
                       </Text>
                     </View>
                   </Pressable>
@@ -429,7 +486,7 @@ export default function IntakeScreen() {
                     >
                       <Text style={styles.optionTitle}>{t('intake.step1.type.kim.title')}</Text>
                       <Text style={styles.optionDescription}>
-                        You'll be supported by Kim — a direct, honest companion for your well-being.
+                        {t('intake.step1.type.kim.description')}
                       </Text>
                     </View>
                   </Pressable>
@@ -438,11 +495,11 @@ export default function IntakeScreen() {
                 <View style={styles.bottomActions}>
                   <Pressable
                     onPress={handleNext}
-                    disabled={!canProceedStep1}
+                    disabled={!canProceedStep2}
                     style={({ pressed }) => [
                       styles.primaryButton,
-                      { opacity: !canProceedStep1 ? 0.4 : pressed ? 0.85 : 1 },
-                      pressed && canProceedStep1 && { transform: [{ scale: 0.97 }] },
+                      { opacity: !canProceedStep2 ? 0.4 : pressed ? 0.85 : 1 },
+                      pressed && canProceedStep2 && { transform: [{ scale: 0.97 }] },
                     ]}
                   >
                     <Text style={styles.primaryButtonText}>{t('intake.step2.button.next')}</Text>
@@ -457,20 +514,23 @@ export default function IntakeScreen() {
                   >
                     <Text style={styles.ghostButtonText}>{t('intake.step1.button.import')}</Text>
                   </Pressable>
+                  <Pressable onPress={handleBack} style={styles.ghostButton}>
+                    <Text style={styles.ghostButtonText}>{t('intake.step3.button.back')}</Text>
+                  </Pressable>
                 </View>
               </Animated.View>
             )}
 
-            {/* Step 2: Stage of Change (Elias) OR Eigen Regie (Kim) */}
-            {step === 2 && (
+            {/* Step 3: Stage of Change (Elias) OR Eigen Regie (Kim) */}
+            {step === 3 && (
               <Animated.View style={[styles.flex1, animatedStepStyle]}>
                 {isKim ? (
                   <>
                     <Text style={styles.stepTitle}>
-                      To what extent is your life currently determined by the other person?
+                      {t('intake.step2.kim.title')}
                     </Text>
                     <Text style={styles.stepSubtitle}>
-                      This helps Kim understand where you are right now.
+                      {t('intake.step2.kim.subtitle')}
                     </Text>
 
                     <View style={styles.optionsGroup}>
@@ -511,7 +571,7 @@ export default function IntakeScreen() {
                   <>
                     <Text style={styles.stepTitle}>{t('intake.step2.elias.title')}</Text>
                     <Text style={styles.stepSubtitle}>
-                      This helps Elias understand how to best support you.
+                      {t('intake.step2.elias.subtitle')}
                     </Text>
 
                     <View style={styles.optionsGroup}>
@@ -541,11 +601,11 @@ export default function IntakeScreen() {
                 <View style={styles.bottomActions}>
                   <Pressable
                     onPress={handleNext}
-                    disabled={!canProceedStep2}
+                    disabled={!canProceedStep3}
                     style={({ pressed }) => [
                       styles.primaryButton,
-                      { opacity: !canProceedStep2 ? 0.4 : pressed ? 0.85 : 1 },
-                      pressed && canProceedStep2 && { transform: [{ scale: 0.97 }] },
+                      { opacity: !canProceedStep3 ? 0.4 : pressed ? 0.85 : 1 },
+                      pressed && canProceedStep3 && { transform: [{ scale: 0.97 }] },
                     ]}
                   >
                     <Text style={styles.primaryButtonText}>{t('intake.step1.button.next')}</Text>
@@ -557,16 +617,16 @@ export default function IntakeScreen() {
               </Animated.View>
             )}
 
-            {/* Step 3: Urgency (final step — submit) */}
-            {step === 3 && (
+            {/* Step 4: Urgency (final step — submit) */}
+            {step === 4 && (
               <Animated.View style={[styles.flex1, animatedStepStyle]}>
                 <Text style={styles.stepTitle}>{t('intake.step3.title')}</Text>
                 <Text style={styles.stepSubtitle}>
-                  This helps us set the right tone and pace for you.
+                  {t('intake.step3.subtitle')}
                 </Text>
 
                 <View style={styles.optionsGroup}>
-                  {URGENCY_LEVELS.map((level) => (
+                  {urgencyLevels.map((level) => (
                     <Pressable
                       key={level.value}
                       onPress={() => setUrgency(level.value)}
@@ -609,7 +669,7 @@ export default function IntakeScreen() {
                 </View>
 
                 <Text style={styles.privacyNote}>
-                  Your data stays on your phone. Nothing is shared without your consent.
+                  {t('intake.step3.privacy_note')}
                 </Text>
               </Animated.View>
             )}
@@ -623,7 +683,7 @@ export default function IntakeScreen() {
           <View style={[styles.optionCard, { backgroundColor: dc.background, borderColor: dc.border, marginHorizontal: 24, maxWidth: 380, width: '90%', padding: 24 }]}>
             <Text style={[styles.heroTitle, { fontSize: 20, marginBottom: 8 }]}>{t('intake.import_modal.title')}</Text>
             <Text style={[styles.optionDescription, { marginBottom: 20, textAlign: 'center' }]}>
-              Have a previous backup? Import your data and continue right away.
+              {t('intake.import_modal.description')}
             </Text>
 
             {/* File picker */}
@@ -689,7 +749,7 @@ export default function IntakeScreen() {
         <Modal visible={true} transparent animationType="fade">
           <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.85)', padding: 16, paddingTop: 60 }}>
             <Text style={{ color: '#fff', fontSize: 16, fontWeight: 'bold', marginBottom: 4 }}>
-              Import Diagnostic Log
+              {t('intake.import_diag.title')}
             </Text>
             <Text style={{ color: '#aaa', fontSize: 11, marginBottom: 12 }}>
               {importNavReady ? t('intake.import_diag.subtitle.success') : t('intake.import_diag.subtitle.pending')}
@@ -704,7 +764,7 @@ export default function IntakeScreen() {
               {importNavReady && importNamePrompt && (
                 <View style={{ marginBottom: 12 }}>
                   <Text style={{ color: '#fbbf24', fontSize: 13, fontWeight: '600', marginBottom: 6 }}>
-                    Your backup didn't include your name. Please enter it:
+                    {t('intake.import_diag.name_prompt.title')}
                   </Text>
                   <TextInput
                     style={{ backgroundColor: '#2a2a2a', color: '#fff', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10, fontSize: 15, borderWidth: 1, borderColor: '#444' }}

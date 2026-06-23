@@ -274,7 +274,7 @@ export function BackpackWizardScreen({ existingBackpack, userType: initialUserTy
   const renderChooseMethod = () => (
     <View style={{ flex: 1, justifyContent: 'center', padding: 24, gap: 24 }}>
       <View style={{ alignItems: 'center', gap: 8, marginBottom: 16 }}>
-        <Text style={{ fontSize: 28 }}>{'\u{1F392}'}</Text>
+        <Text style={{ fontSize: 28 }}>{'🎒'}</Text>
         <Text style={{ fontSize: 22, fontWeight: '700', color: colors.foreground, textAlign: 'center' }}>
           Fill in your Backpack
         </Text>
@@ -300,7 +300,7 @@ export function BackpackWizardScreen({ existingBackpack, userType: initialUserTy
           gap: 8,
         }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-            <Text style={{ fontSize: 24 }}>{'\u{1F4C4}'}</Text>
+            <Text style={{ fontSize: 24 }}>{'📄'}</Text>
             <View style={{ flex: 1 }}>
               <Text style={{ fontSize: 16, fontWeight: '600', color: colors.foreground }}>
                 Upload life story document
@@ -324,7 +324,7 @@ export function BackpackWizardScreen({ existingBackpack, userType: initialUserTy
           gap: 8,
         }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-            <Text style={{ fontSize: 24 }}>{'\u{270F}\u{FE0F}'}</Text>
+            <Text style={{ fontSize: 24 }}>{'✏️'}</Text>
             <View style={{ flex: 1 }}>
               <Text style={{ fontSize: 16, fontWeight: '600', color: colors.foreground }}>
                 Fill in manually
@@ -696,7 +696,7 @@ export function BackpackWizardScreen({ existingBackpack, userType: initialUserTy
 
   const renderDone = () => (
     <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', gap: 16, padding: 24 }}>
-      <Text style={{ fontSize: 48 }}>{'\u2705'}</Text>
+      <Text style={{ fontSize: 48 }}>{'✅'}</Text>
       <Text style={{ fontSize: 20, fontWeight: '700', color: colors.foreground }}>Backpack saved!</Text>
       <Text style={{ fontSize: 14, color: colors.muted, textAlign: 'center', lineHeight: 20, maxWidth: 280 }}>
         {currentUserType === 'elias'

@@ -33,12 +33,12 @@ const SECTION_COLORS: Record<LifePhaseId, string> = {
 };
 
 const SECTION_ICONS: Record<LifePhaseId, string> = {
-  childhood: '\u{1F9D2}',
-  adolescence: '\u{1F331}',
-  adulthood: '\u{1F3E0}',
-  family: '\u{1F468}\u200D\u{1F469}\u200D\u{1F467}\u200D\u{1F466}',
-  themes: '\u{1F504}',
-  vsp: '\u{1F6E1}',
+  childhood: '🧒',
+  adolescence: '🌱',
+  adulthood: '🏠',
+  family: '👨‍👩‍👧‍👦',
+  themes: '🔄',
+  vsp: '🛡',
 };
 
 const STAGE_COLORS: Record<StageOfChange, string> = {
@@ -151,7 +151,7 @@ export default function BackpackScreen() {
                     <Text style={{ fontSize: 11, color, fontWeight: '500' }}>{t('backpack.kim_section.written')}</Text>
                   </View>
                 )}
-                <Text style={{ color: colors.muted }}>{isExpanded ? '\u25B2' : '\u25BC'}</Text>
+                <Text style={{ color: colors.muted }}>{isExpanded ? '▲' : '▼'}</Text>
               </View>
             </View>
           </View>
@@ -190,7 +190,7 @@ export default function BackpackScreen() {
               <View>
                 <Text style={{ fontSize: 14, color: colors.foreground, lineHeight: 22 }}>{fixUnicode(section.content)}</Text>
                 {section.lastUpdated && (
-                  <Text style={{ fontSize: 11, color: colors.muted, marginTop: 8 }}>Last updated: {new Date(section.lastUpdated).toLocaleDateString()}</Text>
+                  <Text style={{ fontSize: 11, color: colors.muted, marginTop: 8 }}>{t('backpack.section.last_updated')}{new Date(section.lastUpdated).toLocaleDateString()}</Text>
                 )}
                 <Pressable onPress={() => handleStartEditElias(section)} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1, marginTop: 12 }]}>
                   <View style={{ backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: 12, paddingVertical: 10, alignItems: 'center' }}>
@@ -249,7 +249,7 @@ export default function BackpackScreen() {
                     <Text style={{ fontSize: 11, color: section.color, fontWeight: '500' }}>{t('backpack.elias_section.written')}</Text>
                   </View>
                 )}
-                <Text style={{ color: colors.muted }}>{isExpanded ? '\u25B2' : '\u25BC'}</Text>
+                <Text style={{ color: colors.muted }}>{isExpanded ? '▲' : '▼'}</Text>
               </View>
             </View>
           </View>
@@ -397,7 +397,7 @@ export default function BackpackScreen() {
                       alignItems: 'center',
                       justifyContent: 'center',
                     }}>
-                      {isSelected && <Text style={{ color: '#fff', fontSize: 12, fontWeight: '700' }}>{'\u2713'}</Text>}
+                      {isSelected && <Text style={{ color: '#fff', fontSize: 12, fontWeight: '700' }}>{'✓'}</Text>}
                     </View>
                     <View style={{ flex: 1 }}>
                       <Text style={{ fontSize: 14, fontWeight: '600', color: isSelected ? stageColor : colors.foreground }}>{option.label}</Text>
@@ -413,12 +413,12 @@ export default function BackpackScreen() {
         {/* Backpack Wizard CTA */}
         <Pressable onPress={() => setShowBackpackWizard(true)} style={({ pressed }) => [{ opacity: pressed ? 0.8 : 1, marginBottom: 16 }]}>
           <View style={{ backgroundColor: '#3B82F620', borderRadius: 12, padding: 14, flexDirection: 'row', alignItems: 'center', gap: 10, borderWidth: 1, borderColor: '#3B82F640' }}>
-            <Text style={{ fontSize: 20 }}>{"\u{1F4DD}"}</Text>
+            <Text style={{ fontSize: 20 }}>{"📝"}</Text>
             <View style={{ flex: 1 }}>
               <Text style={{ fontSize: 14, fontWeight: '600', color: colors.foreground }}>{t('backpack.wizard.title')}</Text>
               <Text style={{ fontSize: 12, color: colors.muted }}>{t('backpack.wizard.description')}</Text>
             </View>
-            <Text style={{ fontSize: 14, color: colors.muted }}>{"\u{203A}"}</Text>
+            <Text style={{ fontSize: 14, color: colors.muted }}>{"›"}</Text>
           </View>
         </Pressable>
 
@@ -433,12 +433,12 @@ export default function BackpackScreen() {
             {/* Wizard button */}
             <Pressable onPress={() => setShowVspWizard(true)} style={({ pressed }) => [{ opacity: pressed ? 0.8 : 1, marginBottom: 12 }]}>
               <View style={{ backgroundColor: '#8B5CF620', borderRadius: 12, padding: 14, flexDirection: 'row', alignItems: 'center', gap: 10, borderWidth: 1, borderColor: '#8B5CF640' }}>
-                <Text style={{ fontSize: 20 }}>{"\u{1F4C4}"}</Text>
+                <Text style={{ fontSize: 20 }}>{"📄"}</Text>
                 <View style={{ flex: 1 }}>
                   <Text style={{ fontSize: 14, fontWeight: '600', color: colors.foreground }}>{t('backpack.vsp.title')}</Text>
                   <Text style={{ fontSize: 12, color: colors.muted }}>{t('backpack.vsp.description')}</Text>
                 </View>
-                <Text style={{ fontSize: 14, color: colors.muted }}>{"\u{203A}"}</Text>
+                <Text style={{ fontSize: 14, color: colors.muted }}>{"›"}</Text>
               </View>
             </Pressable>
             <VspSectionEditor
@@ -452,7 +452,7 @@ export default function BackpackScreen() {
         <View style={{ ...cardStyles.default, marginTop: spacing.sm }}>
           <Text style={{ ...typography.bodySmall, color: dc.textTertiary, lineHeight: 20 }}>
             <Text style={{ fontWeight: '600', color: dc.textPrimary }}>{t('backpack.tip.label')}</Text>
-            You can always come back to add or edit your story. Your backpack is sent in full to your companion at the start of each conversation — it is never summarized or reduced. Only you can change it.
+            {t('backpack.tip.content')}
           </Text>
         </View>
       </ScrollView>

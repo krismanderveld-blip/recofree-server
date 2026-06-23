@@ -461,7 +461,7 @@ export default function ProfileScreen() {
               opacity: vspExporting ? 0.6 : 1,
             }}>
               <View style={{ width: 32, height: 32, borderRadius: 8, backgroundColor: dc.primarySoft, alignItems: 'center', justifyContent: 'center' }}>
-                <Text style={{ fontSize: 16 }}>{vspExporting ? '\u23F3' : '\uD83D\uDCC4'}</Text>
+                <Text style={{ fontSize: 16 }}>{vspExporting ? '⏳' : '📄'}</Text>
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={{ ...typography.bodyMedium, fontWeight: '600', color: dc.primary }}>
@@ -494,7 +494,7 @@ export default function ProfileScreen() {
               gap: 12,
             }}>
               <View style={{ width: 32, height: 32, borderRadius: 8, backgroundColor: dc.danger + '15', alignItems: 'center', justifyContent: 'center' }}>
-                <Text style={{ fontSize: 16 }}>{'\u{1F5D1}'}</Text>
+                <Text style={{ fontSize: 16 }}>{'🗑'}</Text>
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={{ ...typography.bodyMedium, fontWeight: '600', color: dc.danger }}>{t('profile.reset_data.button.title')}</Text>
