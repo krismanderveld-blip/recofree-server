@@ -1,0 +1,3008 @@
+{
+  "home.loading": {
+    "value": "Loading...",
+    "source": "app/(tabs)/index.tsx",
+    "line": 126,
+    "persona": "shared"
+  },
+  "home.clinical_mode.badge": {
+    "value": "CLINICAL MODE",
+    "source": "app/(tabs)/index.tsx",
+    "line": 167,
+    "persona": "shared"
+  },
+  "home.bell_icon": {
+    "value": "🔔",
+    "source": "app/(tabs)/index.tsx",
+    "line": 175,
+    "persona": "shared"
+  },
+  "home.sober_counter.days_label": {
+    "value": "days",
+    "source": "app/(tabs)/index.tsx",
+    "line": 199,
+    "persona": "elias"
+  },
+  "home.sober_counter.title": {
+    "value": "{sobrietyDays} days clean {sobrietyDays >= 30 ? '🔥' : ''}",
+    "source": "app/(tabs)/index.tsx",
+    "line": 203,
+    "persona": "elias"
+  },
+  "home.sober_counter.cta": {
+    "value": "Keep going, {fixUnicode(userName)}",
+    "source": "app/(tabs)/index.tsx",
+    "line": 210,
+    "persona": "elias"
+  },
+  "home.prompt.set_sobriety_date": {
+    "value": "Set your sobriety date to start tracking your progress",
+    "source": "app/(tabs)/index.tsx",
+    "line": 225,
+    "persona": "elias"
+  },
+  "home.prompt.go_to_profile": {
+    "value": "Go to Profile →",
+    "source": "app/(tabs)/index.tsx",
+    "line": 228,
+    "persona": "elias"
+  },
+  "home.mood_card.icon": {
+    "value": "😊",
+    "source": "app/(tabs)/index.tsx",
+    "line": 242,
+    "persona": "shared"
+  },
+  "home.mood_card.title": {
+    "value": "Mood",
+    "source": "app/(tabs)/index.tsx",
+    "line": 244,
+    "persona": "shared"
+  },
+  "home.mood_card.body": {
+    "value": "How are you feeling right now?",
+    "source": "app/(tabs)/index.tsx",
+    "line": 245,
+    "persona": "shared"
+  },
+  "home.mood_card.cta": {
+    "value": "Check in  →",
+    "source": "app/(tabs)/index.tsx",
+    "line": 247,
+    "persona": "shared"
+  },
+  "home.chat_card.title": {
+    "value": "{companionName} is here",
+    "source": "app/(tabs)/index.tsx",
+    "line": 263,
+    "persona": "shared"
+  },
+  "home.chat_card.body": {
+    "value": "Talk or get support whenever you need it.",
+    "source": "app/(tabs)/index.tsx",
+    "line": 264,
+    "persona": "shared"
+  },
+  "home.chat_card.cta": {
+    "value": "Talk to {companionName}  →",
+    "source": "app/(tabs)/index.tsx",
+    "line": 266,
+    "persona": "shared"
+  },
+  "home.diary_card.icon": {
+    "value": "✏️",
+    "source": "app/(tabs)/index.tsx",
+    "line": 277,
+    "persona": "shared"
+  },
+  "home.diary_card.title": {
+    "value": "My Diary",
+    "source": "app/(tabs)/index.tsx",
+    "line": 280,
+    "persona": "shared"
+  },
+  "home.diary_card.body": {
+    "value": "Write freely. Reflect. Gain clarity.",
+    "source": "app/(tabs)/index.tsx",
+    "line": 281,
+    "persona": "shared"
+  },
+  "home.diary_card.cta": {
+    "value": "Write a new entry",
+    "source": "app/(tabs)/index.tsx",
+    "line": 282,
+    "persona": "shared"
+  },
+  "home.diary_card.chevron": {
+    "value": "›",
+    "source": "app/(tabs)/index.tsx",
+    "line": 284,
+    "persona": "shared"
+  },
+  "home.backpack_card.icon": {
+    "value": "🎒",
+    "source": "app/(tabs)/index.tsx",
+    "line": 293,
+    "persona": "shared"
+  },
+  "home.backpack_card.title": {
+    "value": "My Backpack",
+    "source": "app/(tabs)/index.tsx",
+    "line": 296,
+    "persona": "shared"
+  },
+  "home.backpack_card.body": {
+    "value": "Your plan, tools and insights all in one place.",
+    "source": "app/(tabs)/index.tsx",
+    "line": 297,
+    "persona": "shared"
+  },
+  "home.backpack_card.cta": {
+    "value": "Open my Backpack",
+    "source": "app/(tabs)/index.tsx",
+    "line": 298,
+    "persona": "shared"
+  },
+  "home.backpack_card.chevron": {
+    "value": "›",
+    "source": "app/(tabs)/index.tsx",
+    "line": 300,
+    "persona": "shared"
+  },
+  "home.profile_card.title": {
+    "value": "My Profile",
+    "source": "app/(tabs)/index.tsx",
+    "line": 314,
+    "persona": "shared"
+  },
+  "home.profile_card.body": {
+    "value": "Recovery settings, contacts and data.",
+    "source": "app/(tabs)/index.tsx",
+    "line": 315,
+    "persona": "shared"
+  },
+  "home.profile_card.chevron": {
+    "value": "›",
+    "source": "app/(tabs)/index.tsx",
+    "line": 317,
+    "persona": "shared"
+  },
+  "home.clinical_modal.title": {
+    "value": "{isClinicalActive ? 'Disable Clinical Mode?' : 'Enable Clinical Mode?'}",
+    "source": "app/(tabs)/index.tsx",
+    "line": 332,
+    "persona": "shared"
+  },
+  "home.clinical_modal.body": {
+    "value": "{isClinicalActive ? 'Clinical annotations will be hidden and standard restrictions will be restored.' : 'This mode is intended for clinical demonstrations.'}",
+    "source": "app/(tabs)/index.tsx",
+    "line": 335,
+    "persona": "shared"
+  },
+  "home.clinical_modal.cancel": {
+    "value": "Cancel",
+    "source": "app/(tabs)/index.tsx",
+    "line": 348,
+    "persona": "shared"
+  },
+  "home.clinical_modal.confirm": {
+    "value": "{isClinicalActive ? 'Disable' : 'Enable'}",
+    "source": "app/(tabs)/index.tsx",
+    "line": 359,
+    "persona": "shared"
+  },
+  "home.sober_message.0": {
+    "value": "Today is day zero. Tomorrow is day one.",
+    "source": "app/(tabs)/index.tsx",
+    "line": 566,
+    "persona": "elias"
+  },
+  "home.sober_message.1": {
+    "value": "The hardest day. You showed up.",
+    "source": "app/(tabs)/index.tsx",
+    "line": 567,
+    "persona": "elias"
+  },
+  "home.sober_message.7": {
+    "value": "Every single day counts.",
+    "source": "app/(tabs)/index.tsx",
+    "line": 568,
+    "persona": "elias"
+  },
+  "home.sober_message.14": {
+    "value": "One week behind you. You chose yourself.",
+    "source": "app/(tabs)/index.tsx",
+    "line": 569,
+    "persona": "elias"
+  },
+  "home.sober_message.30": {
+    "value": "A month of choosing yourself, every single day.",
+    "source": "app/(tabs)/index.tsx",
+    "line": 570,
+    "persona": "elias"
+  },
+  "home.sober_message.60": {
+    "value": "A month of choosing yourself, every single day.",
+    "source": "app/(tabs)/index.tsx",
+    "line": 571,
+    "persona": "elias"
+  },
+  "home.sober_message.90": {
+    "value": "Two months. The fog is lifting.",
+    "source": "app/(tabs)/index.tsx",
+    "line": 572,
+    "persona": "elias"
+  },
+  "home.sober_message.180": {
+    "value": "This is real. You rebuilt something.",
+    "source": "app/(tabs)/index.tsx",
+    "line": 573,
+    "persona": "elias"
+  },
+  "home.sober_message.365": {
+    "value": "Half a year of showing up.",
+    "source": "app/(tabs)/index.tsx",
+    "line": 574,
+    "persona": "elias"
+  },
+  "home.sober_message.beyond": {
+    "value": "One year and beyond. Look who you are now.",
+    "source": "app/(tabs)/index.tsx",
+    "line": 575,
+    "persona": "elias"
+  },
+  "home.greeting.still_here": {
+    "value": "Still here",
+    "source": "app/(tabs)/index.tsx",
+    "line": 580,
+    "persona": "shared"
+  },
+  "home.greeting.morning": {
+    "value": "Good morning",
+    "source": "app/(tabs)/index.tsx",
+    "line": 581,
+    "persona": "shared"
+  },
+  "home.greeting.afternoon": {
+    "value": "Good afternoon",
+    "source": "app/(tabs)/index.tsx",
+    "line": 582,
+    "persona": "shared"
+  },
+  "home.greeting.evening": {
+    "value": "Good evening",
+    "source": "app/(tabs)/index.tsx",
+    "line": 583,
+    "persona": "shared"
+  },
+  "home.subtitle.elias.craving_high": {
+    "value": "First we slow the moment down.",
+    "source": "app/(tabs)/index.tsx",
+    "line": 589,
+    "persona": "elias"
+  },
+  "home.subtitle.elias.craving_med": {
+    "value": "We keep it small today.",
+    "source": "app/(tabs)/index.tsx",
+    "line": 590,
+    "persona": "elias"
+  },
+  "home.subtitle.elias.default": {
+    "value": "What do you want to protect today?",
+    "source": "app/(tabs)/index.tsx",
+    "line": 591,
+    "persona": "elias"
+  },
+  "home.subtitle.kim.default": {
+    "value": "You do not have to carry everything at once.",
+    "source": "app/(tabs)/index.tsx",
+    "line": 593,
+    "persona": "kim"
+  },
+  "chat.migration.no_userdat": {
+    "value": "Geen userDat gevonden.",
+    "source": "app/(tabs)/chat.tsx",
+    "line": 448,
+    "persona": "shared"
+  },
+  "chat.migration.no_analyses": {
+    "value": "Geen sessionAnalyses om te migreren.",
+    "source": "app/(tabs)/chat.tsx",
+    "line": 454,
+    "persona": "shared"
+  },
+  "chat.migration.already_done": {
+    "value": "Migratie was al voltooid.",
+    "source": "app/(tabs)/chat.tsx",
+    "line": 459,
+    "persona": "shared"
+  },
+  "chat.migration.failed_retry": {
+    "value": "Niet gelukt: ${result.error}. Probeer opnieuw na app herstart.",
+    "source": "app/(tabs)/chat.tsx",
+    "line": 461,
+    "persona": "shared"
+  },
+  "chat.migration.success": {
+    "value": "Klaar: ${result.migrated} gemigreerd, ${result.skipped} overgeslagen.",
+    "source": "app/(tabs)/chat.tsx",
+    "line": 463,
+    "persona": "shared"
+  },
+  "chat.migration.failed_unexpected": {
+    "value": "Niet gelukt. Probeer opnieuw na app herstart.",
+    "source": "app/(tabs)/chat.tsx",
+    "line": 467,
+    "persona": "shared"
+  },
+  "chat.header.back": {
+    "value": "←",
+    "source": "app/(tabs)/chat.tsx",
+    "line": 1388,
+    "persona": "shared"
+  },
+  "chat.header.typing": {
+    "value": "Typing...",
+    "source": "app/(tabs)/chat.tsx",
+    "line": 1406,
+    "persona": "shared"
+  },
+  "chat.header.online": {
+    "value": "Online",
+    "source": "app/(tabs)/chat.tsx",
+    "line": 1406,
+    "persona": "shared"
+  },
+  "chat.header.end_button": {
+    "value": "End",
+    "source": "app/(tabs)/chat.tsx",
+    "line": 1430,
+    "persona": "shared"
+  },
+  "chat.toast.session_saved": {
+    "value": "Vorige sessie veilig opgeslagen",
+    "source": "app/(tabs)/chat.tsx",
+    "line": 1455,
+    "persona": "shared"
+  },
+  "chat.history.hide": {
+    "value": "Hide previous session ▲",
+    "source": "app/(tabs)/chat.tsx",
+    "line": 1499,
+    "persona": "shared"
+  },
+  "chat.history.show": {
+    "value": "Previous session (${previousSessionMessages.length} messages) ▼",
+    "source": "app/(tabs)/chat.tsx",
+    "line": 1499,
+    "persona": "shared"
+  },
+  "chat.history.end_marker": {
+    "value": "— End of previous session —",
+    "source": "app/(tabs)/chat.tsx",
+    "line": 1527,
+    "persona": "shared"
+  },
+  "chat.empty.starting": {
+    "value": "Starting conversation...",
+    "source": "app/(tabs)/chat.tsx",
+    "line": 1538,
+    "persona": "shared"
+  },
+  "chat.scroll_to_bottom": {
+    "value": "↓",
+    "source": "app/(tabs)/chat.tsx",
+    "line": 1607,
+    "persona": "shared"
+  },
+  "chat.input.placeholder": {
+    "value": "Type a message...",
+    "source": "app/(tabs)/chat.tsx",
+    "line": 1640,
+    "persona": "shared"
+  },
+  "chat.disclaimer.text": {
+    "value": "RecoFree is geen vervanging voor professionele hulp. ",
+    "source": "app/(tabs)/chat.tsx",
+    "line": 1678,
+    "persona": "shared"
+  },
+  "chat.disclaimer.suicide_line": {
+    "value": "Zelfmoordlijn: 1813",
+    "source": "app/(tabs)/chat.tsx",
+    "line": 1680,
+    "persona": "shared"
+  },
+  "chat.disclaimer.suicide_info": {
+    "value": " (24/7, gratis, anoniem) | ",
+    "source": "app/(tabs)/chat.tsx",
+    "line": 1685,
+    "persona": "shared"
+  },
+  "chat.disclaimer.domestic_violence_line": {
+    "value": "1712",
+    "source": "app/(tabs)/chat.tsx",
+    "line": 1687,
+    "persona": "shared"
+  },
+  "chat.disclaimer.domestic_violence_info": {
+    "value": " (huiselijk geweld) | ",
+    "source": "app/(tabs)/chat.tsx",
+    "line": 1692,
+    "persona": "shared"
+  },
+  "chat.disclaimer.emergency_line": {
+    "value": "Noodgevallen: 112",
+    "source": "app/(tabs)/chat.tsx",
+    "line": 1694,
+    "persona": "shared"
+  },
+  "chat.modal.title": {
+    "value": "Before we begin",
+    "source": "app/(tabs)/chat.tsx",
+    "line": 1707,
+    "persona": "shared"
+  },
+  "chat.modal.body": {
+    "value": "{companionName} is an AI companion, not a therapist or doctor.\n\n• RecoFree does not replace professional mental health care.\n• RecoFree never provides diagnoses or medical advice.\n• RecoFree is not a replacement for a psychologist or psychiatrist.\n• Sometimes professional help is the better choice — and that is okay.\n• In case of crisis, always contact a professional or call 1813.\n• Your conversations are private and stay on your device.",
+    "source": "app/(tabs)/chat.tsx",
+    "line": 1711,
+    "persona": "shared"
+  },
+  "chat.modal.button": {
+    "value": "I understand",
+    "source": "app/(tabs)/chat.tsx",
+    "line": 1731,
+    "persona": "shared"
+  },
+  "chat.clinical.expanded": {
+    "value": "⚕ clinical ▼",
+    "source": "app/(tabs)/chat.tsx",
+    "line": 1799,
+    "persona": "shared"
+  },
+  "chat.clinical.collapsed": {
+    "value": "⚕ clinical ▶",
+    "source": "app/(tabs)/chat.tsx",
+    "line": 1799,
+    "persona": "shared"
+  },
+  "chat.clinical.fallback_warning": {
+    "value": " ⚠",
+    "source": "app/(tabs)/chat.tsx",
+    "line": 1799,
+    "persona": "shared"
+  },
+  "chat.clinical.vsp_label": {
+    "value": "VSP-Framework: ",
+    "source": "app/(tabs)/chat.tsx",
+    "line": 1808,
+    "persona": "shared"
+  },
+  "chat.clinical.signals_label": {
+    "value": "Signals: ",
+    "source": "app/(tabs)/chat.tsx",
+    "line": 1818,
+    "persona": "shared"
+  },
+  "chat.clinical.signals_none": {
+    "value": "Signals: none",
+    "source": "app/(tabs)/chat.tsx",
+    "line": 1824,
+    "persona": "shared"
+  },
+  "diary.mood.calm": {
+    "value": "Calm",
+    "source": "app/(tabs)/diary.tsx",
+    "line": 40,
+    "persona": "shared"
+  },
+  "diary.mood.sad": {
+    "value": "Sad",
+    "source": "app/(tabs)/diary.tsx",
+    "line": 40,
+    "persona": "shared"
+  },
+  "diary.mood.anxious": {
+    "value": "Anxious",
+    "source": "app/(tabs)/diary.tsx",
+    "line": 40,
+    "persona": "shared"
+  },
+  "diary.mood.angry": {
+    "value": "Angry",
+    "source": "app/(tabs)/diary.tsx",
+    "line": 40,
+    "persona": "shared"
+  },
+  "diary.mood.hopeful": {
+    "value": "Hopeful",
+    "source": "app/(tabs)/diary.tsx",
+    "line": 40,
+    "persona": "shared"
+  },
+  "diary.mood.exhausted": {
+    "value": "Exhausted",
+    "source": "app/(tabs)/diary.tsx",
+    "line": 40,
+    "persona": "shared"
+  },
+  "diary.mood.grateful": {
+    "value": "Grateful",
+    "source": "app/(tabs)/diary.tsx",
+    "line": 40,
+    "persona": "shared"
+  },
+  "diary.mood.neutral": {
+    "value": "Neutral",
+    "source": "app/(tabs)/diary.tsx",
+    "line": 40,
+    "persona": "shared"
+  },
+  "diary.quote.1.text": {
+    "value": "\"You have power over your mind, not outside events. Realize this, and you will find strength.\"",
+    "source": "app/(tabs)/diary.tsx",
+    "line": 56,
+    "persona": "shared"
+  },
+  "diary.quote.1.author": {
+    "value": "Marcus Aurelius",
+    "source": "app/(tabs)/diary.tsx",
+    "line": 56,
+    "persona": "shared"
+  },
+  "diary.quote.2.text": {
+    "value": "\"We suffer more often in imagination than in reality.\"",
+    "source": "app/(tabs)/diary.tsx",
+    "line": 57,
+    "persona": "shared"
+  },
+  "diary.quote.2.author": {
+    "value": "Seneca",
+    "source": "app/(tabs)/diary.tsx",
+    "line": 57,
+    "persona": "shared"
+  },
+  "diary.quote.3.text": {
+    "value": "\"The happiness of your life depends upon the quality of your thoughts.\"",
+    "source": "app/(tabs)/diary.tsx",
+    "line": 58,
+    "persona": "shared"
+  },
+  "diary.quote.3.author": {
+    "value": "Marcus Aurelius",
+    "source": "app/(tabs)/diary.tsx",
+    "line": 58,
+    "persona": "shared"
+  },
+  "diary.quote.4.text": {
+    "value": "\"It is not what happens to you, but how you react to it that matters.\"",
+    "source": "app/(tabs)/diary.tsx",
+    "line": 59,
+    "persona": "shared"
+  },
+  "diary.quote.4.author": {
+    "value": "Epictetus",
+    "source": "app/(tabs)/diary.tsx",
+    "line": 59,
+    "persona": "shared"
+  },
+  "diary.quote.5.text": {
+    "value": "\"No man is free who is not master of himself.\"",
+    "source": "app/(tabs)/diary.tsx",
+    "line": 60,
+    "persona": "shared"
+  },
+  "diary.quote.5.author": {
+    "value": "Epictetus",
+    "source": "app/(tabs)/diary.tsx",
+    "line": 60,
+    "persona": "shared"
+  },
+  "diary.quote.6.text": {
+    "value": "\"Begin at once to live, and count each separate day as a separate life.\"",
+    "source": "app/(tabs)/diary.tsx",
+    "line": 61,
+    "persona": "shared"
+  },
+  "diary.quote.6.author": {
+    "value": "Seneca",
+    "source": "app/(tabs)/diary.tsx",
+    "line": 61,
+    "persona": "shared"
+  },
+  "diary.quote.7.text": {
+    "value": "\"The best revenge is not to be like your enemy.\"",
+    "source": "app/(tabs)/diary.tsx",
+    "line": 62,
+    "persona": "shared"
+  },
+  "diary.quote.7.author": {
+    "value": "Marcus Aurelius",
+    "source": "app/(tabs)/diary.tsx",
+    "line": 62,
+    "persona": "shared"
+  },
+  "diary.quote.8.text": {
+    "value": "\"Waste no more time arguing about what a good man should be. Be one.\"",
+    "source": "app/(tabs)/diary.tsx",
+    "line": 63,
+    "persona": "shared"
+  },
+  "diary.quote.8.author": {
+    "value": "Marcus Aurelius",
+    "source": "app/(tabs)/diary.tsx",
+    "line": 63,
+    "persona": "shared"
+  },
+  "diary.quote.9.text": {
+    "value": "\"He who fears death will never do anything worthy of a living man.\"",
+    "source": "app/(tabs)/diary.tsx",
+    "line": 64,
+    "persona": "shared"
+  },
+  "diary.quote.9.author": {
+    "value": "Seneca",
+    "source": "app/(tabs)/diary.tsx",
+    "line": 64,
+    "persona": "shared"
+  },
+  "diary.quote.10.text": {
+    "value": "\"First say to yourself what you would be; and then do what you have to do.\"",
+    "source": "app/(tabs)/diary.tsx",
+    "line": 65,
+    "persona": "shared"
+  },
+  "diary.quote.10.author": {
+    "value": "Epictetus",
+    "source": "app/(tabs)/diary.tsx",
+    "line": 65,
+    "persona": "shared"
+  },
+  "diary.quote.11.text": {
+    "value": "\"The soul becomes dyed with the colour of its thoughts.\"",
+    "source": "app/(tabs)/diary.tsx",
+    "line": 66,
+    "persona": "shared"
+  },
+  "diary.quote.11.author": {
+    "value": "Marcus Aurelius",
+    "source": "app/(tabs)/diary.tsx",
+    "line": 66,
+    "persona": "shared"
+  },
+  "diary.quote.12.text": {
+    "value": "\"Difficulties strengthen the mind, as labor does the body.\"",
+    "source": "app/(tabs)/diary.tsx",
+    "line": 67,
+    "persona": "shared"
+  },
+  "diary.quote.12.author": {
+    "value": "Seneca",
+    "source": "app/(tabs)/diary.tsx",
+    "line": 67,
+    "persona": "shared"
+  },
+  "diary.quote.13.text": {
+    "value": "\"Man is not worried by real problems so much as by his imagined anxieties about real problems.\"",
+    "source": "app/(tabs)/diary.tsx",
+    "line": 68,
+    "persona": "shared"
+  },
+  "diary.quote.13.author": {
+    "value": "Epictetus",
+    "source": "app/(tabs)/diary.tsx",
+    "line": 68,
+    "persona": "shared"
+  },
+  "diary.quote.14.text": {
+    "value": "\"Very little is needed to make a happy life; it is all within yourself, in your way of thinking.\"",
+    "source": "app/(tabs)/diary.tsx",
+    "line": 69,
+    "persona": "shared"
+  },
+  "diary.quote.14.author": {
+    "value": "Marcus Aurelius",
+    "source": "app/(tabs)/diary.tsx",
+    "line": 69,
+    "persona": "shared"
+  },
+  "diary.quote.15.text": {
+    "value": "\"If it is not right, do not do it. If it is not true, do not say it.\"",
+    "source": "app/(tabs)/diary.tsx",
+    "line": 70,
+    "persona": "shared"
+  },
+  "diary.quote.15.author": {
+    "value": "Marcus Aurelius",
+    "source": "app/(tabs)/diary.tsx",
+    "line": 70,
+    "persona": "shared"
+  },
+  "diary.journal_explanation": {
+    "value": "Writing like the Stoics — what could you control today, what not? What happened, and how did you respond?",
+    "source": "app/(tabs)/diary.tsx",
+    "line": 80,
+    "persona": "shared"
+  },
+  "diary.gratitude_explanation": {
+    "value": "Your brain automatically looks for danger and problems. Writing three things that were good trains your mind to notice what is good too. Not because everything is fine — but because both exist.",
+    "source": "app/(tabs)/diary.tsx",
+    "line": 83,
+    "persona": "shared"
+  },
+  "diary.tab.journal": {
+    "value": "Journal",
+    "source": "app/(tabs)/diary.tsx",
+    "line": 103,
+    "persona": "shared"
+  },
+  "diary.tab.gratitude": {
+    "value": "Gratitude",
+    "source": "app/(tabs)/diary.tsx",
+    "line": 122,
+    "persona": "shared"
+  },
+  "diary.entry.datetime_format": {
+    "value": "{dateStr} at {timeStr}",
+    "source": "app/(tabs)/diary.tsx",
+    "line": 232,
+    "persona": "shared"
+  },
+  "diary.entry.gratitude_label": {
+    "value": "Gratitude",
+    "source": "app/(tabs)/diary.tsx",
+    "line": 236,
+    "persona": "shared"
+  },
+  "diary.entry.gratitude.prefix.1": {
+    "value": "1. ",
+    "source": "app/(tabs)/diary.tsx",
+    "line": 251,
+    "persona": "shared"
+  },
+  "diary.entry.gratitude.prefix.2": {
+    "value": "2. ",
+    "source": "app/(tabs)/diary.tsx",
+    "line": 252,
+    "persona": "shared"
+  },
+  "diary.entry.gratitude.prefix.3": {
+    "value": "3. ",
+    "source": "app/(tabs)/diary.tsx",
+    "line": 253,
+    "persona": "shared"
+  },
+  "diary.quote.mark": {
+    "value": "“",
+    "source": "app/(tabs)/diary.tsx",
+    "line": 271,
+    "persona": "shared"
+  },
+  "diary.quote.author_prefix": {
+    "value": "— {getDailyQuote().author}",
+    "source": "app/(tabs)/diary.tsx",
+    "line": 276,
+    "persona": "shared"
+  },
+  "diary.streak.one_day": {
+    "value": "1 day of gratitude",
+    "source": "app/(tabs)/diary.tsx",
+    "line": 289,
+    "persona": "shared"
+  },
+  "diary.streak.two_days": {
+    "value": "2 days in a row",
+    "source": "app/(tabs)/diary.tsx",
+    "line": 289,
+    "persona": "shared"
+  },
+  "diary.streak.multiple_days": {
+    "value": "{gratitudeStreak} days in a row",
+    "source": "app/(tabs)/diary.tsx",
+    "line": 289,
+    "persona": "shared"
+  },
+  "diary.journal.prompt": {
+    "value": "Write whatever comes to mind...",
+    "source": "app/(tabs)/diary.tsx",
+    "line": 306,
+    "persona": "shared"
+  },
+  "diary.journal.zero_characters": {
+    "value": "0 characters",
+    "source": "app/(tabs)/diary.tsx",
+    "line": 309,
+    "persona": "shared"
+  },
+  "diary.search.placeholder": {
+    "value": "Search entries...",
+    "source": "app/(tabs)/diary.tsx",
+    "line": 321,
+    "persona": "shared"
+  },
+  "diary.search.clear": {
+    "value": "×",
+    "source": "app/(tabs)/diary.tsx",
+    "line": 328,
+    "persona": "shared"
+  },
+  "diary.empty.journal.icon": {
+    "value": "📝",
+    "source": "app/(tabs)/diary.tsx",
+    "line": 342,
+    "persona": "shared"
+  },
+  "diary.empty.gratitude.icon": {
+    "value": "🙏",
+    "source": "app/(tabs)/diary.tsx",
+    "line": 342,
+    "persona": "shared"
+  },
+  "diary.empty.journal.title": {
+    "value": "No journal entries yet",
+    "source": "app/(tabs)/diary.tsx",
+    "line": 344,
+    "persona": "shared"
+  },
+  "diary.empty.gratitude.title": {
+    "value": "No gratitude entries yet",
+    "source": "app/(tabs)/diary.tsx",
+    "line": 344,
+    "persona": "shared"
+  },
+  "diary.empty.journal.subtitle": {
+    "value": "Tap the writing area above to write your first entry.",
+    "source": "app/(tabs)/diary.tsx",
+    "line": 348,
+    "persona": "shared"
+  },
+  "diary.empty.gratitude.subtitle": {
+    "value": "Tap the + button to record what you are grateful for.",
+    "source": "app/(tabs)/diary.tsx",
+    "line": 349,
+    "persona": "shared"
+  },
+  "diary.editor.cancel": {
+    "value": "Cancel",
+    "source": "app/(tabs)/diary.tsx",
+    "line": 384,
+    "persona": "shared"
+  },
+  "diary.editor.title": {
+    "value": "New Entry",
+    "source": "app/(tabs)/diary.tsx",
+    "line": 386,
+    "persona": "shared"
+  },
+  "diary.editor.saving": {
+    "value": "Saving...",
+    "source": "app/(tabs)/diary.tsx",
+    "line": 395,
+    "persona": "shared"
+  },
+  "diary.editor.save": {
+    "value": "Save",
+    "source": "app/(tabs)/diary.tsx",
+    "line": 395,
+    "persona": "shared"
+  },
+  "diary.editor.quote.author_prefix": {
+    "value": "— {getDailyQuote().author}",
+    "source": "app/(tabs)/diary.tsx",
+    "line": 411,
+    "persona": "shared"
+  },
+  "diary.editor.journal.placeholder": {
+    "value": "Write whatever comes to mind...",
+    "source": "app/(tabs)/diary.tsx",
+    "line": 431,
+    "persona": "shared"
+  },
+  "diary.editor.journal.character_count": {
+    "value": "{editorText.length} characters",
+    "source": "app/(tabs)/diary.tsx",
+    "line": 438,
+    "persona": "shared"
+  },
+  "diary.editor.mood.title": {
+    "value": "HOW ARE YOU FEELING?",
+    "source": "app/(tabs)/diary.tsx",
+    "line": 443,
+    "persona": "shared"
+  },
+  "diary.editor.gratitude.prefix": {
+    "value": "{item.n}.",
+    "source": "app/(tabs)/diary.tsx",
+    "line": 488,
+    "persona": "shared"
+  },
+  "diary.editor.gratitude.placeholder": {
+    "value": "Something I am grateful for today...",
+    "source": "app/(tabs)/diary.tsx",
+    "line": 500,
+    "persona": "shared"
+  },
+  "diary.editor.gratitude.optional_hint": {
+    "value": "Optional — fill in as many or as few as you like.",
+    "source": "app/(tabs)/diary.tsx",
+    "line": 510,
+    "persona": "shared"
+  },
+  "mood.title": {
+    "value": "How are you?",
+    "source": "app/(tabs)/mood.tsx",
+    "line": 246,
+    "persona": "shared"
+  },
+  "mood.alert.severe.title": {
+    "value": "High alert",
+    "source": "app/(tabs)/mood.tsx",
+    "line": 250,
+    "persona": "shared"
+  },
+  "mood.alert.severe.message_is": {
+    "value": " is at a critical level.",
+    "source": "app/(tabs)/mood.tsx",
+    "line": 252,
+    "persona": "shared"
+  },
+  "mood.alert.severe.message_are": {
+    "value": " are at a critical level.",
+    "source": "app/(tabs)/mood.tsx",
+    "line": 252,
+    "persona": "shared"
+  },
+  "mood.alert.moderate.title": {
+    "value": "Heads up",
+    "source": "app/(tabs)/mood.tsx",
+    "line": 258,
+    "persona": "shared"
+  },
+  "mood.alert.moderate.message_is": {
+    "value": " is elevated.",
+    "source": "app/(tabs)/mood.tsx",
+    "line": 260,
+    "persona": "shared"
+  },
+  "mood.alert.moderate.message_are": {
+    "value": " are elevated.",
+    "source": "app/(tabs)/mood.tsx",
+    "line": 260,
+    "persona": "shared"
+  },
+  "mood.save_button.saved": {
+    "value": "Saved!",
+    "source": "app/(tabs)/mood.tsx",
+    "line": 329,
+    "persona": "shared"
+  },
+  "mood.save_button.default": {
+    "value": "Save Check-in",
+    "source": "app/(tabs)/mood.tsx",
+    "line": 329,
+    "persona": "shared"
+  },
+  "mood.eigen_regie.title": {
+    "value": "Self-Direction",
+    "source": "app/(tabs)/mood.tsx",
+    "line": 337,
+    "persona": "kim"
+  },
+  "mood.eigen_regie.save_button.saved": {
+    "value": "Saved!",
+    "source": "app/(tabs)/mood.tsx",
+    "line": 375,
+    "persona": "kim"
+  },
+  "mood.eigen_regie.save_button.default": {
+    "value": "Save reflection",
+    "source": "app/(tabs)/mood.tsx",
+    "line": 375,
+    "persona": "kim"
+  },
+  "mood.trend.title.elias": {
+    "value": "Mood trend",
+    "source": "app/(tabs)/mood.tsx",
+    "line": 385,
+    "persona": "elias"
+  },
+  "mood.trend.title.kim": {
+    "value": "Care trend",
+    "source": "app/(tabs)/mood.tsx",
+    "line": 385,
+    "persona": "kim"
+  },
+  "mood.progress.title": {
+    "value": "Progress",
+    "source": "app/(tabs)/mood.tsx",
+    "line": 396,
+    "persona": "shared"
+  },
+  "mood.recognition.title": {
+    "value": "Your Pattern",
+    "source": "app/(tabs)/mood.tsx",
+    "line": 402,
+    "persona": "shared"
+  },
+  "mood.recognition.empty": {
+    "value": "Save a few check-ins to start seeing your patterns here.",
+    "source": "app/(tabs)/mood.tsx",
+    "line": 407,
+    "persona": "shared"
+  },
+  "mood.recognition.last_7_days": {
+    "value": "last 7 days",
+    "source": "app/(tabs)/mood.tsx",
+    "line": 419,
+    "persona": "shared"
+  },
+  "mood.recognition.trend.based_on_single": {
+    "value": "Based on 1 check-in this week",
+    "source": "app/(tabs)/mood.tsx",
+    "line": 432,
+    "persona": "shared"
+  },
+  "mood.recognition.trend.based_on_plural": {
+    "value": "Based on {count} check-ins this week",
+    "source": "app/(tabs)/mood.tsx",
+    "line": 432,
+    "persona": "shared"
+  },
+  "mood.recognition.triggers.title": {
+    "value": "RECURRING TRIGGERS",
+    "source": "app/(tabs)/mood.tsx",
+    "line": 441,
+    "persona": "shared"
+  },
+  "mood.recognition.timeline.hide": {
+    "value": "Hide timeline",
+    "source": "app/(tabs)/mood.tsx",
+    "line": 456,
+    "persona": "shared"
+  },
+  "mood.recognition.timeline.show": {
+    "value": "Show timeline",
+    "source": "app/(tabs)/mood.tsx",
+    "line": 456,
+    "persona": "shared"
+  },
+  "mood.recognition.timeline.hide_icon": {
+    "value": "▲",
+    "source": "app/(tabs)/mood.tsx",
+    "line": 457,
+    "persona": "shared"
+  },
+  "mood.recognition.timeline.show_icon": {
+    "value": "▼",
+    "source": "app/(tabs)/mood.tsx",
+    "line": 457,
+    "persona": "shared"
+  },
+  "mood.recognition.timeline.empty": {
+    "value": "No entries yet.",
+    "source": "app/(tabs)/mood.tsx",
+    "line": 467,
+    "persona": "shared"
+  },
+  "profile.alert.no_data.title": {
+    "value": "No data yet",
+    "source": "app/(tabs)/profile.tsx",
+    "line": 109,
+    "persona": "shared"
+  },
+  "profile.alert.no_data.message": {
+    "value": "Start a few conversations first so the VSP Insight system can build your profile.",
+    "source": "app/(tabs)/profile.tsx",
+    "line": 109,
+    "persona": "shared"
+  },
+  "profile.alert.export_failed.title": {
+    "value": "Export failed",
+    "source": "app/(tabs)/profile.tsx",
+    "line": 129,
+    "persona": "shared"
+  },
+  "profile.alert.export_failed.message": {
+    "value": "Could not generate the VSP Insight overview.",
+    "source": "app/(tabs)/profile.tsx",
+    "line": 129,
+    "persona": "shared"
+  },
+  "profile.user_type.elias": {
+    "value": "Personal recovery",
+    "source": "app/(tabs)/profile.tsx",
+    "line": 136,
+    "persona": "elias"
+  },
+  "profile.user_type.kim": {
+    "value": "Supporting a loved one",
+    "source": "app/(tabs)/profile.tsx",
+    "line": 136,
+    "persona": "kim"
+  },
+  "profile.alert.reset_done.title": {
+    "value": "Done",
+    "source": "app/(tabs)/profile.tsx",
+    "line": 210,
+    "persona": "shared"
+  },
+  "profile.alert.reset_done.message": {
+    "value": "All data has been cleared. Starting fresh.",
+    "source": "app/(tabs)/profile.tsx",
+    "line": 210,
+    "persona": "shared"
+  },
+  "profile.alert.reset_done.button.ok": {
+    "value": "OK",
+    "source": "app/(tabs)/profile.tsx",
+    "line": 211,
+    "persona": "shared"
+  },
+  "profile.alert.reset_confirm_web": {
+    "value": "Are you sure you want to reset all data? This cannot be undone.",
+    "source": "app/(tabs)/profile.tsx",
+    "line": 220,
+    "persona": "shared"
+  },
+  "profile.alert.reset_confirm.title": {
+    "value": "Reset All Data",
+    "source": "app/(tabs)/profile.tsx",
+    "line": 225,
+    "persona": "shared"
+  },
+  "profile.alert.reset_confirm.message": {
+    "value": "This will permanently delete all your data. This cannot be undone.",
+    "source": "app/(tabs)/profile.tsx",
+    "line": 226,
+    "persona": "shared"
+  },
+  "profile.alert.reset_confirm.button.cancel": {
+    "value": "Cancel",
+    "source": "app/(tabs)/profile.tsx",
+    "line": 228,
+    "persona": "shared"
+  },
+  "profile.alert.reset_confirm.button.reset": {
+    "value": "Reset",
+    "source": "app/(tabs)/profile.tsx",
+    "line": 229,
+    "persona": "shared"
+  },
+  "profile.title": {
+    "value": "Profile",
+    "source": "app/(tabs)/profile.tsx",
+    "line": 239,
+    "persona": "shared"
+  },
+  "profile.user_card.default_name": {
+    "value": "User",
+    "source": "app/(tabs)/profile.tsx",
+    "line": 257,
+    "persona": "shared"
+  },
+  "profile.user_card.stats.sessions": {
+    "value": " session",
+    "source": "app/(tabs)/profile.tsx",
+    "line": 260,
+    "persona": "shared"
+  },
+  "profile.user_card.stats.sessions_plural": {
+    "value": "s",
+    "source": "app/(tabs)/profile.tsx",
+    "line": 260,
+    "persona": "shared"
+  },
+  "profile.user_card.stats.checkins": {
+    "value": " check-in",
+    "source": "app/(tabs)/profile.tsx",
+    "line": 260,
+    "persona": "shared"
+  },
+  "profile.user_card.stats.checkins_plural": {
+    "value": "s",
+    "source": "app/(tabs)/profile.tsx",
+    "line": 260,
+    "persona": "shared"
+  },
+  "profile.guidance_depth.title": {
+    "value": "GUIDANCE DEPTH",
+    "source": "app/(tabs)/profile.tsx",
+    "line": 289,
+    "persona": "shared"
+  },
+  "profile.guidance_depth.description": {
+    "value": "Choose how intensely the conversation goes. You can change this anytime.",
+    "source": "app/(tabs)/profile.tsx",
+    "line": 292,
+    "persona": "shared"
+  },
+  "profile.emergency_contacts.title": {
+    "value": "EMERGENCY CONTACTS",
+    "source": "app/(tabs)/profile.tsx",
+    "line": 347,
+    "persona": "shared"
+  },
+  "profile.emergency_contacts.description": {
+    "value": "Add up to 2 personal contacts shown during a crisis (e.g. family, sponsor).",
+    "source": "app/(tabs)/profile.tsx",
+    "line": 350,
+    "persona": "shared"
+  },
+  "profile.emergency_contacts.alert.remove_web": {
+    "value": "Remove ",
+    "source": "app/(tabs)/profile.tsx",
+    "line": 370,
+    "persona": "shared"
+  },
+  "profile.emergency_contacts.alert.remove.title": {
+    "value": "Remove contact",
+    "source": "app/(tabs)/profile.tsx",
+    "line": 372,
+    "persona": "shared"
+  },
+  "profile.emergency_contacts.alert.remove.message": {
+    "value": "Remove ",
+    "source": "app/(tabs)/profile.tsx",
+    "line": 372,
+    "persona": "shared"
+  },
+  "profile.emergency_contacts.alert.remove.button.cancel": {
+    "value": "Cancel",
+    "source": "app/(tabs)/profile.tsx",
+    "line": 373,
+    "persona": "shared"
+  },
+  "profile.emergency_contacts.alert.remove.button.remove": {
+    "value": "Remove",
+    "source": "app/(tabs)/profile.tsx",
+    "line": 374,
+    "persona": "shared"
+  },
+  "profile.emergency_contacts.form.name_placeholder": {
+    "value": "Name (e.g. Dad, Sister)",
+    "source": "app/(tabs)/profile.tsx",
+    "line": 392,
+    "persona": "shared"
+  },
+  "profile.emergency_contacts.form.number_placeholder": {
+    "value": "Phone number",
+    "source": "app/(tabs)/profile.tsx",
+    "line": 399,
+    "persona": "shared"
+  },
+  "profile.emergency_contacts.form.button.cancel": {
+    "value": "Cancel",
+    "source": "app/(tabs)/profile.tsx",
+    "line": 411,
+    "persona": "shared"
+  },
+  "profile.emergency_contacts.form.button.save": {
+    "value": "Save",
+    "source": "app/(tabs)/profile.tsx",
+    "line": 417,
+    "persona": "shared"
+  },
+  "profile.emergency_contacts.button.add": {
+    "value": "+ Add emergency contact",
+    "source": "app/(tabs)/profile.tsx",
+    "line": 435,
+    "persona": "shared"
+  },
+  "profile.vsp_insight.title": {
+    "value": "VSP INSIGHT",
+    "source": "app/(tabs)/profile.tsx",
+    "line": 444,
+    "persona": "shared"
+  },
+  "profile.vsp_insight.description": {
+    "value": "Export your personal insight profile to share with your therapist.",
+    "source": "app/(tabs)/profile.tsx",
+    "line": 447,
+    "persona": "shared"
+  },
+  "profile.vsp_insight.button.generating": {
+    "value": "Generating...",
+    "source": "app/(tabs)/profile.tsx",
+    "line": 466,
+    "persona": "shared"
+  },
+  "profile.vsp_insight.button.export": {
+    "value": "Export VSP Insight Profile",
+    "source": "app/(tabs)/profile.tsx",
+    "line": 466,
+    "persona": "shared"
+  },
+  "profile.vsp_insight.button.description": {
+    "value": "Share your patterns and early signs with your therapist.",
+    "source": "app/(tabs)/profile.tsx",
+    "line": 468,
+    "persona": "shared"
+  },
+  "profile.reset_data.button.title": {
+    "value": "Reset All Data",
+    "source": "app/(tabs)/profile.tsx",
+    "line": 498,
+    "persona": "shared"
+  },
+  "profile.reset_data.button.description": {
+    "value": "Permanently deletes all data and restarts the intake process.",
+    "source": "app/(tabs)/profile.tsx",
+    "line": 499,
+    "persona": "shared"
+  },
+  "backpack.alert.saved.title": {
+    "value": "Saved",
+    "source": "app/(tabs)/backpack.tsx",
+    "line": 100,
+    "persona": "shared"
+  },
+  "backpack.alert.saved.message": {
+    "value": "Your story has been saved.",
+    "source": "app/(tabs)/backpack.tsx",
+    "line": 100,
+    "persona": "shared"
+  },
+  "backpack.alert.updated.title": {
+    "value": "Updated",
+    "source": "app/(tabs)/backpack.tsx",
+    "line": 112,
+    "persona": "shared"
+  },
+  "backpack.alert.updated.message": {
+    "value": "Your stage of change has been updated.",
+    "source": "app/(tabs)/backpack.tsx",
+    "line": 112,
+    "persona": "shared"
+  },
+  "backpack.elias_section.written": {
+    "value": "Written",
+    "source": "app/(tabs)/backpack.tsx",
+    "line": 149,
+    "persona": "elias"
+  },
+  "backpack.elias_section.placeholder": {
+    "value": "Write your story here... Take your time.",
+    "source": "app/(tabs)/backpack.tsx",
+    "line": 168,
+    "persona": "elias"
+  },
+  "backpack.elias_section.cancel": {
+    "value": "Cancel",
+    "source": "app/(tabs)/backpack.tsx",
+    "line": 177,
+    "persona": "elias"
+  },
+  "backpack.elias_section.save": {
+    "value": "Save",
+    "source": "app/(tabs)/backpack.tsx",
+    "line": 182,
+    "persona": "elias"
+  },
+  "backpack.elias_section.last_updated": {
+    "value": "Last updated: ",
+    "source": "app/(tabs)/backpack.tsx",
+    "line": 191,
+    "persona": "elias"
+  },
+  "backpack.elias_section.edit": {
+    "value": "Edit",
+    "source": "app/(tabs)/backpack.tsx",
+    "line": 195,
+    "persona": "elias"
+  },
+  "backpack.elias_section.no_story": {
+    "value": "No story written yet for this phase.",
+    "source": "app/(tabs)/backpack.tsx",
+    "line": 201,
+    "persona": "elias"
+  },
+  "backpack.elias_section.start_writing": {
+    "value": "Start Writing",
+    "source": "app/(tabs)/backpack.tsx",
+    "line": 204,
+    "persona": "elias"
+  },
+  "backpack.kim_section.written": {
+    "value": "Written",
+    "source": "app/(tabs)/backpack.tsx",
+    "line": 247,
+    "persona": "kim"
+  },
+  "backpack.kim_section.placeholder": {
+    "value": "Write your story here... Take your time.",
+    "source": "app/(tabs)/backpack.tsx",
+    "line": 266,
+    "persona": "kim"
+  },
+  "backpack.kim_section.cancel": {
+    "value": "Cancel",
+    "source": "app/(tabs)/backpack.tsx",
+    "line": 275,
+    "persona": "kim"
+  },
+  "backpack.kim_section.save": {
+    "value": "Save",
+    "source": "app/(tabs)/backpack.tsx",
+    "line": 280,
+    "persona": "kim"
+  },
+  "backpack.kim_section.edit": {
+    "value": "Edit",
+    "source": "app/(tabs)/backpack.tsx",
+    "line": 290,
+    "persona": "kim"
+  },
+  "backpack.kim_section.no_story": {
+    "value": "No story written yet for this section.",
+    "source": "app/(tabs)/backpack.tsx",
+    "line": 296,
+    "persona": "kim"
+  },
+  "backpack.kim_section.start_writing": {
+    "value": "Start Writing",
+    "source": "app/(tabs)/backpack.tsx",
+    "line": 299,
+    "persona": "kim"
+  },
+  "backpack.title": {
+    "value": "Your Story",
+    "source": "app/(tabs)/backpack.tsx",
+    "line": 314,
+    "persona": "shared"
+  },
+  "backpack.description.kim": {
+    "value": "Your personal story as a loved one — it helps Kim truly understand your situation. Write at your own pace. Everything stays on your device and is NEVER modified by the system.",
+    "source": "app/(tabs)/backpack.tsx",
+    "line": 320,
+    "persona": "kim"
+  },
+  "backpack.description.elias": {
+    "value": "Your life story is your identity anchor — it helps your companion truly know you. Write at your own pace. Everything stays on your device and is NEVER modified by the system.",
+    "source": "app/(tabs)/backpack.tsx",
+    "line": 321,
+    "persona": "elias"
+  },
+  "backpack.progress.title": {
+    "value": "Progress",
+    "source": "app/(tabs)/backpack.tsx",
+    "line": 332,
+    "persona": "shared"
+  },
+  "backpack.progress.of": {
+    "value": " of ",
+    "source": "app/(tabs)/backpack.tsx",
+    "line": 333,
+    "persona": "shared"
+  },
+  "backpack.progress.sections": {
+    "value": " sections",
+    "source": "app/(tabs)/backpack.tsx",
+    "line": 333,
+    "persona": "shared"
+  },
+  "backpack.stage_of_change.title": {
+    "value": "Stage of Change",
+    "source": "app/(tabs)/backpack.tsx",
+    "line": 365,
+    "persona": "elias"
+  },
+  "backpack.stage_of_change.description": {
+    "value": "Where are you in your journey? This helps your companion adjust their approach.",
+    "source": "app/(tabs)/backpack.tsx",
+    "line": 367,
+    "persona": "elias"
+  },
+  "backpack.wizard.title": {
+    "value": "Fill My Backpack",
+    "source": "app/(tabs)/backpack.tsx",
+    "line": 416,
+    "persona": "shared"
+  },
+  "backpack.wizard.description": {
+    "value": "Upload a life story document or fill in step by step",
+    "source": "app/(tabs)/backpack.tsx",
+    "line": 417,
+    "persona": "shared"
+  },
+  "backpack.vsp.title": {
+    "value": "My Safety Plan",
+    "source": "app/(tabs)/backpack.tsx",
+    "line": 436,
+    "persona": "elias"
+  },
+  "backpack.vsp.description": {
+    "value": "Upload a document or fill in step by step",
+    "source": "app/(tabs)/backpack.tsx",
+    "line": 437,
+    "persona": "elias"
+  },
+  "backpack.tip.label": {
+    "value": "Tip: ",
+    "source": "app/(tabs)/backpack.tsx",
+    "line": 452,
+    "persona": "shared"
+  },
+  "backpack.tip.content": {
+    "value": "You can always come back to add or edit your story. Your backpack is sent in full to your companion at the start of each conversation — it is never summarized or reduced. Only you can change it.",
+    "source": "app/(tabs)/backpack.tsx",
+    "line": 453,
+    "persona": "shared"
+  },
+  "_layout.error_boundary.title": {
+    "value": "Something went wrong",
+    "source": "app/_layout.tsx",
+    "line": 57,
+    "persona": "shared"
+  },
+  "_layout.error_boundary.unknown_error": {
+    "value": "Unknown error",
+    "source": "app/_layout.tsx",
+    "line": 52,
+    "persona": "shared"
+  },
+  "_layout.error_boundary.try_again": {
+    "value": "Try Again",
+    "source": "app/_layout.tsx",
+    "line": 71,
+    "persona": "shared"
+  },
+  "intake.urgency.low.label": {
+    "value": "Low",
+    "source": "app/intake.tsx",
+    "line": 35,
+    "persona": "shared"
+  },
+  "intake.urgency.low.description": {
+    "value": "I want to explore at my own pace",
+    "source": "app/intake.tsx",
+    "line": 35,
+    "persona": "shared"
+  },
+  "intake.urgency.medium.label": {
+    "value": "Medium",
+    "source": "app/intake.tsx",
+    "line": 36,
+    "persona": "shared"
+  },
+  "intake.urgency.medium.description": {
+    "value": "I could use some support",
+    "source": "app/intake.tsx",
+    "line": 36,
+    "persona": "shared"
+  },
+  "intake.urgency.high.label": {
+    "value": "High",
+    "source": "app/intake.tsx",
+    "line": 37,
+    "persona": "shared"
+  },
+  "intake.urgency.high.description": {
+    "value": "I need help right now",
+    "source": "app/intake.tsx",
+    "line": 37,
+    "persona": "shared"
+  },
+  "intake.import.error.file_picker": {
+    "value": "Could not open file picker.",
+    "source": "app/intake.tsx",
+    "line": 163,
+    "persona": "shared"
+  },
+  "intake.step1.hero.emoji": {
+    "value": "💙",
+    "source": "app/intake.tsx",
+    "line": 323,
+    "persona": "shared"
+  },
+  "intake.step1.hero.title": {
+    "value": "Welcome to RecoFree",
+    "source": "app/intake.tsx",
+    "line": 324,
+    "persona": "shared"
+  },
+  "intake.step1.hero.subtitle": {
+    "value": "A safe space for recovery and growth",
+    "source": "app/intake.tsx",
+    "line": 326,
+    "persona": "shared"
+  },
+  "intake.step1.name.label": {
+    "value": "What should I call you?",
+    "source": "app/intake.tsx",
+    "line": 331,
+    "persona": "shared"
+  },
+  "intake.step1.name.placeholder": {
+    "value": "Your first name",
+    "source": "app/intake.tsx",
+    "line": 334,
+    "persona": "shared"
+  },
+  "intake.step1.type.label": {
+    "value": "Which describes you best?",
+    "source": "app/intake.tsx",
+    "line": 345,
+    "persona": "shared"
+  },
+  "intake.step1.type.elias.title": {
+    "value": "I have an addiction myself",
+    "source": "app/intake.tsx",
+    "line": 359,
+    "persona": "shared"
+  },
+  "intake.step1.type.elias.description": {
+    "value": "You'll be supported by Elias — direct, honest support for your recovery — from someone who gets it.",
+    "source": "app/intake.tsx",
+    "line": 361,
+    "persona": "shared"
+  },
+  "intake.step1.type.kim.title": {
+    "value": "I'm a loved one of someone",
+    "source": "app/intake.tsx",
+    "line": 378,
+    "persona": "shared"
+  },
+  "intake.step1.type.kim.description": {
+    "value": "You'll be supported by Kim — a direct, honest companion for your well-being.",
+    "source": "app/intake.tsx",
+    "line": 380,
+    "persona": "shared"
+  },
+  "intake.step1.button.next": {
+    "value": "Next",
+    "source": "app/intake.tsx",
+    "line": 396,
+    "persona": "shared"
+  },
+  "intake.step1.button.import": {
+    "value": "I have a backup — import my data",
+    "source": "app/intake.tsx",
+    "line": 406,
+    "persona": "shared"
+  },
+  "intake.step2.kim.title": {
+    "value": "To what extent is your life currently determined by the other person?",
+    "source": "app/intake.tsx",
+    "line": 418,
+    "persona": "kim"
+  },
+  "intake.step2.kim.subtitle": {
+    "value": "This helps Kim understand where you are right now.",
+    "source": "app/intake.tsx",
+    "line": 421,
+    "persona": "kim"
+  },
+  "intake.step2.elias.title": {
+    "value": "Where are you in your journey?",
+    "source": "app/intake.tsx",
+    "line": 460,
+    "persona": "elias"
+  },
+  "intake.step2.elias.subtitle": {
+    "value": "This helps Elias understand how to best support you.",
+    "source": "app/intake.tsx",
+    "line": 462,
+    "persona": "elias"
+  },
+  "intake.step2.button.next": {
+    "value": "Next",
+    "source": "app/intake.tsx",
+    "line": 499,
+    "persona": "shared"
+  },
+  "intake.step2.button.back": {
+    "value": "Back",
+    "source": "app/intake.tsx",
+    "line": 502,
+    "persona": "shared"
+  },
+  "intake.step3.title": {
+    "value": "How urgent does it feel?",
+    "source": "app/intake.tsx",
+    "line": 511,
+    "persona": "shared"
+  },
+  "intake.step3.subtitle": {
+    "value": "This helps us set the right tone and pace for you.",
+    "source": "app/intake.tsx",
+    "line": 513,
+    "persona": "shared"
+  },
+  "intake.step3.button.submitting": {
+    "value": "One moment...",
+    "source": "app/intake.tsx",
+    "line": 550,
+    "persona": "shared"
+  },
+  "intake.step3.button.submit": {
+    "value": "Get Started",
+    "source": "app/intake.tsx",
+    "line": 550,
+    "persona": "shared"
+  },
+  "intake.step3.button.back": {
+    "value": "Back",
+    "source": "app/intake.tsx",
+    "line": 555,
+    "persona": "shared"
+  },
+  "intake.step3.privacy_note": {
+    "value": "Your data stays on your phone. Nothing is shared without your consent.",
+    "source": "app/intake.tsx",
+    "line": 560,
+    "persona": "shared"
+  },
+  "intake.import_modal.title": {
+    "value": "Import backup",
+    "source": "app/intake.tsx",
+    "line": 572,
+    "persona": "shared"
+  },
+  "intake.import_modal.description": {
+    "value": "Have a previous backup? Import your data and continue right away.",
+    "source": "app/intake.tsx",
+    "line": 574,
+    "persona": "shared"
+  },
+  "intake.import_modal.file_picker.placeholder": {
+    "value": "Choose .recofree file",
+    "source": "app/intake.tsx",
+    "line": 586,
+    "persona": "shared"
+  },
+  "intake.import_modal.password.placeholder": {
+    "value": "Backup password",
+    "source": "app/intake.tsx",
+    "line": 596,
+    "persona": "shared"
+  },
+  "intake.import_modal.button.submit": {
+    "value": "Import and continue",
+    "source": "app/intake.tsx",
+    "line": 620,
+    "persona": "shared"
+  },
+  "intake.import_modal.button.cancel": {
+    "value": "Cancel",
+    "source": "app/intake.tsx",
+    "line": 629,
+    "persona": "shared"
+  },
+  "intake.import_diag.title": {
+    "value": "Import Diagnostic Log",
+    "source": "app/intake.tsx",
+    "line": 640,
+    "persona": "shared"
+  },
+  "intake.import_diag.subtitle.success": {
+    "value": "Import succeeded! Copy log or press Continue.",
+    "source": "app/intake.tsx",
+    "line": 643,
+    "persona": "shared"
+  },
+  "intake.import_diag.subtitle.pending": {
+    "value": "Copy this log and send it for debugging",
+    "source": "app/intake.tsx",
+    "line": 643,
+    "persona": "shared"
+  },
+  "intake.import_diag.name_prompt.title": {
+    "value": "Your backup didn't include your name. Please enter it:",
+    "source": "app/intake.tsx",
+    "line": 655,
+    "persona": "shared"
+  },
+  "intake.import_diag.name_prompt.placeholder": {
+    "value": "Your first name",
+    "source": "app/intake.tsx",
+    "line": 661,
+    "persona": "shared"
+  },
+  "intake.import_diag.button.continue": {
+    "value": "Continue to app →",
+    "source": "app/intake.tsx",
+    "line": 703,
+    "persona": "shared"
+  },
+  "intake.import_diag.button.copied": {
+    "value": "✓ Copied!",
+    "source": "app/intake.tsx",
+    "line": 721,
+    "persona": "shared"
+  },
+  "intake.import_diag.button.copy": {
+    "value": "Copy to clipboard",
+    "source": "app/intake.tsx",
+    "line": 721,
+    "persona": "shared"
+  },
+  "intake.import_diag.button.close": {
+    "value": "Close",
+    "source": "app/intake.tsx",
+    "line": 731,
+    "persona": "shared"
+  },
+  "gdpr_consent.header.emoji": {
+    "value": "🔒",
+    "source": "app/gdpr-consent.tsx",
+    "line": 35,
+    "persona": "shared"
+  },
+  "gdpr_consent.header.title": {
+    "value": "Before you begin",
+    "source": "app/gdpr-consent.tsx",
+    "line": 36,
+    "persona": "shared"
+  },
+  "gdpr_consent.header.subtitle": {
+    "value": "Your privacy is our priority",
+    "source": "app/gdpr-consent.tsx",
+    "line": 38,
+    "persona": "shared"
+  },
+  "gdpr_consent.card.body1": {
+    "value": "RecoFree uses AI technology (OpenAI) to process conversations.",
+    "source": "app/gdpr-consent.tsx",
+    "line": 45,
+    "persona": "shared"
+  },
+  "gdpr_consent.card.body2": {
+    "value": "Your personal data stays on your device. RecoFree does not store personal data on external servers.",
+    "source": "app/gdpr-consent.tsx",
+    "line": 58,
+    "persona": "shared"
+  },
+  "gdpr_consent.contact": {
+    "value": "Questions? privacy@recofree.app",
+    "source": "app/gdpr-consent.tsx",
+    "line": 64,
+    "persona": "shared"
+  },
+  "gdpr_consent.button.accept": {
+    "value": "I understand and agree",
+    "source": "app/gdpr-consent.tsx",
+    "line": 75,
+    "persona": "shared"
+  },
+  "gdpr_consent.privacy_points.0": {
+    "value": "Your name is replaced by an anonymous placeholder before reaching OpenAI.",
+    "source": "app/gdpr-consent.tsx",
+    "line": 84,
+    "persona": "shared"
+  },
+  "gdpr_consent.privacy_points.1": {
+    "value": "Conversations are not stored by OpenAI (store: false).",
+    "source": "app/gdpr-consent.tsx",
+    "line": 85,
+    "persona": "shared"
+  },
+  "gdpr_consent.privacy_points.2": {
+    "value": "OpenAI has signed a Data Processing Agreement (GDPR-compliant).",
+    "source": "app/gdpr-consent.tsx",
+    "line": 86,
+    "persona": "shared"
+  },
+  "gdpr_consent.privacy_points.3": {
+    "value": "All your data is stored locally on your device only.",
+    "source": "app/gdpr-consent.tsx",
+    "line": 87,
+    "persona": "shared"
+  },
+  "gdpr_consent.privacy_points.4": {
+    "value": "RecoFree does not use your data for training or analytics.",
+    "source": "app/gdpr-consent.tsx",
+    "line": 88,
+    "persona": "shared"
+  },
+  "gdpr_consent.privacy_points.5": {
+    "value": "You can permanently delete all your data at any time via Settings → Reset All Data.",
+    "source": "app/gdpr-consent.tsx",
+    "line": 89,
+    "persona": "shared"
+  },
+  "gdpr_consent.privacy_points.6": {
+    "value": "Your journal, backpack, and conversation history never leave your device.",
+    "source": "app/gdpr-consent.tsx",
+    "line": 90,
+    "persona": "shared"
+  },
+  "emergency_card.your_contacts": {
+    "value": "YOUR CONTACTS",
+    "source": "components/emergency-card.tsx",
+    "line": 133,
+    "persona": "shared"
+  },
+  "mood_trend_chart_card.accessibility_label": {
+    "value": "Mood trend chart",
+    "source": "components/mood-trend-chart-card.tsx",
+    "line": 35,
+    "persona": "shared"
+  },
+  "mood_trend_chart_card.axis_label.10": {
+    "value": "10",
+    "source": "components/mood-trend-chart-card.tsx",
+    "line": 86,
+    "persona": "shared"
+  },
+  "mood_trend_chart_card.axis_label.5": {
+    "value": "5",
+    "source": "components/mood-trend-chart-card.tsx",
+    "line": 87,
+    "persona": "shared"
+  },
+  "mood_trend_chart_card.axis_label.0": {
+    "value": "0",
+    "source": "components/mood-trend-chart-card.tsx",
+    "line": 88,
+    "persona": "shared"
+  },
+  "mood_trend_chart_card.range_toggle.7_days": {
+    "value": "7 days",
+    "source": "components/mood-trend-chart-card.tsx",
+    "line": 133,
+    "persona": "shared"
+  },
+  "mood_trend_chart_card.range_toggle.30_days": {
+    "value": "30 days",
+    "source": "components/mood-trend-chart-card.tsx",
+    "line": 144,
+    "persona": "shared"
+  },
+  "mood_trend_chart_card.fallback.no_data": {
+    "value": "No data available.",
+    "source": "components/mood-trend-chart-card.tsx",
+    "line": 164,
+    "persona": "shared"
+  },
+  "mood_trend_chart_card.fallback.check_in": {
+    "value": " check-in",
+    "source": "components/mood-trend-chart-card.tsx",
+    "line": 167,
+    "persona": "shared"
+  },
+  "mood_trend_chart_card.fallback.check_in_plural": {
+    "value": "s",
+    "source": "components/mood-trend-chart-card.tsx",
+    "line": 167,
+    "persona": "shared"
+  },
+  "mood_trend_chart_card.fallback.recorded": {
+    "value": " recorded",
+    "source": "components/mood-trend-chart-card.tsx",
+    "line": 167,
+    "persona": "shared"
+  },
+  "mood_trend_chart_card.title.elias": {
+    "value": "Mood trend",
+    "source": "components/mood-trend-chart-card.tsx",
+    "line": 180,
+    "persona": "elias"
+  },
+  "mood_trend_chart_card.title.kim": {
+    "value": "Care trend",
+    "source": "components/mood-trend-chart-card.tsx",
+    "line": 180,
+    "persona": "kim"
+  },
+  "mood_trend_chart_card.subtitle.elias": {
+    "value": "Based on your local check-ins.",
+    "source": "components/mood-trend-chart-card.tsx",
+    "line": 183,
+    "persona": "elias"
+  },
+  "mood_trend_chart_card.subtitle.kim": {
+    "value": "Based on your local self-care and burden check-ins.",
+    "source": "components/mood-trend-chart-card.tsx",
+    "line": 184,
+    "persona": "kim"
+  },
+  "prechat_eigen_regie.title": {
+    "value": "How was your day, {userName}?",
+    "source": "components/prechat-eigen-regie.tsx",
+    "line": 76,
+    "persona": "kim"
+  },
+  "prechat_eigen_regie.confirm": {
+    "value": "Confirm",
+    "source": "components/prechat-eigen-regie.tsx",
+    "line": 157,
+    "persona": "kim"
+  },
+  "prechat_vsp.description.groen": {
+    "value": "Everything feels manageable.",
+    "source": "components/prechat-vsp.tsx",
+    "line": 33,
+    "persona": "elias"
+  },
+  "prechat_vsp.description.geel": {
+    "value": "Some stress, but I can handle it.",
+    "source": "components/prechat-vsp.tsx",
+    "line": 34,
+    "persona": "elias"
+  },
+  "prechat_vsp.description.oranje": {
+    "value": "Things are getting harder.",
+    "source": "components/prechat-vsp.tsx",
+    "line": 35,
+    "persona": "elias"
+  },
+  "prechat_vsp.description.rood": {
+    "value": "I need support now.",
+    "source": "components/prechat-vsp.tsx",
+    "line": 36,
+    "persona": "elias"
+  },
+  "prechat_vsp.description.paars": {
+    "value": "I've relapsed.",
+    "source": "components/prechat-vsp.tsx",
+    "line": 37,
+    "persona": "elias"
+  },
+  "prechat_vsp.title": {
+    "value": "How are you feeling right now, {userName}?",
+    "source": "components/prechat-vsp.tsx",
+    "line": 72,
+    "persona": "elias"
+  },
+  "prechat_vsp.subtitle": {
+    "value": "Choose the level that best matches how you feel right now.",
+    "source": "components/prechat-vsp.tsx",
+    "line": 75,
+    "persona": "elias"
+  },
+  "prechat_vsp.button.confirm": {
+    "value": "Confirm",
+    "source": "components/prechat-vsp.tsx",
+    "line": 184,
+    "persona": "elias"
+  },
+  "progress_card.trend_arrow.down": {
+    "value": "↓",
+    "source": "components/progress-card.tsx",
+    "line": 39,
+    "persona": "shared"
+  },
+  "progress_card.trend_arrow.up": {
+    "value": "↑",
+    "source": "components/progress-card.tsx",
+    "line": 40,
+    "persona": "shared"
+  },
+  "progress_card.trend_arrow.stable": {
+    "value": "→",
+    "source": "components/progress-card.tsx",
+    "line": 41,
+    "persona": "shared"
+  },
+  "progress_card.trend_arrow.mixed": {
+    "value": "↔",
+    "source": "components/progress-card.tsx",
+    "line": 42,
+    "persona": "shared"
+  },
+  "progress_card.trend_arrow.insufficient_data": {
+    "value": "—",
+    "source": "components/progress-card.tsx",
+    "line": 43,
+    "persona": "shared"
+  },
+  "progress_card.interpretation.softened": {
+    "value": "Softened",
+    "source": "components/progress-card.tsx",
+    "line": 59,
+    "persona": "shared"
+  },
+  "progress_card.interpretation.increased": {
+    "value": "Needs attention",
+    "source": "components/progress-card.tsx",
+    "line": 60,
+    "persona": "shared"
+  },
+  "progress_card.interpretation.stable": {
+    "value": "Stable",
+    "source": "components/progress-card.tsx",
+    "line": 61,
+    "persona": "shared"
+  },
+  "progress_card.interpretation.not_enough_data": {
+    "value": "Not enough data",
+    "source": "components/progress-card.tsx",
+    "line": 62,
+    "persona": "shared"
+  },
+  "progress_card.signal.softened": {
+    "value": "Softened: {signals.softened.join(', ')}",
+    "source": "components/progress-card.tsx",
+    "line": 104,
+    "persona": "shared"
+  },
+  "progress_card.signal.increased": {
+    "value": "Needs attention: {signals.increased.join(', ')}",
+    "source": "components/progress-card.tsx",
+    "line": 111,
+    "persona": "shared"
+  },
+  "progress_card.active_modules.title": {
+    "value": "ACTIVE MODULES",
+    "source": "components/progress-card.tsx",
+    "line": 126,
+    "persona": "shared"
+  },
+  "progress_card.elias.window.7_days": {
+    "value": "7 days",
+    "source": "components/progress-card.tsx",
+    "line": 157,
+    "persona": "elias"
+  },
+  "progress_card.elias.window.30_days": {
+    "value": "30 days",
+    "source": "components/progress-card.tsx",
+    "line": 169,
+    "persona": "elias"
+  },
+  "progress_card.elias.sobriety.title": {
+    "value": "SOBRIETY",
+    "source": "components/progress-card.tsx",
+    "line": 187,
+    "persona": "elias"
+  },
+  "progress_card.elias.inner_landscape.title": {
+    "value": "INNER LANDSCAPE",
+    "source": "components/progress-card.tsx",
+    "line": 198,
+    "persona": "elias"
+  },
+  "progress_card.elias.inner_landscape.hope": {
+    "value": "Hope: {summary.projectionMovement.strongestHope}",
+    "source": "components/progress-card.tsx",
+    "line": 201,
+    "persona": "elias"
+  },
+  "progress_card.elias.inner_landscape.fear": {
+    "value": "Fear: {summary.projectionMovement.strongestFear}",
+    "source": "components/progress-card.tsx",
+    "line": 206,
+    "persona": "elias"
+  },
+  "progress_card.elias.disclaimer": {
+    "value": "This is pattern information, not a score or diagnosis.",
+    "source": "components/progress-card.tsx",
+    "line": 214,
+    "persona": "elias"
+  },
+  "progress_card.kim.window.7_days": {
+    "value": "7 days",
+    "source": "components/progress-card.tsx",
+    "line": 239,
+    "persona": "kim"
+  },
+  "progress_card.kim.window.30_days": {
+    "value": "30 days",
+    "source": "components/progress-card.tsx",
+    "line": 251,
+    "persona": "kim"
+  },
+  "progress_card.kim.self_care.title": {
+    "value": "SELF-CARE",
+    "source": "components/progress-card.tsx",
+    "line": 268,
+    "persona": "kim"
+  },
+  "progress_card.kim.disclaimer": {
+    "value": "This is a view of your load, not a judgment of your care.",
+    "source": "components/progress-card.tsx",
+    "line": 277,
+    "persona": "kim"
+  },
+  "progress_card.header.icon": {
+    "value": "📊",
+    "source": "components/progress-card.tsx",
+    "line": 348,
+    "persona": "shared"
+  },
+  "progress_card.header.title": {
+    "value": "Your Progress",
+    "source": "components/progress-card.tsx",
+    "line": 349,
+    "persona": "shared"
+  },
+  "progress_card.header.expand_arrow": {
+    "value": "▲",
+    "source": "components/progress-card.tsx",
+    "line": 352,
+    "persona": "shared"
+  },
+  "progress_card.header.collapse_arrow": {
+    "value": "▼",
+    "source": "components/progress-card.tsx",
+    "line": 352,
+    "persona": "shared"
+  },
+  "sober_counter.set_clean_date": {
+    "value": "Set your clean date",
+    "source": "components/sober-counter.tsx",
+    "line": 63,
+    "persona": "elias"
+  },
+  "sober_counter.arrow": {
+    "value": "→",
+    "source": "components/sober-counter.tsx",
+    "line": 64,
+    "persona": "elias"
+  },
+  "sober_counter.message.day_1": {
+    "value": "Today is day 1. That counts.",
+    "source": "components/sober-counter.tsx",
+    "line": 88,
+    "persona": "elias"
+  },
+  "sober_counter.message.day_1_clean": {
+    "value": "1 day clean.",
+    "source": "components/sober-counter.tsx",
+    "line": 90,
+    "persona": "elias"
+  },
+  "sober_counter.message.days_clean": {
+    "value": "${days} days clean.",
+    "source": "components/sober-counter.tsx",
+    "line": 92,
+    "persona": "elias"
+  },
+  "sober_counter.message.days_clean_keep_going": {
+    "value": "${days} days clean. Keep going.",
+    "source": "components/sober-counter.tsx",
+    "line": 94,
+    "persona": "elias"
+  },
+  "sober_counter.message.days_clean_fire": {
+    "value": "${days} days clean. 🔥",
+    "source": "components/sober-counter.tsx",
+    "line": 96,
+    "persona": "elias"
+  },
+  "sober_counter.message.days_clean_heart": {
+    "value": "${days} days clean. 💙",
+    "source": "components/sober-counter.tsx",
+    "line": 98,
+    "persona": "elias"
+  },
+  "sober_counter.modal.title": {
+    "value": "Clean since",
+    "source": "components/sober-counter.tsx",
+    "line": 171,
+    "persona": "elias"
+  },
+  "sober_counter.modal.description": {
+    "value": "Enter the date you started your recovery (YYYY-MM-DD)",
+    "source": "components/sober-counter.tsx",
+    "line": 174,
+    "persona": "elias"
+  },
+  "sober_counter.modal.date_placeholder": {
+    "value": "2024-01-15",
+    "source": "components/sober-counter.tsx",
+    "line": 180,
+    "persona": "elias"
+  },
+  "sober_counter.modal.save": {
+    "value": "Save",
+    "source": "components/sober-counter.tsx",
+    "line": 209,
+    "persona": "elias"
+  },
+  "sober_counter.modal.remove": {
+    "value": "Remove clean date",
+    "source": "components/sober-counter.tsx",
+    "line": 220,
+    "persona": "elias"
+  },
+  "sober_counter.modal.cancel": {
+    "value": "Cancel",
+    "source": "components/sober-counter.tsx",
+    "line": 231,
+    "persona": "elias"
+  },
+  "vsp_section_editor.zone_config.green.label": {
+    "value": "Green — Stable",
+    "source": "components/vsp-section-editor.tsx",
+    "line": 10,
+    "persona": "shared"
+  },
+  "vsp_section_editor.zone_config.green.emoji": {
+    "value": "🟢",
+    "source": "components/vsp-section-editor.tsx",
+    "line": 10,
+    "persona": "shared"
+  },
+  "vsp_section_editor.zone_config.yellow.label": {
+    "value": "Yellow — First signs",
+    "source": "components/vsp-section-editor.tsx",
+    "line": 11,
+    "persona": "shared"
+  },
+  "vsp_section_editor.zone_config.yellow.emoji": {
+    "value": "🟡",
+    "source": "components/vsp-section-editor.tsx",
+    "line": 11,
+    "persona": "shared"
+  },
+  "vsp_section_editor.zone_config.orange.label": {
+    "value": "Orange — Active intervention",
+    "source": "components/vsp-section-editor.tsx",
+    "line": 12,
+    "persona": "shared"
+  },
+  "vsp_section_editor.zone_config.orange.emoji": {
+    "value": "🟠",
+    "source": "components/vsp-section-editor.tsx",
+    "line": 12,
+    "persona": "shared"
+  },
+  "vsp_section_editor.zone_config.red.label": {
+    "value": "Red — Not safe alone",
+    "source": "components/vsp-section-editor.tsx",
+    "line": 13,
+    "persona": "shared"
+  },
+  "vsp_section_editor.zone_config.red.emoji": {
+    "value": "🔴",
+    "source": "components/vsp-section-editor.tsx",
+    "line": 13,
+    "persona": "shared"
+  },
+  "vsp_section_editor.zone_config.purple.label": {
+    "value": "Purple — Crisis/relapse",
+    "source": "components/vsp-section-editor.tsx",
+    "line": 14,
+    "persona": "shared"
+  },
+  "vsp_section_editor.zone_config.purple.emoji": {
+    "value": "🟣",
+    "source": "components/vsp-section-editor.tsx",
+    "line": 14,
+    "persona": "shared"
+  },
+  "vsp_section_editor.field_labels.signals.label": {
+    "value": "How do I recognize myself?",
+    "source": "components/vsp-section-editor.tsx",
+    "line": 18,
+    "persona": "shared"
+  },
+  "vsp_section_editor.field_labels.signals.placeholder": {
+    "value": "Describe your signals, thoughts, and behavior in this zone...",
+    "source": "components/vsp-section-editor.tsx",
+    "line": 18,
+    "persona": "shared"
+  },
+  "vsp_section_editor.field_labels.what_helps.label": {
+    "value": "What helps?",
+    "source": "components/vsp-section-editor.tsx",
+    "line": 19,
+    "persona": "shared"
+  },
+  "vsp_section_editor.field_labels.what_helps.placeholder": {
+    "value": "What actions and strategies help you in this zone...",
+    "source": "components/vsp-section-editor.tsx",
+    "line": 19,
+    "persona": "shared"
+  },
+  "vsp_section_editor.field_labels.anchor_sentence.label": {
+    "value": "My anchor sentence",
+    "source": "components/vsp-section-editor.tsx",
+    "line": 20,
+    "persona": "shared"
+  },
+  "vsp_section_editor.field_labels.anchor_sentence.placeholder": {
+    "value": "One sentence that reminds you of what matters...",
+    "source": "components/vsp-section-editor.tsx",
+    "line": 20,
+    "persona": "shared"
+  },
+  "vsp_section_editor.alert.saved.title": {
+    "value": "Saved",
+    "source": "components/vsp-section-editor.tsx",
+    "line": 87,
+    "persona": "shared"
+  },
+  "vsp_section_editor.alert.saved.zone_updated": {
+    "value": "Your safety plan zone has been updated.",
+    "source": "components/vsp-section-editor.tsx",
+    "line": 87,
+    "persona": "shared"
+  },
+  "vsp_section_editor.alert.saved.title_2": {
+    "value": "Saved",
+    "source": "components/vsp-section-editor.tsx",
+    "line": 110,
+    "persona": "shared"
+  },
+  "vsp_section_editor.alert.saved.triggers_updated": {
+    "value": "Your triggers have been updated.",
+    "source": "components/vsp-section-editor.tsx",
+    "line": 110,
+    "persona": "shared"
+  },
+  "vsp_section_editor.alert.saved.title_3": {
+    "value": "Saved",
+    "source": "components/vsp-section-editor.tsx",
+    "line": 132,
+    "persona": "shared"
+  },
+  "vsp_section_editor.alert.saved.rules_updated": {
+    "value": "Your recovery rules have been updated.",
+    "source": "components/vsp-section-editor.tsx",
+    "line": 132,
+    "persona": "shared"
+  },
+  "vsp_section_editor.header.emoji": {
+    "value": "\\u{1F6E1}",
+    "source": "components/vsp-section-editor.tsx",
+    "line": 157,
+    "persona": "shared"
+  },
+  "vsp_section_editor.header.title": {
+    "value": "My Safety Plan",
+    "source": "components/vsp-section-editor.tsx",
+    "line": 158,
+    "persona": "shared"
+  },
+  "vsp_section_editor.header.description": {
+    "value": "Your personal early-warning plan per zone. This helps your companion use your own words.",
+    "source": "components/vsp-section-editor.tsx",
+    "line": 161,
+    "persona": "shared"
+  },
+  "vsp_section_editor.zone.checkmark": {
+    "value": "\\u2713",
+    "source": "components/vsp-section-editor.tsx",
+    "line": 198,
+    "persona": "shared"
+  },
+  "vsp_section_editor.zone.arrow_up": {
+    "value": "\\u25B2",
+    "source": "components/vsp-section-editor.tsx",
+    "line": 201,
+    "persona": "shared"
+  },
+  "vsp_section_editor.zone.arrow_down": {
+    "value": "\\u25BC",
+    "source": "components/vsp-section-editor.tsx",
+    "line": 201,
+    "persona": "shared"
+  },
+  "vsp_section_editor.zone.cancel": {
+    "value": "Cancel",
+    "source": "components/vsp-section-editor.tsx",
+    "line": 238,
+    "persona": "shared"
+  },
+  "vsp_section_editor.zone.save": {
+    "value": "Save",
+    "source": "components/vsp-section-editor.tsx",
+    "line": 243,
+    "persona": "shared"
+  },
+  "vsp_section_editor.zone.recognition": {
+    "value": "Recognition",
+    "source": "components/vsp-section-editor.tsx",
+    "line": 252,
+    "persona": "shared"
+  },
+  "vsp_section_editor.zone.what_helps": {
+    "value": "What helps",
+    "source": "components/vsp-section-editor.tsx",
+    "line": 258,
+    "persona": "shared"
+  },
+  "vsp_section_editor.zone.anchor_sentence": {
+    "value": "Anchor sentence",
+    "source": "components/vsp-section-editor.tsx",
+    "line": 264,
+    "persona": "shared"
+  },
+  "vsp_section_editor.zone.edit": {
+    "value": "Edit",
+    "source": "components/vsp-section-editor.tsx",
+    "line": 270,
+    "persona": "shared"
+  },
+  "vsp_section_editor.zone.not_filled": {
+    "value": "Not yet filled in for this zone.",
+    "source": "components/vsp-section-editor.tsx",
+    "line": 276,
+    "persona": "shared"
+  },
+  "vsp_section_editor.zone.fill_in": {
+    "value": "Fill in",
+    "source": "components/vsp-section-editor.tsx",
+    "line": 279,
+    "persona": "shared"
+  },
+  "vsp_section_editor.triggers.emoji": {
+    "value": "\\u26A1",
+    "source": "components/vsp-section-editor.tsx",
+    "line": 304,
+    "persona": "shared"
+  },
+  "vsp_section_editor.triggers.title": {
+    "value": "My Core Triggers",
+    "source": "components/vsp-section-editor.tsx",
+    "line": 305,
+    "persona": "shared"
+  },
+  "vsp_section_editor.triggers.arrow_up": {
+    "value": "\\u25B2",
+    "source": "components/vsp-section-editor.tsx",
+    "line": 311,
+    "persona": "shared"
+  },
+  "vsp_section_editor.triggers.arrow_down": {
+    "value": "\\u25BC",
+    "source": "components/vsp-section-editor.tsx",
+    "line": 311,
+    "persona": "shared"
+  },
+  "vsp_section_editor.triggers.counter_thought_prefix": {
+    "value": "Counter-thought: ",
+    "source": "components/vsp-section-editor.tsx",
+    "line": 326,
+    "persona": "shared"
+  },
+  "vsp_section_editor.triggers.remove": {
+    "value": "\\u2715",
+    "source": "components/vsp-section-editor.tsx",
+    "line": 329,
+    "persona": "shared"
+  },
+  "vsp_section_editor.triggers.placeholder.trigger": {
+    "value": "Trigger (e.g. loss of control)",
+    "source": "components/vsp-section-editor.tsx",
+    "line": 337,
+    "persona": "shared"
+  },
+  "vsp_section_editor.triggers.placeholder.counter_thought": {
+    "value": "Counter-thought (e.g. not everything needs solving)",
+    "source": "components/vsp-section-editor.tsx",
+    "line": 344,
+    "persona": "shared"
+  },
+  "vsp_section_editor.triggers.add": {
+    "value": "+ Add",
+    "source": "components/vsp-section-editor.tsx",
+    "line": 351,
+    "persona": "shared"
+  },
+  "vsp_section_editor.triggers.cancel": {
+    "value": "Cancel",
+    "source": "components/vsp-section-editor.tsx",
+    "line": 358,
+    "persona": "shared"
+  },
+  "vsp_section_editor.triggers.save": {
+    "value": "Save",
+    "source": "components/vsp-section-editor.tsx",
+    "line": 363,
+    "persona": "shared"
+  },
+  "vsp_section_editor.triggers.counter_thought_prefix_2": {
+    "value": "Counter-thought: ",
+    "source": "components/vsp-section-editor.tsx",
+    "line": 373,
+    "persona": "shared"
+  },
+  "vsp_section_editor.triggers.edit": {
+    "value": "Edit",
+    "source": "components/vsp-section-editor.tsx",
+    "line": 378,
+    "persona": "shared"
+  },
+  "vsp_section_editor.triggers.no_triggers": {
+    "value": "No triggers added yet.",
+    "source": "components/vsp-section-editor.tsx",
+    "line": 384,
+    "persona": "shared"
+  },
+  "vsp_section_editor.triggers.add_triggers": {
+    "value": "Add triggers",
+    "source": "components/vsp-section-editor.tsx",
+    "line": 388,
+    "persona": "shared"
+  },
+  "vsp_section_editor.rules.emoji": {
+    "value": "\\u{1F4CB}",
+    "source": "components/vsp-section-editor.tsx",
+    "line": 410,
+    "persona": "shared"
+  },
+  "vsp_section_editor.rules.title": {
+    "value": "My Recovery Rules",
+    "source": "components/vsp-section-editor.tsx",
+    "line": 411,
+    "persona": "shared"
+  },
+  "vsp_section_editor.rules.arrow_up": {
+    "value": "\\u25B2",
+    "source": "components/vsp-section-editor.tsx",
+    "line": 417,
+    "persona": "shared"
+  },
+  "vsp_section_editor.rules.arrow_down": {
+    "value": "\\u25BC",
+    "source": "components/vsp-section-editor.tsx",
+    "line": 417,
+    "persona": "shared"
+  },
+  "vsp_section_editor.rules.list_dot": {
+    "value": ". ",
+    "source": "components/vsp-section-editor.tsx",
+    "line": 429,
+    "persona": "shared"
+  },
+  "vsp_section_editor.rules.remove": {
+    "value": "\\u2715",
+    "source": "components/vsp-section-editor.tsx",
+    "line": 431,
+    "persona": "shared"
+  },
+  "vsp_section_editor.rules.placeholder": {
+    "value": "New recovery rule...",
+    "source": "components/vsp-section-editor.tsx",
+    "line": 438,
+    "persona": "shared"
+  },
+  "vsp_section_editor.rules.add": {
+    "value": "+ Add",
+    "source": "components/vsp-section-editor.tsx",
+    "line": 447,
+    "persona": "shared"
+  },
+  "vsp_section_editor.rules.cancel": {
+    "value": "Cancel",
+    "source": "components/vsp-section-editor.tsx",
+    "line": 454,
+    "persona": "shared"
+  },
+  "vsp_section_editor.rules.save": {
+    "value": "Save",
+    "source": "components/vsp-section-editor.tsx",
+    "line": 459,
+    "persona": "shared"
+  },
+  "vsp_section_editor.rules.list_dot_2": {
+    "value": ". ",
+    "source": "components/vsp-section-editor.tsx",
+    "line": 467,
+    "persona": "shared"
+  },
+  "vsp_section_editor.rules.edit": {
+    "value": "Edit",
+    "source": "components/vsp-section-editor.tsx",
+    "line": 471,
+    "persona": "shared"
+  },
+  "vsp_section_editor.rules.no_rules": {
+    "value": "No recovery rules added yet.",
+    "source": "components/vsp-section-editor.tsx",
+    "line": 477,
+    "persona": "shared"
+  },
+  "vsp_section_editor.rules.add_rules": {
+    "value": "Add rules",
+    "source": "components/vsp-section-editor.tsx",
+    "line": 480,
+    "persona": "shared"
+  },
+  "vsp_section_editor.main_anchor.title": {
+    "value": "My most important sentence",
+    "source": "components/vsp-section-editor.tsx",
+    "line": 491,
+    "persona": "shared"
+  },
+  "vsp_section_editor.main_anchor.placeholder": {
+    "value": "The sentence that captures everything...",
+    "source": "components/vsp-section-editor.tsx",
+    "line": 496,
+    "persona": "shared"
+  },
+  "vsp_section_editor.main_anchor.cancel": {
+    "value": "Cancel",
+    "source": "components/vsp-section-editor.tsx",
+    "line": 505,
+    "persona": "shared"
+  },
+  "vsp_section_editor.main_anchor.save": {
+    "value": "Save",
+    "source": "components/vsp-section-editor.tsx",
+    "line": 510,
+    "persona": "shared"
+  },
+  "vsp_section_editor.main_anchor.edit": {
+    "value": "Edit",
+    "source": "components/vsp-section-editor.tsx",
+    "line": 519,
+    "persona": "shared"
+  },
+  "vsp_section_editor.main_anchor.tap_to_enter": {
+    "value": "Tap to enter your most important sentence...",
+    "source": "components/vsp-section-editor.tsx",
+    "line": 524,
+    "persona": "shared"
+  },
+  "vsp_section_editor.last_updated": {
+    "value": "Last updated: ",
+    "source": "components/vsp-section-editor.tsx",
+    "line": 532,
+    "persona": "shared"
+  },
+  "profile.balkmetafoor.label.draaglast": {
+    "value": "Draaglast",
+    "source": "components/profile/BalkmetafoorCard.tsx",
+    "line": 44,
+    "persona": "shared"
+  },
+  "profile.balkmetafoor.label.draagkracht": {
+    "value": "Draagkracht",
+    "source": "components/profile/BalkmetafoorCard.tsx",
+    "line": 47,
+    "persona": "shared"
+  },
+  "profile.balkmetafoor.state.balanced": {
+    "value": "In balans",
+    "source": "components/profile/BalkmetafoorCard.tsx",
+    "line": 53,
+    "persona": "shared"
+  },
+  "profile.balkmetafoor.state.leaning_draaglast": {
+    "value": "Meer draaglast dan draagkracht",
+    "source": "components/profile/BalkmetafoorCard.tsx",
+    "line": 54,
+    "persona": "shared"
+  },
+  "profile.balkmetafoor.state.leaning_draagkracht": {
+    "value": "Meer draagkracht dan draaglast",
+    "source": "components/profile/BalkmetafoorCard.tsx",
+    "line": 55,
+    "persona": "shared"
+  },
+  "profile.balkmetafoor.state.empty": {
+    "value": "Nog niets ingevuld",
+    "source": "components/profile/BalkmetafoorCard.tsx",
+    "line": 56,
+    "persona": "shared"
+  },
+  "profile.balkmetafoor.remove": {
+    "value": "✕",
+    "source": "components/profile/BalkmetafoorCard.tsx",
+    "line": 79,
+    "persona": "shared"
+  },
+  "profile.balkmetafoor.question.draaglast": {
+    "value": "Wat trekt aan je",
+    "source": "components/profile/BalkmetafoorCard.tsx",
+    "line": 89,
+    "persona": "shared"
+  },
+  "profile.balkmetafoor.question.draagkracht": {
+    "value": "Wat houdt je overeind",
+    "source": "components/profile/BalkmetafoorCard.tsx",
+    "line": 89,
+    "persona": "shared"
+  },
+  "profile.balkmetafoor.uninitialized": {
+    "value": "De balkmetafoor wordt geïntroduceerd door Elias wanneer het moment er is.",
+    "source": "components/profile/BalkmetafoorCard.tsx",
+    "line": 131,
+    "persona": "shared"
+  },
+  "profile.balkmetafoor.title": {
+    "value": "Jouw balans",
+    "source": "components/profile/BalkmetafoorCard.tsx",
+    "line": 140,
+    "persona": "shared"
+  },
+  "profile.balkmetafoor.subtitle": {
+    "value": "Geen score — gewoon een beeld van wat er speelt",
+    "source": "components/profile/BalkmetafoorCard.tsx",
+    "line": 143,
+    "persona": "shared"
+  },
+  "profile.balkmetafoor.placeholder.add": {
+    "value": "Voeg toe...",
+    "source": "components/profile/BalkmetafoorCard.tsx",
+    "line": 179,
+    "persona": "shared"
+  },
+  "home_button.icon": {
+    "value": "←",
+    "source": "components/home-button.tsx",
+    "line": 28,
+    "persona": "shared"
+  },
+  "home_button.label": {
+    "value": "Home",
+    "source": "components/home-button.tsx",
+    "line": 29,
+    "persona": "shared"
+  },
+  "chat_error_boundary.no_stack": {
+    "value": "No stack",
+    "source": "components/chat-error-boundary.tsx",
+    "line": 47,
+    "persona": "shared"
+  },
+  "chat_error_boundary.title": {
+    "value": "⚠️ Chat Crash",
+    "source": "components/chat-error-boundary.tsx",
+    "line": 50,
+    "persona": "shared"
+  },
+  "chat_error_boundary.message": {
+    "value": "Er is een fout opgetreden. Je data is veilig.",
+    "source": "components/chat-error-boundary.tsx",
+    "line": 52,
+    "persona": "shared"
+  },
+  "chat_error_boundary.crash_title_prefix": {
+    "value": "Error: ",
+    "source": "components/chat-error-boundary.tsx",
+    "line": 56,
+    "persona": "shared"
+  },
+  "chat_error_boundary.screenshot_hint": {
+    "value": "📸 Screenshot dit scherm en stuur het naar de developer",
+    "source": "components/chat-error-boundary.tsx",
+    "line": 62,
+    "persona": "shared"
+  },
+  "chat_error_boundary.restart_button": {
+    "value": "Herstart sessie",
+    "source": "components/chat-error-boundary.tsx",
+    "line": 71,
+    "persona": "shared"
+  },
+  "theme_lab.action.none_yet": {
+    "value": "None yet",
+    "source": "app/dev/theme-lab.tsx",
+    "line": 29,
+    "persona": "shared"
+  },
+  "theme_lab.action.applied_scheme": {
+    "value": "Applied ${scheme} globally",
+    "source": "app/dev/theme-lab.tsx",
+    "line": 80,
+    "persona": "shared"
+  },
+  "theme_lab.scheme_toggle.light": {
+    "value": "Light preview",
+    "source": "app/dev/theme-lab.tsx",
+    "line": 94,
+    "persona": "shared"
+  },
+  "theme_lab.scheme_toggle.dark": {
+    "value": "Dark preview",
+    "source": "app/dev/theme-lab.tsx",
+    "line": 94,
+    "persona": "shared"
+  },
+  "theme_lab.scheme_toggle.subtitle": {
+    "value": "Global theme (NativeWind + useColors)",
+    "source": "app/dev/theme-lab.tsx",
+    "line": 107,
+    "persona": "shared"
+  },
+  "theme_lab.tailwind_tokens.title": {
+    "value": "Tailwind tokens",
+    "source": "app/dev/theme-lab.tsx",
+    "line": 115,
+    "persona": "shared"
+  },
+  "theme_lab.tailwind_tokens.subtitle": {
+    "value": "Buttons and badges driven by global {colorScheme} palette",
+    "source": "app/dev/theme-lab.tsx",
+    "line": 118,
+    "persona": "shared"
+  },
+  "theme_lab.action.pressed_primary": {
+    "value": "Pressed Primary token",
+    "source": "app/dev/theme-lab.tsx",
+    "line": 127,
+    "persona": "shared"
+  },
+  "theme_lab.tokens.primary": {
+    "value": "Primary",
+    "source": "app/dev/theme-lab.tsx",
+    "line": 130,
+    "persona": "shared"
+  },
+  "theme_lab.action.pressed_surface": {
+    "value": "Pressed Surface token",
+    "source": "app/dev/theme-lab.tsx",
+    "line": 137,
+    "persona": "shared"
+  },
+  "theme_lab.tokens.surface": {
+    "value": "Surface",
+    "source": "app/dev/theme-lab.tsx",
+    "line": 141,
+    "persona": "shared"
+  },
+  "theme_lab.action.pressed_success": {
+    "value": "Pressed Success token",
+    "source": "app/dev/theme-lab.tsx",
+    "line": 149,
+    "persona": "shared"
+  },
+  "theme_lab.tokens.success": {
+    "value": "Success",
+    "source": "app/dev/theme-lab.tsx",
+    "line": 153,
+    "persona": "shared"
+  },
+  "theme_lab.action.pressed_warning": {
+    "value": "Pressed Warning token",
+    "source": "app/dev/theme-lab.tsx",
+    "line": 161,
+    "persona": "shared"
+  },
+  "theme_lab.tokens.warning": {
+    "value": "Warning",
+    "source": "app/dev/theme-lab.tsx",
+    "line": 164,
+    "persona": "shared"
+  },
+  "theme_lab.action.pressed_error": {
+    "value": "Pressed Error token",
+    "source": "app/dev/theme-lab.tsx",
+    "line": 173,
+    "persona": "shared"
+  },
+  "theme_lab.tokens.error": {
+    "value": "Error",
+    "source": "app/dev/theme-lab.tsx",
+    "line": 177,
+    "persona": "shared"
+  },
+  "theme_lab.use_colors.title": {
+    "value": "useColors()",
+    "source": "app/dev/theme-lab.tsx",
+    "line": 184,
+    "persona": "shared"
+  },
+  "theme_lab.use_colors.values": {
+    "value": "Background: {colors.background} • Text: {colors.text} • Tint: {colors.tint}",
+    "source": "app/dev/theme-lab.tsx",
+    "line": 187,
+    "persona": "shared"
+  },
+  "theme_lab.use_colors.note": {
+    "value": "(Pressable uses style; Tailwind on Pressable is disabled via remap)",
+    "source": "app/dev/theme-lab.tsx",
+    "line": 190,
+    "persona": "shared"
+  },
+  "theme_lab.use_colors.press_count": {
+    "value": "Press count: {pressCount}",
+    "source": "app/dev/theme-lab.tsx",
+    "line": 196,
+    "persona": "shared"
+  },
+  "theme_lab.use_colors.last_action": {
+    "value": "Last action: {lastAction}",
+    "source": "app/dev/theme-lab.tsx",
+    "line": 200,
+    "persona": "shared"
+  },
+  "theme_lab.palette_values.title": {
+    "value": "Palette values",
+    "source": "app/dev/theme-lab.tsx",
+    "line": 208,
+    "persona": "shared"
+  },
+  "theme_lab.palette_values.subtitle": {
+    "value": "Live values for the selected scheme",
+    "source": "app/dev/theme-lab.tsx",
+    "line": 211,
+    "persona": "shared"
+  }
+}
