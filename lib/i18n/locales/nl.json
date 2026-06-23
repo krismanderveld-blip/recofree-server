@@ -505,5 +505,12 @@
   "home.clinical_modal.body_disable": "Klinische annotaties worden verborgen en standaardbeperkingen worden hersteld.",
   "home.clinical_modal.body_enable": "Deze modus is alleen bedoeld voor klinische demonstratie. Elias en Kim geven therapeutische annotaties en werken zonder standaardbeperkingen.",
   "home.clinical_modal.confirm_disable": "Uitschakelen",
-  "home.clinical_modal.confirm_enable": "Inschakelen"
+  "home.clinical_modal.confirm_enable": "Inschakelen",
+  "chat.migration.title": "Migratie",
+  "intake.lang.title": "Kies je taal",
+  "intake.lang.subtitle": "Je kunt dit later wijzigen in instellingen",
+  "intake.lang.option.nl": "Nederlands",
+  "intake.lang.option.en": "English",
+  "intake.lang.option.fr": "Français",
+  "intake.lang.button.continue": "Doorgaan"
 }

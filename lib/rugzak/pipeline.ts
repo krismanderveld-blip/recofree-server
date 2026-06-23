@@ -504,7 +504,7 @@ export async function processMessage(
   userMessage: string,
   provider: AIProvider,
   userDat?: UserDat,
-  options?: { isSessionStart?: boolean; diaryEntries?: import('../ai/types').DiaryEntry[]; logsSessions?: import('../types/memory/logsDat.types').SessionLogSummary[] }
+  options?: { isSessionStart?: boolean; diaryEntries?: import('../ai/types').DiaryEntry[]; logsSessions?: import('../types/memory/logsDat.types').SessionLogSummary[]; locale?: 'nl' | 'en' | 'fr' }
 ): Promise<PipelineResult> {
   // Resolve the two stores
   let backpack: Backpack;
@@ -2630,6 +2630,8 @@ export async function processMessage(
     })(),
     // PAST_REFERENCE: inject context from logs.dat/user.dat when user references past events
     pastReferenceContext,
+    // User-selected app language (from i18n provider)
+    locale: options?.locale,
   };
 
   let response: string;

@@ -269,6 +269,8 @@ interface ChatRequestInput {
   selfAcceptanceContext?: string | null;
   /** Kim pattern support continuity context (PAAL-K01/BEHE-K01/AANP-K01/CODEP-K01, Kim only) */
   kimPatternSupportContext?: string | null;
+  /** User-selected app language. Determines AI response language. */
+  locale?: 'nl' | 'en' | 'fr';
 }
 
 // ─── Server-side Session Cache ───────────────────────────────────
@@ -699,6 +701,8 @@ export const chatInputSchema = z.object({
     modes: z.array(z.object({ name: z.string(), confidence: z.number() })),
     triggers: z.array(z.string()),
   }).nullable().optional(),
+  /** User-selected app language. Determines AI response language. */
+  locale: z.enum(['nl', 'en', 'fr']).optional(),
 });
 
 // ─── Structured Memory Block Builder (from extractedEntities) ──────────────
@@ -1159,6 +1163,15 @@ ${parts.join("\n")}
 export function buildSystemPrompt(input: ChatRequestInput): string {
   const isElias = input.userType === "elias";
   const name = input.userName;
+
+  // ── Language instruction based on user-selected locale ──
+  const LOCALE_LANGUAGE_MAP: Record<string, string> = {
+    nl: 'Dutch (Nederlands)',
+    en: 'English',
+    fr: 'French (Français)',
+  };
+  const selectedLanguage = LOCALE_LANGUAGE_MAP[input.locale ?? 'nl'] ?? 'Dutch (Nederlands)';
+  const languageInstruction = `- LANGUAGE RULE (ABSOLUTE): You MUST respond in ${selectedLanguage}. ALL your output — therapeutic content, questions, reflections, module explanations — MUST be in ${selectedLanguage}. This overrides any other language detection. The ONLY exception is the <clinical> tag which stays in English for the clinician interface.`;
 
   // ── Dynamic Module List (from backend catalogs) ──
   const eliasModules = ELIAS_THERAPEUTIC_MODULES.map(m => `- ${m.id}: ${m.name} — ${m.description}`).join('\n');
@@ -1832,7 +1845,7 @@ ${input.backpackEmpty ? `- You do NOT yet know ${name}'s story. Their backpack i
 - ANKERZIN-REGEL (ABSOLUUT): Als er een ankerzin in het VSP staat EN de gebruiker is overweldigd, in paniek, of zegt "ik weet niet meer wat ik moet doen" / "ik kan niet meer" / "het is te veel" → CITEER de ankerzin LETTERLIJK in je antwoord. Verweef het natuurlijk, bv: "Weet je nog wat je zelf hebt opgeschreven? '[ankerzin]'. Dat geldt nu ook."
 - DAGBOEK-REGEL (ABSOLUUT): Als er dagboek-entries hierboven staan EN het huidige gespreksthema overlapt met een dagboek-entry (bv. werk/baas, relatie, slaap, geld) → VERWIJS expliciet naar die specifieke entry. Gebruik het ⏰ tijdslabel uit de entry: zeg "vandaag" alleen als het label "vandaag" bevat, zeg "gisteren" als het label "gisteren" bevat. NOOIT "vandaag" zeggen voor een entry van gisteren of ouder. Bv: "Je schreef gisteren dat [concrete inhoud uit dagboek]. Herken je dat nu ook?" Nooit generiek verwijzen ("je dagboek") — altijd de INHOUD citeren.
 - STEUNPERSOON-REGEL (ABSOLUUT): Als er een steunpersoon staat in het VSP "wat helpt" (bv. "bellen met Melissa", "contact met Henk") EN de gebruiker emotioneel beladen taal gebruikt → NOEM die steunpersoon bij NAAM als concrete optie. Bv: "Heb je al overwogen om Melissa te bellen? Zij staat in je plan als iemand die helpt."
-- Respond in the same language the user writes in
+${languageInstruction}
 - Keep responses concise: follow the PACING instruction strictly
 - Never diagnose, never prescribe, never claim to be a professional
 - Never break character
@@ -2303,7 +2316,7 @@ ${input.extractedEntities && input.extractedEntities.persons && input.extractedE
   * If NO recent data exists (all entries older than 2 days), use the most recent available entry as gentle context but do NOT present it as "vandaag".
   * NEVER treat old data as current. Always be time-aware. The ⏰ label is your source of truth for recency.
 - Do NOT reference what was discussed in previous sessions unless the session memory above explicitly mentions it AND it is therapeutically relevant.`}
-- Respond in the same language the user writes in
+${languageInstruction}
 - Keep responses concise: follow the PACING instruction strictly
 - Never diagnose, never prescribe, never claim to be a professional
 - Never break character

@@ -1824,4 +1824,21 @@
 - [x] Keep "I have a backup — import my data" option on intake screen unchanged
 - [x] Persona separation maintained (Elias/Kim strings separate in mapping)
 - [x] Exclude dev/debug files from UI string replacement
-- [ ] Handle ~425 UNMATCHED strings (complex expressions, template literals with JS) — Phase A.2
+- [x] Handle ~425 UNMATCHED strings — analyzed: all are internal engine strings, not user-facing. Only 6 Migration alerts replaced.
+
+## Phase B — Language selection screen in intake flow
+- [x] Added language selection as step 0 in intake flow (before addiction/loved-one choice)
+- [x] Three language options: Nederlands, English, Français with flag indicators
+- [x] Selection persists via I18nProvider (AsyncStorage)
+- [x] "I have a backup" option preserved on step 1 unchanged
+
+## Phase C — AI output language via system prompt locale parameter
+- [x] Added locale field to ChatContext interface (lib/ai/types.ts)
+- [x] Added locale field to ChatRequestInput interface (server/ai-chat.ts)
+- [x] Added locale to chatInputSchema (zod validation)
+- [x] Added LANGUAGE RULE (ABSOLUTE) to buildSystemPrompt based on locale
+- [x] Threaded locale through pipeline processMessage options
+- [x] Threaded locale through OpenAI provider (SESSION_INIT + LIVE_MESSAGE payloads)
+- [x] Updated sessionInitGreetingStep to prefer locale over content detection
+- [x] Fixed greeting fallback to use locale-based language selection (NL/EN/FR)
+- [x] Added locale/setLocale aliases to I18nContextValue for pipeline compatibility

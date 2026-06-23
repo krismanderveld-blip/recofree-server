@@ -135,7 +135,7 @@ function ChatScreenInner() {
   const [showScrollButton, setShowScrollButton] = useState(false);
 
   const userName = getUserName();
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const companionName = state.userType === 'elias' ? 'Elias' : 'Kim';
 
   // ── Initialize GptSignalEngine once at mount ──────────────────────────
@@ -447,26 +447,26 @@ function ChatScreenInner() {
       const persona = (state.userType === 'elias' ? 'elias' : 'kim') as 'elias' | 'kim';
       const udJson = await readEncrypted(USERDAT_KEY);
       if (!udJson) {
-        Alert.alert('Migration', t('chat.migration.no_userdat'));
+        Alert.alert(t('chat.migration.title'), t('chat.migration.no_userdat'));
         return;
       }
       const ud = JSON.parse(udJson);
       const sessionAnalyses = ud.sessionAnalyses || [];
       if (sessionAnalyses.length === 0) {
-        Alert.alert('Migration', t('chat.migration.no_analyses'));
+        Alert.alert(t('chat.migration.title'), t('chat.migration.no_analyses'));
         return;
       }
       const result = await migrateSessionAnalysesToLogsDat(persona, sessionAnalyses);
       if (result.alreadyDone) {
-        Alert.alert('Migration', t('chat.migration.already_done'));
+        Alert.alert(t('chat.migration.title'), t('chat.migration.already_done'));
       } else if (result.error) {
-        Alert.alert('Migration', t('chat.migration.failed_retry'));
+        Alert.alert(t('chat.migration.title'), t('chat.migration.failed_retry'));
       } else {
-        Alert.alert('Migration', t('chat.migration.success'));
+        Alert.alert(t('chat.migration.title'), t('chat.migration.success'));
       }
     } catch (err) {
       console.error('[Migration] Unexpected error:', err);
-      Alert.alert('Migration', t('chat.migration.failed_unexpected'));
+      Alert.alert(t('chat.migration.title'), t('chat.migration.failed_unexpected'));
     }
   };
 
@@ -754,6 +754,7 @@ function ChatScreenInner() {
             allSessions,
             vspInsightContext: vspInsightCtx,
             previousSessionMessages: prevMsgsForGreeting,
+            locale: locale as 'nl' | 'en' | 'fr',
           });
           greetingText = greetingResult.greeting;
           console.log(greetingResult.debugLog);
@@ -878,7 +879,7 @@ function ChatScreenInner() {
       }
       const provider = getAIProvider();
       // FOLLOW-UP MESSAGE: isSessionStart = false, no diary entries
-      const result = await processMessage(backpack, processedText, provider, currentUserDat, { isSessionStart: false, diaryEntries: [], logsSessions: logsDatSessionsRef.current });
+      const result = await processMessage(backpack, processedText, provider, currentUserDat, { isSessionStart: false, diaryEntries: [], logsSessions: logsDatSessionsRef.current, locale: locale as 'nl' | 'en' | 'fr' });
       // DEFENSIVE GUARD: if processMessage returns null/undefined (should never happen,
       // but observed 'undefined is not a function' crash on device — root cause unconfirmed,
       // likely Metro bundler module resolution issue or stale closure. This guardrail

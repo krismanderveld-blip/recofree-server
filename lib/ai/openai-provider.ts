@@ -558,6 +558,9 @@ export class OpenAIProvider implements AIProvider {
           backpack: gptPayload.backpack,
           userDat: gptPayload.userDat,
           diaryEntries: gptPayload.diaryEntries,
+
+          // User-selected app language (from i18n provider)
+          locale: context.locale ?? null,
         };
 
         // Cache the static fields locally so we don't resend them
@@ -713,6 +716,9 @@ export class OpenAIProvider implements AIProvider {
 
           // Known user patterns (compact, every turn) — in clinical mode, show ALL candidates
           knownUserPatterns: buildKnownUserPatterns(context.userDat, context.userDat?.clinicalModeActive ?? false),
+
+          // User-selected app language (from i18n provider)
+          locale: context.locale ?? null,
 
           // NO backpack, NO userDat, NO diaryEntries, NO coreWound,
           // NO contextLine, NO relationshipAnchor, NO relationalPattern

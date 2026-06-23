@@ -505,5 +505,12 @@
   "home.clinical_modal.body_disable": "Les annotations cliniques seront masquées et les restrictions standard seront rétablies.",
   "home.clinical_modal.body_enable": "Ce mode est destiné uniquement à la démonstration clinique. Elias et Kim fourniront des annotations thérapeutiques et fonctionneront sans restrictions standard.",
   "home.clinical_modal.confirm_disable": "Désactiver",
-  "home.clinical_modal.confirm_enable": "Activer"
+  "home.clinical_modal.confirm_enable": "Activer",
+  "chat.migration.title": "Migration",
+  "intake.lang.title": "Choisissez votre langue",
+  "intake.lang.subtitle": "Vous pouvez modifier cela plus tard dans les paramètres",
+  "intake.lang.option.nl": "Nederlands",
+  "intake.lang.option.en": "English",
+  "intake.lang.option.fr": "Français",
+  "intake.lang.button.continue": "Continuer"
 }

@@ -505,5 +505,12 @@
   "home.clinical_modal.body_disable": "Clinical annotations will be hidden and standard restrictions will be restored.",
   "home.clinical_modal.body_enable": "This mode is intended for clinical demonstration only. Elias and Kim will provide therapeutic annotations and operate without standard restrictions.",
   "home.clinical_modal.confirm_disable": "Disable",
-  "home.clinical_modal.confirm_enable": "Enable"
+  "home.clinical_modal.confirm_enable": "Enable",
+  "chat.migration.title": "Migration",
+  "intake.lang.title": "Choose your language",
+  "intake.lang.subtitle": "You can change this later in settings",
+  "intake.lang.option.nl": "Nederlands",
+  "intake.lang.option.en": "English",
+  "intake.lang.option.fr": "Français",
+  "intake.lang.button.continue": "Continue"
 }

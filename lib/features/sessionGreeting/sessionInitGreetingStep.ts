@@ -50,6 +50,8 @@ export interface SessionInitGreetingInput {
   vspInsightContext?: string | null;
   /** Raw previous session messages (from chatHistory) — fallback when logs.dat is empty */
   previousSessionMessages?: Array<{ role: string; content: string; timestamp?: string }>;
+  /** User-selected app language (from i18n provider). Overrides content-based detection. */
+  locale?: 'nl' | 'en' | 'fr';
 }
 
 export interface SessionInitGreetingOutput {
@@ -96,10 +98,18 @@ export async function sessionInitGreetingStep(
   // Run V3 engine (deterministic)
   const engineResult: SessionGreetingV3EngineResult = sessionGreetingEngineV3(engineInput);
 
-  // Detect user language from their content (backpack, diary, gratitude, VSP)
-  const langResult = detectUserLanguageFromContent(backpack, diaryEntries);
-  const langInstruction = getGreetingLanguageInstruction(langResult);
-  console.log(`[SessionGreetingV3] Detected language: ${langResult.language} (hasContent=${langResult.hasContent}, confidence=${langResult.confidence})`);
+  // Determine greeting language: prefer user-selected locale, fallback to content detection
+  const userLocale = input.locale;
+  let langInstruction: string;
+  if (userLocale) {
+    const LOCALE_LANG_NAMES: Record<string, string> = { nl: 'Dutch (Nederlands)', en: 'English', fr: 'French (Français)' };
+    langInstruction = `You MUST respond in ${LOCALE_LANG_NAMES[userLocale] ?? 'Dutch (Nederlands)'}. This is the user's chosen app language.`;
+    console.log(`[SessionGreetingV3] Using user-selected locale: ${userLocale}`);
+  } else {
+    const langResult = detectUserLanguageFromContent(backpack, diaryEntries);
+    langInstruction = getGreetingLanguageInstruction(langResult);
+    console.log(`[SessionGreetingV3] Detected language: ${langResult.language} (hasContent=${langResult.hasContent}, confidence=${langResult.confidence})`);
+  }
 
   // Build the GPT prompt based on mode
   const userName = greetingUserDat?.userName ?? 'there';
@@ -123,10 +133,15 @@ export async function sessionInitGreetingStep(
     rawGreeting = await callSessionGreetingEndpoint(apiBaseUrl, systemPrompt, userName, clinicalModeActive, vspInsightContext);
   } catch (error) {
     console.warn('[SessionGreetingV3] GPT call failed, using fallback:', error);
-    // Fallback in detected language or English
-    rawGreeting = langResult.hasContent && langResult.language === 'nl'
-      ? `${userName}, fijn dat je er bent. Waar wil je het vandaag over hebben?`
-      : `${userName}, good to see you. What would you like to talk about today?`;
+    // Fallback based on locale or detected language
+    const fallbackLang = userLocale ?? 'nl';
+    if (fallbackLang === 'fr') {
+      rawGreeting = `${userName}, content de te voir. De quoi aimerais-tu parler aujourd'hui?`;
+    } else if (fallbackLang === 'en') {
+      rawGreeting = `${userName}, good to see you. What would you like to talk about today?`;
+    } else {
+      rawGreeting = `${userName}, fijn dat je er bent. Waar wil je het vandaag over hebben?`;
+    }
   }
 
   // Apply output safety filter

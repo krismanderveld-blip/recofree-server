@@ -24,8 +24,11 @@ const COUNTRY_STORAGE_KEY = '@recofree_country';
 // ─── Context ────────────────────────────────────────────────────
 interface I18nContextValue {
   language: SupportedLanguage;
+  /** Alias for language — used by pipeline/server to pass locale */
+  locale: SupportedLanguage;
   country: SupportedCountry | null;
   setLanguage: (lang: SupportedLanguage) => void;
+  setLocale: (lang: SupportedLanguage) => void;
   setCountry: (country: SupportedCountry) => void;
   t: (key: string, params?: Record<string, string | number>) => string;
   isReady: boolean;
@@ -99,7 +102,7 @@ export function I18nProvider({ children }: I18nProviderProps) {
   );
 
   return (
-    <I18nContext.Provider value={{ language, country, setLanguage, setCountry, t, isReady }}>
+    <I18nContext.Provider value={{ language, locale: language, country, setLanguage, setLocale: setLanguage, setCountry, t, isReady }}>
       {children}
     </I18nContext.Provider>
   );

@@ -30,7 +30,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useTranslation, tStatic } from '@/lib/i18n';
 
-type IntakeStep = 1 | 2 | 3;
+type IntakeStep = 0 | 1 | 2 | 3;
 
 const URGENCY_LEVELS: { label: string; value: UrgencyLevel; description: string }[] = [
   { label: tStatic('intake.urgency.low.label'), value: 'laag', description: tStatic('intake.urgency.low.description') },
@@ -69,7 +69,7 @@ export default function IntakeScreen() {
   const router = useRouter();
   const { completeIntake, reloadFromStorage } = useUser();
 
-  const [step, setStep] = useState<IntakeStep>(1);
+  const [step, setStep] = useState<IntakeStep>(0);
   const [name, setName] = useState('');
   const [selectedType, setSelectedType] = useState<UserType | null>(null);
   const [stageOfChange, setStageOfChange] = useState<StageOfChange | null>(null);
@@ -143,7 +143,7 @@ export default function IntakeScreen() {
   };
 
   const handleBack = () => {
-    if (step > 1) {
+    if (step > 0) {
       animateTransition('backward', () => setStep((step - 1) as IntakeStep));
     }
   };
@@ -170,7 +170,7 @@ export default function IntakeScreen() {
   // Name prompt after import when backpack has no name
   const [importNamePrompt, setImportNamePrompt] = useState(false);
   const [importName, setImportName] = useState('');
-  const { t } = useTranslation();
+  const { t, language, setLanguage } = useTranslation();
 
   const handleImportExecute = useCallback(async () => {
     if (!importFile || !importPassword) return;
@@ -309,14 +309,64 @@ export default function IntakeScreen() {
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.container}>
-            {/* Progress Indicator */}
-            <View style={styles.progressRow}>
-              {[1, 2, 3].map((s) => (
-                <View key={s} style={styles.progressBarTrack}>
-                  <AnimatedProgressBar active={s <= step} />
+            {/* Progress Indicator — hidden on language step */}
+            {step > 0 && (
+              <View style={styles.progressRow}>
+                {[1, 2, 3].map((s) => (
+                  <View key={s} style={styles.progressBarTrack}>
+                    <AnimatedProgressBar active={s <= step} />
+                  </View>
+                ))}
+              </View>
+            )}
+
+            {/* Step 0: Language Selection */}
+            {step === 0 && (
+              <Animated.View style={[styles.flex1, animatedStepStyle]}>
+                <View style={styles.heroSection}>
+                  <Text style={styles.heroEmoji}>🌍</Text>
+                  <Text style={styles.heroTitle}>{t('intake.lang.title')}</Text>
+                  <Text style={styles.heroSubtitle}>{t('intake.lang.subtitle')}</Text>
                 </View>
-              ))}
-            </View>
+
+                <View style={styles.optionsGroup}>
+                  {(['nl', 'en', 'fr'] as const).map((lang) => (
+                    <Pressable
+                      key={lang}
+                      onPress={() => setLanguage(lang)}
+                      style={({ pressed }) => [
+                        { opacity: pressed ? 0.85 : 1, transform: [{ scale: pressed ? 0.98 : 1 }] },
+                      ]}
+                    >
+                      <View
+                        style={[
+                          styles.optionCard,
+                          language === lang && styles.optionCardSelectedElias,
+                        ]}
+                      >
+                        <Text style={styles.optionTitle}>
+                          {lang === 'nl' ? '🇳🇱' : lang === 'en' ? '🇬🇧' : '🇫🇷'}{' '}
+                          {t(`intake.lang.option.${lang}`)}
+                        </Text>
+                      </View>
+                    </Pressable>
+                  ))}
+                </View>
+
+                <View style={styles.bottomActions}>
+                  <Pressable
+                    onPress={handleNext}
+                    style={({ pressed }) => [
+                      styles.primaryButton,
+                      { opacity: pressed ? 0.85 : 1 },
+                      pressed && { transform: [{ scale: 0.97 }] },
+                    ]}
+                  >
+                    <Text style={styles.primaryButtonText}>{t('intake.lang.button.continue')}</Text>
+                  </Pressable>
+                </View>
+              </Animated.View>
+            )}
 
             {/* Step 1: Name + User Type */}
             {step === 1 && (

@@ -1212,6 +1212,8 @@ export interface ChatContext {
   };
   /** PAST_REFERENCE: context from logs.dat/user.dat when user references something from the past */
   pastReferenceContext?: string;
+  /** User-selected app language (from i18n provider). Determines AI response language. */
+  locale?: 'nl' | 'en' | 'fr';
 }
 
 /**
