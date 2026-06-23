@@ -19,7 +19,7 @@ import type { EdgeInsets, Metrics, Rect } from "react-native-safe-area-context";
 import { trpc, createTRPCClient } from "@/lib/trpc";
 import { initManusRuntime, subscribeSafeAreaInsets } from "@/lib/_core/manus-runtime";
 import { UserProvider } from "@/lib/user-context";
-import { I18nProvider, tStatic, useTranslation } from "@/lib/i18n";
+import { I18nProvider, tStatic } from "@/lib/i18n";
 import { migrateAllToEncrypted } from "@/lib/crypto/storage-encryption";
 
 import type { ReactNode } from "react";
@@ -125,7 +125,6 @@ export default function RootLayout() {
       }),
   );
   const [trpcClient] = useState(() => createTRPCClient());
-  const { t } = useTranslation();
 
   // Ensure minimum padding for top and bottom on mobile
   const providerInitialMetrics = useMemo(() => {
