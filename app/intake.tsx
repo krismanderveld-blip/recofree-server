@@ -147,6 +147,13 @@ export default function IntakeScreen() {
     }
   };
 
+  // Track whether import succeeded so the diag overlay can show "Continue" button
+  const [importNavReady, setImportNavReady] = useState(false);
+  // Name prompt after import when backpack has no name
+  const [importNamePrompt, setImportNamePrompt] = useState(false);
+  const [importName, setImportName] = useState('');
+  const { t, language, setLanguage, setCountry } = useTranslation();
+
   // ── Import from backup ──
   const handleImportPickFile = useCallback(async () => {
     try {
@@ -163,13 +170,6 @@ export default function IntakeScreen() {
       setImportError(t('intake.import.error.file_picker'));
     }
   }, [t]);
-
-  // Track whether import succeeded so the diag overlay can show "Continue" button
-  const [importNavReady, setImportNavReady] = useState(false);
-  // Name prompt after import when backpack has no name
-  const [importNamePrompt, setImportNamePrompt] = useState(false);
-  const [importName, setImportName] = useState('');
-  const { t, language, setLanguage, setCountry } = useTranslation();
 
   const urgencyLevels = useMemo(() => [
     { label: t('intake.urgency.low.label'), value: 'laag' as UrgencyLevel, description: t('intake.urgency.low.description') },
