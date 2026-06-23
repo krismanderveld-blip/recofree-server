@@ -4,7 +4,7 @@ import { useRouter, Href } from 'expo-router';
 import { ScreenContainer } from '@/components/screen-container';
 import { useUser } from '@/lib/user-context';
 import { colors as dc, radius, shadows, spacing, typography } from '@/constants/design';
-import { useTranslation, tStatic } from '@/lib/i18n';
+import { useTranslation } from '@/lib/i18n';
 
 /**
  * GDPR Consent Screen
@@ -37,33 +37,33 @@ export default function GdprConsentScreen() {
             <Text style={styles.headerEmoji}>{t('gdpr_consent.header.emoji')}</Text>
             <Text style={styles.title}>{t('gdpr_consent.header.title')}</Text>
             <Text style={styles.subtitle}>
-              Your privacy is our priority
+              {t('gdpr_consent.header.subtitle')}
             </Text>
           </View>
 
           {/* Content Card */}
           <View style={styles.card}>
             <Text style={styles.body}>
-              RecoFree uses AI technology (OpenAI) to process conversations.
+              {t('gdpr_consent.card.body1')}
             </Text>
 
             <View style={styles.bulletList}>
-              {PRIVACY_POINTS.map((point, idx) => (
+              {[0, 1, 2, 3, 4, 5, 6].map((idx) => (
                 <View key={idx} style={styles.bulletRow}>
                   <View style={styles.bulletDot} />
-                  <Text style={styles.bulletText}>{point}</Text>
+                  <Text style={styles.bulletText}>{t(`gdpr_consent.privacy_points.${idx}`)}</Text>
                 </View>
               ))}
             </View>
 
             <Text style={[styles.body, { marginTop: 16 }]}>
-              Your personal data stays on your device. RecoFree does not store personal data on external servers.
+              {t('gdpr_consent.card.body2')}
             </Text>
           </View>
 
           {/* Contact info */}
           <Text style={styles.contact}>
-            Questions? privacy@recofree.app
+            {t('gdpr_consent.contact_text')}
           </Text>
 
           {/* Accept Button */}
@@ -82,15 +82,7 @@ export default function GdprConsentScreen() {
   );
 }
 
-const PRIVACY_POINTS = [
-  tStatic('gdpr_consent.privacy_points.0'),
-  tStatic('gdpr_consent.privacy_points.1'),
-  tStatic('gdpr_consent.privacy_points.2'),
-  tStatic('gdpr_consent.privacy_points.3'),
-  tStatic('gdpr_consent.privacy_points.4'),
-  tStatic('gdpr_consent.privacy_points.5'),
-  tStatic('gdpr_consent.privacy_points.6'),
-];
+// Privacy points are now rendered reactively with t() inside the component
 
 const styles = StyleSheet.create({
   scrollContent: {

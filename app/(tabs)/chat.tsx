@@ -1683,23 +1683,11 @@ function ChatScreenInner() {
         <View style={{ flex: 1, justifyContent: 'center', padding: 24, backgroundColor: 'rgba(0,0,0,0.5)' }}>
           <View style={{ backgroundColor: colors.surface, borderRadius: 16, padding: 24, maxHeight: '80%' }}>
             <Text style={{ fontWeight: 'bold', fontSize: 18, marginBottom: 16, color: colors.foreground }}>
-              Before we begin
+              {t('chat.modal.title')}
             </Text>
             <RNScrollView style={{ maxHeight: 300 }}>
               <Text style={{ color: colors.foreground, lineHeight: 22 }}>
-                {companionName} is an AI companion, not a therapist or doctor.
-                {'\n\n'}
-                {'•'} RecoFree does not replace professional mental health care.
-                {'\n'}
-                {'•'} RecoFree never provides diagnoses or medical advice.
-                {'\n'}
-                {'•'} RecoFree is not a replacement for a psychologist or psychiatrist.
-                {'\n'}
-                {'•'} Sometimes professional help is the better choice — and that is okay.
-                {'\n'}
-                {'•'} In case of crisis, always contact a professional or call 1813.
-                {'\n'}
-                {'•'} Your conversations are private and stay on your device.
+                {t('chat.modal.body', { companionName })}
               </Text>
             </RNScrollView>
             <TouchableOpacity
@@ -1707,7 +1695,7 @@ function ChatScreenInner() {
               style={{ marginTop: 24, backgroundColor: colors.primary, borderRadius: 12, paddingVertical: 14, alignItems: 'center' }}
             >
               <Text style={{ color: '#FFFFFF', fontWeight: 'bold', fontSize: 16 }}>
-                I understand
+                {t('chat.modal.button')}
               </Text>
             </TouchableOpacity>
           </View>

@@ -1874,3 +1874,17 @@
 - [x] Shared crisis-prompt-helper.ts for elias and kim prompt blocks
 - [x] Client sends country to server in chat requests
 - [x] All 34 export/import tests pass
+
+## French translations fix (missing keys cause fallback to EN/NL)
+- [x] Add FR translations for stage of change options (intake screen)
+- [x] Add FR translations for urgency levels and subtitle (intake screen)
+- [x] Add FR translations for GDPR consent screen (subtitle + bullet points)
+- [x] Add FR translations for zone selector (title, subtitle, zone names + descriptions)
+- [x] Add FR translations for disclaimer modal (title, body, bullets, button)
+- [x] Add FR translations for any other missing keys found in comparison
+- [x] Verify components use t() not hardcoded strings for these sections
+- [x] Add mood screen i18n keys (slider descriptions, zone labels, trend labels, timestamps)
+- [x] Replace hardcoded SLIDER_META and ZONE_CONFIG with reactive t() in mood.tsx
+- [x] Replace hardcoded strings in backpack stage section with t() calls
+- [x] Replace hardcoded strings in BackpackWizardScreen with t() calls
+- [x] Fix crisis-prompt-helper require() → import for vitest compatibility

@@ -18,7 +18,6 @@ import { useRouter } from 'expo-router';
 import { ScreenContainer } from '@/components/screen-container';
 import { useUser } from '@/lib/user-context';
 import type { UserType, UrgencyLevel, StageOfChange, EigenRegieLevel } from '@/lib/ai/types';
-import { STAGE_OF_CHANGE_OPTIONS, EIGEN_REGIE_INTAKE_OPTIONS } from '@/lib/ai/types';
 import { colors as dc, radius, shadows, spacing, typography } from '@/constants/design';
 import Animated, {
   useSharedValue,
@@ -175,6 +174,22 @@ export default function IntakeScreen() {
     { label: t('intake.urgency.low.label'), value: 'laag' as UrgencyLevel, description: t('intake.urgency.low.description') },
     { label: t('intake.urgency.medium.label'), value: 'midden' as UrgencyLevel, description: t('intake.urgency.medium.description') },
     { label: t('intake.urgency.high.label'), value: 'hoog' as UrgencyLevel, description: t('intake.urgency.high.description') },
+  ], [t]);
+
+  const stageOfChangeOptions = useMemo(() => [
+    { value: 'precontemplation' as StageOfChange, label: t('intake.stage.precontemplation.label'), description: t('intake.stage.precontemplation.description') },
+    { value: 'contemplation' as StageOfChange, label: t('intake.stage.contemplation.label'), description: t('intake.stage.contemplation.description') },
+    { value: 'preparation' as StageOfChange, label: t('intake.stage.preparation.label'), description: t('intake.stage.preparation.description') },
+    { value: 'action' as StageOfChange, label: t('intake.stage.action.label'), description: t('intake.stage.action.description') },
+    { value: 'maintenance' as StageOfChange, label: t('intake.stage.maintenance.label'), description: t('intake.stage.maintenance.description') },
+  ], [t]);
+
+  const eigenRegieOptions = useMemo(() => [
+    { value: 1 as EigenRegieLevel, zone: 'RED', label: t('intake.eigen_regie.1.label') },
+    { value: 2 as EigenRegieLevel, zone: 'ORANGE', label: t('intake.eigen_regie.2.label') },
+    { value: 3 as EigenRegieLevel, zone: 'YELLOW', label: t('intake.eigen_regie.3.label') },
+    { value: 4 as EigenRegieLevel, zone: 'LIGHT GREEN', label: t('intake.eigen_regie.4.label') },
+    { value: 5 as EigenRegieLevel, zone: 'DARK GREEN', label: t('intake.eigen_regie.5.label') },
   ], [t]);
 
   const handleImportExecute = useCallback(async () => {
@@ -534,7 +549,7 @@ export default function IntakeScreen() {
                     </Text>
 
                     <View style={styles.optionsGroup}>
-                      {EIGEN_REGIE_INTAKE_OPTIONS.map((option) => {
+                      {eigenRegieOptions.map((option) => {
                         const zoneColor = EIGEN_REGIE_ZONE_COLORS[option.zone] ?? dc.textMuted;
                         const isSelected = eigenRegieLevel === option.value;
                         return (
@@ -575,7 +590,7 @@ export default function IntakeScreen() {
                     </Text>
 
                     <View style={styles.optionsGroup}>
-                      {STAGE_OF_CHANGE_OPTIONS.map((option) => (
+                      {stageOfChangeOptions.map((option) => (
                         <Pressable
                           key={option.value}
                           onPress={() => setStageOfChange(option.value)}

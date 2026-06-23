@@ -7,6 +7,7 @@
  *
  * No new logic. Direct extraction only.
  */
+import { getCrisisNumbersForPrompt } from '../crisis-prompt-helper';
 
 /**
  * Kim identity prompt block.
@@ -81,7 +82,6 @@ IMPORTANT: Never claim capabilities you do NOT have. Only these exist in your sy
  * Exact same text, no changes.
  */
 export function kimCrisisInstructions(crisisLevel: number, country?: string, locale?: string): string {
-  const { getCrisisNumbersForPrompt } = require('../crisis-prompt-helper');
   const crisisInfo = getCrisisNumbersForPrompt(country, locale);
   return `\n⚠️ CRISIS ACTIVE (level ${crisisLevel}).
 

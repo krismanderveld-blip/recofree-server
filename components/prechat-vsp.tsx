@@ -21,7 +21,7 @@ import * as Haptics from 'expo-haptics';
 import { VSP_OPTIONS, type VspLevel } from '@/lib/engine/elias/vsp';
 import { useColors } from '@/hooks/use-colors';
 import { IconSymbol } from '@/components/ui/icon-symbol';
-import { useTranslation, tStatic } from '@/lib/i18n';
+import { useTranslation } from '@/lib/i18n';
 
 interface PreChatVspProps {
   /** Called when user confirms their VSP selection */
@@ -30,13 +30,7 @@ interface PreChatVspProps {
   userName: string;
 }
 
-const VSP_DESCRIPTIONS: Record<VspLevel, string> = {
-  GROEN: tStatic('prechat_vsp.description.groen'),
-  GEEL: tStatic('prechat_vsp.description.geel'),
-  ORANJE: tStatic('prechat_vsp.description.oranje'),
-  ROOD: tStatic('prechat_vsp.description.rood'),
-  PAARS: tStatic('prechat_vsp.description.paars'),
-};
+// VSP_DESCRIPTIONS and labels are now computed inside the component with t() for reactivity
 
 const VSP_ICONS: Record<VspLevel, string> = {
   GROEN: '🟢',
@@ -49,6 +43,22 @@ const VSP_ICONS: Record<VspLevel, string> = {
 export function PreChatVsp({ onSubmit, userName }: PreChatVspProps) {
   const colors = useColors();
   const { t } = useTranslation();
+
+  const vspDescriptions: Record<VspLevel, string> = {
+    GROEN: t('prechat_vsp.description.groen'),
+    GEEL: t('prechat_vsp.description.geel'),
+    ORANJE: t('prechat_vsp.description.oranje'),
+    ROOD: t('prechat_vsp.description.rood'),
+    PAARS: t('prechat_vsp.description.paars'),
+  };
+
+  const vspLabels: Record<VspLevel, string> = {
+    GROEN: t('prechat_vsp.option.groen.label'),
+    GEEL: t('prechat_vsp.option.geel.label'),
+    ORANJE: t('prechat_vsp.option.oranje.label'),
+    ROOD: t('prechat_vsp.option.rood.label'),
+    PAARS: t('prechat_vsp.option.paars.label'),
+  };
   const [selected, setSelected] = useState<VspLevel | null>(null);
 
   const handleSelect = (level: VspLevel) => {
@@ -71,10 +81,10 @@ export function PreChatVsp({ onSubmit, userName }: PreChatVspProps) {
       {/* Header */}
       <View style={{ marginBottom: 20, alignItems: 'center' }}>
         <Text style={{ fontSize: 24, fontWeight: '700', color: colors.foreground, textAlign: 'center', marginBottom: 8 }}>
-          How are you feeling right now, {userName}?
+          {t('prechat_vsp.title', { userName })}
         </Text>
         <Text style={{ fontSize: 14, color: colors.muted, textAlign: 'center', lineHeight: 20 }}>
-          Choose the level that best matches how you feel right now.
+          {t('prechat_vsp.subtitle')}
         </Text>
       </View>
 
@@ -144,14 +154,14 @@ export function PreChatVsp({ onSubmit, userName }: PreChatVspProps) {
                       fontWeight: '600',
                       color: isRelapse && isSelected ? '#DC2626' : colors.foreground,
                     }}>
-                      {option.label}
+                      {vspLabels[option.value]}
                     </Text>
                     <Text style={{
                       fontSize: 12,
                       color: isRelapse && isSelected ? '#B91C1C' : colors.muted,
                       marginTop: 2,
                     }}>
-                      {VSP_DESCRIPTIONS[option.value]}
+                      {vspDescriptions[option.value]}
                     </Text>
                   </View>
 
@@ -183,7 +193,7 @@ export function PreChatVsp({ onSubmit, userName }: PreChatVspProps) {
               }]}
             >
               <Text style={{ color: '#fff', fontSize: 16, fontWeight: '600' }}>
-                Confirm
+                {t('prechat_vsp.button.confirm')}
               </Text>
             </Pressable>
           </View>

@@ -25,16 +25,8 @@ import { useTranslation } from '@/lib/i18n';
 
 // ─── Constants ──────────────────────────────────────────────────
 
-const SLIDER_META: Record<string, { description: string; lowLabel: string; highLabel: string }> = {
-  craving: { description: 'How strong is the urge right now?', lowLabel: 'None', highLabel: 'Overwhelming' },
-  frustration: { description: 'How frustrated do you feel?', lowLabel: 'Calm', highLabel: 'Very frustrated' },
-  despondency: { description: 'How hopeless or discouraged do you feel?', lowLabel: 'Hopeful', highLabel: 'Very discouraged' },
-  focus: { description: 'How well can you concentrate right now?', lowLabel: 'Scattered', highLabel: 'Very focused' },
-  stress: { description: 'How stressed do you feel right now?', lowLabel: 'Relaxed', highLabel: 'Very stressed' },
-  boundaryFatigue: { description: 'How exhausted are you from setting boundaries?', lowLabel: 'Energized', highLabel: 'Exhausted' },
-  emotionalBurden: { description: 'How heavy does the emotional weight feel?', lowLabel: 'Light', highLabel: 'Overwhelming' },
-  selfCare: { description: 'How well are you taking care of yourself?', lowLabel: 'Neglecting', highLabel: 'Very well' },
-};
+// SLIDER_META is now computed inside the component with t() for reactivity
+const SLIDER_KEYS = ['craving', 'frustration', 'despondency', 'focus', 'stress', 'boundaryFatigue', 'emotionalBurden', 'selfCare'] as const;
 
 const POSITIVE_KEYS = new Set(['focus', 'selfCare']);
 
@@ -46,14 +38,15 @@ const EIGEN_REGIE_ZONE_COLORS: Record<EigenRegieZone, string> = {
   GROEN: dc.success,
 };
 
-const ZONE_CONFIG = {
-  GREEN:  { label: 'Stable', color: dc.moodGreen, description: 'You\'ve been in a calm, manageable space.' },
-  YELLOW: { label: 'Elevated', color: dc.moodYellow, description: 'Some tension is building. Stay aware.' },
-  ORANGE: { label: 'Strained', color: dc.moodOrange, description: 'Things have been harder lately. That\'s okay to acknowledge.' },
-  RED:    { label: 'Critical', color: dc.moodRed, description: 'You\'ve been under heavy pressure. Consider reaching out.' },
+// ZONE_CONFIG is now computed inside the component with t() for reactivity
+const ZONE_COLORS = {
+  GREEN: dc.moodGreen,
+  YELLOW: dc.moodYellow,
+  ORANGE: dc.moodOrange,
+  RED: dc.moodRed,
 } as const;
 
-type ZoneKey = keyof typeof ZONE_CONFIG;
+type ZoneKey = keyof typeof ZONE_COLORS;
 
 // ─── Helpers ────────────────────────────────────────────────────
 
@@ -89,29 +82,29 @@ function recentSnapshots(history: MoodSnapshot[], days: number): MoodSnapshot[] 
   return history.filter((s) => new Date(s.timestamp).getTime() >= cutoff);
 }
 
-function computeTrend(scores: number[]): { arrow: string; label: string; color: string } {
-  if (scores.length < 2) return { arrow: '—', label: 'Not enough data yet', color: '#9CA3AF' };
+function computeTrend(scores: number[], t: (key: string, params?: any) => string): { arrow: string; label: string; color: string } {
+  if (scores.length < 2) return { arrow: '—', label: t('mood.trend.not_enough_data'), color: '#9CA3AF' };
   const firstHalf = scores.slice(0, Math.floor(scores.length / 2));
   const secondHalf = scores.slice(Math.floor(scores.length / 2));
   const avgFirst = firstHalf.reduce((a, b) => a + b, 0) / firstHalf.length;
   const avgSecond = secondHalf.reduce((a, b) => a + b, 0) / secondHalf.length;
   const diff = avgSecond - avgFirst;
-  if (Math.abs(diff) < 0.5) return { arrow: '→', label: 'Stable', color: '#9CA3AF' };
-  if (diff < 0) return { arrow: '↑', label: 'Improving', color: '#22C55E' };
-  return { arrow: '↓', label: 'Needs attention', color: '#EF4444' };
+  if (Math.abs(diff) < 0.5) return { arrow: '→', label: t('mood.trend.stable'), color: '#9CA3AF' };
+  if (diff < 0) return { arrow: '↑', label: t('mood.trend.improving'), color: '#22C55E' };
+  return { arrow: '↓', label: t('mood.trend.needs_attention'), color: '#EF4444' };
 }
 
-function formatTimestamp(ts: string): string {
+function formatTimestamp(ts: string, t: (key: string, params?: any) => string): string {
   const d = new Date(ts);
   const now = new Date();
   const diffMs = now.getTime() - d.getTime();
   const diffHours = diffMs / (1000 * 60 * 60);
   const diffDays = diffMs / (1000 * 60 * 60 * 24);
-  if (diffHours < 1) return 'Just now';
-  if (diffHours < 24) return `${Math.floor(diffHours)}h ago`;
-  if (diffDays < 2) return 'Yesterday';
-  if (diffDays < 7) return `${Math.floor(diffDays)} days ago`;
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  if (diffHours < 1) return t('mood.time.just_now');
+  if (diffHours < 24) return t('mood.time.hours_ago', { hours: Math.floor(diffHours) });
+  if (diffDays < 2) return t('mood.time.yesterday');
+  if (diffDays < 7) return t('mood.time.days_ago', { days: Math.floor(diffDays) });
+  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
 // ─── Mood Trend Helpers ─────────────────────────────────────────
@@ -181,6 +174,25 @@ export default function MoodScreen() {
   });
   const [eigenRegieSaved, setEigenRegieSaved] = useState(false);
   const { t } = useTranslation();
+
+  const SLIDER_META = useMemo(() => ({
+    craving: { description: t('mood.slider.craving.description'), lowLabel: t('mood.slider.craving.low'), highLabel: t('mood.slider.craving.high') },
+    frustration: { description: t('mood.slider.frustration.description'), lowLabel: t('mood.slider.frustration.low'), highLabel: t('mood.slider.frustration.high') },
+    despondency: { description: t('mood.slider.despondency.description'), lowLabel: t('mood.slider.despondency.low'), highLabel: t('mood.slider.despondency.high') },
+    focus: { description: t('mood.slider.focus.description'), lowLabel: t('mood.slider.focus.low'), highLabel: t('mood.slider.focus.high') },
+    stress: { description: t('mood.slider.stress.description'), lowLabel: t('mood.slider.stress.low'), highLabel: t('mood.slider.stress.high') },
+    boundaryFatigue: { description: t('mood.slider.boundaryFatigue.description'), lowLabel: t('mood.slider.boundaryFatigue.low'), highLabel: t('mood.slider.boundaryFatigue.high') },
+    emotionalBurden: { description: t('mood.slider.emotionalBurden.description'), lowLabel: t('mood.slider.emotionalBurden.low'), highLabel: t('mood.slider.emotionalBurden.high') },
+    selfCare: { description: t('mood.slider.selfCare.description'), lowLabel: t('mood.slider.selfCare.low'), highLabel: t('mood.slider.selfCare.high') },
+  } as Record<string, { description: string; lowLabel: string; highLabel: string }>), [t]);
+
+  const ZONE_CONFIG = useMemo(() => ({
+    GREEN: { label: t('mood.zone.green.label'), color: ZONE_COLORS.GREEN, description: t('mood.zone.green.description') },
+    YELLOW: { label: t('mood.zone.yellow.label'), color: ZONE_COLORS.YELLOW, description: t('mood.zone.yellow.description') },
+    ORANGE: { label: t('mood.zone.orange.label'), color: ZONE_COLORS.ORANGE, description: t('mood.zone.orange.description') },
+    RED: { label: t('mood.zone.red.label'), color: ZONE_COLORS.RED, description: t('mood.zone.red.description') },
+  }), [t]);
+
   const eigenRegieResult = useMemo(
     () => isKim ? processEigenRegie(eigenRegieInput) : null,
     [eigenRegieInput, isKim],
@@ -227,7 +239,7 @@ export default function MoodScreen() {
     [distressScores],
   );
   const dominantZone = useMemo(() => distressToZone(avgDistress), [avgDistress]);
-  const trend = useMemo(() => computeTrend(distressScores), [distressScores]);
+  const trend = useMemo(() => computeTrend(distressScores, t), [distressScores, t]);
   const topTriggers = useMemo(
     () => [...triggerPatterns]
       .sort((a, b) => (b.weight ?? b.count * 10) - (a.weight ?? a.count * 10))
@@ -481,9 +493,10 @@ export default function MoodScreen() {
 // ─── Timeline Entry ─────────────────────────────────────────────
 
 function TimelineEntry({ snapshot, sliderConfig, colors }: { snapshot: MoodSnapshot; sliderConfig: SliderConfig[]; colors: any }) {
+  const { t: tl } = useTranslation();
   return (
     <View style={{ backgroundColor: '#fff', borderRadius: 12, padding: 12, borderWidth: 1, borderColor: colors.border, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-      <Text style={{ fontSize: 11, color: colors.muted, width: 60 }}>{formatTimestamp(snapshot.timestamp)}</Text>
+      <Text style={{ fontSize: 11, color: colors.muted, width: 60 }}>{formatTimestamp(snapshot.timestamp, tl)}</Text>
       <View style={{ flex: 1, flexDirection: 'row', gap: 6 }}>
         {sliderConfig.map((sc) => {
           const value = (snapshot.sliders as any)[sc.key] ?? 0;

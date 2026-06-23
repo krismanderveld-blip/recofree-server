@@ -31,6 +31,7 @@ import {
   STAGE_OF_CHANGE_OPTIONS,
 } from '@/lib/ai/types';
 import { useColors } from '@/hooks/use-colors';
+import { useTranslation } from '@/lib/i18n';
 import { pickAndParseBackpackDocument, type BackpackExtractedData } from './backpack-document-upload-client';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -78,6 +79,7 @@ const KIM_SECTION_CONFIG = [
 
 export function BackpackWizardScreen({ existingBackpack, userType: initialUserType, onSave, onCancel }: BackpackWizardScreenProps) {
   const colors = useColors();
+  const { t } = useTranslation();
 
   // ─── State ────────────────────────────────────────────────────────────────
   const [step, setStep] = useState<WizardStep>('choose_method');
@@ -638,7 +640,7 @@ export function BackpackWizardScreen({ existingBackpack, userType: initialUserTy
       {currentUserType === 'elias' && (
         <>
           <Text style={{ fontSize: 14, fontWeight: '600', color: colors.foreground, marginBottom: 6 }}>
-            Where are you in your change process?
+            {t('backpack.stage_of_change.description')}
           </Text>
           <View style={{ gap: 8, marginBottom: 24 }}>
             {STAGE_OF_CHANGE_OPTIONS.map(opt => (
@@ -655,9 +657,9 @@ export function BackpackWizardScreen({ existingBackpack, userType: initialUserTy
                   borderColor: stageOfChange === opt.value ? colors.primary : colors.border,
                 }}>
                   <Text style={{ fontSize: 14, fontWeight: '600', color: stageOfChange === opt.value ? colors.primary : colors.foreground }}>
-                    {opt.label}
+                    {t(`backpack.stage.${opt.value}.label`)}
                   </Text>
-                  <Text style={{ fontSize: 12, color: colors.muted, marginTop: 2 }}>{opt.description}</Text>
+                  <Text style={{ fontSize: 12, color: colors.muted, marginTop: 2 }}>{t(`backpack.stage.${opt.value}.description`)}</Text>
                 </View>
               </Pressable>
             ))}

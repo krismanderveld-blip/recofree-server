@@ -6,6 +6,7 @@
  *
  * Extracted from server/ai-chat.ts to achieve single source of truth.
  */
+import { getCrisisNumbersForPrompt } from '../crisis-prompt-helper';
 
 // ─── CORE IDENTITY ─────────────────────────────────────────────
 
@@ -122,7 +123,6 @@ You have 15 Stoic sessions available. Activate them when the context fits:
 // ─── CRISIS INSTRUCTIONS ───────────────────────────────────────
 
 export function eliasCrisisInstructions(crisisLevel: number, country?: string, locale?: string): string {
-  const { getCrisisNumbersForPrompt } = require('../crisis-prompt-helper');
   const crisisInfo = getCrisisNumbersForPrompt(country, locale);
   return `\n⚠️ CRISIS ACTIVE (level ${crisisLevel}).
 

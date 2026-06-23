@@ -138,8 +138,8 @@ describe('Auto-close User Feedback', () => {
   it('should show English auto-close message', async () => {
     const fs = await import('fs');
     const chatSource = fs.readFileSync('./app/(tabs)/chat.tsx', 'utf-8');
-    
-    expect(chatSource).toContain('Your session has been saved after 10 minutes of inactivity');
-    expect(chatSource).toContain('Everything is safely stored');
+    // After i18n migration, the auto-close uses handleEndConversation which shows farewell + safely stored
+    expect(chatSource).toContain('safely stored');
+    expect(chatSource).toContain('inactivity_10min');
   });
 });

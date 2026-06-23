@@ -366,7 +366,7 @@ export default function BackpackScreen() {
           <View style={{ marginBottom: 24 }}>
             <Text style={{ fontSize: 16, fontWeight: '700', color: colors.foreground, marginBottom: 4 }}>{t('backpack.stage_of_change.title')}</Text>
             <Text style={{ fontSize: 13, color: colors.muted, marginBottom: 16, lineHeight: 18 }}>
-              Where are you in your journey? This helps your companion adjust their approach.
+              {t('backpack.stage_of_change.description')}
             </Text>
             {STAGE_OF_CHANGE_OPTIONS.map((option) => {
               const isSelected = currentStage === option.value;
@@ -400,8 +400,8 @@ export default function BackpackScreen() {
                       {isSelected && <Text style={{ color: '#fff', fontSize: 12, fontWeight: '700' }}>{'✓'}</Text>}
                     </View>
                     <View style={{ flex: 1 }}>
-                      <Text style={{ fontSize: 14, fontWeight: '600', color: isSelected ? stageColor : colors.foreground }}>{option.label}</Text>
-                      <Text style={{ fontSize: 12, color: colors.muted, marginTop: 2 }}>{option.description}</Text>
+                      <Text style={{ fontSize: 14, fontWeight: '600', color: isSelected ? stageColor : colors.foreground }}>{t(`backpack.stage.${option.value}.label`)}</Text>
+                      <Text style={{ fontSize: 12, color: colors.muted, marginTop: 2 }}>{t(`backpack.stage.${option.value}.description`)}</Text>
                     </View>
                   </View>
                 </Pressable>
