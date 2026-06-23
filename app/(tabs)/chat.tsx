@@ -862,7 +862,7 @@ function ChatScreenInner() {
     setIsTyping(true);
 
     try {
-      const preprocessed = await preprocessInput(rawText);
+      const preprocessed = await preprocessInput(rawText, locale as 'nl' | 'en' | 'fr');
       const processedText = preprocessed.processedText;
       // Load latest userDat from storage (may have been updated by greeting)
       const userDatJson = await readEncrypted(USERDAT_KEY);

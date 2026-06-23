@@ -1888,3 +1888,14 @@
 - [x] Replace hardcoded strings in backpack stage section with t() calls
 - [x] Replace hardcoded strings in BackpackWizardScreen with t() calls
 - [x] Fix crisis-prompt-helper require() → import for vitest compatibility
+
+## Pre-translate vrije tekst (veiligheidskritiek)
+- [x] Build pre-translate module (gpt-4o-mini, NL vertaling, fallback, debug log)
+- [x] Integrate pre-translate BEFORE all detection layers (trigger, zone, crisis, SignalEngine)
+- [x] Condition: only call when locale !== 'nl', skip for NL users
+- [x] Fallback: on error, pass original text through (never drop messages)
+- [x] Debug trace: [pre-translate] input → NL translation (or skipped)
+- [x] Test: FR "je veux mourir" → crisis detection triggers
+- [x] Test: FR "j'ai envie de boire" → craving trigger matches
+- [x] Test: NL message → no translate call, skipped
+- [x] Test: Simulated translate failure → message passed through

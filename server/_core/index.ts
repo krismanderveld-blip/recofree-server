@@ -5,6 +5,7 @@ import net from "net";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { registerOAuthRoutes } from "./oauth";
 import { registerSignalEngineRoute } from "../signal-engine";
+import { registerPreTranslateRoute } from "../pre-translate";
 import { registerBackpackAnalysisRoute } from "../backpack-analysis";
 import { registerVspBackpackAnalysisRoute } from "../vsp-backpack-analysis";
 import { registerVspDocumentParseRoute } from "../vsp-document-parse";
@@ -65,6 +66,7 @@ async function startServer() {
 
   registerOAuthRoutes(app);
   registerSignalEngineRoute(app);
+  registerPreTranslateRoute(app);
   registerBackpackAnalysisRoute(app);
   registerVspBackpackAnalysisRoute(app);
   registerVspDocumentParseRoute(app);

@@ -1,78 +1,43 @@
 /**
- * Input Preprocessor
+ * Input Preprocessor — Pre-Translate Step
  *
- * Handles language detection and translation of user input before
- * it reaches the Elias/Kim logic layer.
+ * SAFETY-CRITICAL: Translates FR/EN user messages to Dutch (NL) BEFORE
+ * the pipeline's detection layers (trigger matching, zone detection,
+ * crisis detection, SignalEngine). Without this, a French user writing
+ * about crisis or craving would NOT be detected by the NL-based logic.
  *
  * Pipeline:
  *   Raw user input (any language)
- *     → Detect language
- *     → Translate to English (if needed)
- *     → Return English text for processing
+ *     → If locale === 'nl': skip (no API call, no latency)
+ *     → If locale !== 'nl': call server /api/pre-translate (gpt-4o-mini)
+ *     → Return NL text for all detection layers
  *
- * Mock phase: pass-through (assumes English input)
- * Backend phase: real detection + translation via OpenAI
+ * Fallback: On ANY error, pass through the original text unchanged.
+ * A crisis message must NEVER be dropped or blocked.
  */
+
+import { getApiBaseUrl } from '@/constants/oauth';
 
 export interface PreprocessedInput {
   /** The original raw input from the user */
   originalText: string;
-  /** The English-translated text for processing */
+  /** The NL-translated text for processing (all detection runs on this) */
   processedText: string;
-  /** Detected input language (ISO 639-1 code) */
+  /** Detected/specified input language */
   detectedLanguage: string;
   /** Whether translation was applied */
   wasTranslated: boolean;
 }
 
 /**
- * Preprocess user input: detect language and translate to English.
+ * Preprocess user input: translate to Dutch if locale !== 'nl'.
  *
- * In mock mode, this is a pass-through that assumes English.
- * When the backend is connected, this will call the translation API.
+ * @param rawInput - The raw user message
+ * @param locale - The user's selected app language ('nl' | 'en' | 'fr')
  */
-export async function preprocessInput(rawInput: string): Promise<PreprocessedInput> {
-  const trimmed = rawInput.trim();
-
-  if (!trimmed) {
-    return {
-      originalText: rawInput,
-      processedText: '',
-      detectedLanguage: 'en',
-      wasTranslated: false,
-    };
-  }
-
-  // Mock phase: simple heuristic language detection
-  const detectedLanguage = detectLanguageHeuristic(trimmed);
-
-  if (detectedLanguage === 'en') {
-    return {
-      originalText: rawInput,
-      processedText: trimmed,
-      detectedLanguage: 'en',
-      wasTranslated: false,
-    };
-  }
-
-  // Non-English detected in mock mode: pass through as-is
-  // In production, this will call the backend translation endpoint
-  // POST /api/translate { text, targetLanguage: 'en' }
-  return {
-    originalText: rawInput,
-    processedText: trimmed, // Pass-through in mock mode
-    detectedLanguage,
-    wasTranslated: false, // Will be true when real translation is active
-  };
-}
-
-/**
- * Backend-powered preprocessing (for production use).
- * Calls the backend API to detect language and translate.
- */
-export async function preprocessInputViaBackend(
+export async function preprocessInput(
   rawInput: string,
-  apiBaseUrl: string
+  locale: 'nl' | 'en' | 'fr' = 'nl'
 ): Promise<PreprocessedInput> {
   const trimmed = rawInput.trim();
 
@@ -80,67 +45,96 @@ export async function preprocessInputViaBackend(
     return {
       originalText: rawInput,
       processedText: '',
-      detectedLanguage: 'en',
+      detectedLanguage: locale,
+      wasTranslated: false,
+    };
+  }
+
+  // NL users: skip entirely — no API call, no latency cost
+  if (locale === 'nl') {
+    console.log('[pre-translate] skipped (nl)');
+    return {
+      originalText: rawInput,
+      processedText: trimmed,
+      detectedLanguage: 'nl',
+      wasTranslated: false,
+    };
+  }
+
+  // Non-NL: call server to translate to Dutch via gpt-4o-mini
+  const apiBaseUrl = getApiBaseUrl();
+  if (!apiBaseUrl) {
+    console.warn('[pre-translate] No API base URL — fallback to original');
+    return {
+      originalText: rawInput,
+      processedText: trimmed,
+      detectedLanguage: locale,
       wasTranslated: false,
     };
   }
 
   try {
-    const response = await fetch(`${apiBaseUrl}/api/preprocess`, {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000); // 8s timeout
+
+    const response = await fetch(`${apiBaseUrl}/api/pre-translate`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text: trimmed }),
+      body: JSON.stringify({ text: trimmed, locale }),
+      signal: controller.signal,
     });
 
+    clearTimeout(timeoutId);
+
     if (!response.ok) {
-      throw new Error(`Preprocess API error: ${response.status}`);
+      console.error(`[pre-translate] Server error ${response.status} — fallback to original`);
+      return {
+        originalText: rawInput,
+        processedText: trimmed,
+        detectedLanguage: locale,
+        wasTranslated: false,
+      };
     }
 
     const data = await response.json();
 
+    if (data.wasTranslated && data.translatedText) {
+      console.log(`[pre-translate] input: "${trimmed}" → NL: "${data.translatedText}"`);
+      return {
+        originalText: rawInput,
+        processedText: data.translatedText,
+        detectedLanguage: locale,
+        wasTranslated: true,
+      };
+    }
+
+    // Server returned but didn't translate (e.g., error fallback on server side)
     return {
       originalText: rawInput,
       processedText: data.translatedText || trimmed,
-      detectedLanguage: data.detectedLanguage || 'en',
-      wasTranslated: data.wasTranslated || false,
+      detectedLanguage: locale,
+      wasTranslated: false,
     };
   } catch (error) {
-    console.error('Preprocessing error, falling back to raw input:', error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error(`[pre-translate] Exception: ${errorMessage} — fallback to original`);
+    // FALLBACK: never drop the message — pass through original
     return {
       originalText: rawInput,
       processedText: trimmed,
-      detectedLanguage: 'unknown',
+      detectedLanguage: locale,
       wasTranslated: false,
     };
   }
 }
 
 /**
- * Simple heuristic language detection based on character ranges.
- * This is a rough approximation for the mock phase only.
+ * @deprecated Use preprocessInput with locale parameter instead.
+ * Kept for backward compatibility.
  */
-function detectLanguageHeuristic(text: string): string {
-  // Check for non-Latin scripts first
-  if (/[\u4e00-\u9fff]/.test(text)) return 'zh';
-  if (/[\u3040-\u309f\u30a0-\u30ff]/.test(text)) return 'ja';
-  if (/[\uac00-\ud7af]/.test(text)) return 'ko';
-  if (/[\u0600-\u06ff]/.test(text)) return 'ar';
-  if (/[\u0400-\u04ff]/.test(text)) return 'ru';
-
-  // For Latin-script languages, check common Dutch/German/French patterns
-  const lowerText = text.toLowerCase();
-  const dutchPatterns = /\b(ik|het|een|dat|niet|maar|ook|wel|nog|als|naar|voor|bij|uit|aan|heb|ben|kan|wil|zou|mijn|dit|die|deze|geen)\b/;
-  if (dutchPatterns.test(lowerText)) return 'nl';
-
-  const germanPatterns = /\b(ich|das|ein|nicht|aber|auch|noch|als|nach|für|bei|aus|hab|bin|kann|will|mein|dies|kein)\b/;
-  if (germanPatterns.test(lowerText)) return 'de';
-
-  const frenchPatterns = /\b(je|le|la|les|un|une|pas|mais|aussi|encore|pour|avec|dans|suis|peux|veux|mon|cette)\b/;
-  if (frenchPatterns.test(lowerText)) return 'fr';
-
-  const spanishPatterns = /\b(yo|el|la|los|un|una|no|pero|también|para|con|en|soy|puedo|quiero|mi|este|esta)\b/;
-  if (spanishPatterns.test(lowerText)) return 'es';
-
-  // Default to English
-  return 'en';
+export async function preprocessInputViaBackend(
+  rawInput: string,
+  apiBaseUrl: string
+): Promise<PreprocessedInput> {
+  return preprocessInput(rawInput, 'fr');
 }
