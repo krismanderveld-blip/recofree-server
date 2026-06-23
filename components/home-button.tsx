@@ -2,6 +2,7 @@ import { Pressable, Text, View, Platform, StyleSheet } from 'react-native';
 import { useRouter, type Href } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { colors as dc, typography } from '@/constants/design';
+import { useTranslation } from '@/lib/i18n';
 
 /**
  * A simple home button that navigates back to the home screen.
@@ -9,6 +10,7 @@ import { colors as dc, typography } from '@/constants/design';
  */
 export function HomeButton() {
   const router = useRouter();
+  const { t } = useTranslation();
 
   const handlePress = () => {
     if (Platform.OS !== 'web') {
@@ -25,8 +27,8 @@ export function HomeButton() {
         { opacity: pressed ? 0.6 : 1 },
       ]}
     >
-      <Text style={styles.icon}>←</Text>
-      <Text style={styles.label}>Home</Text>
+      <Text style={styles.icon}>{t('home_button.icon')}</Text>
+      <Text style={styles.label}>{t('home_button.label')}</Text>
     </Pressable>
   );
 }

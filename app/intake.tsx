@@ -28,13 +28,14 @@ import Animated, {
   withSequence,
   Easing,
 } from 'react-native-reanimated';
+import { useTranslation, tStatic } from '@/lib/i18n';
 
 type IntakeStep = 1 | 2 | 3;
 
 const URGENCY_LEVELS: { label: string; value: UrgencyLevel; description: string }[] = [
-  { label: 'Low', value: 'laag', description: 'I want to explore at my own pace' },
-  { label: 'Medium', value: 'midden', description: 'I could use some support' },
-  { label: 'High', value: 'hoog', description: 'I need help right now' },
+  { label: tStatic('intake.urgency.low.label'), value: 'laag', description: tStatic('intake.urgency.low.description') },
+  { label: tStatic('intake.urgency.medium.label'), value: 'midden', description: tStatic('intake.urgency.medium.description') },
+  { label: tStatic('intake.urgency.high.label'), value: 'hoog', description: tStatic('intake.urgency.high.description') },
 ];
 
 /** Zone colors for Eigen Regie intake options */
@@ -160,7 +161,7 @@ export default function IntakeScreen() {
       setImportFile({ uri: asset.uri, name: asset.name });
       setImportError(null);
     } catch {
-      setImportError('Could not open file picker.');
+      setImportError(tStatic('intake.import.error.file_picker'));
     }
   }, []);
 
@@ -169,6 +170,7 @@ export default function IntakeScreen() {
   // Name prompt after import when backpack has no name
   const [importNamePrompt, setImportNamePrompt] = useState(false);
   const [importName, setImportName] = useState('');
+  const { t } = useTranslation();
 
   const handleImportExecute = useCallback(async () => {
     if (!importFile || !importPassword) return;
@@ -320,18 +322,18 @@ export default function IntakeScreen() {
             {step === 1 && (
               <Animated.View style={[styles.flex1, animatedStepStyle]}>
                 <View style={styles.heroSection}>
-                  <Text style={styles.heroEmoji}>💙</Text>
-                  <Text style={styles.heroTitle}>Welcome to RecoFree</Text>
+                  <Text style={styles.heroEmoji}>{t('intake.step1.hero.emoji')}</Text>
+                  <Text style={styles.heroTitle}>{t('intake.step1.hero.title')}</Text>
                   <Text style={styles.heroSubtitle}>
                     A safe space for recovery and growth
                   </Text>
                 </View>
 
                 <View style={styles.fieldGroup}>
-                  <Text style={styles.fieldLabel}>What should I call you?</Text>
+                  <Text style={styles.fieldLabel}>{t('intake.step1.name.label')}</Text>
                   <TextInput
                     style={styles.textInput}
-                    placeholder="Your first name"
+                    placeholder={t('intake.import_diag.name_prompt.placeholder')}
                     placeholderTextColor={dc.textMuted}
                     value={name}
                     onChangeText={setName}
@@ -342,7 +344,7 @@ export default function IntakeScreen() {
                 </View>
 
                 <View style={styles.fieldGroup}>
-                  <Text style={styles.fieldLabel}>Which describes you best?</Text>
+                  <Text style={styles.fieldLabel}>{t('intake.step1.type.label')}</Text>
 
                   <Pressable
                     onPress={() => setSelectedType('elias')}
@@ -356,7 +358,7 @@ export default function IntakeScreen() {
                         selectedType === 'elias' && styles.optionCardSelectedElias,
                       ]}
                     >
-                      <Text style={styles.optionTitle}>I have an addiction myself</Text>
+                      <Text style={styles.optionTitle}>{t('intake.step1.type.elias.title')}</Text>
                       <Text style={styles.optionDescription}>
                         You'll be supported by Elias — direct, honest support for your recovery — from someone who gets it.
                       </Text>
@@ -375,7 +377,7 @@ export default function IntakeScreen() {
                         selectedType === 'kim' && styles.optionCardSelectedKim,
                       ]}
                     >
-                      <Text style={styles.optionTitle}>I'm a loved one of someone</Text>
+                      <Text style={styles.optionTitle}>{t('intake.step1.type.kim.title')}</Text>
                       <Text style={styles.optionDescription}>
                         You'll be supported by Kim — a direct, honest companion for your well-being.
                       </Text>
@@ -393,7 +395,7 @@ export default function IntakeScreen() {
                       pressed && canProceedStep1 && { transform: [{ scale: 0.97 }] },
                     ]}
                   >
-                    <Text style={styles.primaryButtonText}>Next</Text>
+                    <Text style={styles.primaryButtonText}>{t('intake.step2.button.next')}</Text>
                   </Pressable>
 
                   <Pressable
@@ -403,7 +405,7 @@ export default function IntakeScreen() {
                       { opacity: pressed ? 0.6 : 1 },
                     ]}
                   >
-                    <Text style={styles.ghostButtonText}>I have a backup — import my data</Text>
+                    <Text style={styles.ghostButtonText}>{t('intake.step1.button.import')}</Text>
                   </Pressable>
                 </View>
               </Animated.View>
@@ -457,7 +459,7 @@ export default function IntakeScreen() {
                   </>
                 ) : (
                   <>
-                    <Text style={styles.stepTitle}>Where are you in your journey?</Text>
+                    <Text style={styles.stepTitle}>{t('intake.step2.elias.title')}</Text>
                     <Text style={styles.stepSubtitle}>
                       This helps Elias understand how to best support you.
                     </Text>
@@ -496,10 +498,10 @@ export default function IntakeScreen() {
                       pressed && canProceedStep2 && { transform: [{ scale: 0.97 }] },
                     ]}
                   >
-                    <Text style={styles.primaryButtonText}>Next</Text>
+                    <Text style={styles.primaryButtonText}>{t('intake.step1.button.next')}</Text>
                   </Pressable>
                   <Pressable onPress={handleBack} style={styles.ghostButton}>
-                    <Text style={styles.ghostButtonText}>Back</Text>
+                    <Text style={styles.ghostButtonText}>{t('intake.step3.button.back')}</Text>
                   </Pressable>
                 </View>
               </Animated.View>
@@ -508,7 +510,7 @@ export default function IntakeScreen() {
             {/* Step 3: Urgency (final step — submit) */}
             {step === 3 && (
               <Animated.View style={[styles.flex1, animatedStepStyle]}>
-                <Text style={styles.stepTitle}>How urgent does it feel?</Text>
+                <Text style={styles.stepTitle}>{t('intake.step3.title')}</Text>
                 <Text style={styles.stepSubtitle}>
                   This helps us set the right tone and pace for you.
                 </Text>
@@ -547,12 +549,12 @@ export default function IntakeScreen() {
                       ]}
                     >
                       <Text style={styles.primaryButtonText}>
-                        {isSubmitting ? 'One moment...' : 'Get Started'}
+                        {isSubmitting ? t('intake.step3.button.submitting') : t('intake.step3.button.submit')}
                       </Text>
                     </Pressable>
                   </Animated.View>
                   <Pressable onPress={handleBack} style={styles.ghostButton}>
-                    <Text style={styles.ghostButtonText}>Back</Text>
+                    <Text style={styles.ghostButtonText}>{t('intake.step2.button.back')}</Text>
                   </Pressable>
                 </View>
 
@@ -569,7 +571,7 @@ export default function IntakeScreen() {
       <Modal visible={showImportFlow} transparent animationType="fade">
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.5)' }}>
           <View style={[styles.optionCard, { backgroundColor: dc.background, borderColor: dc.border, marginHorizontal: 24, maxWidth: 380, width: '90%', padding: 24 }]}>
-            <Text style={[styles.heroTitle, { fontSize: 20, marginBottom: 8 }]}>Import backup</Text>
+            <Text style={[styles.heroTitle, { fontSize: 20, marginBottom: 8 }]}>{t('intake.import_modal.title')}</Text>
             <Text style={[styles.optionDescription, { marginBottom: 20, textAlign: 'center' }]}>
               Have a previous backup? Import your data and continue right away.
             </Text>
@@ -583,7 +585,7 @@ export default function IntakeScreen() {
               ]}
             >
               <Text style={{ color: importFile ? dc.textPrimary : dc.textMuted, fontSize: 14 }}>
-                {importFile ? importFile.name : 'Choose .recofree file'}
+                {importFile ? importFile.name : t('intake.import_modal.file_picker.placeholder')}
               </Text>
             </Pressable>
 
@@ -593,7 +595,7 @@ export default function IntakeScreen() {
               secureTextEntry
               value={importPassword}
               onChangeText={(t) => { setImportPassword(t); setImportError(null); }}
-              placeholder="Backup password"
+              placeholder={t('intake.import_modal.password.placeholder')}
               placeholderTextColor={dc.textMuted}
               autoComplete="off"
               returnKeyType="done"
@@ -617,7 +619,7 @@ export default function IntakeScreen() {
               {importLoading ? (
                 <ActivityIndicator color="#fff" size="small" />
               ) : (
-                <Text style={styles.primaryButtonText}>Import and continue</Text>
+                <Text style={styles.primaryButtonText}>{t('intake.import_modal.button.submit')}</Text>
               )}
             </Pressable>
 
@@ -626,7 +628,7 @@ export default function IntakeScreen() {
               onPress={() => { setShowImportFlow(false); setImportError(null); setImportFile(null); setImportPassword(''); }}
               style={({ pressed }) => [styles.ghostButton, { opacity: pressed ? 0.6 : 1 }]}
             >
-              <Text style={styles.ghostButtonText}>Cancel</Text>
+              <Text style={styles.ghostButtonText}>{t('intake.import_modal.button.cancel')}</Text>
             </Pressable>
           </View>
         </View>
@@ -640,7 +642,7 @@ export default function IntakeScreen() {
               Import Diagnostic Log
             </Text>
             <Text style={{ color: '#aaa', fontSize: 11, marginBottom: 12 }}>
-              {importNavReady ? 'Import succeeded! Copy log or press Continue.' : 'Copy this log and send it for debugging'}
+              {importNavReady ? t('intake.import_diag.subtitle.success') : t('intake.import_diag.subtitle.pending')}
             </Text>
             <ScrollView style={{ flex: 1, backgroundColor: '#1a1a1a', borderRadius: 8, padding: 12, marginBottom: 12 }}>
               <Text style={{ color: '#e0e0e0', fontSize: 11, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace', lineHeight: 16 }} selectable>
@@ -658,7 +660,7 @@ export default function IntakeScreen() {
                     style={{ backgroundColor: '#2a2a2a', color: '#fff', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10, fontSize: 15, borderWidth: 1, borderColor: '#444' }}
                     value={importName}
                     onChangeText={setImportName}
-                    placeholder="Your first name"
+                    placeholder={t('intake.step1.name.placeholder')}
                     placeholderTextColor="#666"
                     autoFocus
                     returnKeyType="done"
@@ -700,7 +702,7 @@ export default function IntakeScreen() {
                     opacity: (importNamePrompt && !importName.trim()) ? 0.5 : pressed ? 0.8 : 1,
                   }]}
                 >
-                  <Text style={{ color: '#fff', fontWeight: '700', fontSize: 15 }}>Continue to app →</Text>
+                  <Text style={{ color: '#fff', fontWeight: '700', fontSize: 15 }}>{t('intake.import_diag.button.continue')}</Text>
                 </Pressable>
               )}
               <View style={{ flexDirection: 'row', gap: 12 }}>
@@ -718,7 +720,7 @@ export default function IntakeScreen() {
                   }]}
                 >
                   <Text style={{ color: '#fff', fontWeight: '600', fontSize: 14 }}>
-                    {diagCopied ? '✓ Copied!' : 'Copy to clipboard'}
+                    {diagCopied ? t('intake.import_diag.button.copied') : t('intake.import_diag.button.copy')}
                   </Text>
                 </Pressable>
                 <Pressable
@@ -728,7 +730,7 @@ export default function IntakeScreen() {
                     opacity: pressed ? 0.8 : 1,
                   }]}
                 >
-                  <Text style={{ color: '#fff', fontWeight: '600', fontSize: 14 }}>Close</Text>
+                  <Text style={{ color: '#fff', fontWeight: '600', fontSize: 14 }}>{t('intake.import_diag.button.close')}</Text>
                 </Pressable>
               </View>
             </View>

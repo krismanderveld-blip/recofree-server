@@ -21,6 +21,7 @@ import * as Haptics from 'expo-haptics';
 import { VSP_OPTIONS, type VspLevel } from '@/lib/engine/elias/vsp';
 import { useColors } from '@/hooks/use-colors';
 import { IconSymbol } from '@/components/ui/icon-symbol';
+import { useTranslation, tStatic } from '@/lib/i18n';
 
 interface PreChatVspProps {
   /** Called when user confirms their VSP selection */
@@ -30,11 +31,11 @@ interface PreChatVspProps {
 }
 
 const VSP_DESCRIPTIONS: Record<VspLevel, string> = {
-  GROEN: 'Everything feels manageable.',
-  GEEL: 'Some stress, but I can handle it.',
-  ORANJE: 'Things are getting harder.',
-  ROOD: 'I need support now.',
-  PAARS: "I've relapsed.",
+  GROEN: tStatic('prechat_vsp.description.groen'),
+  GEEL: tStatic('prechat_vsp.description.geel'),
+  ORANJE: tStatic('prechat_vsp.description.oranje'),
+  ROOD: tStatic('prechat_vsp.description.rood'),
+  PAARS: tStatic('prechat_vsp.description.paars'),
 };
 
 const VSP_ICONS: Record<VspLevel, string> = {
@@ -47,6 +48,7 @@ const VSP_ICONS: Record<VspLevel, string> = {
 
 export function PreChatVsp({ onSubmit, userName }: PreChatVspProps) {
   const colors = useColors();
+  const { t } = useTranslation();
   const [selected, setSelected] = useState<VspLevel | null>(null);
 
   const handleSelect = (level: VspLevel) => {

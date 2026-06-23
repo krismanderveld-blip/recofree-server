@@ -18,6 +18,7 @@ import type {
   MoodTrendSeries,
   SimpleLineChartProps,
 } from '@/lib/features/mood-trend/mood-trend-types';
+import { useTranslation, tStatic } from '@/lib/i18n';
 
 // ─── SimpleLineChart ────────────────────────────────────────────────────────
 
@@ -32,7 +33,7 @@ function SimpleLineChart({ series, width, height, showLegend, showLatestValue }:
   const renderableSeries = series.filter((s) => s.points.length >= 2);
 
   return (
-    <View accessible accessibilityLabel="Mood trend chart">
+    <View accessible accessibilityLabel={tStatic('mood_trend_chart_card.accessibility_label')}>
       <Svg width={width} height={height}>
         {/* Grid lines at 0, 5, 10 */}
         {[0, 0.5, 1].map((yGrid) => (
@@ -83,9 +84,9 @@ function SimpleLineChart({ series, width, height, showLegend, showLatestValue }:
 
       {/* Y-axis text labels overlay */}
       <View style={[StyleSheet.absoluteFill, { justifyContent: 'space-between', paddingVertical: padding - 6 }]} pointerEvents="none">
-        <Text style={styles.axisLabel}>10</Text>
-        <Text style={styles.axisLabel}>5</Text>
-        <Text style={styles.axisLabel}>0</Text>
+        <Text style={styles.axisLabel}>{tStatic('mood_trend_chart_card.axis_label.10')}</Text>
+        <Text style={styles.axisLabel}>{tStatic('mood_trend_chart_card.axis_label.5')}</Text>
+        <Text style={styles.axisLabel}>{tStatic('mood_trend_chart_card.axis_label.0')}</Text>
       </View>
 
       {/* Legend */}
@@ -161,10 +162,10 @@ function MoodTrendTextFallback({
 }) {
   return (
     <View style={styles.fallbackContainer}>
-      <Text style={styles.fallbackText}>{text || 'No data available.'}</Text>
+      <Text style={styles.fallbackText}>{text || tStatic('mood_trend_chart_card.fallback.no_data')}</Text>
       {checkInCount > 0 && (
         <Text style={styles.fallbackCount}>
-          {checkInCount} check-in{checkInCount !== 1 ? 's' : ''} recorded
+          {checkInCount} check-in{checkInCount !== 1 ? tStatic('mood_trend_chart_card.fallback.check_in_plural') : ''} recorded
         </Text>
       )}
     </View>
@@ -174,14 +175,15 @@ function MoodTrendTextFallback({
 // ─── Main Card ──────────────────────────────────────────────────────────────
 
 export function MoodTrendChartCard({ persona, chartData, onRangeChange }: MoodTrendChartCardProps) {
+  const { t } = useTranslation();
   const { width: screenWidth } = useWindowDimensions();
   const chartWidth = Math.min(screenWidth - 72, 360);
 
-  const title = persona === 'elias' ? 'Mood trend' : 'Care trend';
+  const title = persona === 'elias' ? t('mood_trend_chart_card.title.elias') : t('mood_trend_chart_card.title.kim');
   const subtitle =
     persona === 'elias'
-      ? 'Based on your local check-ins.'
-      : 'Based on your local self-care and burden check-ins.';
+      ? t('mood_trend_chart_card.subtitle.elias')
+      : t('mood_trend_chart_card.subtitle.kim');
 
   return (
     <View style={styles.card}>

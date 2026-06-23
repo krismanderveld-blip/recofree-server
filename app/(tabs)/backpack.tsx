@@ -21,6 +21,7 @@ import { VspWizardScreen } from '@/lib/features/vspWizard/VspWizardScreen';
 import { BackpackWizardScreen } from '@/lib/features/backpackWizard/BackpackWizardScreen';
 import { colors as dc, spacing, radius, typography, shadows, cardStyles, buttonStyles } from '@/constants/design';
 import { HomeButton } from '@/components/home-button';
+import { useTranslation } from '@/lib/i18n';
 
 const SECTION_COLORS: Record<LifePhaseId, string> = {
   childhood: '#FF6B6B',
@@ -57,6 +58,7 @@ export default function BackpackScreen() {
 
   const [showVspWizard, setShowVspWizard] = useState(false);
   const [showBackpackWizard, setShowBackpackWizard] = useState(false);
+  const { t } = useTranslation();
   const isKim = state.backpack?.userType === 'kim';
   const sections = state.backpack?.sections ?? [];
   const kimData = state.backpack?.kimBackpack;
@@ -97,7 +99,7 @@ export default function BackpackScreen() {
     }
     setEditingSection(null);
     if (Platform.OS !== 'web') {
-      Alert.alert('Saved', 'Your story has been saved.');
+      Alert.alert(t('backpack.alert.saved.title'), t('backpack.alert.saved.message'));
     }
   }, [editText, updateBackpackSection, updateKimBackpackSection, isKim]);
 
@@ -109,7 +111,7 @@ export default function BackpackScreen() {
   const handleStageChange = useCallback(async (stage: StageOfChange) => {
     await updateStageOfChange(stage);
     if (Platform.OS !== 'web') {
-      Alert.alert('Updated', 'Your stage of change has been updated.');
+      Alert.alert(t('backpack.alert.updated.title'), t('backpack.alert.updated.message'));
     }
   }, [updateStageOfChange]);
 
@@ -146,7 +148,7 @@ export default function BackpackScreen() {
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                 {hasContent && (
                   <View style={{ backgroundColor: color + '20', borderRadius: 10, paddingHorizontal: 8, paddingVertical: 2 }}>
-                    <Text style={{ fontSize: 11, color, fontWeight: '500' }}>Written</Text>
+                    <Text style={{ fontSize: 11, color, fontWeight: '500' }}>{t('backpack.kim_section.written')}</Text>
                   </View>
                 )}
                 <Text style={{ color: colors.muted }}>{isExpanded ? '\u25B2' : '\u25BC'}</Text>
@@ -165,7 +167,7 @@ export default function BackpackScreen() {
               <View>
                 <TextInput
                   style={{ backgroundColor: '#fff', borderWidth: 1, borderColor: colors.border, borderRadius: 12, padding: 16, fontSize: 15, color: colors.foreground, minHeight: 160, textAlignVertical: 'top', lineHeight: 24 }}
-                  placeholder="Write your story here... Take your time."
+                  placeholder={t('backpack.kim_section.placeholder')}
                   placeholderTextColor="#9CA3AF"
                   value={editText}
                   onChangeText={setEditText}
@@ -174,12 +176,12 @@ export default function BackpackScreen() {
                 <View style={{ flexDirection: 'row', gap: 12, marginTop: 12 }}>
                   <Pressable onPress={handleCancel} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1, flex: 1 }]}>
                     <View style={{ backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: 12, paddingVertical: 12, alignItems: 'center' }}>
-                      <Text style={{ color: colors.foreground, fontWeight: '500' }}>Cancel</Text>
+                      <Text style={{ color: colors.foreground, fontWeight: '500' }}>{t('backpack.kim_section.cancel')}</Text>
                     </View>
                   </Pressable>
                   <Pressable onPress={() => handleSave(section.id)} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1, flex: 1 }]}>
                     <View style={{ backgroundColor: colors.primary, borderRadius: 12, paddingVertical: 12, alignItems: 'center' }}>
-                      <Text style={{ color: '#fff', fontWeight: '600' }}>Save</Text>
+                      <Text style={{ color: '#fff', fontWeight: '600' }}>{t('backpack.kim_section.save')}</Text>
                     </View>
                   </Pressable>
                 </View>
@@ -192,16 +194,16 @@ export default function BackpackScreen() {
                 )}
                 <Pressable onPress={() => handleStartEditElias(section)} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1, marginTop: 12 }]}>
                   <View style={{ backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: 12, paddingVertical: 10, alignItems: 'center' }}>
-                    <Text style={{ color: colors.primary, fontWeight: '500' }}>Edit</Text>
+                    <Text style={{ color: colors.primary, fontWeight: '500' }}>{t('backpack.kim_section.edit')}</Text>
                   </View>
                 </Pressable>
               </View>
             ) : (
               <View style={{ alignItems: 'center', paddingVertical: 16 }}>
-                <Text style={{ color: colors.muted, fontSize: 13, marginBottom: 12 }}>No story written yet for this phase.</Text>
+                <Text style={{ color: colors.muted, fontSize: 13, marginBottom: 12 }}>{t('backpack.elias_section.no_story')}</Text>
                 <Pressable onPress={() => handleStartEditElias(section)} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}>
                   <View style={{ backgroundColor: colors.primary, borderRadius: 12, paddingHorizontal: 24, paddingVertical: 12 }}>
-                    <Text style={{ color: '#fff', fontWeight: '600' }}>Start Writing</Text>
+                    <Text style={{ color: '#fff', fontWeight: '600' }}>{t('backpack.kim_section.start_writing')}</Text>
                   </View>
                 </Pressable>
               </View>
@@ -244,7 +246,7 @@ export default function BackpackScreen() {
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                 {hasContent && (
                   <View style={{ backgroundColor: section.color + '20', borderRadius: 10, paddingHorizontal: 8, paddingVertical: 2 }}>
-                    <Text style={{ fontSize: 11, color: section.color, fontWeight: '500' }}>Written</Text>
+                    <Text style={{ fontSize: 11, color: section.color, fontWeight: '500' }}>{t('backpack.elias_section.written')}</Text>
                   </View>
                 )}
                 <Text style={{ color: colors.muted }}>{isExpanded ? '\u25B2' : '\u25BC'}</Text>
@@ -263,7 +265,7 @@ export default function BackpackScreen() {
               <View>
                 <TextInput
                   style={{ backgroundColor: '#fff', borderWidth: 1, borderColor: colors.border, borderRadius: 12, padding: 16, fontSize: 15, color: colors.foreground, minHeight: 160, textAlignVertical: 'top', lineHeight: 24 }}
-                  placeholder="Write your story here... Take your time."
+                  placeholder={t('backpack.elias_section.placeholder')}
                   placeholderTextColor="#9CA3AF"
                   value={editText}
                   onChangeText={setEditText}
@@ -272,12 +274,12 @@ export default function BackpackScreen() {
                 <View style={{ flexDirection: 'row', gap: 12, marginTop: 12 }}>
                   <Pressable onPress={handleCancel} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1, flex: 1 }]}>
                     <View style={{ backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: 12, paddingVertical: 12, alignItems: 'center' }}>
-                      <Text style={{ color: colors.foreground, fontWeight: '500' }}>Cancel</Text>
+                      <Text style={{ color: colors.foreground, fontWeight: '500' }}>{t('backpack.elias_section.cancel')}</Text>
                     </View>
                   </Pressable>
                   <Pressable onPress={() => handleSave(section.id)} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1, flex: 1 }]}>
                     <View style={{ backgroundColor: colors.primary, borderRadius: 12, paddingVertical: 12, alignItems: 'center' }}>
-                      <Text style={{ color: '#fff', fontWeight: '600' }}>Save</Text>
+                      <Text style={{ color: '#fff', fontWeight: '600' }}>{t('backpack.elias_section.save')}</Text>
                     </View>
                   </Pressable>
                 </View>
@@ -287,16 +289,16 @@ export default function BackpackScreen() {
                 <Text style={{ fontSize: 14, color: colors.foreground, lineHeight: 22 }}>{fixUnicode(content)}</Text>
                 <Pressable onPress={() => handleStartEditKim(section.id)} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1, marginTop: 12 }]}>
                   <View style={{ backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: 12, paddingVertical: 10, alignItems: 'center' }}>
-                    <Text style={{ color: colors.primary, fontWeight: '500' }}>Edit</Text>
+                    <Text style={{ color: colors.primary, fontWeight: '500' }}>{t('backpack.elias_section.edit')}</Text>
                   </View>
                 </Pressable>
               </View>
             ) : (
               <View style={{ alignItems: 'center', paddingVertical: 16 }}>
-                <Text style={{ color: colors.muted, fontSize: 13, marginBottom: 12 }}>No story written yet for this section.</Text>
+                <Text style={{ color: colors.muted, fontSize: 13, marginBottom: 12 }}>{t('backpack.kim_section.no_story')}</Text>
                 <Pressable onPress={() => handleStartEditKim(section.id)} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}>
                   <View style={{ backgroundColor: colors.primary, borderRadius: 12, paddingHorizontal: 24, paddingVertical: 12 }}>
-                    <Text style={{ color: '#fff', fontWeight: '600' }}>Start Writing</Text>
+                    <Text style={{ color: '#fff', fontWeight: '600' }}>{t('backpack.elias_section.start_writing')}</Text>
                   </View>
                 </Pressable>
               </View>
@@ -311,14 +313,14 @@ export default function BackpackScreen() {
     <ScreenContainer containerClassName="bg-backgroundWarm">
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 120, paddingHorizontal: spacing.screenHorizontal, paddingTop: spacing.screenTop }}>
         <HomeButton />
-        <Text style={{ ...typography.titleLarge, color: dc.textPrimary, marginBottom: spacing.lg }}>Your Story</Text>
+        <Text style={{ ...typography.titleLarge, color: dc.textPrimary, marginBottom: spacing.lg }}>{t('backpack.title')}</Text>
         {/* Description Card */}
         <View style={{ ...cardStyles.default, marginBottom: spacing.lg, flexDirection: 'row', alignItems: 'flex-start', gap: 12 }}>
           <View style={{ flex: 1 }}>
             <Text style={{ ...typography.bodySmall, color: dc.textSecondary, lineHeight: 20 }}>
               {isKim
-                ? 'Your personal story as a loved one — it helps Kim truly understand your situation. Write at your own pace. Everything stays on your device and is NEVER modified by the system.'
-                : 'Your life story is your identity anchor — it helps your companion truly know you. Write at your own pace. Everything stays on your device and is NEVER modified by the system.'}
+                ? t('backpack.description.kim')
+                : t('backpack.description.elias')}
             </Text>
           </View>
           <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: dc.primarySoft, alignItems: 'center', justifyContent: 'center' }}>
@@ -329,7 +331,7 @@ export default function BackpackScreen() {
         {/* Progress */}
         <View style={{ marginBottom: 24 }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-            <Text style={{ fontSize: 15, fontWeight: '600', color: colors.foreground }}>Progress</Text>
+            <Text style={{ fontSize: 15, fontWeight: '600', color: colors.foreground }}>{t('backpack.progress.title')}</Text>
             <Text style={{ fontSize: 13, color: colors.muted }}>{filledCount} of {totalCount} sections</Text>
           </View>
           <View style={{ flexDirection: 'row', gap: 4 }}>
@@ -362,7 +364,7 @@ export default function BackpackScreen() {
         {/* Stage of Change */}
         {!isKim && state.backpack?.userType === 'elias' && (
           <View style={{ marginBottom: 24 }}>
-            <Text style={{ fontSize: 16, fontWeight: '700', color: colors.foreground, marginBottom: 4 }}>Stage of Change</Text>
+            <Text style={{ fontSize: 16, fontWeight: '700', color: colors.foreground, marginBottom: 4 }}>{t('backpack.stage_of_change.title')}</Text>
             <Text style={{ fontSize: 13, color: colors.muted, marginBottom: 16, lineHeight: 18 }}>
               Where are you in your journey? This helps your companion adjust their approach.
             </Text>
@@ -413,8 +415,8 @@ export default function BackpackScreen() {
           <View style={{ backgroundColor: '#3B82F620', borderRadius: 12, padding: 14, flexDirection: 'row', alignItems: 'center', gap: 10, borderWidth: 1, borderColor: '#3B82F640' }}>
             <Text style={{ fontSize: 20 }}>{"\u{1F4DD}"}</Text>
             <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 14, fontWeight: '600', color: colors.foreground }}>Fill My Backpack</Text>
-              <Text style={{ fontSize: 12, color: colors.muted }}>Upload a life story document or fill in step by step</Text>
+              <Text style={{ fontSize: 14, fontWeight: '600', color: colors.foreground }}>{t('backpack.wizard.title')}</Text>
+              <Text style={{ fontSize: 12, color: colors.muted }}>{t('backpack.wizard.description')}</Text>
             </View>
             <Text style={{ fontSize: 14, color: colors.muted }}>{"\u{203A}"}</Text>
           </View>
@@ -433,8 +435,8 @@ export default function BackpackScreen() {
               <View style={{ backgroundColor: '#8B5CF620', borderRadius: 12, padding: 14, flexDirection: 'row', alignItems: 'center', gap: 10, borderWidth: 1, borderColor: '#8B5CF640' }}>
                 <Text style={{ fontSize: 20 }}>{"\u{1F4C4}"}</Text>
                 <View style={{ flex: 1 }}>
-                  <Text style={{ fontSize: 14, fontWeight: '600', color: colors.foreground }}>My Safety Plan</Text>
-                  <Text style={{ fontSize: 12, color: colors.muted }}>Upload a document or fill in step by step</Text>
+                  <Text style={{ fontSize: 14, fontWeight: '600', color: colors.foreground }}>{t('backpack.vsp.title')}</Text>
+                  <Text style={{ fontSize: 12, color: colors.muted }}>{t('backpack.vsp.description')}</Text>
                 </View>
                 <Text style={{ fontSize: 14, color: colors.muted }}>{"\u{203A}"}</Text>
               </View>
@@ -449,7 +451,7 @@ export default function BackpackScreen() {
         {/* Tip */}
         <View style={{ ...cardStyles.default, marginTop: spacing.sm }}>
           <Text style={{ ...typography.bodySmall, color: dc.textTertiary, lineHeight: 20 }}>
-            <Text style={{ fontWeight: '600', color: dc.textPrimary }}>Tip: </Text>
+            <Text style={{ fontWeight: '600', color: dc.textPrimary }}>{t('backpack.tip.label')}</Text>
             You can always come back to add or edit your story. Your backpack is sent in full to your companion at the start of each conversation — it is never summarized or reduced. Only you can change it.
           </Text>
         </View>

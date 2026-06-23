@@ -21,6 +21,7 @@ import {
 } from '@/lib/engine/kim/eigen-regie';
 import { colors as dc, spacing, radius, typography, shadows, cardStyles, buttonStyles } from '@/constants/design';
 import { HomeButton } from '@/components/home-button';
+import { useTranslation } from '@/lib/i18n';
 
 // ─── Constants ──────────────────────────────────────────────────
 
@@ -179,6 +180,7 @@ export default function MoodScreen() {
     return 50;
   });
   const [eigenRegieSaved, setEigenRegieSaved] = useState(false);
+  const { t } = useTranslation();
   const eigenRegieResult = useMemo(
     () => isKim ? processEigenRegie(eigenRegieInput) : null,
     [eigenRegieInput, isKim],
@@ -243,11 +245,11 @@ export default function MoodScreen() {
     <ScreenContainer containerClassName="bg-backgroundWarm">
       <ScrollView contentContainerStyle={{ paddingBottom: 120, paddingHorizontal: spacing.screenHorizontal, paddingTop: spacing.screenTop }} showsVerticalScrollIndicator={false}>
         <HomeButton />
-        <Text style={{ ...typography.titleLarge, color: dc.textPrimary, marginBottom: spacing.lg }}>How are you?</Text>
+        <Text style={{ ...typography.titleLarge, color: dc.textPrimary, marginBottom: spacing.lg }}>{t('mood.title')}</Text>
         {/* Intervention Alerts */}
         {severeAlerts.length > 0 && (
           <View style={{ backgroundColor: dc.dangerSoft, borderRadius: radius.xl, padding: spacing.cardPadding, marginBottom: spacing.cardGap, borderWidth: 1, borderColor: '#F3B8B8' }}>
-            <Text style={{ color: dc.danger, fontWeight: '700', fontSize: 13, marginBottom: 4 }}>High alert</Text>
+            <Text style={{ color: dc.danger, fontWeight: '700', fontSize: 13, marginBottom: 4 }}>{t('mood.alert.severe.title')}</Text>
             <Text style={{ ...typography.bodySmall, color: dc.textPrimary }}>
               {severeAlerts.map((a) => a.label).join(', ')} {severeAlerts.length === 1 ? 'is' : 'are'} at a critical level.
             </Text>
@@ -255,7 +257,7 @@ export default function MoodScreen() {
         )}
         {moderateAlerts.length > 0 && severeAlerts.length === 0 && (
           <View style={{ backgroundColor: dc.warningSoft, borderRadius: radius.xl, padding: spacing.cardPadding, marginBottom: spacing.cardGap, borderWidth: 1, borderColor: dc.moodYellow }}>
-            <Text style={{ color: dc.warning, fontWeight: '700', fontSize: 13, marginBottom: 4 }}>Heads up</Text>
+            <Text style={{ color: dc.warning, fontWeight: '700', fontSize: 13, marginBottom: 4 }}>{t('mood.alert.moderate.title')}</Text>
             <Text style={{ ...typography.bodySmall, color: dc.textPrimary }}>
               {moderateAlerts.map((a) => a.label).join(', ')} {moderateAlerts.length === 1 ? 'is' : 'are'} elevated.
             </Text>
@@ -326,7 +328,7 @@ export default function MoodScreen() {
             backgroundColor: saved ? dc.success : dc.primary,
           }}>
             <Text style={{ ...typography.button, color: dc.textInverse }}>
-              {saved ? 'Saved!' : 'Save Check-in'}
+              {saved ? t('mood.eigen_regie.save_button.saved') : t('mood.save_button.default')}
             </Text>
           </View>
         </Pressable>
@@ -334,7 +336,7 @@ export default function MoodScreen() {
         {/* Self-Direction (Kim only) */}
         {isKim && eigenRegieResult && (
           <View style={{ marginTop: 40 }}>
-            <Text style={{ fontSize: 18, fontWeight: '700', color: colors.foreground, marginBottom: 8 }}>Self-Direction</Text>
+            <Text style={{ fontSize: 18, fontWeight: '700', color: colors.foreground, marginBottom: 8 }}>{t('mood.eigen_regie.title')}</Text>
             <Text style={{ fontSize: 13, color: colors.muted, marginBottom: 16 }}>{EIGEN_REGIE_QUESTION}</Text>
 
             <View style={{ backgroundColor: '#fff', borderRadius: 16, padding: 20, borderWidth: 1, borderColor: colors.border }}>
@@ -372,7 +374,7 @@ export default function MoodScreen() {
             >
               <View style={{ backgroundColor: eigenRegieSaved ? '#10B981' : colors.primary, borderRadius: 16, paddingVertical: 14, alignItems: 'center' }}>
                 <Text style={{ color: '#fff', fontSize: 15, fontWeight: '700' }}>
-                  {eigenRegieSaved ? 'Saved!' : 'Save reflection'}
+                  {eigenRegieSaved ? t('mood.save_button.saved') : t('mood.eigen_regie.save_button.default')}
                 </Text>
               </View>
             </Pressable>
@@ -382,7 +384,7 @@ export default function MoodScreen() {
         {/* Mood Trend Chart */}
         <View style={{ marginTop: 40 }}>
           <Text style={{ fontSize: 18, fontWeight: '700', color: colors.foreground, marginBottom: 16 }}>
-            {userType === 'elias' ? 'Mood trend' : 'Care trend'}
+            {userType === 'elias' ? t('mood.trend.title.elias') : t('mood.trend.title.kim')}
           </Text>
           <MoodTrendChartCard
             persona={userType as 'elias' | 'kim'}
@@ -393,13 +395,13 @@ export default function MoodScreen() {
 
         {/* Progress Tracker */}
         <View style={{ marginTop: 40 }}>
-          <Text style={{ fontSize: 18, fontWeight: '700', color: colors.foreground, marginBottom: 16 }}>Progress</Text>
+          <Text style={{ fontSize: 18, fontWeight: '700', color: colors.foreground, marginBottom: 16 }}>{t('mood.progress.title')}</Text>
           <ProgressCard />
         </View>
 
         {/* Recognition Section */}
         <View style={{ marginTop: 40 }}>
-          <Text style={{ fontSize: 18, fontWeight: '700', color: colors.foreground, marginBottom: 16 }}>Your Pattern</Text>
+          <Text style={{ fontSize: 18, fontWeight: '700', color: colors.foreground, marginBottom: 16 }}>{t('mood.recognition.title')}</Text>
 
           {!hasRecognitionData ? (
             <View style={{ backgroundColor: '#fff', borderRadius: 16, padding: 20, borderWidth: 1, borderColor: colors.border }}>
@@ -416,7 +418,7 @@ export default function MoodScreen() {
                   <Text style={{ fontSize: 15, fontWeight: '700', color: ZONE_CONFIG[dominantZone].color }}>
                     {ZONE_CONFIG[dominantZone].label}
                   </Text>
-                  <Text style={{ fontSize: 11, color: colors.muted }}>last 7 days</Text>
+                  <Text style={{ fontSize: 11, color: colors.muted }}>{t('mood.recognition.last_7_days')}</Text>
                 </View>
                 <Text style={{ fontSize: 13, color: colors.foreground, lineHeight: 18 }}>
                   {ZONE_CONFIG[dominantZone].description}
@@ -453,8 +455,8 @@ export default function MoodScreen() {
               {/* Timeline Toggle */}
               <Pressable onPress={() => setShowTimeline(!showTimeline)} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}>
                 <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 6, paddingVertical: 8 }}>
-                  <Text style={{ fontSize: 12, color: colors.muted }}>{showTimeline ? 'Hide timeline' : 'Show timeline'}</Text>
-                  <Text style={{ fontSize: 12, color: colors.muted }}>{showTimeline ? '▲' : '▼'}</Text>
+                  <Text style={{ fontSize: 12, color: colors.muted }}>{showTimeline ? t('mood.recognition.timeline.hide') : t('mood.recognition.timeline.show')}</Text>
+                  <Text style={{ fontSize: 12, color: colors.muted }}>{showTimeline ? t('mood.recognition.timeline.hide_icon') : t('mood.recognition.timeline.show_icon')}</Text>
                 </View>
               </Pressable>
 
@@ -464,7 +466,7 @@ export default function MoodScreen() {
                     <TimelineEntry key={`${snapshot.timestamp}-${index}`} snapshot={snapshot} sliderConfig={sliderConfig} colors={colors} />
                   ))}
                   {recentTimeline.length === 0 && (
-                    <Text style={{ fontSize: 12, color: colors.muted, textAlign: 'center', paddingVertical: 8 }}>No entries yet.</Text>
+                    <Text style={{ fontSize: 12, color: colors.muted, textAlign: 'center', paddingVertical: 8 }}>{t('mood.recognition.timeline.empty')}</Text>
                   )}
                 </View>
               )}

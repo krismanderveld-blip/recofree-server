@@ -31,16 +31,17 @@ import {
   detectKimProgress,
   type KimProgressSummary,
 } from '@/lib/engine/kim/kim-progress-tracker';
+import { useTranslation, tStatic } from '@/lib/i18n';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function trendArrow(direction: TrendDirection): string {
   switch (direction) {
-    case 'DOWN': return '↓';
-    case 'UP': return '↑';
-    case 'STABLE': return '→';
-    case 'MIXED': return '↔';
-    case 'INSUFFICIENT_DATA': return '—';
+    case 'DOWN': return tStatic('progress_card.trend_arrow.down');
+    case 'UP': return tStatic('progress_card.trend_arrow.up');
+    case 'STABLE': return tStatic('progress_card.trend_arrow.stable');
+    case 'MIXED': return tStatic('progress_card.trend_arrow.mixed');
+    case 'INSUFFICIENT_DATA': return tStatic('progress_card.trend_arrow.insufficient_data');
   }
 }
 
@@ -56,10 +57,10 @@ function trendColor(direction: TrendDirection, isPositive: boolean): string {
 
 function interpretationLabel(interpretation: string): string {
   switch (interpretation) {
-    case 'softened': return 'Softened';
-    case 'increased': return 'Needs attention';
-    case 'stable': return 'Stable';
-    case 'not_enough_data': return 'Not enough data';
+    case 'softened': return tStatic('progress_card.interpretation.softened');
+    case 'increased': return tStatic('progress_card.interpretation.increased');
+    case 'stable': return tStatic('progress_card.interpretation.stable');
+    case 'not_enough_data': return tStatic('progress_card.interpretation.not_enough_data');
     default: return '';
   }
 }
@@ -123,7 +124,7 @@ function ActiveModulesRow({ modules }: { modules: { moduleId: string; count: num
 
   return (
     <View style={styles.modulesContainer}>
-      <Text style={styles.sectionLabel}>ACTIVE MODULES</Text>
+      <Text style={styles.sectionLabel}>{tStatic('progress_card.active_modules.title')}</Text>
       <View style={styles.modulesRow}>
         {modules.map((m) => (
           <View key={m.moduleId} style={styles.moduleBadge}>
@@ -184,7 +185,7 @@ function EliasProgressContent({ summary }: { summary: EliasProgressSummary }) {
       {/* Sobriety */}
       {summary.sobriety.sobrietyDate && (
         <View style={styles.sobrietyContainer}>
-          <Text style={styles.sectionLabel}>SOBRIETY</Text>
+          <Text style={styles.sectionLabel}>{tStatic('progress_card.elias.sobriety.title')}</Text>
           <Text style={styles.sobrietyText}>{summary.sobriety.displayCopy}</Text>
         </View>
       )}
@@ -195,7 +196,7 @@ function EliasProgressContent({ summary }: { summary: EliasProgressSummary }) {
       {/* Projection Movement */}
       {(summary.projectionMovement.fearCount > 0 || summary.projectionMovement.hopeCount > 0) && (
         <View style={styles.projectionContainer}>
-          <Text style={styles.sectionLabel}>INNER LANDSCAPE</Text>
+          <Text style={styles.sectionLabel}>{tStatic('progress_card.elias.inner_landscape.title')}</Text>
           {summary.projectionMovement.strongestHope && (
             <Text style={[styles.projectionText, { color: dc.success }]}>
               Hope: {summary.projectionMovement.strongestHope}
@@ -265,7 +266,7 @@ function KimProgressContent({ summary }: { summary: KimProgressSummary }) {
 
       {/* Self-care */}
       <View style={styles.selfCareContainer}>
-        <Text style={styles.sectionLabel}>SELF-CARE</Text>
+        <Text style={styles.sectionLabel}>{tStatic('progress_card.kim.self_care.title')}</Text>
         <Text style={styles.selfCareText}>{summary.selfCare.displayCopy}</Text>
       </View>
 
@@ -288,6 +289,7 @@ export function ProgressCard() {
   const userType = state.userType ?? 'elias';
   const userDat = getUserDat();
   const [expanded, setExpanded] = useState(false);
+  const { t } = useTranslation();
 
   const progressData = useMemo(() => {
     if (!userDat) return null;
@@ -345,11 +347,11 @@ export function ProgressCard() {
       >
         <View style={styles.headerRow}>
           <View style={styles.headerLeft}>
-            <Text style={styles.headerIcon}>📊</Text>
-            <Text style={[styles.headerTitle, { color: dc.textPrimary }]}>Your Progress</Text>
+            <Text style={styles.headerIcon}>{t('progress_card.header.icon')}</Text>
+            <Text style={[styles.headerTitle, { color: dc.textPrimary }]}>{t('progress_card.header.title')}</Text>
           </View>
           <Text style={[styles.expandArrow, { color: dc.textTertiary }]}>
-            {expanded ? '▲' : '▼'}
+            {expanded ? t('progress_card.header.expand_arrow') : t('progress_card.header.collapse_arrow')}
           </Text>
         </View>
       </Pressable>

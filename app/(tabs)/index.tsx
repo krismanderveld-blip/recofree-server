@@ -13,11 +13,13 @@ import { useColors } from '@/hooks/use-colors';
 import { getSliderConfig } from '@/lib/ai/types';
 import * as Haptics from 'expo-haptics';
 import { colors as dc, spacing, radius, shadows, typography, cardStyles, buttonStyles } from '@/constants/design';
+import { useTranslation } from '@/lib/i18n';
 
 export default function HomeScreen() {
   const router = useRouter();
   const { state, getUserName, getMood, getUserDat, updateMilestoneShown, toggleClinicalMode } = useUser();
   const colors = useColors();
+  const { t } = useTranslation();
   const userName = getUserName();
   const mood = getMood();
   const userDat = getUserDat();
@@ -123,7 +125,7 @@ export default function HomeScreen() {
     return (
       <ScreenContainer containerClassName="bg-backgroundWarm">
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-          <Text style={{ color: dc.textMuted, fontSize: 16 }}>Loading...</Text>
+          <Text style={{ color: dc.textMuted, fontSize: 16 }}>{t('home.loading')}</Text>
         </View>
       </ScreenContainer>
     );
@@ -153,18 +155,18 @@ export default function HomeScreen() {
           <View style={{ flex: 1 }}>
             <Pressable onPress={handleCompanionNameTap}>
               <Text style={styles.greeting}>
-                {getTimeGreeting()}, {fixUnicode(userName)}
+                {getTimeGreeting(t)}, {fixUnicode(userName)}
               </Text>
             </Pressable>
             <Text style={styles.subtitle}>
-              {getSubtitle(isElias, mood)}
+              {getSubtitle(isElias, mood, t)}
             </Text>
             {isClinicalActive && (
               <Pressable onPress={() => setShowClinicalModal(true)}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8 }}>
                   <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: dc.success, marginRight: 6 }} />
                   <Text style={{ fontSize: 11, color: dc.success, fontWeight: '700', letterSpacing: 0.5 }}>
-                    CLINICAL MODE
+                    {t('home.clinical_mode.badge')}
                   </Text>
                 </View>
               </Pressable>
@@ -172,7 +174,7 @@ export default function HomeScreen() {
           </View>
           {/* Notification bell (visual only, no functionality yet) */}
           <View style={styles.bellContainer}>
-            <Text style={{ fontSize: 22 }}>🔔</Text>
+            <Text style={{ fontSize: 22 }}>{t('home.bell_icon')}</Text>
             <View style={styles.bellDot} />
           </View>
         </View>
@@ -196,18 +198,18 @@ export default function HomeScreen() {
           <View style={styles.soberCard}>
             <View style={styles.soberCircle}>
               <Text style={styles.soberDaysNumber}>{sobrietyDays}</Text>
-              <Text style={styles.soberDaysLabel}>days</Text>
+              <Text style={styles.soberDaysLabel}>{t('home.sober_counter.days_label')}</Text>
             </View>
             <View style={{ flex: 1, marginLeft: 20 }}>
               <Text style={styles.soberTitle}>
-                {sobrietyDays} days clean {sobrietyDays >= 30 ? '🔥' : ''}
+                {t('home.sober_counter.title', { sobrietyDays: String(sobrietyDays) })}
               </Text>
               <Text style={styles.soberMessage}>
-                {getSoberMessage(sobrietyDays)}
+                {getSoberMessage(sobrietyDays, t)}
               </Text>
               <View style={styles.soberCta}>
                 <Text style={{ fontSize: 14, color: dc.primary, fontWeight: '600' }}>
-                  Keep going, {fixUnicode(userName)}
+                  {t('home.sober_counter.cta', { userName: fixUnicode(userName) })}
                 </Text>
               </View>
             </View>
@@ -222,10 +224,10 @@ export default function HomeScreen() {
           >
             <View style={styles.promptCard}>
               <Text style={{ fontSize: 15, color: dc.textSecondary, textAlign: 'center', lineHeight: 22 }}>
-                Set your sobriety date to start tracking your progress
+                {t('home.prompt.set_sobriety_date')}
               </Text>
               <Text style={{ fontSize: 14, color: dc.primary, fontWeight: '600', marginTop: 10 }}>
-                Go to Profile →
+                {t('home.prompt.go_to_profile')}
               </Text>
             </View>
           </Pressable>
@@ -239,12 +241,12 @@ export default function HomeScreen() {
             style={({ pressed }) => [styles.dualCard, styles.dualCardLeft, { opacity: pressed ? 0.85 : 1 }]}
           >
             <View style={styles.dualCardIcon}>
-              <Text style={{ fontSize: 28 }}>😊</Text>
+              <Text style={{ fontSize: 28 }}>{t('home.mood_card.icon')}</Text>
             </View>
-            <Text style={styles.dualCardTitle}>Mood</Text>
-            <Text style={styles.dualCardBody}>How are you feeling right now?</Text>
+            <Text style={styles.dualCardTitle}>{t('home.mood_card.title')}</Text>
+            <Text style={styles.dualCardBody}>{t('home.mood_card.body')}</Text>
             <View style={[styles.dualCardCta, { backgroundColor: dc.success }]}>
-              <Text style={styles.dualCardCtaText}>Check in  →</Text>
+              <Text style={styles.dualCardCtaText}>{t('home.mood_card.cta')}</Text>
             </View>
           </Pressable>
 
@@ -260,10 +262,10 @@ export default function HomeScreen() {
               }
               style={styles.dualCardAvatar}
             />
-            <Text style={styles.dualCardTitle}>{companionName} is here</Text>
-            <Text style={styles.dualCardBody}>Talk or get support whenever you need it.</Text>
+            <Text style={styles.dualCardTitle}>{t('home.chat_card.title', { companionName })}</Text>
+            <Text style={styles.dualCardBody}>{t('home.chat_card.body')}</Text>
             <View style={[styles.dualCardCta, { backgroundColor: dc.eliasAccent }]}>
-              <Text style={styles.dualCardCtaText}>Talk to {companionName}  →</Text>
+              <Text style={styles.dualCardCtaText}>{t('home.chat_card.cta', { companionName })}</Text>
             </View>
           </Pressable>
         </View>
@@ -274,32 +276,30 @@ export default function HomeScreen() {
           style={({ pressed }) => [styles.navCard, { backgroundColor: dc.diaryAccentSoft, borderColor: dc.secondaryMuted, opacity: pressed ? 0.85 : 1 }]}
         >
           <View style={[styles.navCardIcon, { backgroundColor: '#FFF3E0' }]}>
-            <Text style={{ fontSize: 22 }}>✏️</Text>
+            <Text style={{ fontSize: 22 }}>{t('home.diary_card.icon')}</Text>
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={styles.navCardTitle}>My Diary</Text>
-            <Text style={styles.navCardBody}>Write freely. Reflect. Gain clarity.</Text>
-            <Text style={[styles.navCardCta, { color: dc.diaryAccent }]}>Write a new entry</Text>
+            <Text style={styles.navCardTitle}>{t('home.diary_card.title')}</Text>
+            <Text style={styles.navCardBody}>{t('home.diary_card.body')}</Text>
+            <Text style={[styles.navCardCta, { color: dc.diaryAccent }]}>{t('home.diary_card.cta')}</Text>
           </View>
-          <Text style={styles.navCardChevron}>›</Text>
+                    <Text style={styles.navCardChevron}>{t('home.diary_card.chevron')}</Text>
         </Pressable>
-
         {/* My Backpack Card */}
         <Pressable
           onPress={() => router.push('/(tabs)/backpack' as Href)}
           style={({ pressed }) => [styles.navCard, { backgroundColor: dc.backpackAccentSoft, borderColor: dc.eliasAccentMuted, opacity: pressed ? 0.85 : 1 }]}
         >
           <View style={[styles.navCardIcon, { backgroundColor: '#E8E0F0' }]}>
-            <Text style={{ fontSize: 22 }}>🎒</Text>
+            <Text style={{ fontSize: 22 }}>{t('home.backpack_card.icon')}</Text>
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={styles.navCardTitle}>My Backpack</Text>
-            <Text style={styles.navCardBody}>Your plan, tools and insights all in one place.</Text>
-            <Text style={[styles.navCardCta, { color: dc.backpackAccent }]}>Open my Backpack</Text>
+            <Text style={styles.navCardTitle}>{t('home.backpack_card.title')}</Text>
+            <Text style={styles.navCardBody}>{t('home.backpack_card.body')}</Text>
+            <Text style={[styles.navCardCta, { color: dc.backpackAccent }]}>{t('home.backpack_card.cta')}</Text>
           </View>
-          <Text style={styles.navCardChevron}>›</Text>
+                    <Text style={styles.navCardChevron}>{t('home.backpack_card.chevron')}</Text>
         </Pressable>
-
         {/* My Profile Card */}
         <Pressable
           onPress={() => router.push('/(tabs)/profile' as Href)}
@@ -311,10 +311,10 @@ export default function HomeScreen() {
             </Text>
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={styles.navCardTitle}>My Profile</Text>
-            <Text style={styles.navCardBody}>Recovery settings, contacts and data.</Text>
+            <Text style={styles.navCardTitle}>{t('home.profile_card.title')}</Text>
+            <Text style={styles.navCardBody}>{t('home.profile_card.body')}</Text>
           </View>
-          <Text style={styles.navCardChevron}>›</Text>
+          <Text style={styles.navCardChevron}>{t('home.profile_card.chevron')}</Text>
         </Pressable>
       </ScrollView>
 
@@ -329,12 +329,12 @@ export default function HomeScreen() {
             style={styles.modalCard}
           >
             <Text style={{ ...typography.titleSmall, color: dc.textPrimary, marginBottom: 14 }}>
-              {isClinicalActive ? 'Disable Clinical Mode?' : 'Enable Clinical Mode?'}
+              {isClinicalActive ? t('home.clinical_modal.title_disable') : t('home.clinical_modal.title_enable')}
             </Text>
             <Text style={{ ...typography.bodySmall, color: dc.textSecondary, lineHeight: 21, marginBottom: 24 }}>
               {isClinicalActive
-                ? 'Clinical annotations will be hidden and standard restrictions will be restored.'
-                : 'This mode is intended for clinical demonstration only. Elias and Kim will provide therapeutic annotations and operate without standard restrictions.'}
+                ? t('home.clinical_modal.body_disable')
+                : t('home.clinical_modal.body_enable')}
             </Text>
             <View style={{ flexDirection: 'row', gap: 12 }}>
               <Pressable
@@ -345,7 +345,7 @@ export default function HomeScreen() {
                   opacity: pressed ? 0.8 : 1,
                 }]}
               >
-                <Text style={{ fontWeight: '600', color: dc.textPrimary, fontSize: 15 }}>Cancel</Text>
+                <Text style={{ fontWeight: '600', color: dc.textPrimary, fontSize: 15 }}>{t('home.clinical_modal.cancel')}</Text>
               </Pressable>
               <Pressable
                 onPress={isClinicalActive ? handleDisableClinical : handleEnableClinical}
@@ -356,7 +356,7 @@ export default function HomeScreen() {
                 }]}
               >
                 <Text style={{ fontWeight: '700', color: dc.textInverse, fontSize: 15 }}>
-                  {isClinicalActive ? 'Disable' : 'Enable'}
+                  {isClinicalActive ? t('home.clinical_modal.confirm_disable') : t('home.clinical_modal.confirm_enable')}
                 </Text>
               </Pressable>
             </View>
@@ -562,33 +562,33 @@ const styles = StyleSheet.create({
   },
 });
 
-function getSoberMessage(days: number): string {
-  if (days === 0) return 'Today is day zero. Tomorrow is day one.';
-  if (days === 1) return 'The hardest day. You showed up.';
-  if (days < 7) return 'Every single day counts.';
-  if (days < 14) return 'One week behind you. You chose yourself.';
-  if (days < 30) return 'A month of choosing yourself, every single day.';
-  if (days < 60) return 'A month of choosing yourself, every single day.';
-  if (days < 90) return 'Two months. The fog is lifting.';
-  if (days < 180) return 'This is real. You rebuilt something.';
-  if (days < 365) return 'Half a year of showing up.';
-  return 'One year and beyond. Look who you are now.';
+function getSoberMessage(days: number, t: (key: string) => string): string {
+  if (days === 0) return t('home.sober_message.0');
+  if (days === 1) return t('home.sober_message.1');
+  if (days < 7) return t('home.sober_message.7');
+  if (days < 14) return t('home.sober_message.14');
+  if (days < 30) return t('home.sober_message.30');
+  if (days < 60) return t('home.sober_message.60');
+  if (days < 90) return t('home.sober_message.90');
+  if (days < 180) return t('home.sober_message.180');
+  if (days < 365) return t('home.sober_message.365');
+  return t('home.sober_message.beyond');
 }
 
-function getTimeGreeting(): string {
+function getTimeGreeting(t: (key: string) => string): string {
   const hour = new Date().getHours();
-  if (hour < 6) return 'Still here';
-  if (hour < 12) return 'Good morning';
-  if (hour < 18) return 'Good afternoon';
-  return 'Good evening';
+  if (hour < 6) return t('home.greeting.still_here');
+  if (hour < 12) return t('home.greeting.morning');
+  if (hour < 18) return t('home.greeting.afternoon');
+  return t('home.greeting.evening');
 }
 
-function getSubtitle(isElias: boolean, mood: any): string {
+function getSubtitle(isElias: boolean, mood: any, t: (key: string) => string): string {
   if (isElias) {
     const craving = mood?.craving ?? 0;
-    if (craving > 7) return 'First we slow the moment down.';
-    if (craving > 4) return 'We keep it small today.';
-    return 'What do you want to protect today?';
+    if (craving > 7) return t('home.subtitle.elias.craving_high');
+    if (craving > 4) return t('home.subtitle.elias.craving_med');
+    return t('home.subtitle.elias.default');
   }
-  return 'You do not have to carry everything at once.';
+  return t('home.subtitle.kim.default');
 }

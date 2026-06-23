@@ -7,6 +7,7 @@ import { View, Text, FlatList, TextInput, TouchableOpacity } from "react-native"
 import { useState, useCallback } from "react";
 import type { BalkmetafoorData, BalkmetafoorEntry } from "@/src/types/balkmetafoor.types";
 import { deriveBalkmetafoorVisualState } from "@/src/types/balkmetafoor.types";
+import { useTranslation, tStatic } from '@/lib/i18n';
 
 interface BalkmetafoorCardProps {
   data: BalkmetafoorData;
@@ -50,10 +51,10 @@ function BalanceBar({ data }: { data: BalkmetafoorData }) {
 
       {/* Visual state description */}
       <Text className="text-xs text-muted mt-2 italic">
-        {visualState === "BALANCED" && "In balans"}
-        {visualState === "LEANING_DRAAGLAST" && "Meer draaglast dan draagkracht"}
-        {visualState === "LEANING_DRAAGKRACHT" && "Meer draagkracht dan draaglast"}
-        {visualState === "EMPTY" && "Nog niets ingevuld"}
+        {visualState === "BALANCED" && tStatic('profile.balkmetafoor.state.balanced')}
+        {visualState === "LEANING_DRAAGLAST" && tStatic('profile.balkmetafoor.state.leaning_draaglast')}
+        {visualState === "LEANING_DRAAGKRACHT" && tStatic('profile.balkmetafoor.state.leaning_draagkracht')}
+        {visualState === "EMPTY" && tStatic('profile.balkmetafoor.state.empty')}
       </Text>
     </View>
   );
@@ -76,7 +77,7 @@ function EntryList({
           onPress={() => onRemove(item.id)}
           activeOpacity={0.6}
         >
-          <Text className="text-xs text-muted ml-2">✕</Text>
+          <Text className="text-xs text-muted ml-2">{tStatic('profile.balkmetafoor.remove')}</Text>
         </TouchableOpacity>
       </View>
     ),
@@ -86,7 +87,7 @@ function EntryList({
   return (
     <View className="flex-1 px-2">
       <Text className="text-sm font-semibold text-foreground mb-2">
-        {side === "draaglast" ? "Wat trekt aan je" : "Wat houdt je overeind"}
+        {side === "draaglast" ? tStatic('profile.balkmetafoor.question.draaglast') : tStatic('profile.balkmetafoor.question.draagkracht')}
       </Text>
       <FlatList
         data={entries}
@@ -107,6 +108,7 @@ export function BalkmetafoorCard({
 }: BalkmetafoorCardProps) {
   const [draaglastInput, setDraaglastInput] = useState("");
   const [draagkrachtInput, setDraagkrachtInput] = useState("");
+  const { t } = useTranslation();
 
   const handleAddDraaglast = useCallback(() => {
     const trimmed = draaglastInput.trim();
@@ -156,7 +158,7 @@ export function BalkmetafoorCard({
           <View className="flex-row items-center mt-2 px-2">
             <TextInput
               className="flex-1 bg-background rounded-lg px-3 py-2 text-sm text-foreground border border-border"
-              placeholder="Voeg toe..."
+              placeholder={t('profile.balkmetafoor.placeholder.add')}
               placeholderTextColor="#9BA1A6"
               value={draaglastInput}
               onChangeText={setDraaglastInput}
@@ -176,7 +178,7 @@ export function BalkmetafoorCard({
           <View className="flex-row items-center mt-2 px-2">
             <TextInput
               className="flex-1 bg-background rounded-lg px-3 py-2 text-sm text-foreground border border-border"
-              placeholder="Voeg toe..."
+              placeholder={t('profile.balkmetafoor.placeholder.add')}
               placeholderTextColor="#9BA1A6"
               value={draagkrachtInput}
               onChangeText={setDraagkrachtInput}

@@ -20,6 +20,7 @@ import { fixUnicode } from '@/lib/utils';
 import * as Haptics from 'expo-haptics';
 import { colors as dc, spacing, radius, typography, shadows, cardStyles } from '@/constants/design';
 import { HomeButton } from '@/components/home-button';
+import { useTranslation, tStatic } from '@/lib/i18n';
 
 interface GratitudeData {
   entry1: string;
@@ -37,7 +38,7 @@ interface DiaryEntry {
 
 type DiaryTab = 'journal' | 'gratitude';
 
-const MOOD_TAGS = ['Calm', 'Sad', 'Anxious', 'Angry', 'Hopeful', 'Exhausted', 'Grateful', 'Neutral'];
+const MOOD_TAGS = [tStatic('diary.mood.calm'), tStatic('diary.mood.sad'), tStatic('diary.mood.anxious'), tStatic('diary.mood.angry'), tStatic('diary.mood.hopeful'), tStatic('diary.mood.exhausted'), tStatic('diary.mood.grateful'), tStatic('diary.mood.neutral')];
 
 const MOOD_TAG_COLORS: Record<string, string> = {
   Calm: '#3B82F6',
@@ -53,21 +54,21 @@ const MOOD_TAG_COLORS: Record<string, string> = {
 const STORAGE_KEY = '@recofree_diary';
 
 const STOIC_QUOTES = [
-  { text: '"You have power over your mind, not outside events. Realize this, and you will find strength."', author: 'Marcus Aurelius' },
-  { text: '"We suffer more often in imagination than in reality."', author: 'Seneca' },
-  { text: '"The happiness of your life depends upon the quality of your thoughts."', author: 'Marcus Aurelius' },
-  { text: '"It is not what happens to you, but how you react to it that matters."', author: 'Epictetus' },
-  { text: '"No man is free who is not master of himself."', author: 'Epictetus' },
-  { text: '"Begin at once to live, and count each separate day as a separate life."', author: 'Seneca' },
-  { text: '"The best revenge is not to be like your enemy."', author: 'Marcus Aurelius' },
-  { text: '"Waste no more time arguing about what a good man should be. Be one."', author: 'Marcus Aurelius' },
-  { text: '"He who fears death will never do anything worthy of a living man."', author: 'Seneca' },
-  { text: '"First say to yourself what you would be; and then do what you have to do."', author: 'Epictetus' },
-  { text: '"The soul becomes dyed with the colour of its thoughts."', author: 'Marcus Aurelius' },
-  { text: '"Difficulties strengthen the mind, as labor does the body."', author: 'Seneca' },
-  { text: '"Man is not worried by real problems so much as by his imagined anxieties about real problems."', author: 'Epictetus' },
-  { text: '"Very little is needed to make a happy life; it is all within yourself, in your way of thinking."', author: 'Marcus Aurelius' },
-  { text: '"If it is not right, do not do it. If it is not true, do not say it."', author: 'Marcus Aurelius' },
+  { text: tStatic('diary.quote.1.text'), author: tStatic('diary.quote.15.author') },
+  { text: tStatic('diary.quote.2.text'), author: tStatic('diary.quote.12.author') },
+  { text: tStatic('diary.quote.3.text'), author: tStatic('diary.quote.14.author') },
+  { text: tStatic('diary.quote.4.text'), author: tStatic('diary.quote.13.author') },
+  { text: tStatic('diary.quote.5.text'), author: tStatic('diary.quote.10.author') },
+  { text: tStatic('diary.quote.6.text'), author: tStatic('diary.quote.9.author') },
+  { text: tStatic('diary.quote.7.text'), author: tStatic('diary.quote.11.author') },
+  { text: tStatic('diary.quote.8.text'), author: tStatic('diary.quote.8.author') },
+  { text: tStatic('diary.quote.9.text'), author: tStatic('diary.quote.6.author') },
+  { text: tStatic('diary.quote.10.text'), author: tStatic('diary.quote.5.author') },
+  { text: tStatic('diary.quote.11.text'), author: tStatic('diary.quote.7.author') },
+  { text: tStatic('diary.quote.12.text'), author: tStatic('diary.quote.2.author') },
+  { text: tStatic('diary.quote.13.text'), author: tStatic('diary.quote.4.author') },
+  { text: tStatic('diary.quote.14.text'), author: tStatic('diary.quote.3.author') },
+  { text: tStatic('diary.quote.15.text'), author: tStatic('diary.quote.1.author') },
 ];
 
 function getDailyQuote(): { text: string; author: string } {
@@ -77,10 +78,10 @@ function getDailyQuote(): { text: string; author: string } {
 }
 
 const JOURNAL_EXPLANATION =
-  'Writing like the Stoics — what could you control today, what not? What happened, and how did you respond?';
+  tStatic('diary.journal_explanation');
 
 const GRATITUDE_EXPLANATION =
-  'Your brain automatically looks for danger and problems. Writing three things that were good trains your mind to notice what is good too. Not because everything is fine — but because both exist.';
+  tStatic('diary.gratitude_explanation');
 
 function TabSelector({ activeTab, onTabChange, colors }: { activeTab: DiaryTab; onTabChange: (tab: DiaryTab) => void; colors: any }) {
   return (
@@ -143,6 +144,7 @@ export default function DiaryScreen() {
   const [editorTab, setEditorTab] = useState<DiaryTab>('journal');
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchActive, setIsSearchActive] = useState(false);
+  const { t } = useTranslation();
 
   useEffect(() => {
     (async () => {
@@ -180,7 +182,7 @@ export default function DiaryScreen() {
     const newEntry: DiaryEntry = {
       id: `diary_${Date.now()}`,
       content: text,
-      moodTag: editorMood || 'Neutral',
+      moodTag: editorMood || t('diary.mood.neutral'),
       timestamp: new Date().toISOString(),
       ...(hasGratitude ? { gratitude: { entry1: g1, entry2: g2, entry3: g3 } } : {}),
     };
@@ -229,11 +231,11 @@ export default function DiaryScreen() {
     return (
       <View style={{ ...cardStyles.default, marginBottom: spacing.cardGap }}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-          <Text style={{ ...typography.micro, color: dc.textTertiary }}>{dateStr} at {timeStr}</Text>
+          <Text style={{ ...typography.micro, color: dc.textTertiary }}>{t('diary.entry.datetime_format')}</Text>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
             {hasGratitude && (
               <View style={{ backgroundColor: '#DCFCE7', borderRadius: 12, paddingHorizontal: 8, paddingVertical: 3 }}>
-                <Text style={{ fontSize: 11, color: '#16A34A', fontWeight: '500' }}>Gratitude</Text>
+                <Text style={{ fontSize: 11, color: '#16A34A', fontWeight: '500' }}>{t('diary.entry.gratitude_label')}</Text>
               </View>
             )}
             <View style={{ backgroundColor: (MOOD_TAG_COLORS[item.moodTag] || '#6B7280') + '15', borderRadius: 12, paddingHorizontal: 8, paddingVertical: 3 }}>
@@ -273,7 +275,7 @@ export default function DiaryScreen() {
             <Text style={{ fontSize: 13, color: colors.foreground, fontStyle: 'italic', lineHeight: 18 }}>
               {getDailyQuote().text}
             </Text>
-            <Text style={{ fontSize: 12, color: colors.muted, marginTop: 4 }}>— {getDailyQuote().author}</Text>
+            <Text style={{ fontSize: 12, color: colors.muted, marginTop: 4 }}>{t('diary.editor.quote.author_prefix')}</Text>
           </View>
         </View>
       )}
@@ -286,7 +288,7 @@ export default function DiaryScreen() {
         >
           <View style={{ backgroundColor: '#DCFCE7', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6, alignSelf: 'flex-start', marginBottom: 12 }}>
             <Text style={{ fontSize: 12, fontWeight: '500', color: '#16A34A' }}>
-              {gratitudeStreak === 1 ? '1 day of gratitude' : gratitudeStreak === 2 ? '2 days in a row' : `${gratitudeStreak} days in a row`}
+              {gratitudeStreak === 1 ? t('diary.streak.one_day') : gratitudeStreak === 2 ? t('diary.streak.two_days') : `${gratitudeStreak} days in a row`}
             </Text>
           </View>
         </Pressable>
@@ -303,10 +305,10 @@ export default function DiaryScreen() {
             style={({ pressed }) => [{ opacity: pressed ? 0.9 : 1 }]}
           >
             <View style={{ backgroundColor: '#fff', borderRadius: 12, padding: 14, borderWidth: 1, borderColor: colors.border }}>
-              <Text style={{ fontSize: 14, color: '#9CA3AF' }}>Write whatever comes to mind...</Text>
+              <Text style={{ fontSize: 14, color: '#9CA3AF' }}>{t('diary.editor.journal.placeholder')}</Text>
             </View>
           </Pressable>
-          <Text style={{ fontSize: 11, color: colors.muted, marginTop: 6, textAlign: 'right' }}>0 characters</Text>
+          <Text style={{ fontSize: 11, color: colors.muted, marginTop: 6, textAlign: 'right' }}>{t('diary.journal.zero_characters')}</Text>
         </View>
       )}
 
@@ -318,14 +320,14 @@ export default function DiaryScreen() {
         <TextInput
           value={searchQuery}
           onChangeText={(text) => { setSearchQuery(text); setIsSearchActive(text.length > 0); }}
-          placeholder="Search entries..."
+          placeholder={t('diary.search.placeholder')}
           placeholderTextColor={colors.muted}
           style={{ flex: 1, paddingVertical: 10, paddingHorizontal: 8, fontSize: 14, color: colors.foreground }}
           returnKeyType="search"
         />
         {searchQuery.length > 0 && (
           <Pressable onPress={() => { setSearchQuery(''); setIsSearchActive(false); }} style={({ pressed }) => [{ opacity: pressed ? 0.5 : 1, padding: 4 }]}>
-            <Text style={{ fontSize: 18, color: colors.muted, fontWeight: '600' }}>×</Text>
+            <Text style={{ fontSize: 18, color: colors.muted, fontWeight: '600' }}>{t('diary.search.clear')}</Text>
           </Pressable>
         )}
       </View>
@@ -341,12 +343,12 @@ export default function DiaryScreen() {
           <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 40 }}>
             <Text style={{ fontSize: 32, marginBottom: 12 }}>{activeTab === 'journal' ? '\u{1F4DD}' : '\u{1F64F}'}</Text>
             <Text style={{ fontSize: 16, fontWeight: '600', color: colors.foreground, marginBottom: 4 }}>
-              {activeTab === 'journal' ? 'No journal entries yet' : 'No gratitude entries yet'}
+              {activeTab === 'journal' ? t('diary.empty.journal.title') : t('diary.empty.gratitude.title')}
             </Text>
             <Text style={{ fontSize: 13, color: colors.muted, textAlign: 'center' }}>
               {activeTab === 'journal'
-                ? 'Tap the writing area above to write your first entry.'
-                : 'Tap the + button to record what you are grateful for.'}
+                ? t('diary.empty.journal.subtitle')
+                : t('diary.empty.gratitude.subtitle')}
             </Text>
           </View>
         }
@@ -381,9 +383,9 @@ export default function DiaryScreen() {
             {/* Modal Header */}
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
               <Pressable onPress={resetEditor}>
-                <Text style={{ fontSize: 15, color: colors.muted }}>Cancel</Text>
+                <Text style={{ fontSize: 15, color: colors.muted }}>{t('diary.editor.cancel')}</Text>
               </Pressable>
-              <Text style={{ fontSize: 17, fontWeight: '700', color: colors.foreground }}>New Entry</Text>
+              <Text style={{ fontSize: 17, fontWeight: '700', color: colors.foreground }}>{t('diary.editor.title')}</Text>
               <Pressable
                 onPress={saveEntry}
                 disabled={(!editorText.trim() && !gratitude1.trim() && !gratitude2.trim() && !gratitude3.trim()) || isSaving}
@@ -392,7 +394,7 @@ export default function DiaryScreen() {
                 }]}
               >
                 <Text style={{ fontSize: 15, fontWeight: '700', color: colors.primary }}>
-                  {isSaving ? 'Saving...' : 'Save'}
+                  {isSaving ? t('diary.editor.saving') : t('diary.editor.save')}
                 </Text>
               </Pressable>
             </View>
@@ -408,7 +410,7 @@ export default function DiaryScreen() {
                     <Text style={{ fontSize: 13, color: colors.foreground, fontStyle: 'italic', lineHeight: 18 }}>
                       {getDailyQuote().text}
                     </Text>
-                    <Text style={{ fontSize: 12, color: colors.muted, marginTop: 8 }}>— {getDailyQuote().author}</Text>
+                    <Text style={{ fontSize: 12, color: colors.muted, marginTop: 8 }}>{t('diary.quote.author_prefix')}</Text>
                   </View>
 
                   <Text style={{ fontSize: 13, color: colors.muted, lineHeight: 18, marginBottom: 16 }}>
@@ -428,7 +430,7 @@ export default function DiaryScreen() {
                       minHeight: 180,
                       textAlignVertical: 'top',
                     }}
-                    placeholder="Write whatever comes to mind..."
+                    placeholder={t('diary.journal.prompt')}
                     placeholderTextColor="#9CA3AF"
                     value={editorText}
                     onChangeText={setEditorText}
@@ -440,7 +442,7 @@ export default function DiaryScreen() {
 
                   {/* Mood Tags */}
                   <View style={{ marginTop: 16 }}>
-                    <Text style={{ fontSize: 11, fontWeight: '600', color: colors.muted, marginBottom: 10, letterSpacing: 0.5 }}>HOW ARE YOU FEELING?</Text>
+                    <Text style={{ fontSize: 11, fontWeight: '600', color: colors.muted, marginBottom: 10, letterSpacing: 0.5 }}>{t('diary.editor.mood.title')}</Text>
                     <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
                       {MOOD_TAGS.map((tag) => (
                         <Pressable
@@ -485,7 +487,7 @@ export default function DiaryScreen() {
                   <View style={{ gap: 12 }}>
                     {[{ val: gratitude1, set: setGratitude1, n: '1' }, { val: gratitude2, set: setGratitude2, n: '2' }, { val: gratitude3, set: setGratitude3, n: '3' }].map((item) => (
                       <View key={item.n}>
-                        <Text style={{ fontSize: 12, color: colors.muted, marginBottom: 6, fontWeight: '500' }}>{item.n}.</Text>
+                        <Text style={{ fontSize: 12, color: colors.muted, marginBottom: 6, fontWeight: '500' }}>{t('diary.editor.gratitude.prefix')}</Text>
                         <TextInput
                           style={{
                             backgroundColor: colors.surface,
@@ -497,7 +499,7 @@ export default function DiaryScreen() {
                             fontSize: 15,
                             color: colors.foreground,
                           }}
-                          placeholder="Something I am grateful for today..."
+                          placeholder={t('diary.editor.gratitude.placeholder')}
                           placeholderTextColor="#9CA3AF"
                           value={item.val}
                           onChangeText={item.set}

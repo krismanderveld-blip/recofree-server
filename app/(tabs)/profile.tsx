@@ -19,6 +19,7 @@ import { loadVspInsightProfile, buildPdfPlainText } from '@/src/features/vspInsi
 import { BalkmetafoorCard } from '@/components/profile/BalkmetafoorCard';
 import { createEmptyBalkmetafoor } from '@/src/types/balkmetafoor.types';
 import type { BalkmetafoorData, BalkmetafoorEntry } from '@/src/types/balkmetafoor.types';
+import { useTranslation } from '@/lib/i18n';
 
 const STAGE_LABELS: Record<string, string> = {
   precontemplation: 'Precontemplation',
@@ -106,7 +107,7 @@ export default function ProfileScreen() {
       const persona = (state.userType === 'elias' ? 'elias' : 'kim') as 'elias' | 'kim';
       const profile = await loadVspInsightProfile('local_user', persona);
       if (!profile) {
-        Alert.alert('No data yet', 'Start a few conversations first so the VSP Insight system can build your profile.');
+        Alert.alert(t('profile.alert.no_data.title'), t('profile.alert.no_data.message'));
         setVspExporting(false);
         return;
       }
@@ -126,14 +127,15 @@ export default function ProfileScreen() {
       if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch (e) {
       console.error('[Profile] VSP export failed:', e);
-      Alert.alert('Export failed', 'Could not generate the VSP Insight overview.');
+      Alert.alert(t('profile.alert.export_failed.title'), t('profile.alert.export_failed.message'));
     } finally {
       setVspExporting(false);
     }
   }, [state.userType]);
   const isElias = state.userType === 'elias';
   const companionName = isElias ? 'Elias' : 'Kim';
-  const userTypeLabel = isElias ? 'Personal recovery' : 'Supporting a loved one';
+  const { t } = useTranslation();
+  const userTypeLabel = isElias ? t('profile.user_type.elias') : t('profile.user_type.kim');
   const stageOfChange = userDat?.stageOfChange ?? 'contemplation';
   const totalSessions = userDat?.totalSessions ?? 0;
   const moodCheckIns = userDat?.moodHistory?.length ?? 0;
@@ -207,8 +209,8 @@ export default function ProfileScreen() {
         if (Platform.OS === 'web') {
           router.replace('/intake' as any);
         } else {
-          Alert.alert('Done', 'All data has been cleared. Starting fresh.', [
-            { text: 'OK', onPress: () => router.replace('/intake' as any) },
+          Alert.alert(t('profile.alert.reset_done.title'), t('profile.alert.reset_done.message'), [
+            { text: t('profile.alert.reset_done.button.ok'), onPress: () => router.replace('/intake' as any) },
           ]);
         }
       } catch (e) {
@@ -217,16 +219,16 @@ export default function ProfileScreen() {
     };
 
     if (Platform.OS === 'web') {
-      if (confirm('Are you sure you want to reset all data? This cannot be undone.')) {
+      if (confirm(t('profile.alert.reset_confirm_web'))) {
         doReset();
       }
     } else {
       Alert.alert(
-        'Reset All Data',
-        'This will permanently delete all your data. This cannot be undone.',
+        t('profile.alert.reset_confirm.title'),
+        t('profile.alert.reset_confirm.message'),
         [
-          { text: 'Cancel', style: 'cancel' },
-          { text: 'Reset', style: 'destructive', onPress: doReset },
+          { text: t('profile.emergency_contacts.alert.remove.button.cancel'), style: 'cancel' },
+          { text: t('profile.alert.reset_confirm.button.reset'), style: 'destructive', onPress: doReset },
         ],
       );
     }
@@ -236,7 +238,7 @@ export default function ProfileScreen() {
     <ScreenContainer containerClassName="bg-backgroundWarm">
       <ScrollView contentContainerStyle={{ paddingBottom: 120, paddingHorizontal: spacing.screenHorizontal, paddingTop: spacing.screenTop }} showsVerticalScrollIndicator={false}>
         <HomeButton />
-        <Text style={{ ...typography.titleLarge, color: dc.textPrimary, marginBottom: spacing.lg }}>Profile</Text>
+        <Text style={{ ...typography.titleLarge, color: dc.textPrimary, marginBottom: spacing.lg }}>{t('profile.title')}</Text>
 
         {/* User Card */}
         <View style={{ ...cardStyles.default, marginBottom: spacing.lg, flexDirection: 'row', alignItems: 'center' }}>
@@ -254,10 +256,10 @@ export default function ProfileScreen() {
             </Text>
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={{ ...typography.titleSmall, color: dc.textPrimary }}>{fixUnicode(userName) || 'User'}</Text>
+            <Text style={{ ...typography.titleSmall, color: dc.textPrimary }}>{fixUnicode(userName) || t('profile.user_card.default_name')}</Text>
             <Text style={{ ...typography.bodySmall, color: dc.textSecondary, marginTop: 2 }}>{userTypeLabel}</Text>
             <Text style={{ ...typography.micro, color: dc.textTertiary, marginTop: 2 }}>
-              {companionName}{isElias ? ` · ${STAGE_LABELS[stageOfChange] ?? stageOfChange}` : ''} · {totalSessions} session{totalSessions !== 1 ? 's' : ''} · {moodCheckIns} check-in{moodCheckIns !== 1 ? 's' : ''}
+              {companionName}{isElias ? ` · ${STAGE_LABELS[stageOfChange] ?? stageOfChange}` : ''} · {totalSessions} session{totalSessions !== 1 ? t('profile.user_card.stats.sessions_plural') : ''} · {moodCheckIns} check-in{moodCheckIns !== 1 ? t('profile.user_card.stats.checkins_plural') : ''}
             </Text>
           </View>
           <IconSymbol name="chevron.right" size={18} color={dc.textTertiary} />
@@ -369,9 +371,9 @@ export default function ProfileScreen() {
                   if (Platform.OS === 'web') {
                     if (confirm(`Remove ${contact.name}?`)) removeContact(idx);
                   } else {
-                    Alert.alert('Remove contact', `Remove ${contact.name}?`, [
-                      { text: 'Cancel', style: 'cancel' },
-                      { text: 'Remove', style: 'destructive', onPress: () => removeContact(idx) },
+                    Alert.alert(t('profile.emergency_contacts.alert.remove.title'), `Remove ${contact.name}?`, [
+                      { text: t('profile.alert.reset_confirm.button.cancel'), style: 'cancel' },
+                      { text: t('profile.emergency_contacts.alert.remove.button.remove'), style: 'destructive', onPress: () => removeContact(idx) },
                     ]);
                   }
                 }}
@@ -389,14 +391,14 @@ export default function ProfileScreen() {
               borderWidth: 2,
             }}>
               <TextInput
-                placeholder="Name (e.g. Dad, Sister)"
+                placeholder={t('profile.emergency_contacts.form.name_placeholder')}
                 value={editingContact?.name ?? ''}
                 onChangeText={(t) => setEditingContact(prev => ({ name: t, number: prev?.number ?? '' }))}
                 style={{ ...typography.bodyMedium, borderBottomWidth: 1, borderBottomColor: dc.borderSoft, paddingVertical: 8, marginBottom: 12, color: dc.textPrimary }}
                 placeholderTextColor={dc.textMuted}
               />
               <TextInput
-                placeholder="Phone number"
+                placeholder={t('profile.emergency_contacts.form.number_placeholder')}
                 value={editingContact?.number ?? ''}
                 onChangeText={(t) => setEditingContact(prev => ({ name: prev?.name ?? '', number: t }))}
                 keyboardType="phone-pad"
@@ -408,13 +410,13 @@ export default function ProfileScreen() {
                   onPress={() => { setShowContactForm(false); setEditingContact(null); }}
                   style={({ pressed }) => [{ flex: 1, opacity: pressed ? 0.7 : 1, paddingVertical: 12, alignItems: 'center', borderRadius: radius.lg, backgroundColor: dc.borderSoft }]}
                 >
-                  <Text style={{ ...typography.bodySmall, color: dc.textSecondary }}>Cancel</Text>
+                  <Text style={{ ...typography.bodySmall, color: dc.textSecondary }}>{t('profile.emergency_contacts.form.button.cancel')}</Text>
                 </Pressable>
                 <Pressable
                   onPress={saveContact}
                   style={({ pressed }) => [{ flex: 1, opacity: pressed ? 0.8 : 1, paddingVertical: 12, alignItems: 'center', borderRadius: radius.lg, backgroundColor: dc.primary }]}
                 >
-                  <Text style={{ ...typography.bodySmall, fontWeight: '600', color: dc.textInverse }}>Save</Text>
+                  <Text style={{ ...typography.bodySmall, fontWeight: '600', color: dc.textInverse }}>{t('profile.emergency_contacts.form.button.save')}</Text>
                 </Pressable>
               </View>
             </View>
@@ -432,7 +434,7 @@ export default function ProfileScreen() {
                 borderStyle: 'dashed',
                 alignItems: 'center',
               }}>
-                <Text style={{ ...typography.bodySmall, color: dc.primary, fontWeight: '600' }}>+ Add emergency contact</Text>
+                <Text style={{ ...typography.bodySmall, color: dc.primary, fontWeight: '600' }}>{t('profile.emergency_contacts.button.add')}</Text>
               </View>
             </Pressable>
           ) : null}
@@ -463,9 +465,9 @@ export default function ProfileScreen() {
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={{ ...typography.bodyMedium, fontWeight: '600', color: dc.primary }}>
-                  {vspExporting ? 'Generating...' : 'Export VSP Insight Profile'}
+                  {vspExporting ? t('profile.vsp_insight.button.generating') : t('profile.vsp_insight.button.export')}
                 </Text>
-                <Text style={{ ...typography.caption, color: dc.textSecondary, marginTop: 2 }}>Share your patterns and early signs with your therapist.</Text>
+                <Text style={{ ...typography.caption, color: dc.textSecondary, marginTop: 2 }}>{t('profile.vsp_insight.button.description')}</Text>
               </View>
               <IconSymbol name="chevron.right" size={16} color={dc.textTertiary} />
             </View>
@@ -495,8 +497,8 @@ export default function ProfileScreen() {
                 <Text style={{ fontSize: 16 }}>{'\u{1F5D1}'}</Text>
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={{ ...typography.bodyMedium, fontWeight: '600', color: dc.danger }}>Reset All Data</Text>
-                <Text style={{ ...typography.caption, color: dc.textSecondary, marginTop: 2 }}>Permanently deletes all data and restarts the intake process.</Text>
+                <Text style={{ ...typography.bodyMedium, fontWeight: '600', color: dc.danger }}>{t('profile.reset_data.button.title')}</Text>
+                <Text style={{ ...typography.caption, color: dc.textSecondary, marginTop: 2 }}>{t('profile.reset_data.button.description')}</Text>
               </View>
             </View>
           </Pressable>

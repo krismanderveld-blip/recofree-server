@@ -51,6 +51,7 @@ import { migrateSessionAnalysesToLogsDat } from '@/lib/pipeline/memory/migrateSe
 import { ChatErrorBoundary } from '@/components/chat-error-boundary';
 import { colors as dc, spacing, radius, typography, shadows } from '@/constants/design';
 import { triggerBackpackAnalysisIfNeeded } from '@/lib/backpack-analysis/schema-mode-trigger';
+import { useTranslation } from '@/lib/i18n';
 
 const BACKPACK_KEY = '@recofree_backpack';
 const USERDAT_KEY = '@recofree_userdat';
@@ -134,6 +135,7 @@ function ChatScreenInner() {
   const [showScrollButton, setShowScrollButton] = useState(false);
 
   const userName = getUserName();
+  const { t } = useTranslation();
   const companionName = state.userType === 'elias' ? 'Elias' : 'Kim';
 
   // ── Initialize GptSignalEngine once at mount ──────────────────────────
@@ -445,26 +447,26 @@ function ChatScreenInner() {
       const persona = (state.userType === 'elias' ? 'elias' : 'kim') as 'elias' | 'kim';
       const udJson = await readEncrypted(USERDAT_KEY);
       if (!udJson) {
-        Alert.alert('Migration', 'Geen userDat gevonden.');
+        Alert.alert('Migration', t('chat.migration.no_userdat'));
         return;
       }
       const ud = JSON.parse(udJson);
       const sessionAnalyses = ud.sessionAnalyses || [];
       if (sessionAnalyses.length === 0) {
-        Alert.alert('Migration', 'Geen sessionAnalyses om te migreren.');
+        Alert.alert('Migration', t('chat.migration.no_analyses'));
         return;
       }
       const result = await migrateSessionAnalysesToLogsDat(persona, sessionAnalyses);
       if (result.alreadyDone) {
-        Alert.alert('Migration', 'Migratie was al voltooid.');
+        Alert.alert('Migration', t('chat.migration.already_done'));
       } else if (result.error) {
-        Alert.alert('Migration', `Niet gelukt: ${result.error}. Probeer opnieuw na app herstart.`);
+        Alert.alert('Migration', t('chat.migration.failed_retry'));
       } else {
-        Alert.alert('Migration', `Klaar: ${result.migrated} gemigreerd, ${result.skipped} overgeslagen.`);
+        Alert.alert('Migration', t('chat.migration.success'));
       }
     } catch (err) {
       console.error('[Migration] Unexpected error:', err);
-      Alert.alert('Migration', 'Niet gelukt. Probeer opnieuw na app herstart.');
+      Alert.alert('Migration', t('chat.migration.failed_unexpected'));
     }
   };
 
@@ -1385,7 +1387,7 @@ function ChatScreenInner() {
               onPress={() => router.push('/(tabs)/' as Href)}
               style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1, marginRight: 14 }]}
             >
-              <Text style={{ fontSize: 20, color: dc.textInverse, fontWeight: '600' }}>←</Text>
+              <Text style={{ fontSize: 20, color: dc.textInverse, fontWeight: '600' }}>{t('chat.header.back')}</Text>
             </Pressable>
             <Pressable
               onPress={() => {
@@ -1404,7 +1406,7 @@ function ChatScreenInner() {
                 {companionName}
               </Text>
               <Text style={{ ...typography.micro, color: 'rgba(255,255,255,0.7)', marginTop: 2 }}>
-                {isTyping ? 'Typing...' : 'Online'}
+                {isTyping ? t('chat.header.typing') : t('chat.header.online')}
               </Text>
             </Pressable>
           </View>
@@ -1427,7 +1429,7 @@ function ChatScreenInner() {
                 borderColor: 'rgba(255,255,255,0.4)',
               }]}
             >
-              <Text style={{ fontSize: 13, color: dc.textInverse, fontWeight: '600' }}>End</Text>
+              <Text style={{ fontSize: 13, color: dc.textInverse, fontWeight: '600' }}>{t('chat.header.end_button')}</Text>
             </Pressable>
           )}
         </View>
@@ -1497,7 +1499,7 @@ function ChatScreenInner() {
                     }]}
                   >
                     <Text style={{ fontSize: 12, color: colors.muted, fontWeight: '500' }}>
-                      {showPreviousSession ? 'Hide previous session ▲' : `Previous session (${previousSessionMessages.length} messages) ▼`}
+                      {showPreviousSession ? t('chat.history.hide') : t('chat.history.show')}
                     </Text>
                   </Pressable>
                   {showPreviousSession && (
@@ -1524,7 +1526,7 @@ function ChatScreenInner() {
                         </View>
                       ))}
                       <View style={{ alignItems: 'center', paddingVertical: 8, borderTopWidth: 0.5, borderTopColor: colors.border, marginTop: 4 }}>
-                        <Text style={{ fontSize: 11, color: colors.muted }}>— End of previous session —</Text>
+                        <Text style={{ fontSize: 11, color: colors.muted }}>{t('chat.history.end_marker')}</Text>
                       </View>
                     </View>
                   )}
@@ -1535,7 +1537,7 @@ function ChatScreenInner() {
           ListEmptyComponent={
             !isTyping ? (
               <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-                <Text style={{ color: colors.muted, fontSize: 16 }}>Starting conversation...</Text>
+                <Text style={{ color: colors.muted, fontSize: 16 }}>{t('chat.empty.starting')}</Text>
               </View>
             ) : null
           }
@@ -1604,7 +1606,7 @@ function ChatScreenInner() {
               zIndex: 10,
             })}
           >
-            <Text style={{ color: '#FFFFFF', fontSize: 20, fontWeight: '700', lineHeight: 22 }}>↓</Text>
+            <Text style={{ color: '#FFFFFF', fontSize: 20, fontWeight: '700', lineHeight: 22 }}>{t('chat.scroll_to_bottom')}</Text>
           </Pressable>
         )}
 
@@ -1637,7 +1639,7 @@ function ChatScreenInner() {
                   color: dc.textPrimary,
                   maxHeight: 120,
                 }}
-                placeholder="Type a message..."
+                placeholder={t('chat.input.placeholder')}
                 placeholderTextColor={dc.textMuted}
                 value={inputText}
                 onChangeText={setInputText}
@@ -1778,6 +1780,7 @@ function parseClinicalTag(content: string, isUser: boolean): { visibleContent: s
 function ClinicalTag({ annotation }: { annotation: string }) {
   const [expanded, setExpanded] = useState(false);
   const colors = useColors();
+  const { t } = useTranslation();
 
   // Show fallback annotation when model did not comply (visible to clinician)
   const isFallback = annotation.includes('[not annotated') || annotation.includes('model did not comply');
@@ -1797,7 +1800,7 @@ function ClinicalTag({ annotation }: { annotation: string }) {
         style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}
       >
         <Text style={{ fontSize: 11, fontWeight: '600', color: isFallback ? '#B71C1C' : '#2E7D32' }}>
-          {expanded ? '⚕ clinical ▼' : '⚕ clinical ▶'}{isFallback ? ' ⚠' : ''}{vspFramework ? ` · VSP: ${vspFramework}` : ''}
+          {expanded ? t('chat.clinical.expanded') : t('chat.clinical.collapsed')}{isFallback ? t('chat.clinical.fallback_warning') : ''}{vspFramework ? ` · VSP: ${vspFramework}` : ''}
         </Text>
       </Pressable>
       {expanded && (

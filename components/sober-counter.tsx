@@ -3,6 +3,7 @@ import { useState, useCallback } from 'react';
 import { useUser } from '@/lib/user-context';
 import { useColors } from '@/hooks/use-colors';
 import * as Haptics from 'expo-haptics';
+import { useTranslation } from '@/lib/i18n';
 
 /**
  * SoberCounter — Elias only, optional.
@@ -15,6 +16,7 @@ export function SoberCounter() {
   const userDat = getUserDat();
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [dateInput, setDateInput] = useState('');
+  const { t } = useTranslation();
 
   // Only show for Elias users
   if (state.userType !== 'elias') return null;
@@ -60,8 +62,8 @@ export function SoberCounter() {
         style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}
       >
         <View className="bg-surface rounded-xl px-4 py-3 border border-border flex-row items-center gap-2">
-          <Text className="text-sm text-muted">Set your clean date</Text>
-          <Text className="text-xs text-muted">→</Text>
+          <Text className="text-sm text-muted">{t('sober_counter.set_clean_date')}</Text>
+          <Text className="text-xs text-muted">{t('sober_counter.arrow')}</Text>
         </View>
 
         <DatePickerModal
@@ -85,17 +87,17 @@ export function SoberCounter() {
   // Format message
   let message: string;
   if (days === 0) {
-    message = 'Today is day 1. That counts.';
+    message = t('sober_counter.message.day_1');
   } else if (days === 1) {
-    message = '1 day clean.';
+    message = t('sober_counter.message.day_1_clean');
   } else if (days < 7) {
-    message = `${days} days clean.`;
+    message = t('sober_counter.message.days_clean');
   } else if (days < 30) {
-    message = `${days} days clean. Keep going.`;
+    message = t('sober_counter.message.days_clean_keep_going');
   } else if (days < 100) {
-    message = `${days} days clean. 🔥`;
+    message = t('sober_counter.message.days_clean_fire');
   } else {
-    message = `${days} days clean. 💙`;
+    message = t('sober_counter.message.days_clean_heart');
   }
 
   return (
@@ -146,6 +148,7 @@ function DatePickerModal({
   onClose: () => void;
   colors: any;
 }) {
+  const { t } = useTranslation();
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <Pressable
@@ -177,7 +180,7 @@ function DatePickerModal({
           <TextInput
             value={dateInput}
             onChangeText={onChangeDate}
-            placeholder="2024-01-15"
+            placeholder={t('sober_counter.modal.date_placeholder')}
             placeholderTextColor={colors.muted}
             keyboardType="numbers-and-punctuation"
             returnKeyType="done"
@@ -206,7 +209,7 @@ function DatePickerModal({
               marginBottom: 8,
             }]}
           >
-            <Text style={{ color: '#fff', fontWeight: '700', fontSize: 15 }}>Save</Text>
+            <Text style={{ color: '#fff', fontWeight: '700', fontSize: 15 }}>{t('sober_counter.modal.save')}</Text>
           </Pressable>
 
           <Pressable
@@ -217,7 +220,7 @@ function DatePickerModal({
               opacity: pressed ? 0.6 : 1,
             }]}
           >
-            <Text style={{ color: colors.error, fontSize: 13 }}>Remove clean date</Text>
+            <Text style={{ color: colors.error, fontSize: 13 }}>{t('sober_counter.modal.remove')}</Text>
           </Pressable>
 
           <Pressable
@@ -228,7 +231,7 @@ function DatePickerModal({
               opacity: pressed ? 0.6 : 1,
             }]}
           >
-            <Text style={{ color: colors.muted, fontSize: 13 }}>Cancel</Text>
+            <Text style={{ color: colors.muted, fontSize: 13 }}>{t('sober_counter.modal.cancel')}</Text>
           </Pressable>
         </Pressable>
       </Pressable>

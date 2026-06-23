@@ -1809,3 +1809,19 @@
 - [x] Update C2 absence test to reflect V3.3 score-based ordering
 - [x] All 1359 tests pass (1 pre-existing failure unrelated)
 - [x] Created selectMostRecentGreetingSource.ts utility (standalone, for future use)
+
+## Phase A — i18n foundation + UI string replacement (drietaligheid NL/EN/FR)
+- [x] Build i18n provider with React Context
+- [x] Build useTranslation() hook with t("key") function + tStatic for module-level
+- [x] Split flat JSON into nl.json, en.json, fr.json language files
+- [x] Wire i18n provider into app/_layout.tsx
+- [x] Write automated replacement script (source/line-based from combined JSON)
+- [x] Test replacement script on ONE file first (app/(tabs)/index.tsx) — 50 strings replaced
+- [x] Report single-file result for user confirmation
+- [x] Batch replace remaining 18 files — 16 files modified, ~200 replacements
+- [x] Fix TS errors: placeholder braces, module-level t→tStatic, variable shadowing
+- [x] Verify all tests still pass (1359 pass, 1 pre-existing failure only)
+- [x] Keep "I have a backup — import my data" option on intake screen unchanged
+- [x] Persona separation maintained (Elias/Kim strings separate in mapping)
+- [x] Exclude dev/debug files from UI string replacement
+- [ ] Handle ~425 UNMATCHED strings (complex expressions, template literals with JS) — Phase A.2

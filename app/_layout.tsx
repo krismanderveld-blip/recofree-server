@@ -19,6 +19,7 @@ import type { EdgeInsets, Metrics, Rect } from "react-native-safe-area-context";
 import { trpc, createTRPCClient } from "@/lib/trpc";
 import { initManusRuntime, subscribeSafeAreaInsets } from "@/lib/_core/manus-runtime";
 import { UserProvider } from "@/lib/user-context";
+import { I18nProvider, tStatic, useTranslation } from "@/lib/i18n";
 import { migrateAllToEncrypted } from "@/lib/crypto/storage-encryption";
 
 import type { ReactNode } from "react";
@@ -49,7 +50,7 @@ class AppErrorBoundary extends Component<{ children: ReactNode }, ErrorBoundaryS
 
   render() {
     if (this.state.hasError) {
-      const errorMessage = this.state.error?.message ?? "Unknown error";
+      const errorMessage = this.state.error?.message ?? tStatic('_layout.error_boundary.unknown_error');
       const errorStack = this.state.error?.stack ?? "";
       return (
         <View style={{ flex: 1, backgroundColor: "#1a1a2e", justifyContent: "center", padding: 24 }}>
@@ -68,7 +69,7 @@ class AppErrorBoundary extends Component<{ children: ReactNode }, ErrorBoundaryS
             onPress={() => this.setState({ hasError: false, error: null })}
             style={{ backgroundColor: "#e94560", paddingVertical: 14, borderRadius: 10, alignItems: "center" }}
           >
-            <Text style={{ color: "#ffffff", fontSize: 16, fontWeight: "600" }}>Try Again</Text>
+            <Text style={{ color: "#ffffff", fontSize: 16, fontWeight: "600" }}>{tStatic('_layout.error_boundary.try_again')}</Text>
           </TouchableOpacity>
         </View>
       );
@@ -124,6 +125,7 @@ export default function RootLayout() {
       }),
   );
   const [trpcClient] = useState(() => createTRPCClient());
+  const { t } = useTranslation();
 
   // Ensure minimum padding for top and bottom on mobile
   const providerInitialMetrics = useMemo(() => {
@@ -140,6 +142,7 @@ export default function RootLayout() {
 
   const content = (
     <GestureHandlerRootView style={{ flex: 1 }}>
+      <I18nProvider>
       <UserProvider>
         <trpc.Provider client={trpcClient} queryClient={queryClient}>
           <QueryClientProvider client={queryClient}>
@@ -154,6 +157,7 @@ export default function RootLayout() {
           </QueryClientProvider>
         </trpc.Provider>
       </UserProvider>
+      </I18nProvider>
     </GestureHandlerRootView>
   );
 

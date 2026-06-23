@@ -4,6 +4,7 @@ import { useRouter, Href } from 'expo-router';
 import { ScreenContainer } from '@/components/screen-container';
 import { useUser } from '@/lib/user-context';
 import { colors as dc, radius, shadows, spacing, typography } from '@/constants/design';
+import { useTranslation, tStatic } from '@/lib/i18n';
 
 /**
  * GDPR Consent Screen
@@ -14,6 +15,7 @@ import { colors as dc, radius, shadows, spacing, typography } from '@/constants/
 export default function GdprConsentScreen() {
   const router = useRouter();
   const { acceptGdpr } = useUser();
+  const { t } = useTranslation();
 
   const handleAccept = useCallback(async () => {
     await acceptGdpr();
@@ -32,8 +34,8 @@ export default function GdprConsentScreen() {
         <View style={styles.container}>
           {/* Header */}
           <View style={styles.header}>
-            <Text style={styles.headerEmoji}>🔒</Text>
-            <Text style={styles.title}>Before you begin</Text>
+            <Text style={styles.headerEmoji}>{t('gdpr_consent.header.emoji')}</Text>
+            <Text style={styles.title}>{t('gdpr_consent.header.title')}</Text>
             <Text style={styles.subtitle}>
               Your privacy is our priority
             </Text>
@@ -72,7 +74,7 @@ export default function GdprConsentScreen() {
               pressed && { opacity: 0.85, transform: [{ scale: 0.97 }] },
             ]}
           >
-            <Text style={styles.buttonText}>I understand and agree</Text>
+            <Text style={styles.buttonText}>{t('gdpr_consent.button.accept')}</Text>
           </Pressable>
         </View>
       </ScrollView>
@@ -81,13 +83,13 @@ export default function GdprConsentScreen() {
 }
 
 const PRIVACY_POINTS = [
-  'Your name is replaced by an anonymous placeholder before reaching OpenAI.',
-  'Conversations are not stored by OpenAI (store: false).',
-  'OpenAI has signed a Data Processing Agreement (GDPR-compliant).',
-  'All your data is stored locally on your device only.',
-  'RecoFree does not use your data for training or analytics.',
-  'You can permanently delete all your data at any time via Settings → Reset All Data.',
-  'Your journal, backpack, and conversation history never leave your device.',
+  tStatic('gdpr_consent.privacy_points.0'),
+  tStatic('gdpr_consent.privacy_points.1'),
+  tStatic('gdpr_consent.privacy_points.2'),
+  tStatic('gdpr_consent.privacy_points.3'),
+  tStatic('gdpr_consent.privacy_points.4'),
+  tStatic('gdpr_consent.privacy_points.5'),
+  tStatic('gdpr_consent.privacy_points.6'),
 ];
 
 const styles = StyleSheet.create({

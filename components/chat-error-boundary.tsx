@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, Pressable, StyleSheet, Platform, ScrollView } from 'react-native';
 import { logDebugEvent } from '@/lib/debug/session-logger';
+import { tStatic as t } from '@/lib/i18n';
 
 interface Props {
   children: React.ReactNode;
@@ -44,10 +45,10 @@ export class ChatErrorBoundary extends React.Component<Props, State> {
   render() {
     if (this.state.hasError) {
       const err = this.state.error;
-      const stackLines = (err?.stack ?? 'No stack').split('\n').slice(0, 10).join('\n');
+      const stackLines = (err?.stack ?? t('chat_error_boundary.no_stack')).split('\n').slice(0, 10).join('\n');
       return (
         <View style={styles.container}>
-          <Text style={styles.title}>⚠️ Chat Crash</Text>
+          <Text style={styles.title}>{t('chat_error_boundary.title')}</Text>
           <Text style={styles.message}>
             Er is een fout opgetreden. Je data is veilig.
           </Text>
@@ -68,7 +69,7 @@ export class ChatErrorBoundary extends React.Component<Props, State> {
               pressed && { opacity: 0.8 },
             ]}
           >
-            <Text style={styles.buttonText}>Herstart sessie</Text>
+            <Text style={styles.buttonText}>{t('chat_error_boundary.restart_button')}</Text>
           </Pressable>
         </View>
       );
