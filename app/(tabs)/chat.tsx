@@ -788,7 +788,7 @@ function ChatScreenInner() {
         });
       } else {
         // Fallback: use existing pipeline greeting
-        const result = await generateGreeting(backpack, provider, userDat, diaryEntries);
+        const result = await generateGreeting(backpack, provider, userDat, diaryEntries, { locale: locale as 'nl' | 'en' | 'fr', country: (country || 'BE') as 'NL' | 'BE' | 'FR' | 'UK' | 'US' });
         // Only persist userDat (backpack is NEVER modified by the system)
         await writeEncrypted(USERDAT_KEY, JSON.stringify(result.updatedUserDat));
         // Only show the greeting message (last item in chatHistory), not old session messages

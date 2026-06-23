@@ -3161,7 +3161,8 @@ export async function generateGreeting(
   rugzakOrBackpack: Rugzak | Backpack,
   provider: AIProvider,
   userDat?: UserDat,
-  diaryEntries?: import('../ai/types').DiaryEntry[]
+  diaryEntries?: import('../ai/types').DiaryEntry[],
+  options?: { locale?: 'nl' | 'en' | 'fr'; country?: 'NL' | 'BE' | 'FR' | 'UK' | 'US' }
 ): Promise<PipelineResult> {
   // Reset session state at greeting (session start)
   resetSessionState();
@@ -3312,6 +3313,8 @@ export async function generateGreeting(
     backpackChanged: backpackUpdatedRecently || !currentUserDat.extractedEntities || (currentUserDat.extractedEntities.persons.length === 0),
     vspLevel,
     vspInsightContext: greetingVspResult.active ? greetingVspResult.contextString || undefined : undefined,
+    locale: options?.locale,
+    country: options?.country,
   };
 
   let response: string;

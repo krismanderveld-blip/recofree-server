@@ -2050,9 +2050,9 @@ Rules:
 - The tag is parsed by the UI and shown to the clinician — omitting it breaks the interface${input.vspInsightContext ? `\n- The VSP-Framework line is ENGINE-DETERMINED — copy it exactly as shown, do NOT change it` : ''}
 
 ⚠️ FINAL REMINDER: Your response is INVALID without <clinical>...</clinical> at the end. Even for greetings, short replies, or simple questions — ALWAYS include it. For greetings use Method: "Therapeutic greeting", Observation: "Session start", Intervention: "Warm opening + open question".
-` : ''}`;
+` : ''}
+⚠️ LANGUAGE ENFORCEMENT (FINAL — OVERRIDES ALL): Your ENTIRE therapeutic response MUST be in ${selectedLanguage}. Even though instructions above may be in Dutch, your OUTPUT to the user MUST be in ${selectedLanguage}. This is non-negotiable.`;
   }
-
   // ══════════════════════════════════════════════════════════════
   // SESSION START: Full system prompt with backpack + userDat + diary
   // Cache the static context for follow-up use.
@@ -2521,9 +2521,9 @@ Rules:
 - The tag is parsed by the UI and shown to the clinician — omitting it breaks the interface${input.vspInsightContext ? `\n- The VSP-Framework line is ENGINE-DETERMINED — copy it exactly as shown, do NOT change it` : ''}
 
 ⚠️ FINAL REMINDER: Your response is INVALID without <clinical>...</clinical> at the end. Even for greetings, short replies, or simple questions — ALWAYS include it. For greetings use Method: "Therapeutic greeting", Observation: "Session start", Intervention: "Warm opening + open question".
-` : ''}`;
+` : ''}
+⚠️ LANGUAGE ENFORCEMENT (FINAL — OVERRIDES ALL): Your ENTIRE therapeutic response MUST be in ${selectedLanguage}. Even though instructions above may be in Dutch, your OUTPUT to the user MUST be in ${selectedLanguage}. This is non-negotiable.`;
 }
-
 // ─── OpenAI Call ──────────────────────────────────────────────────
 
 export async function generateAIResponse(

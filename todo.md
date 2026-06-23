@@ -1899,3 +1899,7 @@
 - [x] Test: FR "j'ai envie de boire" → craving trigger matches
 - [x] Test: NL message → no translate call, skipped
 - [x] Test: Simulated translate failure → message passed through
+
+## GPT antwoordt in verkeerde taal (NL ipv EN/FR)
+- [x] Fix: LANGUAGE ENFORCEMENT reminder toegevoegd aan einde van BEIDE prompt templates (Elias + Kim)
+- [x] Fix: generateGreeting() miste locale parameter - nu doorgegeven vanuit chat.tsx
