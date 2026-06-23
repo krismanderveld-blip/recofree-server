@@ -29,6 +29,7 @@ import { getAIProvider } from '@/lib/ai';
 import { preprocessInput } from '@/lib/ai/preprocessor';
 import { processMessage, generateGreeting, endSession } from '@/lib/rugzak/pipeline';
 import { EmergencyCard } from '@/components/emergency-card';
+import { getPrimarySuicideLine, getEmergencyNumber } from '@/lib/crisis/resources';
 import type { ChatMessage, Rugzak, Backpack, UserDat, DiaryEntry } from '@/lib/ai/types';
 import { composeRugzak } from '@/lib/ai/types';
 import { IconSymbol } from '@/components/ui/icon-symbol';
@@ -135,7 +136,7 @@ function ChatScreenInner() {
   const [showScrollButton, setShowScrollButton] = useState(false);
 
   const userName = getUserName();
-  const { t, locale } = useTranslation();
+  const { t, locale, language, country } = useTranslation();
   const companionName = state.userType === 'elias' ? 'Elias' : 'Kim';
 
   // ── Initialize GptSignalEngine once at mount ──────────────────────────
@@ -876,7 +877,7 @@ function ChatScreenInner() {
       }
       const provider = getAIProvider();
       // FOLLOW-UP MESSAGE: isSessionStart = false, no diary entries
-      const result = await processMessage(backpack, processedText, provider, currentUserDat, { isSessionStart: false, diaryEntries: [], logsSessions: logsDatSessionsRef.current, locale: locale as 'nl' | 'en' | 'fr' });
+      const result = await processMessage(backpack, processedText, provider, currentUserDat, { isSessionStart: false, diaryEntries: [], logsSessions: logsDatSessionsRef.current, locale: locale as 'nl' | 'en' | 'fr', country: (country || 'BE') as 'NL' | 'BE' | 'FR' | 'UK' | 'US' });
       // DEFENSIVE GUARD: if processMessage returns null/undefined (should never happen,
       // but observed 'undefined is not a function' crash on device — root cause unconfirmed,
       // likely Metro bundler module resolution issue or stale closure. This guardrail
@@ -1545,7 +1546,6 @@ function ChatScreenInner() {
                 <EmergencyCard
                   visible={showEmergency}
                   onDismiss={() => setShowEmergency(false)}
-                  lastUserMessage={messages.filter(m => m.role === 'user').pop()?.content ?? null}
                 />
               )}
               {isTyping && sessionPhase === 'active' && (
@@ -1674,30 +1674,8 @@ function ChatScreenInner() {
           </View>
         )}
 
-        {/* Fixed crisis disclaimer at bottom */}
-        <Text style={{ fontSize: 12, color: '#999', textAlign: 'center', paddingTop: 6, paddingBottom: insets.bottom + 12, paddingHorizontal: 16 }}>
-          RecoFree is geen vervanging voor professionele hulp.{' '}
-          <Text
-            style={{ color: '#E53935', fontWeight: 'bold', textDecorationLine: 'underline' }}
-            onPress={() => Linking.openURL('tel:1813')}
-          >
-            Zelfmoordlijn: 1813
-          </Text>
-          {' '}(24/7, gratis, anoniem) |{' '}
-          <Text
-            style={{ color: '#E53935', fontWeight: 'bold', textDecorationLine: 'underline' }}
-            onPress={() => Linking.openURL('tel:1712')}
-          >
-            1712
-          </Text>
-          {' '}(huiselijk geweld) |{' '}
-          <Text
-            style={{ color: '#E53935', fontWeight: 'bold', textDecorationLine: 'underline' }}
-            onPress={() => Linking.openURL('tel:112')}
-          >
-            Noodgevallen: 112
-          </Text>
-        </Text>
+        {/* Fixed crisis disclaimer at bottom — dynamic per country */}
+        <CrisisFooter language={language} country={country} insetBottom={insets.bottom} />
       </View>
 
       {/* First-chat disclaimer modal — not skipable */}
@@ -1830,5 +1808,44 @@ function ClinicalTag({ annotation }: { annotation: string }) {
         </View>
       )}
     </View>
+  );
+}
+
+/** Dynamic crisis footer — shows country-specific numbers */
+function CrisisFooter({ language, country, insetBottom }: { language: string; country: string | null; insetBottom: number }) {
+  const effectiveCountry = (country || 'BE') as import('@/lib/i18n/i18n-provider').SupportedCountry;
+  const effectiveLang = language === 'nl' ? 'nl' as const : language === 'fr' ? 'fr' as const : 'en' as const;
+  const suicideLine = getPrimarySuicideLine(effectiveCountry, effectiveLang);
+  const emergencyNum = getEmergencyNumber(effectiveCountry);
+
+  const disclaimer = effectiveLang === 'nl'
+    ? 'RecoFree is geen vervanging voor professionele hulp.'
+    : effectiveLang === 'fr'
+      ? "RecoFree ne remplace pas l'aide professionnelle."
+      : 'RecoFree is not a substitute for professional help.';
+
+  const emergencyLabel = effectiveLang === 'nl'
+    ? 'Noodgevallen'
+    : effectiveLang === 'fr'
+      ? 'Urgences'
+      : 'Emergency';
+
+  return (
+    <Text style={{ fontSize: 12, color: '#999', textAlign: 'center', paddingTop: 6, paddingBottom: insetBottom + 12, paddingHorizontal: 16 }}>
+      {disclaimer}{' '}
+      <Text
+        style={{ color: '#E53935', fontWeight: 'bold', textDecorationLine: 'underline' }}
+        onPress={() => Linking.openURL(`tel:${suicideLine.number.replace(/[^0-9+]/g, '')}`)}
+      >
+        {suicideLine.name}: {suicideLine.number}
+      </Text>
+      {' '}(24/7, {effectiveLang === 'nl' ? 'gratis, anoniem' : effectiveLang === 'fr' ? 'gratuit, anonyme' : 'free, anonymous'}) |{' '}
+      <Text
+        style={{ color: '#E53935', fontWeight: 'bold', textDecorationLine: 'underline' }}
+        onPress={() => Linking.openURL(`tel:${emergencyNum}`)}
+      >
+        {emergencyLabel}: {emergencyNum}
+      </Text>
+    </Text>
   );
 }

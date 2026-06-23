@@ -271,6 +271,8 @@ interface ChatRequestInput {
   kimPatternSupportContext?: string | null;
   /** User-selected app language. Determines AI response language. */
   locale?: 'nl' | 'en' | 'fr';
+  /** User-selected country. Determines crisis numbers shown by AI. */
+  country?: 'NL' | 'BE' | 'FR' | 'UK' | 'US';
 }
 
 // ─── Server-side Session Cache ───────────────────────────────────
@@ -429,6 +431,86 @@ function incrementMessageCount(): void {
   if (sessionCache) {
     sessionCache.messageCount++;
   }
+}
+
+// ─── Dynamic Crisis Numbers (country-based) ────────────────────────────────
+
+const CRISIS_NUMBERS_SERVER: Record<string, { suicide: Record<string, { name: string; number: string }>; emergency: string }> = {
+  BE: {
+    suicide: {
+      nl: { name: 'Zelfmoordlijn', number: '1813' },
+      fr: { name: 'Centre de Prévention du Suicide', number: '0800 32 123' },
+      en: { name: 'Suicide Prevention', number: '1813' },
+    },
+    emergency: '112',
+  },
+  NL: {
+    suicide: {
+      nl: { name: '113 Zelfmoordpreventie', number: '113' },
+      en: { name: 'Suicide Prevention', number: '113' },
+      fr: { name: 'Prévention du suicide', number: '113' },
+    },
+    emergency: '112',
+  },
+  FR: {
+    suicide: {
+      fr: { name: 'SOS Amitié', number: '09 72 39 40 50' },
+      nl: { name: 'SOS Amitié', number: '09 72 39 40 50' },
+      en: { name: 'SOS Amitié', number: '09 72 39 40 50' },
+    },
+    emergency: '112',
+  },
+  UK: {
+    suicide: {
+      en: { name: 'Samaritans', number: '116 123' },
+      nl: { name: 'Samaritans', number: '116 123' },
+      fr: { name: 'Samaritans', number: '116 123' },
+    },
+    emergency: '999',
+  },
+  US: {
+    suicide: {
+      en: { name: 'Suicide & Crisis Lifeline', number: '988' },
+      nl: { name: 'Suicide & Crisis Lifeline', number: '988' },
+      fr: { name: 'Suicide & Crisis Lifeline', number: '988' },
+    },
+    emergency: '911',
+  },
+};
+
+function getServerCrisisInfo(country?: string, locale?: string): { suicideName: string; suicideNumber: string; emergencyNumber: string } {
+  const c = country || 'BE';
+  const l = locale || 'nl';
+  const data = CRISIS_NUMBERS_SERVER[c] || CRISIS_NUMBERS_SERVER['BE'];
+  const suicideEntry = data.suicide[l] || data.suicide['nl'] || Object.values(data.suicide)[0];
+  return { suicideName: suicideEntry.name, suicideNumber: suicideEntry.number, emergencyNumber: data.emergency };
+}
+
+function buildCrisisFallbackMessage(country?: string, locale?: string): string {
+  const { suicideName, suicideNumber, emergencyNumber } = getServerCrisisInfo(country, locale);
+  const l = locale || 'nl';
+  if (l === 'nl') {
+    return `Ik kan je nu even niet bereiken door een verbindingsprobleem. Als je je niet veilig voelt, bel ${suicideName}: ${suicideNumber} (24/7, gratis, anoniem) of ${emergencyNumber} bij onmiddellijk gevaar. Je hoeft dit niet alleen te dragen.`;
+  } else if (l === 'fr') {
+    return `Je ne peux pas te joindre en ce moment en raison d'un problème de connexion. Si tu ne te sens pas en sécurité, appelle ${suicideName}: ${suicideNumber} (24/7, gratuit, anonyme) ou ${emergencyNumber} en cas de danger immédiat.`;
+  }
+  return `I cannot reach you right now due to a connection issue. If you feel unsafe, call ${suicideName}: ${suicideNumber} (24/7, free, anonymous) or ${emergencyNumber} for immediate danger. You don't have to carry this alone.`;
+}
+
+function getCrisisEnforcementNumber(country?: string, locale?: string): string {
+  const { suicideNumber } = getServerCrisisInfo(country, locale);
+  return suicideNumber;
+}
+
+function buildCrisisAppendMessage(country?: string, locale?: string): string {
+  const { suicideName, suicideNumber, emergencyNumber } = getServerCrisisInfo(country, locale);
+  const l = locale || 'nl';
+  if (l === 'nl') {
+    return `Je kan ook bellen naar ${suicideName}: ${suicideNumber} (24/7, gratis en anoniem) of ${emergencyNumber} bij onmiddellijk gevaar.`;
+  } else if (l === 'fr') {
+    return `Tu peux aussi appeler ${suicideName}: ${suicideNumber} (24/7, gratuit et anonyme) ou ${emergencyNumber} en cas de danger immédiat.`;
+  }
+  return `You can also call ${suicideName}: ${suicideNumber} (24/7, free and anonymous) or ${emergencyNumber} for immediate danger.`;
 }
 
 // ─── Zod Schema ───────────────────────────────────────────────────
@@ -703,6 +785,7 @@ export const chatInputSchema = z.object({
   }).nullable().optional(),
   /** User-selected app language. Determines AI response language. */
   locale: z.enum(['nl', 'en', 'fr']).optional(),
+  country: z.enum(['NL', 'BE', 'FR', 'UK', 'US']).optional(),
 });
 
 // ─── Structured Memory Block Builder (from extractedEntities) ──────────────
@@ -1289,8 +1372,8 @@ VIOLATION OF THIS PROTOCOL IS UNACCEPTABLE.`;
   let crisisInstructions = "";
   if (input.crisisLevel >= 2) {
     crisisInstructions = isElias
-      ? eliasCrisisInstructions(input.crisisLevel)
-      : kimCrisisInstructions(input.crisisLevel);
+      ? eliasCrisisInstructions(input.crisisLevel, input.country, input.locale)
+      : kimCrisisInstructions(input.crisisLevel, input.country, input.locale);
   } else if (input.crisisLevel === 1) {
     crisisInstructions = `\nHEIGHTENED VIGILANCE. Be extra attentive to signs of distress.`;
   }
@@ -2577,7 +2660,7 @@ export async function generateAIResponse(
     console.error("[AI Chat] OpenAI API network error:", error);
     if (crisisLevel >= 1) {
       return {
-        response: 'Ik kan je nu even niet bereiken door een verbindingsprobleem. Als je je niet veilig voelt, bel de Zelfmoordlijn: 1813 (24/7, gratis, anoniem), 1712 (huiselijk geweld) of 112 bij onmiddellijk gevaar. Je hoeft dit niet alleen te dragen.',
+        response: buildCrisisFallbackMessage(input.country, input.locale),
         advisoryEmotion: input.detectedEmotion,
         advisoryConfidence: 0,
         tokenUsage: undefined,
@@ -2592,7 +2675,7 @@ export async function generateAIResponse(
     console.error("[AI Chat] OpenAI API error:", openaiResponse.status, errorText);
     if (crisisLevel >= 1) {
       return {
-        response: 'Ik kan je nu even niet bereiken door een verbindingsprobleem. Als je je niet veilig voelt, bel de Zelfmoordlijn: 1813 (24/7, gratis, anoniem), 1712 (huiselijk geweld) of 112 bij onmiddellijk gevaar. Je hoeft dit niet alleen te dragen.',
+        response: buildCrisisFallbackMessage(input.country, input.locale),
         advisoryEmotion: input.detectedEmotion,
         advisoryConfidence: 0,
         tokenUsage: undefined,
@@ -2640,9 +2723,10 @@ export async function generateAIResponse(
   // If crisisLevel >= 2 and GPT did NOT include the crisis number in its response,
   // we FORCE-APPEND it. This is a safety-critical fallback — the user MUST see the number.
   let finalResponse = responseText;
-  if (crisisLevel >= 2 && !finalResponse.includes('1813')) {
+  const crisisEnforcementNumber = getCrisisEnforcementNumber(input.country, input.locale);
+  if (crisisLevel >= 2 && !finalResponse.includes(crisisEnforcementNumber)) {
     console.warn('[AI Chat] CRISIS ENFORCEMENT: GPT omitted crisis number — force-appending');
-    finalResponse += '\n\nJe kan ook bellen naar de Zelfmoordlijn: 1813 (24/7, gratis en anoniem), 1712 (huiselijk geweld) of 112 bij onmiddellijk gevaar.';
+    finalResponse += '\n\n' + buildCrisisAppendMessage(input.country, input.locale);
   }
   // ─── CLINICAL ANNOTATION (separate gpt-4o call) ────────────────────
   // When clinical mode is active, ALWAYS generate the annotation via gpt-4o.

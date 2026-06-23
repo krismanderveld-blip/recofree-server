@@ -1864,3 +1864,13 @@
 - [x] Keep existing intake flow (with import) as step 2-4
 - [x] All hardcoded English strings in intake replaced with t() calls
 - [x] Unicode escapes in source code replaced with actual emoji characters
+
+## Dynamic crisis numbers per country (safety-critical)
+- [x] Replace hardcoded BE crisis numbers with CRISIS_NUMBERS mapping per country
+- [x] Implement BE language exception (NL→1813, FR→0800 32 123)
+- [x] Update emergency card and footer links to use dynamic numbers
+- [x] Add i18n labels for all number categories (NL, EN, FR)
+- [x] Server-side AI prompt crisis numbers now dynamic per country/locale
+- [x] Shared crisis-prompt-helper.ts for elias and kim prompt blocks
+- [x] Client sends country to server in chat requests
+- [x] All 34 export/import tests pass

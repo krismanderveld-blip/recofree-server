@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Text, View, Pressable, Linking, Platform, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { getCrisisContentForMessage, type CrisisContent } from '@/lib/crisis/resources';
+import { getCrisisContent, getPrimarySuicideLine, getEmergencyNumber, type CrisisContent, type CrisisResource } from '@/lib/crisis/resources';
+import { useTranslation } from '@/lib/i18n/i18n-provider';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { colors as dc, spacing, radius } from '@/constants/design';
 import * as Haptics from 'expo-haptics';
@@ -9,12 +10,11 @@ import * as Haptics from 'expo-haptics';
 interface EmergencyCardProps {
   visible: boolean;
   onDismiss?: () => void;
-  /** Last user message for language detection. If null/undefined, defaults to Dutch. */
-  lastUserMessage?: string | null;
 }
 
-export function EmergencyCard({ visible, onDismiss, lastUserMessage }: EmergencyCardProps) {
+export function EmergencyCard({ visible, onDismiss }: EmergencyCardProps) {
   const [personalContacts, setPersonalContacts] = useState<{ name: string; number: string }[]>([]);
+  const { language, country, t } = useTranslation();
 
   useEffect(() => {
     if (!visible) return;
@@ -25,10 +25,20 @@ export function EmergencyCard({ visible, onDismiss, lastUserMessage }: Emergency
 
   if (!visible) return null;
 
-  const content: CrisisContent = getCrisisContentForMessage(lastUserMessage);
+  const effectiveCountry = country || 'BE';
+  const effectiveLang = language === 'nl' ? 'nl' : language === 'fr' ? 'fr' : 'en';
+  const content: CrisisContent = getCrisisContent(effectiveCountry, effectiveLang);
+  const primaryLine = getPrimarySuicideLine(effectiveCountry, effectiveLang);
 
-  const handleCall = (number: string) => {
-    const cleaned = number.replace(/\D/g, '');
+  const handleCall = (number: string, isText?: boolean) => {
+    if (isText) {
+      // For text-based resources (SMS lines, websites), open URL if it looks like one
+      if (number.includes('.')) {
+        Linking.openURL(`https://${number}`);
+      }
+      return;
+    }
+    const cleaned = number.replace(/[^0-9+]/g, '');
     if (cleaned) {
       if (Platform.OS !== 'web') {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -41,22 +51,35 @@ export function EmergencyCard({ visible, onDismiss, lastUserMessage }: Emergency
     if (Platform.OS !== 'web') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
     }
+    const confirmTitle = effectiveLang === 'nl'
+      ? `Wil je ${primaryLine.number} bellen?`
+      : effectiveLang === 'fr'
+        ? `Voulez-vous appeler le ${primaryLine.number} ?`
+        : `Do you want to call ${primaryLine.number}?`;
+    const confirmMsg = effectiveLang === 'nl'
+      ? `Je wordt doorverbonden met ${primaryLine.name} (24/7, gratis, anoniem).`
+      : effectiveLang === 'fr'
+        ? `Vous serez connecté(e) à ${primaryLine.name} (24/7, gratuit, anonyme).`
+        : `You will be connected to ${primaryLine.name} (24/7, free, anonymous).`;
+    const confirmBtn = effectiveLang === 'nl' ? 'Bevestig' : effectiveLang === 'fr' ? 'Confirmer' : 'Confirm';
+    const cancelBtn = effectiveLang === 'nl' ? 'Annuleer' : effectiveLang === 'fr' ? 'Annuler' : 'Cancel';
+
     Alert.alert(
-      content.callConfirmTitle,
-      content.callConfirmMessage,
+      confirmTitle,
+      confirmMsg,
       [
-        { text: content.cancelButton, style: 'cancel' },
-        { text: content.confirmButton, style: 'default', onPress: () => Linking.openURL('tel:1813') },
+        { text: cancelBtn, style: 'cancel' },
+        { text: confirmBtn, style: 'default', onPress: () => {
+          const cleaned = primaryLine.number.replace(/[^0-9+]/g, '');
+          Linking.openURL(`tel:${cleaned}`);
+        }},
       ]
     );
   };
 
-  const handleSms = () => {
-    if (Platform.OS !== 'web') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    }
-    Linking.openURL('tel:107');
-  };
+  // Separate primary suicide line from other resources for layout
+  const primaryResource = content.resources.find(r => r.category === 'SUICIDE_CRISIS_LINE' || r.category === 'SUICIDE_PREVENTION_LINE' || r.category === 'SUICIDE_AND_CRISIS_LIFELINE' || r.category === 'SAMARITANS');
+  const otherResources = content.resources.filter(r => r !== primaryResource);
 
   return (
     <View style={{
@@ -78,59 +101,36 @@ export function EmergencyCard({ visible, onDismiss, lastUserMessage }: Emergency
         {content.intro}
       </Text>
 
-      {/* Primary call button — 1813 (Zelfmoordlijn) */}
-      <Pressable
-        onPress={handlePrimaryCall}
-        style={({ pressed }) => [
-          {
-            backgroundColor: pressed ? '#9A3A3A' : dc.danger,
-            borderRadius: 16,
-            paddingVertical: 18,
-            paddingHorizontal: 24,
-            marginBottom: 8,
-            alignItems: 'center',
-            justifyContent: 'center',
-            flexDirection: 'row',
-            transform: [{ scale: pressed ? 0.97 : 1 }],
-          },
-        ]}
-      >
-        <IconSymbol name="phone.fill" size={22} color="#FFFFFF" />
-        <Text style={{ color: '#FFFFFF', fontSize: 18, fontWeight: '700', marginLeft: 10 }}>
-          {content.callButtonText}
-        </Text>
-      </Pressable>
-
-      {/* Secondary call button — 107 (CGG) */}
-      <Pressable
-        onPress={handleSms}
-        style={({ pressed }) => [
-          {
-            backgroundColor: pressed ? dc.dangerSoft : 'transparent',
-            borderRadius: 12,
-            borderWidth: 2,
-            borderColor: dc.danger,
-            paddingVertical: 12,
-            paddingHorizontal: 20,
-            marginBottom: 16,
-            alignItems: 'center',
-            justifyContent: 'center',
-            flexDirection: 'row',
-            transform: [{ scale: pressed ? 0.97 : 1 }],
-          },
-        ]}
-      >
-        <IconSymbol name="paperplane.fill" size={18} color={dc.danger} />
-        <Text style={{ color: dc.danger, fontSize: 16, fontWeight: '600', marginLeft: 8 }}>
-          {content.smsButtonText}
-        </Text>
-      </Pressable>
+      {/* Primary call button — suicide/crisis line */}
+      {primaryResource && !primaryResource.isText && (
+        <Pressable
+          onPress={handlePrimaryCall}
+          style={({ pressed }) => [
+            {
+              backgroundColor: pressed ? '#9A3A3A' : dc.danger,
+              borderRadius: 16,
+              paddingVertical: 18,
+              paddingHorizontal: 24,
+              marginBottom: 8,
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexDirection: 'row',
+              transform: [{ scale: pressed ? 0.97 : 1 }],
+            },
+          ]}
+        >
+          <IconSymbol name="phone.fill" size={22} color="#FFFFFF" />
+          <Text style={{ color: '#FFFFFF', fontSize: 18, fontWeight: '700', marginLeft: 10 }}>
+            {effectiveLang === 'nl' ? 'Bel' : effectiveLang === 'fr' ? 'Appeler' : 'Call'} {primaryLine.number}
+          </Text>
+        </Pressable>
+      )}
 
       {/* Personal emergency contacts */}
       {personalContacts.length > 0 && (
         <View style={{ marginBottom: 12 }}>
           <Text style={{ fontSize: 11, fontWeight: '700', color: dc.textMuted, marginBottom: 8, letterSpacing: 0.5 }}>
-            YOUR CONTACTS
+            {effectiveLang === 'nl' ? 'JOUW CONTACTEN' : effectiveLang === 'fr' ? 'VOS CONTACTS' : 'YOUR CONTACTS'}
           </Text>
           {personalContacts.map((contact, idx) => (
             <Pressable
@@ -162,10 +162,10 @@ export function EmergencyCard({ visible, onDismiss, lastUserMessage }: Emergency
       )}
 
       {/* Other resources */}
-      {content.resources.filter(r => r.number !== '1813' && r.number !== '107').map((resource) => (
+      {otherResources.map((resource) => (
         <Pressable
-          key={resource.name}
-          onPress={() => handleCall(resource.number)}
+          key={resource.number}
+          onPress={() => handleCall(resource.number, resource.isText)}
           style={({ pressed }) => [
             { opacity: pressed ? 0.7 : 1 },
           ]}

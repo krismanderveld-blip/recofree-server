@@ -80,7 +80,9 @@ IMPORTANT: Never claim capabilities you do NOT have. Only these exist in your sy
  * Used when crisisLevel >= 2 for Kim users.
  * Exact same text, no changes.
  */
-export function kimCrisisInstructions(crisisLevel: number): string {
+export function kimCrisisInstructions(crisisLevel: number, country?: string, locale?: string): string {
+  const { getCrisisNumbersForPrompt } = require('../crisis-prompt-helper');
+  const crisisInfo = getCrisisNumbersForPrompt(country, locale);
   return `\n⚠️ CRISIS ACTIVE (level ${crisisLevel}).
 
 CRISIS RESPONSE PROTOCOL — FOLLOW THIS EXACT ORDER:
@@ -89,8 +91,8 @@ Step 2: Ask SAFETY. "Ben je nu veilig?" or "Are you safe right now?" — Wait fo
 Step 3: After presence AND safety check, ALWAYS end your response with the crisis numbers line below.
 
 MANDATORY CRISIS FOOTER (ALWAYS include at the END of your response when crisisLevel >= 2):
-You MUST end your message with this exact line (in Dutch):
-"Je kan ook bellen naar de Zelfmoordlijn: 1813 (24/7, gratis en anoniem), 1712 (huiselijk geweld) of 112 bij onmiddellijk gevaar."
+You MUST end your message with this exact line:
+"${crisisInfo.footerLine}"
 This line MUST appear in your response text — it is NOT optional. The UI card below may not be visible to the user.
 
 RULES:
@@ -101,9 +103,6 @@ RULES:
 - Do NOT ask exploratory questions. Acknowledge pain immediately.
 - For Kim (naaste): also validate that THEIR pain matters, not just the person they care for.
 
-Belgian crisis numbers:
-- 1813 (Zelfmoordlijn — 24/7, gratis, anoniem)
-- 1712 (huiselijk geweld — gratis, anoniem)
-- 107 (Centrum Geestelijke Gezondheidszorg)
-- 112 (noodgevallen — alleen bij onmiddellijk gevaar)`;
+Crisis numbers for user's country (${country || 'BE'}):
+${crisisInfo.numbersList}`;
 }
