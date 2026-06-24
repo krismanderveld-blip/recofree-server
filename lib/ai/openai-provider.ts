@@ -261,6 +261,7 @@ function buildKnownUserPatterns(userDat: ChatContext['userDat'], clinicalMode = 
   }
 
   const triggers = (userDat.triggerPatterns || [])
+    .filter((t: any) => t.trigger && typeof t.trigger === 'string')
     .sort((a: any, b: any) => (b.weight ?? b.count ?? 0) - (a.weight ?? a.count ?? 0))
     .slice(0, 8)
     .map((t: any) => t.trigger);

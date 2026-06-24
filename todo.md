@@ -1939,3 +1939,8 @@
 - [x] Fix: defensive guard in updateTriggerPatterns — skip undefined/null/empty trigger strings before persisting
 - [x] NOT caused by i18n-sweep — backpack section labels are never written to triggerPatterns
 - [x] All 1383 tests pass
+
+## Server 400 fix: knownUserPatterns.triggers[0] invalid_type
+- [x] Diagnose: buildKnownUserPatterns sends undefined trigger strings to server (Zod expects string[])
+- [x] Fix: filter out undefined/null/non-string entries from triggerPatterns before mapping to trigger strings
+- [x] All pipeline + AI chat tests pass
