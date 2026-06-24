@@ -130,7 +130,7 @@ export function BalkmetafoorCard({
     return (
       <View className="bg-surface rounded-2xl p-4 border border-border">
         <Text className="text-sm text-muted text-center">
-          {tStatic('profile.balkmetafoor.not_initialized')}
+          {t('profile.balkmetafoor.not_initialized')}
         </Text>
       </View>
     );

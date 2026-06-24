@@ -71,6 +71,8 @@ export interface MilestoneDefinition {
   label: string;
   thresholdType: 'SOBRIETY_DAYS' | 'SELF_CARE_CONSISTENCY';
   thresholdValue: number;
+  /** i18n key prefix for title/message/cta (e.g. 'milestone.elias.day_30') */
+  i18nKey: string;
   title: string;
   message: string;
   ctaLabel: string;

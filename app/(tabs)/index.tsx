@@ -184,9 +184,9 @@ export default function HomeScreen() {
           <MilestoneCard
             persona={activeMilestone.persona}
             milestoneId={activeMilestone.milestoneId}
-            title={activeMilestone.title}
-            message={activeMilestone.message}
-            ctaLabel={activeMilestone.ctaLabel}
+            title={t(`${activeMilestone.i18nKey}.title`)}
+            message={t(`${activeMilestone.i18nKey}.message`)}
+            ctaLabel={t(`${activeMilestone.i18nKey}.cta`)}
             accentColor={activeMilestone.accentColor}
             softBackgroundColor={activeMilestone.softBackgroundColor}
             onAcknowledge={handleDismissMilestone}

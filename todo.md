@@ -1948,3 +1948,11 @@
 - [x] Cleanup persist: if corrupt entries were removed, persist cleaned userDat back to storage (both initial load + reloadFromStorage paths)
 - [x] Logging: `[cleanup] removed N corrupt triggerPattern entries` when entries are cleaned
 - [x] Defensive: safe for users without rugzak/triggers (checks Array.isArray before comparing lengths)
+
+## Milestone cards + sober counter i18n fix
+- [x] Milestone cards: added i18nKey to MilestoneDefinition type + all Elias/Kim definitions
+- [x] Home screen uses t() for milestone title/message/cta based on i18nKey
+- [x] Added 36 milestone i18n keys to en/nl/fr locale files (8 Elias + 4 Kim milestones × 3 fields)
+- [x] Sober counter: fixed ${days} → {days} interpolation in locale files
+- [x] Sober counter: pass days param to t() calls in sober-counter.tsx
+- [x] All 1382 tests pass (1 timeout on Railway health check = infra, not code)

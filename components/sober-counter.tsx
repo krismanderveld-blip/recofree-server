@@ -91,13 +91,13 @@ export function SoberCounter() {
   } else if (days === 1) {
     message = t('sober_counter.message.day_1_clean');
   } else if (days < 7) {
-    message = t('sober_counter.message.days_clean');
+    message = t('sober_counter.message.days_clean', { days });
   } else if (days < 30) {
-    message = t('sober_counter.message.days_clean_keep_going');
+    message = t('sober_counter.message.days_clean_keep_going', { days });
   } else if (days < 100) {
-    message = t('sober_counter.message.days_clean_fire');
+    message = t('sober_counter.message.days_clean_fire', { days });
   } else {
-    message = t('sober_counter.message.days_clean_heart');
+    message = t('sober_counter.message.days_clean_heart', { days });
   }
 
   return (
