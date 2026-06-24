@@ -269,6 +269,35 @@ interface ChatRequestInput {
   selfAcceptanceContext?: string | null;
   /** Kim pattern support continuity context (PAAL-K01/BEHE-K01/AANP-K01/CODEP-K01, Kim only) */
   kimPatternSupportContext?: string | null;
+
+  // Advanced module contexts
+  vergv01Context?: string | null;
+  igh01Context?: string | null;
+  agc01Context?: string | null;
+  hwk01Context?: string | null;
+  fale01Context?: string | null;
+  verg01Context?: string | null;
+  rouw01Context?: string | null;
+  iden01Context?: string | null;
+  zink01Context?: string | null;
+  terv01Context?: string | null;
+  mi02Context?: string | null;
+  slaap01EliasContext?: string | null;
+  slaap01KimContext?: string | null;
+  bedr01Context?: string | null;
+  vetr01Context?: string | null;
+  gasl01Context?: string | null;
+  cdp01Context?: string | null;
+  rnw01Context?: string | null;
+  par01Context?: string | null;
+  fin01Context?: string | null;
+  iso01Context?: string | null;
+
+  // LOOPBLOCKER: cross-session repeating pattern directive
+  loopDetected?: string | null;
+  // LANGUAGE_RECOVERY: diminishing negative intensity directive
+  languageRecovery?: string | null;
+
   /** User-selected app language. Determines AI response language. */
   locale?: 'nl' | 'en' | 'fr';
   /** User-selected country. Determines crisis numbers shown by AI. */
@@ -702,6 +731,34 @@ export const chatInputSchema = z.object({
   // Kim pattern support continuity (PAAL-K01/BEHE-K01/AANP-K01/CODEP-K01, Kim only)
   kimPatternSupportContext: z.string().nullable().optional(),
 
+  // Advanced module contexts (Elias + Kim)
+  vergv01Context: z.string().nullable().optional(),
+  igh01Context: z.string().nullable().optional(),
+  agc01Context: z.string().nullable().optional(),
+  hwk01Context: z.string().nullable().optional(),
+  fale01Context: z.string().nullable().optional(),
+  verg01Context: z.string().nullable().optional(),
+  rouw01Context: z.string().nullable().optional(),
+  iden01Context: z.string().nullable().optional(),
+  zink01Context: z.string().nullable().optional(),
+  terv01Context: z.string().nullable().optional(),
+  mi02Context: z.string().nullable().optional(),
+  slaap01EliasContext: z.string().nullable().optional(),
+  slaap01KimContext: z.string().nullable().optional(),
+  bedr01Context: z.string().nullable().optional(),
+  vetr01Context: z.string().nullable().optional(),
+  gasl01Context: z.string().nullable().optional(),
+  cdp01Context: z.string().nullable().optional(),
+  rnw01Context: z.string().nullable().optional(),
+  par01Context: z.string().nullable().optional(),
+  fin01Context: z.string().nullable().optional(),
+  iso01Context: z.string().nullable().optional(),
+
+  // LOOPBLOCKER: cross-session repeating pattern directive
+  loopDetected: z.string().nullable().optional(),
+  // LANGUAGE_RECOVERY: diminishing negative intensity directive
+  languageRecovery: z.string().nullable().optional(),
+
   // Signal engine: relevance scores for context gating (LIVE_MESSAGE only)
   relevanceScores: z.object({
     backpackRelevance: z.number(),
@@ -786,7 +843,7 @@ export const chatInputSchema = z.object({
   /** User-selected app language. Determines AI response language. */
   locale: z.enum(['nl', 'en', 'fr']).optional(),
   country: z.enum(['NL', 'BE', 'FR', 'UK', 'US']).optional(),
-});
+}).passthrough();
 
 // ─── Structured Memory Block Builder (from extractedEntities) ──────────────
 

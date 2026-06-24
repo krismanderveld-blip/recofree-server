@@ -1979,3 +1979,11 @@
 - [x] Fix: changed to `{ prompt }` and parse `{ result }` response correctly
 - [x] GPT session summaries now actually reach logs.dat (not just fallback data)
 - [x] All 1383 tests pass
+
+## Bug: Server 400 on ai.chat — Zod schema missing 22+ module context fields
+- [x] Root cause: client sends fields (vergv01Context, igh01Context, loopDetected, languageRecovery, etc.) that server Zod schema doesn't declare
+- [x] Zod z.object() in tRPC is strict by default — unknown fields cause 400
+- [x] Fix: added all 22 missing context fields + loopDetected + languageRecovery to chatInputSchema
+- [x] Added .passthrough() to schema to prevent future 400s from new client fields
+- [x] Also added fields to ChatRequestInput interface for type safety
+- [x] All 1383 tests pass
