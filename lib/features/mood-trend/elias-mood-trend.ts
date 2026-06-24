@@ -16,6 +16,7 @@ import {
   EliasMoodTrendColors,
   type EliasMoodMetric,
 } from './mood-trend-types';
+import { tStatic } from '@/lib/i18n';
 
 export function buildEliasMoodTrendChartData(input: MoodTrendRuntimeInput): MoodTrendChartData {
   // Persona separation guard
@@ -39,10 +40,10 @@ export function buildEliasMoodTrendChartData(input: MoodTrendRuntimeInput): Mood
   const windowStartIso = getWindowStartIso(input.nowIso, input.range);
 
   const rawSeries: MoodTrendSeries[] = [
-    mapMetricToSeries('craving', 'Craving', 'elias', state.cravingHistory, windowStartIso, input.nowIso),
-    mapMetricToSeries('frustration', 'Frustration', 'elias', state.frustrationHistory, windowStartIso, input.nowIso),
-    mapMetricToSeries('despondency', 'Despondency', 'elias', state.despondencyHistory, windowStartIso, input.nowIso),
-    mapMetricToSeries('focus', 'Focus', 'elias', state.focusHistory, windowStartIso, input.nowIso),
+    mapMetricToSeries('craving', tStatic('mood.slider.craving.title'), 'elias', state.cravingHistory, windowStartIso, input.nowIso),
+    mapMetricToSeries('frustration', tStatic('mood.slider.frustration.title'), 'elias', state.frustrationHistory, windowStartIso, input.nowIso),
+    mapMetricToSeries('despondency', tStatic('mood.slider.despondency.title'), 'elias', state.despondencyHistory, windowStartIso, input.nowIso),
+    mapMetricToSeries('focus', tStatic('mood.slider.focus.title'), 'elias', state.focusHistory, windowStartIso, input.nowIso),
   ];
 
   return finalizeMoodTrendChartData('elias', input.range, rawSeries, input.nowIso);
@@ -122,7 +123,7 @@ function finalizeMoodTrendChartData(
       requiredMinimumCheckIns: 3,
       totalCheckInsInRange,
       series,
-      fallbackText: 'Nog geen check-ins om een mood trend te tonen.',
+      fallbackText: tStatic('mood_trend_chart_card.fallback.no_data'),
       generatedAt: nowIso,
       localOnly: true,
       aiInterpretationUsed: false,
@@ -138,7 +139,7 @@ function finalizeMoodTrendChartData(
       requiredMinimumCheckIns: 3,
       totalCheckInsInRange,
       series,
-      fallbackText: 'Nog te weinig check-ins voor een grafiek. Vanaf 3 check-ins tonen we je trend hier.',
+      fallbackText: tStatic('mood_trend_chart_card.fallback.insufficient'),
       generatedAt: nowIso,
       localOnly: true,
       aiInterpretationUsed: false,

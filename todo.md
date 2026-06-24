@@ -1909,3 +1909,26 @@
 - [x] Fix: Data & Privacy section - all export/import strings now use t()
 - [x] Fix: ImportDataSection - all strings use t() (confirm modal, name prompt, buttons)
 - [x] Fix: ExportDataSection - validation messages, success, footer all use t()
+
+## Hardcoded strings fix (FR screenshots juni 2026)
+- [x] Mood screen: slider titles (Craving/Frustration/Despondency/Focus) → t() calls
+- [x] Mood screen: intervention alert text "X, Y are elevated" → t() with interpolation
+- [x] Mood screen: trend card fallback text → t() (elias + kim mood-trend.ts)
+- [x] Mood screen: "Save a few check-ins to start seeing your patterns here" → t()
+- [x] Mood screen: "7 days / 30 days" tab labels → t()
+- [x] Mood trend chart card: series display names from i18n (elias + kim)
+- [x] Progress card: 7/30 days toggle, signal summary, hope/fear from i18n
+- [x] Backpack screen: section titles (Childhood, Adolescence, Adulthood, Family, Recurring Themes) → t()
+- [x] Backpack screen: section subtitles (6-12 years, 12-18 years, etc.) → t()
+- [x] Backpack screen: Kim section titles/subtitles → t()
+- [x] Backpack screen: progress counter → t()
+- [x] Profile screen: "De balkmetafoor wordt geïntroduceerd..." (NL hardcoded) → t()
+- [x] Profile screen: "1 session · 2 check-ins" → t() with interpolation
+- [x] Profile screen: STAGE_LABELS replaced with t() calls
+- [x] Profile screen: emergency contact remove confirm → t()
+- [x] Profile screen: VSP share dialog title → t()
+- [x] BalkmetafoorCard: all hardcoded NL strings → t()
+- [x] Chat error boundary: NL strings → t()
+- [x] Prechat Eigen Regie: all hardcoded EN strings → t()
+- [x] Added 54 new keys to en/nl/fr locale files
+- [x] All 1383 tests pass

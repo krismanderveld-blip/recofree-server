@@ -17,10 +17,8 @@ import { Text, View, Pressable, Platform, ScrollView } from 'react-native';
 import Slider from '@react-native-community/slider';
 import * as Haptics from 'expo-haptics';
 import { useColors } from '@/hooks/use-colors';
+import { useTranslation } from '@/lib/i18n';
 import {
-  EIGEN_REGIE_QUESTION,
-  EIGEN_REGIE_SLIDER_LABELS,
-  ZONE_DISPLAY_LABELS,
   processEigenRegie,
   type EigenRegieZone,
 } from '@/lib/engine/kim/eigen-regie';
@@ -43,6 +41,7 @@ interface PreChatEigenRegieProps {
 
 export function PreChatEigenRegie({ onSubmit, userName }: PreChatEigenRegieProps) {
   const colors = useColors();
+  const { t } = useTranslation();
   // null = user has not interacted with slider yet (no default!)
   const [sliderValue, setSliderValue] = useState<number | null>(null);
   const [hasInteracted, setHasInteracted] = useState(false);
@@ -73,10 +72,10 @@ export function PreChatEigenRegie({ onSubmit, userName }: PreChatEigenRegieProps
         {/* Header */}
         <View style={{ marginBottom: 32, alignItems: 'center' }}>
           <Text style={{ fontSize: 22, fontWeight: '700', color: colors.foreground, textAlign: 'center', marginBottom: 8 }}>
-            How was your day, {userName}?
+            {t('eigen_regie.greeting', { name: userName })}
           </Text>
           <Text style={{ fontSize: 15, color: colors.muted, textAlign: 'center', lineHeight: 22 }}>
-            {EIGEN_REGIE_QUESTION}
+            {t('eigen_regie.question')}
           </Text>
         </View>
 
@@ -96,10 +95,10 @@ export function PreChatEigenRegie({ onSubmit, userName }: PreChatEigenRegieProps
           {/* Slider labels */}
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 4 }}>
             <Text style={{ fontSize: 12, color: colors.muted, maxWidth: '45%' }}>
-              {EIGEN_REGIE_SLIDER_LABELS.min}
+              {t('eigen_regie.slider.min')}
             </Text>
             <Text style={{ fontSize: 12, color: colors.muted, maxWidth: '45%', textAlign: 'right' }}>
-              {EIGEN_REGIE_SLIDER_LABELS.max}
+              {t('eigen_regie.slider.max')}
             </Text>
           </View>
         </View>
@@ -127,7 +126,7 @@ export function PreChatEigenRegie({ onSubmit, userName }: PreChatEigenRegieProps
                 }}
               />
               <Text style={{ fontSize: 14, fontWeight: '600', color: colors.foreground }}>
-                {ZONE_DISPLAY_LABELS[result.zone]}
+                {t(`eigen_regie.zone.${result.zone}`)}
               </Text>
             </View>
             <Text style={{ fontSize: 14, color: colors.muted, lineHeight: 20 }}>
@@ -154,7 +153,7 @@ export function PreChatEigenRegie({ onSubmit, userName }: PreChatEigenRegieProps
           ]}
         >
           <Text style={{ color: '#FFFFFF', fontSize: 16, fontWeight: '600' }}>
-            Confirm
+            {t('eigen_regie.confirm')}
           </Text>
         </Pressable>
       </ScrollView>

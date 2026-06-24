@@ -102,14 +102,14 @@ function SignalSummary({ signals }: { signals: { softened: string[]; increased: 
       {hasSoftened && (
         <View style={[styles.signalBadge, { backgroundColor: dc.success + '15', borderColor: dc.success + '40' }]}>
           <Text style={[styles.signalText, { color: dc.success }]}>
-            Softened: {signals.softened.join(', ')}
+            {tStatic('progress_card.signal.softened_prefix')}{signals.softened.join(', ')}
           </Text>
         </View>
       )}
       {hasIncreased && (
         <View style={[styles.signalBadge, { backgroundColor: dc.moodOrange + '15', borderColor: dc.moodOrange + '40' }]}>
           <Text style={[styles.signalText, { color: dc.moodOrange }]}>
-            Needs attention: {signals.increased.join(', ')}
+            {tStatic('progress_card.signal.increased_prefix')}{signals.increased.join(', ')}
           </Text>
         </View>
       )}
@@ -155,7 +155,7 @@ function EliasProgressContent({ summary }: { summary: EliasProgressSummary }) {
           ]}
         >
           <Text style={[styles.windowButtonText, showWindow === '7' && styles.windowButtonTextActive]}>
-            7 days
+            {tStatic('progress_card.elias.window.7_days')}
           </Text>
         </Pressable>
         <Pressable
@@ -167,7 +167,7 @@ function EliasProgressContent({ summary }: { summary: EliasProgressSummary }) {
           ]}
         >
           <Text style={[styles.windowButtonText, showWindow === '30' && styles.windowButtonTextActive]}>
-            30 days
+            {tStatic('progress_card.elias.window.30_days')}
           </Text>
         </Pressable>
       </View>
@@ -199,12 +199,12 @@ function EliasProgressContent({ summary }: { summary: EliasProgressSummary }) {
           <Text style={styles.sectionLabel}>{tStatic('progress_card.elias.inner_landscape.title')}</Text>
           {summary.projectionMovement.strongestHope && (
             <Text style={[styles.projectionText, { color: dc.success }]}>
-              Hope: {summary.projectionMovement.strongestHope}
+              {tStatic('progress_card.elias.inner_landscape.hope_prefix')}{summary.projectionMovement.strongestHope}
             </Text>
           )}
           {summary.projectionMovement.strongestFear && (
             <Text style={[styles.projectionText, { color: dc.moodOrange }]}>
-              Fear: {summary.projectionMovement.strongestFear}
+              {tStatic('progress_card.elias.inner_landscape.fear_prefix')}{summary.projectionMovement.strongestFear}
             </Text>
           )}
         </View>
@@ -212,7 +212,7 @@ function EliasProgressContent({ summary }: { summary: EliasProgressSummary }) {
 
       {/* Disclaimer */}
       <Text style={styles.disclaimer}>
-        This is pattern information, not a score or diagnosis.
+        {tStatic('progress_card.elias.disclaimer')}
       </Text>
     </View>
   );
@@ -237,7 +237,7 @@ function KimProgressContent({ summary }: { summary: KimProgressSummary }) {
           ]}
         >
           <Text style={[styles.windowButtonText, showWindow === '7' && styles.windowButtonTextActive]}>
-            7 days
+            {tStatic('progress_card.kim.window.7_days')}
           </Text>
         </Pressable>
         <Pressable
@@ -249,7 +249,7 @@ function KimProgressContent({ summary }: { summary: KimProgressSummary }) {
           ]}
         >
           <Text style={[styles.windowButtonText, showWindow === '30' && styles.windowButtonTextActive]}>
-            30 days
+            {tStatic('progress_card.kim.window.30_days')}
           </Text>
         </Pressable>
       </View>
@@ -275,7 +275,7 @@ function KimProgressContent({ summary }: { summary: KimProgressSummary }) {
 
       {/* Disclaimer */}
       <Text style={styles.disclaimer}>
-        This is a view of your load, not a judgment of your care.
+        {tStatic('progress_card.kim.disclaimer')}
       </Text>
     </View>
   );

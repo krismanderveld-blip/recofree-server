@@ -131,7 +131,7 @@ function MoodTrendRangeToggle({
         ]}
       >
         <Text style={[styles.toggleText, value === 'DAYS_7' && { color: activeTextColor, fontWeight: '600' }]}>
-          7 days
+          {tStatic('mood_trend_chart_card.toggle.7_days')}
         </Text>
       </Pressable>
       <Pressable
@@ -142,7 +142,7 @@ function MoodTrendRangeToggle({
         ]}
       >
         <Text style={[styles.toggleText, value === 'DAYS_30' && { color: activeTextColor, fontWeight: '600' }]}>
-          30 days
+          {tStatic('mood_trend_chart_card.toggle.30_days')}
         </Text>
       </Pressable>
     </View>
@@ -165,7 +165,7 @@ function MoodTrendTextFallback({
       <Text style={styles.fallbackText}>{text || tStatic('mood_trend_chart_card.fallback.no_data')}</Text>
       {checkInCount > 0 && (
         <Text style={styles.fallbackCount}>
-          {checkInCount} check-in{checkInCount !== 1 ? tStatic('mood_trend_chart_card.fallback.check_in_plural') : ''} recorded
+          {tStatic('mood_trend_chart_card.fallback.count_recorded', { count: checkInCount, plural: checkInCount !== 1 ? 's' : '' })}
         </Text>
       )}
     </View>

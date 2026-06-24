@@ -141,8 +141,8 @@ export default function BackpackScreen() {
               <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, gap: 12 }}>
                 <Text style={{ fontSize: 22 }}>{icon}</Text>
                 <View style={{ flex: 1 }}>
-                  <Text style={{ fontSize: 15, fontWeight: '600', color: colors.foreground }}>{section.label}</Text>
-                  <Text style={{ fontSize: 12, color: colors.muted, marginTop: 2 }}>{section.ageRange}</Text>
+                  <Text style={{ fontSize: 15, fontWeight: '600', color: colors.foreground }}>{t(`backpack.section.${section.id}.label`)}</Text>
+                  <Text style={{ fontSize: 12, color: colors.muted, marginTop: 2 }}>{t(`backpack.section.${section.id}.age_range`)}</Text>
                 </View>
               </View>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
@@ -239,8 +239,8 @@ export default function BackpackScreen() {
               <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, gap: 12 }}>
                 <Text style={{ fontSize: 22 }}>{section.emoji}</Text>
                 <View style={{ flex: 1 }}>
-                  <Text style={{ fontSize: 15, fontWeight: '600', color: colors.foreground }}>{section.title}</Text>
-                  <Text style={{ fontSize: 12, color: colors.muted, marginTop: 2 }}>{section.subtitle}</Text>
+                  <Text style={{ fontSize: 15, fontWeight: '600', color: colors.foreground }}>{t(`backpack.kim.${section.id}.title`)}</Text>
+                  <Text style={{ fontSize: 12, color: colors.muted, marginTop: 2 }}>{t(`backpack.kim.${section.id}.subtitle`)}</Text>
                 </View>
               </View>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
@@ -332,7 +332,7 @@ export default function BackpackScreen() {
         <View style={{ marginBottom: 24 }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
             <Text style={{ fontSize: 15, fontWeight: '600', color: colors.foreground }}>{t('backpack.progress.title')}</Text>
-            <Text style={{ fontSize: 13, color: colors.muted }}>{filledCount} of {totalCount} sections</Text>
+            <Text style={{ fontSize: 13, color: colors.muted }}>{t('backpack.progress.counter', { filled: filledCount, total: totalCount })}</Text>
           </View>
           <View style={{ flexDirection: 'row', gap: 4 }}>
             {isKim

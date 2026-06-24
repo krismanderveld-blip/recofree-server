@@ -50,7 +50,7 @@ export class ChatErrorBoundary extends React.Component<Props, State> {
         <View style={styles.container}>
           <Text style={styles.title}>{t('chat_error_boundary.title')}</Text>
           <Text style={styles.message}>
-            Er is een fout opgetreden. Je data is veilig.
+            {t('chat_error_boundary.message')}
           </Text>
           {err && (
             <ScrollView style={styles.crashBox} nestedScrollEnabled>
@@ -60,7 +60,7 @@ export class ChatErrorBoundary extends React.Component<Props, State> {
             </ScrollView>
           )}
           <Text style={styles.screenshotHint}>
-            📸 Screenshot dit scherm en stuur het naar de developer
+            {t('chat_error_boundary.screenshot_hint')}
           </Text>
           <Pressable
             onPress={this.handleRestart}

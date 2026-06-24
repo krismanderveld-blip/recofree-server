@@ -21,13 +21,7 @@ import { createEmptyBalkmetafoor } from '@/src/types/balkmetafoor.types';
 import type { BalkmetafoorData, BalkmetafoorEntry } from '@/src/types/balkmetafoor.types';
 import { useTranslation } from '@/lib/i18n';
 
-const STAGE_LABELS: Record<string, string> = {
-  precontemplation: 'Precontemplation',
-  contemplation: 'Contemplation',
-  preparation: 'Preparation',
-  action: 'Action',
-  maintenance: 'Maintenance',
-};
+// Stage labels now come from i18n: profile.stage.<key>
 
 const APP_VERSION = Constants.expoConfig?.version ?? '1.0.0';
 
@@ -123,7 +117,7 @@ export default function ProfileScreen() {
       const Sharing = await import('expo-sharing');
       const fileUri = FileSystem.documentDirectory + 'vsp-insight-overzicht.txt';
       await FileSystem.writeAsStringAsync(fileUri, plainText, { encoding: FileSystem.EncodingType.UTF8 });
-      await Sharing.shareAsync(fileUri, { mimeType: 'text/plain', dialogTitle: 'VSP Insight Overzicht' });
+      await Sharing.shareAsync(fileUri, { mimeType: 'text/plain', dialogTitle: t('profile.vsp_insight.share_title') });
       if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch (e) {
       console.error('[Profile] VSP export failed:', e);
@@ -259,7 +253,7 @@ export default function ProfileScreen() {
             <Text style={{ ...typography.titleSmall, color: dc.textPrimary }}>{fixUnicode(userName) || t('profile.user_card.default_name')}</Text>
             <Text style={{ ...typography.bodySmall, color: dc.textSecondary, marginTop: 2 }}>{userTypeLabel}</Text>
             <Text style={{ ...typography.micro, color: dc.textTertiary, marginTop: 2 }}>
-              {companionName}{isElias ? ` · ${STAGE_LABELS[stageOfChange] ?? stageOfChange}` : ''} · {totalSessions} session{totalSessions !== 1 ? t('profile.user_card.stats.sessions_plural') : ''} · {moodCheckIns} check-in{moodCheckIns !== 1 ? t('profile.user_card.stats.checkins_plural') : ''}
+              {companionName}{isElias ? ` · ${t(`profile.stage.${stageOfChange}`)}` : ''} · {totalSessions} {t('profile.user_card.stats.session')}{totalSessions !== 1 ? t('profile.user_card.stats.plural_s') : ''} · {moodCheckIns} check-in{moodCheckIns !== 1 ? t('profile.user_card.stats.plural_s') : ''}
             </Text>
           </View>
           <IconSymbol name="chevron.right" size={18} color={dc.textTertiary} />
@@ -371,9 +365,9 @@ export default function ProfileScreen() {
               <Pressable
                 onPress={() => {
                   if (Platform.OS === 'web') {
-                    if (confirm(`Remove ${contact.name}?`)) removeContact(idx);
+                    if (confirm(t('profile.emergency_contacts.alert.remove.message_name', { name: contact.name }))) removeContact(idx);
                   } else {
-                    Alert.alert(t('profile.emergency_contacts.alert.remove.title'), `Remove ${contact.name}?`, [
+                    Alert.alert(t('profile.emergency_contacts.alert.remove.title'), t('profile.emergency_contacts.alert.remove.message_name', { name: contact.name }), [
                       { text: t('profile.alert.reset_confirm.button.cancel'), style: 'cancel' },
                       { text: t('profile.emergency_contacts.alert.remove.button.remove'), style: 'destructive', onPress: () => removeContact(idx) },
                     ]);

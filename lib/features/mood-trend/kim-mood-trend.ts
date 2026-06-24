@@ -16,6 +16,7 @@ import {
   KimMoodTrendColors,
   type KimMoodMetric,
 } from './mood-trend-types';
+import { tStatic } from '@/lib/i18n';
 
 export function buildKimMoodTrendChartData(input: MoodTrendRuntimeInput): MoodTrendChartData {
   // Persona separation guard
@@ -28,7 +29,7 @@ export function buildKimMoodTrendChartData(input: MoodTrendRuntimeInput): MoodTr
       requiredMinimumCheckIns: 3,
       totalCheckInsInRange: 0,
       series: [],
-      fallbackText: 'Mood trend is unavailable for this persona.',
+      fallbackText: tStatic('mood_trend_chart_card.fallback.persona_mismatch'),
       generatedAt: input.nowIso,
       localOnly: true,
       aiInterpretationUsed: false,
@@ -39,10 +40,10 @@ export function buildKimMoodTrendChartData(input: MoodTrendRuntimeInput): MoodTr
   const windowStartIso = getWindowStartIso(input.nowIso, input.range);
 
   const rawSeries: MoodTrendSeries[] = [
-    mapMetricToSeries('stress', 'Stress', 'kim', state.stressHistory, windowStartIso, input.nowIso),
-    mapMetricToSeries('boundaryFatigue', 'Boundary Fatigue', 'kim', state.boundaryFatigueHistory, windowStartIso, input.nowIso),
-    mapMetricToSeries('emotionalBurden', 'Emotional Burden', 'kim', state.emotionalBurdenHistory, windowStartIso, input.nowIso),
-    mapMetricToSeries('selfCare', 'Self-care', 'kim', state.selfCareHistory, windowStartIso, input.nowIso),
+    mapMetricToSeries('stress', tStatic('mood.slider.stress.title'), 'kim', state.stressHistory, windowStartIso, input.nowIso),
+    mapMetricToSeries('boundaryFatigue', tStatic('mood.slider.boundaryFatigue.title'), 'kim', state.boundaryFatigueHistory, windowStartIso, input.nowIso),
+    mapMetricToSeries('emotionalBurden', tStatic('mood.slider.emotionalBurden.title'), 'kim', state.emotionalBurdenHistory, windowStartIso, input.nowIso),
+    mapMetricToSeries('selfCare', tStatic('mood.slider.selfCare.title'), 'kim', state.selfCareHistory, windowStartIso, input.nowIso),
   ];
 
   return finalizeMoodTrendChartData('kim', input.range, rawSeries, input.nowIso);
@@ -122,7 +123,7 @@ function finalizeMoodTrendChartData(
       requiredMinimumCheckIns: 3,
       totalCheckInsInRange,
       series,
-      fallbackText: 'Nog geen check-ins om een draagkrachttrend te tonen.',
+      fallbackText: tStatic('mood_trend_chart_card.fallback.no_data'),
       generatedAt: nowIso,
       localOnly: true,
       aiInterpretationUsed: false,
@@ -138,7 +139,7 @@ function finalizeMoodTrendChartData(
       requiredMinimumCheckIns: 3,
       totalCheckInsInRange,
       series,
-      fallbackText: 'Nog te weinig check-ins voor een grafiek. Vanaf 3 check-ins tonen we je zelfzorg- en draagkrachttrend hier.',
+      fallbackText: tStatic('mood_trend_chart_card.fallback.insufficient'),
       generatedAt: nowIso,
       localOnly: true,
       aiInterpretationUsed: false,

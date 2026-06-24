@@ -42,10 +42,10 @@ function BalanceBar({ data }: { data: BalkmetafoorData }) {
       {/* Labels */}
       <View className="flex-row w-64 justify-between mt-3">
         <Text className="text-xs text-muted">
-          Draaglast ({data.draaglast.length})
+          {tStatic('profile.balkmetafoor.label.draaglast')} ({data.draaglast.length})
         </Text>
         <Text className="text-xs text-muted">
-          Draagkracht ({data.draagkracht.length})
+          {tStatic('profile.balkmetafoor.label.draagkracht')} ({data.draagkracht.length})
         </Text>
       </View>
 
@@ -130,7 +130,7 @@ export function BalkmetafoorCard({
     return (
       <View className="bg-surface rounded-2xl p-4 border border-border">
         <Text className="text-sm text-muted text-center">
-          De balkmetafoor wordt geïntroduceerd door Elias wanneer het moment er is.
+          {tStatic('profile.balkmetafoor.not_initialized')}
         </Text>
       </View>
     );
@@ -139,10 +139,10 @@ export function BalkmetafoorCard({
   return (
     <View className="bg-surface rounded-2xl p-4 border border-border">
       <Text className="text-base font-semibold text-foreground mb-1 text-center">
-        Jouw balans
+        {t('profile.balkmetafoor.title')}
       </Text>
       <Text className="text-xs text-muted text-center mb-3">
-        Geen score — gewoon een beeld van wat er speelt
+        {t('profile.balkmetafoor.subtitle')}
       </Text>
 
       <BalanceBar data={data} />

@@ -14,9 +14,6 @@ import type { MoodSliders, MoodSnapshot, SliderConfig } from '@/lib/ai/types';
 import * as Haptics from 'expo-haptics';
 import {
   processEigenRegie,
-  EIGEN_REGIE_QUESTION,
-  EIGEN_REGIE_SLIDER_LABELS,
-  ZONE_DISPLAY_LABELS,
   type EigenRegieZone,
 } from '@/lib/engine/kim/eigen-regie';
 import { colors as dc, spacing, radius, typography, shadows, cardStyles, buttonStyles } from '@/constants/design';
@@ -263,7 +260,9 @@ export default function MoodScreen() {
           <View style={{ backgroundColor: dc.dangerSoft, borderRadius: radius.xl, padding: spacing.cardPadding, marginBottom: spacing.cardGap, borderWidth: 1, borderColor: '#F3B8B8' }}>
             <Text style={{ color: dc.danger, fontWeight: '700', fontSize: 13, marginBottom: 4 }}>{t('mood.alert.severe.title')}</Text>
             <Text style={{ ...typography.bodySmall, color: dc.textPrimary }}>
-              {severeAlerts.map((a) => a.label).join(', ')} {severeAlerts.length === 1 ? 'is' : 'are'} at a critical level.
+              {severeAlerts.length === 1
+                ? t('mood.alert.severe.message', { labels: severeAlerts.map((a) => t(`mood.slider.${a.key}.label`)).join(', ') })
+                : t('mood.alert.severe.message_plural', { labels: severeAlerts.map((a) => t(`mood.slider.${a.key}.label`)).join(', ') })}
             </Text>
           </View>
         )}
@@ -271,7 +270,9 @@ export default function MoodScreen() {
           <View style={{ backgroundColor: dc.warningSoft, borderRadius: radius.xl, padding: spacing.cardPadding, marginBottom: spacing.cardGap, borderWidth: 1, borderColor: dc.moodYellow }}>
             <Text style={{ color: dc.warning, fontWeight: '700', fontSize: 13, marginBottom: 4 }}>{t('mood.alert.moderate.title')}</Text>
             <Text style={{ ...typography.bodySmall, color: dc.textPrimary }}>
-              {moderateAlerts.map((a) => a.label).join(', ')} {moderateAlerts.length === 1 ? 'is' : 'are'} elevated.
+              {moderateAlerts.length === 1
+                ? t('mood.alert.moderate.message', { labels: moderateAlerts.map((a) => t(`mood.slider.${a.key}.label`)).join(', ') })
+                : t('mood.alert.moderate.message_plural', { labels: moderateAlerts.map((a) => t(`mood.slider.${a.key}.label`)).join(', ') })}
             </Text>
           </View>
         )}
@@ -292,7 +293,7 @@ export default function MoodScreen() {
             >
               {/* Title + Value */}
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                <Text style={{ ...typography.bodyLarge, fontWeight: '600', color: dc.textPrimary }}>{sc.label}</Text>
+                <Text style={{ ...typography.bodyLarge, fontWeight: '600', color: dc.textPrimary }}>{t(`mood.slider.${sc.key}.label`)}</Text>
                 <Text style={{ fontSize: 24, fontWeight: '800', color: sliderColor }}>
                   {Math.round(value)}
                 </Text>
@@ -349,12 +350,12 @@ export default function MoodScreen() {
         {isKim && eigenRegieResult && (
           <View style={{ marginTop: 40 }}>
             <Text style={{ fontSize: 18, fontWeight: '700', color: colors.foreground, marginBottom: 8 }}>{t('mood.eigen_regie.title')}</Text>
-            <Text style={{ fontSize: 13, color: colors.muted, marginBottom: 16 }}>{EIGEN_REGIE_QUESTION}</Text>
+            <Text style={{ fontSize: 13, color: colors.muted, marginBottom: 16 }}>{t('mood.eigen_regie.question')}</Text>
 
             <View style={{ backgroundColor: '#fff', borderRadius: 16, padding: 20, borderWidth: 1, borderColor: colors.border }}>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
-                <Text style={{ fontSize: 11, color: colors.muted }}>{EIGEN_REGIE_SLIDER_LABELS.min}</Text>
-                <Text style={{ fontSize: 11, color: colors.muted }}>{EIGEN_REGIE_SLIDER_LABELS.max}</Text>
+                <Text style={{ fontSize: 11, color: colors.muted }}>{t('mood.eigen_regie.slider.min')}</Text>
+                <Text style={{ fontSize: 11, color: colors.muted }}>{t('mood.eigen_regie.slider.max')}</Text>
               </View>
               <Slider
                 minimumValue={0}
@@ -373,10 +374,10 @@ export default function MoodScreen() {
 
             <View style={{ borderRadius: 16, padding: 20, marginTop: 12, backgroundColor: EIGEN_REGIE_ZONE_COLORS[eigenRegieResult.zone] + '12', borderWidth: 1, borderColor: EIGEN_REGIE_ZONE_COLORS[eigenRegieResult.zone] + '40' }}>
               <Text style={{ fontSize: 13, fontWeight: '600', color: EIGEN_REGIE_ZONE_COLORS[eigenRegieResult.zone], marginBottom: 4 }}>
-                {ZONE_DISPLAY_LABELS[eigenRegieResult.zone]}
+                {t(`mood.eigen_regie.zone.${eigenRegieResult.zone}`)}
               </Text>
               <Text style={{ fontSize: 13, color: colors.muted, lineHeight: 18 }}>
-                {eigenRegieResult.meaning}
+                {t(`mood.eigen_regie.meaning.${eigenRegieResult.zone}`)}
               </Text>
             </View>
 
@@ -418,7 +419,7 @@ export default function MoodScreen() {
           {!hasRecognitionData ? (
             <View style={{ backgroundColor: '#fff', borderRadius: 16, padding: 20, borderWidth: 1, borderColor: colors.border }}>
               <Text style={{ fontSize: 13, color: colors.muted, textAlign: 'center' }}>
-                Save a few check-ins to start seeing your patterns here.
+                {t('mood.recognition.empty')}
               </Text>
             </View>
           ) : (
@@ -443,7 +444,9 @@ export default function MoodScreen() {
                 <View style={{ flex: 1 }}>
                   <Text style={{ fontSize: 14, fontWeight: '600', color: trend.color }}>{trend.label}</Text>
                   <Text style={{ fontSize: 11, color: colors.muted, marginTop: 2 }}>
-                    Based on {last7Days.length} check-in{last7Days.length !== 1 ? 's' : ''} this week
+                    {last7Days.length === 1
+                      ? t('mood.recognition.trend.based_on_single')
+                      : t('mood.recognition.trend.based_on_plural', { count: last7Days.length })}
                   </Text>
                 </View>
               </View>
@@ -452,7 +455,7 @@ export default function MoodScreen() {
               {topTriggers.length > 0 && (
                 <View style={{ backgroundColor: '#fff', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: colors.border }}>
                   <Text style={{ fontSize: 11, fontWeight: '600', color: colors.muted, marginBottom: 12, letterSpacing: 0.5 }}>
-                    RECURRING TRIGGERS
+                    {t('mood.recognition.triggers.title')}
                   </Text>
                   {topTriggers.map((t, i) => (
                     <View key={`${t.trigger}-${i}`} style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 }}>
