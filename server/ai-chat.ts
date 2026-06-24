@@ -560,9 +560,9 @@ export const chatInputSchema = z.object({
   // Live triggers (every call)
   selectedTriggers: z.array(
     z.object({ trigger: z.string(), score: z.number() })
-  ).optional(),
-  riskScore: z.number().optional(),
-  dominantModule: z.string().optional(),
+  ).nullable().optional(),
+  riskScore: z.number().nullable().optional(),
+  dominantModule: z.string().nullable().optional(),
   vspLevel: z.string().nullable().optional(),
 
   // Static context (SESSION_INIT only)
@@ -575,8 +575,8 @@ export const chatInputSchema = z.object({
   }).nullable().optional(),
   recentDiary: z.array(
     z.object({ content: z.string(), moodTag: z.string(), date: z.string() })
-  ).optional(),
-  stageOfChange: z.string().optional(),
+  ).nullable().optional(),
+  stageOfChange: z.string().nullable().optional(),
   relationalPattern: z.object({
     pattern: z.string(),
     schema: z.string(),
@@ -609,7 +609,7 @@ export const chatInputSchema = z.object({
       intakeDate: z.string(),
     }),
     createdAt: z.string(),
-  }).optional(),
+  }).nullable().optional(),
   userDat: z.object({
     totalSessions: z.number(),
     triggerPatterns: z.array(
@@ -645,23 +645,23 @@ export const chatInputSchema = z.object({
         endRiskLevel: z.string(),
       })
     ),
-  }).optional(),
+  }).nullable().optional(),
   diaryEntries: z.array(
     z.object({
       content: z.string(),
       moodTag: z.string(),
       timestamp: z.string(),
     })
-  ).optional(),
+  ).nullable().optional(),
   activeModules: z.array(z.string()),
   crisisLevel: z.number(),
-  isCrisis: z.boolean().optional(),
+  isCrisis: z.boolean().nullable().optional(),
   detectedEmotion: z.string(),
   therapeuticStance: z.string(),
   sessionDurationMinutes: z.number(),
   urgency: z.string(),
   startEmotion: z.string(),
-  guidanceDepth: z.enum(['light', 'normal', 'deep']).optional(),
+  guidanceDepth: z.enum(['light', 'normal', 'deep']).nullable().optional(),
   bufferSnapshot: z.any().optional(),
 
   // Regulation layer result (from client-side regulation engine)
@@ -770,15 +770,15 @@ export const chatInputSchema = z.object({
   contextSummary: z.string().nullable().optional(),
 
   // Clinical Mode (easter egg — therapeutic annotations)
-  clinicalModeActive: z.boolean().optional(),
+  clinicalModeActive: z.boolean().nullable().optional(),
   // Backpack empty flag (for greeting tone adaptation)
-  backpackEmpty: z.boolean().optional(),
+  backpackEmpty: z.boolean().nullable().optional(),
   // Signal engine: active signals for clinical annotation
   activeSignals: z.array(z.object({
     label: z.string(),
     score: z.number(),
     memory: z.string(),
-  })).optional(),
+  })).nullable().optional(),
 
   // Backpack Entity Extraction: structured memory (replaces full backpack text when unchanged)
   extractedEntities: z.object({
@@ -818,9 +818,9 @@ export const chatInputSchema = z.object({
     extractedAt: z.string(),
     sourceHash: z.string(),
     schemaVersion: z.number(),
-  }).optional(),
+  }).nullable().optional(),
   /** Whether backpack content changed since last extraction */
-  backpackChanged: z.boolean().optional(),
+  backpackChanged: z.boolean().nullable().optional(),
 
   /** Deep analysis of backpack (schemas, modes, triggers, core beliefs, coping patterns) from GPT-4o */
   backpackAnalysis: z.object({
@@ -841,8 +841,8 @@ export const chatInputSchema = z.object({
     triggers: z.array(z.string()),
   }).nullable().optional(),
   /** User-selected app language. Determines AI response language. */
-  locale: z.enum(['nl', 'en', 'fr']).optional(),
-  country: z.enum(['NL', 'BE', 'FR', 'UK', 'US']).optional(),
+  locale: z.enum(['nl', 'en', 'fr']).nullable().optional(),
+  country: z.enum(['NL', 'BE', 'FR', 'UK', 'US']).nullable().optional(),
 }).passthrough();
 
 // ─── Structured Memory Block Builder (from extractedEntities) ──────────────

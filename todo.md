@@ -1987,3 +1987,12 @@
 - [x] Added .passthrough() to schema to prevent future 400s from new client fields
 - [x] Also added fields to ChatRequestInput interface for type safety
 - [x] All 1383 tests pass
+
+## Bug: Server 400 DEFINITIVE FIX (proven with live server tests)
+- [x] Root cause PROVEN: client sends `selectedTriggers: null` and `activeSignals: null` — server Zod expects array, not null
+- [x] Also: `extractedEntities: null` rejected (server expects object or undefined)
+- [x] Client fix: sanitizeChatPayload converts null arrays → `[]`, null objects → delete
+- [x] Server fix: ALL .optional() fields now also .nullable() as safety net
+- [x] Tested against LIVE deployed server: unsanitized → 400, sanitized → 200
+- [x] SESSION_END farewell call also tested and passes
+- [x] All 1383 tests pass

@@ -319,6 +319,28 @@ function sanitizeChatPayload(payload: Record<string, unknown>): Record<string, u
     );
   }
 
+  // 4. Convert null → undefined for ALL optional fields that could receive null
+  // This prevents Zod from rejecting null values
+  const nullToDeleteFields = [
+    'extractedEntities', 'recentDiary', 'diaryEntries',
+    'backpack', 'userDat', 'bufferSnapshot',
+    'regulationResult', 'engineDirective',
+  ];
+  for (const field of nullToDeleteFields) {
+    if (payload[field] === null) {
+      delete payload[field];
+    }
+  }
+
+  // 5. Convert null arrays → empty arrays (selectedTriggers, activeSignals)
+  // These are expected as arrays, not null
+  const arrayFields = ['selectedTriggers', 'activeSignals'];
+  for (const field of arrayFields) {
+    if (payload[field] === null || payload[field] === undefined) {
+      payload[field] = [];
+    }
+  }
+
   return payload;
 }
 
