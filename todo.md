@@ -1956,3 +1956,12 @@
 - [x] Sober counter: fixed ${days} → {days} interpolation in locale files
 - [x] Sober counter: pass days param to t() calls in sober-counter.tsx
 - [x] All 1382 tests pass (1 timeout on Railway health check = infra, not code)
+
+## Persistent server 400 fix: final-layer payload sanitization
+- [x] Root cause: backpackAnalysis.triggers sent raw to server without filtering (could contain null/undefined/non-string entries)
+- [x] Root cause: knownUserPatterns filter exists but no final safety net before serialization
+- [x] Fix: added sanitizeChatPayload() helper in openai-provider.ts — runs on EVERY payload before superjson.serialize()
+- [x] Sanitizes: backpackAnalysis.triggers (string[]), backpackAnalysis.coreBeliefs (string[]), backpackAnalysis.copingPatterns (string[])
+- [x] Sanitizes: knownUserPatterns.triggers (string[])
+- [x] Sanitizes: selectedTriggers (Array<{trigger: string, score: number}>)
+- [x] All 1383 tests pass

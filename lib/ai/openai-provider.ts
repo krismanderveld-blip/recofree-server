@@ -272,6 +272,56 @@ function buildKnownUserPatterns(userDat: ChatContext['userDat'], clinicalMode = 
   return { schemas, modes, triggers };
 }
 
+/**
+ * Final-layer sanitization of the chat payload before sending to server.
+ * Ensures all `triggers` arrays (in knownUserPatterns, backpackAnalysis, selectedTriggers)
+ * contain only valid values that pass Zod validation.
+ */
+function sanitizeChatPayload(payload: Record<string, unknown>): Record<string, unknown> {
+  // 1. backpackAnalysis.triggers → must be string[]
+  if (payload.backpackAnalysis && typeof payload.backpackAnalysis === 'object') {
+    const ba = payload.backpackAnalysis as Record<string, unknown>;
+    if (Array.isArray(ba.triggers)) {
+      ba.triggers = ba.triggers.filter(
+        (t: unknown) => t != null && typeof t === 'string' && t !== ''
+      );
+    }
+    // Also sanitize other string arrays in backpackAnalysis
+    for (const key of ['coreBeliefs', 'copingPatterns'] as const) {
+      if (Array.isArray(ba[key])) {
+        (ba as any)[key] = (ba[key] as unknown[]).filter(
+          (v: unknown) => v != null && typeof v === 'string'
+        );
+      }
+    }
+  }
+
+  // 2. knownUserPatterns.triggers → must be string[]
+  if (payload.knownUserPatterns && typeof payload.knownUserPatterns === 'object') {
+    const kup = payload.knownUserPatterns as Record<string, unknown>;
+    if (Array.isArray(kup.triggers)) {
+      kup.triggers = kup.triggers.filter(
+        (t: unknown) => t != null && typeof t === 'string' && t !== ''
+      );
+    }
+  }
+
+  // 3. selectedTriggers → must be Array<{ trigger: string, score: number }>
+  if (Array.isArray(payload.selectedTriggers)) {
+    payload.selectedTriggers = (payload.selectedTriggers as unknown[]).filter(
+      (item: unknown) =>
+        item != null &&
+        typeof item === 'object' &&
+        typeof (item as any).trigger === 'string' &&
+        (item as any).trigger !== '' &&
+        typeof (item as any).score === 'number' &&
+        Number.isFinite((item as any).score)
+    );
+  }
+
+  return payload;
+}
+
 export class OpenAIProvider implements AIProvider {
   async generateResponse(context: ChatContext): Promise<AIResult> {
     try {
@@ -730,7 +780,9 @@ export class OpenAIProvider implements AIProvider {
       }
 
       // ── STEP 4: Send to server (with retry for cold starts) ──
-      const serialized = superjson.serialize(inputPayload);
+      // Final sanitization: ensure all triggers arrays are clean before Zod validation
+      const sanitizedPayload = sanitizeChatPayload(inputPayload as Record<string, unknown>);
+      const serialized = superjson.serialize(sanitizedPayload);
       const token = await Auth.getSessionToken();
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
