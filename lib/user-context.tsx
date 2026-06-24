@@ -309,10 +309,21 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
           const userDat = migrateUserDat(rawUserDat, backpack.userType);
           // Re-persist if migration sanitized any entries (idempotent)
           const originalHistory = rawUserDat.moodHistory ?? [];
-          const needsRepersist = originalHistory.some((entry: any) =>
+          const historyNeedsRepersist = originalHistory.some((entry: any) =>
             entry?.sliders && Object.keys(entry.sliders).length !== Object.keys(sanitizeSliders(entry.sliders)).length
           );
-          if (needsRepersist) {
+
+          // Cleanup: check if corrupt triggerPatterns were removed
+          const rawTriggers = rawUserDat.triggerPatterns;
+          let triggersRemoved = 0;
+          if (Array.isArray(rawTriggers)) {
+            triggersRemoved = rawTriggers.length - userDat.triggerPatterns.length;
+          }
+          if (triggersRemoved > 0) {
+            console.log(`[cleanup] removed ${triggersRemoved} corrupt triggerPattern entries`);
+          }
+
+          if (historyNeedsRepersist || triggersRemoved > 0) {
             await persistUserDat(userDat);
           }
           dispatch({ type: 'RESTORE_STORES', payload: { backpack, userDat } });
@@ -933,8 +944,18 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
     if (backpackJson && userDatJson) {
       // Both keys present — normal path
+      const rawUserDat = JSON.parse(userDatJson);
       const backpack = migrateBackpack(JSON.parse(backpackJson));
-      const userDat = migrateUserDat(JSON.parse(userDatJson), backpack.userType);
+      const userDat = migrateUserDat(rawUserDat, backpack.userType);
+
+      // Cleanup: persist if corrupt triggerPatterns were removed
+      const rawTriggers = rawUserDat.triggerPatterns;
+      if (Array.isArray(rawTriggers) && rawTriggers.length > userDat.triggerPatterns.length) {
+        const removed = rawTriggers.length - userDat.triggerPatterns.length;
+        console.log(`[cleanup] removed ${removed} corrupt triggerPattern entries`);
+        await persistUserDat(userDat);
+      }
+
       logImportDiag('reloadFromStorage: dispatch RESTORE_STORES', 'OK',
         `userType=${backpack.userType}, naam=${backpack.naam}, intakeCompleted will be TRUE`);
       dispatch({ type: 'RESTORE_STORES', payload: { backpack, userDat } });

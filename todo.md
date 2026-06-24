@@ -1945,3 +1945,6 @@
 - [x] Fix: filter out undefined/null/non-string entries from triggerPatterns before mapping to trigger strings
 - [x] All pipeline + AI chat tests pass
 - [x] Cleanup migration: migrateUserDat now filters out corrupted triggerPatterns entries (trigger undefined/null/non-string) at load time
+- [x] Cleanup persist: if corrupt entries were removed, persist cleaned userDat back to storage (both initial load + reloadFromStorage paths)
+- [x] Logging: `[cleanup] removed N corrupt triggerPattern entries` when entries are cleaned
+- [x] Defensive: safe for users without rugzak/triggers (checks Array.isArray before comparing lengths)
