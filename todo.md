@@ -1944,3 +1944,4 @@
 - [x] Diagnose: buildKnownUserPatterns sends undefined trigger strings to server (Zod expects string[])
 - [x] Fix: filter out undefined/null/non-string entries from triggerPatterns before mapping to trigger strings
 - [x] All pipeline + AI chat tests pass
+- [x] Cleanup migration: migrateUserDat now filters out corrupted triggerPatterns entries (trigger undefined/null/non-string) at load time
