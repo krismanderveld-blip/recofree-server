@@ -1932,3 +1932,10 @@
 - [x] Prechat Eigen Regie: all hardcoded EN strings → t()
 - [x] Added 54 new keys to en/nl/fr locale files
 - [x] All 1383 tests pass
+
+## Pipeline crash fix: scoreTrigger .toLowerCase() on undefined
+- [x] Diagnose: tp.trigger is undefined in userDat.triggerPatterns (persisted by updateTriggerPatterns when label is undefined)
+- [x] Fix: defensive guard in scoreTrigger — skip entries where tp.trigger is falsy
+- [x] Fix: defensive guard in updateTriggerPatterns — skip undefined/null/empty trigger strings before persisting
+- [x] NOT caused by i18n-sweep — backpack section labels are never written to triggerPatterns
+- [x] All 1383 tests pass

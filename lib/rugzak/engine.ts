@@ -201,6 +201,8 @@ export function updateTriggerPatterns(
   const now = new Date().toISOString();
 
   for (const trigger of newTriggers) {
+    // Defensive: skip undefined/null/empty trigger labels
+    if (!trigger || typeof trigger !== 'string' || trigger.trim() === '') continue;
     const idx = updated.findIndex((t) => t.trigger === trigger);
     if (idx >= 0) {
       updated[idx] = {

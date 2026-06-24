@@ -195,7 +195,7 @@ function scoreTrigger(
 
   // user.dat weight: check if this trigger has been seen before
   const existingPattern = (userDat.triggerPatterns || []).find(
-    (tp) => tp.trigger.toLowerCase() === triggerId.toLowerCase()
+    (tp) => tp.trigger && tp.trigger.toLowerCase() === triggerId.toLowerCase()
   );
   if (existingPattern) {
     score += Math.min(existingPattern.count, 5); // +0 to +5
