@@ -1972,3 +1972,10 @@
 - [x] Kept 10-min inactivity auto-close (full endSession chain, no follow-up messages)
 - [x] All 1383 tests pass
 - [x] Clinical dropdown: all text nodes now have selectable prop (copy/paste works)
+
+## Bug: logs.dat save fails at session end (GPT summarization always 400)
+- [x] Root cause: sessionEndSummarizer sent wrong payload format to /api/signal-engine
+- [x] Route expects `{ prompt: string }`, summarizer was sending `{ conversationHistory, bufferSnapshot, _internal }`
+- [x] Fix: changed to `{ prompt }` and parse `{ result }` response correctly
+- [x] GPT session summaries now actually reach logs.dat (not just fallback data)
+- [x] All 1383 tests pass

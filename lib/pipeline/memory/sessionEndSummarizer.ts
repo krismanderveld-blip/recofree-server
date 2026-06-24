@@ -100,24 +100,22 @@ export async function generateSessionSummary(
     const response = await fetch(`${request.apiBaseUrl}/api/signal-engine`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        userId: "session-summarizer",
-        conversationHistory: [{ role: "user", content: prompt }],
-        bufferSnapshot: { zone: "GREEN", persona: request.persona },
-        _internal: {
-          model: "gpt-4o-mini",
-          store: false,
-          maxTokens: 500,
-          purpose: "session_summary",
-        },
-      }),
+      body: JSON.stringify({ prompt }),
     });
 
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}`);
     }
 
-    const data = await response.json();
+    const responseJson = await response.json();
+    // signal-engine returns { result: "..." } — parse the JSON string from GPT
+    let data: any = {};
+    try {
+      data = JSON.parse(responseJson.result || '{}');
+    } catch {
+      // If GPT returned non-JSON, use it as narrative
+      data = { compressedNarrative: (responseJson.result || '').slice(0, 1500) };
+    }
     const rawOutput = JSON.stringify(data);
 
     // Parse GPT output into valid SessionLogSummary
