@@ -288,14 +288,16 @@ export default function ProfileScreen() {
         {/* Guidance Depth */}
         <View style={{ marginBottom: spacing.xl }}>
           <Text style={{ ...typography.micro, color: dc.textTertiary, marginBottom: spacing.xs, fontWeight: '700', letterSpacing: 0.5 }}>
-            GUIDANCE DEPTH
+            {t('profile.guidance_depth.title')}
           </Text>
           <Text style={{ ...typography.bodySmall, color: dc.textSecondary, marginBottom: spacing.md, lineHeight: 18 }}>
-            Choose how intensely the conversation goes. You can change this anytime.
+            {t('profile.guidance_depth.description')}
           </Text>
 
           <View style={{ gap: spacing.sm }}>
-            {GUIDANCE_DEPTH_OPTIONS.map((option) => {
+            {([{ value: 'light' as const, label: t('profile.guidance_depth.option.light.label'), description: t('profile.guidance_depth.option.light.description') },
+              { value: 'normal' as const, label: t('profile.guidance_depth.option.normal.label'), description: t('profile.guidance_depth.option.normal.description') },
+              { value: 'deep' as const, label: t('profile.guidance_depth.option.deep.label'), description: t('profile.guidance_depth.option.deep.description') }]).map((option) => {
               const isActive = option.value === currentDepth;
               return (
                 <Pressable
@@ -346,10 +348,10 @@ export default function ProfileScreen() {
         {/* Emergency Contacts */}
         <View style={{ marginBottom: spacing.xl }}>
           <Text style={{ ...typography.micro, color: dc.textTertiary, marginBottom: spacing.xs, fontWeight: '700', letterSpacing: 0.5 }}>
-            EMERGENCY CONTACTS
+            {t('profile.emergency_contacts.title')}
           </Text>
           <Text style={{ ...typography.bodySmall, color: dc.textSecondary, marginBottom: spacing.md, lineHeight: 18 }}>
-            Add up to 2 personal contacts shown during a crisis (e.g. family, sponsor).
+            {t('profile.emergency_contacts.description')}
           </Text>
 
           {emergencyContacts.map((contact, idx) => (
@@ -443,10 +445,10 @@ export default function ProfileScreen() {
         {/* VSP Insight Export */}
         <View style={{ marginBottom: spacing.xl }}>
           <Text style={{ ...typography.micro, color: dc.textTertiary, marginBottom: spacing.xs, fontWeight: '700', letterSpacing: 0.5 }}>
-            VSP INSIGHT
+            {t('profile.vsp_insight.title')}
           </Text>
           <Text style={{ ...typography.bodySmall, color: dc.textSecondary, marginBottom: spacing.md, lineHeight: 18 }}>
-            Export your personal insight profile to share with your therapist.
+            {t('profile.vsp_insight.description')}
           </Text>
           <Pressable
             onPress={handleVspExport}

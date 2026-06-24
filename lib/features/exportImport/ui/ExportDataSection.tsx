@@ -15,6 +15,7 @@ import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, Platform, A
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createEncryptedRecoFreeExport } from '../services/exportDataService';
 import type { ExportImportStores } from '../services/exportImportStores.types';
+import { useTranslation } from '@/lib/i18n';
 
 const LAST_EXPORT_KEY = '@recofree_last_export_timestamp';
 
@@ -24,6 +25,7 @@ interface ExportDataSectionProps {
 }
 
 export function ExportDataSection({ stores, appVersion }: ExportDataSectionProps) {
+  const { t } = useTranslation();
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -98,52 +100,52 @@ export function ExportDataSection({ stores, appVersion }: ExportDataSectionProps
 
   return (
     <View className="gap-4">
-      <Text className="text-lg font-semibold text-foreground">Export your RecoFree data</Text>
+      <Text className="text-lg font-semibold text-foreground">{t('profile.data_privacy.export.title')}</Text>
       <Text className="text-sm text-muted leading-relaxed">
-        Create one encrypted file with your local RecoFree data. The file can only be opened with the password you choose.
+        {t('profile.data_privacy.export.description')}
       </Text>
 
       {lastExportedAt && (
         <Text className="text-xs text-muted">
-          Last exported: {formatExportDate(lastExportedAt)}
+          {t('profile.data_privacy.export.last_exported')}{formatExportDate(lastExportedAt)}
         </Text>
       )}
 
       <View className="gap-2">
-        <Text className="text-xs font-medium text-muted uppercase">Password</Text>
+        <Text className="text-xs font-medium text-muted uppercase">{t('profile.data_privacy.export.password_label')}</Text>
         <TextInput
           className="bg-surface border border-border rounded-lg px-4 py-3 text-foreground"
           secureTextEntry
           value={password}
-          onChangeText={(t) => { setPassword(t); setSuccess(false); setError(null); }}
-          placeholder="Minimum 8 characters"
+          onChangeText={(val) => { setPassword(val); setSuccess(false); setError(null); }}
+          placeholder={t('profile.data_privacy.export.password_placeholder')}
           placeholderTextColor="#9BA1A6"
           autoComplete="off"
         />
       </View>
 
       <View className="gap-2">
-        <Text className="text-xs font-medium text-muted uppercase">Confirm password</Text>
+        <Text className="text-xs font-medium text-muted uppercase">{t('profile.data_privacy.export.confirm_label')}</Text>
         <TextInput
           className="bg-surface border border-border rounded-lg px-4 py-3 text-foreground"
           secureTextEntry
           value={confirmPassword}
-          onChangeText={(t) => { setConfirmPassword(t); setSuccess(false); setError(null); }}
-          placeholder="Repeat password"
+          onChangeText={(val) => { setConfirmPassword(val); setSuccess(false); setError(null); }}
+          placeholder={t('profile.data_privacy.export.confirm_placeholder')}
           placeholderTextColor="#9BA1A6"
           autoComplete="off"
         />
       </View>
 
       {password.length > 0 && !passwordLongEnough && (
-        <Text className="text-xs text-warning">Password must be at least 8 characters.</Text>
+        <Text className="text-xs text-warning">{t('profile.data_privacy.export.password_too_short')}</Text>
       )}
       {confirmPassword.length > 0 && !passwordsMatch && (
-        <Text className="text-xs text-error">Passwords do not match.</Text>
+        <Text className="text-xs text-error">{t('profile.data_privacy.export.passwords_no_match')}</Text>
       )}
 
       <Text className="text-xs text-muted italic">
-        RecoFree cannot recover this password. Keep this file somewhere safe.
+        {t('profile.data_privacy.export.warning')}
       </Text>
 
       <TouchableOpacity
@@ -156,20 +158,20 @@ export function ExportDataSection({ stores, appVersion }: ExportDataSectionProps
           <ActivityIndicator color="#fff" size="small" />
         ) : (
           <Text className={`font-semibold ${canExport ? 'text-background' : 'text-muted'}`}>
-            Export encrypted backup
+            {t('profile.data_privacy.export.button')}
           </Text>
         )}
       </TouchableOpacity>
 
       {success && (
-        <Text className="text-sm text-success font-medium">Backup saved to your chosen location.</Text>
+        <Text className="text-sm text-success font-medium">{t('profile.data_privacy.export.success')}</Text>
       )}
       {error && (
         <Text className="text-sm text-error">{error}</Text>
       )}
 
       <Text className="text-xs text-muted">
-        Your export is encrypted on this device. RecoFree cannot recover the password. No server is involved.
+        {t('profile.data_privacy.export.footer')}
       </Text>
     </View>
   );

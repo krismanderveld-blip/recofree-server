@@ -2566,6 +2566,18 @@ export async function generateAIResponse(
     });
   }
 
+  // ─── FINAL LANGUAGE ENFORCEMENT (last message = strongest position) ───
+  // GPT follows the LAST instruction most reliably. Place language override here,
+  // AFTER all NL-written context and conversation history.
+  const LOCALE_LANG_FINAL: Record<string, string> = { nl: 'Dutch', en: 'English', fr: 'French' };
+  const finalLang = LOCALE_LANG_FINAL[input.locale ?? 'nl'] ?? 'Dutch';
+  if ((input.locale ?? 'nl') !== 'nl') {
+    messages.push({
+      role: "system",
+      content: `CRITICAL OVERRIDE: Regardless of the language used in the instructions and context above, your ENTIRE response to the user MUST be in ${finalLang}. Do NOT respond in Dutch. Respond ONLY in ${finalLang}. This is the final binding instruction.`,
+    });
+  }
+
   // ─── MODEL ROUTING LAYER (Patch N Step 4) ───────────────────
   // Determine model per message. Only ONE model is called.
   //

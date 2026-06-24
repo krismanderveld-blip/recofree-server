@@ -7,6 +7,7 @@ import { View, Text } from 'react-native';
 import { ExportDataSection } from './ExportDataSection';
 import { ImportDataSection } from './ImportDataSection';
 import type { ExportImportStores } from '../services/exportImportStores.types';
+import { useTranslation } from '@/lib/i18n';
 
 interface DataPrivacySectionProps {
   stores: ExportImportStores;
@@ -15,12 +16,13 @@ interface DataPrivacySectionProps {
 }
 
 export function DataPrivacySection({ stores, appVersion, onImportSuccess }: DataPrivacySectionProps) {
+  const { t } = useTranslation();
   return (
     <View className="gap-8">
       <View className="gap-2">
-        <Text className="text-xl font-bold text-foreground">Data & Privacy</Text>
+        <Text className="text-xl font-bold text-foreground">{t('profile.data_privacy.title')}</Text>
         <Text className="text-sm text-muted">
-          Manage your local RecoFree data. All operations happen on this device only.
+          {t('profile.data_privacy.subtitle')}
         </Text>
       </View>
 

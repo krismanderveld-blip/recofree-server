@@ -12,6 +12,7 @@ import React, { useState, useCallback } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, Modal } from 'react-native';
 import { importEncryptedRecoFreeBackup } from '../services/importDataService';
 import type { ExportImportStores } from '../services/exportImportStores.types';
+import { useTranslation } from '@/lib/i18n';
 
 interface PickedFile {
   uri: string;
@@ -25,6 +26,7 @@ interface ImportDataSectionProps {
 }
 
 export function ImportDataSection({ stores, appVersion, onImportSuccess }: ImportDataSectionProps) {
+  const { t } = useTranslation();
   const [selectedFile, setSelectedFile] = useState<PickedFile | null>(null);
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -139,9 +141,9 @@ export function ImportDataSection({ stores, appVersion, onImportSuccess }: Impor
 
   return (
     <View className="gap-4">
-      <Text className="text-lg font-semibold text-foreground">Import RecoFree backup</Text>
+      <Text className="text-lg font-semibold text-foreground">{t('profile.data_privacy.import.title')}</Text>
       <Text className="text-sm text-muted leading-relaxed">
-        Importing replaces the RecoFree data on this device. Your existing local data will be overwritten after the file is verified.
+        {t('profile.data_privacy.import.description')}
       </Text>
 
       <TouchableOpacity
@@ -150,18 +152,18 @@ export function ImportDataSection({ stores, appVersion, onImportSuccess }: Impor
         activeOpacity={0.7}
       >
         <Text className="text-foreground font-medium">
-          {selectedFile ? selectedFile.name : "Choose backup file"}
+          {selectedFile ? selectedFile.name : t('profile.data_privacy.import.button.choose')}
         </Text>
       </TouchableOpacity>
 
       <View className="gap-2">
-        <Text className="text-xs font-medium text-muted uppercase">Password</Text>
+        <Text className="text-xs font-medium text-muted uppercase">{t('profile.data_privacy.import.password_label')}</Text>
         <TextInput
           className="bg-surface border border-border rounded-lg px-4 py-3 text-foreground"
           secureTextEntry
           value={password}
-          onChangeText={(t) => { setPassword(t); setError(null); setSuccess(false); }}
-          placeholder="Enter backup password"
+          onChangeText={(val) => { setPassword(val); setError(null); setSuccess(false); }}
+          placeholder={t('profile.data_privacy.import.password_placeholder')}
           placeholderTextColor="#9BA1A6"
           autoComplete="off"
         />
@@ -177,13 +179,13 @@ export function ImportDataSection({ stores, appVersion, onImportSuccess }: Impor
           <ActivityIndicator color="#fff" size="small" />
         ) : (
           <Text className={`font-semibold ${canImport ? 'text-background' : 'text-muted'}`}>
-            Import encrypted backup
+            {t('profile.data_privacy.import.button.import')}
           </Text>
         )}
       </TouchableOpacity>
 
       {success && (
-        <Text className="text-sm text-success font-medium">Backup imported successfully.</Text>
+        <Text className="text-sm text-success font-medium">{t('profile.data_privacy.import.success')}</Text>
       )}
       {error && (
         <Text className="text-sm text-error">{error}</Text>
@@ -193,9 +195,9 @@ export function ImportDataSection({ stores, appVersion, onImportSuccess }: Impor
       <Modal visible={showConfirmModal} transparent animationType="fade">
         <View className="flex-1 justify-center items-center" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
           <View className="bg-background rounded-2xl p-6 mx-6 max-w-sm w-full gap-4">
-            <Text className="text-lg font-semibold text-foreground">Replace local data?</Text>
+            <Text className="text-lg font-semibold text-foreground">{t('profile.data_privacy.import.confirm.title')}</Text>
             <Text className="text-sm text-muted leading-relaxed">
-              Importing this backup will replace the RecoFree data currently stored on this device. This cannot be merged. Continue?
+              {t('profile.data_privacy.import.confirm.message')}
             </Text>
             <View className="flex-row gap-3 mt-2">
               <TouchableOpacity
@@ -203,14 +205,14 @@ export function ImportDataSection({ stores, appVersion, onImportSuccess }: Impor
                 onPress={() => setShowConfirmModal(false)}
                 activeOpacity={0.7}
               >
-                <Text className="text-foreground font-medium">Cancel</Text>
+                <Text className="text-foreground font-medium">{t('profile.data_privacy.import.confirm.cancel')}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 className="flex-1 bg-error rounded-lg py-3 items-center"
                 onPress={handleImportConfirm}
                 activeOpacity={0.7}
               >
-                <Text className="text-background font-semibold">Replace local data</Text>
+                <Text className="text-background font-semibold">{t('profile.data_privacy.import.confirm.replace')}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -221,15 +223,15 @@ export function ImportDataSection({ stores, appVersion, onImportSuccess }: Impor
       <Modal visible={showNamePrompt} transparent animationType="fade">
         <View className="flex-1 justify-center items-center" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
           <View className="bg-background rounded-2xl p-6 mx-6 max-w-sm w-full gap-4">
-            <Text className="text-lg font-semibold text-foreground">What's your name?</Text>
+            <Text className="text-lg font-semibold text-foreground">{t('profile.data_privacy.import.name_prompt.title')}</Text>
             <Text className="text-sm text-muted leading-relaxed">
-              Your backup didn't include a name. Please enter your first name so the app can address you personally.
+              {t('profile.data_privacy.import.name_prompt.message')}
             </Text>
             <TextInput
               className="bg-surface border border-border rounded-lg px-4 py-3 text-foreground"
               value={importedName}
               onChangeText={setImportedName}
-              placeholder="Your first name"
+              placeholder={t('profile.data_privacy.import.name_prompt.placeholder')}
               placeholderTextColor="#9BA1A6"
               autoFocus
               returnKeyType="done"
@@ -242,7 +244,7 @@ export function ImportDataSection({ stores, appVersion, onImportSuccess }: Impor
               activeOpacity={0.7}
             >
               <Text className={`font-semibold ${importedName.trim() ? 'text-background' : 'text-muted'}`}>
-                Save & continue
+                {t('profile.data_privacy.import.name_prompt.save')}
               </Text>
             </TouchableOpacity>
           </View>

@@ -1903,3 +1903,9 @@
 ## GPT antwoordt in verkeerde taal (NL ipv EN/FR)
 - [x] Fix: LANGUAGE ENFORCEMENT reminder toegevoegd aan einde van BEIDE prompt templates (Elias + Kim)
 - [x] Fix: generateGreeting() miste locale parameter - nu doorgegeven vanuit chat.tsx
+- [x] Fix: Added final system message AFTER user message to enforce locale (strongest position)
+- [x] Fix: Intake country step hardcoded to English (language not yet chosen at that point)
+- [x] Fix: Profile GUIDANCE DEPTH section - replaced hardcoded EN with t() calls + useMemo
+- [x] Fix: Data & Privacy section - all export/import strings now use t()
+- [x] Fix: ImportDataSection - all strings use t() (confirm modal, name prompt, buttons)
+- [x] Fix: ExportDataSection - validation messages, success, footer all use t()
