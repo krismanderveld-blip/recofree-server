@@ -59,38 +59,8 @@ const USERDAT_KEY = '@recofree_userdat';
 // PENDING_CLOSE_KEY removed — no longer needed (one path to session-end, no fallback markers)
 const DIARY_KEY = '@recofree_diary';
 
-// ─── Silence Detection (both personas) ───────────────────────────────
-const SILENCE_TIMEOUT_MS = 180_000; // 180 seconds (3 minutes)
-const POST_DISCLOSURE_TIMEOUT_MS = 90_000; // 90 seconds (Module 58)
+// ─── Inactivity Auto-Close ───────────────────────────────────────────
 const INACTIVITY_AUTO_CLOSE_MS = 600_000; // 10 minutes (600 seconds) — auto-close + full write-back
-
-const STILTE_RESPONSES_ELIAS = [
-  "I'm here, even when you have nothing to say.",
-  "Sometimes words are hard. I'll stay.",
-  "You don't have to force anything. I'll wait.",
-];
-
-const STILTE_RESPONSES_KIM = [
-  "I'm here, even when you're quiet.",
-  "Sometimes words are hard. I'll stay with you.",
-  "Silence is okay. When you want to talk again, I'm here.",
-];
-
-const POST_ONTHULLING_RESPONSE_ELIAS =
-  "What you just shared takes courage. It's okay to pause for a moment. I'm still here.";
-
-const POST_ONTHULLING_RESPONSE_KIM =
-  "You don't have to continue right away. Everything you share here, stays here.";
-
-// Keywords that indicate a deep disclosure (Module 58)
-const DISCLOSURE_KEYWORDS = [
-  'i am ashamed', 'i feel ashamed',
-  'i did something bad', 'i did something terrible',
-  'i\'m afraid you\'ll hate me', 'you\'ll hate me',
-  'i don\'t dare to say it', 'i\'ve done something horrible',
-  'nobody can know this', 'i feel dirty',
-  'i disgust myself', 'i am a bad person',
-];
 
 type SessionPhase = 'active' | 'ending' | 'completed';
 
@@ -149,8 +119,6 @@ function ChatScreenInner() {
   useEffect(() => {
     if (!state.intakeCompleted) {
       greetingSent.current = false;
-      silenceFiredRef.current = false;
-      disclosureDetectedRef.current = false;
       setMessages([]);
       setSessionPhase('active');
       setIsTyping(false);
@@ -158,111 +126,12 @@ function ChatScreenInner() {
     }
   }, [state.intakeCompleted]);
 
-  // ── Silence Detection (both personas) ──────────────────────────────
-  const silenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const silenceFiredRef = useRef(false);
-  const disclosureDetectedRef = useRef(false);
+  // ── Inactivity Auto-Close refs ───────────────────────────────────
   const inactivityTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const inactivityEndTriggeredRef = useRef(false);
   const handleEndConversationRef = useRef<(() => Promise<void>) | null>(null);
   const logsDatSessionsRef = useRef<any[]>([]);
   const isElias = state.userType === 'elias';
-
-  /** Check if the last user message contains disclosure keywords (Module 58) */
-  const checkForDisclosure = useCallback((text: string): boolean => {
-    const lower = text.toLowerCase();
-    return DISCLOSURE_KEYWORDS.some((kw) => lower.includes(kw));
-  }, []);
-
-  /** Reset the silence timer — called on every user interaction */
-  const resetSilenceTimer = useCallback(() => {
-    // Clear existing timer
-    if (silenceTimerRef.current) {
-      clearTimeout(silenceTimerRef.current);
-      silenceTimerRef.current = null;
-    }
-    // Don't restart if already fired this silence moment
-    if (silenceFiredRef.current) return;
-    // Don't start if crisis level >= 2
-    if (state.crisisLevel >= 2) return;
-
-    // Determine timeout: 90s if disclosure detected, else 20s
-    const timeout = disclosureDetectedRef.current
-      ? POST_DISCLOSURE_TIMEOUT_MS
-      : SILENCE_TIMEOUT_MS;
-
-    silenceTimerRef.current = setTimeout(() => {
-      // Guard: only fire if not already fired
-      if (silenceFiredRef.current) return;
-      // Guard: crisis check at fire time
-      if (state.crisisLevel >= 2) return;
-      silenceFiredRef.current = true;
-
-      let response: string;
-      if (disclosureDetectedRef.current) {
-        // Module 58: post-disclosure response
-        response = isElias ? POST_ONTHULLING_RESPONSE_ELIAS : POST_ONTHULLING_RESPONSE_KIM;
-      } else {
-        // Normal silence: pick random from persona-specific list
-        const list = isElias ? STILTE_RESPONSES_ELIAS : STILTE_RESPONSES_KIM;
-        response = list[Math.floor(Math.random() * list.length)];
-      }
-
-      // Personalize with name if known
-      if (userName) {
-        response = response.replace(/^([^,\.]+)/, `$1, ${userName}`);
-      }
-
-      const silenceMsg: ChatMessage = {
-        id: `msg_silence_${Date.now()}`,
-        role: 'assistant',
-        content: response,
-        timestamp: new Date().toISOString(),
-      };
-      setMessages((prev) => [...prev, silenceMsg]);
-    }, timeout);
-  }, [isElias, userName, state.crisisLevel]);
-
-  // Start/reset silence timer when session becomes active and greeting is sent
-  useEffect(() => {
-    if (sessionPhase !== 'active') return;
-    // Only start after greeting is sent (messages > 0)
-    if (messages.length === 0) return;
-    // If AI is typing, don't start timer
-    if (isTyping) {
-      if (silenceTimerRef.current) {
-        clearTimeout(silenceTimerRef.current);
-        silenceTimerRef.current = null;
-      }
-      return;
-    }
-    // Check last message context
-    const lastMsg = messages[messages.length - 1];
-    if (lastMsg?.role === 'assistant' && !lastMsg.id.startsWith('msg_silence_')) {
-      // AI just responded — reset silence state for next silence moment
-      silenceFiredRef.current = false;
-      // Check if the last USER message before this AI response was a disclosure
-      const lastUserMsg = [...messages].reverse().find((m) => m.role === 'user');
-      disclosureDetectedRef.current = lastUserMsg ? checkForDisclosure(lastUserMsg.content) : false;
-      resetSilenceTimer();
-    }
-    return () => {
-      if (silenceTimerRef.current) {
-        clearTimeout(silenceTimerRef.current);
-        silenceTimerRef.current = null;
-      }
-    };
-  }, [sessionPhase, messages.length, isTyping, resetSilenceTimer, checkForDisclosure]);
-
-  // Reset silence timer on text input change (user is typing)
-  useEffect(() => {
-    if (!inputText) return;
-    // User is actively typing — reset timer and silence state
-    silenceFiredRef.current = false;
-    disclosureDetectedRef.current = false;
-    resetSilenceTimer();
-    resetInactivityTimer();
-  }, [inputText, resetSilenceTimer]);
 
   // ── 10-Minute Inactivity Auto-Close Timer ─────────────────────────────
   // After 10 minutes of no user interaction, trigger the EXACT SAME full
@@ -314,6 +183,12 @@ function ChatScreenInner() {
       }
     };
   }, []);
+
+  // Reset inactivity timer on text input change (user is typing)
+  useEffect(() => {
+    if (!inputText) return;
+    resetInactivityTimer();
+  }, [inputText, resetInactivityTimer]);
 
   // ── First-chat disclaimer modal (one-time, not skipable) ──
   const [firstChatSeen, setFirstChatSeen] = useState<boolean>(true); // default true to avoid flash
@@ -420,8 +295,6 @@ function ChatScreenInner() {
           setSessionPhase('active');
           setMessages([]);
           setShowEmergency(false);
-          silenceFiredRef.current = false;
-          disclosureDetectedRef.current = false;
           setShowRestoreToast(true);
           setTimeout(() => setShowRestoreToast(false), 3500);
         }
@@ -512,8 +385,6 @@ function ChatScreenInner() {
         setSessionPhase('active');
         setMessages([]);
         setShowEmergency(false);
-        silenceFiredRef.current = false;
-        disclosureDetectedRef.current = false;
         return; // Will re-trigger on next focus after preChatDone is set
       }
       if (!preChatDone) return; // Pre-chat gate: required input not yet submitted
@@ -839,13 +710,6 @@ function ChatScreenInner() {
     const rawText = inputText.trim();
     if (!rawText || isTyping || !state.backpack || !state.userDat || sessionPhase !== 'active') return;
 
-    // Reset silence detection on user send
-    silenceFiredRef.current = false;
-    disclosureDetectedRef.current = checkForDisclosure(rawText);
-    if (silenceTimerRef.current) {
-      clearTimeout(silenceTimerRef.current);
-      silenceTimerRef.current = null;
-    }
     // Reset inactivity timer on user send
     resetInactivityTimer();
 
@@ -1224,8 +1088,6 @@ function ChatScreenInner() {
     setSessionPhase('active');
     setMessages([]);
     setShowEmergency(false);
-    silenceFiredRef.current = false;
-    disclosureDetectedRef.current = false;
     router.replace('/(tabs)');
   }, [router]);
 
@@ -1771,24 +1633,24 @@ function ClinicalTag({ annotation }: { annotation: string }) {
         <View style={{ marginTop: 6, backgroundColor: colors.background, borderRadius: 8, padding: 10 }}>
           {vspFramework && (
             <View style={{ marginBottom: 8, paddingBottom: 6, borderBottomWidth: 0.5, borderBottomColor: colors.border }}>
-              <Text style={{ fontSize: 11, fontWeight: '700', color: '#1565C0' }}>
+              <Text selectable style={{ fontSize: 11, fontWeight: '700', color: '#1565C0' }}>
                 VSP-Framework: <Text style={{ fontWeight: '600', color: vspFramework === 'DGT' ? '#E65100' : vspFramework === 'MBT' ? '#6A1B9A' : '#2E7D32' }}>{vspFramework}</Text>
               </Text>
             </View>
           )}
-          <Text style={{ fontSize: 12, color: colors.muted, lineHeight: 17, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace' }}>
+          <Text selectable style={{ fontSize: 12, color: colors.muted, lineHeight: 17, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace' }}>
             {otherLines}
           </Text>
           {signalsValue && signalsValue !== 'none' && (
             <View style={{ marginTop: 6, paddingTop: 6, borderTopWidth: 0.5, borderTopColor: colors.border }}>
-              <Text style={{ fontSize: 11, fontWeight: '700', color: '#E65100' }}>
+              <Text selectable style={{ fontSize: 11, fontWeight: '700', color: '#E65100' }}>
                 Signals: <Text style={{ fontWeight: '400', color: colors.foreground }}>{signalsValue}</Text>
               </Text>
             </View>
           )}
           {signalsValue === 'none' && (
             <View style={{ marginTop: 6, paddingTop: 6, borderTopWidth: 0.5, borderTopColor: colors.border }}>
-              <Text style={{ fontSize: 11, color: colors.muted, fontStyle: 'italic' }}>
+              <Text selectable style={{ fontSize: 11, color: colors.muted, fontStyle: 'italic' }}>
                 Signals: none
               </Text>
             </View>

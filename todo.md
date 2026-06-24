@@ -1965,3 +1965,10 @@
 - [x] Sanitizes: knownUserPatterns.triggers (string[])
 - [x] Sanitizes: selectedTriggers (Array<{trigger: string, score: number}>)
 - [x] All 1383 tests pass
+
+## Bug: Inactivity auto-message causes state corruption + server 400
+- [x] Removed silence auto-message entirely (was source of English responses + state corruption)
+- [x] Removed all STILTE_RESPONSES, POST_ONTHULLING, DISCLOSURE_KEYWORDS, silence timer logic
+- [x] Kept 10-min inactivity auto-close (full endSession chain, no follow-up messages)
+- [x] All 1383 tests pass
+- [x] Clinical dropdown: all text nodes now have selectable prop (copy/paste works)
