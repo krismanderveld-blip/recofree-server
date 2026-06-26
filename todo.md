@@ -2003,3 +2003,8 @@
 - [x] Auto-end session: replaced setTimeout with timestamp-based check on foreground return (backgroundStartTimeRef)
 - [x] Fixed knownUserPatterns null → delete (was incorrectly being converted to empty array)
 - [x] All 1392 tests pass
+
+## Recency-Weighted Conversation Window
+- [x] Increase conversation window from 6 to 20 messages (recency-weighted)
+- [x] Add CONVERSATION CONTINUITY RULE to server-side system prompt
+- [x] Update gpt-payload-builder.ts header comment to reflect new window size

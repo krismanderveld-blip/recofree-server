@@ -1926,6 +1926,14 @@ ${input.stoaKContext ? `\n=== KIM STOA-K (STOIC REFLECTIVE FRAMEWORK) ACTIVE ===
 ${input.vspInsightContext ? `\n=== VSP INSIGHT SYSTEM ACTIVE (store:false) ===\n${input.vspInsightContext}\n=== END VSP INSIGHT ===` : ''}
 ${sessionEndInstructions}
 
+CONVERSATION CONTINUITY RULE — ABSOLUTE:
+The conversation history you receive is structured with RECENCY WEIGHTING:
+- The LAST 20 messages are the PRIMARY context — these represent the most recent exchange and are the most relevant for continuity, tone, and topic.
+- Earlier messages (if present) are summarized thematically and provide background only.
+- When responding, ALWAYS prioritize the content, tone, and direction of the last 20 messages.
+- If there is a contradiction between an earlier summary and a recent message, the recent message takes precedence.
+- Build your response as a natural continuation of the most recent exchanges — do not restart topics that were already resolved in the recent window.
+
 ANTI-FABRICATION RULE — ABSOLUTE:
 You may ONLY reference information that is explicitly present in:
 - The current conversation history

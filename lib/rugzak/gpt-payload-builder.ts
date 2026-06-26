@@ -9,7 +9,7 @@
  * - dominant module (1 only)
  * - risk score
  * - current sliders
- * - last 6-10 messages (conversation window)
+ * - last 20 messages (recency-weighted conversation window)
  * - max 2 triggers (from Backpack Relevance Analyzer)
  * - max 1 core wound
  * - max 1 context line
@@ -391,54 +391,43 @@ function buildOptimisedConversationWindow(
   chatHistory: ChatMessage[],
   isSessionStart: boolean,
 ): Array<{ role: 'user' | 'assistant'; content: string; isSummary?: boolean }> {
-  const maxMessages = isSessionStart ? 10 : 6;
+  // ── Recency-weighted window: last 20 messages are PRIMARY context ──
+  // All 60 messages in chatHistory are available, but we send up to 20 recent
+  // messages in full (the most contextually relevant for continuity), plus a
+  // thematic summary of older messages and one emotionally salient message.
+  const RECENT_WINDOW = 20;
+  const maxMessages = isSessionStart ? 24 : RECENT_WINDOW;
 
   // If history fits within window, no optimisation needed
   if (chatHistory.length <= maxMessages) {
     return chatHistory.map((msg) => ({ role: msg.role, content: msg.content }));
   }
 
-  // Step 1: Identify the last user + assistant pair (always kept)
-  const lastMessages = chatHistory.slice(-2);
-  const remainingPool = chatHistory.slice(0, -2);
+  // ── Split: recent (last 20) vs. earlier ──
+  const recentMessages = chatHistory.slice(-RECENT_WINDOW);
+  const earlierMessages = chatHistory.slice(0, -RECENT_WINDOW);
 
-  // Step 2: Find the most emotionally relevant message from the pool
+  // ── Find most emotionally relevant message from earlier pool ──
   let bestEmotionalMsg: ChatMessage | null = null;
   let bestEmotionalScore = 0;
-  let bestEmotionalIdx = -1;
 
-  for (let i = 0; i < remainingPool.length; i++) {
-    if (remainingPool[i].role !== 'user') continue;
-    const score = computeEmotionalIntensity(remainingPool[i].content);
+  for (let i = 0; i < earlierMessages.length; i++) {
+    if (earlierMessages[i].role !== 'user') continue;
+    const score = computeEmotionalIntensity(earlierMessages[i].content);
     if (score > bestEmotionalScore) {
       bestEmotionalScore = score;
-      bestEmotionalMsg = remainingPool[i];
-      bestEmotionalIdx = i;
+      bestEmotionalMsg = earlierMessages[i];
     }
   }
 
-  // Step 3: Fill remaining slots with most recent messages
-  const reservedSlots = 2 + (bestEmotionalMsg ? 1 : 0); // last pair + emotional
-  const fillSlots = maxMessages - reservedSlots;
-
-  // Get the most recent messages from the pool (excluding the emotional one)
-  const fillPool = remainingPool.filter((_, i) => i !== bestEmotionalIdx);
-  const filledMessages = fillPool.slice(-fillSlots);
-
-  // Step 4: Summarize dropped messages
-  const keptIndices = new Set<number>();
-  // Mark filled messages
-  for (const fm of filledMessages) {
-    const idx = remainingPool.indexOf(fm);
-    if (idx >= 0) keptIndices.add(idx);
-  }
-  if (bestEmotionalIdx >= 0) keptIndices.add(bestEmotionalIdx);
-
-  const droppedMessages = remainingPool.filter((_, i) => !keptIndices.has(i));
+  // ── Summarize earlier messages (excluding the emotional one) ──
+  const droppedMessages = bestEmotionalMsg
+    ? earlierMessages.filter((m) => m !== bestEmotionalMsg)
+    : earlierMessages;
 
   const result: Array<{ role: 'user' | 'assistant'; content: string; isSummary?: boolean }> = [];
 
-  // Add summary of dropped messages (if any)
+  // Add thematic summary of earlier messages
   if (droppedMessages.length > 0) {
     const userDropped = droppedMessages.filter((m) => m.role === 'user');
     const themes: string[] = [];
@@ -455,24 +444,19 @@ function buildOptimisedConversationWindow(
     }
     const uniqueThemes = [...new Set(themes)];
     const summaryText = uniqueThemes.length > 0
-      ? `[Earlier in this conversation (${droppedMessages.length} messages summarized): User discussed ${uniqueThemes.join(', ')}.]`
-      : `[Earlier in this conversation: ${droppedMessages.length} messages exchanged.]`;
+      ? `[Earlier in this conversation (${droppedMessages.length} messages summarized): User discussed ${uniqueThemes.join(', ')}. These provide background — prioritize the recent messages below for continuity.]`
+      : `[Earlier in this conversation: ${droppedMessages.length} messages exchanged. Prioritize the recent messages below for continuity.]`;
     result.push({ role: 'assistant', content: summaryText, isSummary: true });
   }
 
-  // Add filled messages (in chronological order)
-  for (const msg of filledMessages) {
-    result.push({ role: msg.role, content: msg.content });
-  }
-
-  // Add emotional message (if not already in filled)
-  if (bestEmotionalMsg && !filledMessages.includes(bestEmotionalMsg)) {
-    // Insert before the last pair but after filled messages
+  // Add the most emotionally salient earlier message (if found)
+  if (bestEmotionalMsg && bestEmotionalScore > 0) {
     result.push({ role: bestEmotionalMsg.role, content: bestEmotionalMsg.content });
   }
 
-  // Add last pair
-  for (const msg of lastMessages) {
+  // ── Add all 20 recent messages (full content, chronological) ──
+  // These are the PRIMARY context for GPT — most recent = most relevant for continuity
+  for (const msg of recentMessages) {
     result.push({ role: msg.role, content: msg.content });
   }
 
