@@ -44,13 +44,24 @@ export function selectGreetingSynthesisSources(
 
   if (eligible.length === 0) return [];
 
-  // Sort by relevance descending
-  const sorted = [...eligible].sort((a, b) => b.relevanceScore - a.relevanceScore);
-
-  // Take top candidates with balance rules
+  // CONTINUITY RULE: LAST_SESSION_SUMMARY is ALWAYS selected first when eligible.
+  // This ensures the greeting always references the previous session for continuity.
   const selected: SelectedSynthesisSource[] = [];
   let positiveCount = 0;
   let negativeCount = 0;
+
+  const sessionSource = eligible.find(c => c.sourceType === 'LAST_SESSION_SUMMARY');
+  if (sessionSource) {
+    selected.push({
+      sourceType: sessionSource.sourceType,
+      safeAnchor: sessionSource.safeAnchor,
+      relevanceScore: sessionSource.relevanceScore,
+    });
+  }
+
+  // Sort remaining by relevance descending
+  const remaining = eligible.filter(c => c.sourceType !== 'LAST_SESSION_SUMMARY');
+  const sorted = [...remaining].sort((a, b) => b.relevanceScore - a.relevanceScore);
 
   for (const candidate of sorted) {
     if (selected.length >= V3_MAX_SYNTHESIS_SOURCES) break;

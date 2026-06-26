@@ -218,8 +218,10 @@ ${vspPersonalContext}
 === EINDE PERSOONLIJKE DATA ===
 
 KERNINSTRUCTIE:
-Je MOET minstens DRIE concrete elementen uit de bovenstaande persoonlijke data ACTIEF verwerken in je begroeting.
-Dit is GEEN optionele context — dit is het DOEL van deze begroeting: de gebruiker laten voelen dat je HEN kent.
+De VORIGE SESSIE is je PRIMAIRE bron. Als er "VORIGE SESSIE" data beschikbaar is, MOET je begroeting daar DIRECT naar verwijzen — wat er besproken werd, welke thema's speelden, welke open eindjes er waren. Dit geeft de gebruiker het gevoel van continuïteit: "we pakken het gesprek op waar we gebleven waren."
+
+Daarnaast MOET je minstens ÉÉN ander concreet element uit de overige persoonlijke data verwerken.
+Dit is GEEN optionele context — dit is het DOEL van deze begroeting: de gebruiker laten voelen dat je HEN kent en dat je ONTHOUDT wat er vorige keer besproken is.
 Als er namen, plaatsen, activiteiten of specifieke gevoelens in de data staan, NOEM ze dan bij naam.
 
 ${buildMandatoryElements(selectedSources, vspSection, zone)}

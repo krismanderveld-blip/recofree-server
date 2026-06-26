@@ -2008,3 +2008,9 @@
 - [x] Increase conversation window from 6 to 20 messages (recency-weighted)
 - [x] Add CONVERSATION CONTINUITY RULE to server-side system prompt
 - [x] Update gpt-payload-builder.ts header comment to reflect new window size
+
+## Greeting Continuity Fix
+- [x] LAST_SESSION_SUMMARY always selected FIRST in selectGreetingSynthesisSources (not competitive)
+- [x] Greeting prompt: vorige sessie is PRIMAIRE bron, GPT MOET er direct naar refereren
+- [x] Updated timestampDominance tests to reflect new continuity rule
+- [x] All 1391 tests pass, 119 greeting tests pass
