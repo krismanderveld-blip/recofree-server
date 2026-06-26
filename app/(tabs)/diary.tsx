@@ -491,7 +491,7 @@ export default function DiaryScreen() {
                   <View style={{ gap: 12 }}>
                     {[{ val: gratitude1, set: setGratitude1, n: '1' }, { val: gratitude2, set: setGratitude2, n: '2' }, { val: gratitude3, set: setGratitude3, n: '3' }].map((item) => (
                       <View key={item.n}>
-                        <Text style={{ fontSize: 12, color: colors.muted, marginBottom: 6, fontWeight: '500' }}>{t('diary.editor.gratitude.prefix')}</Text>
+                        <Text style={{ fontSize: 12, color: colors.muted, marginBottom: 6, fontWeight: '500' }}>{item.n}.</Text>
                         <TextInput
                           style={{
                             backgroundColor: colors.surface,
@@ -513,7 +513,7 @@ export default function DiaryScreen() {
                     ))}
                   </View>
                   <Text style={{ fontSize: 12, color: colors.muted, marginTop: 12, fontStyle: 'italic' }}>
-                    Optional — fill in as many or as few as you like.
+                    Optioneel — vul er zo veel of weinig in als je wilt.
                   </Text>
                 </View>
               )}

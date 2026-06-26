@@ -325,6 +325,7 @@ function sanitizeChatPayload(payload: Record<string, unknown>): Record<string, u
     'extractedEntities', 'recentDiary', 'diaryEntries',
     'backpack', 'userDat', 'bufferSnapshot',
     'regulationResult', 'engineDirective',
+    'knownUserPatterns', 'backpackAnalysis',
   ];
   for (const field of nullToDeleteFields) {
     if (payload[field] === null) {
@@ -339,6 +340,43 @@ function sanitizeChatPayload(payload: Record<string, unknown>): Record<string, u
     if (payload[field] === null || payload[field] === undefined) {
       payload[field] = [];
     }
+  }
+
+  // 6. Remap backpack.sections → backpack.lifeStory (server expects lifeStory)
+  // The gpt-payload-builder does this for SESSION_INIT, but SESSION_END sends raw backpack
+  if (payload.backpack && typeof payload.backpack === 'object') {
+    const bp = payload.backpack as Record<string, unknown>;
+    if (Array.isArray(bp.sections) && !Array.isArray(bp.lifeStory)) {
+      bp.lifeStory = (bp.sections as any[]).map((s: any) => ({
+        id: s.id || '',
+        label: s.label || '',
+        ageRange: s.ageRange || '',
+        content: s.content || '',
+      }));
+      delete bp.sections;
+    }
+    // Ensure intakeContext has all required fields
+    if (bp.intakeContext && typeof bp.intakeContext === 'object') {
+      const ic = bp.intakeContext as Record<string, unknown>;
+      if (!ic.initialContext && ic.firstContext) {
+        ic.initialContext = ic.firstContext;
+        delete ic.firstContext;
+      }
+      ic.startEmotion = ic.startEmotion || '';
+      ic.urgency = ic.urgency || 'midden';
+      ic.initialContext = ic.initialContext || '';
+      ic.intakeDate = ic.intakeDate || '';
+    }
+  }
+
+  // 7. Remap userDat.moduleUsage → userDat.moduleUsageSummary (server expects moduleUsageSummary)
+  if (payload.userDat && typeof payload.userDat === 'object') {
+    const ud = payload.userDat as Record<string, unknown>;
+    if (Array.isArray(ud.moduleUsage) && !ud.moduleUsageSummary) {
+      ud.moduleUsageSummary = [...new Set((ud.moduleUsage as any[]).map((m: any) => m.moduleId || m))];
+    }
+    // Ensure required arrays exist
+    if (!ud.moduleUsageSummary) ud.moduleUsageSummary = [];
   }
 
   return payload;

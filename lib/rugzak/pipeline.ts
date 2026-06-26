@@ -3534,8 +3534,8 @@ export async function endSession(
     console.error('Farewell generation error:', error);
     const name = backpack.naam;
     farewell = backpack.userType === 'elias'
-      ? `${name}, I've saved everything from our conversation. You showed real courage today. Take care of yourself, and I'll be here whenever you need me.`
-      : `${name}, I've saved everything from our conversation. What you're doing for your loved one matters. Take care of yourself too, and I'll be here when you're ready.`;
+      ? `${name}, ik heb alles uit ons gesprek bewaard. Je hebt vandaag echte moed getoond. Zorg goed voor jezelf, en ik ben er wanneer je me nodig hebt.`
+      : `${name}, ik heb alles uit ons gesprek bewaard. Wat je doet voor je naaste is belangrijk. Zorg ook goed voor jezelf, en ik ben er wanneer je klaar bent.`;
   }
 
   // ── STEP 3: Ranked promotion evaluation ──

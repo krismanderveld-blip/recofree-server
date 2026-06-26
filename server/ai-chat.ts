@@ -45,16 +45,16 @@ interface ChatRequestInput {
   isSessionStart: boolean;
 
   // Live-selected triggers (re-analyzed per message)
-  selectedTriggers?: Array<{ trigger: string; score: number }>;
-  riskScore?: number;
-  dominantModule?: string;
+  selectedTriggers?: Array<{ trigger: string; score: number }> | null;
+  riskScore?: number | null;
+  dominantModule?: string | null;
 
   // Static context (SESSION_INIT only — cached server-side)
   coreWound?: string | null;
   contextLine?: string | null;
   relationshipAnchor?: { name: string; role: string; roleEN?: string } | null;
-  recentDiary?: Array<{ content: string; moodTag: string; date: string }>;
-  stageOfChange?: string;
+  recentDiary?: Array<{ content: string; moodTag: string; date: string }> | null;
+  stageOfChange?: string | null;
   relationalPattern?: { pattern: string; schema: string; confidence: number } | null;
 
   // Full data (SESSION_INIT only)
@@ -81,7 +81,7 @@ interface ChatRequestInput {
       intakeDate: string;
     };
     createdAt: string;
-  };
+  } | null;
   userDat?: {
     totalSessions: number;
     triggerPatterns: Array<{
@@ -110,17 +110,17 @@ interface ChatRequestInput {
         resilienceChange: number;
       };
       endRiskLevel: string;
-    }>;
-  };
+    }>;  
+  } | null;
   diaryEntries?: Array<{
     content: string;
     moodTag: string;
     timestamp: string;
-  }>;
+  }> | null;
 
   activeModules: string[];
   crisisLevel: number;
-  isCrisis?: boolean;
+  isCrisis?: boolean | null;
   vspLevel?: string | null;
   detectedEmotion: string;
   therapeuticStance: string;
@@ -137,7 +137,7 @@ interface ChatRequestInput {
     emotionalDirection: string;
     liveIntent: string;
     dominantState: string;
-  };
+  } | null;
 
   // Regulation result from regulation layer (per-message)
   regulationResult?: {
@@ -196,16 +196,16 @@ interface ChatRequestInput {
   contextSummary?: string | null;
 
   // Clinical Mode (easter egg — therapeutic annotations)
-  clinicalModeActive?: boolean;
+  clinicalModeActive?: boolean | null;
   // Backpack empty flag (for greeting tone adaptation)
-  backpackEmpty?: boolean;
+  backpackEmpty?: boolean | null;
 
   // Signal engine: active signals for clinical annotation
   activeSignals?: Array<{
     label: string;
     score: number;
     memory: string;
-  }>;
+  }> | null;
 
   // Backpack Entity Extraction: structured memory (replaces full backpack text when unchanged)
   extractedEntities?: {
@@ -216,7 +216,7 @@ interface ChatRequestInput {
     extractedAt: string;
     sourceHash: string;
     schemaVersion: number;
-  };
+  } | null;
   /** Whether backpack content changed since last extraction (forces full backpack resend) */
   backpackChanged?: boolean;
 

@@ -135,11 +135,13 @@ describe('Lifecycle Manager Buffer', () => {
 
 // Test 3: Auto-close message content
 describe('Auto-close User Feedback', () => {
-  it('should show English auto-close message', async () => {
+  it('should show Dutch auto-close message and use timestamp-based background check', async () => {
     const fs = await import('fs');
     const chatSource = fs.readFileSync('./app/(tabs)/chat.tsx', 'utf-8');
-    // After i18n migration, the auto-close uses handleEndConversation which shows farewell + safely stored
-    expect(chatSource).toContain('safely stored');
-    expect(chatSource).toContain('inactivity_10min');
+    // Auto-close uses handleEndConversation which shows farewell + veilig bewaard
+    expect(chatSource).toContain('veilig bewaard');
+    expect(chatSource).toContain('app_background_10min');
+    // Uses timestamp-based check, not setTimeout
+    expect(chatSource).toContain('backgroundStartTimeRef');
   });
 });

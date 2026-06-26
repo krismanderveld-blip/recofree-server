@@ -1996,3 +1996,10 @@
 - [x] Tested against LIVE deployed server: unsanitized → 400, sanitized → 200
 - [x] SESSION_END farewell call also tested and passes
 - [x] All 1383 tests pass
+
+## Bug: 3 mini tweaks (June 26)
+- [x] Gratitude tab: fixed {item.n}. → direct item.n rendering (1., 2., 3.)
+- [x] Session save/end messages: all translated to Dutch (analyzing, confirmation, fallback, pipeline farewell)
+- [x] Auto-end session: replaced setTimeout with timestamp-based check on foreground return (backgroundStartTimeRef)
+- [x] Fixed knownUserPatterns null → delete (was incorrectly being converted to empty array)
+- [x] All 1392 tests pass

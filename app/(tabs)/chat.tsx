@@ -246,13 +246,14 @@ function ChatScreenInner() {
   // No PENDING_CLOSE_KEY markers are written, so nothing to recover.
 
   // ── Auto-end session when app stays in background for 10 minutes ──
-  // NOT immediate. Starts a 10-min timer when going to background.
-  // If user returns before 10 min, timer is cancelled. Same full endSession chain.
+  // Uses timestamp-based check: records when app went to background,
+  // then on foreground return checks if 10+ minutes elapsed.
+  // setTimeout does NOT work in background on mobile (JS thread is suspended).
   const autoEndTriggeredRef = useRef(false);
-  const backgroundTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const backgroundStartTimeRef = useRef<number | null>(null);
   useEffect(() => {
     const subscription = AppState.addEventListener('change', async (nextState: AppStateStatus) => {
-      // Going to background: start 10-min timer
+      // Going to background: record timestamp
       if (
         appStateRef.current === 'active' &&
         (nextState === 'background' || nextState === 'inactive') &&
@@ -262,33 +263,30 @@ function ChatScreenInner() {
         state.backpack &&
         state.userDat
       ) {
-        // Start delayed auto-end (10 minutes)
-        if (!backgroundTimerRef.current) {
-          backgroundTimerRef.current = setTimeout(async () => {
-            backgroundTimerRef.current = null;
-            if (autoEndTriggeredRef.current) return;
-            autoEndTriggeredRef.current = true;
-            console.log('[Chat] Background auto-close triggered (10 min in background) — running full endSession chain');
-            logDebugEvent('session_auto_end', { trigger: 'app_background_10min', messageCount: messages.length });
-
-            if (handleEndConversationRef.current) {
-              await handleEndConversationRef.current();
-            }
-          }, INACTIVITY_AUTO_CLOSE_MS); // 10 minutes
-        }
+        backgroundStartTimeRef.current = Date.now();
       }
-      // Returning to foreground: cancel timer if not yet fired, or reset if already ended
+      // Returning to foreground: check elapsed time
       if (
         (appStateRef.current === 'background' || appStateRef.current === 'inactive') &&
         nextState === 'active'
       ) {
-        // Cancel pending background timer
-        if (backgroundTimerRef.current) {
-          clearTimeout(backgroundTimerRef.current);
-          backgroundTimerRef.current = null;
-        }
-        // If session already ended while in background, reset for fresh session
-        if (autoEndTriggeredRef.current) {
+        const startTime = backgroundStartTimeRef.current;
+        backgroundStartTimeRef.current = null;
+        // Check if 10+ minutes elapsed while in background
+        if (
+          startTime &&
+          !autoEndTriggeredRef.current &&
+          sessionPhase === 'active' &&
+          (Date.now() - startTime) >= INACTIVITY_AUTO_CLOSE_MS
+        ) {
+          autoEndTriggeredRef.current = true;
+          console.log('[Chat] Background auto-close triggered (10+ min in background) — running full endSession chain');
+          logDebugEvent('session_auto_end', { trigger: 'app_background_10min', messageCount: messages.length, elapsedMs: Date.now() - startTime });
+
+          if (handleEndConversationRef.current) {
+            await handleEndConversationRef.current();
+          }
+          // Reset for fresh session after auto-end
           autoEndTriggeredRef.current = false;
           greetingSent.current = false;
           setPreChatDone(false);
@@ -303,10 +301,6 @@ function ChatScreenInner() {
     });
     return () => {
       subscription.remove();
-      if (backgroundTimerRef.current) {
-        clearTimeout(backgroundTimerRef.current);
-        backgroundTimerRef.current = null;
-      }
     };
   }, [sessionPhase, messages, state.backpack, state.userDat]);
 
@@ -975,7 +969,7 @@ function ChatScreenInner() {
     const analyzingMsg: ChatMessage = {
       id: `msg_end_${Date.now()}`,
       role: 'assistant',
-      content: `I'm going to analyze everything you shared. Stay here for a moment — I'll let you know when it's safe to leave.`,
+      content: `Ik ga alles wat je gedeeld hebt analyseren. Blijf nog even — ik laat je weten wanneer je veilig kunt afsluiten.`,
       timestamp: new Date().toISOString(),
     };
     setMessages((prev) => [...prev, analyzingMsg]);
@@ -998,7 +992,7 @@ function ChatScreenInner() {
       const confirmationMsg: ChatMessage = {
         id: `msg_confirm_${Date.now()}`,
         role: 'assistant',
-        content: result.farewell + '\n\nEverything has been saved. Your session is safely stored. You can close the app now or go back to the home screen.',
+        content: result.farewell + '\n\nAlles is opgeslagen. Je sessie is veilig bewaard. Je kunt de app nu sluiten of teruggaan naar het startscherm.',
         timestamp: new Date().toISOString(),
       };
       setMessages((prev) => [...prev, confirmationMsg]);
@@ -1070,7 +1064,7 @@ function ChatScreenInner() {
       const fallbackMsg: ChatMessage = {
         id: `msg_fallback_${Date.now()}`,
         role: 'assistant',
-        content: `${userName}, your session has been saved. Something went wrong during analysis, but your conversation is safely stored. You can close the app now.`,
+        content: `${userName}, je sessie is opgeslagen. Er ging iets mis tijdens de analyse, maar je gesprek is veilig bewaard. Je kunt de app nu sluiten.`,
         timestamp: new Date().toISOString(),
       };
       setMessages((prev) => [...prev, fallbackMsg]);
