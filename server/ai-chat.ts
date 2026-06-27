@@ -1739,6 +1739,15 @@ Keep it short (3-5 sentences max). Do NOT ask new questions.`;
   // ══════════════════════════════════════════════════════════════
 
   if (!input.isSessionStart) {
+    // ── PERSONA ISOLATION GUARD ──────────────────────────────────────────────
+    // If sessionCache belongs to a different persona (e.g., Elias cache used for Kim),
+    // invalidate it entirely. This prevents cross-persona contamination when V3 greeting
+    // bypasses SESSION_INIT and the first follow-up arrives as LIVE_MESSAGE.
+    if (sessionCache && sessionCache.userType !== input.userType) {
+      console.warn(`[AI Chat] PERSONA MISMATCH: sessionCache.userType=${sessionCache.userType} vs input.userType=${input.userType} — invalidating stale cache`);
+      sessionCache = null;
+    }
+
     // Resolve which cached fields are relevant for THIS message
     const conditional = sessionCache
       ? resolveConditionalContext(

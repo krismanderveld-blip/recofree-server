@@ -27,7 +27,8 @@ import { useUser } from '@/lib/user-context';
 import { fixUnicode } from '@/lib/utils';
 import { getAIProvider } from '@/lib/ai';
 import { preprocessInput } from '@/lib/ai/preprocessor';
-import { processMessage, generateGreeting, endSession } from '@/lib/rugzak/pipeline';
+import { processMessage, generateGreeting, endSession, resetSessionState } from '@/lib/rugzak/pipeline';
+import { clearSessionInitCache } from '@/lib/ai/openai-provider';
 import { EmergencyCard } from '@/components/emergency-card';
 import { getPrimarySuicideLine, getEmergencyNumber } from '@/lib/crisis/resources';
 import type { ChatMessage, Rugzak, Backpack, UserDat, DiaryEntry } from '@/lib/ai/types';
@@ -126,6 +127,12 @@ function ChatScreenInner() {
     }
   }, [state.intakeCompleted]);
 
+  // ── V3 Greeting Session-Init tracking ───────────────────────────────
+  // When V3 greeting engine is used, generateGreeting() is skipped, so the server
+  // sessionCache is never populated. The first follow-up message MUST be sent as
+  // isSessionStart=true to initialize the server cache with correct persona data.
+  const v3GreetingUsedRef = useRef(false);
+
   // ── Inactivity Auto-Close refs ───────────────────────────────────
   const inactivityTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const inactivityEndTriggeredRef = useRef(false);
@@ -144,8 +151,9 @@ function ChatScreenInner() {
     }
     // Don't start if session is not active or already ended
     if (sessionPhase !== 'active' || inactivityEndTriggeredRef.current) return;
-    // Only start if there are messages (session has started)
-    if (messages.length <= 1) return;
+    // Start timer even with just the greeting message (messages.length >= 1)
+    // This ensures greeting-only sessions still get auto-closed after inactivity
+    if (messages.length < 1) return;
 
     inactivityTimerRef.current = setTimeout(async () => {
       if (inactivityEndTriggeredRef.current || sessionPhase !== 'active') return;
@@ -163,7 +171,7 @@ function ChatScreenInner() {
 
   // Start/reset inactivity timer when session is active and messages change
   useEffect(() => {
-    if (sessionPhase === 'active' && messages.length > 1) {
+    if (sessionPhase === 'active' && messages.length > 0) {
       resetInactivityTimer();
     }
     return () => {
@@ -628,6 +636,14 @@ function ChatScreenInner() {
 
       // If greeting engine produced a result, use it directly
       if (greetingText) {
+        // V3 greeting bypasses generateGreeting() which normally calls resetSessionState().
+        // We must reset pipeline state manually AND mark that the first follow-up message
+        // needs to be sent as SESSION_INIT to populate the server's sessionCache.
+        resetSessionState();
+        clearSessionInitCache();
+        v3GreetingUsedRef.current = true;
+        console.log('[Chat] V3 greeting used — pipeline state reset, first follow-up will be SESSION_INIT');
+
         const greetingMsg: ChatMessage = {
           id: `msg_greeting_${Date.now()}`,
           role: 'assistant',
@@ -734,8 +750,16 @@ function ChatScreenInner() {
         console.warn('Could not read backpack from AsyncStorage, using state:', e);
       }
       const provider = getAIProvider();
-      // FOLLOW-UP MESSAGE: isSessionStart = false, no diary entries
-      const result = await processMessage(backpack, processedText, provider, currentUserDat, { isSessionStart: false, diaryEntries: [], logsSessions: logsDatSessionsRef.current, locale: locale as 'nl' | 'en' | 'fr', country: (country || 'BE') as 'NL' | 'BE' | 'FR' | 'UK' | 'US' });
+      // If V3 greeting was used, the first follow-up MUST be sent as SESSION_INIT
+      // to populate the server's sessionCache with the correct persona/userType data.
+      // Without this, the server uses stale cache from a previous session (potentially
+      // a different persona, causing Kim↔Elias cross-contamination).
+      const forceSessionInit = v3GreetingUsedRef.current;
+      if (forceSessionInit) {
+        v3GreetingUsedRef.current = false;
+        console.log('[Chat] First message after V3 greeting — sending as SESSION_INIT to populate server cache');
+      }
+      const result = await processMessage(backpack, processedText, provider, currentUserDat, { isSessionStart: forceSessionInit, diaryEntries: forceSessionInit ? (await (async () => { try { const dj = await readEncrypted(DIARY_KEY); return dj ? JSON.parse(dj) : []; } catch { return []; } })()) : [], logsSessions: logsDatSessionsRef.current, locale: locale as 'nl' | 'en' | 'fr', country: (country || 'BE') as 'NL' | 'BE' | 'FR' | 'UK' | 'US' });
       // DEFENSIVE GUARD: if processMessage returns null/undefined (should never happen,
       // but observed 'undefined is not a function' crash on device — root cause unconfirmed,
       // likely Metro bundler module resolution issue or stale closure. This guardrail

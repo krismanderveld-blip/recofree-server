@@ -2029,3 +2029,7 @@
 - [x] Greeting copies raw logs.dat text literally instead of verbalizing facts (shows "laatste sessie: elias: ja, die hitte...") — fixed: stripRawLabels() in greetingFactExtractor + buildGreetingSynthesisPrompt, strengthened anti-copy instructions
 - [x] Missing i18n keys: mood.slider.craving.title → actually .label keys exist in all locales; progress tracker was using hardcoded English labels instead of tStatic() — fixed
 - [x] English text on voortgang/progress screen needs Dutch translation ("36 days. This is factual, not a score.", slider names, "isolation") — fixed: elias-progress-tracker + kim-progress-tracker now use tStatic() with proper i18n keys
+
+## Bugs reported 2026-06-27 (batch 2)
+- [x] Session timeout/autosave: greeting context becomes stale after inactivity (no response for ~1 hour) causing raw/unprocessed text in GPT response when user finally replies — fixed: V3 greeting now calls resetSessionState()+clearSessionInitCache(), inactivity timer starts after greeting (guard changed from <=1 to <1), first follow-up forces SESSION_INIT to populate server cache
+- [x] Persona isolation leak: Kim received an Elias mention in chat (one-time occurrence) — fixed: server-side persona guard invalidates sessionCache when userType mismatches, client forces SESSION_INIT on first follow-up after V3 greeting to ensure correct persona data in cache
