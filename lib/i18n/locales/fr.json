@@ -720,7 +720,7 @@
   "backpack.kim.goals.subtitle": "Vers quoi tu travailles ?",
   "profile.user_card.stats.session": "session",
   "profile.balkmetafoor.not_initialized": "La métaphore de la balance sera introduite par Elias quand le moment sera venu.",
-  "eigen_regie.greeting": "Comment était ta journée, {{name}} ?",
+  "eigen_regie.greeting": "Comment était ta journée, {name} ?",
   "eigen_regie.question": "Dans quelle mesure ta journée a-t-elle été déterminée par les choix de l'autre personne ?",
   "eigen_regie.slider.min": "Pleine autonomie",
   "eigen_regie.slider.max": "Entièrement déterminé par l'autre",

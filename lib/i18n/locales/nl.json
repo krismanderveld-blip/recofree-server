@@ -720,7 +720,7 @@
   "backpack.kim.goals.subtitle": "Waar werk je naartoe?",
   "profile.user_card.stats.session": "sessie",
   "profile.balkmetafoor.not_initialized": "De balkmetafoor wordt geïntroduceerd door Elias wanneer het moment er is.",
-  "eigen_regie.greeting": "Hoe was je dag, {{name}}?",
+  "eigen_regie.greeting": "Hoe was je dag, {name}?",
   "eigen_regie.question": "In hoeverre werd je dag vandaag bepaald door de keuzes van de ander?",
   "eigen_regie.slider.min": "Volledige eigen regie",
   "eigen_regie.slider.max": "Volledig bepaald door de ander",
