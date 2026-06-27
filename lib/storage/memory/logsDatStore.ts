@@ -24,7 +24,7 @@ export interface LogsDatStore {
    * If a session with the same sessionId already exists, it is REPLACED (updated).
    * This is the "0-3 maanden" strategy: raw berichten, geen GPT-samenvatting nodig.
    */
-  upsertCurrentSession(persona: RecoFreePersona, summary: SessionLogSummary): Promise<void>;
+  upsertCurrentSession(persona: RecoFreePersona, summary: SessionLogSummary, cycleTimestamp?: string): Promise<void>;
 }
 
 export function createLogsDatStore(): LogsDatStore {
@@ -66,7 +66,7 @@ export function createLogsDatStore(): LogsDatStore {
       await this.save(persona, data);
     },
 
-    async upsertCurrentSession(persona, summary) {
+    async upsertCurrentSession(persona, summary, cycleTimestamp?: string) {
       const data = await this.load(persona);
       // Find existing entry with same sessionId and REPLACE it
       const existingIdx = data.sessions.findIndex(s => s.sessionId === summary.sessionId);
@@ -75,7 +75,7 @@ export function createLogsDatStore(): LogsDatStore {
       } else {
         data.sessions.push(summary);
       }
-      data.updatedAt = new Date().toISOString();
+      data.updatedAt = cycleTimestamp || new Date().toISOString();
       await this.save(persona, data);
     },
 

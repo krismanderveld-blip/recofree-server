@@ -153,7 +153,8 @@ export function createSessionLifecycleManager(): SessionLifecycleManager {
       // Upsert to logs.dat (encrypted) — upgrades the incremental raw entry
       // that was written during the session with the full GPT summary.
       // Uses upsert (not append) to avoid duplicates with the per-turn writes.
-      await stores.logsDatStore.upsertCurrentSession(persona, writeResult.summary);
+      // Use the summary's endedAt as cycleTimestamp to guarantee logs.dat timestamp >= other layers
+      await stores.logsDatStore.upsertCurrentSession(persona, writeResult.summary, writeResult.summary.endedAt);
 
       // ── Transfer Diagnostic Point 3: logs.dat write completed ──
       logDebugEvent('transfer_3_logsdat_write', {

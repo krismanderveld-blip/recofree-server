@@ -27,6 +27,8 @@ import type {
 import { sessionGreetingEngineV3, type SessionGreetingV3EngineResult } from './sessionGreetingEngineV3';
 import { enforceGreetingOutputRulesV3 } from './buildGreetingSynthesisPrompt';
 import { detectUserLanguageFromContent, getGreetingLanguageInstruction } from './detectUserLanguage';
+import { extractGreetingFacts, type GreetingFactExtractionResult } from './greetingFactExtractor';
+import { validateGreetingAgainstFacts } from './greetingFactValidator';
 
 export interface SessionInitGreetingInput {
   backpack: Backpack;
@@ -144,17 +146,46 @@ export async function sessionInitGreetingStep(
     }
   }
 
-  // Apply output safety filter
-  const validation = enforceGreetingOutputRulesV3(rawGreeting);
+  // FIX 2+3: Extract facts and validate greeting against them
+  const factResult: GreetingFactExtractionResult = extractGreetingFacts(
+    engineResult.selectedSources,
+    userName,
+    vspSection ?? undefined,
+    greetingStateDat?.vspZone,
+  );
+
+  // FIX 3: Blocking validation with retry (max 2x) + deterministic fallback
+  const MAX_RETRIES = 2;
   let greeting = rawGreeting;
+  let validation = validateGreetingAgainstFacts(rawGreeting, factResult.facts);
+  let retryCount = 0;
+
+  while (!validation.valid && retryCount < MAX_RETRIES) {
+    retryCount++;
+    console.warn(`[SessionGreetingV3] Output REJECTED (attempt ${retryCount}): ${validation.reason}. Retrying...`);
+    try {
+      // Retry with stricter prompt: append fact-only constraint
+      const stricterPrompt = systemPrompt + `\n\n=== RETRY — VORIGE OUTPUT AFGEWEZEN (${validation.reason}) ===\nJe vorige output bevatte informatie die NIET in de brondata staat. Probeer opnieuw.\nGebruik UITSLUITEND de feiten die hierboven staan. Voeg NIETS toe.`;
+      const retryGreeting = await callSessionGreetingEndpoint(apiBaseUrl, stricterPrompt, userName, clinicalModeActive, vspInsightContext);
+      validation = validateGreetingAgainstFacts(retryGreeting, factResult.facts);
+      if (validation.valid) {
+        greeting = retryGreeting;
+      }
+    } catch (retryError) {
+      console.warn(`[SessionGreetingV3] Retry ${retryCount} failed:`, retryError);
+      break;
+    }
+  }
+
+  // If still invalid after retries: use deterministic fallback (no GPT)
   if (!validation.valid) {
-    console.warn(`[SessionGreetingV3] Output rejected: ${validation.reason}. Using raw output anyway.`);
-    // In V3 we still use the output but log the violation
-    // A strict mode could retry or fallback here
+    console.warn(`[SessionGreetingV3] All retries failed. Using deterministic fallback.`);
+    greeting = factResult.fallbackGreeting;
+    validation = { valid: true, reason: 'deterministic_fallback' };
   }
 
   // Build debug log
-  const debugLog = buildV3DebugLog(engineResult, validation);
+  const debugLog = buildV3DebugLog(engineResult, validation, retryCount, factResult.facts.length);
   console.log(debugLog);
 
   return { greeting, debugLog };
@@ -195,16 +226,23 @@ async function callSessionGreetingEndpoint(
 function buildV3DebugLog(
   result: SessionGreetingV3EngineResult,
   validation: { valid: boolean; reason: string },
+  retryCount: number = 0,
+  factCount: number = 0,
 ): string {
   const sources = result.selectedSources.map(s => s.sourceType).join(', ') || 'none';
-  let log = `[SessionGreetingV3] mode=${result.mode} sources=[${sources}]`;
+  let log = `[SessionGreetingV3] mode=${result.mode} sources=[${sources}] facts=${factCount}`;
+  if (retryCount > 0) {
+    log += ` retries=${retryCount}`;
+  }
   if (result.absence.band !== 'NONE') {
     log += ` absence=${result.absence.band}(${result.absence.absenceDaysExact !== null ? Math.round(result.absence.absenceDaysExact) : '?'}d)`;
   }
   if (result.override) {
     log += ` override_reason="${result.override.reason}"`;
   }
-  if (!validation.valid) {
+  if (validation.reason === 'deterministic_fallback') {
+    log += ` output=DETERMINISTIC_FALLBACK`;
+  } else if (!validation.valid) {
     log += ` output_violation="${validation.reason}"`;
   }
   return log;

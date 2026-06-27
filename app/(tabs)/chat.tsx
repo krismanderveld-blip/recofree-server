@@ -891,7 +891,7 @@ function ChatScreenInner() {
               sessionId: currentBuffer.sessionId,
               persona,
               startedAt: currentBuffer.startedAt,
-              endedAt: new Date().toISOString(),
+              endedAt: bundle.context.timestampIso,
               createdAt: currentBuffer.startedAt,
               summaryModel: 'gpt-4o-mini',
               summarySchemaVersion: 'session_summary.v1',
@@ -907,7 +907,7 @@ function ChatScreenInner() {
               inputTokenEstimate: 0,
               outputTokenEstimate: 0,
             };
-            await stores.logsDatStore.upsertCurrentSession(persona, incrementalSummary as any);
+            await stores.logsDatStore.upsertCurrentSession(persona, incrementalSummary as any, bundle.context.timestampIso);
           }
         } catch (incrErr) {
           // Non-critical: if incremental write fails, endSession will still try

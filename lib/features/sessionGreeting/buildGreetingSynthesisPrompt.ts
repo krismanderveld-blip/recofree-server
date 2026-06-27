@@ -210,55 +210,38 @@ function buildCoherentSynthesisInstruction(
 ZONE: ${zone}
 ${zoneTone.toneInstruction}
 ${zoneChronologyBlock || ''}
-=== PERSOONLIJKE DATA VAN DE GEBRUIKER (VERPLICHT TE GEBRUIKEN) ===
+=== GETAGDE FEITEN — DIT IS ALLES WAT JE MAG GEBRUIKEN ===
 
 ${contextBriefing}
 ${vspPersonalContext}
 
-=== EINDE PERSOONLIJKE DATA ===
+=== EINDE FEITEN ===
 
 KERNINSTRUCTIE:
-De VORIGE SESSIE is je PRIMAIRE bron. Als er "VORIGE SESSIE" data beschikbaar is, MOET je begroeting daar DIRECT naar verwijzen — wat er besproken werd, welke thema's speelden, welke open eindjes er waren. Dit geeft de gebruiker het gevoel van continuïteit: "we pakken het gesprek op waar we gebleven waren."
+Je mag UITSLUITEND de bovenstaande feiten verbaliseren. Je mag NIETS toevoegen, interpreteren, of herformuleren.
 
-Daarnaast MOET je minstens ÉÉN ander concreet element uit de overige persoonlijke data verwerken.
-Dit is GEEN optionele context — dit is het DOEL van deze begroeting: de gebruiker laten voelen dat je HEN kent en dat je ONTHOUDT wat er vorige keer besproken is.
-Als er namen, plaatsen, activiteiten of specifieke gevoelens in de data staan, NOEM ze dan bij naam.
-
-${buildMandatoryElements(selectedSources, vspSection, zone)}
+PRIORITEIT:
+1. Als er "VORIGE SESSIE" data staat: dat is je PRIMAIRE bron. Begin daar direct mee.
+2. Verwerk daarnaast maximaal ÉÉN ander feit.
+3. Eindig met een SPECIFIEKE vraag die direct voortkomt uit de feiten.
 
 HOE:
-- Verweef de persoonlijke data tot ÉÉN vloeiende, menselijke begroeting
-- Gebruik MAXIMAAL 4-5 zinnen totaal
-- Begin met een persoonlijke opening (gebruik de naam)
+- MAXIMAAL 4 zinnen totaal
+- Begin met de naam
 - ${zoneTone.openQuestionStyle}
-- De begroeting moet aanvoelen als een warm gesprek met iemand die je KENT
-- De TOON moet passen bij zone ${zone}: ${zone === 'GROEN' ? 'open, warm en erkennend van wat goed gaat' : zone === 'GEEL' ? 'erkennend en zacht — er speelt iets, benoem dat subtiel' : zone === 'ORANJE' ? 'direct, grondend, en verwijzend naar wat de gebruiker zelf zegt dat helpt' : 'rustig, aanwezig, en direct verwijzend naar hun copingstrategie'}
+- Toon: ${zone === 'GROEN' ? 'warm, erkennend' : zone === 'GEEL' ? 'zacht, erkennend' : zone === 'ORANJE' ? 'direct, grondend' : 'rustig, aanwezig'}
 
-CONCREET VOORBEELD van hoe je data verweeft:
-- Als dagboek zegt "vandaag was zwaar op werk" → "Het klinkt alsof werk je bezighoudt..."
-- Als gratitude zegt "mijn hond" → "Fijn dat [hond] er is voor je..."
-- Als mood craving 7/10 is → "Ik merk dat het vandaag stevig trekt..."
-- Als VSP "wandelen" als wat helpt noemt → "Heb je al even buiten gelopen?"
-
-VERBODEN (HARD — elke overtreding maakt de output ONGELDIG):
-- "Hoe voel je je?" / "Hoe gaat het?" / "Hoe voel je je nu?" / "Hoe is het?" → NOOIT. Je HEBT data, stel een SPECIFIEKE vraag.
-- "Ik zie dat je..." / "Ik lees in je dagboek..." (te klinisch, noem bronnen NOOIT)
-- "Je zit in zone..." / kleuren noemen
-- "Laten we beginnen met..." (te gestructureerd)
-- Opsommingen, checklist-taal, "ten eerste/ten tweede"
-- Emoji
-- GENERIEKE begroetingen die je ook zonder data zou kunnen schrijven
-- Eindigen met een open vraag die je ook ZONDER data zou stellen → vervang door een SPECIFIEKE vraag gebaseerd op de data (bv. "Heb je al even buiten gelopen?" of "Heb je Henk al gebeld?")
+VERBODEN (elke overtreding = output ongeldig):
+- "Hoe voel je je?" / "Hoe gaat het?" / "Hoe is het?" → NOOIT
+- Bronnen noemen ("ik lees", "ik zie dat", "in je dagboek")
+- Zones/kleuren noemen
+- Opsommingen, checklist-taal, emoji
+- GENERIEKE zinnen die je ook ZONDER de feiten zou schrijven
+- Informatie die NIET LETTERLIJK in de feiten hierboven staat
+- Herinterpreteren: als het feit zegt "afspraak over 9 dagen" mag je NIET zeggen "uitgesteld"
 
 TAALREGEL:
 - Grammaticaal correct Nederlands, geen emoji
-
-KRITIEK — GEEN HALLUCINATIE / GEEN HERINTERPRETERING:
-- Verwijs ALLEEN naar informatie die EXPLICIET in de persoonlijke data hierboven staat
-- Verzin NOOIT sessies, gesprekken of activiteiten die niet in de data staan
-- PARAFRASEER NIET: als de gebruiker zei "ik heb een afspraak over 9 dagen", zeg dan NIET "je hebt uitgesteld" of "je hebt besloten om uit te stellen" — gebruik de EIGEN WOORDEN van de gebruiker
-- Als VORIGE SESSIE data beschikbaar is, gebruik dan LETTERLIJK wat daar staat. Voeg geen interpretatie toe.
-- Bij twijfel: houd het concreet maar algemeen, zonder specifieke tijdsreferenties
 
 VOORBEELD (ter illustratie, niet kopiëren):
 ${getZoneExample(userName, zone)}`;

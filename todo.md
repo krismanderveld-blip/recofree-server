@@ -2014,3 +2014,13 @@
 - [x] Greeting prompt: vorige sessie is PRIMAIRE bron, GPT MOET er direct naar refereren
 - [x] Updated timestampDominance tests to reflect new continuity rule
 - [x] All 1391 tests pass, 119 greeting tests pass
+
+## Greeting Herontwerp + Timestamp Consistentie (3 fixes)
+- [x] FIX 1: Timestamp-consistentie — één bron per schrijfcyclus, logs.dat ≥ andere lagen
+- [x] FIX 2: Greeting herontwerp — engine bepaalt feiten/verband, model verwoordt alleen
+- [x] FIX 3: Blokkerende output-check met retry en fact-only fallback
+- [x] TEST 1: Dagboek "blij Melissa" + chat "Melissa ambetant warm weer" → greeting noemt beide mét toeschrijving, ZONDER verzonnen verband
+- [x] TEST 2: Timestamps logs.dat ≥ andere lagen na sessie-einde
+- [x] TEST 3: Crisis-zin → crisis-override, geen synthese
+- [x] TEST 4: Eén bron → warme greeting met dat ene feit
+- [x] TEST 5: Geen nieuwe data → geen crash
