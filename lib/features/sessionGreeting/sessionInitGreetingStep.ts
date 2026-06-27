@@ -129,24 +129,7 @@ export async function sessionInitGreetingStep(
   // Append language instruction to the prompt — this OVERRIDES any earlier language instructions
   systemPrompt += `\n\n=== CRITICAL LANGUAGE OVERRIDE ===\nIGNORE any earlier language instructions in this prompt.\n${langInstruction}\nThis is the FINAL and BINDING language rule. All output MUST be in this language.`;
 
-  // Call GPT via server endpoint
-  let rawGreeting: string;
-  try {
-    rawGreeting = await callSessionGreetingEndpoint(apiBaseUrl, systemPrompt, userName, clinicalModeActive, vspInsightContext);
-  } catch (error) {
-    console.warn('[SessionGreetingV3] GPT call failed, using fallback:', error);
-    // Fallback based on locale or detected language
-    const fallbackLang = userLocale ?? 'nl';
-    if (fallbackLang === 'fr') {
-      rawGreeting = `${userName}, content de te voir. De quoi aimerais-tu parler aujourd'hui?`;
-    } else if (fallbackLang === 'en') {
-      rawGreeting = `${userName}, good to see you. What would you like to talk about today?`;
-    } else {
-      rawGreeting = `${userName}, fijn dat je er bent. Waar wil je het vandaag over hebben?`;
-    }
-  }
-
-  // FIX 2+3: Extract facts and validate greeting against them
+  // Extract facts BEFORE GPT call so we can use contextual fallback on connection failure
   const factResult: GreetingFactExtractionResult = extractGreetingFacts(
     engineResult.selectedSources,
     userName,
@@ -154,10 +137,25 @@ export async function sessionInitGreetingStep(
     greetingStateDat?.vspZone,
   );
 
+  // Call GPT via server endpoint
+  let rawGreeting: string;
+  let connectionFailed = false;
+  try {
+    rawGreeting = await callSessionGreetingEndpoint(apiBaseUrl, systemPrompt, userName, clinicalModeActive, vspInsightContext);
+  } catch (error) {
+    connectionFailed = true;
+    console.warn('[SessionGreetingV3] GPT call failed, using contextual fallback:', error);
+    // Use deterministic fallback WITH context (mood, diary, session) instead of generic string
+    rawGreeting = factResult.fallbackGreeting;
+  }
+
   // FIX 3: Blocking validation with retry (max 2x) + deterministic fallback
+  // Skip validation if connection failed — fallback is already deterministic and safe
   const MAX_RETRIES = 2;
   let greeting = rawGreeting;
-  let validation = validateGreetingAgainstFacts(rawGreeting, factResult.facts);
+  let validation = connectionFailed
+    ? { valid: true, reason: 'connection_failed_deterministic_fallback' }
+    : validateGreetingAgainstFacts(rawGreeting, factResult.facts);
   let retryCount = 0;
 
   while (!validation.valid && retryCount < MAX_RETRIES) {

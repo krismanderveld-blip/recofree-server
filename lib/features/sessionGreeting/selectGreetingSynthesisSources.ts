@@ -44,24 +44,15 @@ export function selectGreetingSynthesisSources(
 
   if (eligible.length === 0) return [];
 
-  // CONTINUITY RULE: LAST_SESSION_SUMMARY is ALWAYS selected first when eligible.
-  // This ensures the greeting always references the previous session for continuity.
+  // DIVERSITY RULE: All sources compete on relevanceScore.
+  // LAST_SESSION_SUMMARY no longer gets forced first-pick — it competes via recency bonus.
+  // This prevents the same session content from being repeated every greeting.
   const selected: SelectedSynthesisSource[] = [];
   let positiveCount = 0;
   let negativeCount = 0;
 
-  const sessionSource = eligible.find(c => c.sourceType === 'LAST_SESSION_SUMMARY');
-  if (sessionSource) {
-    selected.push({
-      sourceType: sessionSource.sourceType,
-      safeAnchor: sessionSource.safeAnchor,
-      relevanceScore: sessionSource.relevanceScore,
-    });
-  }
-
-  // Sort remaining by relevance descending
-  const remaining = eligible.filter(c => c.sourceType !== 'LAST_SESSION_SUMMARY');
-  const sorted = [...remaining].sort((a, b) => b.relevanceScore - a.relevanceScore);
+  // Sort ALL eligible by relevance descending (recency bonus already applied)
+  const sorted = [...eligible].sort((a, b) => b.relevanceScore - a.relevanceScore);
 
   for (const candidate of sorted) {
     if (selected.length >= V3_MAX_SYNTHESIS_SOURCES) break;

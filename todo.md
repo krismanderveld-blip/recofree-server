@@ -2033,3 +2033,7 @@
 ## Bugs reported 2026-06-27 (batch 2)
 - [x] Session timeout/autosave: greeting context becomes stale after inactivity (no response for ~1 hour) causing raw/unprocessed text in GPT response when user finally replies — fixed: V3 greeting now calls resetSessionState()+clearSessionInitCache(), inactivity timer starts after greeting (guard changed from <=1 to <1), first follow-up forces SESSION_INIT to populate server cache
 - [x] Persona isolation leak: Kim received an Elias mention in chat (one-time occurrence) — fixed: server-side persona guard invalidates sessionCache when userType mismatches, client forces SESSION_INIT on first follow-up after V3 greeting to ensure correct persona data in cache
+
+## Bugs reported 2026-06-27 (batch 3)
+- [x] Greeting repeats same content every session ("de vermoeidheid door de warmte en de craving") — fixed: removed forced CONTINUITY RULE, all sources now compete on relevanceScore (recency bonus decides)
+- [x] Connection failure to server gives generic fallback ("fijn dat je er bent. Waar wil je het vandaag over hebben?") with no context — fixed: fact extraction moved before GPT call, connection failure now uses contextual deterministic fallback (mood/diary/session reference)

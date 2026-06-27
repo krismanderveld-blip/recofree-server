@@ -94,14 +94,14 @@ describe('V3.3 Timestamp Dominance', () => {
     const selected = selectGreetingSynthesisSources({ candidates, moodMetric });
     expect(selected.length).toBeGreaterThan(0);
 
-    // CONTINUITY RULE: LAST_SESSION_SUMMARY is always first when eligible,
-    // regardless of timestamp. Diary is second.
+    // DIVERSITY RULE: Most recent source wins via recency bonus.
+    // Diary is newest (T3) so it should rank highest.
     const diaryIdx = selected.findIndex(s => s.sourceType === 'RECENT_DIARY');
     const sessionIdx = selected.findIndex(s => s.sourceType === 'LAST_SESSION_SUMMARY');
 
-    expect(sessionIdx).toBe(0); // session is always first (continuity rule)
-    if (diaryIdx !== -1) {
-      expect(sessionIdx).toBeLessThan(diaryIdx); // session ranks above diary
+    expect(diaryIdx).toBeGreaterThanOrEqual(0); // diary is present
+    if (sessionIdx !== -1) {
+      expect(diaryIdx).toBeLessThan(sessionIdx); // diary ranks above session (it's newer)
     }
   });
 
@@ -159,14 +159,14 @@ describe('V3.3 Timestamp Dominance', () => {
     const sessionIdx = selected.findIndex(s => s.sourceType === 'LAST_SESSION_SUMMARY');
     const diaryIdx = selected.findIndex(s => s.sourceType === 'RECENT_DIARY');
 
-    // CONTINUITY RULE: LAST_SESSION_SUMMARY is always first when eligible.
-    // Mood is second (highest relevance among remaining).
-    expect(sessionIdx).toBe(0); // session is always first (continuity rule)
-    if (moodIdx !== -1) {
-      expect(sessionIdx).toBeLessThan(moodIdx);
+    // DIVERSITY RULE: Most recent source wins via recency bonus.
+    // Mood is newest (T3) so it should rank highest.
+    expect(moodIdx).toBeGreaterThanOrEqual(0); // mood is present
+    if (sessionIdx !== -1) {
+      expect(moodIdx).toBeLessThan(sessionIdx); // mood ranks above session (it's newer)
     }
     if (diaryIdx !== -1) {
-      expect(sessionIdx).toBeLessThan(diaryIdx);
+      expect(moodIdx).toBeLessThan(diaryIdx); // mood ranks above diary (it's newer)
     }
   });
 
