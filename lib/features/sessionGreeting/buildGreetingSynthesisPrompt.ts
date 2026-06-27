@@ -218,10 +218,12 @@ ${vspPersonalContext}
 === EINDE FEITEN ===
 
 KERNINSTRUCTIE:
-Je mag UITSLUITEND de bovenstaande feiten verbaliseren. Je mag NIETS toevoegen, interpreteren, of herformuleren.
+Je mag UITSLUITEND de bovenstaande feiten verbaliseren. Je mag NIETS toevoegen dat niet in de feiten staat.
+Formuleer ALTIJD in je EIGEN woorden — kopieer NOOIT de brontekst letterlijk.
+Je bent een vriend die terugverwijst naar wat jullie bespraken, niet een machine die tekst herhaalt.
 
 PRIORITEIT:
-1. Als er "VORIGE SESSIE" data staat: dat is je PRIMAIRE bron. Begin daar direct mee.
+1. Als er "VORIGE SESSIE" data staat: dat is je PRIMAIRE bron. Verwijs ernaar in je eigen woorden.
 2. Verwerk daarnaast maximaal ÉÉN ander feit.
 3. Eindig met een SPECIFIEKE vraag die direct voortkomt uit de feiten.
 
@@ -237,7 +239,8 @@ VERBODEN (elke overtreding = output ongeldig):
 - Zones/kleuren noemen
 - Opsommingen, checklist-taal, emoji
 - GENERIEKE zinnen die je ook ZONDER de feiten zou schrijven
-- Informatie die NIET LETTERLIJK in de feiten hierboven staat
+- Informatie die NIET in de feiten hierboven staat
+- LETTERLIJK KOPIËREN van de brontekst (bv. "ja, die hitte kan echt vervelend zijn") → NOOIT
 - Herinterpreteren: als het feit zegt "afspraak over 9 dagen" mag je NIET zeggen "uitgesteld"
 
 TAALREGEL:
@@ -343,6 +346,23 @@ function buildVspPersonalContext(vspSection: GreetingVspSectionSnapshot | undefi
 }
 
 /**
+ * Strips raw session labels and speaker prefixes from safeAnchor text.
+ * Prevents GPT from seeing (and copying) structural markers like "Laatste sessie: elias: ..."
+ */
+function stripRawLabels(text: string): string {
+  let cleaned = text;
+  // Strip session labels: "Laatste sessie: ", "Sessie daarvoor: ", "Eerdere sessie: ", "Vorige sessie: "
+  cleaned = cleaned.replace(/^(?:Laatste sessie|Sessie daarvoor|Eerdere sessie|Vorige sessie):\s*/gi, '');
+  cleaned = cleaned.replace(/\n(?:Laatste sessie|Sessie daarvoor|Eerdere sessie|Vorige sessie):\s*/gi, '\n');
+  // Strip speaker prefixes: "elias: ", "kim: ", "kris: ", "gebruiker: "
+  cleaned = cleaned.replace(/(?:^|\n)\s*(?:elias|kim|kris|gebruiker|user):\s*/gi, (m) => m.includes('\n') ? '\n' : '');
+  // Strip "Sessie-inhoud (N berichten):" prefix
+  cleaned = cleaned.replace(/^Sessie-inhoud \(\d+ berichten\):\s*/i, '');
+  cleaned = cleaned.replace(/^Sessie met \d+ berichten.*?:\s*/i, '');
+  return cleaned.replace(/\n{2,}/g, '\n').trim();
+}
+
+/**
  * V3.1: Builds a RICH narrative context from selected sources.
  * Each source outputs its FULL content — no truncation, no one-liners.
  * GPT needs the complete picture to create a truly personal greeting.
@@ -374,9 +394,12 @@ function buildContextBriefing(sources: SelectedSynthesisSource[], zone: string):
       case 'SCHEMA_ROTATION':
         parts.push(`TERUGKEREND SCHEMA/THEMA:\n  ${source.safeAnchor}`);
         break;
-      case 'LAST_SESSION_SUMMARY':
-        parts.push(`VORIGE SESSIE (LETTERLIJKE BERICHTEN — dit is wat de gebruiker ECHT zei, gebruik ALLEEN deze tekst als bron):\n  ${source.safeAnchor}`);
+      case 'LAST_SESSION_SUMMARY': {
+        // Strip labels and speaker prefixes from the raw safeAnchor before presenting to GPT
+        const cleanedAnchor = stripRawLabels(source.safeAnchor);
+        parts.push(`VORIGE SESSIE (inhoudelijke samenvatting — formuleer dit in je EIGEN woorden, kopieer NOOIT letterlijk):\n  ${cleanedAnchor}`);
         break;
+      }
       case 'RECURRING_PATTERN':
         parts.push(`TERUGKEREND PATROON (meerdere sessies):\n  ${source.safeAnchor}`);
         break;
@@ -429,7 +452,7 @@ function buildReturnAfterAbsenceInstruction(
 
   let contextBriefing = '';
   if (sessionSources.length > 0) {
-    contextBriefing += `\n=== VORIGE SESSIE-INHOUD (VERPLICHT TE GEBRUIKEN) ===\n${buildContextBriefing(sessionSources, zone)}\n=== EINDE SESSIE-INHOUD ===\nJe MOET minstens ÉÉN concreet element uit de vorige sessie-inhoud verwerken in je begroeting.\nDit is wat jullie ECHT besproken hebben — dit weegt zwaarder dan dagboek of mood.\n`;
+    contextBriefing += `\n=== VORIGE SESSIE-INHOUD (VERPLICHT TE GEBRUIKEN) ===\n${buildContextBriefing(sessionSources, zone)}\n=== EINDE SESSIE-INHOUD ===\nJe MOET minstens ÉÉN concreet element uit de vorige sessie-inhoud verwerken in je begroeting.\nFormuleer dit in je EIGEN woorden — kopieer NOOIT de brontekst letterlijk.\nDit is wat jullie ECHT besproken hebben — dit weegt zwaarder dan dagboek of mood.\n`;
   }
   if (otherSources.length > 0) {
     contextBriefing += `\nOVERIGE CONTEXT (optioneel te verweven als het natuurlijk past):\n${buildContextBriefing(otherSources, zone)}`;

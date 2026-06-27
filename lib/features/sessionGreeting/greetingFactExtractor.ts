@@ -127,16 +127,34 @@ function determineRelation(sourceType: string): GreetingFactRelation {
 
 /**
  * Extract the core factual content from a source's safeAnchor.
- * Strips meta-text, keeps only the user's own words or concrete data.
+ * Strips meta-labels, speaker prefixes, and structural markers — keeps only the user's own words or concrete data.
  */
 function extractCoreFact(sourceType: string, safeAnchor: string): string {
-  // For all sources, take the raw content (already sanitized by the candidate builder)
+  let cleaned = safeAnchor.trim();
+
+  // Strip session labels that buildGreetingSynthesisCandidates adds
+  // e.g. "Laatste sessie: ...", "Sessie daarvoor: ...", "Eerdere sessie: ...", "Vorige sessie: ..."
+  cleaned = cleaned.replace(/^(?:Laatste sessie|Sessie daarvoor|Eerdere sessie|Vorige sessie):\s*/gi, '');
+
+  // For multi-line anchors (multiple sessions), strip labels from each line
+  cleaned = cleaned.replace(/\n(?:Laatste sessie|Sessie daarvoor|Eerdere sessie|Vorige sessie):\s*/gi, '\n');
+
+  // Strip speaker prefixes like "elias: ", "kim: ", "kris: ", "gebruiker: "
+  // These appear in raw session narratives from logs.dat
+  cleaned = cleaned.replace(/(?:^|(?<=\n))\s*(?:elias|kim|kris|gebruiker|user):\s*/gi, '');
+
+  // Strip "Sessie-inhoud (N berichten):" prefix
+  cleaned = cleaned.replace(/^Sessie-inhoud \(\d+ berichten\):\s*/i, '');
+  cleaned = cleaned.replace(/^Sessie met \d+ berichten.*?:\s*/i, '');
+
+  // Collapse multiple whitespace/newlines
+  cleaned = cleaned.replace(/\n{2,}/g, '\n').trim();
+
   // Limit to 200 chars to keep facts concise
-  const trimmed = safeAnchor.trim();
-  if (trimmed.length > 200) {
-    return trimmed.slice(0, 197) + '...';
+  if (cleaned.length > 200) {
+    return cleaned.slice(0, 197) + '...';
   }
-  return trimmed;
+  return cleaned;
 }
 
 /**

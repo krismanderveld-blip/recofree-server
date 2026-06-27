@@ -11,6 +11,7 @@
 
 import type { MoodSnapshot, ModuleUsageRecord, RepeatingPattern } from '@/lib/ai/types';
 import type { EliasProjection, ProjectionEntry } from './projection';
+import { tStatic } from '@/lib/i18n';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -245,13 +246,13 @@ function computeSobriety(
 
   let displayCopy: string;
   if (soberDays === null) {
-    displayCopy = 'No sobriety date set yet.';
+    displayCopy = tStatic('progress_card.elias.sobriety.no_date');
   } else if (soberDays === 0) {
-    displayCopy = 'Today is day one. That counts.';
+    displayCopy = tStatic('progress_card.elias.sobriety.day_zero');
   } else if (soberDays === 1) {
-    displayCopy = '1 day. One step at a time.';
+    displayCopy = tStatic('progress_card.elias.sobriety.day_one');
   } else {
-    displayCopy = `${soberDays} days. This is factual, not a score.`;
+    displayCopy = tStatic('progress_card.elias.sobriety.days', { days: soberDays });
   }
 
   return { sobrietyDate, soberDays, relapseEventsInWindow7, relapseEventsInWindow30, displayCopy };
@@ -266,10 +267,10 @@ export function computeEliasProgress(input: EliasProgressInput): EliasProgressSu
   // Extract per-slider trend points from moodHistory
   const sliderKeys = ['craving', 'frustration', 'despondency', 'focus'] as const;
   const sliderLabels: Record<string, string> = {
-    craving: 'Craving',
-    frustration: 'Frustration',
-    despondency: 'Despondency',
-    focus: 'Focus',
+    craving: tStatic('mood.slider.craving.label'),
+    frustration: tStatic('mood.slider.frustration.label'),
+    despondency: tStatic('mood.slider.despondency.label'),
+    focus: tStatic('mood.slider.focus.label'),
   };
   const positiveKeys = new Set(['focus']);
 

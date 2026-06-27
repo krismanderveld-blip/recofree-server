@@ -10,6 +10,7 @@
  */
 
 import type { MoodSnapshot, ModuleUsageRecord, RepeatingPattern } from '@/lib/ai/types';
+import { tStatic } from '@/lib/i18n';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -213,10 +214,10 @@ export function computeKimProgress(input: KimProgressInput): KimProgressSummary 
   // Extract per-slider trend points from moodHistory
   const sliderKeys = ['stress', 'boundaryFatigue', 'emotionalBurden', 'selfCare'] as const;
   const sliderLabels: Record<string, string> = {
-    stress: 'Stress',
-    boundaryFatigue: 'Boundary fatigue',
-    emotionalBurden: 'Emotional burden',
-    selfCare: 'Self-care',
+    stress: tStatic('mood.slider.stress.label'),
+    boundaryFatigue: tStatic('mood.slider.boundaryFatigue.label'),
+    emotionalBurden: tStatic('mood.slider.emotionalBurden.label'),
+    selfCare: tStatic('mood.slider.selfCare.label'),
   };
   const positiveKeys = new Set(['selfCare']);
 
@@ -258,13 +259,13 @@ export function computeKimProgress(input: KimProgressInput): KimProgressSummary 
 
   let selfCareDisplayCopy: string;
   if (!selfCareTrend7 || selfCareTrend7.direction === 'INSUFFICIENT_DATA') {
-    selfCareDisplayCopy = 'Not enough self-care data yet.';
+    selfCareDisplayCopy = tStatic('progress_card.kim.self_care.no_data');
   } else if (selfCareTrend7.direction === 'UP') {
-    selfCareDisplayCopy = 'Self-care check-ins increased this week. This is not a score of goodness.';
+    selfCareDisplayCopy = tStatic('progress_card.kim.self_care.up');
   } else if (selfCareTrend7.direction === 'DOWN') {
-    selfCareDisplayCopy = 'Self-care was lower this week. This is a signal, not a judgment.';
+    selfCareDisplayCopy = tStatic('progress_card.kim.self_care.down');
   } else {
-    selfCareDisplayCopy = 'Self-care has been stable. This is a view of your load, not your worth.';
+    selfCareDisplayCopy = tStatic('progress_card.kim.self_care.stable');
   }
 
   const selfCare: KimProgressSummary['selfCare'] = {

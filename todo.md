@@ -2024,3 +2024,8 @@
 - [x] TEST 3: Crisis-zin → crisis-override, geen synthese
 - [x] TEST 4: Eén bron → warme greeting met dat ene feit
 - [x] TEST 5: Geen nieuwe data → geen crash
+
+## Bugs reported 2026-06-27
+- [x] Greeting copies raw logs.dat text literally instead of verbalizing facts (shows "laatste sessie: elias: ja, die hitte...") — fixed: stripRawLabels() in greetingFactExtractor + buildGreetingSynthesisPrompt, strengthened anti-copy instructions
+- [x] Missing i18n keys: mood.slider.craving.title → actually .label keys exist in all locales; progress tracker was using hardcoded English labels instead of tStatic() — fixed
+- [x] English text on voortgang/progress screen needs Dutch translation ("36 days. This is factual, not a score.", slider names, "isolation") — fixed: elias-progress-tracker + kim-progress-tracker now use tStatic() with proper i18n keys

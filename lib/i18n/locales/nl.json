@@ -765,5 +765,13 @@
   "milestone.kim.month_3.cta": "Draag niet alleen",
   "milestone.kim.month_6.title": "Zes maanden grenzen en zorg.",
   "milestone.kim.month_6.message": "Zes maanden aandacht voor je draagkracht verdient stille erkenning. Niet omdat je perfect zorgde, maar omdat je bleef meetellen.",
-  "milestone.kim.month_6.cta": "Bewaar je draagkracht"
+  "milestone.kim.month_6.cta": "Bewaar je draagkracht",
+  "progress_card.elias.sobriety.no_date": "Nog geen nuchterheiddatum ingesteld.",
+  "progress_card.elias.sobriety.day_zero": "Vandaag is dag één. Dat telt.",
+  "progress_card.elias.sobriety.day_one": "1 dag. Stap voor stap.",
+  "progress_card.elias.sobriety.days": "{{days}} dagen. Dit is feitelijk, geen score.",
+  "progress_card.kim.self_care.no_data": "Nog niet genoeg zelfzorggegevens.",
+  "progress_card.kim.self_care.up": "Zelfzorg-check-ins namen toe deze week. Dit is geen score van goedheid.",
+  "progress_card.kim.self_care.down": "Zelfzorg was lager deze week. Dit is een signaal, geen oordeel.",
+  "progress_card.kim.self_care.stable": "Zelfzorg is stabiel gebleven. Dit is een beeld van je draagkracht, niet je waarde."
 }

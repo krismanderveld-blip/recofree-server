@@ -765,5 +765,13 @@
   "milestone.kim.month_3.cta": "Don't carry alone",
   "milestone.kim.month_6.title": "Six months of boundaries and care.",
   "milestone.kim.month_6.message": "Six months of attention to your capacity deserves quiet recognition. Not because you cared perfectly, but because you kept counting too.",
-  "milestone.kim.month_6.cta": "Preserve your capacity"
+  "milestone.kim.month_6.cta": "Preserve your capacity",
+  "progress_card.elias.sobriety.no_date": "No sobriety date set yet.",
+  "progress_card.elias.sobriety.day_zero": "Today is day one. That counts.",
+  "progress_card.elias.sobriety.day_one": "1 day. One step at a time.",
+  "progress_card.elias.sobriety.days": "{{days}} days. This is factual, not a score.",
+  "progress_card.kim.self_care.no_data": "Not enough self-care data yet.",
+  "progress_card.kim.self_care.up": "Self-care check-ins increased this week. This is not a score of goodness.",
+  "progress_card.kim.self_care.down": "Self-care was lower this week. This is a signal, not a judgment.",
+  "progress_card.kim.self_care.stable": "Self-care has been stable. This is a view of your load, not your worth."
 }

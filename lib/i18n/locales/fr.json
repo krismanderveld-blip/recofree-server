@@ -765,5 +765,13 @@
   "milestone.kim.month_3.cta": "Ne porte pas seul(e)",
   "milestone.kim.month_6.title": "Six mois de limites et de soin.",
   "milestone.kim.month_6.message": "Six mois d'attention à ta capacité mérite une reconnaissance silencieuse. Pas parce que tu as pris soin parfaitement, mais parce que tu as continué à compter aussi.",
-  "milestone.kim.month_6.cta": "Préserve ta capacité"
+  "milestone.kim.month_6.cta": "Préserve ta capacité",
+  "progress_card.elias.sobriety.no_date": "Pas encore de date de sobriété définie.",
+  "progress_card.elias.sobriety.day_zero": "Aujourd'hui est le premier jour. Ça compte.",
+  "progress_card.elias.sobriety.day_one": "1 jour. Un pas à la fois.",
+  "progress_card.elias.sobriety.days": "{{days}} jours. C'est factuel, pas un score.",
+  "progress_card.kim.self_care.no_data": "Pas encore assez de données de soins personnels.",
+  "progress_card.kim.self_care.up": "Les check-ins de soins personnels ont augmenté cette semaine. Ce n'est pas un score de bonté.",
+  "progress_card.kim.self_care.down": "Les soins personnels étaient plus bas cette semaine. C'est un signal, pas un jugement.",
+  "progress_card.kim.self_care.stable": "Les soins personnels sont restés stables. C'est une vue de ta charge, pas de ta valeur."
 }
