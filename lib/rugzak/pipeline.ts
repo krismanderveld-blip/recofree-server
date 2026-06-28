@@ -2850,16 +2850,25 @@ export async function processMessage(
     country: options?.country,
   };
 
+  // ── CLIENT-SIDE GPT CALL (DEPRECATED — server-led is primary) ──
+  // This path only executes when the server-led block above fails (graceful degradation).
+  // In normal operation, processMessage returns early from the server-led block.
   let response: string;
   let tokenUsage: TokenUsage | undefined;
   let selectedModel: string | undefined;
-  try {
-    const result: AIResult = await provider.generateResponse(context);
-    response = result.response;
-    tokenUsage = result.tokenUsage;
-    selectedModel = result.selectedModel;
-  } catch (error) {
-    console.error('AI generation error:', error);
+  if (provider) {
+    try {
+      const result: AIResult = await provider.generateResponse(context);
+      response = result.response;
+      tokenUsage = result.tokenUsage;
+      selectedModel = result.selectedModel;
+    } catch (error) {
+      console.error('[Pipeline] CLIENT FALLBACK AI generation error:', error);
+      response = "I'm still here with you. Something went wrong on my end — please try again.";
+    }
+  } else {
+    // No provider available and server-led failed — hard fallback
+    console.error('[Pipeline] No AI provider available and server-led failed. Returning safe fallback.');
     response = "I'm still here with you. Something went wrong on my end — please try again.";
   }
 
