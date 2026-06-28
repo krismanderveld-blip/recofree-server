@@ -19,6 +19,14 @@ import { WEEKDAYS, WEEKDAY_TO_NUMBER, STORAGE_KEYS } from './types';
 import { NOTIFICATION_CHANNELS, MAX_SCHEDULED_NOTIFICATIONS } from './constants';
 import { DayStructureTimeAdapter } from './time-adapter';
 
+// ─── Sleep Notification Content ───────────────────────────────────────────────
+// NOTE: Notifications are scheduled ahead of time and stored as plain strings.
+// We cannot use i18n t() here because the notification fires when the app may be
+// backgrounded. We store the user's device language at schedule time.
+// For now, Dutch is the primary language.
+const SLEEP_NOTIFICATION_TITLE = 'Bedtijd 🌙';
+const SLEEP_NOTIFICATION_BODY = 'Vergeet je wekker niet te zetten!';
+
 // ─── Notification Index Persistence ─────────────────────────────────────────
 
 async function loadNotificationIndex(): Promise<NotificationIndex> {
@@ -88,11 +96,19 @@ function buildNotificationContent(
 ): Notifications.NotificationContentInput {
   // Title and body use block label — actual i18n is handled at display time
   // For notifications, we store the label directly (user-entered text)
+  let body: string;
+  if (block.kind === 'wake') {
+    body = `⏰ ${block.startTime}`;
+  } else if (block.kind === 'sleep') {
+    // Sleep notification reminds user to set their device alarm
+    body = SLEEP_NOTIFICATION_BODY;
+  } else {
+    body = `📋 ${block.startTime} - ${block.endTime}`;
+  }
+
   const content: Notifications.NotificationContentInput = {
-    title: block.label,
-    body: block.kind === 'wake'
-      ? `⏰ ${block.startTime}`
-      : `📋 ${block.startTime} - ${block.endTime}`,
+    title: block.kind === 'sleep' ? SLEEP_NOTIFICATION_TITLE : block.label,
+    body,
     data: {
       type: 'daystructure_block',
       blockId: block.id,

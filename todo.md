@@ -2107,3 +2107,5 @@
 - [x] Fase 7: i18n keys (nl/en/fr) + icon mappings (46 keys x 3 locales)
 - [x] Fase 8: Unit tests (34 tests passing)
 - [x] Fase 9: Final verification + checkpoint
+- [x] Audit weekday mapping: TimeAdapter ISO 1-7 ↔ expo-notifications US 1-7 conversion confirmed correct
+- [x] Sleep notification: added "Vergeet je wekker niet te zetten!" body text + "Bedtijd 🌙" title for sleep blocks
