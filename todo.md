@@ -2049,3 +2049,8 @@
 - [x] Checkpoint A: Dominant-state-selector stub (returns null until buffer ported)
 - [x] Checkpoint A: Shadow engine client (fire-and-forget comparison)
 - [x] Checkpoint A: Go/No-Go validation (1399 tests pass, server responds 1-2ms, crisis detection correct)
+- [x] Checkpoint B: ShortTermMemoryBuffer ported to server (session-stateful, in-memory cache)
+- [x] Checkpoint B: Loopblocker + mid-session re-eval ported to server
+- [x] Checkpoint B: Regulation layer (zone decay + overshoot) ported to server
+- [x] Checkpoint B: All wired into engine-process endpoint (full pipeline: analyze → buffer → decay → loopblock → regulate → re-eval)
+- [x] Checkpoint B: Go/No-Go validation (1398 pass, 1 pre-existing timeout, crisis detection correct, latency 5ms)

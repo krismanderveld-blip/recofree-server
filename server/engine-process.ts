@@ -6,23 +6,39 @@
  * Contract:
  *   - Client sends CanonicalEngineInput (validated by Zod schema).
  *   - Server processes through engine pipeline.
- *   - Server returns EngineProcessResponse (stateAnalysis + dominantState).
+ *   - Server returns EngineProcessResponse (stateAnalysis + buffer + regulation + dominantState).
  *   - Server does NOT persist any personal data (transit-only).
  *   - Server does NOT use Node Date for user-facing time (uses deviceTimeContext).
  *   - OpenAI calls use store:false.
  *
  * Session cache:
  *   - Server maintains an in-memory session cache (per sessionId).
- *   - Cache holds: buffer state, zone score, module history for the session.
+ *   - Cache holds: BufferState for the session.
  *   - Cache expires after 30 minutes of inactivity.
  *   - Cache is NEVER persisted to disk or database.
  */
 
 import { z } from "zod";
+import type { Express } from 'express';
 
 // ─── Import server-safe engine modules ───────────────────────────────
 import { analyzeStateServer } from './engine/state-analyzer-server';
 import type { StateAnalysis } from './engine/state-analyzer-server';
+import {
+  getSessionBuffer,
+  setSessionBuffer,
+  updateBufferServer,
+  cleanExpiredSessions,
+} from './engine/buffer-server';
+import type { BufferState, ZoneColor } from './engine/buffer-server';
+import { checkLoopblock, checkMidSessionReEval, applyLoopblockToBuffer } from './engine/loopblocker-server';
+import {
+  applyRegulation,
+  applyDecayServer,
+  applyDecayToBufferServer,
+  requiresPreRegulation,
+} from './engine/regulation-server';
+import type { RegulationResult, DecayResult } from './engine/regulation-server';
 
 // ─── Zod Schemas ──────────────────────────────────────────────────────
 
@@ -115,71 +131,73 @@ export const engineProcessInputSchema = z.object({
   previousZoneScore: z.number(),
   messageCount: z.number(),
   deviceTimeContext: deviceTimeContextSchema,
+  /** Last assistant message for anti-repetition detection */
+  previousAssistantMessage: z.string().nullable().optional(),
 });
 
 export type EngineProcessInput = z.infer<typeof engineProcessInputSchema>;
 
-// ─── Session Cache ────────────────────────────────────────────────────
-
-interface SessionCacheEntry {
-  sessionId: string;
-  lastAccess: number;
-  /** Buffer state (zone, emotion, triggers, etc.) */
-  zoneScore: number;
-  zoneColor: string;
-  emotionalState: string;
-  usedModules: string[];
-  messageCount: number;
-  /** Dominant state from last turn */
-  lastDominantModule: string | null;
-}
-
-const SESSION_CACHE = new Map<string, SessionCacheEntry>();
-const SESSION_CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutes
-
-/**
- * Get or create a session cache entry.
- */
-export function getEngineSessionCache(sessionId: string): SessionCacheEntry {
-  const existing = SESSION_CACHE.get(sessionId);
-  if (existing) {
-    existing.lastAccess = Date.now();
-    return existing;
-  }
-  const entry: SessionCacheEntry = {
-    sessionId,
-    lastAccess: Date.now(),
-    zoneScore: 0,
-    zoneColor: 'GREEN',
-    emotionalState: 'stable',
-    usedModules: [],
-    messageCount: 0,
-    lastDominantModule: null,
-  };
-  SESSION_CACHE.set(sessionId, entry);
-  return entry;
-}
-
-/**
- * Evict expired session cache entries.
- */
-export function evictExpiredSessions(): void {
-  const now = Date.now();
-  for (const [id, entry] of SESSION_CACHE) {
-    if (now - entry.lastAccess > SESSION_CACHE_TTL_MS) {
-      SESSION_CACHE.delete(id);
-    }
-  }
-}
-
+// ─── Session Cache (TTL eviction) ────────────────────────────────────
 // Run eviction every 5 minutes
-setInterval(evictExpiredSessions, 5 * 60 * 1000);
+setInterval(cleanExpiredSessions, 5 * 60 * 1000);
 
-// ─── Helper: Reconstruct input for analyzeStateServer ───────────────
+// ─── Engine Process Response ─────────────────────────────────────────
+
+export interface EngineProcessResponse {
+  /** State analysis result */
+  stateAnalysis: StateAnalysis;
+  /** Buffer state after processing */
+  bufferState: {
+    currentZoneScore: number;
+    currentZoneColor: ZoneColor;
+    currentEmotion: string;
+    currentIntent: string;
+    currentTriggerGuess: string;
+    messageCount: number;
+    usedModules: string[];
+    intensityTrajectory: string;
+    responseDirection: string;
+  };
+  /** Loopblock result */
+  loopblock: {
+    isBlocked: boolean;
+    blockedModule: string | null;
+    reason: string | null;
+  };
+  /** Regulation result */
+  regulation: {
+    action: string;
+    intervention: string | null;
+    requiresRegulationTone: boolean;
+    gptInstruction: string | null;
+    zone: ZoneColor;
+    effectiveDepth: string;
+    wasSoftened: boolean;
+    wasSkipped: boolean;
+  };
+  /** Decay result */
+  decay: {
+    newZoneScore: number;
+    newZoneColor: ZoneColor;
+    decayApplied: number;
+    activeDecayTypes: string[];
+    reason: string;
+  };
+  /** Mid-session re-eval result */
+  midSessionReEval: {
+    shouldReEval: boolean;
+    reason: string | null;
+  };
+  /** Server engine version for shadow comparison */
+  engineVersion: string;
+  /** Processing latency in ms */
+  latencyMs: number;
+}
+
+// ─── Helper: Build input for state analyzer ──────────────────────────
 function buildAnalysisInput(input: EngineProcessInput) {
   const userType = input.userType as 'elias' | 'kim';
   const summary = input.userDatSummary;
-
   const moodSliders = (input.moodSliders || {}) as any;
 
   const moodHistory = (summary?.moodHistory || []).map(m => ({
@@ -204,78 +222,150 @@ function buildAnalysisInput(input: EngineProcessInput) {
   };
 }
 
-// ─── Engine Process Handler ───────────────────────────────────────────
-
-export interface EngineProcessResponse {
-  /** State analysis result (Phase 3) */
-  stateAnalysis: {
-    riskLevel: string;
-    emotionalState: string;
-    moodTrend: string;
-    activeTriggers: string[];
-    triggerContextActive: boolean;
-    patternAccumulation: number;
-    tone: string;
-    pacing: string;
-    suggestionIntensity: number;
-    crisisMonitoring: boolean;
-    crisisThresholdLowered: boolean;
-    priorityModules: string[];
-    stateSummary: string;
-  };
-  /** Dominant state (Phase 4 — null until buffer is ported) */
-  dominantState: null;
-  /** Server engine version for shadow comparison */
-  engineVersion: string;
-  /** Processing latency in ms */
-  latencyMs: number;
-}
+// ─── Engine Process Handler ──────────────────────────────────────────
 
 /**
- * Process an engine request.
- *
- * Phase progression:
- *   - Checkpoint A: state-analyzer (active) + dominant-state-selector (stub — needs buffer)
- *   - Checkpoint B: buffer + loopblocker + regulation + crisis
- *   - Checkpoint C: signal/VSP/past-reference/GPT
- *   - Checkpoint D: state patch roundtrip
+ * Process an engine request through the full pipeline:
+ *   1. State Analysis (risk, emotion, triggers)
+ *   2. Buffer Update (session state, zone, trajectory)
+ *   3. Decay (time, response, overshoot correction)
+ *   4. Loopblock (module repetition prevention)
+ *   5. Regulation (zone → action → micro-intervention)
+ *   6. Mid-session re-eval (should we re-evaluate module?)
  */
 export async function processEngineRequest(input: EngineProcessInput): Promise<EngineProcessResponse> {
   const startMs = Date.now();
 
-  // Derive sessionId from deviceTimeContext (stable per session)
+  // Derive sessionId from user + session start time (stable per session)
   const sessionId = `${input.userName}_${input.deviceTimeContext.sessionStartedAtDeviceIso}`;
-  const cache = getEngineSessionCache(sessionId);
-  cache.messageCount = input.messageCount;
-  cache.usedModules = input.usedModules;
 
   // ── Step 1: State Analysis ──────────────────────────────────────
   const analysisInput = buildAnalysisInput(input);
   const stateAnalysis: StateAnalysis = analyzeStateServer(analysisInput, input.message);
 
-  // Update cache with analysis results
-  cache.emotionalState = stateAnalysis.emotionalState;
-  cache.zoneScore = stateAnalysis.suggestionIntensity; // proxy for zone score
+  // ── Step 2: Buffer Update ───────────────────────────────────────
+  // Get or create the session buffer
+  let buffer = getSessionBuffer(sessionId);
 
-  // ── Step 2: Dominant State Selection ────────────────────────────
-  // selectDominantState requires a full BufferState (session-stateful).
-  // Buffer porting is Phase 5-6. For now, return null.
-  // The shadow comparison will mark this as "not_compared" for dominantState.
-  const dominantState = null;
+  // Build conversation history as ChatMessage[]
+  const allMessages = input.conversationHistory.map((m, i) => ({
+    id: `msg-${i}`,
+    role: m.role as 'user' | 'assistant',
+    content: m.content,
+    timestamp: m.timestamp || input.deviceTimeContext.deviceNowIso,
+  }));
+
+  // Update buffer with new message data
+  buffer = updateBufferServer(
+    buffer,
+    input.message,
+    allMessages,
+    input.moodSliders as any,
+    input.userType as any,
+  );
+
+  // Save updated buffer back to session cache
+  setSessionBuffer(sessionId, buffer);
+
+  // ── Step 3: Decay ──────────────────────────────────────────────
+  const decayResult: DecayResult = applyDecayServer(buffer);
+  buffer = applyDecayToBufferServer(buffer, decayResult);
+
+  // ── Step 4: Loopblock ──────────────────────────────────────────
+  const proposedModule = input.usedModules[input.usedModules.length - 1] || 'default';
+  const loopblockResult = checkLoopblock(buffer, proposedModule, input.usedModules);
+  if (!loopblockResult.isBlocked) {
+    buffer = applyLoopblockToBuffer(buffer, proposedModule);
+    setSessionBuffer(sessionId, buffer);
+  }
+
+  // ── Step 5: Regulation ─────────────────────────────────────────
+  const regulationResult: RegulationResult = applyRegulation(
+    buffer.currentZoneColor,
+    (input.guidanceDepth as 'light' | 'normal' | 'deep') || 'normal',
+    input.previousAssistantMessage || null,
+  );
+
+  // ── Step 6: Mid-session Re-eval ────────────────────────────────
+  const previousZoneColor = (input.previousZoneScore <= 20 ? 'GREEN' :
+    input.previousZoneScore <= 40 ? 'YELLOW' :
+    input.previousZoneScore <= 60 ? 'ORANGE' :
+    input.previousZoneScore <= 80 ? 'RED' : 'PURPLE') as ZoneColor;
+  const midSessionReEval = checkMidSessionReEval(previousZoneColor, buffer.currentZoneColor, buffer);
 
   const latencyMs = Date.now() - startMs;
 
   return {
     stateAnalysis,
-    dominantState,
-    engineVersion: 'server-v0.2.0-checkpoint-a',
+    bufferState: {
+      currentZoneScore: buffer.currentZoneScore,
+      currentZoneColor: buffer.currentZoneColor,
+      currentEmotion: buffer.currentEmotion,
+      currentIntent: buffer.currentIntent,
+      currentTriggerGuess: buffer.currentTriggerGuess,
+      messageCount: buffer.messageCount,
+      usedModules: buffer.usedModules,
+      intensityTrajectory: buffer.intensityTrajectory,
+      responseDirection: buffer.responseDirection,
+    },
+    loopblock: {
+      isBlocked: loopblockResult.isBlocked,
+      blockedModule: loopblockResult.blockedModules[0] || null,
+      reason: loopblockResult.reason,
+    },
+    regulation: {
+      action: regulationResult.action,
+      intervention: regulationResult.intervention,
+      requiresRegulationTone: regulationResult.requiresRegulationTone,
+      gptInstruction: regulationResult.gptInstruction,
+      zone: regulationResult.zone,
+      effectiveDepth: regulationResult.effectiveDepth,
+      wasSoftened: regulationResult.wasSoftened,
+      wasSkipped: regulationResult.wasSkipped,
+    },
+    decay: {
+      newZoneScore: decayResult.newZoneScore,
+      newZoneColor: decayResult.newZoneColor,
+      decayApplied: decayResult.decayApplied,
+      activeDecayTypes: decayResult.activeDecayTypes,
+      reason: decayResult.reason,
+    },
+    midSessionReEval: {
+      shouldReEval: midSessionReEval.reEvalTriggered,
+      reason: midSessionReEval.clearedModules.length > 0
+        ? `Cleared modules: ${midSessionReEval.clearedModules.join(', ')}`
+        : null,
+    },
+    engineVersion: 'server-v0.3.0-checkpoint-b',
     latencyMs,
   };
 }
 
-// ─── Route Registration ─────────────────────────────────────────────
+// ─── Helpers ─────────────────────────────────────────────────────────
 
-import type { Express } from 'express';
+function mapRiskToIntent(riskLevel: string): 'crisis' | 'venting' | 'neutral' {
+  if (riskLevel === 'critical' || riskLevel === 'high') return 'crisis';
+  if (riskLevel === 'moderate') return 'venting';
+  return 'neutral';
+}
+
+function computeZoneDelta(analysis: StateAnalysis): number {
+  // Map risk level to zone score delta
+  switch (analysis.riskLevel) {
+    case 'critical': return 40;
+    case 'high': return 25;
+    case 'moderate': return 10;
+    case 'low': return 0;
+    default: return 0;
+  }
+}
+
+function extractTopic(message: string): string {
+  // Simple topic extraction: first 50 chars, trimmed
+  return message.slice(0, 50).trim();
+}
+
+// ─── Route Registration ─────────────────────────────────────────────
 
 export function registerEngineProcessRoute(app: Express): void {
   app.post('/api/engine-process', async (req, res) => {
