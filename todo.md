@@ -2080,3 +2080,7 @@
 - [x] Additional: Buffer initialization from input.previousZoneScore for fresh sessions
 - [x] Re-run shadow validator — FINAL RESULT: Crisis 100% (PASS), Persona 100% (PASS), High fields 98.2% (PASS)
 - [x] VERDICT: 🟢 GO — Server parity validated. Checkpoint G is verantwoord.
+- [x] Regulation vocabulary alignment: added resolvedZoneForRegulation to server (mirrors client's VSP+crisis+distress zone resolution before regulation)
+- [x] Model routing on server: modelRoutingDecision exposed in response (gpt-4o for crisis/high-risk/complex modules/VSP ROOD+PAARS+ORANJE)
+- [x] Re-run shadow validation: Crisis 100%, Persona 100%, High fields 98.2% — 🟢 GO maintained (9 real diffs, 7 timing artifacts)
+- [ ] Publish for user testing

@@ -248,6 +248,8 @@ export interface EngineProcessResponse {
   vspInsight: VspInsightServerResult | null;
   /** Past-reference search result */
   pastReference: PastReferenceSearchResult | null;
+  /** Model routing decision (exposed even without GPT response for shadow comparison) */
+  modelRoutingDecision: string;
   /** Server engine version for shadow comparison */
   engineVersion: string;
   /** Processing latency in ms */
@@ -361,9 +363,58 @@ export async function processEngineRequest(input: EngineProcessInput): Promise<E
     setSessionBuffer(sessionId, buffer);
   }
 
-  // ── Step 5: Regulation ─────────────────────────────────────────
+  // ── Step 5: Zone Resolution + Regulation ──────────────────────────
+  // Mirror client's resolvedZoneForRegulation: MAX(VSP severity, computed zone severity)
+  // Client uses Elias decision layer which resolves zone from VSP + crisis + distress/resilience.
+  const resolvedZoneForRegulation: ZoneColor = (() => {
+    const bufferZone = buffer.currentZoneColor;
+    if (input.userType === 'elias') {
+      // Step A: Compute Elias zone from crisis + distress/resilience
+      const sliders = input.moodSliders as Record<string, number | null | undefined>;
+      const craving = Number(sliders?.craving ?? 0);
+      const frustration = Number(sliders?.frustration ?? 0);
+      const despondency = Number(sliders?.despondency ?? 0);
+      const focus = Number(sliders?.focus ?? 5);
+      const distressScore = (craving + frustration + despondency) / 3;
+      const resilienceScore = focus;
+      const crisisLevel = stateAnalysis.riskLevel === 'critical' ? 2 : stateAnalysis.riskLevel === 'high' ? 1 : 0;
+      // determineEliasZoneLevel logic (Dutch zone labels)
+      let computedZoneDutch: string;
+      if (crisisLevel >= 2) computedZoneDutch = 'ROOD';
+      else if (distressScore >= 7.5 && resilienceScore <= 3) computedZoneDutch = 'ROOD';
+      else if (crisisLevel === 1) computedZoneDutch = 'ORANJE';
+      else if (distressScore >= 5.5) computedZoneDutch = 'ORANJE';
+      else if (distressScore >= 3.5) computedZoneDutch = 'GEEL';
+      else if (input.userDatSummary?.stageOfChange === 'precontemplation' && distressScore < 3.5) computedZoneDutch = 'GEEL';
+      else if (distressScore < 3.5 && resilienceScore >= 5) computedZoneDutch = 'GROEN';
+      else computedZoneDutch = 'LICHTGROEN';
+      // Step B: Resolve with VSP (MAX severity)
+      const COMPUTED_SEVERITY: Record<string, number> = { GROEN: 1, LICHTGROEN: 1, GEEL: 2, ORANJE: 3, ROOD: 4 };
+      const VSP_SEVERITY: Record<string, number> = { GROEN: 1, GEEL: 2, ORANJE: 3, ROOD: 4, PAARS: 5 };
+      const SEVERITY_TO_ZONE: Record<number, ZoneColor> = { 1: 'GREEN', 2: 'YELLOW', 3: 'ORANGE', 4: 'RED', 5: 'PURPLE' };
+      const computedSeverity = COMPUTED_SEVERITY[computedZoneDutch] ?? 1;
+      const vspLevel = input.vspSection?.level ?? null;
+      if (vspLevel === 'PAARS') return 'PURPLE'; // Always crisis override
+      const vspSeverity = vspLevel ? (VSP_SEVERITY[vspLevel] ?? 1) : 0;
+      const finalSeverity = Math.max(computedSeverity, vspSeverity);
+      const resolvedZone = SEVERITY_TO_ZONE[finalSeverity] ?? bufferZone;
+      // Take MAX of resolved zone and buffer zone (never downgrade from buffer)
+      const ZONE_ORDER: ZoneColor[] = ['GREEN', 'YELLOW', 'ORANGE', 'RED', 'PURPLE'];
+      const bufferIdx = ZONE_ORDER.indexOf(bufferZone);
+      const resolvedIdx = ZONE_ORDER.indexOf(resolvedZone);
+      return resolvedIdx >= bufferIdx ? resolvedZone : bufferZone;
+    }
+    if (input.userType === 'kim') {
+      // Kim crisis: eigenRegie < 10 → PURPLE
+      const eigenRegie = Number((input.moodSliders as any)?.eigenRegie ?? 50);
+      if (eigenRegie < 10) return 'PURPLE';
+      // Otherwise use buffer zone (Kim doesn't have VSP resolution)
+      return bufferZone;
+    }
+    return bufferZone;
+  })();
   const regulationResult: RegulationResult = applyRegulation(
-    buffer.currentZoneColor,
+    resolvedZoneForRegulation,
     (input.guidanceDepth as 'light' | 'normal' | 'deep') || 'normal',
     input.previousAssistantMessage || null,
   );
@@ -650,7 +701,21 @@ export async function processEngineRequest(input: EngineProcessInput): Promise<E
     signalEngine: signalResult,
     vspInsight: vspInsightResult,
     pastReference: pastReferenceResult,
-    engineVersion: 'server-v0.6.0-checkpoint-e',
+    // Model routing decision (exposed even without GPT response for shadow comparison)
+    modelRoutingDecision: (() => {
+      const crisisLevel = stateAnalysis.riskLevel === 'critical' ? 3 : stateAnalysis.riskLevel === 'high' ? 2 : 0;
+      const riskScore = crisisLevel >= 2 ? 90 : crisisLevel >= 1 ? 60 : 5;
+      const vspLevel = input.vspSection?.level ?? null;
+      const dominantModuleForRouting = (loopblockResult.isBlocked ? 'default' : dominantState.dominantModule).toLowerCase();
+      const HIGH_COMPLEXITY = ['e03', 'e05', 'e06', 'e07', 'e08', 'e10', 'e11', 'e12', 'e13', 'm01', 'm02', 'm03', 'm05', 'm06', 'm07', 'm08', 'm09', 'm10', 'm11', 'm12', 'm13'];
+      if (input.isSessionStart) return 'gpt-4o';
+      if (crisisLevel > 0 || riskScore >= 30) return 'gpt-4o';
+      if (vspLevel === 'ROOD' || vspLevel === 'PAARS' || vspLevel === 'ORANJE') return 'gpt-4o';
+      if (signalResult?.relapseIntent?.detected) return 'gpt-4o';
+      if (HIGH_COMPLEXITY.some(m => dominantModuleForRouting.includes(m))) return 'gpt-4o';
+      return 'gpt-4o-mini';
+    })(),
+    engineVersion: 'server-v0.7.0-shadow-validated',
     latencyMs,
     gptResponse,
   };

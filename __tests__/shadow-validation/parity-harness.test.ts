@@ -238,7 +238,7 @@ function normalizeServerOutput(serverResult: any, userType: string): NormalizedO
     regulationZone: serverResult.regulation?.zone ?? 'GREEN',
     regulationWasSoftened: serverResult.regulation?.wasSoftened ?? false,
     regulationWasSkipped: serverResult.regulation?.wasSkipped ?? false,
-    selectedModel: serverResult.gptResponse?.selectedModel ?? 'gpt-4o-mini',
+    selectedModel: serverResult.modelRoutingDecision ?? serverResult.gptResponse?.selectedModel ?? 'gpt-4o-mini',
     persona: userType,
   };
 }
