@@ -16,6 +16,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createEncryptedRecoFreeExport } from '../services/exportDataService';
 import type { ExportImportStores } from '../services/exportImportStores.types';
 import { useTranslation } from '@/lib/i18n';
+import { LocalDeviceTimeService } from "@/lib/core/time";
 
 const LAST_EXPORT_KEY = '@recofree_last_export_timestamp';
 
@@ -49,7 +50,7 @@ export function ExportDataSection({ stores, appVersion }: ExportDataSectionProps
     setSuccess(false);
 
     try {
-      const nowIso = new Date().toISOString();
+      const nowIso = LocalDeviceTimeService.now().utcIso;
       const result = await createEncryptedRecoFreeExport({
         password,
         nowIso,

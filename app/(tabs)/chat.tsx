@@ -54,6 +54,7 @@ import { ChatErrorBoundary } from '@/components/chat-error-boundary';
 import { colors as dc, spacing, radius, typography, shadows } from '@/constants/design';
 import { triggerBackpackAnalysisIfNeeded } from '@/lib/backpack-analysis/schema-mode-trigger';
 import { useTranslation } from '@/lib/i18n';
+import { LocalDeviceTimeService } from "@/lib/core/time";
 
 const BACKPACK_KEY = '@recofree_backpack';
 const USERDAT_KEY = '@recofree_userdat';
@@ -271,7 +272,7 @@ function ChatScreenInner() {
         state.backpack &&
         state.userDat
       ) {
-        backgroundStartTimeRef.current = Date.now();
+        backgroundStartTimeRef.current = LocalDeviceTimeService.now().epochMs;
       }
       // Returning to foreground: check elapsed time
       if (
@@ -285,11 +286,11 @@ function ChatScreenInner() {
           startTime &&
           !autoEndTriggeredRef.current &&
           sessionPhase === 'active' &&
-          (Date.now() - startTime) >= INACTIVITY_AUTO_CLOSE_MS
+          (LocalDeviceTimeService.now().epochMs - startTime) >= INACTIVITY_AUTO_CLOSE_MS
         ) {
           autoEndTriggeredRef.current = true;
           console.log('[Chat] Background auto-close triggered (10+ min in background) — running full endSession chain');
-          logDebugEvent('session_auto_end', { trigger: 'app_background_10min', messageCount: messages.length, elapsedMs: Date.now() - startTime });
+          logDebugEvent('session_auto_end', { trigger: 'app_background_10min', messageCount: messages.length, elapsedMs: LocalDeviceTimeService.now().epochMs - startTime });
 
           if (handleEndConversationRef.current) {
             await handleEndConversationRef.current();
@@ -504,7 +505,7 @@ function ChatScreenInner() {
       let triggerModule93 = false;
       if (userDat.lastSessionDate && userDat.totalSessions > 0) {
         const lastDate = new Date(userDat.lastSessionDate).getTime();
-        const now = Date.now();
+        const now = LocalDeviceTimeService.now().epochMs;
         const daysSinceLastSession = (now - lastDate) / (1000 * 60 * 60 * 24);
         if (daysSinceLastSession >= 3) {
           triggerModule93 = true;
@@ -619,7 +620,7 @@ function ChatScreenInner() {
             userDat,
             diaryEntries,
             apiBaseUrl: apiUrl,
-            timezone: 'Europe/Amsterdam',
+            timezone: LocalDeviceTimeService.getCurrentTimeZone(),
             clinicalModeActive: userDat?.clinicalModeActive ?? false,
             lastSessionSummary,
             allSessions,
@@ -645,10 +646,10 @@ function ChatScreenInner() {
         console.log('[Chat] V3 greeting used — pipeline state reset, first follow-up will be SESSION_INIT');
 
         const greetingMsg: ChatMessage = {
-          id: `msg_greeting_${Date.now()}`,
+          id: `msg_greeting_${LocalDeviceTimeService.now().epochMs}`,
           role: 'assistant',
           content: greetingText,
-          timestamp: new Date().toISOString(),
+          timestamp: LocalDeviceTimeService.now().utcIso,
           clinicalInfo: {
             module: 'SESSION_GREETING_V3',
             zone: 'SESSION_START',
@@ -659,7 +660,7 @@ function ChatScreenInner() {
         // Append to chatHistory and persist
         userDat.chatHistory = [...(userDat.chatHistory || []), greetingMsg];
         userDat.totalSessions = (userDat.totalSessions ?? 0) + 1;
-        userDat.lastSessionDate = new Date().toISOString().slice(0, 10);
+        userDat.lastSessionDate = LocalDeviceTimeService.now().utcIso.slice(0, 10);
         await writeEncrypted(USERDAT_KEY, JSON.stringify(userDat));
         setMessages([greetingMsg]);
         logDebugEvent('session_start', {
@@ -690,7 +691,7 @@ function ChatScreenInner() {
         const persona = (state.userType === 'elias' ? 'elias' : 'kim') as 'elias' | 'kim';
         const apiBase = getApiBaseUrl();
         const lifecycleManager = getSessionLifecycleManager();
-        const sessionId = `session_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+        const sessionId = `session_${LocalDeviceTimeService.now().epochMs}_${Math.random().toString(36).slice(2, 8)}`;
         const localUserId = backpack.naam ?? 'anonymous';
         await lifecycleManager.startSession(persona, sessionId, localUserId, apiBase);
         console.log(`[Chat] Memory lifecycle buffer initialized: ${sessionId}`);
@@ -705,10 +706,10 @@ function ChatScreenInner() {
       console.error('Greeting error:', error);
       // Show the error to the user so we can debug on device
       const errorMsg: ChatMessage = {
-        id: `msg_err_${Date.now()}`,
+        id: `msg_err_${LocalDeviceTimeService.now().epochMs}`,
         role: 'assistant',
         content: `[DEBUG] Greeting failed: ${(error as Error)?.message ?? 'Unknown error'}`,
-        timestamp: new Date().toISOString(),
+        timestamp: LocalDeviceTimeService.now().utcIso,
       };
       setMessages((prev) => [...prev, errorMsg]);
     } finally {
@@ -727,10 +728,10 @@ function ChatScreenInner() {
     Keyboard.dismiss();
 
     const tempUserMsg: ChatMessage = {
-      id: `msg_${Date.now()}`,
+      id: `msg_${LocalDeviceTimeService.now().epochMs}`,
       role: 'user',
       content: rawText,
-      timestamp: new Date().toISOString(),
+      timestamp: LocalDeviceTimeService.now().utcIso,
     };
     setMessages((prev) => [...prev, tempUserMsg]);
     setIsTyping(true);
@@ -813,7 +814,7 @@ function ChatScreenInner() {
         const memoryInput: PipelineResultForMemory = {
           userMessage: processedText,
           persona,
-          sessionId: `session_${Date.now()}`,
+          sessionId: `session_${LocalDeviceTimeService.now().epochMs}`,
           localUserId: 'local_user',
           candidateSignals: result.candidateSignals ? {
             fears: (result.candidateSignals.fears || []).map((f: any) => ({ label: f.keyword || f.label || f, confidence: f.confidence ?? 0.5 })),
@@ -869,7 +870,7 @@ function ChatScreenInner() {
             turnId,
             role: 'user',
             text: processedText,
-            timestampIso: new Date().toISOString(),
+            timestampIso: LocalDeviceTimeService.now().utcIso,
           });
           const updatedBuffer = stores.sessionBufferStore.getBuffer();
           if (updatedBuffer) {
@@ -877,7 +878,7 @@ function ChatScreenInner() {
               turnId,
               role: 'assistant',
               text: (result.response ?? '').slice(0, 200),
-              timestampIso: new Date().toISOString(),
+              timestampIso: LocalDeviceTimeService.now().utcIso,
             });
           }
           stores.sessionBufferStore.appendTurnSnapshot(stores.sessionBufferStore.getBuffer()!, {
@@ -967,7 +968,7 @@ function ChatScreenInner() {
         `Stack trace:`,
         stackLines,
         `━━━━━━━━━━━━━━━━━━━━━━━━`,
-        `Timestamp: ${new Date().toISOString()}`,
+        `Timestamp: ${LocalDeviceTimeService.now().utcIso}`,
         `Session phase: ${sessionPhase}`,
         `Has backpack: ${!!state.backpack}`,
         `Has userDat: ${!!state.userDat}`,
@@ -976,10 +977,10 @@ function ChatScreenInner() {
         `en stuur het naar de developer.`,
       ].join('\n');
       const errorMsg: ChatMessage = {
-        id: `msg_${Date.now() + 1}`,
+        id: `msg_${LocalDeviceTimeService.now().epochMs + 1}`,
         role: 'assistant',
         content: crashReport,
-        timestamp: new Date().toISOString(),
+        timestamp: LocalDeviceTimeService.now().utcIso,
       };
       setMessages((prev) => [...prev, errorMsg]);
     } finally {
@@ -991,10 +992,10 @@ function ChatScreenInner() {
     if (!state.backpack || !state.userDat || sessionPhase !== 'active') return;
     setSessionPhase('ending');
     const analyzingMsg: ChatMessage = {
-      id: `msg_end_${Date.now()}`,
+      id: `msg_end_${LocalDeviceTimeService.now().epochMs}`,
       role: 'assistant',
       content: `Ik ga alles wat je gedeeld hebt analyseren. Blijf nog even — ik laat je weten wanneer je veilig kunt afsluiten.`,
-      timestamp: new Date().toISOString(),
+      timestamp: LocalDeviceTimeService.now().utcIso,
     };
     setMessages((prev) => [...prev, analyzingMsg]);
     try {
@@ -1014,10 +1015,10 @@ function ChatScreenInner() {
       await writeEncrypted(USERDAT_KEY, JSON.stringify(result.updatedUserDat));
       await endSessionWithUserDat(result.updatedUserDat);
       const confirmationMsg: ChatMessage = {
-        id: `msg_confirm_${Date.now()}`,
+        id: `msg_confirm_${LocalDeviceTimeService.now().epochMs}`,
         role: 'assistant',
         content: result.farewell + '\n\nAlles is opgeslagen. Je sessie is veilig bewaard. Je kunt de app nu sluiten of teruggaan naar het startscherm.',
-        timestamp: new Date().toISOString(),
+        timestamp: LocalDeviceTimeService.now().utcIso,
       };
       setMessages((prev) => [...prev, confirmationMsg]);
       setSessionPhase('completed');
@@ -1086,10 +1087,10 @@ function ChatScreenInner() {
     } catch (error) {
       console.error('End session error:', error);
       const fallbackMsg: ChatMessage = {
-        id: `msg_fallback_${Date.now()}`,
+        id: `msg_fallback_${LocalDeviceTimeService.now().epochMs}`,
         role: 'assistant',
         content: `${userName}, je sessie is opgeslagen. Er ging iets mis tijdens de analyse, maar je gesprek is veilig bewaard. Je kunt de app nu sluiten.`,
-        timestamp: new Date().toISOString(),
+        timestamp: LocalDeviceTimeService.now().utcIso,
       };
       setMessages((prev) => [...prev, fallbackMsg]);
       setSessionPhase('completed');
@@ -1270,7 +1271,7 @@ function ChatScreenInner() {
             </Pressable>
             <Pressable
               onPress={() => {
-                const now = Date.now();
+                const now = LocalDeviceTimeService.now().epochMs;
                 const newTaps = migrationTaps.filter(t => now - t < 3000);
                 newTaps.push(now);
                 setMigrationTaps(newTaps);

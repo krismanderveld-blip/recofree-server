@@ -19,6 +19,7 @@ import {
 import { colors as dc, spacing, radius, typography, shadows, cardStyles, buttonStyles } from '@/constants/design';
 import { HomeButton } from '@/components/home-button';
 import { useTranslation } from '@/lib/i18n';
+import { LocalDeviceTimeService } from "@/lib/core/time";
 
 // ─── Constants ──────────────────────────────────────────────────
 
@@ -75,7 +76,7 @@ function distressToZone(score: number): ZoneKey {
 }
 
 function recentSnapshots(history: MoodSnapshot[], days: number): MoodSnapshot[] {
-  const cutoff = Date.now() - days * 24 * 60 * 60 * 1000;
+  const cutoff = LocalDeviceTimeService.now().epochMs - days * 24 * 60 * 60 * 1000;
   return history.filter((s) => new Date(s.timestamp).getTime() >= cutoff);
 }
 
@@ -93,7 +94,7 @@ function computeTrend(scores: number[], t: (key: string, params?: any) => string
 
 function formatTimestamp(ts: string, t: (key: string, params?: any) => string): string {
   const d = new Date(ts);
-  const now = new Date();
+  const now = new Date(LocalDeviceTimeService.now().epochMs);
   const diffMs = now.getTime() - d.getTime();
   const diffHours = diffMs / (1000 * 60 * 60);
   const diffDays = diffMs / (1000 * 60 * 60 * 24);
@@ -140,7 +141,7 @@ export default function MoodScreen() {
 
   // Mood Trend Chart data — local only, persona-separated
   const moodTrendData = useMemo(() => {
-    const nowIso = new Date().toISOString();
+    const nowIso = LocalDeviceTimeService.now().utcIso;
     if (userType === 'elias') {
       const stateDat = {
         persona: 'elias' as const,

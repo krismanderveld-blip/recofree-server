@@ -32,6 +32,7 @@
 
 import { ELIAS_DEFAULT_STAGE } from '../engine/elias/stage-of-change';
 import type { VspLevel } from '../engine/elias/vsp';
+import { LocalDeviceTimeService } from "@/lib/core/time";
 
 /** User type determined at intake - IMMUTABLE after assignment */
 export type UserType = 'elias' | 'kim';
@@ -826,9 +827,9 @@ export function createNewBackpack(intake: IntakeData): Backpack {
       startEmotion: intake.startEmotion,
       urgency: intake.urgency,
       initialContext: intake.initialContext,
-      intakeDate: new Date().toISOString(),
+      intakeDate: LocalDeviceTimeService.now().utcIso,
     },
-    createdAt: new Date().toISOString(),
+    createdAt: LocalDeviceTimeService.now().utcIso,
   };
 }
 

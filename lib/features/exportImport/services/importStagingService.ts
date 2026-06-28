@@ -12,6 +12,7 @@ import type { RecoFreeExportPlaintextPayload, RecoFreePersonaExportBundle } from
 import type { ImportStagingPackage, ImportValidationResult } from '../types/importResult.types';
 import type { ExportImportStores } from './exportImportStores.types';
 import { isSupportedPayloadVersion } from '../version/exportImportVersion';
+import { LocalDeviceTimeService } from '@/lib/core/time';
 
 // ─── Build Staging Package ───────────────────────────────────────────────────
 
@@ -201,12 +202,12 @@ function buildLogsDatFromSessionAnalyses(userDat: unknown | null | undefined, pe
   if (!analyses || !Array.isArray(analyses) || analyses.length === 0) return null;
 
   const sessions = analyses.map((a, i) => ({
-    summaryId: `imported_${persona}_${i}_${Date.now()}`,
+    summaryId: `imported_${persona}_${i}_${LocalDeviceTimeService.now().epochMs}`,
     sessionId: `legacy_imported_${i}`,
     persona,
-    startedAt: (a.date as string) || new Date().toISOString(),
-    endedAt: (a.date as string) || new Date().toISOString(),
-    createdAt: new Date().toISOString(),
+    startedAt: (a.date as string) || LocalDeviceTimeService.now().utcIso,
+    endedAt: (a.date as string) || LocalDeviceTimeService.now().utcIso,
+    createdAt: LocalDeviceTimeService.now().utcIso,
     summaryModel: "migration",
     summarySchemaVersion: "session_summary.v1",
     compressedNarrative: buildImportNarrative(a),
@@ -225,8 +226,8 @@ function buildLogsDatFromSessionAnalyses(userDat: unknown | null | undefined, pe
   return {
     persona,
     schemaVersion: "logs.dat.v1",
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
+    createdAt: LocalDeviceTimeService.now().utcIso,
+    updatedAt: LocalDeviceTimeService.now().utcIso,
     sessions,
   };
 }

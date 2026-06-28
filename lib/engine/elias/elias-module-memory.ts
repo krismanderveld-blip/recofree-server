@@ -21,6 +21,7 @@ import {
   createDefaultModuleMemoryState,
   buildModuleMemoryStoragePatch,
 } from '../shared/module-memory-cross-session';
+import { LocalDeviceTimeService } from "@/lib/core/time";
 
 // ─── Elias Config ────────────────────────────────────────────────────────────
 
@@ -109,7 +110,7 @@ export function recordEliasModuleActivation(args: {
     moduleId: args.moduleId,
     persona: 'elias',
     sessionId: args.sessionId,
-    activatedAt: new Date().toISOString(),
+    activatedAt: LocalDeviceTimeService.now().utcIso,
     dominanceLevel: args.dominanceLevel,
     responseMode: args.responseMode,
     confidenceScore: args.confidenceScore,

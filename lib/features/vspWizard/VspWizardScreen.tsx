@@ -24,6 +24,7 @@ import type { VspStructuredPlan, VspZoneEntry, VspTrigger } from '@/lib/ai/types
 import { DEFAULT_VSP_STRUCTURED_PLAN } from '@/lib/ai/types';
 import { useColors } from '@/hooks/use-colors';
 import { pickAndParseVspDocument } from './vsp-document-upload-client';
+import { LocalDeviceTimeService } from "@/lib/core/time";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -185,7 +186,7 @@ export function VspWizardScreen({ existingPlan, onSave, onCancel }: VspWizardScr
     try {
       const finalPlan: VspStructuredPlan = {
         ...plan,
-        lastUpdated: new Date().toISOString(),
+        lastUpdated: LocalDeviceTimeService.now().utcIso,
       };
       await onSave(finalPlan);
       setStep('done');

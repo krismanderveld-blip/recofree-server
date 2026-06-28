@@ -8,6 +8,7 @@
  */
 
 import type { DGTSignalId, DGTEvidence } from './dbt-types';
+import { LocalDeviceTimeService } from "@/lib/core/time";
 
 // ─── Marker definitions per signal ─────────────────────────────────────────
 
@@ -251,7 +252,7 @@ const HIGH_PRIORITY_SIGNALS: DGTSignalId[] = [
 export function detectDGTSignals(userMessage: string): DGTDetectionResult[] {
   const lower = userMessage.toLowerCase();
   const results: DGTDetectionResult[] = [];
-  const now = new Date().toISOString();
+  const now = LocalDeviceTimeService.now().utcIso;
 
   for (const [signalId, markers] of Object.entries(MARKERS) as [DGTSignalId, readonly string[]][]) {
     const matchedMarkers: string[] = [];

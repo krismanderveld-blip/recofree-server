@@ -11,6 +11,7 @@ import {
   generateRandomBytes,
 } from "./secureKeyStore";
 import { gcm } from '@noble/ciphers/aes.js';
+import { LocalDeviceTimeService } from "@/lib/core/time";
 
 /**
  * Encrypt a JSON-serializable value with AES-256-GCM.
@@ -37,7 +38,7 @@ export async function encryptJsonAes256Gcm<T>(
   const ciphertext = ciphertextWithTag.slice(0, ciphertextWithTag.length - 16);
   const authTag = ciphertextWithTag.slice(ciphertextWithTag.length - 16);
 
-  const now = new Date().toISOString();
+  const now = LocalDeviceTimeService.now().utcIso;
 
   return {
     schemaVersion: "logs.dat.encrypted.v2",

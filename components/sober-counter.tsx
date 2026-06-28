@@ -4,6 +4,7 @@ import { useUser } from '@/lib/user-context';
 import { useColors } from '@/hooks/use-colors';
 import * as Haptics from 'expo-haptics';
 import { useTranslation } from '@/lib/i18n';
+import { LocalDeviceTimeService } from "@/lib/core/time";
 
 /**
  * SoberCounter — Elias only, optional.
@@ -24,7 +25,7 @@ export function SoberCounter() {
   const sobrietyDate = userDat?.sobrietyDate ?? null;
 
   const handleOpenPicker = useCallback(() => {
-    setDateInput(sobrietyDate ?? new Date().toISOString().slice(0, 10));
+    setDateInput(sobrietyDate ?? LocalDeviceTimeService.now().utcIso.slice(0, 10));
     setShowDatePicker(true);
     if (Platform.OS !== 'web') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -40,7 +41,7 @@ export function SoberCounter() {
     if (isNaN(parsed.getTime())) return;
 
     // Cannot be in the future
-    if (parsed.getTime() > Date.now()) return;
+    if (parsed.getTime() > LocalDeviceTimeService.now().epochMs) return;
 
     await updateSobrietyDate(dateInput);
     setShowDatePicker(false);
@@ -81,7 +82,7 @@ export function SoberCounter() {
 
   // Calculate days
   const days = Math.floor(
-    (Date.now() - new Date(sobrietyDate).getTime()) / 86400000
+    (LocalDeviceTimeService.now().epochMs - new Date(sobrietyDate).getTime()) / 86400000
   );
 
   // Format message

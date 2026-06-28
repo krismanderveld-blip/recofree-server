@@ -21,6 +21,7 @@ import type { StateAnalysis } from './state-analyzer';
 import { kimBackpackSliderScore } from '../engine/kim/slider-interpretation';
 import { KIM_MODULE_ALIGNMENTS } from '../engine/kim/module-catalog';
 import { eliasBackpackSliderScore, ELIAS_MODULE_ALIGNMENTS } from '../engine/elias/module-catalog';
+import { LocalDeviceTimeService } from "@/lib/core/time";
 
 // ─── Output Types ──────────────────────────────────────────────
 
@@ -121,7 +122,7 @@ export function resetTriggerDecay(): void {
  * - Decay runs BEFORE Top-N selection
  */
 function computeTriggerDecay(triggerId: string, hasMatch: boolean): number {
-  const now = Date.now();
+  const now = LocalDeviceTimeService.now().epochMs;
   let state = triggerDecayMap.get(triggerId);
 
   if (!state) {

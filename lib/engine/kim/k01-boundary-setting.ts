@@ -26,6 +26,7 @@
 // TYPES
 // ════════════════════════════════════════════════════════════════════════════════
 
+import { LocalDeviceTimeService } from "@/lib/core/time";
 export type K01BoundaryState =
   | 'boundary_fatigue'
   | 'guilt_after_boundary'
@@ -502,7 +503,7 @@ export function updateK01Progress(
   if (interventionType === 'boundary_practice') updated.boundaryPracticeCount++;
 
   updated.lastInterventionType = interventionType;
-  updated.lastSessionDate = new Date().toISOString();
+  updated.lastSessionDate = LocalDeviceTimeService.now().utcIso;
 
   // Trend calculation
   const totalSessions = updated.sessionsWithBoundaryFatigue + updated.sessionsWithGuiltAfterBoundary +

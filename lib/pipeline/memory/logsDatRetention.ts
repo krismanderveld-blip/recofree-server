@@ -10,6 +10,7 @@
  * recent therapeutic context for the greeting engine and per-message pipeline.
  */
 import type { SessionLogSummary, LogsDatPlaintext } from "@/lib/types/memory/logsDat.types";
+import { LocalDeviceTimeService } from "@/lib/core/time";
 
 const THREE_MONTHS_MS = 90 * 24 * 60 * 60 * 1000;
 const SIX_MONTHS_MS = 180 * 24 * 60 * 60 * 1000;
@@ -29,7 +30,7 @@ export function applyLogsDatRetention(sessions: SessionLogSummary[]): {
   sessions: SessionLogSummary[];
   result: RetentionResult;
 } {
-  const now = Date.now();
+  const now = LocalDeviceTimeService.now().epochMs;
   const result: RetentionResult = {
     originalCount: sessions.length,
     keptFull: 0,
@@ -97,6 +98,6 @@ function compressSession(session: SessionLogSummary): SessionLogSummary {
 export function applyRetentionToLogsDat(logsDat: LogsDatPlaintext): RetentionResult {
   const { sessions, result } = applyLogsDatRetention(logsDat.sessions);
   logsDat.sessions = sessions;
-  logsDat.updatedAt = new Date().toISOString();
+  logsDat.updatedAt = LocalDeviceTimeService.now().utcIso;
   return result;
 }

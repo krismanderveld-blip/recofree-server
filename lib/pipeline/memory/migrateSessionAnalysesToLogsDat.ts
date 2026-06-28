@@ -8,6 +8,7 @@ import type { RecoFreePersona } from "@/lib/types/memory/memoryCore.types";
 import type { SessionLogSummary } from "@/lib/types/memory/logsDat.types";
 import { createLogsDatStore } from "@/lib/storage/memory/logsDatStore";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { LocalDeviceTimeService } from "@/lib/core/time";
 
 const MIGRATION_DONE_KEY = "@recofree_migration_sessionAnalyses_to_logsDat_done";
 
@@ -86,7 +87,7 @@ export async function migrateSessionAnalysesToLogsDat(
   let skipped = 0;
 
   for (const analysis of sessionAnalyses) {
-    const date = analysis.date || new Date().toISOString();
+    const date = analysis.date || LocalDeviceTimeService.now().utcIso;
     const dateKey = date.slice(0, 10);
 
     // Skip if a session for this date already exists in logs.dat
@@ -96,12 +97,12 @@ export async function migrateSessionAnalysesToLogsDat(
     }
 
     const summary: SessionLogSummary = {
-      summaryId: `migrated_${analysis.sessionNumber || migrated}_${Date.now()}`,
+      summaryId: `migrated_${analysis.sessionNumber || migrated}_${LocalDeviceTimeService.now().epochMs}`,
       sessionId: `legacy_session_${analysis.sessionNumber || migrated}`,
       persona,
       startedAt: date,
       endedAt: date,
-      createdAt: new Date().toISOString(),
+      createdAt: LocalDeviceTimeService.now().utcIso,
       summaryModel: "gpt-4o-mini",
       summarySchemaVersion: "session_summary.v1",
       compressedNarrative: buildMigrationNarrative(analysis),
@@ -136,7 +137,7 @@ export async function migrateSessionAnalysesToLogsDat(
 
   // Sort by date
   logsDat.sessions.sort((a, b) => new Date(a.startedAt).getTime() - new Date(b.startedAt).getTime());
-  logsDat.updatedAt = new Date().toISOString();
+  logsDat.updatedAt = LocalDeviceTimeService.now().utcIso;
 
   // Save
   await store.save(persona, logsDat);

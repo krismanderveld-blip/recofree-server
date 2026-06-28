@@ -7,6 +7,7 @@
  */
 
 import type { CBTSignalId, CBTEvidence } from './cgt-types';
+import { LocalDeviceTimeService } from "@/lib/core/time";
 
 // ─── Marker definitions per signal (Section 19) ─────────────────────────────
 
@@ -178,7 +179,7 @@ export interface CBTDetectionResult {
 export function detectCBTSignals(userMessage: string): CBTDetectionResult[] {
   const lower = userMessage.toLowerCase();
   const results: CBTDetectionResult[] = [];
-  const now = new Date().toISOString();
+  const now = LocalDeviceTimeService.now().utcIso;
 
   for (const [signalId, markers] of Object.entries(MARKERS) as [CBTSignalId, readonly string[]][]) {
     const matchedMarkers: string[] = [];

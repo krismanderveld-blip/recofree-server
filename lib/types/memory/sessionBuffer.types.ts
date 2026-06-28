@@ -11,6 +11,7 @@ import type {
   DetectedSchemaTendency,
   DetectedModeTendency,
 } from "./memoryCore.types";
+import { LocalDeviceTimeService } from "@/lib/core/time";
 
 export interface SessionBuffer {
   schemaVersion: "buffer.v1";
@@ -66,7 +67,7 @@ export function createEmptySessionBuffer(
   persona: RecoFreePersona,
   sessionId: string
 ): SessionBuffer {
-  const now = new Date().toISOString();
+  const now = LocalDeviceTimeService.now().utcIso;
   return {
     schemaVersion: "buffer.v1",
     persona,

@@ -4,10 +4,11 @@
 
 import type { KimPatternPromptPayload, KimPatternMemoryUseDirective } from "@/src/types/kimPatternsSupport.types";
 import type { PaalK01DetectionResult } from "./paalK01.detector";
+import { LocalDeviceTimeService } from "@/lib/core/time";
 
 export function buildPaalK01PromptPayload(detection: PaalK01DetectionResult): KimPatternPromptPayload {
   const memoryDirective: KimPatternMemoryUseDirective = {
-    directiveId: `paal-k01-directive-${Date.now()}`,
+    directiveId: `paal-k01-directive-${LocalDeviceTimeService.now().epochMs}`,
     appliesToModuleId: "PAAL-K01",
     hardDirective: true,
     requiredToUseOnEveryRelevantTurn: true,

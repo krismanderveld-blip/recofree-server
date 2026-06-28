@@ -25,6 +25,7 @@ import {
 } from '../hooks/useExportImportStores';
 import { logImportDiag } from '@/lib/debug/import-diagnostics';
 import { importStorageKey } from '@/lib/crypto/storage-encryption';
+import { LocalDeviceTimeService } from "@/lib/core/time";
 
 // ─── Public API ──────────────────────────────────────────────────────────────
 
@@ -35,7 +36,7 @@ export async function importEncryptedRecoFreeBackup(input: {
   stores: ExportImportStores;
 }): Promise<ImportRecoFreeResult> {
   const { envelopeJson, password, currentAppVersion, stores } = input;
-  const nowIso = new Date().toISOString();
+  const nowIso = LocalDeviceTimeService.now().utcIso;
 
   // 1. Parse envelope
   let envelope: RecoFreeEncryptedExportEnvelope;

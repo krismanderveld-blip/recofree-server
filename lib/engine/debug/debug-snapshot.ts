@@ -14,6 +14,7 @@ import { UserDat } from "../shared/userdat-filter";
 import { SessionImpact } from "../shared/session-impact";
 import { FailsafeState } from "../shared/failsafe";
 import type { EliasDecision } from "../elias/decision-layer";
+import { LocalDeviceTimeService } from "@/lib/core/time";
 
 /** Debug snapshot metadata. */
 export interface DebugSnapshotMeta {
@@ -71,7 +72,7 @@ export function createDebugSnapshot(
     failsafe,
     eliasDecision: eliasDecision ?? null,
     meta: Object.freeze({
-      createdAt: Date.now(),
+      createdAt: LocalDeviceTimeService.now().epochMs,
     }),
   });
 }

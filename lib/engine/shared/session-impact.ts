@@ -11,6 +11,7 @@
  */
 
 import { UserDat } from "./userdat-filter";
+import { LocalDeviceTimeService } from "@/lib/core/time";
 
 /** Trigger impact: presence and count only. */
 export interface TriggerImpact {
@@ -59,7 +60,7 @@ export function createSessionImpact(userDat: UserDat): SessionImpact {
       entryCount: userDat.backpackEntryCount,
     }),
     meta: Object.freeze({
-      createdAt: Date.now(),
+      createdAt: LocalDeviceTimeService.now().epochMs,
     }),
   });
 }

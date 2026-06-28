@@ -21,6 +21,7 @@ import { detectMI02 } from '@/modules/elias/mi02/mi02-detector';
 import { buildMI02PromptPayload } from '@/modules/elias/mi02/mi02-prompt';
 import type { TERV01RuntimeInput } from '@/modules/elias/terv01/terv01-types';
 import type { MI02RuntimeInput } from '@/modules/elias/mi02/mi02-types';
+import { LocalDeviceTimeService } from "@/lib/core/time";
 
 // ─── Types ──────────────────────────────────────────────────────────────────────
 
@@ -128,7 +129,7 @@ export function runEliasAdvancedModulesP3(input: EliasAdvancedP3Input): EliasAdv
     feelingKnown: input.feelingKnown,
     behaviorKnown: input.behaviorKnown,
     usePointKnown: input.usePointKnown,
-    timestampIso: new Date().toISOString(),
+    timestampIso: LocalDeviceTimeService.now().utcIso,
   };
 
   const terv01Result = detectTERV01(terv01Input);
@@ -171,7 +172,7 @@ export function runEliasAdvancedModulesP3(input: EliasAdvancedP3Input): EliasAdv
     readinessScore: input.readinessScore,
     sessionMixedSignalsCount: input.sessionMixedSignalsCount,
     mi01PreviouslyActive: input.mi01PreviouslyActive,
-    timestampIso: new Date().toISOString(),
+    timestampIso: LocalDeviceTimeService.now().utcIso,
   };
 
   const mi02Result = detectMI02(mi02Input);

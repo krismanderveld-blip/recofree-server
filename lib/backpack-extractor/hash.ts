@@ -8,6 +8,7 @@
 
 import type { BackpackHashState, BackpackSectionHash } from './types';
 import type { Backpack } from '../ai/types';
+import { LocalDeviceTimeService } from "@/lib/core/time";
 
 // ─── DJB2 Hash ─────────────────────────────────────────────────
 
@@ -31,7 +32,7 @@ function djb2Hash(str: string): string {
  * Compute hashes for all backpack sections (Elias life-phase + Kim backpack + intake).
  */
 export function computeBackpackHash(backpack: Backpack): BackpackHashState {
-  const now = new Date().toISOString();
+  const now = LocalDeviceTimeService.now().utcIso;
   const sectionHashes: BackpackSectionHash[] = [];
 
   // Elias life-phase sections

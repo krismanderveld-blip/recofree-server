@@ -13,6 +13,7 @@
  */
 
 import type { ShadowSignal, ShadowSource, RelapseRisk } from './sw01_shadow_types';
+import { LocalDeviceTimeService } from "@/lib/core/time";
 
 // ─── Verbal Markers (English) ────────────────────────────────────────────────
 
@@ -228,7 +229,7 @@ export function buildShadowSignal(
   const primaryMarker = detection.verbalMatches[0] || detection.behaviouralMatches[0] || 'pattern_detected';
 
   return {
-    id: `sw01_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+    id: `sw01_${LocalDeviceTimeService.now().epochMs}_${Math.random().toString(36).slice(2, 8)}`,
     source,
     marker: primaryMarker,
     confidence: detection.confidence,

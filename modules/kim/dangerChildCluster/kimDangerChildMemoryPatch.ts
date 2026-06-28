@@ -10,13 +10,14 @@ import type {
   KimCluster2ProjectionPatch,
   KimCluster2LogEntryPatch,
 } from './kimDangerChildCluster.types';
+import { LocalDeviceTimeService } from "@/lib/core/time";
 
 export function buildDangerChildMemoryPatch(
   detection: KimCluster2DetectionResult,
   sessionId: string,
   turnId: string,
 ): KimCluster2MemoryPatch {
-  const now = new Date().toISOString();
+  const now = LocalDeviceTimeService.now().utcIso;
 
   const triggerPatterns: KimCluster2TriggerPatternPatch[] = [];
   const projections: KimCluster2ProjectionPatch[] = [];
@@ -25,7 +26,7 @@ export function buildDangerChildMemoryPatch(
   if (detection.dangerCategories) {
     for (const category of detection.dangerCategories) {
       triggerPatterns.push({
-        triggerId: `${detection.moduleId}_${category}_${Date.now()}`,
+        triggerId: `${detection.moduleId}_${category}_${LocalDeviceTimeService.now().epochMs}`,
         label: category,
         normalizedLabel: category.toLowerCase().replace(/_/g, ' '),
         category,
@@ -41,7 +42,7 @@ export function buildDangerChildMemoryPatch(
   if (detection.childSafetyCategories) {
     for (const category of detection.childSafetyCategories) {
       triggerPatterns.push({
-        triggerId: `${detection.moduleId}_${category}_${Date.now()}`,
+        triggerId: `${detection.moduleId}_${category}_${LocalDeviceTimeService.now().epochMs}`,
         label: category,
         normalizedLabel: category.toLowerCase().replace(/_/g, ' '),
         category,
@@ -56,7 +57,7 @@ export function buildDangerChildMemoryPatch(
   // Build projections (fears/concerns)
   if (detection.moduleId === 'GEVAAR-K01') {
     projections.push({
-      projectionId: `gevaar_concern_${Date.now()}`,
+      projectionId: `gevaar_concern_${LocalDeviceTimeService.now().epochMs}`,
       kind: 'fear',
       label: `Danger situation: ${detection.dangerCategories?.join(', ') || 'unknown'}`,
       normalizedLabel: `danger: ${detection.dangerCategories?.join(', ') || 'unknown'}`,
@@ -69,7 +70,7 @@ export function buildDangerChildMemoryPatch(
 
   if (detection.moduleId === 'KIND-K01') {
     projections.push({
-      projectionId: `kind_concern_${Date.now()}`,
+      projectionId: `kind_concern_${LocalDeviceTimeService.now().epochMs}`,
       kind: 'concern',
       label: `Child safety: ${detection.childSafetyCategories?.join(', ') || 'unknown'}`,
       normalizedLabel: `child safety: ${detection.childSafetyCategories?.join(', ') || 'unknown'}`,
@@ -82,7 +83,7 @@ export function buildDangerChildMemoryPatch(
 
   // Build log entry
   const logEntry: KimCluster2LogEntryPatch = {
-    logId: `${detection.moduleId}_log_${Date.now()}`,
+    logId: `${detection.moduleId}_log_${LocalDeviceTimeService.now().epochMs}`,
     sessionId,
     turnId,
     timestampIso: now,

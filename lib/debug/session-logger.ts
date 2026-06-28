@@ -5,6 +5,7 @@
  * All data is in-memory only and resets on session end or app restart.
  */
 
+import { LocalDeviceTimeService } from "@/lib/core/time";
 export type DebugEventType =
   | 'session_start'
   | 'session_end'
@@ -70,7 +71,7 @@ export function logDebugEvent(type: DebugEventType, data: Record<string, unknown
   eventCounter++;
   events.push({
     id: eventCounter,
-    timestamp: new Date().toISOString(),
+    timestamp: LocalDeviceTimeService.now().utcIso,
     type,
     data,
   });

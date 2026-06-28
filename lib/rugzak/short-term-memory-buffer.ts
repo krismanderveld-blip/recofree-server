@@ -28,6 +28,7 @@ import type { ChatMessage, MoodSliders, UserType } from '../ai/types';
 import { detectKimTrigger } from '../engine/kim/relational-signals';
 import { kimDistressScore } from '../engine/kim/slider-interpretation';
 import { eliasDistressScore } from '../engine/elias/slider-interpretation';
+import { LocalDeviceTimeService } from "@/lib/core/time";
 
 // ─── Types ────────────────────────────────────────────────────
 
@@ -115,7 +116,7 @@ export function scoreToZone(score: number): ZoneColor {
 
 export function createBuffer(): BufferState {
   return {
-    sessionId: `session_${Date.now()}`,
+    sessionId: `session_${LocalDeviceTimeService.now().epochMs}`,
     recentMessages: [],
     currentEmotion: 'neutral',
     currentTriggerGuess: '',
@@ -417,7 +418,7 @@ function updateTemporaryRepeats(
   text: string
 ): TemporaryRepeat[] {
   const lower = text.toLowerCase();
-  const now = new Date().toISOString();
+  const now = LocalDeviceTimeService.now().utcIso;
 
   // Extract significant words/phrases to track
   const significantPatterns = [

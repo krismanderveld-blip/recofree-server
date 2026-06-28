@@ -4,6 +4,7 @@
  */
 
 import type { KSC01DetectionResult, KSC01StorageState } from './ksc01-types';
+import { LocalDeviceTimeService } from "@/lib/core/time";
 
 export function buildKSC01StoragePatch(
   detection: KSC01DetectionResult,
@@ -15,7 +16,7 @@ export function buildKSC01StoragePatch(
 
   return {
     ksc01Activated: true,
-    lastActivatedAt: new Date().toISOString(),
+    lastActivatedAt: LocalDeviceTimeService.now().utcIso,
     activationCount: prev.activationCount + 1,
     dominantTrigger: detection.triggers.find(t => t !== 'NONE') || 'NONE',
     dominantMode: detection.recommendedMode,

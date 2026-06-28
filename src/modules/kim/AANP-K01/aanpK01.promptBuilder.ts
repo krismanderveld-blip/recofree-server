@@ -4,10 +4,11 @@
 
 import type { KimPatternPromptPayload, KimPatternMemoryUseDirective } from "@/src/types/kimPatternsSupport.types";
 import type { AanpK01DetectionResult } from "./aanpK01.detector";
+import { LocalDeviceTimeService } from "@/lib/core/time";
 
 export function buildAanpK01PromptPayload(detection: AanpK01DetectionResult): KimPatternPromptPayload {
   const memoryDirective: KimPatternMemoryUseDirective = {
-    directiveId: `aanp-k01-directive-${Date.now()}`,
+    directiveId: `aanp-k01-directive-${LocalDeviceTimeService.now().epochMs}`,
     appliesToModuleId: "AANP-K01",
     hardDirective: true,
     requiredToUseOnEveryRelevantTurn: true,

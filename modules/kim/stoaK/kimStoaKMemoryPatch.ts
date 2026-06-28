@@ -9,6 +9,7 @@ import type {
   KimStoaMemoryPatch,
   KimStoaTheme,
 } from './kimStoaK.types';
+import { LocalDeviceTimeService } from "@/lib/core/time";
 
 function buildTriggerPattern(themes: KimStoaTheme[]): string {
   if (themes.includes('control_loop')) return 'controlLoopCaregiver';
@@ -45,7 +46,7 @@ export function buildKimStoaKMemoryPatch(
   result: KimStoaDetectionResult,
   timestamp?: string
 ): KimStoaMemoryPatch {
-  const ts = timestamp || new Date().toISOString();
+  const ts = timestamp || LocalDeviceTimeService.now().utcIso;
   const pattern = buildTriggerPattern(result.themes);
   const projections = buildProjectionNeeds(result.themes);
 

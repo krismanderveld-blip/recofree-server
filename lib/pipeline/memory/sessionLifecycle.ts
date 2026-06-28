@@ -17,6 +17,7 @@ import { applyRetentionToLogsDat } from "./logsDatRetention";
 import { generateSessionSummary } from "./sessionEndSummarizer";
 import { writeUnifiedSessionEnd, isSessionAlreadyClosed, resetSessionCloseLock } from "./unifiedSessionEndWriter";
 import { logDebugEvent } from "@/lib/debug/session-logger";
+import { LocalDeviceTimeService } from "@/lib/core/time";
 
 /**
  * Feature flag: when true, uses logs.dat for session init context.
@@ -114,15 +115,15 @@ export function createSessionLifecycleManager(): SessionLifecycleManager {
       // If buffer is null but we have chatHistory, build a synthetic buffer
       // This ensures logs.dat ALWAYS gets written even if startSession was missed
       if (!buffer && chatHistoryFallback && chatHistoryFallback.length > 0) {
-        const sessionId = `session_recovered_${Date.now()}`;
+        const sessionId = `session_recovered_${LocalDeviceTimeService.now().epochMs}`;
         buffer = stores.sessionBufferStore.initialize(persona, sessionId);
         // Populate buffer from chatHistory
         for (const msg of chatHistoryFallback.slice(-20)) {
           buffer = stores.sessionBufferStore.appendMessage(buffer, {
-            turnId: `turn_recovered_${Date.now()}_${Math.random().toString(36).slice(2,6)}`,
+            turnId: `turn_recovered_${LocalDeviceTimeService.now().epochMs}_${Math.random().toString(36).slice(2,6)}`,
             role: msg.role as 'user' | 'assistant',
             text: (msg.content || '').slice(0, 300),
-            timestampIso: msg.timestamp || new Date().toISOString(),
+            timestampIso: msg.timestamp || LocalDeviceTimeService.now().utcIso,
           });
         }
         console.log(`[SessionLifecycle] Buffer recovered from chatHistory (${chatHistoryFallback.length} msgs)`);

@@ -16,6 +16,7 @@ import type { SessionLogSummary } from "@/lib/types/memory/logsDat.types";
 import type { SessionBuffer } from "@/lib/types/memory/sessionBuffer.types";
 import { generateSessionSummary } from "./sessionEndSummarizer";
 import { logDebugEvent } from "@/lib/debug/session-logger";
+import { LocalDeviceTimeService } from "@/lib/core/time";
 
 export interface UnifiedSessionEndInput {
   persona: RecoFreePersona;
@@ -150,7 +151,7 @@ function buildBufferFallbackSummary(
   buffer: SessionBuffer,
   legacyData?: UnifiedSessionEndInput["legacySessionData"]
 ): SessionLogSummary {
-  const now = new Date().toISOString();
+  const now = LocalDeviceTimeService.now().utcIso;
 
   // Extract narrative from user messages (last 5, max 300 chars each)
   const userMessages = buffer.compactMessages
@@ -183,7 +184,7 @@ function buildBufferFallbackSummary(
     }));
 
   return {
-    summaryId: `summary_${sessionId}_${Date.now()}`,
+    summaryId: `summary_${sessionId}_${LocalDeviceTimeService.now().epochMs}`,
     sessionId,
     persona,
     startedAt: buffer.startedAt,

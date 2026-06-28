@@ -10,12 +10,13 @@
 
 import { Platform } from "react-native";
 import type { Metrics } from "react-native-safe-area-context";
+import { LocalDeviceTimeService } from "@/lib/core/time";
 
 // Debug logging with timestamps
 const DEBUG = true;
 const log = (msg: string) => {
   if (!DEBUG) return;
-  const ts = new Date().toISOString();
+  const ts = LocalDeviceTimeService.now().utcIso;
   console.log(`[ManusRuntime ${ts}] ${msg}`);
 };
 

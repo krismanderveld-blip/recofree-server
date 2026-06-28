@@ -32,6 +32,7 @@ import {
   type KimProgressSummary,
 } from '@/lib/engine/kim/kim-progress-tracker';
 import { useTranslation, tStatic } from '@/lib/i18n';
+import { LocalDeviceTimeService } from "@/lib/core/time";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -293,7 +294,7 @@ export function ProgressCard() {
 
   const progressData = useMemo(() => {
     if (!userDat) return null;
-    const now = new Date().toISOString();
+    const now = LocalDeviceTimeService.now().utcIso;
     const moodHistory = userDat.moodHistory ?? [];
     const moduleUsage = userDat.moduleUsage ?? [];
     const repeatingPatterns = userDat.repeatingPatterns ?? [];

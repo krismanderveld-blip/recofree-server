@@ -9,6 +9,7 @@
  */
 
 import type { PAR01DetectionInput, PAR01Detection, PAR01Marker } from './par01-types';
+import { LocalDeviceTimeService } from "@/lib/core/time";
 
 // ─── English Marker Patterns (original) ─────────────────────────────────────
 const MARKER_PATTERNS_EN: Record<PAR01Marker, RegExp[]> = {
@@ -158,10 +159,10 @@ const HISTORY_BONUS = 0.05;
 export function detectPAR01(input: PAR01DetectionInput): PAR01Detection {
   // Safety gates
   if (input.crisisLevel >= 2) {
-    return { detected: false, confidence: 0, markers: [], phase: 'recognition', timestamp: new Date().toISOString() };
+    return { detected: false, confidence: 0, markers: [], phase: 'recognition', timestamp: LocalDeviceTimeService.now().utcIso };
   }
   if (!input.k06Stabilized) {
-    return { detected: false, confidence: 0, markers: [], phase: 'recognition', timestamp: new Date().toISOString() };
+    return { detected: false, confidence: 0, markers: [], phase: 'recognition', timestamp: LocalDeviceTimeService.now().utcIso };
   }
 
   const detectedMarkers: PAR01Marker[] = [];
@@ -215,7 +216,7 @@ export function detectPAR01(input: PAR01DetectionInput): PAR01Detection {
     confidence,
     markers: detectedMarkers,
     phase,
-    timestamp: new Date().toISOString(),
+    timestamp: LocalDeviceTimeService.now().utcIso,
   };
 }
 

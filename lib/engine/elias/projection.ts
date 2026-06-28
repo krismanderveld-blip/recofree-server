@@ -111,6 +111,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 // ─── AsyncStorage Persistence (local within-device memory, AES-256-GCM encrypted) ─────
 
 import { readEncrypted, writeEncrypted, removeEncrypted } from '@/lib/crypto/storage-encryption';
+import { LocalDeviceTimeService } from "@/lib/core/time";
 
 const ELIAS_PROJECTION_STORAGE_KEY = '@recofree_projection_elias';
 
@@ -171,7 +172,7 @@ function createEmptyEliasProjection(): EliasProjection {
   return {
     userType: 'elias',
     entries: [],
-    lastUpdatedAt: new Date().toISOString(),
+    lastUpdatedAt: LocalDeviceTimeService.now().utcIso,
     sessionSignalCount: 0,
   };
 }
@@ -245,7 +246,7 @@ export interface ProjectionSignalResult {
 export function detectProjectionSignals(input: ProjectionSignalInput): ProjectionSignalResult {
   const newEntries: ProjectionEntry[] = [];
   const reinforcedIds: string[] = [];
-  const now = new Date().toISOString();
+  const now = LocalDeviceTimeService.now().utcIso;
   let signalCount = 0;
 
   // ── VSP Signals ──
@@ -562,7 +563,7 @@ function findMatchingEntryByKeyword(category: ProjectionCategory, keyword: strin
 }
 
 function reinforceEntry(id: string): void {
-  const now = new Date().toISOString();
+  const now = LocalDeviceTimeService.now().utcIso;
   currentProjection = {
     ...currentProjection,
     entries: currentProjection.entries.map(e =>
@@ -604,9 +605,9 @@ function createEntry(params: {
   strength: ProjectionStrength;
   decayScore: number;
 }): ProjectionEntry {
-  const now = new Date().toISOString();
+  const now = LocalDeviceTimeService.now().utcIso;
   return {
-    id: `proj_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+    id: `proj_${LocalDeviceTimeService.now().epochMs}_${Math.random().toString(36).slice(2, 8)}`,
     category: params.category,
     content: params.content.slice(0, PROJECTION_MAX_CONTENT_LENGTH),
     source: params.source,

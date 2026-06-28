@@ -14,6 +14,7 @@ import { getSliderConfig } from '@/lib/ai/types';
 import * as Haptics from 'expo-haptics';
 import { colors as dc, spacing, radius, shadows, typography, cardStyles, buttonStyles } from '@/constants/design';
 import { useTranslation } from '@/lib/i18n';
+import { LocalDeviceTimeService } from "@/lib/core/time";
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -78,8 +79,8 @@ export default function HomeScreen() {
   // Milestone check (both personas)
   useEffect(() => {
     if (state.isLoading || !state.intakeCompleted) return;
-    const nowIso = new Date().toISOString();
-    const sessionId = `home_${Date.now()}`;
+    const nowIso = LocalDeviceTimeService.now().utcIso;
+    const sessionId = `home_${LocalDeviceTimeService.now().epochMs}`;
 
     if (state.userType === 'elias') {
       const milestoneState: EliasMilestoneTrackerState = {
@@ -98,7 +99,7 @@ export default function HomeScreen() {
       });
       if (result.status === 'ACTIVE' && result.eligibleMilestone) {
         setActiveMilestone(result.eligibleMilestone);
-        updateMilestoneShown(new Date().toISOString().slice(0, 10));
+        updateMilestoneShown(LocalDeviceTimeService.now().utcIso.slice(0, 10));
       }
     } else if (state.userType === 'kim') {
       const milestoneState: KimMilestoneTrackerState = {
@@ -139,7 +140,7 @@ export default function HomeScreen() {
   const sobrietyDays = (() => {
     if (!isElias || !userDat?.sobrietyDate) return null;
     return Math.floor(
-      (Date.now() - new Date(userDat.sobrietyDate).getTime()) / 86400000
+      (LocalDeviceTimeService.now().epochMs - new Date(userDat.sobrietyDate).getTime()) / 86400000
     );
   })();
 
@@ -576,7 +577,7 @@ function getSoberMessage(days: number, t: (key: string) => string): string {
 }
 
 function getTimeGreeting(t: (key: string) => string): string {
-  const hour = new Date().getHours();
+  const hour = LocalDeviceTimeService.getCurrentLocalHour();
   if (hour < 6) return t('home.greeting.still_here');
   if (hour < 12) return t('home.greeting.morning');
   if (hour < 18) return t('home.greeting.afternoon');

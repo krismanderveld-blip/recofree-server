@@ -14,6 +14,7 @@ import type { SessionBuffer, BufferTurnSnapshot } from "@/lib/types/memory/sessi
 import { mergeTriggerPattern, mergeSchemaTendency, mergeModeTendency, mergeModuleUsage } from "@/lib/storage/memory/mergeUserDat";
 import { mergeCurrentState, mergeMoodHistory, mergeZoneHistoryBuffer } from "@/lib/storage/memory/mergeStateDat";
 import { mergeProjectionRecord } from "@/lib/storage/memory/mergeProjectionsDat";
+import { LocalDeviceTimeService } from "@/lib/core/time";
 
 export interface MemoryCommitResult {
   planId: string;
@@ -134,7 +135,7 @@ function applyStateDatPatch(stateDat: StateDat, patch: MemoryWritePatch, session
           lastPipelineTurnId: payload.lastPipelineTurnId,
           lastSessionId: payload.lastSessionId,
         },
-        payload.timestampIso || new Date().toISOString()
+        payload.timestampIso || LocalDeviceTimeService.now().utcIso
       );
     default:
       return stateDat;

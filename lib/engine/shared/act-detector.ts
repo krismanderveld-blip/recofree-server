@@ -7,6 +7,7 @@
  */
 
 import type { ACTSignalId, ACTEvidence } from './act-types';
+import { LocalDeviceTimeService } from "@/lib/core/time";
 
 // ─── Marker definitions per signal ───────────────────────────────────────────
 
@@ -176,7 +177,7 @@ export interface ACTDetectionResult {
 export function detectACTSignals(userMessage: string): ACTDetectionResult[] {
   const lower = userMessage.toLowerCase();
   const results: ACTDetectionResult[] = [];
-  const now = new Date().toISOString();
+  const now = LocalDeviceTimeService.now().utcIso;
 
   for (const [signalId, markers] of Object.entries(MARKERS) as [ACTSignalId, readonly string[]][]) {
     const matchedMarkers: string[] = [];

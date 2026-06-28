@@ -27,6 +27,7 @@ import { getProjectionSummary, clearEliasProjection } from '@/lib/engine/elias/p
 import { getKimProjectionSummary, clearKimProjection } from '@/lib/engine/kim/projection';
 import { getInterventionState } from '@/lib/engine/elias/intervention-continuity';
 import { getSessionCostSummary, getRemainingBudget, isOverBudget } from '@/lib/rugzak/cost-control';
+import { LocalDeviceTimeService } from "@/lib/core/time";
 
 type TabId = 'live' | 'log' | 'modules' | 'copy';
 
@@ -540,7 +541,7 @@ function CopyAllTab({ liveState, events, colors, traceBlocks }: { liveState: any
     // Fallback: old-style dump if no trace blocks yet
     const lines: string[] = [];
     lines.push('=== RECOFREE DEBUG DUMP (no trace blocks yet) ===');
-    lines.push(`Timestamp: ${new Date().toISOString()}`);
+    lines.push(`Timestamp: ${LocalDeviceTimeService.now().utcIso}`);
     lines.push(`User Type: ${liveState.userType}`);
     lines.push(`Total Sessions: ${liveState.totalSessions}`);
     lines.push(`Budget Status: ${liveState.budgetStatus}`);

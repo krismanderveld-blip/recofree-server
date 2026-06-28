@@ -12,6 +12,7 @@ import type {
   KimPatternMemoryLayerJustification,
 } from "@/src/types/kimPatternsSupport.types";
 import type { AanpK01DetectionResult } from "./aanpK01.detector";
+import { LocalDeviceTimeService } from "@/lib/core/time";
 
 export interface AanpK01MemoryPatchInput {
   detection: AanpK01DetectionResult;
@@ -60,7 +61,7 @@ export function buildAanpK01MemoryPatch(input: AanpK01MemoryPatchInput): KimPatt
     },
     upsertLearnedKimPatterns: detection.matchedMarkerGroups.includes("coveringUp")
       ? [{
-          patternId: `aanp-k01-covering-${Date.now()}`,
+          patternId: `aanp-k01-covering-${LocalDeviceTimeService.now().epochMs}`,
           patternType: "covering_up",
           label: detection.matchedMarkers[0] || "schijn ophouden",
           normalizedLabel: (detection.matchedMarkers[0] || "schijn ophouden").toLowerCase(),
@@ -72,7 +73,7 @@ export function buildAanpK01MemoryPatch(input: AanpK01MemoryPatchInput): KimPatt
         }]
       : detection.matchedMarkerGroups.includes("selfErasure")
         ? [{
-            patternId: `aanp-k01-erasure-${Date.now()}`,
+            patternId: `aanp-k01-erasure-${LocalDeviceTimeService.now().epochMs}`,
             patternType: "self_erasure",
             label: detection.matchedMarkers[0] || "zelfuitwissing",
             normalizedLabel: (detection.matchedMarkers[0] || "zelfuitwissing").toLowerCase(),
@@ -84,7 +85,7 @@ export function buildAanpK01MemoryPatch(input: AanpK01MemoryPatchInput): KimPatt
           }]
         : detection.matchedMarkerGroups.includes("keepingUpAppearances")
           ? [{
-              patternId: `aanp-k01-appearances-${Date.now()}`,
+              patternId: `aanp-k01-appearances-${LocalDeviceTimeService.now().epochMs}`,
               patternType: "keeping_up_appearances",
               label: detection.matchedMarkers[0] || "schijn ophouden",
               normalizedLabel: (detection.matchedMarkers[0] || "schijn ophouden").toLowerCase(),

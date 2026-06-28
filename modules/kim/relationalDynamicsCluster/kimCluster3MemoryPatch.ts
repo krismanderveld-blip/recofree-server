@@ -11,6 +11,7 @@ import type {
   KimCluster3ProjectionPatch,
   KimCluster3RuntimeInput,
 } from './kimCluster3.types';
+import { LocalDeviceTimeService } from "@/lib/core/time";
 
 // ─── Trigger pattern mappings ──────────────────────────────
 
@@ -59,7 +60,7 @@ export function buildKimCluster3MemoryPatch(
   if (input.persona !== 'kim') return null;
   if (result.activationStatus !== 'ACTIVE') return null;
 
-  const now = input.timestampIso || new Date().toISOString();
+  const now = input.timestampIso || LocalDeviceTimeService.now().utcIso;
   const moduleId = result.moduleId;
 
   const triggerPatterns: KimCluster3TriggerPatternPatch[] = (TRIGGER_PATTERNS[moduleId] || []).map(tp => ({

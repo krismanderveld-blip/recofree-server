@@ -15,6 +15,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import { getApiBaseUrl } from '@/constants/oauth';
 import * as Auth from '@/lib/_core/auth';
 import type { VspStructuredPlan } from '@/lib/ai/types';
+import { LocalDeviceTimeService } from "@/lib/core/time";
 
 export interface VspUploadResult {
   success: boolean;
@@ -201,7 +202,7 @@ async function sendForParsing(documentText: string): Promise<VspStructuredPlan |
     // Add lastUpdated timestamp
     return {
       ...data.vspPlan,
-      lastUpdated: new Date().toISOString(),
+      lastUpdated: LocalDeviceTimeService.now().utcIso,
     } as VspStructuredPlan;
   } catch (err) {
     console.error('[VspUpload] sendForParsing error:', err);

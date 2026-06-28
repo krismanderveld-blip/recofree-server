@@ -7,6 +7,7 @@ import type { SessionBuffer } from "@/lib/types/memory/sessionBuffer.types";
 import type { SessionLogSummary } from "@/lib/types/memory/logsDat.types";
 import type { RecoFreePersona } from "@/lib/types/memory/memoryCore.types";
 import { estimateTokens } from "@/lib/utils/tokens/estimateTokens";
+import { LocalDeviceTimeService } from "@/lib/core/time";
 
 export interface SessionSummaryRequest {
   persona: RecoFreePersona;
@@ -57,9 +58,10 @@ Retourneer ALLEEN geldige JSON in dit formaat:
  * Build a minimal but valid SessionLogSummary (used as fallback or when GPT is unreachable).
  */
 function buildMinimalSummary(request: SessionSummaryRequest, narrative: string): SessionLogSummary {
-  const now = new Date().toISOString();
+  const snapshot = LocalDeviceTimeService.now();
+  const now = snapshot.utcIso;
   return {
-    summaryId: `summary_${request.sessionId}_${Date.now()}`,
+    summaryId: `summary_${request.sessionId}_${snapshot.epochMs}`,
     sessionId: request.sessionId,
     persona: request.persona,
     startedAt: request.buffer.startedAt,
@@ -120,10 +122,11 @@ export async function generateSessionSummary(
 
     // Parse GPT output into valid SessionLogSummary
     const parsed = parseSessionSummaryOutput(data);
-    const now = new Date().toISOString();
+    const snapshot = LocalDeviceTimeService.now();
+    const now = snapshot.utcIso;
 
     const summary: SessionLogSummary = {
-      summaryId: `summary_${request.sessionId}_${Date.now()}`,
+      summaryId: `summary_${request.sessionId}_${snapshot.epochMs}`,
       sessionId: request.sessionId,
       persona: request.persona,
       startedAt: request.buffer.startedAt,

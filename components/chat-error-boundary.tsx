@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, Pressable, StyleSheet, Platform, ScrollView } from 'react-native';
 import { logDebugEvent } from '@/lib/debug/session-logger';
 import { tStatic as t } from '@/lib/i18n';
+import { LocalDeviceTimeService } from "@/lib/core/time";
 
 interface Props {
   children: React.ReactNode;
@@ -33,7 +34,7 @@ export class ChatErrorBoundary extends React.Component<Props, State> {
       message: error.message,
       stack: error.stack?.slice(0, 500) ?? '',
       componentStack: errorInfo.componentStack?.slice(0, 500) ?? '',
-      timestamp: new Date().toISOString(),
+      timestamp: LocalDeviceTimeService.now().utcIso,
     });
     console.error('[ChatErrorBoundary]', error, errorInfo);
   }

@@ -28,6 +28,7 @@ import type { BackpackRelevanceResult } from './backpack-relevance-analyzer';
 import type { RelationalPatternResult } from './relational-pattern-analyzer';
 import { ELIAS_DEFAULT_STAGE } from '../engine/elias/stage-of-change';
 import { sanitizeSliders } from '../engine/shared/slider-sanitize';
+import { LocalDeviceTimeService } from "@/lib/core/time";
 
 // ─── Output Types ──────────────────────────────────────────────
 
@@ -481,7 +482,7 @@ export function buildGPTPayload(input: PayloadBuilderInput): GPTPayload {
   );
 
   // ── Diary: last 3 entries (with time-aware labels) ──
-  const nowMs = Date.now();
+  const nowMs = LocalDeviceTimeService.now().epochMs;
   const recentDiary = (input.diaryEntries || [])
     .slice(-3)
     .map((entry) => {
@@ -755,7 +756,7 @@ export function buildGPTPayload(input: PayloadBuilderInput): GPTPayload {
         initialContext: backpack.intakeContext?.initialContext || '',
         intakeDate: backpack.intakeContext?.intakeDate || '',
       },
-      createdAt: backpack.createdAt || new Date().toISOString(),
+      createdAt: backpack.createdAt || LocalDeviceTimeService.now().utcIso,
     };
     payload.backpackChanged = true;
     // Also send extractedEntities if available (supplementary structured memory)

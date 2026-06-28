@@ -4,6 +4,7 @@
  */
 
 import type { KDL01DetectionResult, KDL01StorageState } from './kdl01-types';
+import { LocalDeviceTimeService } from "@/lib/core/time";
 
 export function buildKDL01StoragePatch(
   detection: KDL01DetectionResult,
@@ -15,7 +16,7 @@ export function buildKDL01StoragePatch(
 
   return {
     kdl01Activated: true,
-    lastActivatedAt: new Date().toISOString(),
+    lastActivatedAt: LocalDeviceTimeService.now().utcIso,
     activationCount: prev.activationCount + 1,
     dominantTrigger: detection.triggers.find(t => t !== 'NONE') || 'NONE',
     dominantMode: detection.recommendedMode,

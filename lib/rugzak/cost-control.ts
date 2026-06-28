@@ -18,6 +18,7 @@
 
 // ─── Types ────────────────────────────────────────────────────────
 
+import { LocalDeviceTimeService } from "@/lib/core/time";
 export interface TokenUsage {
   promptTokens: number;
   completionTokens: number;
@@ -118,7 +119,7 @@ export function recordCallCost(
   }
 
   const record: CallCostRecord = {
-    timestamp: new Date().toISOString(),
+    timestamp: LocalDeviceTimeService.now().utcIso,
     promptTokens: usage.promptTokens,
     completionTokens: usage.completionTokens,
     totalTokens: usage.totalTokens,
@@ -198,6 +199,6 @@ export function buildSessionCostRecord(): {
     totalTokens: summary.totalTokens,
     averageTokensPerCall: summary.averageTokensPerCall,
     peakCallTokens: summary.peakCallTokens,
-    date: new Date().toISOString(),
+    date: LocalDeviceTimeService.now().utcIso,
   };
 }

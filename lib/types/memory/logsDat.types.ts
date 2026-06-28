@@ -11,6 +11,7 @@ import type {
   DetectedSchemaTendency,
   DetectedModeTendency,
 } from "./memoryCore.types";
+import { LocalDeviceTimeService } from "@/lib/core/time";
 
 export interface LogsDatPlaintext {
   schemaVersion: "logs.dat.v2";
@@ -109,7 +110,7 @@ export interface LogsDatEncryptedEnvelope {
 }
 
 export function createEmptyLogsDat(persona: RecoFreePersona): LogsDatPlaintext {
-  const now = new Date().toISOString();
+  const now = LocalDeviceTimeService.now().utcIso;
   return {
     schemaVersion: "logs.dat.v2",
     persona,

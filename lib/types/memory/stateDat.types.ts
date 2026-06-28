@@ -2,6 +2,7 @@
  * state.dat — Current moment and short rolling state layer.
  */
 import type { RecoFreePersona, ZoneDecision } from "./memoryCore.types";
+import { LocalDeviceTimeService } from "@/lib/core/time";
 
 export interface StateDat {
   schemaVersion: "state.dat.v2";
@@ -65,7 +66,7 @@ export interface OpenSessionEndpoint {
 }
 
 export function createEmptyStateDat(persona: RecoFreePersona): StateDat {
-  const now = new Date().toISOString();
+  const now = LocalDeviceTimeService.now().utcIso;
   return {
     schemaVersion: "state.dat.v2",
     persona,

@@ -12,6 +12,7 @@ import { createEmptyLogsDat } from "@/lib/types/memory/logsDat.types";
 import { encryptJsonAes256Gcm, decryptJsonAes256Gcm } from "@/lib/storage/crypto/aes256gcm";
 import { readJson, writeJson } from "./atomicJsonStore";
 import { getLogsDatKey, getEncryptionKeyAlias } from "./localMemoryPaths";
+import { LocalDeviceTimeService } from "@/lib/core/time";
 
 export interface LogsDatStore {
   load(persona: RecoFreePersona): Promise<LogsDatPlaintext>;
@@ -62,7 +63,7 @@ export function createLogsDatStore(): LogsDatStore {
     async appendSessionSummary(persona, summary) {
       const data = await this.load(persona);
       data.sessions.push(summary);
-      data.updatedAt = new Date().toISOString();
+      data.updatedAt = LocalDeviceTimeService.now().utcIso;
       await this.save(persona, data);
     },
 
@@ -75,14 +76,14 @@ export function createLogsDatStore(): LogsDatStore {
       } else {
         data.sessions.push(summary);
       }
-      data.updatedAt = cycleTimestamp || new Date().toISOString();
+      data.updatedAt = cycleTimestamp || LocalDeviceTimeService.now().utcIso;
       await this.save(persona, data);
     },
 
     async appendRoutingAudit(persona, audit) {
       const data = await this.load(persona);
       data.routingAudits.push(audit);
-      data.updatedAt = new Date().toISOString();
+      data.updatedAt = LocalDeviceTimeService.now().utcIso;
       await this.save(persona, data);
     },
   };

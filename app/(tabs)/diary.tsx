@@ -21,6 +21,7 @@ import * as Haptics from 'expo-haptics';
 import { colors as dc, spacing, radius, typography, shadows, cardStyles } from '@/constants/design';
 import { HomeButton } from '@/components/home-button';
 import { useTranslation } from '@/lib/i18n';
+import { LocalDeviceTimeService } from "@/lib/core/time";
 
 interface GratitudeData {
   entry1: string;
@@ -142,7 +143,7 @@ export default function DiaryScreen() {
   ], [t]);
 
   const getDailyQuote = useCallback((): { text: string; author: string } => {
-    const now = new Date();
+    const now = new Date(LocalDeviceTimeService.now().epochMs);
     const dayIndex = Math.floor(now.getTime() / (1000 * 60 * 60 * 24)) % stoicQuotes.length;
     return stoicQuotes[dayIndex];
   }, [stoicQuotes]);
@@ -184,10 +185,10 @@ export default function DiaryScreen() {
     setIsSaving(true);
 
     const newEntry: DiaryEntry = {
-      id: `diary_${Date.now()}`,
+      id: `diary_${LocalDeviceTimeService.now().epochMs}`,
       content: text,
       moodTag: editorMood || t('diary.mood.neutral'),
-      timestamp: new Date().toISOString(),
+      timestamp: LocalDeviceTimeService.now().utcIso,
       ...(hasGratitude ? { gratitude: { entry1: g1, entry2: g2, entry3: g3 } } : {}),
     };
 

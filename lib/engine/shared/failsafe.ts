@@ -11,6 +11,7 @@
  */
 
 import { SessionImpact } from "./session-impact";
+import { LocalDeviceTimeService } from "@/lib/core/time";
 
 /** Static limits. */
 export interface FailsafeLimits {
@@ -75,7 +76,7 @@ export function createFailsafeState(impact: SessionImpact): FailsafeState {
       backpackLimitReached: backpackEntryCount >= maxBackpackEntriesPerSession,
     }),
     meta: Object.freeze({
-      createdAt: Date.now(),
+      createdAt: LocalDeviceTimeService.now().epochMs,
     }),
   });
 }

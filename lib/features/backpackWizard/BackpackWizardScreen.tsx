@@ -33,6 +33,7 @@ import {
 import { useColors } from '@/hooks/use-colors';
 import { useTranslation } from '@/lib/i18n';
 import { pickAndParseBackpackDocument, type BackpackExtractedData } from './backpack-document-upload-client';
+import { LocalDeviceTimeService } from "@/lib/core/time";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -223,7 +224,7 @@ export function BackpackWizardScreen({ existingBackpack, userType: initialUserTy
   const handleSave = useCallback(async () => {
     setSaving(true);
     try {
-      const now = new Date().toISOString();
+      const now = LocalDeviceTimeService.now().utcIso;
 
       // Build sections array for Elias
       const sections = DEFAULT_BACKPACK_SECTIONS.map(s => ({

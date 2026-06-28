@@ -4,10 +4,11 @@
 
 import type { KimPatternPromptPayload, KimPatternMemoryUseDirective } from "@/src/types/kimPatternsSupport.types";
 import type { BeheK01DetectionResult } from "./beheK01.detector";
+import { LocalDeviceTimeService } from "@/lib/core/time";
 
 export function buildBeheK01PromptPayload(detection: BeheK01DetectionResult): KimPatternPromptPayload {
   const memoryDirective: KimPatternMemoryUseDirective = {
-    directiveId: `behe-k01-directive-${Date.now()}`,
+    directiveId: `behe-k01-directive-${LocalDeviceTimeService.now().epochMs}`,
     appliesToModuleId: "BEHE-K01",
     hardDirective: true,
     requiredToUseOnEveryRelevantTurn: true,

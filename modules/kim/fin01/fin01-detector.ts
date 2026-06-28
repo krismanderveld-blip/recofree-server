@@ -7,6 +7,7 @@
  */
 
 import type { FIN01DetectionInput, FIN01Detection, FIN01Marker } from './fin01-types';
+import { LocalDeviceTimeService } from "@/lib/core/time";
 
 const MARKER_PATTERNS: Record<FIN01Marker, RegExp[]> = {
   'financial-control': [
@@ -73,10 +74,10 @@ const HISTORY_BONUS = 0.05;
 export function detectFIN01(input: FIN01DetectionInput): FIN01Detection {
   // Safety gates
   if (input.crisisLevel >= 2) {
-    return { detected: false, confidence: 0, markers: [], phase: 'awareness', timestamp: new Date().toISOString() };
+    return { detected: false, confidence: 0, markers: [], phase: 'awareness', timestamp: LocalDeviceTimeService.now().utcIso };
   }
   if (!input.k06Stabilized) {
-    return { detected: false, confidence: 0, markers: [], phase: 'awareness', timestamp: new Date().toISOString() };
+    return { detected: false, confidence: 0, markers: [], phase: 'awareness', timestamp: LocalDeviceTimeService.now().utcIso };
   }
 
   const detectedMarkers: FIN01Marker[] = [];
@@ -128,7 +129,7 @@ export function detectFIN01(input: FIN01DetectionInput): FIN01Detection {
     confidence,
     markers: detectedMarkers,
     phase,
-    timestamp: new Date().toISOString(),
+    timestamp: LocalDeviceTimeService.now().utcIso,
   };
 }
 

@@ -20,6 +20,7 @@ import { BalkmetafoorCard } from '@/components/profile/BalkmetafoorCard';
 import { createEmptyBalkmetafoor } from '@/src/types/balkmetafoor.types';
 import type { BalkmetafoorData, BalkmetafoorEntry } from '@/src/types/balkmetafoor.types';
 import { useTranslation } from '@/lib/i18n';
+import { LocalDeviceTimeService } from "@/lib/core/time";
 
 // Stage labels now come from i18n: profile.stage.<key>
 
@@ -41,16 +42,16 @@ export default function ProfileScreen() {
 
   const handleAddDraaglast = useCallback(async (text: string) => {
     const entry: BalkmetafoorEntry = {
-      id: `dl_${Date.now()}`,
+      id: `dl_${LocalDeviceTimeService.now().epochMs}`,
       text: text.trim(),
-      addedAt: new Date().toISOString(),
+      addedAt: LocalDeviceTimeService.now().utcIso,
       sourceModuleId: 'manual',
     };
     const updated: BalkmetafoorData = {
       ...balkmetafoorData,
       initialized: true,
-      initializedAt: balkmetafoorData.initializedAt || new Date().toISOString(),
-      lastUpdatedAt: new Date().toISOString(),
+      initializedAt: balkmetafoorData.initializedAt || LocalDeviceTimeService.now().utcIso,
+      lastUpdatedAt: LocalDeviceTimeService.now().utcIso,
       draaglast: [...balkmetafoorData.draaglast, entry],
     };
     await updateBalkmetafoor(updated);
@@ -59,16 +60,16 @@ export default function ProfileScreen() {
 
   const handleAddDraagkracht = useCallback(async (text: string) => {
     const entry: BalkmetafoorEntry = {
-      id: `dk_${Date.now()}`,
+      id: `dk_${LocalDeviceTimeService.now().epochMs}`,
       text: text.trim(),
-      addedAt: new Date().toISOString(),
+      addedAt: LocalDeviceTimeService.now().utcIso,
       sourceModuleId: 'manual',
     };
     const updated: BalkmetafoorData = {
       ...balkmetafoorData,
       initialized: true,
-      initializedAt: balkmetafoorData.initializedAt || new Date().toISOString(),
-      lastUpdatedAt: new Date().toISOString(),
+      initializedAt: balkmetafoorData.initializedAt || LocalDeviceTimeService.now().utcIso,
+      lastUpdatedAt: LocalDeviceTimeService.now().utcIso,
       draagkracht: [...balkmetafoorData.draagkracht, entry],
     };
     await updateBalkmetafoor(updated);
@@ -78,7 +79,7 @@ export default function ProfileScreen() {
   const handleRemoveDraaglast = useCallback(async (id: string) => {
     const updated: BalkmetafoorData = {
       ...balkmetafoorData,
-      lastUpdatedAt: new Date().toISOString(),
+      lastUpdatedAt: LocalDeviceTimeService.now().utcIso,
       draaglast: balkmetafoorData.draaglast.filter(e => e.id !== id),
     };
     await updateBalkmetafoor(updated);
@@ -88,7 +89,7 @@ export default function ProfileScreen() {
   const handleRemoveDraagkracht = useCallback(async (id: string) => {
     const updated: BalkmetafoorData = {
       ...balkmetafoorData,
-      lastUpdatedAt: new Date().toISOString(),
+      lastUpdatedAt: LocalDeviceTimeService.now().utcIso,
       draagkracht: balkmetafoorData.draagkracht.filter(e => e.id !== id),
     };
     await updateBalkmetafoor(updated);
@@ -110,7 +111,7 @@ export default function ProfileScreen() {
         profile,
         includeRawUserSelectedExamples: false,
         selectedExampleIds: [],
-        exportedAt: new Date().toISOString(),
+        exportedAt: LocalDeviceTimeService.now().utcIso,
       });
       // Write to temp file and share
       const FileSystem = await import('expo-file-system/legacy');
@@ -166,7 +167,7 @@ export default function ProfileScreen() {
   }, [emergencyContacts]);
 
   const handleVersionTap = useCallback(() => {
-    const now = Date.now();
+    const now = LocalDeviceTimeService.now().epochMs;
     if (now - lastTapRef.current > 2000) {
       tapCountRef.current = 0;
     }

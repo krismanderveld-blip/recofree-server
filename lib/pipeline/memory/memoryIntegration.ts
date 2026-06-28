@@ -20,6 +20,7 @@ import type { MemoryWriteBackOutput } from "./memoryWriteBackStep";
 import { executeMemoryWriteBack } from "./memoryWriteBackStep";
 import { createSessionLifecycleManager, type SessionLifecycleManager } from "./sessionLifecycle";
 import { stableHash } from "@/lib/utils/hash/stableHash";
+import { LocalDeviceTimeService } from "@/lib/core/time";
 
 // ─── Singleton Lifecycle Manager ─────────────────────────────────────────────
 let _lifecycleManager: SessionLifecycleManager | null = null;
@@ -92,12 +93,12 @@ export interface PipelineResultForMemory {
  * Maps existing pipeline output fields to the memory write routing types.
  */
 export function buildDetectionBundle(input: PipelineResultForMemory): PipelineDetectionBundle {
-  const now = new Date().toISOString();
+  const now = LocalDeviceTimeService.now().utcIso;
   const inputHash = stableHash(input.userMessage);
 
   const context: PipelineTurnContext = {
-    turnId: `turn_${Date.now()}_${inputHash.slice(0, 6)}`,
-    sessionId: input.sessionId || `session_${Date.now()}`,
+    turnId: `turn_${LocalDeviceTimeService.now().epochMs}_${inputHash.slice(0, 6)}`,
+    sessionId: input.sessionId || `session_${LocalDeviceTimeService.now().epochMs}`,
     localUserId: input.localUserId || "local_user",
     persona: input.persona,
     timestampIso: now,

@@ -6,6 +6,7 @@ import type {
   MemorySource,
   DetectedTrigger,
 } from "./memoryCore.types";
+import { LocalDeviceTimeService } from "@/lib/core/time";
 
 export interface UserDat {
   schemaVersion: "user.dat.v2";
@@ -152,7 +153,7 @@ export interface ModuleUsagePatchPayload {
 }
 
 export function createEmptyUserDat(persona: RecoFreePersona, localUserId: string): UserDat {
-  const now = new Date().toISOString();
+  const now = LocalDeviceTimeService.now().utcIso;
   return {
     schemaVersion: "user.dat.v2",
     persona,

@@ -6,6 +6,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { ActivityIndicator, Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { LocalDeviceTimeService } from "@/lib/core/time";
 
 export default function OAuthCallback() {
   const router = useRouter();
@@ -50,7 +51,7 @@ export default function OAuthCallback() {
                 name: userData.name,
                 email: userData.email,
                 loginMethod: userData.loginMethod,
-                lastSignedIn: new Date(userData.lastSignedIn || Date.now()),
+                lastSignedIn: new Date(userData.lastSignedIn || LocalDeviceTimeService.now().epochMs),
               };
               await Auth.setUserInfo(userInfo);
               console.log("[OAuth] User info stored:", userInfo);
@@ -201,7 +202,7 @@ export default function OAuthCallback() {
               name: result.user.name,
               email: result.user.email,
               loginMethod: result.user.loginMethod,
-              lastSignedIn: new Date(result.user.lastSignedIn || Date.now()),
+              lastSignedIn: new Date(result.user.lastSignedIn || LocalDeviceTimeService.now().epochMs),
             };
             await Auth.setUserInfo(userInfo);
             console.log("[OAuth] User info stored:", userInfo);

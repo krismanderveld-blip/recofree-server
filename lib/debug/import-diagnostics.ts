@@ -6,6 +6,7 @@
  * where the import fails on a production APK without Metro console access.
  */
 
+import { LocalDeviceTimeService } from "@/lib/core/time";
 export interface ImportDiagStep {
   id: number;
   timestamp: string;
@@ -38,7 +39,7 @@ export function logImportDiag(
   stepCounter++;
   steps.push({
     id: stepCounter,
-    timestamp: new Date().toISOString().slice(11, 23), // HH:mm:ss.SSS
+    timestamp: LocalDeviceTimeService.now().utcIso.slice(11, 23), // HH:mm:ss.SSS
     label,
     status,
     detail: detail ?? undefined,

@@ -9,6 +9,7 @@ import { getApiBaseUrl } from '@/constants/oauth';
 import * as Auth from '@/lib/_core/auth';
 import type { VspBackpackProfileCached } from './vsp-backpack-analyzer';
 import { buildVspProfileContextBlock } from './vsp-backpack-analyzer';
+import { LocalDeviceTimeService } from "@/lib/core/time";
 
 /**
  * Call server to analyze VSP zones from themes content.
@@ -48,7 +49,7 @@ export async function callVspBackpackAnalysis(input: {
     return {
       ...profile,
       contextBlock,
-      analyzedAt: new Date().toISOString(),
+      analyzedAt: LocalDeviceTimeService.now().utcIso,
       sourceHash: input.sourceHash,
     };
   } catch (error) {

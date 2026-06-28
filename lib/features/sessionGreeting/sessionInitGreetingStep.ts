@@ -11,6 +11,7 @@
  */
 
 import type { Backpack, UserDat, DiaryEntry } from '@/lib/ai/types';
+import { LocalDeviceTimeService } from '@/lib/core/time';
 import { detectRecurringPatterns } from './detectRecurringPatterns';
 import type {
   SessionGreetingInitInput,
@@ -70,8 +71,12 @@ export async function sessionInitGreetingStep(
 ): Promise<SessionInitGreetingOutput> {
   const { backpack, userDat, diaryEntries, apiBaseUrl, timezone = 'Europe/Amsterdam', clinicalModeActive = false, vspInsightContext = null } = input;
 
-  const nowIso = new Date().toISOString();
-  const localCalendarDate = getLocalCalendarDate(nowIso, timezone);
+  // Use central time source — all fields from same base instant
+  const timeSnapshot = LocalDeviceTimeService.now();
+  const nowIso = timeSnapshot.utcIso;
+  // Use device timezone from central service if not explicitly overridden
+  const effectiveTimezone = timezone === 'Europe/Amsterdam' ? timeSnapshot.timeZone : timezone;
+  const localCalendarDate = timeSnapshot.localDate;
 
   // Adapt legacy stores to greeting engine snapshots
   const greetingUserDat = adaptUserDat(backpack, userDat);
@@ -87,7 +92,7 @@ export async function sessionInitGreetingStep(
   const engineInput: SessionGreetingInitInput = {
     nowIso,
     localCalendarDate,
-    timezone,
+    timezone: effectiveTimezone,
     userDat: greetingUserDat,
     stateDat: greetingStateDat,
     projectionsDat: greetingProjectionsDat,
@@ -258,7 +263,7 @@ function adaptUserDat(backpack: Backpack, userDat: UserDat): GreetingUserDatSnap
     name: s.domain || s.schemaId || 'unknown',
     score: s.confidence ?? 0,
     confirmed: (s.confidence ?? 0) > 0.6,
-    lastUpdatedAt: s.lastUpdatedAt ?? s.lastSeen ?? new Date().toISOString(),
+    lastUpdatedAt: s.lastUpdatedAt ?? s.lastSeen ?? nowIso,
   }));
 
   // Derive backpackLastUpdatedAt from backpack sections
@@ -343,7 +348,7 @@ function adaptLogsDat(
     const last5 = previousSessionMessages!.slice(-5);
     const rawTranscript = last5.map(m => `${m.role === 'user' ? 'Gebruiker' : 'Elias'}: ${m.content}`).join('\n');
     result.latestLogDigest = rawTranscript;
-    const lastMsgTimestamp = last5[last5.length - 1]?.timestamp || new Date().toISOString();
+    const lastMsgTimestamp = last5[last5.length - 1]?.timestamp || nowIso;
     result.recentSessionDigests = [{
       narrative: rawTranscript,
       topics: [],

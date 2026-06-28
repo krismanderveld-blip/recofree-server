@@ -12,6 +12,7 @@ import type {
   KimPatternMemoryLayerJustification,
 } from "@/src/types/kimPatternsSupport.types";
 import type { CodepK01DetectionResult } from "./codepK01.detector";
+import { LocalDeviceTimeService } from "@/lib/core/time";
 
 export interface CodepK01MemoryPatchInput {
   detection: CodepK01DetectionResult;
@@ -60,7 +61,7 @@ export function buildCodepK01MemoryPatch(input: CodepK01MemoryPatchInput): KimPa
     },
     upsertLearnedKimPatterns: detection.matchedMarkerGroups.includes("identityFusion")
       ? [{
-          patternId: `codep-k01-fusion-${Date.now()}`,
+          patternId: `codep-k01-fusion-${LocalDeviceTimeService.now().epochMs}`,
           patternType: "identity_fusion",
           label: detection.matchedMarkers[0] || "identiteitsfusie",
           normalizedLabel: (detection.matchedMarkers[0] || "identiteitsfusie").toLowerCase(),
@@ -72,7 +73,7 @@ export function buildCodepK01MemoryPatch(input: CodepK01MemoryPatchInput): KimPa
         }]
       : detection.matchedMarkerGroups.includes("rescueBehavior")
         ? [{
-            patternId: `codep-k01-rescue-${Date.now()}`,
+            patternId: `codep-k01-rescue-${LocalDeviceTimeService.now().epochMs}`,
             patternType: "rescue_behavior",
             label: detection.matchedMarkers[0] || "reddingsgedrag",
             normalizedLabel: (detection.matchedMarkers[0] || "reddingsgedrag").toLowerCase(),
@@ -84,7 +85,7 @@ export function buildCodepK01MemoryPatch(input: CodepK01MemoryPatchInput): KimPa
           }]
         : detection.matchedMarkerGroups.includes("boundaryAbsence")
           ? [{
-              patternId: `codep-k01-boundary-${Date.now()}`,
+              patternId: `codep-k01-boundary-${LocalDeviceTimeService.now().epochMs}`,
               patternType: "boundary_absence",
               label: detection.matchedMarkers[0] || "grensverlies",
               normalizedLabel: (detection.matchedMarkers[0] || "grensverlies").toLowerCase(),
@@ -96,7 +97,7 @@ export function buildCodepK01MemoryPatch(input: CodepK01MemoryPatchInput): KimPa
             }]
           : detection.matchedMarkerGroups.includes("selfNeglect")
             ? [{
-                patternId: `codep-k01-neglect-${Date.now()}`,
+                patternId: `codep-k01-neglect-${LocalDeviceTimeService.now().epochMs}`,
                 patternType: "self_neglect",
                 label: detection.matchedMarkers[0] || "zelfverwaarlozing",
                 normalizedLabel: (detection.matchedMarkers[0] || "zelfverwaarlozing").toLowerCase(),

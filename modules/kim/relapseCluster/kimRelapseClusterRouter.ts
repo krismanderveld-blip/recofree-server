@@ -17,6 +17,7 @@ import { buildKimRelapseClusterMemoryPatch } from './kimRelapseClusterMemoryPatc
 import { buildHervK01Payload } from './HERV-K01/hervK01Payload';
 import { buildNahervK01Payload } from './NAHERV-K01/nahervK01Payload';
 import { buildCrisisK01Payload } from './CRISIS-K01/crisisK01Payload';
+import { LocalDeviceTimeService } from "@/lib/core/time";
 
 export interface KimRelapseClusterRouterOutput {
   detection: KimRelapseClusterDetectionResult;
@@ -57,7 +58,7 @@ export function buildRuntimeInput(params: {
     language: params.language,
     userMessage: params.userMessage,
     normalizedMessage,
-    timestampIso: new Date().toISOString(),
+    timestampIso: LocalDeviceTimeService.now().utcIso,
     sessionId: params.sessionId,
     turnId: params.turnId,
     storePolicy: 'store:false',

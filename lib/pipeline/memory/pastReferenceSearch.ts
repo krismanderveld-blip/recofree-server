@@ -10,6 +10,7 @@
  */
 import type { SessionLogSummary } from "@/lib/types/memory/logsDat.types";
 import type { UserDat } from "@/lib/ai/types";
+import { LocalDeviceTimeService } from "@/lib/core/time";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -318,7 +319,7 @@ function buildContextString(query: string, matches: PastReferenceMatch[]): strin
  */
 function formatRelativeTime(isoTimestamp: string): string {
   const date = new Date(isoTimestamp);
-  const now = new Date();
+  const now = new Date(LocalDeviceTimeService.now().epochMs);
   const diffMs = now.getTime() - date.getTime();
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 

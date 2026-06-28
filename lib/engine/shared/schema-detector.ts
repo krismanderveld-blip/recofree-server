@@ -21,6 +21,7 @@ import {
   SchemaModeDetectionInput,
   SCHEMA_DOMAIN_MAP,
 } from './schema-mode-types';
+import { LocalDeviceTimeService } from "@/lib/core/time";
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // SECTION: Schema Marker Definitions
@@ -335,7 +336,7 @@ const SCHEMA_MARKERS: SchemaMarkerDef[] = [
  */
 export function detectSchemaCandidates(input: SchemaModeDetectionInput): SchemaCandidate[] {
   const messageLower = input.message.toLowerCase();
-  const now = new Date().toISOString();
+  const now = LocalDeviceTimeService.now().utcIso;
   const candidates: SchemaCandidate[] = [];
 
   for (const markerDef of SCHEMA_MARKERS) {

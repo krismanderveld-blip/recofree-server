@@ -15,6 +15,7 @@ import type {
   KimPatternMemoryLayerJustification,
 } from "@/src/types/kimPatternsSupport.types";
 import type { BeheK01DetectionResult } from "./beheK01.detector";
+import { LocalDeviceTimeService } from "@/lib/core/time";
 
 export interface BeheK01MemoryPatchInput {
   detection: BeheK01DetectionResult;
@@ -65,7 +66,7 @@ export function buildBeheK01MemoryPatch(input: BeheK01MemoryPatchInput): KimPatt
     },
     upsertLearnedKimPatterns: detection.matchedMarkerGroups.includes("controlBehavior")
       ? [{
-          patternId: `behe-k01-control-${Date.now()}`,
+          patternId: `behe-k01-control-${LocalDeviceTimeService.now().epochMs}`,
           patternType: "caregiver_control",
           label: detection.matchedMarkers[0] || "controlegedrag",
           normalizedLabel: (detection.matchedMarkers[0] || "controlegedrag").toLowerCase(),

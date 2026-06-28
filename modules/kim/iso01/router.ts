@@ -4,6 +4,7 @@
  */
 import type { ISO01RuntimeInput, ISO01DetectionResult } from './types';
 import { detectISO01 } from './detector';
+import { LocalDeviceTimeService } from "@/lib/core/time";
 
 /**
  * NL marker patterns for ISO01 signal detection.
@@ -187,7 +188,7 @@ export function analyzeISO01Signals(
     wantsConnectionButScared,
     acuteOverload: options.acuteOverload,
     safetyRisk: options.safetyRisk,
-    timestampIso: new Date().toISOString(),
+    timestampIso: LocalDeviceTimeService.now().utcIso,
   };
 }
 

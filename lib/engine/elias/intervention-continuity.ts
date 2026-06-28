@@ -39,6 +39,7 @@
 
 import type { FinalZoneLabel, ResolvedEliasZone } from './vsp-resolution';
 import type { RegulationAction } from '../../rugzak/regulation-layer';
+import { LocalDeviceTimeService } from "@/lib/core/time";
 
 // ─── Intervention Types ──────────────────────────────────────
 
@@ -464,7 +465,7 @@ export function evaluateInterventionContinuity(
     severity: currentSeverity,
     interventionType: currentInterventionState.lastInterventionType,
     userResponse,
-    timestamp: new Date().toISOString(),
+    timestamp: LocalDeviceTimeService.now().utcIso,
   };
   const updatedEvolution = [...currentInterventionState.zoneEvolution, newEvolutionEntry];
 
@@ -548,7 +549,7 @@ export function updateInterventionAfterResponse(
       severity: currentSeverity,
       interventionType,
       userResponse: 'unknown',
-      timestamp: new Date().toISOString(),
+      timestamp: LocalDeviceTimeService.now().utcIso,
     };
 
     currentInterventionState = Object.freeze({

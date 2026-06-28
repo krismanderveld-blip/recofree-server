@@ -26,6 +26,7 @@ import { computeKimEngineModules } from '../engine/kim/module-catalog';
 import { eliasDistressScore, eliasResilienceScore, eliasPrimaryConcern } from '../engine/elias/slider-interpretation';
 import { computeEliasPriorityModules } from '../engine/elias/module-catalog';
 import { sanitizeSliders } from '../engine/shared/slider-sanitize';
+import { LocalDeviceTimeService } from "@/lib/core/time";
 
 // ─── Generic Slider Access ─────────────────────────────────────
 
@@ -198,7 +199,7 @@ export function updateTriggerPatterns(
   newTriggers: string[]
 ): TriggerPattern[] {
   const updated = [...(existing || [])];
-  const now = new Date().toISOString();
+  const now = LocalDeviceTimeService.now().utcIso;
 
   for (const trigger of newTriggers) {
     // Defensive: skip undefined/null/empty trigger labels
@@ -243,7 +244,7 @@ export function recordMoodSnapshot(
 ): Rugzak {
   const snapshot: MoodSnapshot = {
     sliders: sanitizeSliders(mood as unknown as Record<string, unknown>) as unknown as MoodSliders,
-    timestamp: new Date().toISOString(),
+    timestamp: LocalDeviceTimeService.now().utcIso,
   };
 
   return {
@@ -267,7 +268,7 @@ export function recordModuleUsage(
       ...rugzak,
       moduleUsage: (rugzak.moduleUsage || []).map(m =>
         m.moduleId === moduleId
-          ? { ...m, count: (m.count || 1) + 1, usedAt: new Date().toISOString(), context }
+          ? { ...m, count: (m.count || 1) + 1, usedAt: LocalDeviceTimeService.now().utcIso, context }
           : m
       ),
     };
@@ -277,7 +278,7 @@ export function recordModuleUsage(
     ...rugzak,
     moduleUsage: [
       ...(rugzak.moduleUsage || []),
-      { moduleId, usedAt: new Date().toISOString(), context, count: 1 },
+      { moduleId, usedAt: LocalDeviceTimeService.now().utcIso, context, count: 1 },
     ],
   };
 }
@@ -287,7 +288,7 @@ export function recordModuleUsage(
 export function startNewSession(rugzak: Rugzak): Rugzak {
   return {
     ...rugzak,
-    lastSessionDate: new Date().toISOString(),
+    lastSessionDate: LocalDeviceTimeService.now().utcIso,
     totalSessions: (rugzak.totalSessions || 0) + 1,
   };
 }

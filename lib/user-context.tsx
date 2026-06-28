@@ -141,6 +141,7 @@ interface UserContextValue {
 
 import { readEncrypted, writeEncrypted } from '@/lib/crypto/storage-encryption';
 import { logImportDiag } from '@/lib/debug/import-diagnostics';
+import { LocalDeviceTimeService } from '@/lib/core/time';
 
 const BACKPACK_KEY = '@recofree_backpack';
 const USERDAT_KEY = '@recofree_userdat';
@@ -253,7 +254,7 @@ function userReducer(state: UserState, action: UserAction): UserState {
       const { rugzak, influence } = composeState(state.backpack, updatedUserDat);
       return {
         ...state,
-        sessionStartTime: new Date().toISOString(),
+        sessionStartTime: LocalDeviceTimeService.now().utcIso,
         crisisLevel: 0,
         detectedEmotion: 'neutral',
         userDat: updatedUserDat,
@@ -348,9 +349,9 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
               startEmotion: raw.intakeContext?.startEmotion ?? '',
               urgency: raw.intakeContext?.urgency ?? 'midden' as const,
               initialContext: raw.intakeContext?.initialContext ?? '',
-              intakeDate: raw.intakeContext?.intakeDate ?? new Date().toISOString(),
+              intakeDate: raw.intakeContext?.intakeDate ?? LocalDeviceTimeService.now().utcIso,
             },
-            createdAt: raw.createdAt ?? new Date().toISOString(),
+            createdAt: raw.createdAt ?? LocalDeviceTimeService.now().utcIso,
           };
 
           const userDat: UserDat = {
@@ -434,7 +435,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     callBackpackAnalysis(userId, fullText).then((analysis) => {
       if (analysis && state.userDat) {
         const previousAnalyzedAt = state.userDat.backpackAnalysis?.analyzedAt ?? null;
-        const now = new Date().toISOString();
+        const now = LocalDeviceTimeService.now().utcIso;
         let updatedUserDat = {
           ...state.userDat,
           backpackAnalysis: { ...analysis, previousAnalyzedAt },
@@ -636,7 +637,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       ...state.backpack,
       sections: state.backpack.sections.map((s) =>
         s.id === sectionId
-          ? { ...s, content, lastUpdated: new Date().toISOString() }
+          ? { ...s, content, lastUpdated: LocalDeviceTimeService.now().utcIso }
           : s
       ),
     };
@@ -676,7 +677,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     if (!state.backpack) return;
     const updatedBackpack: Backpack = {
       ...state.backpack,
-      vspSection: { ...vspPlan, lastUpdated: new Date().toISOString() },
+      vspSection: { ...vspPlan, lastUpdated: LocalDeviceTimeService.now().utcIso },
     };
     dispatch({ type: 'UPDATE_BACKPACK', payload: updatedBackpack });
     await persistBackpack(updatedBackpack);
@@ -742,7 +743,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     if (!state.userDat) return;
     const entry: import('./ai/types').EigenRegieEntry = {
       userInput,
-      timestamp: new Date().toISOString(),
+      timestamp: LocalDeviceTimeService.now().utcIso,
     };
     const history = [...(state.userDat.eigenRegieHistory ?? []), entry];
     // Dual write: eigenRegieHistory (storage) + currentMood.eigenRegie (current state)
@@ -814,7 +815,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     const updatedUserDat: UserDat = {
       ...state.userDat,
       gdprAccepted: true,
-      gdprAcceptedAt: new Date().toISOString(),
+      gdprAcceptedAt: LocalDeviceTimeService.now().utcIso,
       gdprVersion: '1.0',
     };
     dispatch({ type: 'UPDATE_USERDAT', payload: updatedUserDat });
@@ -973,9 +974,9 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
           startEmotion: '',
           urgency: 'midden' as const,
           initialContext: '',
-          intakeDate: new Date().toISOString(),
+          intakeDate: LocalDeviceTimeService.now().utcIso,
         },
-        createdAt: new Date().toISOString(),
+        createdAt: LocalDeviceTimeService.now().utcIso,
       };
       const backpack = migrateBackpack(reconstructedBackpack);
       const userDat = migrateUserDat(rawUserDat, backpack.userType);
@@ -1090,9 +1091,9 @@ function migrateBackpack(raw: any): Backpack {
       startEmotion: raw.intakeContext?.startEmotion ?? '',
       urgency: raw.intakeContext?.urgency ?? 'midden' as const,
       initialContext: raw.intakeContext?.initialContext ?? '',
-      intakeDate: raw.intakeContext?.intakeDate ?? new Date().toISOString(),
+      intakeDate: raw.intakeContext?.intakeDate ?? LocalDeviceTimeService.now().utcIso,
     },
-    createdAt: raw.createdAt ?? new Date().toISOString(),
+    createdAt: raw.createdAt ?? LocalDeviceTimeService.now().utcIso,
     kimBackpack: raw.kimBackpack ?? undefined,
     vspSection: raw.vspSection ?? undefined,
   };

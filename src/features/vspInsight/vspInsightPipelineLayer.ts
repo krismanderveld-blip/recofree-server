@@ -28,6 +28,7 @@ import { routeKimVspInsight, mapToKimInsightState } from "./kimVspVariant";
 import { extractChatSignals } from "./vspChatSignalAdapter";
 import { buildDgtSoothingFlow } from "./vspDgtSoothingFlow";
 import type { VspDgtSoothingFlow, VspInsightProfile } from "./vspInsightTypes";
+import { LocalDeviceTimeService } from "@/lib/core/time";
 
 // ─── Pipeline Integration Input ───────────────────────────────────────────────
 
@@ -133,7 +134,7 @@ export function runVspInsightLayer(input: VspInsightPipelineInput): VspInsightPi
     frustration: moodSliders.frustration ?? 0,
     despondency: moodSliders.despondency ?? 0,
     focus: moodSliders.focus ?? 5,
-    capturedAt: new Date().toISOString(),
+    capturedAt: LocalDeviceTimeService.now().utcIso,
   };
 
   // Detect insight state

@@ -10,6 +10,7 @@ import type {
 } from "@/lib/types/memory/sessionBuffer.types";
 import { createEmptySessionBuffer } from "@/lib/types/memory/sessionBuffer.types";
 import { estimateTokens } from "@/lib/utils/tokens/estimateTokens";
+import { LocalDeviceTimeService } from "@/lib/core/time";
 
 export interface SessionBufferStore {
   initialize(persona: RecoFreePersona, sessionId: string): SessionBuffer;
@@ -67,7 +68,7 @@ export function createSessionBufferStore(): SessionBufferStore {
       currentBuffer = {
         ...buffer,
         activeDetections: detections,
-        lastUpdatedAt: new Date().toISOString(),
+        lastUpdatedAt: LocalDeviceTimeService.now().utcIso,
       };
       return currentBuffer;
     },

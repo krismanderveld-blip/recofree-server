@@ -4,10 +4,11 @@
 
 import type { KimPatternPromptPayload, KimPatternMemoryUseDirective } from "@/src/types/kimPatternsSupport.types";
 import type { CodepK01DetectionResult } from "./codepK01.detector";
+import { LocalDeviceTimeService } from "@/lib/core/time";
 
 export function buildCodepK01PromptPayload(detection: CodepK01DetectionResult): KimPatternPromptPayload {
   const memoryDirective: KimPatternMemoryUseDirective = {
-    directiveId: `codep-k01-directive-${Date.now()}`,
+    directiveId: `codep-k01-directive-${LocalDeviceTimeService.now().epochMs}`,
     appliesToModuleId: "CODEP-K01",
     hardDirective: true,
     requiredToUseOnEveryRelevantTurn: true,

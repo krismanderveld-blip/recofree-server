@@ -21,6 +21,7 @@ import {
   createDefaultModuleMemoryState,
   buildModuleMemoryStoragePatch,
 } from '../shared/module-memory-cross-session';
+import { LocalDeviceTimeService } from "@/lib/core/time";
 
 // ─── Kim Config ──────────────────────────────────────────────────────────────
 
@@ -105,7 +106,7 @@ export function recordKimModuleActivation(args: {
     moduleId: args.moduleId,
     persona: 'kim',
     sessionId: args.sessionId,
-    activatedAt: new Date().toISOString(),
+    activatedAt: LocalDeviceTimeService.now().utcIso,
     dominanceLevel: args.dominanceLevel,
     responseMode: args.responseMode,
     confidenceScore: args.confidenceScore,

@@ -7,6 +7,7 @@ import { buildGPTPayload } from '@/lib/rugzak/gpt-payload-builder';
 import { detectRelationalAnchor, extractRelationalAnchors } from '@/lib/rugzak/relational-anchor-detector';
 import { analyzeRelationalPatterns } from '@/lib/rugzak/relational-pattern-analyzer';
 import { ELIAS_DEFAULT_MODULE } from '@/lib/engine/elias/module-catalog';
+import { LocalDeviceTimeService } from "@/lib/core/time";
 
 /**
  * OpenAIProvider — Routes through backend tRPC to OpenAI.
@@ -94,7 +95,7 @@ let lastHealthCheck = 0;
 const HEALTH_CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
 
 async function ensureServerAwake(apiBaseUrl: string): Promise<void> {
-  const now = Date.now();
+  const now = LocalDeviceTimeService.now().epochMs;
   if (now - lastHealthCheck < HEALTH_CHECK_INTERVAL_MS) {
     return; // Recently checked, skip
   }

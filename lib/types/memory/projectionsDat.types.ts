@@ -2,6 +2,7 @@
  * projections.dat — Future-oriented emotional projections with decay.
  */
 import type { RecoFreePersona, MemorySource } from "./memoryCore.types";
+import { LocalDeviceTimeService } from "@/lib/core/time";
 
 export interface ProjectionsDat {
   schemaVersion: "projections.dat.v2";
@@ -61,7 +62,7 @@ export const DEFAULT_PROJECTION_DECAY_CONFIG: ProjectionDecayConfig = {
 };
 
 export function createEmptyProjectionsDat(persona: RecoFreePersona): ProjectionsDat {
-  const now = new Date().toISOString();
+  const now = LocalDeviceTimeService.now().utcIso;
   return {
     schemaVersion: "projections.dat.v2",
     persona,

@@ -29,6 +29,7 @@
 
 import type { BufferState, TemporaryRepeat } from './short-term-memory-buffer';
 import type { TriggerPattern, UserDat } from '../ai/types';
+import { LocalDeviceTimeService } from "@/lib/core/time";
 
 // ─── Types ────────────────────────────────────────────────────
 
@@ -212,8 +213,8 @@ export function applyPromotions(
         trigger: promo.signal,
         count: 1,
         weight: Math.min(promo.weightDelta, 50),
-        firstSeen: new Date().toISOString(),
-        lastSeen: new Date().toISOString(),
+        firstSeen: LocalDeviceTimeService.now().utcIso,
+        lastSeen: LocalDeviceTimeService.now().utcIso,
       });
     }
   }

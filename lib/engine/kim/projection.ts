@@ -50,6 +50,7 @@ export interface KimProjection {
 // ─── AsyncStorage Persistence (local within-device memory, AES-256-GCM encrypted) ─────
 
 import { readEncrypted, writeEncrypted, removeEncrypted } from '@/lib/crypto/storage-encryption';
+import { LocalDeviceTimeService } from "@/lib/core/time";
 
 const KIM_PROJECTION_STORAGE_KEY = '@recofree_projection_kim';
 
@@ -110,7 +111,7 @@ function createEmptyKimProjection(): KimProjection {
   return {
     userType: 'kim',
     entries: [],
-    lastUpdatedAt: new Date().toISOString(),
+    lastUpdatedAt: LocalDeviceTimeService.now().utcIso,
     sessionSignalCount: 0,
   };
 }
@@ -187,7 +188,7 @@ export interface KimProjectionSignalResult {
 export function detectKimProjectionSignals(input: KimProjectionSignalInput): KimProjectionSignalResult {
   const newEntries: ProjectionEntry[] = [];
   const reinforcedIds: string[] = [];
-  const now = new Date().toISOString();
+  const now = LocalDeviceTimeService.now().utcIso;
   let signalCount = 0;
 
   // ── Eigen Regie Signals ──
@@ -489,7 +490,7 @@ function findMatchingEntryByKeyword(category: ProjectionCategory, keyword: strin
 }
 
 function reinforceEntry(id: string): void {
-  const now = new Date().toISOString();
+  const now = LocalDeviceTimeService.now().utcIso;
   currentProjection = {
     ...currentProjection,
     entries: currentProjection.entries.map(e =>
@@ -531,9 +532,9 @@ function createEntry(params: {
   strength: ProjectionStrength;
   decayScore: number;
 }): ProjectionEntry {
-  const now = new Date().toISOString();
+  const now = LocalDeviceTimeService.now().utcIso;
   return {
-    id: `kproj_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+    id: `kproj_${LocalDeviceTimeService.now().epochMs}_${Math.random().toString(36).slice(2, 8)}`,
     category: params.category,
     content: params.content.slice(0, PROJECTION_MAX_CONTENT_LENGTH),
     source: params.source,

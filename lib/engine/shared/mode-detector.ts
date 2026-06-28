@@ -20,6 +20,7 @@ import {
   ELIAS_PRIMARY_MODES,
   KIM_PRIMARY_MODES,
 } from './schema-mode-types';
+import { LocalDeviceTimeService } from "@/lib/core/time";
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // SECTION: Mode Marker Definitions
@@ -421,7 +422,7 @@ const MODE_MARKERS: ModeMarkerDef[] = [
  */
 export function detectModeCandidates(input: SchemaModeDetectionInput): ModeCandidate[] {
   const messageLower = input.message.toLowerCase();
-  const now = new Date().toISOString();
+  const now = LocalDeviceTimeService.now().utcIso;
   const candidates: ModeCandidate[] = [];
 
   // Filter modes by user type

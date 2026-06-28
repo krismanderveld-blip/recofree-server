@@ -16,6 +16,7 @@
  */
 
 import type { ChatMessage } from '../ai/types';
+import { LocalDeviceTimeService } from "@/lib/core/time";
 
 // ─── Configuration ──────────────────────────────────────────────
 
@@ -134,8 +135,8 @@ function createArchiveSummary(
 
   return {
     sessionNumber,
-    startDate: timestamps[0] || new Date().toISOString(),
-    endDate: timestamps[timestamps.length - 1] || new Date().toISOString(),
+    startDate: timestamps[0] || LocalDeviceTimeService.now().utcIso,
+    endDate: timestamps[timestamps.length - 1] || LocalDeviceTimeService.now().utcIso,
     messageCount: messages.length,
     userMessageCount: userMessages.length,
     themes: themes.slice(0, 5),

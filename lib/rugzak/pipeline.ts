@@ -321,6 +321,7 @@ import { detectAutopilot01 } from '../../src/modules/elias/AUTOPILOT01/detector'
 import type { EliasPsychoEducationRuntimeInput, EliasPsychoEducationDetectionResult } from '../../src/types/eliasPsychoEducation.types';
 import type { PsychoEducationActivation } from '../types/memory/memoryCore.types';
 import { searchPastReferences } from '../pipeline/memory/pastReferenceSearch';
+import { LocalDeviceTimeService } from "@/lib/core/time";
 
 // ─── Pattern Marking (post-GPT local state) ─────────────────
 
@@ -587,10 +588,10 @@ export async function processMessage(
   // ── PRE-GPT STEP 2: Update ShortTermMemoryBuffer with new message ──
   // Buffer update happens AFTER decay, so new message data merges into decayed state.
   const allMessages = [...(currentUserDat.chatHistory || []), {
-    id: `msg_${Date.now()}`,
+    id: `msg_${LocalDeviceTimeService.now().epochMs}`,
     role: 'user' as const,
     content: userMessage,
-    timestamp: new Date().toISOString(),
+    timestamp: LocalDeviceTimeService.now().utcIso,
   }];
   const previousZoneColor = sessionBuffer?.currentZoneColor ?? null;
   sessionBuffer = updateBuffer(
@@ -1536,7 +1537,7 @@ export async function processMessage(
       withdrawalRisk: (currentUserDat as any).withdrawalRisk ?? 0,
       paarsZoneActive: (currentUserDat as any).currentZone === 'PAARS',
       relapseRecentlyOccurred: (currentUserDat as any).relapseActive === true,
-      timestampIso: new Date().toISOString(),
+      timestampIso: LocalDeviceTimeService.now().utcIso,
     });
   }
 
@@ -1568,9 +1569,9 @@ export async function processMessage(
       conditionedTriggerLanguageDetected: /(?:altijd.*als|elke.*keer|zodra.*dan|whenever|every.*time.*then)/i.test(userMessage),
       vspZone: (sessionBuffer.currentZoneColor?.toUpperCase() ?? 'UNKNOWN') as 'GROEN' | 'GEEL' | 'ORANJE' | 'ROOD' | 'PAARS' | 'UNKNOWN',
       cravingSliderValue: cravingSlider,
-      timestampIso: new Date().toISOString(),
-      sessionId: `session_${Date.now()}`,
-      turnId: `turn_${Date.now()}`,
+      timestampIso: LocalDeviceTimeService.now().utcIso,
+      sessionId: `session_${LocalDeviceTimeService.now().epochMs}`,
+      turnId: `turn_${LocalDeviceTimeService.now().epochMs}`,
       existingMemoryHints: [],
     };
 
@@ -1612,11 +1613,11 @@ export async function processMessage(
     const paal01Input = {
       persona: 'elias' as const,
       intakeCompleted: true,
-      userId: `user_${Date.now()}`,
-      sessionId: `session_${Date.now()}`,
-      turnId: `turn_${Date.now()}`,
+      userId: `user_${LocalDeviceTimeService.now().epochMs}`,
+      sessionId: `session_${LocalDeviceTimeService.now().epochMs}`,
+      turnId: `turn_${LocalDeviceTimeService.now().epochMs}`,
       turnIndex: sessionBuffer.recentMessages.length,
-      timestampIso: new Date().toISOString(),
+      timestampIso: LocalDeviceTimeService.now().utcIso,
       latestUserMessage: userMessage,
       recentMessages: sessionBuffer.recentMessages.slice(-3).map(m => m.content),
       language: ((currentUserDat as any).detectedLanguage ?? 'nl') as 'nl' | 'en' | 'fr' | 'mixed' | 'unknown',
@@ -1669,11 +1670,11 @@ export async function processMessage(
     const sacInput = {
       persona: 'elias' as const,
       intakeCompleted: true,
-      userId: `user_${Date.now()}`,
-      sessionId: `session_${Date.now()}`,
-      turnId: `turn_${Date.now()}`,
+      userId: `user_${LocalDeviceTimeService.now().epochMs}`,
+      sessionId: `session_${LocalDeviceTimeService.now().epochMs}`,
+      turnId: `turn_${LocalDeviceTimeService.now().epochMs}`,
       turnIndex: sessionBuffer.recentMessages.length,
-      timestampIso: new Date().toISOString(),
+      timestampIso: LocalDeviceTimeService.now().utcIso,
       latestUserMessage: userMessage,
       recentMessages: sessionBuffer.recentMessages.slice(-3).map(m => m.content),
       language: ((currentUserDat as any).detectedLanguage ?? 'nl') as 'nl' | 'en' | 'fr' | 'mixed' | 'unknown',
@@ -1730,11 +1731,11 @@ export async function processMessage(
     const kimPatternInput = {
       persona: 'kim' as const,
       intakeCompleted: true,
-      userId: `user_${Date.now()}`,
-      sessionId: `session_${Date.now()}`,
-      turnId: `turn_${Date.now()}`,
+      userId: `user_${LocalDeviceTimeService.now().epochMs}`,
+      sessionId: `session_${LocalDeviceTimeService.now().epochMs}`,
+      turnId: `turn_${LocalDeviceTimeService.now().epochMs}`,
       turnIndex: sessionBuffer.recentMessages.length,
-      timestampIso: new Date().toISOString(),
+      timestampIso: LocalDeviceTimeService.now().utcIso,
       latestUserMessage: userMessage,
       recentMessages: sessionBuffer.recentMessages.slice(-3).map(m => m.content),
       language: ((currentUserDat as any).detectedLanguage ?? 'nl') as 'nl' | 'en' | 'fr' | 'mixed' | 'unknown',
@@ -1806,7 +1807,7 @@ export async function processMessage(
       boundaryFatigueIntensity: (currentUserDat.currentMood as any)?.boundaryFatigue ?? 0,
       caregiverStressIntensity: (currentUserDat.currentMood as any)?.stress ?? 0,
       acuteHouseholdSafetyRisk: (currentUserDat as any).acuteHouseholdSafetyRisk ?? false,
-      timestampIso: new Date().toISOString(),
+      timestampIso: LocalDeviceTimeService.now().utcIso,
     });
   }
 
@@ -1829,7 +1830,7 @@ export async function processMessage(
       recentMessages: sessionBuffer.recentMessages.slice(-3).map(m => m.content),
       language: (currentUserDat as any).detectedLanguage ?? 'nl',
       sessionId: sessionId ?? 'unknown',
-      turnId: `turn-${Date.now()}`,
+      turnId: `turn-${LocalDeviceTimeService.now().epochMs}`,
       immediateDanger: analysis.riskLevel === 'critical',
       childPresentOrAffected: (currentUserDat as any).childrenInvolved ?? false,
       aggressionDetected: (currentUserDat as any).aggressionDetected ?? false,
@@ -1841,7 +1842,7 @@ export async function processMessage(
       policeRelevantButNot112: (currentUserDat as any).policeRelevantButNot112 ?? false,
       childMaltreatmentOrNeglectDetected: (currentUserDat as any).childMaltreatmentOrNeglectDetected ?? false,
       childParentificationRiskDetected: (currentUserDat as any).childParentificationRiskDetected ?? false,
-      timestampIso: new Date().toISOString(),
+      timestampIso: LocalDeviceTimeService.now().utcIso,
     });
   }
 
@@ -1863,7 +1864,7 @@ export async function processMessage(
       recentMessages: sessionBuffer.recentMessages.slice(-3).map(m => m.content),
       language: (currentUserDat as any).detectedLanguage ?? 'nl',
       sessionId: sessionId ?? 'unknown',
-      turnId: `turn-${Date.now()}`,
+      turnId: `turn-${LocalDeviceTimeService.now().epochMs}`,
       caregiverState: (currentUserDat as any).caregiverState ?? 'unknown',
       safetyRiskLevel: analysis.riskLevel === 'critical' ? 'IMMEDIATE' : analysis.riskLevel === 'high' ? 'HIGH' : 'NONE',
       vspZone: (currentUserDat as any).vspZone ?? 'GROEN',
@@ -1876,7 +1877,7 @@ export async function processMessage(
       explicitDisappearance: false,
       explicitImpairedDrivingRisk: false,
       explicitChildSafetyRisk: false,
-      timestampIso: new Date().toISOString(),
+      timestampIso: LocalDeviceTimeService.now().utcIso,
     });
   }
 
@@ -1919,8 +1920,8 @@ export async function processMessage(
       lovedOneUseContext: /(?:hij|zij|he|she|il|elle)/i.test(userMessage),
       firstPersonUseContext: /\b(ik|I|je)\b.*\b(gebruik|drink|use|consume)\b/i.test(userMessage),
       sessionId: sessionId ?? 'unknown',
-      turnId: `turn-${Date.now()}`,
-      timestampIso: new Date().toISOString(),
+      turnId: `turn-${LocalDeviceTimeService.now().epochMs}`,
+      timestampIso: LocalDeviceTimeService.now().utcIso,
     });
   }
 
@@ -2028,7 +2029,7 @@ export async function processMessage(
       informationAsymmetry: (currentUserDat as any).informationAsymmetry ?? false,
       childrenTriangulation: (currentUserDat as any).childrenTriangulation ?? false,
       partnerBlamesCaregiver: (currentUserDat as any).partnerBlamesCaregiver ?? false,
-      timestampIso: new Date().toISOString(),
+      timestampIso: LocalDeviceTimeService.now().utcIso,
     });
   }
 
@@ -2070,7 +2071,7 @@ export async function processMessage(
       futureLoss: (currentUserDat as any).futureLoss ?? false,
       acuteFlooding: (currentUserDat as any).acuteFlooding ?? false,
       safetyRisk: analysis.riskLevel === 'critical' ? 0.9 : analysis.riskLevel === 'high' ? 0.7 : 0.1,
-      timestampIso: new Date().toISOString(),
+      timestampIso: LocalDeviceTimeService.now().utcIso,
     });
   }
 
@@ -2093,7 +2094,7 @@ export async function processMessage(
       par01PreviousDetections: (currentUserDat as any).par01Detections ?? [],
       fin01PreviousDetections: (currentUserDat as any).fin01Detections ?? [],
       safetyRisk: analysis.riskLevel === 'critical' ? 0.9 : analysis.riskLevel === 'high' ? 0.7 : 0.1,
-      timestampIso: new Date().toISOString(),
+      timestampIso: LocalDeviceTimeService.now().utcIso,
       backpackContext: JSON.stringify((backpack as any).sections ?? {}),
     });
   }
@@ -2139,7 +2140,7 @@ export async function processMessage(
       wantsConnectionButScared: iso01Concepts.has('social-withdrawal') && iso01Concepts.has('painful-loneliness'),
       acuteOverload: analysis.riskLevel === 'high',
       safetyRisk: analysis.riskLevel === 'critical' ? 0.9 : analysis.riskLevel === 'high' ? 0.7 : 0.1,
-      timestampIso: new Date().toISOString(),
+      timestampIso: LocalDeviceTimeService.now().utcIso,
     });
   }
 
@@ -2417,7 +2418,7 @@ export async function processMessage(
   // ── Persist relapse-intent event to user.dat log (cross-session pattern tracking) ──
   if (relapseIntentResult?.detected) {
     const relapseEvent = {
-      timestamp: new Date().toISOString(),
+      timestamp: LocalDeviceTimeService.now().utcIso,
       source: relapseIntentResult.source,
       confidence: relapseIntentResult.confidence,
       sessionNumber: currentUserDat.totalSessions,
@@ -2432,8 +2433,8 @@ export async function processMessage(
     console.log(`[Pipeline] RELAPSE_INTENT_LOGGED: event #${currentUserDat.relapseIntentLog!.length} persisted to user.dat`);
   }
 
-  const sessionStart = currentUserDat.lastSessionDate ? new Date(currentUserDat.lastSessionDate) : new Date();
-  const sessionMinutes = Math.floor((Date.now() - sessionStart.getTime()) / 60000);
+  const sessionStart = currentUserDat.lastSessionDate ? new Date(currentUserDat.lastSessionDate) : new Date(LocalDeviceTimeService.now().epochMs);
+  const sessionMinutes = Math.floor((LocalDeviceTimeService.now().epochMs - sessionStart.getTime()) / 60000);
 
   // ── STEP 5f: VSP Insight Layer (AFTER safety core, BEFORE GPT call) ──
   // Reads safety core output but NEVER mutates it. store:false.
@@ -2708,10 +2709,10 @@ export async function processMessage(
 
   // 7a. Add user message to history
   const userMsg: ChatMessage = {
-    id: `msg_${Date.now()}`,
+    id: `msg_${LocalDeviceTimeService.now().epochMs}`,
     role: 'user',
     content: userMessage,
-    timestamp: new Date().toISOString(),
+    timestamp: LocalDeviceTimeService.now().utcIso,
   };
   updatedUserDat = {
     ...updatedUserDat,
@@ -2720,10 +2721,10 @@ export async function processMessage(
 
   // 7b. Add AI response to history
   const aiMsg: ChatMessage = {
-    id: `msg_${Date.now() + 1}`,
+    id: `msg_${LocalDeviceTimeService.now().epochMs + 1}`,
     role: 'assistant',
     content: response,
-    timestamp: new Date().toISOString(),
+    timestamp: LocalDeviceTimeService.now().utcIso,
     modulesUsed: [activeDecision ? activeDecision.dominantModule : preGPTDominantState.dominantModule],
     clinicalInfo: {
       module: activeDecision ? activeDecision.dominantModule : preGPTDominantState.dominantModule,
@@ -2817,7 +2818,7 @@ export async function processMessage(
 
   // ── POST-GPT STEP 9: Consolidated logging ──
   const messageLog: MessageLog = {
-    timestamp: new Date().toISOString(),
+    timestamp: LocalDeviceTimeService.now().utcIso,
     messageIndex: sessionBuffer.messageCount,
     preGPT: {
       triggerDecayApplied,
@@ -2887,7 +2888,7 @@ export async function processMessage(
   // ── Build engine trace data for debug screen ──
   const traceData: EngineTraceInput = {
     messageIndex: sessionBuffer.messageCount,
-    timestamp: new Date().toISOString(),
+    timestamp: LocalDeviceTimeService.now().utcIso,
     userMessage,
     pipelineSteps: [
       { step: '1. Trigger decay', status: 'passed', reason: `applied to ${sessionBuffer.messageCount > 1 ? 'previous' : 'initial'} buffer` },
@@ -3121,7 +3122,7 @@ export async function processMessage(
 function markPatternSignal(signal: string, existingTriggers: import('../ai/types').TriggerPattern[]): void {
   const normalized = signal.toLowerCase();
   const existing = sessionPatternSignals.find((p) => p.signal === normalized);
-  const now = new Date().toISOString();
+  const now = LocalDeviceTimeService.now().utcIso;
 
   if (existing) {
     existing.repeatCount++;
@@ -3147,7 +3148,7 @@ function markPatternSignal(signal: string, existingTriggers: import('../ai/types
  */
 function isInCooldown(signal: PatternSignal): boolean {
   if (!signal.cooldownUntil) return false;
-  return new Date(signal.cooldownUntil).getTime() > Date.now();
+  return new Date(signal.cooldownUntil).getTime() > LocalDeviceTimeService.now().epochMs;
 }
 
 // ─── Generate Greeting ──────────────────────────────────────
@@ -3223,8 +3224,8 @@ export async function generateGreeting(
 
   const analysis = analyzeState(rugzak, '');
 
-  const sessionStartDate = currentUserDat.lastSessionDate ? new Date(currentUserDat.lastSessionDate) : new Date();
-  const sessionMinutes = Math.floor((Date.now() - sessionStartDate.getTime()) / 60000);
+  const sessionStartDate = currentUserDat.lastSessionDate ? new Date(currentUserDat.lastSessionDate) : new Date(LocalDeviceTimeService.now().epochMs);
+  const sessionMinutes = Math.floor((LocalDeviceTimeService.now().epochMs - sessionStartDate.getTime()) / 60000);
 
   // Determine if backpack is empty (no sections filled)
   const isBackpackEmpty = backpack.userType === 'kim'
@@ -3233,10 +3234,10 @@ export async function generateGreeting(
 
   // ── TIMESTAMP-BASED FILTERING ──────────────────────────────────
   // Apply time windows: mood=today, diary=2d, gratitude=2d, rugzak=4d
-  const now = Date.now();
+  const now = LocalDeviceTimeService.now().epochMs;
   const TWO_DAYS_MS = 2 * 24 * 60 * 60 * 1000;
   const FOUR_DAYS_MS = 4 * 24 * 60 * 60 * 1000;
-  const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
+  const todayStart = new Date(LocalDeviceTimeService.now().epochMs); todayStart.setHours(0, 0, 0, 0);
   const todayMs = todayStart.getTime();
 
   // Filter diary entries: content within 2 days, gratitude within 2 days
@@ -3336,10 +3337,10 @@ export async function generateGreeting(
 
   // Add greeting to userDat history
   const aiMsg: ChatMessage = {
-    id: `msg_${Date.now()}`,
+    id: `msg_${LocalDeviceTimeService.now().epochMs}`,
     role: 'assistant',
     content: response,
-    timestamp: new Date().toISOString(),
+    timestamp: LocalDeviceTimeService.now().utcIso,
     modulesUsed: analysis.priorityModules,
   };
 
@@ -3455,8 +3456,8 @@ export async function endSession(
 
   // ── STEP 1: Analyze the full session ──
   const sessionMessages = currentUserDat.chatHistory || [];
-  const sessionStartDate = currentUserDat.lastSessionDate ? new Date(currentUserDat.lastSessionDate) : new Date();
-  const durationMinutes = Math.floor((Date.now() - sessionStartDate.getTime()) / 60000);
+  const sessionStartDate = currentUserDat.lastSessionDate ? new Date(currentUserDat.lastSessionDate) : new Date(LocalDeviceTimeService.now().epochMs);
+  const durationMinutes = Math.floor((LocalDeviceTimeService.now().epochMs - sessionStartDate.getTime()) / 60000);
 
   const userMessages = sessionMessages.filter((m) => m.role === 'user');
   const allUserText = userMessages.map((m) => m.content).join(' ');
@@ -3562,10 +3563,10 @@ export async function endSession(
 
   // ── STEP 4: Update UserDat ONLY (backpack is NEVER modified) ──
   const farewellMsg: ChatMessage = {
-    id: `msg_${Date.now()}`,
+    id: `msg_${LocalDeviceTimeService.now().epochMs}`,
     role: 'assistant',
     content: farewell,
-    timestamp: new Date().toISOString(),
+    timestamp: LocalDeviceTimeService.now().utcIso,
   };
 
   let updatedUserDat: UserDat = {
@@ -3587,7 +3588,7 @@ export async function endSession(
   // ── Projection Decay (session-end) ──
   // Apply decay to projection entries that were not reinforced this session.
   // Runs directly after UserDat promotion, within the same session-end block.
-  const sessionEndTimestamp = new Date().toISOString();
+  const sessionEndTimestamp = LocalDeviceTimeService.now().utcIso;
   if (backpack.userType === 'elias') {
     const decayResult = await applyProjectionDecay(sessionEndTimestamp);
     if (decayResult.decayedEntries > 0 || decayResult.removedEntries > 0) {
@@ -3611,7 +3612,7 @@ export async function endSession(
   // Record mood snapshot at session end
   if (updatedUserDat.currentMood) {
     const snapshot = {
-      timestamp: new Date().toISOString(),
+      timestamp: LocalDeviceTimeService.now().utcIso,
       sliders: sanitizeSliders(updatedUserDat.currentMood as unknown as Record<string, unknown>) as unknown as import('../ai/types').MoodSliders,
     };
     updatedUserDat = {
@@ -3623,7 +3624,7 @@ export async function endSession(
   // Add session analysis record to userDat
   const analysisRecord = {
     sessionNumber: currentUserDat.totalSessions,
-    date: new Date().toISOString(),
+    date: LocalDeviceTimeService.now().utcIso,
     messageCount: sessionSummary.messageCount,
     durationMinutes: sessionSummary.durationMinutes,
     dominantEmotion: sessionSummary.dominantEmotion,
@@ -3652,7 +3653,7 @@ export async function endSession(
   // ── STEP 5a2: Schema/Mode tendency persistence with decay (hybrid model — patterns only, never identity) ──
   {
     const activatedModes = getSessionActivatedModes();
-    const now = new Date().toISOString();
+    const now = LocalDeviceTimeService.now().utcIso;
     const DECAY_RATE = 0.10; // 10% decay per session for unseen tendencies
     const PRUNE_THRESHOLD = 0.1; // Remove entries below this score
     const MAX_TENDENCIES = 10; // Cap per category
@@ -3725,7 +3726,7 @@ export async function endSession(
   {
     const actProcessesUsed = getSessionACTProcessesUsed();
     if (actProcessesUsed.length > 0) {
-      const actNow = new Date().toISOString();
+      const actNow = LocalDeviceTimeService.now().utcIso;
       const existingProgress = updatedUserDat.actProgress ?? createDefaultACTProgress();
       const updatedProgress = { ...existingProgress };
       updatedProgress.lastACTProcessUsed = actProcessesUsed[actProcessesUsed.length - 1];
@@ -3739,7 +3740,7 @@ export async function endSession(
   {
     const cbtProcessesUsed = getSessionCBTProcessesUsed();
     if (cbtProcessesUsed.length > 0) {
-      const cbtNow = new Date().toISOString();
+      const cbtNow = LocalDeviceTimeService.now().utcIso;
       const existingCBTProgress = updatedUserDat.cgtProgress ?? createDefaultCBTProgress();
       const updatedCBTProgress = { ...existingCBTProgress };
       updatedCBTProgress.lastCBTProcessUsed = cbtProcessesUsed[cbtProcessesUsed.length - 1];
@@ -3753,7 +3754,7 @@ export async function endSession(
   {
     const dgtProcessesUsed = getSessionDGTProcessesUsed();
     if (dgtProcessesUsed.length > 0) {
-      const dgtNow = new Date().toISOString();
+      const dgtNow = LocalDeviceTimeService.now().utcIso;
       const existingDGTProgress = updatedUserDat.dgtProgress ?? createDefaultDGTProgress();
       const updatedDGTProgress = { ...existingDGTProgress };
       updatedDGTProgress.lastDGTProcessUsed = dgtProcessesUsed[dgtProcessesUsed.length - 1];
@@ -3767,7 +3768,7 @@ export async function endSession(
   {
     const mbtProcessesUsed = getSessionMBTProcessesUsed();
     if (mbtProcessesUsed.length > 0) {
-      const mbtNow = new Date().toISOString();
+      const mbtNow = LocalDeviceTimeService.now().utcIso;
       const existingMBTProgress = updatedUserDat.mbtProgress ?? createDefaultMBTProgress();
       const updatedMBTProgress = { ...existingMBTProgress };
       updatedMBTProgress.lastMBTProcessUsed = mbtProcessesUsed[mbtProcessesUsed.length - 1];
@@ -3781,7 +3782,7 @@ export async function endSession(
   if (backpack.userType === 'kim') {
     const ko1PatternsUsed = getSessionKO1PatternsUsed();
     if (ko1PatternsUsed.length > 0) {
-      const ko1Now = new Date().toISOString();
+      const ko1Now = LocalDeviceTimeService.now().utcIso;
       const existingKO1Progress = (updatedUserDat as any).ko1Progress ?? createDefaultKO1Progress();
       const updatedKO1Progress = { ...existingKO1Progress };
       updatedKO1Progress.lastPatternDetected = ko1PatternsUsed[ko1PatternsUsed.length - 1];
@@ -3801,7 +3802,7 @@ export async function endSession(
   if (backpack.userType === 'kim') {
     const k05ModesUsed = getSessionK05ModesUsed();
     if (k05ModesUsed.length > 0) {
-      const k05Now = new Date().toISOString();
+      const k05Now = LocalDeviceTimeService.now().utcIso;
       const existingK05Progress = (updatedUserDat as any).k05Progress ?? createDefaultK05Progress();
       const updatedK05Progress = { ...existingK05Progress };
       updatedK05Progress.lastCommunicationMode = k05ModesUsed[k05ModesUsed.length - 1];
@@ -3819,7 +3820,7 @@ export async function endSession(
     const k02FlagsUsed = getSessionK02FlagsUsed();
     const k02StatesUsed = getSessionK02InterventionStates();
     if (k02FlagsUsed.length > 0) {
-      const k02Now = new Date().toISOString();
+      const k02Now = LocalDeviceTimeService.now().utcIso;
       const existingK02Progress = (updatedUserDat as any).k02Progress ?? createDefaultK02Progress();
       const updatedK02Progress = { ...existingK02Progress };
       updatedK02Progress.lastSessionDate = k02Now;
@@ -3964,8 +3965,8 @@ export async function endSession(
   {
     const existingMemory: ModuleMemoryState = (updatedUserDat as any).moduleMemory ?? createDefaultModuleMemoryState(backpack.userType as 'elias' | 'kim');
     const sessionId = `session_${currentUserDat.totalSessions + 1}`;
-    const sessionStartedAt = (updatedUserDat as any).lastSessionDate ?? new Date().toISOString();
-    const sessionEndedAt = new Date().toISOString();
+    const sessionStartedAt = (updatedUserDat as any).lastSessionDate ?? LocalDeviceTimeService.now().utcIso;
+    const sessionEndedAt = LocalDeviceTimeService.now().utcIso;
     const dominantTheme = sessionSummary.themes[0] ?? undefined;
 
     if (backpack.userType === 'elias' && existingMemory.persona === 'elias') {
@@ -3999,7 +4000,7 @@ export async function endSession(
   {
     // Check today's diary entries for completed gratitude (all 3 fields filled)
     // The streak is updated based on lastGratitudeDate vs today
-    const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+    const today = LocalDeviceTimeService.now().utcIso.slice(0, 10); // YYYY-MM-DD
     const lastDate = (updatedUserDat as any).lastGratitudeDate as string | null;
     const currentStreak = (updatedUserDat as any).gratitudeStreak ?? 0;
 
@@ -4016,12 +4017,12 @@ export async function endSession(
 
     if (todayGratitude) {
       // Check if streak is consecutive (yesterday or today already counted)
-      const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+      const yesterday = new Date(LocalDeviceTimeService.now().epochMs - 86400000).toISOString().slice(0, 10);
       const isConsecutive = lastDate === yesterday || lastDate === today;
       const newStreak = isConsecutive ? currentStreak + 1 : 1;
       updatedUserDat = { ...updatedUserDat, gratitudeStreak: newStreak, lastGratitudeDate: today } as any;
       console.log(`[Pipeline] Gratitude streak: ${newStreak} (consecutive: ${isConsecutive})`);
-    } else if (lastDate && lastDate < new Date(Date.now() - 86400000).toISOString().slice(0, 10)) {
+    } else if (lastDate && lastDate < new Date(LocalDeviceTimeService.now().epochMs - 86400000).toISOString().slice(0, 10)) {
       // Missed a day — reset streak
       updatedUserDat = { ...updatedUserDat, gratitudeStreak: 0 } as any;
       console.log(`[Pipeline] Gratitude streak reset (last: ${lastDate}, today: ${today})`);
@@ -4035,7 +4036,7 @@ export async function endSession(
     const existingPatterns: import('../ai/types').RepeatingPattern[] = (updatedUserDat as any).repeatingPatterns ?? [];
     const sessionThemes = sessionSummary.themes;
     const hasProgression = sessionSummary.moodDelta.distressChange < -1 || sessionSummary.moodDelta.resilienceChange > 1;
-    const now = new Date().toISOString();
+    const now = LocalDeviceTimeService.now().utcIso;
 
     let updatedPatterns = [...existingPatterns];
 
@@ -4444,8 +4445,8 @@ export function runDeferredSessionAnalysis(
   const sessionMessages = userDat.chatHistory || [];
   if (sessionMessages.length === 0) return userDat;
 
-  const sessionStartDate = userDat.lastSessionDate ? new Date(userDat.lastSessionDate) : new Date();
-  const durationMinutes = Math.floor((Date.now() - sessionStartDate.getTime()) / 60000);
+  const sessionStartDate = userDat.lastSessionDate ? new Date(userDat.lastSessionDate) : new Date(LocalDeviceTimeService.now().epochMs);
+  const durationMinutes = Math.floor((LocalDeviceTimeService.now().epochMs - sessionStartDate.getTime()) / 60000);
 
   const userMessages = sessionMessages.filter((m) => m.role === 'user');
   const allUserText = userMessages.map((m) => m.content).join(' ');
@@ -4507,7 +4508,7 @@ export function runDeferredSessionAnalysis(
   // Record mood snapshot
   if (updatedUserDat.currentMood) {
     const snapshot = {
-      timestamp: new Date().toISOString(),
+      timestamp: LocalDeviceTimeService.now().utcIso,
       sliders: sanitizeSliders(updatedUserDat.currentMood as unknown as Record<string, unknown>) as unknown as import('../ai/types').MoodSliders,
     };
     updatedUserDat = {
@@ -4519,7 +4520,7 @@ export function runDeferredSessionAnalysis(
   // Add session analysis record
   const analysisRecord = {
     sessionNumber: userDat.totalSessions,
-    date: new Date().toISOString(),
+    date: LocalDeviceTimeService.now().utcIso,
     messageCount: sessionSummary.messageCount,
     durationMinutes: sessionSummary.durationMinutes,
     dominantEmotion: sessionSummary.dominantEmotion,

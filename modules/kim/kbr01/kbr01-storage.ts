@@ -4,6 +4,7 @@
  */
 
 import type { KBR01DetectionResult, KBR01StorageState } from './kbr01-types';
+import { LocalDeviceTimeService } from "@/lib/core/time";
 
 export function buildKBR01StoragePatch(
   detection: KBR01DetectionResult,
@@ -15,7 +16,7 @@ export function buildKBR01StoragePatch(
 
   return {
     kbr01Activated: true,
-    lastActivatedAt: new Date().toISOString(),
+    lastActivatedAt: LocalDeviceTimeService.now().utcIso,
     activationCount: prev.activationCount + 1,
     dominantTrigger: detection.triggers.find(t => t !== 'NONE') || 'NONE',
     dominantMode: detection.recommendedMode,
