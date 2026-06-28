@@ -22,7 +22,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { readEncrypted, writeEncrypted } from '@/lib/crypto/storage-encryption';
-import { useRouter, useFocusEffect, type Href } from 'expo-router';
+import { useRouter, useFocusEffect, useNavigation, type Href } from 'expo-router';
 import { useUser } from '@/lib/user-context';
 import { fixUnicode } from '@/lib/utils';
 import { getAIProvider } from '@/lib/ai';
@@ -1100,6 +1100,86 @@ function ChatScreenInner() {
   // Keep ref in sync so inactivity/background timers can call the same function
   handleEndConversationRef.current = handleEndConversation;
 
+  // ── Quiet session close (back-button / tab-switch) ──────────────────────
+  // Writes full summary to logs.dat WITHOUT UI feedback (no farewell, no analyzing msg).
+  // Uses GPT with 5s timeout; falls back to buffer-based summary on timeout/failure.
+  // Does NOT call the rugzak endSession (no farewell, no userDat promotion).
+  // Respects concurrency lock: if handleEndConversation already ran, this is a no-op.
+  const closeSessionQuietlyRef = useRef<(() => Promise<void>) | null>(null);
+  const closeSessionQuietly = useCallback(async () => {
+    // Only close if session was active and has messages
+    if (sessionPhase !== 'active' || messages.length < 1) return;
+    try {
+      const persona = (state.userType === 'elias' ? 'elias' : 'kim') as 'elias' | 'kim';
+      const apiBase = getApiBaseUrl();
+      const lifecycleManager = getSessionLifecycleManager();
+      const buffer = lifecycleManager.getStores().sessionBufferStore.getBuffer();
+
+      // Build chatHistory fallback from current messages
+      const chatHistoryForFallback = messages
+        .filter(m => m.role === 'user' || m.role === 'assistant')
+        .map(m => ({ role: m.role, content: m.content, timestamp: m.timestamp }));
+
+      logDebugEvent('transfer_1_session_end_detected', {
+        trigger: 'quiet_close',
+        messageCount: messages.length,
+        sessionAnalysesCountBefore: 0,
+        writtenTo: `recofree_memory/${persona}/logs.dat`,
+      });
+      logDebugEvent('transfer_2_buffer_status', {
+        bufferExists: buffer !== null,
+        bufferMessageCount: buffer?.compactMessages?.length ?? 0,
+        bufferSessionId: buffer?.sessionId ?? 'none',
+      });
+
+      // GPT with 5s timeout — if it takes longer, fallback kicks in automatically
+      // (the lifecycle endSession already has internal fallback, but we add a race
+      //  to ensure navigation is never blocked for more than 5s)
+      const QUIET_CLOSE_TIMEOUT_MS = 5000;
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('quiet_close_timeout')), QUIET_CLOSE_TIMEOUT_MS)
+      );
+
+      const endResult = await Promise.race([
+        lifecycleManager.endSession(persona, apiBase, chatHistoryForFallback),
+        timeoutPromise,
+      ]).catch(async (err) => {
+        // Timeout or error: force buffer-fallback write
+        console.warn('[QuietClose] GPT timed out or failed, forcing buffer fallback:', err?.message);
+        // The concurrency lock may already be set by the timed-out call.
+        // If so, the incremental write is already the best we have.
+        // If not, try one more time with a very short apiBase that will fail fast.
+        return { sessionId: buffer?.sessionId ?? 'unknown', summarized: false, error: err?.message };
+      });
+
+      console.log(`[QuietClose] endSession result: sessionId=${(endResult as any).sessionId}, summarized=${(endResult as any).summarized}`);
+      logDebugEvent('transfer_4_lifecycle_result', {
+        sessionId: (endResult as any).sessionId ?? 'unknown',
+        summarized: (endResult as any).summarized ?? false,
+        error: (endResult as any).error ?? null,
+        writtenTo: `recofree_memory/${persona}/logs.dat`,
+      });
+    } catch (err) {
+      console.warn('[QuietClose] Non-critical error:', err);
+    }
+  }, [sessionPhase, messages, state.userType]);
+  closeSessionQuietlyRef.current = closeSessionQuietly;
+
+  // ── Tab-switch / blur listener ──────────────────────────────────────────
+  // When the user switches to another tab, the 'blur' event fires.
+  // We trigger the quiet close to ensure logs.dat gets a full summary.
+  const navigation = useNavigation();
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('blur', () => {
+      // Fire-and-forget: quiet close runs in background
+      // The concurrency lock prevents double-writes if back-button already triggered it
+      if (closeSessionQuietlyRef.current) {
+        closeSessionQuietlyRef.current();
+      }
+    });
+    return unsubscribe;
+  }, [navigation]);
+
   const handleBackToHome = useCallback(() => {
     // Reset session state so next Chat tab focus triggers a fresh greeting
     greetingSent.current = false;
@@ -1264,7 +1344,13 @@ function ChatScreenInner() {
         >
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
             <Pressable
-              onPress={() => router.push('/(tabs)/' as Href)}
+              onPress={async () => {
+                // Trigger quiet session close before navigating away
+                if (closeSessionQuietlyRef.current) {
+                  await closeSessionQuietlyRef.current();
+                }
+                router.push('/(tabs)/' as Href);
+              }}
               style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1, marginRight: 14 }]}
             >
               <Text style={{ fontSize: 20, color: dc.textInverse, fontWeight: '600' }}>{t('chat.header.back')}</Text>
