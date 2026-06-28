@@ -336,15 +336,22 @@ function adaptLogsDat(
 ): GreetingLogsDatSnapshot {
   const result: GreetingLogsDatSnapshot = { lastSessionOpenLoops: [] };
 
-  // V3.3 FIX: Raw previous session messages are the SINGLE SOURCE OF TRUTH.
-  // logs.dat compressedNarrative is a GPT-generated summary that can be stale/wrong
-  // (e.g., it may say "uitstellen" when the user actually said "afspraak over 9 dagen").
-  // When raw messages are available, they REPLACE all logs.dat narrative content.
+  // TIMESTAMP-FIRST: Always use the most recent data source.
+  // Compare the last raw message timestamp vs the last logs.dat session endedAt.
+  // Whichever is newer wins — that's the context the greeting uses.
   const hasRawMessages = previousSessionMessages && previousSessionMessages.length > 0;
+  const lastRawMsgTimestamp = hasRawMessages
+    ? previousSessionMessages![previousSessionMessages!.length - 1]?.timestamp || ''
+    : '';
+  const lastLogsDatTimestamp = (allSessions && allSessions.length > 0)
+    ? (allSessions[allSessions.length - 1].endedAt || allSessions[allSessions.length - 1].createdAt || '')
+    : '';
 
-  if (hasRawMessages) {
-    // RAW MESSAGES PATH: Use ONLY the actual chat messages as context.
-    // Do NOT mix in logs.dat compressedNarrative — it may contradict the raw messages.
+  // Most recent timestamp wins
+  const useRawMessages = hasRawMessages && lastRawMsgTimestamp >= lastLogsDatTimestamp;
+
+  if (useRawMessages) {
+    // Raw messages are newer — use them as context
     const last5 = previousSessionMessages!.slice(-5);
     const rawTranscript = last5.map(m => `${m.role === 'user' ? 'Gebruiker' : 'Elias'}: ${m.content}`).join('\n');
     result.latestLogDigest = rawTranscript;
@@ -355,26 +362,25 @@ function adaptLogsDat(
       openEndpoints: lastSessionSummary?.unresolvedTensions ?? [],
       endedAt: lastMsgTimestamp,
     }];
-    // Preserve open loops and follow-up from logs.dat (these are structural, not narrative)
     result.lastSessionOpenLoops = lastSessionSummary?.unresolvedTensions ?? [];
     result.lastSessionFollowUp = lastSessionSummary?.suggestedFollowUp?.length
       ? lastSessionSummary.suggestedFollowUp
       : undefined;
     result.lastSessionEmotionalArc = lastSessionSummary?.emotionalArc || undefined;
-    // DO NOT include logs.dat session digests — they contain stale GPT summaries
-    // that may contradict the actual messages the user sent.
-  } else if (lastSessionSummary) {
-    // FALLBACK PATH: No raw messages available, use logs.dat summary.
-    result.latestLogDigest = lastSessionSummary.compressedNarrative || undefined;
-    result.lastSessionOpenLoops = lastSessionSummary.unresolvedTensions ?? [];
-    result.lastSessionTopics = lastSessionSummary.discussedTopics?.length > 0
-      ? lastSessionSummary.discussedTopics
+  } else if (lastSessionSummary || (allSessions && allSessions.length > 0)) {
+    // logs.dat is newer (or raw messages unavailable) — use logs.dat
+    const lastSession = allSessions && allSessions.length > 0
+      ? allSessions[allSessions.length - 1]
       : undefined;
-    result.lastSessionEmotionalArc = lastSessionSummary.emotionalArc || undefined;
-    result.lastSessionFollowUp = lastSessionSummary.suggestedFollowUp?.length > 0
+    result.latestLogDigest = lastSession?.compressedNarrative || lastSessionSummary?.compressedNarrative || undefined;
+    result.lastSessionOpenLoops = lastSessionSummary?.unresolvedTensions ?? (lastSession?.openEndpoints ?? []).map(ep => ep.label);
+    result.lastSessionTopics = (lastSession?.discussedTopics?.length ?? 0) > 0
+      ? lastSession!.discussedTopics
+      : lastSessionSummary?.discussedTopics?.length ? lastSessionSummary.discussedTopics : undefined;
+    result.lastSessionEmotionalArc = lastSessionSummary?.emotionalArc || (lastSession?.emotionalThemes ?? []).map(t => t.label).join(', ') || undefined;
+    result.lastSessionFollowUp = lastSessionSummary?.suggestedFollowUp?.length
       ? lastSessionSummary.suggestedFollowUp
       : undefined;
-    // Include logs.dat digests only when we have no raw messages
     if (allSessions && allSessions.length > 0) {
       const recent = allSessions.slice(-3).reverse();
       result.recentSessionDigests = recent.map(s => ({
