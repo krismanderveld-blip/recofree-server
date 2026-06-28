@@ -819,5 +819,10 @@
   "dayStructure.home_card.now": "Nu",
   "dayStructure.bell.enabled": "Meldingen aan",
   "dayStructure.bell.disabled": "Meldingen uit",
-  "dayStructure.bell.denied": "Meldingen geblokkeerd"
+  "dayStructure.bell.denied": "Meldingen geblokkeerd",
+  "home.daystructure_card.icon": "📅",
+  "home.daystructure_card.title": "Mijn dagstructuur",
+  "home.daystructure_card.body": "Plan je dag en ontvang herinneringen",
+  "home.daystructure_card.cta": "Bekijken →",
+  "home.daystructure_card.chevron": "›"
 }

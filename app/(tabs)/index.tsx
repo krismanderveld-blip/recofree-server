@@ -301,6 +301,21 @@ export default function HomeScreen() {
           </View>
                     <Text style={styles.navCardChevron}>{t('home.backpack_card.chevron')}</Text>
         </Pressable>
+        {/* Day Structure Card */}
+        <Pressable
+          onPress={() => router.push('/day-structure/wizard' as Href)}
+          style={({ pressed }) => [styles.navCard, { backgroundColor: '#E3F2FD', borderColor: '#90CAF9', opacity: pressed ? 0.85 : 1 }]}
+        >
+          <View style={[styles.navCardIcon, { backgroundColor: '#BBDEFB' }]}>
+            <Text style={{ fontSize: 22 }}>{t('home.daystructure_card.icon')}</Text>
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.navCardTitle}>{t('home.daystructure_card.title')}</Text>
+            <Text style={styles.navCardBody}>{t('home.daystructure_card.body')}</Text>
+            <Text style={[styles.navCardCta, { color: '#1565C0' }]}>{t('home.daystructure_card.cta')}</Text>
+          </View>
+          <Text style={styles.navCardChevron}>{t('home.daystructure_card.chevron')}</Text>
+        </Pressable>
         {/* My Profile Card */}
         <Pressable
           onPress={() => router.push('/(tabs)/profile' as Href)}

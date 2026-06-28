@@ -819,5 +819,10 @@
   "dayStructure.home_card.now": "Maintenant",
   "dayStructure.bell.enabled": "Notifications activées",
   "dayStructure.bell.disabled": "Notifications désactivées",
-  "dayStructure.bell.denied": "Notifications bloquées"
+  "dayStructure.bell.denied": "Notifications bloquées",
+  "home.daystructure_card.icon": "📅",
+  "home.daystructure_card.title": "Ma structure de jour",
+  "home.daystructure_card.body": "Planifiez votre journée et recevez des rappels",
+  "home.daystructure_card.cta": "Voir →",
+  "home.daystructure_card.chevron": "›"
 }

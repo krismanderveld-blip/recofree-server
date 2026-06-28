@@ -2109,3 +2109,4 @@
 - [x] Fase 9: Final verification + checkpoint
 - [x] Audit weekday mapping: TimeAdapter ISO 1-7 ↔ expo-notifications US 1-7 conversion confirmed correct
 - [x] Sleep notification: added "Vergeet je wekker niet te zetten!" body text + "Bedtijd 🌙" title for sleep blocks
+- [x] Home screen: dagstructuur nav card met 📅 agenda-icoon + navigatie naar /day-structure/wizard
