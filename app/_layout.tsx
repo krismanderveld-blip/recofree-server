@@ -21,12 +21,16 @@ import { initManusRuntime, subscribeSafeAreaInsets } from "@/lib/_core/manus-run
 import { UserProvider } from "@/lib/user-context";
 import { I18nProvider, tStatic } from "@/lib/i18n";
 import { migrateAllToEncrypted } from '@/lib/crypto/storage-encryption';
+import { initNotificationHandler, useDayStructureObserver } from '@/lib/features/dayStructure';
 import { TimeProvider } from '@/lib/core/time';
 
 import type { ReactNode } from "react";
 
 const DEFAULT_WEB_INSETS: EdgeInsets = { top: 0, right: 0, bottom: 0, left: 0 };
 const DEFAULT_WEB_FRAME: Rect = { x: 0, y: 0, width: 0, height: 0 };
+
+// Initialize notification handler at module level (before component renders)
+initNotificationHandler();
 
 export const unstable_settings = {
   anchor: "(tabs)",
@@ -91,6 +95,9 @@ export default function RootLayout() {
     initManusRuntime();
   }, []);
 
+  // Day structure: timezone observer + notification rescheduling
+  useDayStructureObserver();
+
   // Migrate legacy plain-text sensitive data to AES-256-GCM encrypted storage
   useEffect(() => {
     migrateAllToEncrypted().then((res) => {
@@ -153,6 +160,7 @@ export default function RootLayout() {
               <Stack.Screen name="gdpr-consent" options={{ gestureEnabled: false }} />
               <Stack.Screen name="oauth/callback" />
               <Stack.Screen name="dev/debug-log" options={{ presentation: 'modal' }} />
+              <Stack.Screen name="day-structure/wizard" options={{ presentation: 'modal', gestureEnabled: false }} />
             </Stack>
             <StatusBar style="auto" />
           </QueryClientProvider>

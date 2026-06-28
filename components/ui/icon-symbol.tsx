@@ -25,6 +25,14 @@ const MAPPING = {
   "stop.circle.fill": "stop-circle",
   "arrow.left": "arrow-back",
   "phone.fill": "phone",
+  "clock.fill": "access-time",
+  "moon.fill": "nightlight-round",
+  "list.bullet": "format-list-bulleted",
+  "checkmark": "check",
+  "bell.fill": "notifications",
+  "bell.slash.fill": "notifications-off",
+  "pencil": "edit",
+  "calendar": "calendar-today",
 } as IconMapping;
 
 export function IconSymbol({

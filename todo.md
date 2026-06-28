@@ -2095,3 +2095,15 @@
 - [x] Stap 3: Remove client-side GPT call path (deprecated to fallback-only, server-led is primary)
 - [x] Greeting server-led: add server-led early return in generateGreeting() (same pattern as processMessage)
 - [x] ChatContext guard: labeled ChatContext + GPT call as CLIENT FALLBACK (only reached when server-led fails)
+- [x] PRE-GPT lazy-load: verified server-led block already returns BEFORE PRE-GPT (line 747 return skips 2000+ lines on success)
+
+## Dagstructuur Feature (local structure + reminder layer)
+- [x] Fase 1: Types + constants + TimeAdapter + LocalDeviceTimeService extensions
+- [x] Fase 2: Repository (encrypted load/save/validate) + DayStructureService + CompletionService
+- [x] Fase 3: NotificationService + PermissionService + app.config updates
+- [x] Fase 4: Wizard UI + routes
+- [x] Fase 5: Home card + bell toggle + day editor UI
+- [x] Fase 6: Root integration (notification handler, observer, reconciliation, timezone hook)
+- [x] Fase 7: i18n keys (nl/en/fr) + icon mappings (46 keys x 3 locales)
+- [x] Fase 8: Unit tests (34 tests passing)
+- [x] Fase 9: Final verification + checkpoint
