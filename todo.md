@@ -2093,3 +2093,5 @@
 - [x] Stap 2: Enable includeGPTResponse:true in callServerEngine so server returns AI text (+ backpack/userDat/diaryEntries payload, 30s timeout)
 - [x] Stap 1: Flip isServerEngineActive() to true (was already SERVER_ACTIVE_CLIENT_SHADOW)
 - [x] Stap 3: Remove client-side GPT call path (deprecated to fallback-only, server-led is primary)
+- [x] Greeting server-led: add server-led early return in generateGreeting() (same pattern as processMessage)
+- [x] ChatContext guard: labeled ChatContext + GPT call as CLIENT FALLBACK (only reached when server-led fails)

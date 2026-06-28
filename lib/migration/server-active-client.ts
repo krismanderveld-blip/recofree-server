@@ -76,6 +76,8 @@ export interface ServerEngineCallInput {
   userDat?: any;
   /** Diary entries for GPT context */
   diaryEntries?: any[];
+  /** Override requestType (default: 'process_message'). Use 'greeting' for session-start greeting. */
+  requestType?: 'process_message' | 'greeting' | 'session_start' | 'session_end';
 }
 
 // ─── Server Engine Call ──────────────────────────────────────────────────
@@ -101,7 +103,7 @@ export async function callServerEngine(input: ServerEngineCallInput): Promise<Se
 
     // Build canonical input matching CanonicalEngineInput exactly
     const engineInput: CanonicalEngineInput = {
-      requestType: 'process_message' as any,
+      requestType: (input.requestType || 'process_message') as any,
       userType: input.persona,
       userName: input.userName,
       locale: input.locale,

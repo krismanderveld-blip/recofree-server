@@ -2701,6 +2701,7 @@ export async function processMessage(
     }
   }
 
+  // ── CLIENT FALLBACK: ChatContext + GPT call (only reached when server-led block above fails) ──
   const context: ChatContext = {
     userType: backpack.userType,
     userName: backpack.naam,
@@ -3509,6 +3510,92 @@ export async function generateGreeting(
     profile: null,
   });
 
+  // ══════════════════════════════════════════════════════════════
+  // SERVER-LED GREETING (same pattern as processMessage server block)
+  // ══════════════════════════════════════════════════════════════
+  if (isServerEngineActive()) {
+    try {
+      const serverInput: ServerEngineCallInput = {
+        persona: backpack.userType as any,
+        userName: backpack.naam,
+        locale: (options?.locale || 'nl') as 'nl' | 'en' | 'fr',
+        country: (options?.country || 'BE') as 'NL' | 'BE' | 'FR' | 'UK' | 'US',
+        guidanceDepth: currentUserDat.guidanceDepth ?? 'normal',
+        clinicalModeActive: currentUserDat.clinicalModeActive ?? false,
+        localUserId: backpack.naam,
+        userMessage: '',
+        conversationHistory: [],
+        moodSliders: (currentUserDat.currentMood || {}) as any,
+        isSessionStart: true,
+        vspSection: vspLevel ? { level: vspLevel as 'GROEN' | 'LICHTGROEN' | 'GEEL' | 'ORANJE' | 'ROOD' | 'PAARS', score: 0 } : null,
+        logsSessions: [],
+        userDatSummary: {
+          totalSessions: currentUserDat.totalSessions ?? 0,
+          stageOfChange: (currentUserDat as any).stageOfChange ?? 'contemplation',
+          sobrietyDate: (currentUserDat as any).sobrietyDate ?? null,
+          lastMilestoneShown: (currentUserDat as any).lastMilestoneShown ?? null,
+          gratitudeStreak: (currentUserDat as any).gratitudeStreak ?? 0,
+          consecutiveSessionsWithoutEngagement: (currentUserDat as any).consecutiveSessionsWithoutEngagement ?? 0,
+        } as any,
+        usedModules: [],
+        previousZoneScore: 0,
+        messageCount: 0,
+        sessionStartedAtIso: new Date().toISOString(),
+        apiBaseUrl: getApiBaseUrl(),
+        backpack: backpack,
+        userDat: currentUserDat,
+        diaryEntries: filteredDiary,
+        requestType: 'greeting',
+      };
+
+      const serverResult = await callServerEngine(serverInput);
+
+      if (serverResult.success && serverResult.responseText) {
+        // Parse engine signals from server greeting
+        const parsed = parseEngineResponse(serverResult.responseText);
+        const greetingText = parsed.clinicalBlock
+          ? parsed.userText + `\n\n<clinical>${parsed.clinicalBlock}</clinical>`
+          : parsed.userText;
+
+        const nowIso = LocalDeviceTimeService.now().utcIso;
+        const aiMsg: ChatMessage = {
+          id: `msg_${LocalDeviceTimeService.now().epochMs}`,
+          role: 'assistant',
+          content: greetingText,
+          timestamp: nowIso,
+          modulesUsed: analysis.priorityModules,
+        };
+
+        const updatedUserDat: UserDat = {
+          ...currentUserDat,
+          chatHistory: [...(currentUserDat.chatHistory || []), aiMsg],
+        };
+
+        const updatedRugzak = composeRugzak(backpack, updatedUserDat);
+
+        console.log('[Pipeline] SERVER-LED greeting generated successfully');
+
+        return {
+          response: greetingText,
+          analysis,
+          updatedRugzak,
+          updatedUserDat,
+          crisisLevel: 0,
+          showEmergency: false,
+          moduleActivations: [],
+          k06Status: (updatedUserDat as any).k06StabilizationStatus ?? 'NOT_RUN',
+          crisisProtocolActive: false,
+        };
+      }
+
+      // Server failed — fall through to client greeting
+      console.warn('[Pipeline] Server greeting failed, falling back to client:', serverResult.error);
+    } catch (greetingErr) {
+      console.warn('[Pipeline] Server greeting exception, falling back to client:', greetingErr);
+    }
+  }
+
+  // ── CLIENT GREETING FALLBACK (deprecated — only runs when server fails) ──
   const context: ChatContext = {
     userType: backpack.userType,
     userName: backpack.naam,
