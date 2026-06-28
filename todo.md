@@ -2037,3 +2037,4 @@
 ## Bugs reported 2026-06-27 (batch 3)
 - [x] Greeting repeats same content every session ("de vermoeidheid door de warmte en de craving") — fixed: removed forced CONTINUITY RULE, all sources now compete on relevanceScore (recency bonus decides)
 - [x] Connection failure to server gives generic fallback ("fijn dat je er bent. Waar wil je het vandaag over hebben?") with no context — fixed: fact extraction moved before GPT call, connection failure now uses contextual deterministic fallback (mood/diary/session reference)
+- [x] Simplify greeting engine: adaptLogsDat now uses only most recent logs.dat session (sorted by endedAt), no raw messages path, no cross-session pattern detection

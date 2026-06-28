@@ -12,7 +12,7 @@
 
 import type { Backpack, UserDat, DiaryEntry } from '@/lib/ai/types';
 import { LocalDeviceTimeService } from '@/lib/core/time';
-import { detectRecurringPatterns } from './detectRecurringPatterns';
+// detectRecurringPatterns removed — greeting now uses only most recent logs.dat session
 import type {
   SessionGreetingInitInput,
   GreetingUserDatSnapshot,
@@ -263,7 +263,7 @@ function adaptUserDat(backpack: Backpack, userDat: UserDat): GreetingUserDatSnap
     name: s.domain || s.schemaId || 'unknown',
     score: s.confidence ?? 0,
     confirmed: (s.confidence ?? 0) > 0.6,
-    lastUpdatedAt: s.lastUpdatedAt ?? s.lastSeen ?? nowIso,
+    lastUpdatedAt: s.lastUpdatedAt ?? s.lastSeen ?? new Date().toISOString(),
   }));
 
   // Derive backpackLastUpdatedAt from backpack sections
@@ -330,90 +330,38 @@ function adaptProjectionsDat(): GreetingProjectionsDatSnapshot {
 }
 
 function adaptLogsDat(
-  lastSessionSummary?: SessionInitGreetingInput['lastSessionSummary'],
+  _lastSessionSummary?: SessionInitGreetingInput['lastSessionSummary'],
   allSessions?: import('@/lib/types/memory/logsDat.types').SessionLogSummary[],
-  previousSessionMessages?: SessionInitGreetingInput['previousSessionMessages'],
+  _previousSessionMessages?: SessionInitGreetingInput['previousSessionMessages'],
 ): GreetingLogsDatSnapshot {
   const result: GreetingLogsDatSnapshot = { lastSessionOpenLoops: [] };
 
-  // TIMESTAMP-FIRST: Always use the most recent data source.
-  // Compare the last raw message timestamp vs the last logs.dat session endedAt.
-  // Whichever is newer wins — that's the context the greeting uses.
-  const hasRawMessages = previousSessionMessages && previousSessionMessages.length > 0;
-  const lastRawMsgTimestamp = hasRawMessages
-    ? previousSessionMessages![previousSessionMessages!.length - 1]?.timestamp || ''
-    : '';
-  const lastLogsDatTimestamp = (allSessions && allSessions.length > 0)
-    ? (allSessions[allSessions.length - 1].endedAt || allSessions[allSessions.length - 1].createdAt || '')
-    : '';
+  // SIMPLE: Sort logs.dat sessions by endedAt descending, take the most recent one.
+  // Its compressedNarrative already contains the last messages from that session.
+  if (!allSessions || allSessions.length === 0) return result;
 
-  // Most recent timestamp wins
-  const useRawMessages = hasRawMessages && lastRawMsgTimestamp >= lastLogsDatTimestamp;
+  const sorted = [...allSessions].sort((a, b) => {
+    const tA = a.endedAt || a.createdAt || '';
+    const tB = b.endedAt || b.createdAt || '';
+    return tB.localeCompare(tA);
+  });
 
-  if (useRawMessages) {
-    // Raw messages are newer — use them as context
-    const last5 = previousSessionMessages!.slice(-5);
-    const rawTranscript = last5.map(m => `${m.role === 'user' ? 'Gebruiker' : 'Elias'}: ${m.content}`).join('\n');
-    result.latestLogDigest = rawTranscript;
-    const lastMsgTimestamp = last5[last5.length - 1]?.timestamp || nowIso;
-    result.recentSessionDigests = [{
-      narrative: rawTranscript,
-      topics: [],
-      openEndpoints: lastSessionSummary?.unresolvedTensions ?? [],
-      endedAt: lastMsgTimestamp,
-    }];
-    result.lastSessionOpenLoops = lastSessionSummary?.unresolvedTensions ?? [];
-    result.lastSessionFollowUp = lastSessionSummary?.suggestedFollowUp?.length
-      ? lastSessionSummary.suggestedFollowUp
-      : undefined;
-    result.lastSessionEmotionalArc = lastSessionSummary?.emotionalArc || undefined;
-  } else if (lastSessionSummary || (allSessions && allSessions.length > 0)) {
-    // logs.dat is newer (or raw messages unavailable) — use logs.dat
-    const lastSession = allSessions && allSessions.length > 0
-      ? allSessions[allSessions.length - 1]
-      : undefined;
-    result.latestLogDigest = lastSession?.compressedNarrative || lastSessionSummary?.compressedNarrative || undefined;
-    result.lastSessionOpenLoops = lastSessionSummary?.unresolvedTensions ?? (lastSession?.openEndpoints ?? []).map(ep => ep.label);
-    result.lastSessionTopics = (lastSession?.discussedTopics?.length ?? 0) > 0
-      ? lastSession!.discussedTopics
-      : lastSessionSummary?.discussedTopics?.length ? lastSessionSummary.discussedTopics : undefined;
-    result.lastSessionEmotionalArc = lastSessionSummary?.emotionalArc || (lastSession?.emotionalThemes ?? []).map(t => t.label).join(', ') || undefined;
-    result.lastSessionFollowUp = lastSessionSummary?.suggestedFollowUp?.length
-      ? lastSessionSummary.suggestedFollowUp
-      : undefined;
-    if (allSessions && allSessions.length > 0) {
-      const recent = allSessions.slice(-3).reverse();
-      result.recentSessionDigests = recent.map(s => ({
-        narrative: s.compressedNarrative || '',
-        topics: s.discussedTopics || [],
-        openEndpoints: (s.openEndpoints || []).map(ep => ep.label),
-        endedAt: s.endedAt || s.createdAt || '',
-      }));
-    }
-  }
+  const mostRecent = sorted[0];
+  result.latestLogDigest = mostRecent.compressedNarrative || undefined;
+  result.lastSessionOpenLoops = (mostRecent.openEndpoints ?? []).map(ep => ep.label);
+  result.lastSessionTopics = mostRecent.discussedTopics?.length ? mostRecent.discussedTopics : undefined;
+  result.lastSessionEmotionalArc = (mostRecent.emotionalThemes ?? []).map(t => t.label).join(', ') || undefined;
+  result.recentSessionDigests = [{
+    narrative: mostRecent.compressedNarrative || '',
+    topics: mostRecent.discussedTopics || [],
+    openEndpoints: (mostRecent.openEndpoints || []).map(ep => ep.label),
+    endedAt: mostRecent.endedAt || mostRecent.createdAt || '',
+  }];
 
   // Derive previous session dominant zone from zoneTrace
-  if (allSessions && allSessions.length > 0) {
-    const lastSession = allSessions[allSessions.length - 1];
-    if (lastSession.zoneTrace && lastSession.zoneTrace.length > 0) {
-      // Pick the zone with the highest count (dominant zone of that session)
-      const sorted = [...lastSession.zoneTrace].sort((a, b) => b.count - a.count);
-      result.previousSessionZone = sorted[0].zone;
-    }
-  }
-
-  // Cross-session pattern detection
-  if (allSessions && allSessions.length >= 3) {
-    try {
-      const patternResult = detectRecurringPatterns(allSessions);
-      if (patternResult.bestPattern) {
-        result.recurringPatternAnchor = patternResult.bestPattern.safeAnchor;
-        result.recurringPatternConfidence = patternResult.bestPattern.confidence;
-      }
-    } catch (err) {
-      // Pattern detection is non-critical — fail silently
-      console.warn('[GreetingInit] Pattern detection failed:', err);
-    }
+  if (mostRecent.zoneTrace && mostRecent.zoneTrace.length > 0) {
+    const zoneSorted = [...mostRecent.zoneTrace].sort((a, b) => b.count - a.count);
+    result.previousSessionZone = zoneSorted[0].zone;
   }
 
   return result;
