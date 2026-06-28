@@ -20,7 +20,8 @@ import { trpc, createTRPCClient } from "@/lib/trpc";
 import { initManusRuntime, subscribeSafeAreaInsets } from "@/lib/_core/manus-runtime";
 import { UserProvider } from "@/lib/user-context";
 import { I18nProvider, tStatic } from "@/lib/i18n";
-import { migrateAllToEncrypted } from "@/lib/crypto/storage-encryption";
+import { migrateAllToEncrypted } from '@/lib/crypto/storage-encryption';
+import { TimeProvider } from '@/lib/core/time';
 
 import type { ReactNode } from "react";
 
@@ -141,6 +142,7 @@ export default function RootLayout() {
 
   const content = (
     <GestureHandlerRootView style={{ flex: 1 }}>
+      <TimeProvider>
       <I18nProvider>
       <UserProvider>
         <trpc.Provider client={trpcClient} queryClient={queryClient}>
@@ -157,6 +159,7 @@ export default function RootLayout() {
         </trpc.Provider>
       </UserProvider>
       </I18nProvider>
+      </TimeProvider>
     </GestureHandlerRootView>
   );
 
