@@ -2068,3 +2068,8 @@
 - [x] Checkpoint F: Crisis safety net (offline/timeout fallback with Dutch crisis numbers)
 - [x] Checkpoint F: All migration files exported from lib/migration/index.ts
 - [x] Checkpoint E+F: Go/No-Go validation (1398 pass, 1 pre-existing timeout, 0 TS errors in migration files)
+- [x] Shadow Validation: Build shadow-comparison test harness (runs golden sessions through both client + server engines)
+- [x] Shadow Validation: Create golden-session scenarios (stable Elias/Kim, high craving, relapse intent, crisis, VSP zones, past-reference, greeting, fact-grounding, module-loops, multilingual)
+- [x] Shadow Validation: Run comparison and collect per-field match data
+- [x] Shadow Validation: Report match-percentages — RESULT: crisis 64.3% (FAIL), persona 100% (PASS), high fields 62.5% (FAIL)
+- [x] Shadow Validation: Classify mismatches — 36 real differences, 10 timing artifacts. Root cause: DominantStateSelector not on server (0% module match), showEmergency threshold mismatch, decay order difference
