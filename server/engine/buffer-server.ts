@@ -167,8 +167,9 @@ export function updateBufferServer(
   // 5. Detect live intent (3 layers)
   const currentIntent = detectLiveIntent(userMessage, buffer.recentMessages, temporaryRepeats, trajectory);
 
-  // 6. Compute zone score from sliders + text + buffer context
-  const zoneScore = computeZoneScore(mood, textIntensity, buffer.currentZoneScore, userType);
+  // 6. Compute zone score from sliders + text + buffer context (aligned with client formula)
+  const hasTrigger = detectTriggerGuess(userMessage, userType) !== '';
+  const zoneScore = computeZoneScore(mood, textIntensity, buffer.currentZoneScore, userType, hasTrigger, currentIntent, trajectory);
   const currentZoneColor = scoreToZone(zoneScore);
 
   // 7. Determine response direction
@@ -327,28 +328,56 @@ function computeZoneScore(
   textIntensity: number,
   previousScore: number,
   userType: UserType,
+  hasTrigger: boolean = false,
+  intent: LiveIntent = 'neutral',
+  trajectory: 'rising' | 'stable' | 'falling' = 'stable',
 ): number {
-  // Base from sliders (0-10 scale → 0-100)
-  let sliderScore: number;
+  // Slider distress: AVERAGE of distress sliders (aligned with client formula)
+  // Client uses eliasDistressScore = avg(craving, frustration, despondency) * 10
+  // Client uses kimDistressScore = avg(stress, boundaryFatigue, emotionalBurden) * 10
+  let sliderDistress: number;
   if (userType === 'elias') {
     const m = mood as any;
-    const craving = (m.craving ?? 0) * 10;
-    const frustration = (m.frustration ?? 0) * 10;
-    const despondency = (m.despondency ?? 0) * 10;
-    const focus = ((10 - (m.focus ?? 5)) * 10); // inverted
-    sliderScore = Math.max(craving, frustration, despondency, focus);
+    const craving = (m.craving ?? 0);
+    const frustration = (m.frustration ?? 0);
+    const despondency = (m.despondency ?? 0);
+    sliderDistress = ((craving + frustration + despondency) / 3) * 10;
   } else {
     const m = mood as any;
-    const stress = (m.stress ?? 0) * 10;
-    const boundaryFatigue = (m.boundaryFatigue ?? 0) * 10;
-    const emotionalBurden = (m.emotionalBurden ?? 0) * 10;
-    const selfCare = ((10 - (m.selfCare ?? 5)) * 10); // inverted
-    sliderScore = Math.max(stress, boundaryFatigue, emotionalBurden, selfCare);
+    const stress = (m.stress ?? 0);
+    const boundaryFatigue = (m.boundaryFatigue ?? 0);
+    const emotionalBurden = (m.emotionalBurden ?? 0);
+    sliderDistress = ((stress + boundaryFatigue + emotionalBurden) / 3) * 10;
   }
 
-  // Combine: 50% sliders, 30% text intensity, 20% momentum from previous
-  const raw = sliderScore * 0.5 + textIntensity * 0.3 + previousScore * 0.2;
-  return Math.max(0, Math.min(100, Math.round(raw)));
+  // Weighted combination: aligned with client (Patch B)
+  // Live text intensity: 40% weight
+  // Slider distress: 25% weight
+  // Previous zone momentum: 20% weight
+  // Trigger/intent boost: 15% weight
+  let score = textIntensity * 0.40 + sliderDistress * 0.25 + previousScore * 0.20;
+
+  // Trigger boost
+  if (hasTrigger) score += 10;
+
+  // Combination amplification
+  if (textIntensity >= 30 && sliderDistress >= 40 && hasTrigger) {
+    score += 12;
+  } else if (textIntensity >= 30 && sliderDistress >= 40) {
+    score += 8;
+  }
+
+  // Intent modifiers
+  if (intent === 'crisis') score += 25;
+  if (intent === 'venting') score += 10;
+  if (intent === 'withdrawing') score += 5;
+  if (intent === 'seeking_reassurance') score += 5;
+
+  // Trajectory momentum
+  if (trajectory === 'rising') score += 5;
+  if (trajectory === 'falling') score -= 5;
+
+  return Math.max(0, Math.min(100, Math.round(score)));
 }
 
 function determineResponseDirection(

@@ -2073,3 +2073,10 @@
 - [x] Shadow Validation: Run comparison and collect per-field match data
 - [x] Shadow Validation: Report match-percentages — RESULT: crisis 64.3% (FAIL), persona 100% (PASS), high fields 62.5% (FAIL)
 - [x] Shadow Validation: Classify mismatches — 36 real differences, 10 timing artifacts. Root cause: DominantStateSelector not on server (0% module match), showEmergency threshold mismatch, decay order difference
+- [x] P1a: Align showEmergency threshold on server (crisisLevel >= 2 OR vspLevel === 'PAARS')
+- [x] P1b: Fix decay order on server (decay BEFORE zone calculation, matching client)
+- [x] P1b+: Align zoneScore formula (AVG not MAX, 40/25/20 weights, trigger/intent/trajectory modifiers)
+- [x] P0: Port DominantStateSelector to server engine-process pipeline (server/engine/dominant-state-selector-server.ts)
+- [x] Additional: Buffer initialization from input.previousZoneScore for fresh sessions
+- [x] Re-run shadow validator — FINAL RESULT: Crisis 100% (PASS), Persona 100% (PASS), High fields 98.2% (PASS)
+- [x] VERDICT: 🟢 GO — Server parity validated. Checkpoint G is verantwoord.

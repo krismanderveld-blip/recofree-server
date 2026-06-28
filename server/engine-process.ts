@@ -45,6 +45,8 @@ import { runVspInsightServer } from './engine/vsp-insight-server';
 import type { VspInsightServerResult } from './engine/vsp-insight-server';
 import { searchPastReferencesServer } from './engine/past-reference-server';
 import type { PastReferenceSearchResult } from './engine/past-reference-server';
+import { selectDominantStateServer } from './engine/dominant-state-selector-server';
+import type { DominantState } from './engine/dominant-state-selector-server';
 
 // ─── Zod Schemas ──────────────────────────────────────────────────────
 
@@ -317,6 +319,12 @@ export async function processEngineRequest(input: EngineProcessInput): Promise<E
   // Get or create the session buffer
   let buffer = getSessionBuffer(sessionId);
 
+  // Initialize buffer with client's previousZoneScore if this is a fresh session
+  // (server buffer starts at 20, but client may have accumulated zone from prior turns)
+  if (buffer.messageCount === 0 && input.previousZoneScore > 0) {
+    buffer = { ...buffer, currentZoneScore: input.previousZoneScore, previousZoneScore: input.previousZoneScore };
+  }
+
   // Build conversation history as ChatMessage[]
   const allMessages = input.conversationHistory.map((m, i) => ({
     id: `msg-${i}`,
@@ -325,7 +333,13 @@ export async function processEngineRequest(input: EngineProcessInput): Promise<E
     timestamp: m.timestamp || input.deviceTimeContext.deviceNowIso,
   }));
 
-  // Update buffer with new message data
+  // P1b: Apply decay BEFORE buffer update (matching client pipeline order)
+  // Client order: decay → buffer update → zone calculation
+  // This ensures zone scores are reduced before being used for regulation/module selection
+  const decayResult: DecayResult = applyDecayServer(buffer);
+  buffer = applyDecayToBufferServer(buffer, decayResult);
+
+  // Update buffer with new message data (AFTER decay)
   buffer = updateBufferServer(
     buffer,
     input.message,
@@ -337,9 +351,7 @@ export async function processEngineRequest(input: EngineProcessInput): Promise<E
   // Save updated buffer back to session cache
   setSessionBuffer(sessionId, buffer);
 
-  // ── Step 3: Decay ──────────────────────────────────────────────
-  const decayResult: DecayResult = applyDecayServer(buffer);
-  buffer = applyDecayToBufferServer(buffer, decayResult);
+  // ── Step 3: (Decay already applied above) ─────────────────────
 
   // ── Step 4: Loopblock ──────────────────────────────────────────
   const proposedModule = input.usedModules[input.usedModules.length - 1] || 'default';
@@ -362,6 +374,27 @@ export async function processEngineRequest(input: EngineProcessInput): Promise<E
     input.previousZoneScore <= 60 ? 'ORANGE' :
     input.previousZoneScore <= 80 ? 'RED' : 'PURPLE') as ZoneColor;
   const midSessionReEval = checkMidSessionReEval(previousZoneColor, buffer.currentZoneColor, buffer);
+
+  // ── P0: DominantStateSelector (before signal engine + GPT) ──────
+  const dominantState: DominantState = selectDominantStateServer({
+    buffer,
+    stateAnalysis: {
+      riskLevel: stateAnalysis.riskLevel,
+      priorityModules: stateAnalysis.priorityModules || [],
+    },
+    mood: input.moodSliders as Record<string, number | null | undefined>,
+    userType: input.userType as 'elias' | 'kim',
+    triggerPatterns: (input.userDatSummary?.triggerPatterns || []).map(t => ({
+      trigger: t.trigger,
+      frequency: t.frequency,
+      lastSeen: t.lastSeen,
+    })),
+    vspContext: input.vspSection ? {
+      vspLevel: input.vspSection.level,
+      whatHelps: input.vspSection.whatHelps || null,
+      userMessage: input.message,
+    } : undefined,
+  });
 
   // ── Step 7: Signal Engine (parallel, non-blocking) ────────────
   let signalResult: SignalEngineResult | null = null;
@@ -456,8 +489,8 @@ export async function processEngineRequest(input: EngineProcessInput): Promise<E
         message: input.message,
         conversationHistory: input.conversationHistory.map(m => ({ role: m.role, content: m.content })),
         moodSliders: input.moodSliders,
-        activeModules: [loopblockResult.isBlocked ? 'default' : (input.usedModules[input.usedModules.length - 1] || 'default')],
-        dominantModule: loopblockResult.isBlocked ? 'default' : (input.usedModules[input.usedModules.length - 1] || 'default'),
+        activeModules: [loopblockResult.isBlocked ? 'default' : dominantState.dominantModule],
+        dominantModule: loopblockResult.isBlocked ? 'default' : dominantState.dominantModule,
         riskScore: stateAnalysis.riskLevel === 'critical' ? 90 : stateAnalysis.riskLevel === 'high' ? 60 : stateAnalysis.riskLevel === 'moderate' ? 30 : 5,
         crisisLevel: stateAnalysis.riskLevel === 'critical' ? 3 : stateAnalysis.riskLevel === 'high' ? 2 : 0,
         isCrisis: stateAnalysis.riskLevel === 'critical',
@@ -492,12 +525,12 @@ export async function processEngineRequest(input: EngineProcessInput): Promise<E
           instruction: loopblockResult.reason,
         } : null,
         // Signal engine context
-        relevanceScores: signalResult?.relevanceScores || null,
-        contextSummary: signalResult?.contextSummary || null,
+        relevanceScores: signalResult?.relevance || null,
+        contextSummary: signalResult?.summary?.text || null,
         // VSP insight
-        vspInsightContext: vspInsightResult?.insightContext || null,
+        vspInsightContext: vspInsightResult?.contextString || null,
         // Past reference
-        pastReferenceContext: pastReferenceResult?.matchedReferences?.map(r => r.narrative).join(' | ') || null,
+        pastReferenceContext: pastReferenceResult?.contextForGPT || null,
         // Clinical mode
         clinicalModeActive: input.clinicalModeActive,
         // Locale
@@ -525,33 +558,38 @@ export async function processEngineRequest(input: EngineProcessInput): Promise<E
     safety: {
       crisisLevel: stateAnalysis.riskLevel === 'critical' ? 3 : stateAnalysis.riskLevel === 'high' ? 2 : stateAnalysis.riskLevel === 'moderate' ? 1 : 0,
       riskLevel: stateAnalysis.riskLevel,
-      showEmergency: stateAnalysis.riskLevel === 'critical',
+      // P1a: Align with client — showEmergency when crisisLevel >= 2 OR VSP is PAARS
+      showEmergency: (
+        stateAnalysis.riskLevel === 'critical' ||
+        stateAnalysis.riskLevel === 'high' ||
+        input.vspSection?.level === 'PAARS'
+      ),
       relapseIntentLog: signalResult?.relapseIntent?.detected
-        ? { confidence: signalResult.relapseIntent.confidence, markers: signalResult.relapseIntent.markers || [], timestamp: nowIso }
+        ? { confidence: signalResult.relapseIntent.confidence, markers: [] as string[], timestamp: nowIso }
         : null,
     },
     sessionState: {
       zoneScore: buffer.currentZoneScore,
       zoneColor: buffer.currentZoneColor,
       emotionalState: stateAnalysis.emotionalState,
-      dominantModule: loopblockResult.isBlocked ? 'default' : (input.usedModules[input.usedModules.length - 1] || 'default'),
+      dominantModule: loopblockResult.isBlocked ? 'default' : dominantState.dominantModule,
       usedModules: buffer.usedModules,
       regulationAction: regulationResult.action,
       regulationWasSoftened: regulationResult.wasSoftened,
-      responseDirection: buffer.responseDirection,
+      responseDirection: dominantState.dominantDirection || buffer.responseDirection,
     },
     memory: {
-      triggerPatterns: signalResult?.triggers?.length
-        ? signalResult.triggers.map(t => ({ trigger: t.trigger || t.name || '', frequency: 1, lastSeen: nowIso }))
+      triggerPatterns: signalResult?.signals?.triggers?.length
+        ? signalResult.signals.triggers.map((t: any) => ({ trigger: t.trigger || t.name || '', frequency: 1, lastSeen: nowIso }))
         : null,
       moduleUsage: buffer.usedModules.length
         ? buffer.usedModules.map(m => ({ moduleId: m, count: 1, lastUsed: nowIso }))
         : null,
       vspInsight: vspInsightResult
-        ? { framework: vspInsightResult.selectedFramework || 'none', discrepancy: vspInsightResult.discrepancyDetected || false }
+        ? { framework: vspInsightResult.framework || 'none', discrepancy: vspInsightResult.insightState === 'discrepancy' }
         : null,
-      pastReferenceUse: pastReferenceResult?.matchedReferences?.length
-        ? { referenced: true, context: pastReferenceResult.matchedReferences[0].narrative }
+      pastReferenceUse: pastReferenceResult?.matches?.length
+        ? { referenced: true, context: pastReferenceResult.matches[0].content }
         : null,
     },
     logs: {
