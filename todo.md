@@ -2054,3 +2054,9 @@
 - [x] Checkpoint B: Regulation layer (zone decay + overshoot) ported to server
 - [x] Checkpoint B: All wired into engine-process endpoint (full pipeline: analyze → buffer → decay → loopblock → regulate → re-eval)
 - [x] Checkpoint B: Go/No-Go validation (1398 pass, 1 pre-existing timeout, crisis detection correct, latency 5ms)
+- [x] Checkpoint C: Signal engine consolidated into engine-process (direct OpenAI call, no HTTP round-trip)
+- [x] Checkpoint C: VSP Insight Layer ported to server (server-safe, no react-native deps)
+- [x] Checkpoint C: Past-reference search ported to server (server-safe)
+- [x] Checkpoint D: GPT prompt build + OpenAI call integrated into engine-process (includeGPTResponse flag)
+- [x] Checkpoint D: Full pipeline test: state-analyzer → buffer → decay → loopblock → regulation → signal → VSP → past-ref → GPT (9960ms with GPT, 1429ms without)
+- [x] Checkpoint D: Go/No-Go validation (1399 tests pass, GPT response correct in Dutch, model routing works)

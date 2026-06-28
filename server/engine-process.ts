@@ -39,6 +39,12 @@ import {
   requiresPreRegulation,
 } from './engine/regulation-server';
 import type { RegulationResult, DecayResult } from './engine/regulation-server';
+import { runSignalEngine } from './engine/signal-engine-server';
+import type { SignalEngineResult } from './engine/signal-engine-server';
+import { runVspInsightServer } from './engine/vsp-insight-server';
+import type { VspInsightServerResult } from './engine/vsp-insight-server';
+import { searchPastReferencesServer } from './engine/past-reference-server';
+import type { PastReferenceSearchResult } from './engine/past-reference-server';
 
 // ─── Zod Schemas ──────────────────────────────────────────────────────
 
@@ -133,6 +139,14 @@ export const engineProcessInputSchema = z.object({
   deviceTimeContext: deviceTimeContextSchema,
   /** Last assistant message for anti-repetition detection */
   previousAssistantMessage: z.string().nullable().optional(),
+  /** Whether to include GPT response (full pipeline mode) */
+  includeGPTResponse: z.boolean().optional(),
+  /** Backpack data for session start (passed to GPT) */
+  backpack: z.any().nullable().optional(),
+  /** UserDat for session start (passed to GPT) */
+  userDat: z.any().nullable().optional(),
+  /** Diary entries for session start (passed to GPT) */
+  diaryEntries: z.any().nullable().optional(),
 });
 
 export type EngineProcessInput = z.infer<typeof engineProcessInputSchema>;
@@ -188,10 +202,28 @@ export interface EngineProcessResponse {
     shouldReEval: boolean;
     reason: string | null;
   };
+  /** Signal engine result (fears, hopes, goals, triggers, relapse intent) */
+  signalEngine: SignalEngineResult | null;
+  /** VSP Insight Layer result */
+  vspInsight: VspInsightServerResult | null;
+  /** Past-reference search result */
+  pastReference: PastReferenceSearchResult | null;
   /** Server engine version for shadow comparison */
   engineVersion: string;
   /** Processing latency in ms */
   latencyMs: number;
+  /** GPT response (only when includeGPTResponse=true) */
+  gptResponse?: {
+    response: string;
+    advisoryEmotion?: string;
+    advisoryConfidence?: number;
+    tokenUsage?: {
+      promptTokens: number;
+      completionTokens: number;
+      totalTokens: number;
+    };
+    selectedModel?: string;
+  } | null;
 }
 
 // ─── Helper: Build input for state analyzer ──────────────────────────
@@ -293,6 +325,158 @@ export async function processEngineRequest(input: EngineProcessInput): Promise<E
     input.previousZoneScore <= 80 ? 'RED' : 'PURPLE') as ZoneColor;
   const midSessionReEval = checkMidSessionReEval(previousZoneColor, buffer.currentZoneColor, buffer);
 
+  // ── Step 7: Signal Engine (parallel, non-blocking) ────────────
+  let signalResult: SignalEngineResult | null = null;
+  try {
+    signalResult = await runSignalEngine(
+      input.message,
+      input.userType,
+      {
+        zone: buffer.currentZoneColor,
+        vspOrEigenRegie: input.vspSection?.level ?? null,
+        keySliders: input.moodSliders as Record<string, unknown>,
+        userType: input.userType,
+      },
+      {
+        backpackSummary: input.userDatSummary?.stageOfChange || '',
+        diarySummary: '',
+        triggerList: input.userDatSummary?.triggerPatterns?.map(t => t.trigger) || [],
+      },
+      {
+        backpackSections: input.userDatSummary?.stageOfChange || '',
+        recentSessionThemes: input.logsSessions?.[0]?.emotionalThemes?.join(', ') || '',
+      },
+    );
+  } catch { /* signal engine failure is non-fatal */ }
+
+  // ── Step 8: VSP Insight Layer ──────────────────────────────────
+  let vspInsightResult: VspInsightServerResult | null = null;
+  if (input.vspSection) {
+    try {
+      vspInsightResult = runVspInsightServer({
+        persona: input.userType,
+        userMessage: input.message,
+        recentMessages: input.conversationHistory.slice(-5).map(m => m.content),
+        moodSliders: {
+          craving: (input.moodSliders as any)?.craving ?? 0,
+          frustration: (input.moodSliders as any)?.frustration ?? 0,
+          despondency: (input.moodSliders as any)?.despondency ?? 0,
+          focus: (input.moodSliders as any)?.focus ?? 5,
+        },
+        selfReportedZone: input.vspSection.level,
+        sessionTurnCount: buffer.messageCount,
+        safetyCore: {
+          finalZone: buffer.currentZoneColor === 'GREEN' ? 'GROEN' :
+            buffer.currentZoneColor === 'YELLOW' ? 'GEEL' :
+            buffer.currentZoneColor === 'ORANGE' ? 'ORANJE' :
+            buffer.currentZoneColor === 'RED' ? 'ROOD' : 'PAARS',
+          userReportedZone: input.vspSection.level,
+          safetyOverrideActive: stateAnalysis.riskLevel === 'critical',
+          crisisDetected: stateAnalysis.riskLevel === 'critical',
+          relapseIntentDetected: signalResult?.relapseIntent?.detected ?? false,
+          modelRoutingDecision: stateAnalysis.riskLevel === 'critical' ? 'gpt-4o' : 'gpt-4o-mini',
+          activeSafetyModuleId: null,
+        },
+        profile: null,
+      });
+    } catch { /* VSP insight failure is non-fatal */ }
+  }
+
+  // ── Step 9: Past-Reference Search ─────────────────────────────
+  let pastReferenceResult: PastReferenceSearchResult | null = null;
+  if (input.message.length > 5 && input.logsSessions.length > 0) {
+    try {
+      pastReferenceResult = searchPastReferencesServer(
+        input.message,
+        input.logsSessions as any,
+        {
+          triggerPatterns: input.userDatSummary?.triggerPatterns?.map(t => ({
+            trigger: t.trigger,
+            context: undefined,
+            lastSeen: t.lastSeen,
+          })) || [],
+          schemaTendencies: input.userDatSummary?.schemaTendencies?.map(s => ({
+            schema: s.domain,
+            evidence: undefined,
+          })) || [],
+        },
+      );
+    } catch { /* past-reference failure is non-fatal */ }
+  }
+
+  // ── Step 10: GPT Response (optional, full pipeline mode) ────────
+  let gptResponse: EngineProcessResponse['gptResponse'] = null;
+  if (input.includeGPTResponse) {
+    try {
+      const { generateAIResponse } = await import('./ai-chat');
+
+      // Build ChatRequestInput from engine results
+      const chatInput: any = {
+        userType: input.userType,
+        userName: input.userName,
+        isSessionStart: input.isSessionStart,
+        message: input.message,
+        conversationHistory: input.conversationHistory.map(m => ({ role: m.role, content: m.content })),
+        moodSliders: input.moodSliders,
+        activeModules: [loopblockResult.isBlocked ? 'default' : (input.usedModules[input.usedModules.length - 1] || 'default')],
+        dominantModule: loopblockResult.isBlocked ? 'default' : (input.usedModules[input.usedModules.length - 1] || 'default'),
+        riskScore: stateAnalysis.riskLevel === 'critical' ? 90 : stateAnalysis.riskLevel === 'high' ? 60 : stateAnalysis.riskLevel === 'moderate' ? 30 : 5,
+        crisisLevel: stateAnalysis.riskLevel === 'critical' ? 3 : stateAnalysis.riskLevel === 'high' ? 2 : 0,
+        isCrisis: stateAnalysis.riskLevel === 'critical',
+        detectedEmotion: stateAnalysis.emotionalState || 'neutral',
+        therapeuticStance: stateAnalysis.tone || 'warm',
+        sessionDurationMinutes: Math.max(0, Math.floor((Date.now() - new Date(input.deviceTimeContext.sessionStartedAtDeviceIso).getTime()) / 60000)),
+        urgency: stateAnalysis.riskLevel === 'critical' ? 'high' : stateAnalysis.riskLevel === 'high' ? 'medium' : 'low',
+        startEmotion: stateAnalysis.emotionalState || 'neutral',
+        stageOfChange: input.userDatSummary?.stageOfChange || 'contemplation',
+        selectedTriggers: stateAnalysis.activeTriggers?.map(t => ({ trigger: t, score: 0.8 })) || [],
+        guidanceDepth: (input.guidanceDepth as 'light' | 'normal' | 'deep') || 'normal',
+        vspLevel: input.vspSection?.level || null,
+        bufferSnapshot: {
+          zone: buffer.currentZoneColor,
+          emotionalDirection: buffer.responseDirection || 'stable',
+          liveIntent: buffer.currentIntent || 'neutral',
+          dominantState: buffer.currentEmotion || 'neutral',
+        },
+        regulationResult: {
+          action: regulationResult.action,
+          intervention: regulationResult.intervention,
+          gptInstruction: regulationResult.gptInstruction,
+          zone: regulationResult.zone,
+          effectiveDepth: regulationResult.effectiveDepth,
+          wasSoftened: regulationResult.wasSoftened,
+          wasSkipped: regulationResult.wasSkipped,
+        },
+        loopDetected: loopblockResult.isBlocked ? {
+          active: true,
+          theme: loopblockResult.blockedModules[0] || '',
+          sessionCount: 2,
+          instruction: loopblockResult.reason,
+        } : null,
+        // Signal engine context
+        relevanceScores: signalResult?.relevanceScores || null,
+        contextSummary: signalResult?.contextSummary || null,
+        // VSP insight
+        vspInsightContext: vspInsightResult?.insightContext || null,
+        // Past reference
+        pastReferenceContext: pastReferenceResult?.matchedReferences?.map(r => r.narrative).join(' | ') || null,
+        // Clinical mode
+        clinicalModeActive: input.clinicalModeActive,
+        // Locale
+        locale: input.locale,
+        // Session start data
+        backpack: input.backpack || null,
+        userDat: input.userDat || null,
+        diaryEntries: input.diaryEntries || null,
+      };
+
+      gptResponse = await generateAIResponse(chatInput);
+    } catch (err: any) {
+      console.error('[engine-process] GPT call failed:', err.message);
+      gptResponse = null;
+    }
+  }
+
   const latencyMs = Date.now() - startMs;
 
   return {
@@ -336,8 +520,12 @@ export async function processEngineRequest(input: EngineProcessInput): Promise<E
         ? `Cleared modules: ${midSessionReEval.clearedModules.join(', ')}`
         : null,
     },
-    engineVersion: 'server-v0.3.0-checkpoint-b',
+    signalEngine: signalResult,
+    vspInsight: vspInsightResult,
+    pastReference: pastReferenceResult,
+    engineVersion: 'server-v0.5.0-checkpoint-d',
     latencyMs,
+    gptResponse,
   };
 }
 
