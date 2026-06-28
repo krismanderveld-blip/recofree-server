@@ -12,6 +12,7 @@ import { registerVspDocumentParseRoute } from "../vsp-document-parse";
 import { registerBackpackDocumentParseRoute } from "../backpack-document-parse";
 import { registerVspTextExtractRoute } from "../vsp-text-extract";
 import { registerSessionGreetingRoute } from "../session-greeting";
+import { registerEngineProcessRoute } from "../engine-process";
 import { registerDebugPromptRoute, setSessionCacheGetter } from "../debug-prompt";
 import { getSessionCache } from "../ai-chat";
 import { appRouter } from "../routers";
@@ -73,6 +74,7 @@ async function startServer() {
   registerVspTextExtractRoute(app);
   registerBackpackDocumentParseRoute(app);
   registerSessionGreetingRoute(app);
+  registerEngineProcessRoute(app);
   registerDebugPromptRoute(app);
   setSessionCacheGetter(getSessionCache);
 

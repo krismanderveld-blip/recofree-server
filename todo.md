@@ -2043,3 +2043,9 @@
 - [x] Migration Harness: canonical EngineOutput comparison type
 - [x] Migration Harness: shadow logging infrastructure (local encrypted)
 - [x] Migration Harness: golden testset foundation
+- [x] Checkpoint A: /api/engine-process endpoint with schema validation
+- [x] Checkpoint A: CanonicalEngineInput builder on client
+- [x] Checkpoint A: State analyzer ported to server (server-safe, no react-native deps)
+- [x] Checkpoint A: Dominant-state-selector stub (returns null until buffer ported)
+- [x] Checkpoint A: Shadow engine client (fire-and-forget comparison)
+- [x] Checkpoint A: Go/No-Go validation (1399 tests pass, server responds 1-2ms, crisis detection correct)

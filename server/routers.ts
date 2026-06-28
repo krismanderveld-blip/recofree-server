@@ -6,6 +6,7 @@ import { publicProcedure, router } from "./_core/trpc";
 import { chatInputSchema, generateAIResponse } from "./ai-chat";
 import { extractionInputSchema, extractEntitiesFromBackpack } from "./backpack-extractor";
 import { analyzeBackpackInputSchema, analyzeBackpackForSchemas } from "./backpack-analyzer";
+import { engineProcessInputSchema, processEngineRequest } from "./engine-process";
 
 export const appRouter = router({
   // if you need to use socket.io, read and register route in server/_core/index.ts, all api should start with '/api/' so that the gateway can route correctly
@@ -62,6 +63,23 @@ export const appRouter = router({
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : String(error);
           console.error(`[ROUTER ERROR] extractEntities:`, errorMessage);
+          throw new TRPCError({
+            code: 'INTERNAL_SERVER_ERROR',
+            message: errorMessage,
+          });
+        }
+      }),
+
+    // Engine Process — server-side engine pipeline (shadow mode initially)
+    engineProcess: publicProcedure
+      .input(engineProcessInputSchema)
+      .mutation(async ({ input }) => {
+        try {
+          const result = await processEngineRequest(input);
+          return { success: true, ...result };
+        } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          console.error(`[ROUTER ERROR] engineProcess:`, errorMessage);
           throw new TRPCError({
             code: 'INTERNAL_SERVER_ERROR',
             message: errorMessage,

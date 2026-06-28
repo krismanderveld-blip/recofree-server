@@ -48,6 +48,12 @@ export {
 
 export { createShadowLogStore } from './shadow-log-store';
 
+// Shadow engine client (fire-and-forget server call + comparison)
+export { fireShadowEngineCall } from './shadow-engine-client';
+
+// Input builder
+export { buildCanonicalEngineInput } from './build-engine-input';
+
 // Golden testset
 export {
   type GoldenTestCategory,
