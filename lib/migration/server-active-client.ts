@@ -95,7 +95,7 @@ export async function callServerEngine(input: ServerEngineCallInput): Promise<Se
 
     // Build canonical input matching CanonicalEngineInput exactly
     const engineInput: CanonicalEngineInput = {
-      requestType: 'LIVE_MESSAGE',
+      requestType: 'process_message' as any,
       userType: input.persona,
       userName: input.userName,
       locale: input.locale,
@@ -160,7 +160,7 @@ export async function callServerEngine(input: ServerEngineCallInput): Promise<Se
 
     return {
       success: true,
-      responseText: result.gptResponse?.text ?? null,
+      responseText: result.gptResponse?.response ?? null,
       patches: result.statePatches ?? null,
       sessionId: result.sessionId ?? null,
       turnId: result.turnId ?? null,

@@ -322,6 +322,8 @@ import type { EliasPsychoEducationRuntimeInput, EliasPsychoEducationDetectionRes
 import type { PsychoEducationActivation } from '../types/memory/memoryCore.types';
 import { searchPastReferences } from '../pipeline/memory/pastReferenceSearch';
 import { LocalDeviceTimeService } from "@/lib/core/time";
+import { isServerEngineActive, callServerEngine, type ServerEngineCallInput } from '@/lib/migration';
+import { getApiBaseUrl } from '@/constants/oauth';
 
 // ─── Pattern Marking (post-GPT local state) ─────────────────
 
@@ -560,6 +562,214 @@ export async function processMessage(
   const hasEigenRegie = backpack.userType === 'kim' && currentUserDat.currentMood && 'eigenRegie' in currentUserDat.currentMood && (currentUserDat.currentMood as import('../ai/types').KimMoodSliders).eigenRegie != null;
   const hasMinimalContext = hasSliders || hasBackpackContent || hasDiary || hasTriggerHistory || hasSessionHistory || hasVsp || hasEigenRegie;
   // Note: hasMinimalContext is used downstream for tone adaptation but NEVER blocks the pipeline.
+
+  // ══════════════════════════════════════════════════════════════
+  // SERVER-LED ENGINE (Checkpoint G)
+  // When server engine is active, skip the entire client pipeline.
+  // The server does: buffer, decay, dominant state, regulation, signal engine, GPT.
+  // On failure: graceful degradation to client pipeline below.
+  // ══════════════════════════════════════════════════════════════
+  if (isServerEngineActive()) {
+    try {
+      // Build conversation history (last 20 messages)
+      const conversationHistory = (currentUserDat.chatHistory || []).slice(-20).map(m => ({
+        role: m.role as 'user' | 'assistant',
+        content: m.content,
+      }));
+
+      // Build mood sliders payload
+      const moodSliders: Record<string, number | null> = {};
+      if (currentUserDat.currentMood) {
+        for (const [key, val] of Object.entries(currentUserDat.currentMood)) {
+          moodSliders[key] = typeof val === 'number' ? val : null;
+        }
+      }
+
+      // Build VSP section for Elias
+      const vspSection = backpack.userType === 'elias' && currentUserDat.currentMood && 'vsp' in currentUserDat.currentMood
+        ? {
+            level: (currentUserDat.currentMood as any).vsp ?? 'GROEN',
+            score: (currentUserDat.currentMood as any).vspScore ?? 0,
+            lastUpdated: LocalDeviceTimeService.now().utcIso,
+            source: 'slider' as const,
+          }
+        : null;
+
+      // Build logs sessions (last 5)
+      const logsSessions = (options?.logsSessions ?? []).slice(-5).map(s => ({
+        sessionId: (s as any).sessionId ?? 'unknown',
+        startedAt: (s as any).startedAt ?? (s as any).createdAt ?? '',
+        endedAt: (s as any).endedAt ?? '',
+        compressedNarrative: (s as any).compressedNarrative ?? '',
+        discussedTopics: (s as any).discussedTopics ?? [],
+        emotionalThemes: (s as any).emotionalThemes ?? [],
+        openEndpoints: (s as any).openEndpoints ?? [],
+        moduleTrace: (s as any).moduleTrace ?? [],
+        zoneTrace: (s as any).zoneTrace ?? [],
+      }));
+
+      // Build server engine input
+      const serverInput: ServerEngineCallInput = {
+        persona: backpack.userType as 'elias' | 'kim',
+        userName: backpack.naam || 'Gebruiker',
+        locale: options?.locale ?? 'nl',
+        country: options?.country ?? 'BE',
+        guidanceDepth: (backpack.intakeContext as any)?.guidanceDepth ?? 'normal',
+        clinicalModeActive: currentUserDat.clinicalModeActive ?? false,
+        localUserId: 'local_user',
+        userMessage,
+        conversationHistory,
+        moodSliders,
+        isSessionStart,
+        vspSection,
+        logsSessions,
+        userDatSummary: {
+          totalSessions: currentUserDat.totalSessions ?? 0,
+          lastSessionDate: currentUserDat.lastSessionDate ?? null,
+          currentMood: moodSliders,
+          moodHistory: (currentUserDat.moodHistory ?? []).slice(-7).map(m => ({
+            date: (m as any).date ?? '',
+            sliders: (m as any).sliders ?? {},
+          })),
+          triggerPatterns: (currentUserDat.triggerPatterns ?? []).slice(0, 10).map(t => ({
+            trigger: t.trigger,
+            frequency: (t as any).frequency ?? t.count ?? 1,
+            lastSeen: (t as any).lastSeen ?? '',
+          })),
+          moduleUsage: (currentUserDat.moduleUsage ?? []).slice(0, 10).map(m => ({
+            moduleId: m.moduleId,
+            count: m.count,
+            lastUsed: (m as any).lastUsed ?? '',
+          })),
+          stageOfChange: currentUserDat.stageOfChange ?? backpack.intakeContext?.stageOfChange ?? 'contemplation',
+          clinicalModeActive: currentUserDat.clinicalModeActive ?? false,
+          guidanceDepth: (currentUserDat as any).guidanceDepth ?? (backpack.intakeContext as any)?.guidanceDepth ?? 'normal',
+        },
+        usedModules: sessionBuffer?.usedModules ?? [],
+        previousZoneScore: sessionBuffer?.currentZoneScore ?? 0,
+        messageCount: sessionBuffer?.messageCount ?? 0,
+        sessionStartedAtIso: LocalDeviceTimeService.now().utcIso,
+        apiBaseUrl: getApiBaseUrl(),
+      };
+
+      const serverResult = await callServerEngine(serverInput);
+
+      if (serverResult.success && serverResult.responseText) {
+        // Build updated chatHistory with user + AI messages
+        const nowIso = LocalDeviceTimeService.now().utcIso;
+        const userMsg: ChatMessage = {
+          id: `msg_user_${Date.now()}`,
+          role: 'user',
+          content: userMessage,
+          timestamp: nowIso,
+        };
+        const aiMsg: ChatMessage = {
+          id: `msg_ai_${Date.now() + 1}`,
+          role: 'assistant',
+          content: serverResult.responseText,
+          timestamp: nowIso,
+        };
+        const updatedChatHistory = [...(currentUserDat.chatHistory || []), userMsg, aiMsg];
+        const updatedUserDat: UserDat = {
+          ...currentUserDat,
+          chatHistory: updatedChatHistory,
+        };
+
+        // Apply state patches from server
+        if (serverResult.patches) {
+          const p = serverResult.patches;
+          if (p.sessionState) {
+            if (sessionBuffer) {
+              sessionBuffer.currentZoneScore = p.sessionState.zoneScore;
+              sessionBuffer.currentZoneColor = p.sessionState.zoneColor as any;
+              sessionBuffer.usedModules = p.sessionState.usedModules;
+              sessionBuffer.messageCount = (sessionBuffer.messageCount ?? 0) + 1;
+            }
+            sessionDominantState = {
+              dominantModule: p.sessionState.dominantModule,
+              dominantTrigger: '',
+              dominantDirection: (p.sessionState.responseDirection || 'reflect') as any,
+              dominantTone: 'warm',
+              riskScore: p.safety?.crisisLevel ? p.safety.crisisLevel * 30 : 0,
+              selectionReason: 'server-engine',
+              sourceLayer: 'default',
+            };
+          }
+        }
+
+        const crisisLevel = serverResult.patches?.safety?.crisisLevel ?? 0;
+        const showEmergency = serverResult.patches?.safety?.showEmergency ?? false;
+
+        // Build MessageLog for chat.tsx debug panel
+        const serverMessageLog: MessageLog = {
+          timestamp: nowIso,
+          messageIndex: sessionBuffer?.messageCount ?? 1,
+          preGPT: {
+            triggerDecayApplied: false,
+            zoneDecay: { applied: 0, types: [], reason: 'server-led' },
+            dominantState: sessionDominantState ?? {
+              dominantModule: 'E01',
+              dominantTrigger: '',
+              dominantDirection: 'reflect',
+              dominantTone: 'warm',
+              riskScore: 0,
+              selectionReason: 'server-engine',
+              sourceLayer: 'default',
+            },
+            selectedTriggers: [],
+            bufferZoneScore: serverResult.patches?.sessionState?.zoneScore ?? 0,
+            bufferZoneColor: serverResult.patches?.sessionState?.zoneColor ?? 'GREEN',
+            regulation: {
+              action: serverResult.patches?.sessionState?.regulationAction ?? 'none',
+              zone: serverResult.patches?.sessionState?.zoneColor ?? 'GREEN',
+              effectiveDepth: 'normal',
+              wasSoftened: serverResult.patches?.sessionState?.regulationWasSoftened ?? false,
+              wasSkipped: false,
+              hasIntervention: false,
+            },
+          },
+          gpt: {
+            selectedModel: 'server-engine',
+            responseLength: serverResult.responseText.length,
+          },
+          postGPT: {
+            updatedZoneScore: serverResult.patches?.sessionState?.zoneScore ?? 0,
+            updatedZoneColor: serverResult.patches?.sessionState?.zoneColor ?? 'GREEN',
+            patternSignalsMarked: [],
+            promotionCandidates: 0,
+            promotionDecisions: [],
+          },
+        };
+
+        return {
+          response: serverResult.responseText,
+          updatedUserDat,
+          updatedRugzak: composeRugzak(backpack, updatedUserDat),
+          crisisLevel,
+          showEmergency,
+          dominantState: sessionDominantState ?? undefined,
+          moduleActivations: [],
+          k06Status: 'NOT_RUN',
+          crisisProtocolActive: crisisLevel >= 2,
+          status: crisisLevel >= 2 ? 'CRISIS_MODE' : 'OK',
+          isBlocked: false,
+          candidateSignals: null,
+          schemaModeResult: null,
+          psychoEducationActivation: null,
+          paal01Activation: null,
+          selfAcceptanceActivation: null,
+          kimPatternSupportActivation: null,
+          messageLog: serverMessageLog,
+        };
+      }
+
+      // Server call failed — fall through to client pipeline
+      console.warn('[Pipeline] Server engine call failed, falling back to client pipeline:', serverResult.error);
+    } catch (serverErr) {
+      console.warn('[Pipeline] Server engine exception, falling back to client pipeline:', serverErr);
+    }
+  }
+
 
   // ══════════════════════════════════════════════════════════════
   // PRE-GPT FLOW (all local, deterministic)

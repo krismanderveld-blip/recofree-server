@@ -53,6 +53,7 @@ export { fireShadowEngineCall } from './shadow-engine-client';
 
 // Input builder
 export { buildCanonicalEngineInput } from './build-engine-input';
+export type { BuildEngineInputParams } from './build-engine-input';
 
 // Patch writer (client-side state patch application)
 export { applyServerPatches } from './patch-writer';

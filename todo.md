@@ -2083,4 +2083,10 @@
 - [x] Regulation vocabulary alignment: added resolvedZoneForRegulation to server (mirrors client's VSP+crisis+distress zone resolution before regulation)
 - [x] Model routing on server: modelRoutingDecision exposed in response (gpt-4o for crisis/high-risk/complex modules/VSP ROOD+PAARS+ORANJE)
 - [x] Re-run shadow validation: Crisis 100%, Persona 100%, High fields 98.2% — 🟢 GO maintained (9 real diffs, 7 timing artifacts)
-- [ ] Publish for user testing
+- [x] Publish for user testing (checkpoint f4bbd37c)
+- [x] Checkpoint G: Switch engine mode to SERVER_ACTIVE (server leidend)
+- [x] Checkpoint G: Insert server-led early return block in pipeline.ts processMessage (calls callServerEngine, returns PipelineResult directly)
+- [x] Checkpoint G: Fix requestType mismatch (server expects 'process_message', not 'LIVE_MESSAGE')
+- [x] Checkpoint G: Build full ServerEngineCallInput payload (UserDatSummaryPayload, LogsSessionPayload, VSP, moodSliders)
+- [x] Checkpoint G: Graceful degradation — on server failure, falls through to client pipeline
+- [x] Checkpoint G: Run tests and verify no regressions (1328 pass, 5 pre-existing env failures)
