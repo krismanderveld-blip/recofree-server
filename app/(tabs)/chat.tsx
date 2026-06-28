@@ -897,46 +897,74 @@ function ChatScreenInner() {
             changedFields: writeResult.commitResult.changedFields,
           });
         }
-        // ── INCREMENTAL LOGS.DAT WRITE (after every turn) ──────────────
-        // Write raw session messages to logs.dat IMMEDIATELY so data is never
-        // lost even if endSession() never runs (app killed, crash, etc.).
-        // This is the "0-3 maanden" strategy: raw berichten, geen GPT nodig.
+        // ── IMMEDIATE LOGS.DAT WRITE (after every turn) ─────────────────
+        // Write full session summary to logs.dat IMMEDIATELY so data is NEVER
+        // lost regardless of how the user leaves (back-button, tab-switch, kill).
+        // The endSession GPT-call can later UPGRADE this entry with richer narrative.
         try {
           const currentBuffer = stores.sessionBufferStore.getBuffer();
           if (currentBuffer && currentBuffer.compactMessages.length > 0) {
-            const rawMsgs = currentBuffer.compactMessages
+            // Extract user messages for narrative
+            const userMsgs = currentBuffer.compactMessages
               .filter(m => m.role === 'user')
               .slice(-10)
               .map(m => m.text.slice(0, 300));
-            const rawNarrative = rawMsgs.length > 0
-              ? `Sessie-inhoud (${currentBuffer.compactMessages.length} berichten): ${rawMsgs.join(' | ')}`
+            const narrative = userMsgs.length > 0
+              ? `Sessie-inhoud (${currentBuffer.compactMessages.length} berichten): ${userMsgs.join(' | ')}`
               : `Sessie met ${currentBuffer.compactMessages.length} berichten`;
-            const incrementalSummary: any = {
-              summaryId: `incremental_${currentBuffer.sessionId}`,
+
+            // Extract topics from user messages (words > 4 chars, top 5)
+            const combined = userMsgs.join(' ').toLowerCase();
+            const words = combined.split(/\s+/).filter(w => w.length > 4);
+            const freq = new Map<string, number>();
+            for (const w of words) freq.set(w, (freq.get(w) || 0) + 1);
+            const topics = [...freq.entries()]
+              .sort((a, b) => b[1] - a[1])
+              .slice(0, 5)
+              .map(([word]) => word);
+
+            // Extract module trace from buffer turn snapshots
+            const moduleTrace = currentBuffer.turnSnapshots
+              .filter(s => s.activeModule)
+              .map(s => ({
+                moduleId: s.activeModule!.moduleId,
+                responseMode: s.activeModule!.responseMode || 'default',
+                count: 1,
+              }));
+
+            // Extract zone trace from buffer turn snapshots
+            const zoneTrace = currentBuffer.turnSnapshots
+              .filter(s => s.zone)
+              .map(s => ({
+                zone: s.zone!.zone,
+                count: 1,
+              }));
+
+            const liveSummary: any = {
+              summaryId: `live_${currentBuffer.sessionId}`,
               sessionId: currentBuffer.sessionId,
               persona,
               startedAt: currentBuffer.startedAt,
               endedAt: bundle.context.timestampIso,
               createdAt: currentBuffer.startedAt,
-              summaryModel: 'gpt-4o-mini',
+              summaryModel: 'local_live',
               summarySchemaVersion: 'session_summary.v1',
-              compressedNarrative: rawNarrative.slice(0, 1500),
-              discussedTopics: [],
+              compressedNarrative: narrative.slice(0, 1500),
+              discussedTopics: topics,
               emotionalThemes: [],
               breakthroughs: [],
               relapseOrRiskEvents: [{eventType: 'none', description: '', severity: 0}],
               openEndpoints: [],
               extractedCandidates: { fears: [], hopes: [], triggers: [], schemaTendencies: [], modeTendencies: [] },
-              moduleTrace: [],
-              zoneTrace: [],
+              moduleTrace,
+              zoneTrace,
               inputTokenEstimate: 0,
               outputTokenEstimate: 0,
             };
-            await stores.logsDatStore.upsertCurrentSession(persona, incrementalSummary as any, bundle.context.timestampIso);
+            await stores.logsDatStore.upsertCurrentSession(persona, liveSummary as any, bundle.context.timestampIso);
           }
         } catch (incrErr) {
-          // Non-critical: if incremental write fails, endSession will still try
-          console.warn('[IncrementalLogsDat] Write failed (non-critical):', incrErr);
+          console.warn('[LiveLogsDat] Write failed (non-critical):', incrErr);
         }
 
         // Debug log
