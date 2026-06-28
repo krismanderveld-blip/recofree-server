@@ -650,6 +650,9 @@ export async function processMessage(
         messageCount: sessionBuffer?.messageCount ?? 0,
         sessionStartedAtIso: LocalDeviceTimeService.now().utcIso,
         apiBaseUrl: getApiBaseUrl(),
+        backpack: backpack,
+        userDat: currentUserDat,
+        diaryEntries: options?.diaryEntries ?? [],
       };
 
       const serverResult = await callServerEngine(serverInput);

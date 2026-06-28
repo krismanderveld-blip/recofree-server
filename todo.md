@@ -2090,3 +2090,6 @@
 - [x] Checkpoint G: Build full ServerEngineCallInput payload (UserDatSummaryPayload, LogsSessionPayload, VSP, moodSliders)
 - [x] Checkpoint G: Graceful degradation — on server failure, falls through to client pipeline
 - [x] Checkpoint G: Run tests and verify no regressions (1328 pass, 5 pre-existing env failures)
+- [x] Stap 2: Enable includeGPTResponse:true in callServerEngine so server returns AI text (+ backpack/userDat/diaryEntries payload, 30s timeout)
+- [x] Stap 1: Flip isServerEngineActive() to true (was already SERVER_ACTIVE_CLIENT_SHADOW)
+- [ ] Stap 3: Remove client-side GPT call path (dead code cleanup)

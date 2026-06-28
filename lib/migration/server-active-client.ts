@@ -70,11 +70,17 @@ export interface ServerEngineCallInput {
   messageCount: number;
   sessionStartedAtIso: string;
   apiBaseUrl: string;
+  /** Full backpack for GPT system prompt (session start context) */
+  backpack?: any;
+  /** Full userDat for GPT system prompt (session start context) */
+  userDat?: any;
+  /** Diary entries for GPT context */
+  diaryEntries?: any[];
 }
 
 // ─── Server Engine Call ──────────────────────────────────────────────────
 
-const SERVER_TIMEOUT_MS = 15000; // 15s timeout for server response
+const SERVER_TIMEOUT_MS = 30000; // 30s timeout for server response (includes GPT call)
 
 /**
  * Daypart helper (inlined to avoid importing from client time module).
@@ -134,6 +140,9 @@ export async function callServerEngine(input: ServerEngineCallInput): Promise<Se
       body: JSON.stringify({
         ...engineInput,
         includeGPTResponse: true,
+        backpack: input.backpack ?? null,
+        userDat: input.userDat ?? null,
+        diaryEntries: input.diaryEntries ?? null,
       }),
       signal: controller.signal,
     });
