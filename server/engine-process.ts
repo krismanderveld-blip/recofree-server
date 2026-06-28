@@ -158,6 +158,44 @@ setInterval(cleanExpiredSessions, 5 * 60 * 1000);
 // ─── Engine Process Response ─────────────────────────────────────────
 
 export interface EngineProcessResponse {
+  /** Session identity for idempotency */
+  sessionId: string;
+  /** Turn identity for idempotency */
+  turnId: string;
+  /** State patches for client to write locally (ordered: safety → sessionState → memory → logs → greetingCycle) */
+  statePatches: {
+    safety: {
+      crisisLevel: number;
+      riskLevel: string;
+      showEmergency: boolean;
+      relapseIntentLog: { confidence: number; markers: string[]; timestamp: string } | null;
+    };
+    sessionState: {
+      zoneScore: number;
+      zoneColor: string;
+      emotionalState: string;
+      dominantModule: string;
+      usedModules: string[];
+      regulationAction: string;
+      regulationWasSoftened: boolean;
+      responseDirection: string;
+    };
+    memory: {
+      triggerPatterns: Array<{ trigger: string; frequency: number; lastSeen: string }> | null;
+      moduleUsage: Array<{ moduleId: string; count: number; lastUsed: string }> | null;
+      vspInsight: { framework: string; discrepancy: boolean } | null;
+      pastReferenceUse: { referenced: boolean; context: string } | null;
+    };
+    logs: {
+      sessionEventSummary: string;
+      moduleActivationSummary: string;
+    };
+    greetingCycle: {
+      lastSessionDate: string;
+      cycleTimestamp: string;
+      sessionStartedAtDeviceIso: string;
+    };
+  };
   /** State analysis result */
   stateAnalysis: StateAnalysis;
   /** Buffer state after processing */
@@ -479,7 +517,58 @@ export async function processEngineRequest(input: EngineProcessInput): Promise<E
 
   const latencyMs = Date.now() - startMs;
 
+  // ── Build State Patches ──────────────────────────────────────────
+  const turnId = `${sessionId}_turn_${buffer.messageCount}`;
+  const nowIso = input.deviceTimeContext.deviceNowIso;
+
+  const statePatches = {
+    safety: {
+      crisisLevel: stateAnalysis.riskLevel === 'critical' ? 3 : stateAnalysis.riskLevel === 'high' ? 2 : stateAnalysis.riskLevel === 'moderate' ? 1 : 0,
+      riskLevel: stateAnalysis.riskLevel,
+      showEmergency: stateAnalysis.riskLevel === 'critical',
+      relapseIntentLog: signalResult?.relapseIntent?.detected
+        ? { confidence: signalResult.relapseIntent.confidence, markers: signalResult.relapseIntent.markers || [], timestamp: nowIso }
+        : null,
+    },
+    sessionState: {
+      zoneScore: buffer.currentZoneScore,
+      zoneColor: buffer.currentZoneColor,
+      emotionalState: stateAnalysis.emotionalState,
+      dominantModule: loopblockResult.isBlocked ? 'default' : (input.usedModules[input.usedModules.length - 1] || 'default'),
+      usedModules: buffer.usedModules,
+      regulationAction: regulationResult.action,
+      regulationWasSoftened: regulationResult.wasSoftened,
+      responseDirection: buffer.responseDirection,
+    },
+    memory: {
+      triggerPatterns: signalResult?.triggers?.length
+        ? signalResult.triggers.map(t => ({ trigger: t.trigger || t.name || '', frequency: 1, lastSeen: nowIso }))
+        : null,
+      moduleUsage: buffer.usedModules.length
+        ? buffer.usedModules.map(m => ({ moduleId: m, count: 1, lastUsed: nowIso }))
+        : null,
+      vspInsight: vspInsightResult
+        ? { framework: vspInsightResult.selectedFramework || 'none', discrepancy: vspInsightResult.discrepancyDetected || false }
+        : null,
+      pastReferenceUse: pastReferenceResult?.matchedReferences?.length
+        ? { referenced: true, context: pastReferenceResult.matchedReferences[0].narrative }
+        : null,
+    },
+    logs: {
+      sessionEventSummary: `Turn ${buffer.messageCount}: ${stateAnalysis.emotionalState} | zone=${buffer.currentZoneColor} | risk=${stateAnalysis.riskLevel}`,
+      moduleActivationSummary: buffer.usedModules.join(', ') || 'none',
+    },
+    greetingCycle: {
+      lastSessionDate: input.deviceTimeContext.localDate,
+      cycleTimestamp: input.deviceTimeContext.cycleTimestamp,
+      sessionStartedAtDeviceIso: input.deviceTimeContext.sessionStartedAtDeviceIso,
+    },
+  };
+
   return {
+    sessionId,
+    turnId,
+    statePatches,
     stateAnalysis,
     bufferState: {
       currentZoneScore: buffer.currentZoneScore,
@@ -523,7 +612,7 @@ export async function processEngineRequest(input: EngineProcessInput): Promise<E
     signalEngine: signalResult,
     vspInsight: vspInsightResult,
     pastReference: pastReferenceResult,
-    engineVersion: 'server-v0.5.0-checkpoint-d',
+    engineVersion: 'server-v0.6.0-checkpoint-e',
     latencyMs,
     gptResponse,
   };

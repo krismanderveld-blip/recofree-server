@@ -2060,3 +2060,11 @@
 - [x] Checkpoint D: GPT prompt build + OpenAI call integrated into engine-process (includeGPTResponse flag)
 - [x] Checkpoint D: Full pipeline test: state-analyzer → buffer → decay → loopblock → regulation → signal → VSP → past-ref → GPT (9960ms with GPT, 1429ms without)
 - [x] Checkpoint D: Go/No-Go validation (1399 tests pass, GPT response correct in Dutch, model routing works)
+- [x] Checkpoint E: State-patch generation on server (statePatches with safety/sessionState/memory/logs/greetingCycle + sessionId + turnId)
+- [x] Checkpoint E: Client-side patch-writer (applyServerPatches) — 0 TS errors, idempotent, persona-aware
+- [x] Checkpoint F: SERVER_ACTIVE_CLIENT_SHADOW mode dispatcher (server-active-client.ts)
+- [x] Checkpoint F: callServerEngine — builds CanonicalEngineInput, calls /api/engine-process, applies patches
+- [x] Checkpoint F: dispatchEngine — mode-aware dispatcher (4 modes: off/shadow/active/only)
+- [x] Checkpoint F: Crisis safety net (offline/timeout fallback with Dutch crisis numbers)
+- [x] Checkpoint F: All migration files exported from lib/migration/index.ts
+- [x] Checkpoint E+F: Go/No-Go validation (1398 pass, 1 pre-existing timeout, 0 TS errors in migration files)

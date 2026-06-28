@@ -54,6 +54,21 @@ export { fireShadowEngineCall } from './shadow-engine-client';
 // Input builder
 export { buildCanonicalEngineInput } from './build-engine-input';
 
+// Patch writer (client-side state patch application)
+export { applyServerPatches } from './patch-writer';
+export type { ServerStatePatches, PatchWriteResult } from './patch-writer';
+
+// Server-active client (Checkpoint F)
+export {
+  callServerEngine,
+  dispatchEngine,
+} from './server-active-client';
+export type {
+  ServerEngineCallResult,
+  ServerEngineCallInput,
+  EngineDispatchResult,
+} from './server-active-client';
+
 // Golden testset
 export {
   type GoldenTestCategory,
