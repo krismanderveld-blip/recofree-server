@@ -2,7 +2,7 @@
  * Wizard Step: Activities
  *
  * User adds activity blocks between wake and sleep.
- * Can add multiple activities with label + time range.
+ * Uses ScrollWheelTimePicker for start/end time selection.
  */
 
 import React, { useState } from 'react';
@@ -11,6 +11,7 @@ import { useTranslation } from '@/lib/i18n';
 import { useColors } from '@/hooks/use-colors';
 import { useWizard } from '@/lib/features/dayStructure/wizard-context';
 import { IconSymbol } from '@/components/ui/icon-symbol';
+import { ScrollWheelTimePicker } from '@/components/day-structure/scroll-wheel-time-picker';
 import type { TimeBlock } from '@/lib/features/dayStructure/types';
 
 export function WizardActivities() {
@@ -19,17 +20,24 @@ export function WizardActivities() {
   const { goToStep, addActivityBlock, removeBlock, state } = useWizard();
 
   const [label, setLabel] = useState('');
-  const [startTime, setStartTime] = useState('');
-  const [endTime, setEndTime] = useState('');
+  const [startHour, setStartHour] = useState(9);
+  const [startMinute, setStartMinute] = useState(0);
+  const [endHour, setEndHour] = useState(10);
+  const [endMinute, setEndMinute] = useState(0);
+  const [showTimePicker, setShowTimePicker] = useState<'start' | 'end' | null>(null);
 
   const activityBlocks = state.draftBlocks.filter((b) => b.kind === 'activity');
 
+  const formatTime = (h: number, m: number) =>
+    `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+
   const handleAdd = () => {
-    if (!label.trim() || !startTime || !endTime) return;
-    addActivityBlock(label.trim(), startTime, endTime);
+    if (!label.trim()) return;
+    const start = formatTime(startHour, startMinute);
+    const end = formatTime(endHour, endMinute);
+    addActivityBlock(label.trim(), start, end);
     setLabel('');
-    setStartTime('');
-    setEndTime('');
+    setShowTimePicker(null);
   };
 
   const handleNext = () => {
@@ -76,29 +84,58 @@ export function WizardActivities() {
           placeholder={t('dayStructure.wizard.activities.label_placeholder')}
           placeholderTextColor={colors.muted}
           style={[styles.input, { color: colors.foreground, borderColor: colors.border }]}
-          returnKeyType="next"
+          returnKeyType="done"
         />
+
+        {/* Time selection buttons */}
         <View style={{ flexDirection: 'row', gap: 12 }}>
-          <TextInput
-            value={startTime}
-            onChangeText={setStartTime}
-            placeholder="09:00"
-            placeholderTextColor={colors.muted}
-            keyboardType="numbers-and-punctuation"
-            style={[styles.timeInput, { color: colors.foreground, borderColor: colors.border, flex: 1 }]}
-            maxLength={5}
-          />
+          <TouchableOpacity
+            onPress={() => setShowTimePicker(showTimePicker === 'start' ? null : 'start')}
+            style={[styles.timeButton, {
+              borderColor: showTimePicker === 'start' ? colors.primary : colors.border,
+              flex: 1,
+            }]}
+            activeOpacity={0.7}
+          >
+            <Text style={{ fontSize: 15, color: colors.foreground, fontWeight: '500' }}>
+              {formatTime(startHour, startMinute)}
+            </Text>
+          </TouchableOpacity>
           <Text style={{ color: colors.muted, alignSelf: 'center' }}>–</Text>
-          <TextInput
-            value={endTime}
-            onChangeText={setEndTime}
-            placeholder="10:00"
-            placeholderTextColor={colors.muted}
-            keyboardType="numbers-and-punctuation"
-            style={[styles.timeInput, { color: colors.foreground, borderColor: colors.border, flex: 1 }]}
-            maxLength={5}
-          />
+          <TouchableOpacity
+            onPress={() => setShowTimePicker(showTimePicker === 'end' ? null : 'end')}
+            style={[styles.timeButton, {
+              borderColor: showTimePicker === 'end' ? colors.primary : colors.border,
+              flex: 1,
+            }]}
+            activeOpacity={0.7}
+          >
+            <Text style={{ fontSize: 15, color: colors.foreground, fontWeight: '500' }}>
+              {formatTime(endHour, endMinute)}
+            </Text>
+          </TouchableOpacity>
         </View>
+
+        {/* Inline time picker */}
+        {showTimePicker === 'start' && (
+          <View style={styles.pickerContainer}>
+            <ScrollWheelTimePicker
+              initialHour={startHour}
+              initialMinute={startMinute}
+              onTimeChange={(h, m) => { setStartHour(h); setStartMinute(m); }}
+            />
+          </View>
+        )}
+        {showTimePicker === 'end' && (
+          <View style={styles.pickerContainer}>
+            <ScrollWheelTimePicker
+              initialHour={endHour}
+              initialMinute={endMinute}
+              onTimeChange={(h, m) => { setEndHour(h); setEndMinute(m); }}
+            />
+          </View>
+        )}
+
         <TouchableOpacity
           onPress={handleAdd}
           style={[styles.addButton, { backgroundColor: colors.primary + '15' }]}
@@ -153,13 +190,16 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 8,
   },
-  timeInput: {
-    fontSize: 15,
+  timeButton: {
     paddingVertical: 10,
     paddingHorizontal: 12,
     borderWidth: 1,
     borderRadius: 8,
-    textAlign: 'center',
+    alignItems: 'center',
+  },
+  pickerContainer: {
+    height: 180,
+    marginVertical: 4,
   },
   addButton: {
     flexDirection: 'row',

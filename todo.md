@@ -2113,3 +2113,6 @@
 - [x] ScrollWheelTimePicker: build scroll-wheel component (two columns, selected big/white, adjacent grey)
 - [x] Wizard wake/sleep: replace current time input with ScrollWheelTimePicker
 - [x] Wizard save button: add persistent Save button + draft persistence (encrypted) for partial saves at any step
+- [x] Activities step: replace TextInput with ScrollWheelTimePicker for start/end times
+- [x] Day editor screen: view/edit/delete existing blocks per weekday (with add block form)
+- [x] Home card conditional text: navigates to editor if configured, wizard if not; different body/CTA text

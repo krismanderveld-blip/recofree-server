@@ -161,6 +161,7 @@ export default function RootLayout() {
               <Stack.Screen name="oauth/callback" />
               <Stack.Screen name="dev/debug-log" options={{ presentation: 'modal' }} />
               <Stack.Screen name="day-structure/wizard" options={{ presentation: 'modal', gestureEnabled: false }} />
+              <Stack.Screen name="day-structure/editor" options={{ presentation: 'modal', headerShown: false }} />
             </Stack>
             <StatusBar style="auto" />
           </QueryClientProvider>

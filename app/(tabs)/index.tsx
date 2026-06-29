@@ -15,6 +15,7 @@ import * as Haptics from 'expo-haptics';
 import { colors as dc, spacing, radius, shadows, typography, cardStyles, buttonStyles } from '@/constants/design';
 import { useTranslation } from '@/lib/i18n';
 import { LocalDeviceTimeService } from "@/lib/core/time";
+import { isConfigured as isDayStructureConfigured } from '@/lib/features/dayStructure/day-structure-service';
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -26,6 +27,11 @@ export default function HomeScreen() {
   const userDat = getUserDat();
   const [activeMilestone, setActiveMilestone] = useState<MilestoneDefinition | null>(null);
   const [showClinicalModal, setShowClinicalModal] = useState(false);
+  const [dayStructureConfigured, setDayStructureConfigured] = useState(false);
+
+  useEffect(() => {
+    isDayStructureConfigured().then(setDayStructureConfigured).catch(() => {});
+  }, []);
 
   // Easter egg: 5x tap on companion name
   const tapCountRef = useRef(0);
@@ -303,7 +309,7 @@ export default function HomeScreen() {
         </Pressable>
         {/* Day Structure Card */}
         <Pressable
-          onPress={() => router.push('/day-structure/wizard' as Href)}
+          onPress={() => router.push(dayStructureConfigured ? '/day-structure/editor' as Href : '/day-structure/wizard' as Href)}
           style={({ pressed }) => [styles.navCard, { backgroundColor: '#E3F2FD', borderColor: '#90CAF9', opacity: pressed ? 0.85 : 1 }]}
         >
           <View style={[styles.navCardIcon, { backgroundColor: '#BBDEFB' }]}>
@@ -311,8 +317,12 @@ export default function HomeScreen() {
           </View>
           <View style={{ flex: 1 }}>
             <Text style={styles.navCardTitle}>{t('home.daystructure_card.title')}</Text>
-            <Text style={styles.navCardBody}>{t('home.daystructure_card.body')}</Text>
-            <Text style={[styles.navCardCta, { color: '#1565C0' }]}>{t('home.daystructure_card.cta')}</Text>
+            <Text style={styles.navCardBody}>
+              {dayStructureConfigured ? t('home.daystructure_card.body_configured') : t('home.daystructure_card.body')}
+            </Text>
+            <Text style={[styles.navCardCta, { color: '#1565C0' }]}>
+              {dayStructureConfigured ? t('home.daystructure_card.cta_configured') : t('home.daystructure_card.cta')}
+            </Text>
           </View>
           <Text style={styles.navCardChevron}>{t('home.daystructure_card.chevron')}</Text>
         </Pressable>

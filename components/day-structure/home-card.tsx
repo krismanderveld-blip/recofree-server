@@ -115,7 +115,7 @@ export function DayStructureHomeCard() {
   };
 
   const handleOpenEditor = () => {
-    router.push('/day-structure/wizard');
+    router.push('/day-structure/editor');
   };
 
   // ─── Not Configured State ─────────────────────────────────────────────────
