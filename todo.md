@@ -2143,3 +2143,4 @@
 - [x] Feature: Move dagplanning to its own tab (day-planning.tsx) with nav card on home
 - [x] Feature: Add 'Straks' (later/skip) option to dagstructuur tab screen
 - [x] Feature: Add streaks on/off toggle (ja/nee) — small text toggle on progress bar
+- [x] Feature: Extend AI greeting with time-of-day awareness + dagstructuur context (current block reference, off-schedule empathetic response during sleep time)
