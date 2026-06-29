@@ -2144,3 +2144,5 @@
 - [x] Feature: Add 'Straks' (later/skip) option to dagstructuur tab screen
 - [x] Feature: Add streaks on/off toggle (ja/nee) — small text toggle on progress bar
 - [x] Feature: Extend AI greeting with time-of-day awareness + dagstructuur context (current block reference, off-schedule empathetic response during sleep time)
+- [x] Fix: Add implicit help signal patterns to LiveIntent detection (short-term-memory-buffer.ts)
+- [x] Fix: Add proactivity instruction to deep guidanceDepth (ai-chat.ts) — soft invitation, zone-safe

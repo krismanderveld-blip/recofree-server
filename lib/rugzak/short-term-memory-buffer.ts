@@ -165,6 +165,14 @@ function detectIntentFromStructure(text: string): LiveIntent | null {
     return 'seeking_action';
   }
 
+  // Implicit help signals (NL + EN): user expresses being stuck/lost without explicit request
+  if (/\b(ik weet niet hoe|ik heb geen idee|waar begin ik|ik zoek een ingang|hoe moet ik dit|geen idee hoe|weet niet waar ik moet beginnen|ik kom er niet uit|ik zit vast|ik loop vast)\b/.test(lower)) {
+    return 'seeking_action';
+  }
+  if (/\b(i don'?t know how|i have no idea|where do i (start|begin)|i'?m stuck|i don'?t know where to (start|begin)|no idea how|i can'?t figure|i need (a|some) direction|how (do|would) i (even|approach))\b/.test(lower)) {
+    return 'seeking_action';
+  }
+
   // Questions seeking reassurance
   if (/\b(is (that|this|it) normal|am i (crazy|bad|wrong))\b/.test(lower)) {
     return 'seeking_reassurance';
