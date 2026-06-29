@@ -302,6 +302,21 @@ interface ChatRequestInput {
   locale?: 'nl' | 'en' | 'fr';
   /** User-selected country. Determines crisis numbers shown by AI. */
   country?: 'NL' | 'BE' | 'FR' | 'UK' | 'US';
+
+  /** Device-local time context (from client). Used for accurate time in AI responses. */
+  deviceTimeContext?: {
+    deviceNowIso: string;
+    timeZone: string;
+    timezoneOffsetMinutes: number;
+    localDate: string;
+    localTime: string;
+    greetingDaypart: 'morning' | 'afternoon' | 'evening' | 'night';
+    cycleTimestamp: string;
+    sessionStartedAtDeviceIso: string;
+  } | null;
+
+  /** Day structure context (current block info for AI awareness) */
+  dayStructureContext?: string | null;
 }
 
 // ─── Server-side Session Cache ───────────────────────────────────
@@ -1914,7 +1929,11 @@ CURRENT STATE:
 - Safety Plan Zone: ${input.vspLevel ?? 'not set'} ${input.vspLevel === 'ROOD' || input.vspLevel === 'RED' ? '⚠️ HIGH RELAPSE RISK' : input.vspLevel === 'ORANJE' || input.vspLevel === 'ORANGE' ? '⚠️ ELEVATED RISK' : input.vspLevel === 'PAARS' || input.vspLevel === 'PURPLE' ? '🚨 CRISIS' : ''}
 - Urgency level: ${input.urgency}
 - Risk score: ${input.riskScore ?? 0}/10
-- Current timestamp: ${new Date().toISOString()}
+- Current timestamp: ${input.deviceTimeContext?.deviceNowIso ?? new Date().toISOString()}
+- Device local time: ${input.deviceTimeContext?.localTime ?? 'unknown'}
+- Device timezone: ${input.deviceTimeContext?.timeZone ?? 'unknown'}
+- Day part: ${input.deviceTimeContext?.greetingDaypart ?? 'unknown'}
+- IMPORTANT: When the user asks what time it is, or when you reference the current time, ALWAYS use the "Device local time" above. NEVER calculate time yourself.
 ${sessionInfo}
 ${input.bufferSnapshot ? `
 LIVE SESSION CONTEXT (real-time analysis):
@@ -1923,6 +1942,10 @@ LIVE SESSION CONTEXT (real-time analysis):
 - Live intent: ${input.bufferSnapshot.liveIntent ?? 'none'}
 - Dominant state: ${input.bufferSnapshot.dominantState ?? 'none'}
 Use this live context to attune your tone and depth to the CURRENT moment.` : ''}
+${input.dayStructureContext ? `
+DAY STRUCTURE (user's planned daily schedule for today):
+${input.dayStructureContext}
+- IMPORTANT: Only reference activities that appear in this schedule. NEVER invent or assume activities not listed here.` : ''}
 
 ${moduleInstructions}
 ${crisisInstructions}
@@ -2384,8 +2407,16 @@ CURRENT STATE:
 - Safety Plan Zone: ${input.vspLevel ?? 'not set'} ${input.vspLevel === 'ROOD' || input.vspLevel === 'RED' ? '⚠️ HIGH RELAPSE RISK' : input.vspLevel === 'ORANJE' || input.vspLevel === 'ORANGE' ? '⚠️ ELEVATED RISK' : input.vspLevel === 'PAARS' || input.vspLevel === 'PURPLE' ? '🚨 CRISIS' : ''}
 - Urgency level: ${input.urgency}
 - Risk score: ${input.riskScore ?? 0}/10
-- Current timestamp: ${new Date().toISOString()}
+- Current timestamp: ${input.deviceTimeContext?.deviceNowIso ?? new Date().toISOString()}
+- Device local time: ${input.deviceTimeContext?.localTime ?? 'unknown'}
+- Device timezone: ${input.deviceTimeContext?.timeZone ?? 'unknown'}
+- Day part: ${input.deviceTimeContext?.greetingDaypart ?? 'unknown'}
+- IMPORTANT: When the user asks what time it is, or when you reference the current time, ALWAYS use the "Device local time" above. NEVER calculate time yourself.
 ${sessionInfo}
+${input.dayStructureContext ? `
+DAY STRUCTURE (user's planned daily schedule for today):
+${input.dayStructureContext}
+- IMPORTANT: Only reference activities that appear in this schedule. NEVER invent or assume activities not listed here.` : ''}
 
 ${moduleInstructions}
 ${crisisInstructions}

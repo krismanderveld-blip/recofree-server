@@ -159,3 +159,35 @@ export async function toggleBell(params: {
     return enableBell();
   }
 }
+
+// ─── Streaks Toggle ────────────────────────────────────────────────────────
+
+/**
+ * Load whether streaks are enabled. Defaults to true (on).
+ */
+export async function loadStreaksEnabled(): Promise<boolean> {
+  try {
+    const raw = await AsyncStorage.getItem(STORAGE_KEYS.STREAKS_ENABLED);
+    if (raw === null) return true; // default on
+    return raw === 'true';
+  } catch {
+    return true;
+  }
+}
+
+/**
+ * Save streaks enabled preference.
+ */
+export async function saveStreaksEnabled(enabled: boolean): Promise<void> {
+  await AsyncStorage.setItem(STORAGE_KEYS.STREAKS_ENABLED, String(enabled));
+}
+
+/**
+ * Toggle streaks on/off. Returns the new state.
+ */
+export async function toggleStreaks(): Promise<boolean> {
+  const current = await loadStreaksEnabled();
+  const next = !current;
+  await saveStreaksEnabled(next);
+  return next;
+}

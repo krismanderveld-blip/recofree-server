@@ -78,6 +78,8 @@ export interface ServerEngineCallInput {
   diaryEntries?: any[];
   /** Override requestType (default: 'process_message'). Use 'greeting' for session-start greeting. */
   requestType?: 'process_message' | 'greeting' | 'session_start' | 'session_end';
+  /** Day structure context string for AI awareness of user's daily schedule */
+  dayStructureContext?: string | null;
 }
 
 // ─── Server Engine Call ──────────────────────────────────────────────────
@@ -145,6 +147,7 @@ export async function callServerEngine(input: ServerEngineCallInput): Promise<Se
         backpack: input.backpack ?? null,
         userDat: input.userDat ?? null,
         diaryEntries: input.diaryEntries ?? null,
+        dayStructureContext: input.dayStructureContext ?? null,
       }),
       signal: controller.signal,
     });

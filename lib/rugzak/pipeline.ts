@@ -507,7 +507,7 @@ export async function processMessage(
   userMessage: string,
   provider: AIProvider,
   userDat?: UserDat,
-  options?: { isSessionStart?: boolean; diaryEntries?: import('../ai/types').DiaryEntry[]; logsSessions?: import('../types/memory/logsDat.types').SessionLogSummary[]; locale?: 'nl' | 'en' | 'fr'; country?: 'NL' | 'BE' | 'FR' | 'UK' | 'US' }
+  options?: { isSessionStart?: boolean; diaryEntries?: import('../ai/types').DiaryEntry[]; logsSessions?: import('../types/memory/logsDat.types').SessionLogSummary[]; locale?: 'nl' | 'en' | 'fr'; country?: 'NL' | 'BE' | 'FR' | 'UK' | 'US'; dayStructureContext?: string | null }
 ): Promise<PipelineResult> {
   // Resolve the two stores
   let backpack: Backpack;
@@ -653,6 +653,7 @@ export async function processMessage(
         backpack: backpack,
         userDat: currentUserDat,
         diaryEntries: options?.diaryEntries ?? [],
+        dayStructureContext: options?.dayStructureContext ?? null,
       };
 
       const serverResult = await callServerEngine(serverInput);

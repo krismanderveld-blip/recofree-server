@@ -22,6 +22,8 @@ import {
   getCompletion,
   toggleBlockCompletion,
   getStreak,
+  loadStreaksEnabled,
+  toggleStreaks,
 } from '@/lib/features/dayStructure';
 import {
   scheduleAllNotifications,
@@ -41,6 +43,7 @@ export function DayStructureHomeCard() {
   const [completedIds, setCompletedIds] = useState<string[]>([]);
   const [currentBlock, setCurrentBlock] = useState<TimeBlock | null>(null);
   const [streak, setStreak] = useState(0);
+  const [streaksEnabled, setStreaksEnabled] = useState(true);
 
   const loadData = useCallback(async () => {
     try {
@@ -75,8 +78,14 @@ export function DayStructureHomeCard() {
       setCompletedIds(completion.completedBlockIds);
 
       // Load streak
-      const currentStreak = await getStreak();
-      setStreak(currentStreak);
+      const streaksPref = await loadStreaksEnabled();
+      setStreaksEnabled(streaksPref);
+      if (streaksPref) {
+        const currentStreak = await getStreak();
+        setStreak(currentStreak);
+      } else {
+        setStreak(0);
+      }
 
       // Find current block
       const nowMinutes = now.getHours() * 60 + now.getMinutes();
@@ -267,7 +276,7 @@ export function DayStructureHomeCard() {
         <Text style={{ fontSize: 12, color: allDone ? colors.success : colors.muted, marginLeft: 8, fontWeight: allDone ? '600' : '400' }}>
           {allDone ? t('dayStructure.home_card.all_done') : `${completedCount}/${totalBlocks}`}
         </Text>
-        {streak > 0 && (
+        {streaksEnabled && streak > 0 && (
           <View style={{ flexDirection: 'row', alignItems: 'center', marginLeft: 12 }}>
             <Text style={{ fontSize: 14 }}>{t('dayStructure.home_card.streak_icon')}</Text>
             <Text style={{ fontSize: 12, color: colors.warning, fontWeight: '600', marginLeft: 2 }}>
@@ -275,6 +284,26 @@ export function DayStructureHomeCard() {
             </Text>
           </View>
         )}
+        {/* Streaks Toggle */}
+        <TouchableOpacity
+          onPress={async () => {
+            if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            const newVal = await toggleStreaks();
+            setStreaksEnabled(newVal);
+            if (newVal) {
+              const s = await getStreak();
+              setStreak(s);
+            } else {
+              setStreak(0);
+            }
+          }}
+          activeOpacity={0.7}
+          style={{ marginLeft: 8 }}
+        >
+          <Text style={{ fontSize: 11, color: streaksEnabled ? colors.warning : colors.muted }}>
+            {streaksEnabled ? t('dayStructure.streaks.toggle_on') : t('dayStructure.streaks.toggle_off')}
+          </Text>
+        </TouchableOpacity>
       </View>
     </View>
   );

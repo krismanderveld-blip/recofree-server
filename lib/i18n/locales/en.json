@@ -873,5 +873,16 @@
   "dayStructure.home_card.streak_icon": "\ud83d\udd25",
   "dayStructure.home_card.streak_days": "days",
   "dayStructure.wizard.activities.start_time": "Start time",
-  "dayStructure.wizard.activities.end_time": "End time"
+  "dayStructure.wizard.activities.end_time": "End time",
+  "dayStructure.tab.title": "My day plan",
+  "dayStructure.tab.body": "View and follow your daily schedule",
+  "dayStructure.setup.title": "Set up your day",
+  "dayStructure.setup.body": "Plan your day with fixed blocks. This helps you find structure and calm.",
+  "dayStructure.setup.start": "Set up now",
+  "dayStructure.setup.later": "Later",
+  "dayStructure.later.title": "No rush",
+  "dayStructure.later.body": "You can always set up your day plan later. Come back whenever you're ready.",
+  "dayStructure.later.open_now": "Open now anyway",
+  "dayStructure.streaks.toggle_on": "Streaks on",
+  "dayStructure.streaks.toggle_off": "Streaks off"
 }

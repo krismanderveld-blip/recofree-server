@@ -586,6 +586,10 @@ export async function processEngineRequest(input: EngineProcessInput): Promise<E
         clinicalModeActive: input.clinicalModeActive,
         // Locale
         locale: input.locale,
+        // Device time context (from client)
+        deviceTimeContext: input.deviceTimeContext,
+        // Day structure context (user's daily schedule)
+        dayStructureContext: (input as any).dayStructureContext || null,
         // Session start data
         backpack: input.backpack || null,
         userDat: input.userDat || null,

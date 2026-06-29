@@ -203,6 +203,8 @@ export const STORAGE_KEYS = {
   BELL_STATE: '@recofree_daystructure_bell_state',
   /** Wizard draft (partial, may be incomplete). */
   WIZARD_DRAFT: '@recofree_daystructure_wizard_draft_v1',
+  /** Streaks toggle (plain, not sensitive). */
+  STREAKS_ENABLED: '@recofree_daystructure_streaks_enabled',
 } as const;
 
 // ─── Validation ─────────────────────────────────────────────────────────────

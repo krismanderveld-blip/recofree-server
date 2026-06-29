@@ -15,8 +15,7 @@ import * as Haptics from 'expo-haptics';
 import { colors as dc, spacing, radius, shadows, typography, cardStyles, buttonStyles } from '@/constants/design';
 import { useTranslation } from '@/lib/i18n';
 import { LocalDeviceTimeService } from "@/lib/core/time";
-import { isConfigured as isDayStructureConfigured } from '@/lib/features/dayStructure/day-structure-service';
-import { DayStructureHomeCard } from '@/components/day-structure/home-card';
+// Day Structure moved to its own tab (day-planning)
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -28,11 +27,8 @@ export default function HomeScreen() {
   const userDat = getUserDat();
   const [activeMilestone, setActiveMilestone] = useState<MilestoneDefinition | null>(null);
   const [showClinicalModal, setShowClinicalModal] = useState(false);
-  const [dayStructureConfigured, setDayStructureConfigured] = useState(false);
 
-  useEffect(() => {
-    isDayStructureConfigured().then(setDayStructureConfigured).catch(() => {});
-  }, []);
+
 
   // Easter egg: 5x tap on companion name
   const tapCountRef = useRef(0);
@@ -303,10 +299,20 @@ export default function HomeScreen() {
           </View>
                     <Text style={styles.navCardChevron}>{t('home.backpack_card.chevron')}</Text>
         </Pressable>
-        {/* Day Structure Home Card (with bell toggle + completion tracking) */}
-        <View style={{ marginBottom: spacing.md }}>
-          <DayStructureHomeCard />
-        </View>
+        {/* Day Planning Card */}
+        <Pressable
+          onPress={() => router.push('/(tabs)/day-planning' as Href)}
+          style={({ pressed }) => [styles.navCard, { backgroundColor: '#E3F2FD', borderColor: dc.borderSoft, opacity: pressed ? 0.85 : 1 }]}
+        >
+          <View style={[styles.navCardIcon, { backgroundColor: '#BBDEFB' }]}>
+            <Text style={{ fontSize: 22 }}>📋</Text>
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.navCardTitle}>{t('dayStructure.tab.title')}</Text>
+            <Text style={styles.navCardBody}>{t('dayStructure.tab.body')}</Text>
+          </View>
+          <Text style={styles.navCardChevron}>›</Text>
+        </Pressable>
         {/* My Profile Card */}
         <Pressable
           onPress={() => router.push('/(tabs)/profile' as Href)}

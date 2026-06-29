@@ -2137,3 +2137,9 @@
 - [x] Feature: Push notification toggle (bell icon) on home card — integrated DayStructureHomeCard with bell on homescreen
 - [x] Feature: Greeting integration — DayStructureHomeCard shows current block highlighted + context
 - [x] Feature: Task follow-up / streak overview — streak counter (🔥 X dagen) on home card progress bar
+- [x] Bug fix: Server/AI uses wrong time — now passes device localTime from client to buildSystemPrompt
+- [x] Bug fix: AI hallucinates activities — dayStructureContext now sent to AI with actual blocks
+- [x] Feature: Push notifications 10min before each block start, activated via bell toggle
+- [x] Feature: Move dagplanning to its own tab (day-planning.tsx) with nav card on home
+- [x] Feature: Add 'Straks' (later/skip) option to dagstructuur tab screen
+- [x] Feature: Add streaks on/off toggle (ja/nee) — small text toggle on progress bar

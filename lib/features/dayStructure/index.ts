@@ -109,6 +109,9 @@ export {
   enableBell,
   disableBell,
   toggleBell,
+  loadStreaksEnabled,
+  saveStreaksEnabled,
+  toggleStreaks,
 } from './permission-service';
 
 // Observer Hook

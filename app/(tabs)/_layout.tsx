@@ -12,6 +12,7 @@ export default function TabLayout() {
       <Tabs.Screen name="mood" />
       <Tabs.Screen name="diary" />
       <Tabs.Screen name="backpack" />
+      <Tabs.Screen name="day-planning" />
       <Tabs.Screen name="chat" />
       <Tabs.Screen name="profile" />
     </Tabs>

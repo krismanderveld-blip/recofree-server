@@ -103,7 +103,7 @@ function buildNotificationContent(
     // Sleep notification reminds user to set their device alarm
     body = SLEEP_NOTIFICATION_BODY;
   } else {
-    body = `📋 ${block.startTime} - ${block.endTime}`;
+    body = `📋 Over 10 min: ${block.label} (${block.startTime} - ${block.endTime})`;
   }
 
   const content: Notifications.NotificationContentInput = {
@@ -145,11 +145,25 @@ async function scheduleBlockNotification(
   // Convert from ISO (1=Mon, 7=Sun) to expo (1=Sun, 2=Mon, ..., 7=Sat)
   const expoWeekday = weekdayNum === 7 ? 1 : weekdayNum + 1;
 
+  // Schedule 10 minutes BEFORE block start for activity/sleep blocks
+  // Wake blocks fire at exact time (alarm)
+  let triggerHour = hour;
+  let triggerMinute = minute;
+  if (block.kind !== 'wake') {
+    // Subtract 10 minutes
+    triggerMinute -= 10;
+    if (triggerMinute < 0) {
+      triggerMinute += 60;
+      triggerHour -= 1;
+      if (triggerHour < 0) triggerHour = 23;
+    }
+  }
+
   const trigger: Notifications.NotificationTriggerInput = {
     type: Notifications.SchedulableTriggerInputTypes.WEEKLY,
     weekday: expoWeekday,
-    hour,
-    minute,
+    hour: triggerHour,
+    minute: triggerMinute,
   };
 
   const content = buildNotificationContent(block, weekday);

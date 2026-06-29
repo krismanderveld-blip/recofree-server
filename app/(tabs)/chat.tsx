@@ -55,6 +55,7 @@ import { colors as dc, spacing, radius, typography, shadows } from '@/constants/
 import { triggerBackpackAnalysisIfNeeded } from '@/lib/backpack-analysis/schema-mode-trigger';
 import { useTranslation } from '@/lib/i18n';
 import { LocalDeviceTimeService } from "@/lib/core/time";
+import { getTodayBlocks } from '@/lib/features/dayStructure';
 
 const BACKPACK_KEY = '@recofree_backpack';
 const USERDAT_KEY = '@recofree_userdat';
@@ -760,7 +761,19 @@ function ChatScreenInner() {
         v3GreetingUsedRef.current = false;
         console.log('[Chat] First message after V3 greeting — sending as SESSION_INIT to populate server cache');
       }
-      const result = await processMessage(backpack, processedText, provider, currentUserDat, { isSessionStart: forceSessionInit, diaryEntries: forceSessionInit ? (await (async () => { try { const dj = await readEncrypted(DIARY_KEY); return dj ? JSON.parse(dj) : []; } catch { return []; } })()) : [], logsSessions: logsDatSessionsRef.current, locale: locale as 'nl' | 'en' | 'fr', country: (country || 'BE') as 'NL' | 'BE' | 'FR' | 'UK' | 'US' });
+      // Build day structure context for AI awareness
+      let dayStructureCtx: string | null = null;
+      try {
+        const todayBlocks = await getTodayBlocks();
+        if (todayBlocks.length > 0) {
+          dayStructureCtx = todayBlocks.map(b => {
+            if (b.kind === 'wake') return `- Opstaan: ${b.startTime}`;
+            if (b.kind === 'sleep') return `- Slapen: ${b.startTime}`;
+            return `- ${b.label}: ${b.startTime} \u2013 ${b.endTime}`;
+          }).join('\n');
+        }
+      } catch { /* non-fatal */ }
+      const result = await processMessage(backpack, processedText, provider, currentUserDat, { isSessionStart: forceSessionInit, diaryEntries: forceSessionInit ? (await (async () => { try { const dj = await readEncrypted(DIARY_KEY); return dj ? JSON.parse(dj) : []; } catch { return []; } })()) : [], logsSessions: logsDatSessionsRef.current, locale: locale as 'nl' | 'en' | 'fr', country: (country || 'BE') as 'NL' | 'BE' | 'FR' | 'UK' | 'US', dayStructureContext: dayStructureCtx });
       // DEFENSIVE GUARD: if processMessage returns null/undefined (should never happen,
       // but observed 'undefined is not a function' crash on device — root cause unconfirmed,
       // likely Metro bundler module resolution issue or stale closure. This guardrail
