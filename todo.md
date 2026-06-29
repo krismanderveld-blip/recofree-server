@@ -2122,3 +2122,5 @@
 - [x] Bug fix: Editor inline-edit showing two pickers for wake/sleep — now shows single picker (syncs start+end)
 - [x] Bug fix: Home card showing wake/sleep blocks as range — now shows single time point
 - [x] Bug fix: Home card weekday resolution using new Date().getDay() — replaced with DayStructureTimeAdapter.getCurrentWeekday()
+- [x] Bug fix: Validation errors (start_equals_end + overlap) when copying day to weekdays — fixed: point-in-time blocks (startTime===endTime) excluded from overlap check
+- [x] Bug fix: Wake block should display as single time point (1 uur), not "van-tot" range — already correct in wizard (startTime===endTime model)

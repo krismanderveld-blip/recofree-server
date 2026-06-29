@@ -29,12 +29,18 @@ function toMinutes(time: string): number {
 /**
  * Check if two blocks overlap, considering midnight crossing.
  * Two blocks overlap if their time ranges intersect.
+ * Point-in-time blocks (startTime === endTime, i.e. wake/sleep) never overlap.
  */
 function blocksOverlap(a: TimeBlock, b: TimeBlock): boolean {
   const aStart = toMinutes(a.startTime);
   const aEnd = toMinutes(a.endTime);
   const bStart = toMinutes(b.startTime);
   const bEnd = toMinutes(b.endTime);
+
+  // Point-in-time blocks (wake/sleep) have zero duration — they cannot overlap anything
+  if (aStart === aEnd || bStart === bEnd) {
+    return false;
+  }
 
   // Normalize ranges for midnight crossing
   const aRanges = aEnd > aStart
