@@ -3,9 +3,10 @@
  *
  * User adds activity blocks between wake and sleep.
  * Uses ScrollWheelTimePicker for start/end time selection.
+ * Auto-suggests next start time from previous activity's end time.
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, TextInput, FlatList, StyleSheet } from 'react-native';
 import { useTranslation } from '@/lib/i18n';
 import { useColors } from '@/hooks/use-colors';
@@ -14,17 +15,52 @@ import { IconSymbol } from '@/components/ui/icon-symbol';
 import { ScrollWheelTimePicker } from '@/components/day-structure/scroll-wheel-time-picker';
 import type { TimeBlock } from '@/lib/features/dayStructure/types';
 
+/**
+ * Get the suggested start time for the next activity:
+ * - If there are existing activity blocks, use the last one's endTime
+ * - Otherwise, use the wake block's startTime (or default '09:00')
+ */
+function getSuggestedStartTime(draftBlocks: TimeBlock[]): string {
+  const activities = draftBlocks
+    .filter((b) => b.kind === 'activity')
+    .sort((a, b) => a.orderIndex - b.orderIndex);
+
+  if (activities.length > 0) {
+    return activities[activities.length - 1]!.endTime;
+  }
+
+  const wakeBlock = draftBlocks.find((b) => b.kind === 'wake');
+  return wakeBlock?.startTime ?? '09:00';
+}
+
+/**
+ * Add one hour to a time string "HH:mm", capped at 23:59.
+ */
+function addOneHour(time: string): string {
+  const [h, m] = time.split(':').map(Number);
+  const newH = Math.min((h ?? 0) + 1, 23);
+  return `${String(newH).padStart(2, '0')}:${String(m ?? 0).padStart(2, '0')}`;
+}
+
 export function WizardActivities() {
   const { t } = useTranslation();
   const colors = useColors();
   const { goToStep, addActivityBlock, removeBlock, state } = useWizard();
 
+  const suggestedStart = getSuggestedStartTime(state.draftBlocks);
   const [label, setLabel] = useState('');
-  const [startTime, setStartTime] = useState('09:00');
-  const [endTime, setEndTime] = useState('10:00');
+  const [startTime, setStartTime] = useState(suggestedStart);
+  const [endTime, setEndTime] = useState(addOneHour(suggestedStart));
   const [showTimePicker, setShowTimePicker] = useState<'start' | 'end' | null>(null);
 
   const activityBlocks = state.draftBlocks.filter((b) => b.kind === 'activity');
+
+  // Update suggested start time when activities change
+  useEffect(() => {
+    const newSuggested = getSuggestedStartTime(state.draftBlocks);
+    setStartTime(newSuggested);
+    setEndTime(addOneHour(newSuggested));
+  }, [activityBlocks.length]);
 
   const handleAdd = () => {
     if (!label.trim()) return;
@@ -90,6 +126,9 @@ export function WizardActivities() {
             }]}
             activeOpacity={0.7}
           >
+            <Text style={{ fontSize: 11, color: colors.muted, marginBottom: 2 }}>
+              {t('dayStructure.wizard.activities.start_time')}
+            </Text>
             <Text style={{ fontSize: 15, color: colors.foreground, fontWeight: '500' }}>
               {startTime}
             </Text>
@@ -103,6 +142,9 @@ export function WizardActivities() {
             }]}
             activeOpacity={0.7}
           >
+            <Text style={{ fontSize: 11, color: colors.muted, marginBottom: 2 }}>
+              {t('dayStructure.wizard.activities.end_time')}
+            </Text>
             <Text style={{ fontSize: 15, color: colors.foreground, fontWeight: '500' }}>
               {endTime}
             </Text>

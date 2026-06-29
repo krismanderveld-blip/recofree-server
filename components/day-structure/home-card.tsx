@@ -4,29 +4,30 @@
  * Displays on the home screen. Shows:
  * - Current/next block info
  * - Bell toggle
- * - Progress for today
+ * - Progress for today with completion checkboxes
  * - CTA to configure if not set up
  */
 
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from '@/lib/i18n';
 import { useColors } from '@/hooks/use-colors';
 import { IconSymbol } from '@/components/ui/icon-symbol';
-import type { BellState, TimeBlock, Weekday } from '@/lib/features/dayStructure/types';
-import { WEEKDAYS } from '@/lib/features/dayStructure/types';
+import type { BellState, TimeBlock } from '@/lib/features/dayStructure/types';
 import {
   loadBellState,
   toggleBell,
   getDocument,
   getCompletion,
+  toggleBlockCompletion,
 } from '@/lib/features/dayStructure';
 import {
   scheduleAllNotifications,
   cancelAllNotifications,
 } from '@/lib/features/dayStructure/notification-service';
 import { DayStructureTimeAdapter } from '@/lib/features/dayStructure/time-adapter';
+import * as Haptics from 'expo-haptics';
 
 export function DayStructureHomeCard() {
   const { t } = useTranslation();
@@ -36,7 +37,7 @@ export function DayStructureHomeCard() {
   const [bellState, setBellState] = useState<BellState>('not_configured');
   const [isConfigured, setIsConfigured] = useState(false);
   const [todayBlocks, setTodayBlocks] = useState<TimeBlock[]>([]);
-  const [completedCount, setCompletedCount] = useState(0);
+  const [completedIds, setCompletedIds] = useState<string[]>([]);
   const [currentBlock, setCurrentBlock] = useState<TimeBlock | null>(null);
 
   const loadData = useCallback(async () => {
@@ -59,7 +60,8 @@ export function DayStructureHomeCard() {
       }
 
       setIsConfigured(true);
-      setTodayBlocks(daySchema.blocks);
+      const sortedBlocks = [...daySchema.blocks].sort((a, b) => a.orderIndex - b.orderIndex);
+      setTodayBlocks(sortedBlocks);
 
       // Load bell state
       const bell = await loadBellState();
@@ -68,7 +70,7 @@ export function DayStructureHomeCard() {
       // Load completion
       const localDayKey = DayStructureTimeAdapter.getCurrentLocalDayKey();
       const completion = await getCompletion(localDayKey);
-      setCompletedCount(completion.completedBlockIds.length);
+      setCompletedIds(completion.completedBlockIds);
 
       // Find current block
       const nowMinutes = now.getHours() * 60 + now.getMinutes();
@@ -77,6 +79,10 @@ export function DayStructureHomeCard() {
         const [eh, em] = b.endTime.split(':').map(Number);
         const start = (sh ?? 0) * 60 + (sm ?? 0);
         const end = (eh ?? 0) * 60 + (em ?? 0);
+        // Point-in-time blocks (wake/sleep): match if within 30 min after
+        if (start === end) {
+          return nowMinutes >= start && nowMinutes < start + 30;
+        }
         if (end > start) {
           return nowMinutes >= start && nowMinutes < end;
         }
@@ -106,6 +112,15 @@ export function DayStructureHomeCard() {
     } else if (newState === 'disabled') {
       await cancelAllNotifications();
     }
+  };
+
+  const handleToggleBlock = async (blockId: string) => {
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    const localDayKey = DayStructureTimeAdapter.getCurrentLocalDayKey();
+    const updated = await toggleBlockCompletion(localDayKey, blockId);
+    setCompletedIds(updated.completedBlockIds);
   };
 
   const handleOpenWizard = () => {
@@ -146,6 +161,8 @@ export function DayStructureHomeCard() {
   const bellIcon = bellState === 'enabled' ? 'bell.fill' : 'bell.slash.fill';
   const bellColor = bellState === 'enabled' ? colors.primary : bellState === 'denied' ? colors.error : colors.muted;
   const totalBlocks = todayBlocks.length;
+  const completedCount = completedIds.length;
+  const allDone = totalBlocks > 0 && completedCount >= totalBlocks;
 
   return (
     <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
@@ -173,38 +190,76 @@ export function DayStructureHomeCard() {
         </TouchableOpacity>
       </View>
 
-      {/* Current Block */}
-      {currentBlock && (
-        <View style={[styles.currentBlockRow, { backgroundColor: colors.primary + '08' }]}>
-          <Text style={{ fontSize: 13, color: colors.primary, fontWeight: '600' }}>
-            {t('dayStructure.home_card.now')}
-          </Text>
-          <Text style={{ fontSize: 14, color: colors.foreground, marginLeft: 8 }}>
-            {currentBlock.label || t(`dayStructure.block_kind.${currentBlock.kind}`)}
-          </Text>
-          <Text style={{ fontSize: 12, color: colors.muted, marginLeft: 'auto' }}>
-            {currentBlock.kind === 'wake' || currentBlock.kind === 'sleep'
-              ? currentBlock.startTime
-              : `${currentBlock.startTime} – ${currentBlock.endTime}`}
-          </Text>
-        </View>
-      )}
+      {/* Block Checklist */}
+      <View style={{ gap: 6, marginBottom: 10 }}>
+        {todayBlocks.map((block) => {
+          const isCompleted = completedIds.includes(block.id);
+          const isCurrent = currentBlock?.id === block.id;
+          const blockLabel = block.label || t(`dayStructure.block_kind.${block.kind}`);
+          const timeDisplay = block.kind === 'wake' || block.kind === 'sleep'
+            ? block.startTime
+            : `${block.startTime} – ${block.endTime}`;
 
-      {/* Progress */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8 }}>
+          return (
+            <TouchableOpacity
+              key={block.id}
+              onPress={() => handleToggleBlock(block.id)}
+              activeOpacity={0.7}
+              style={[
+                styles.blockRow,
+                {
+                  backgroundColor: isCurrent ? colors.primary + '08' : 'transparent',
+                  borderColor: isCurrent ? colors.primary + '30' : 'transparent',
+                },
+              ]}
+            >
+              {/* Checkbox */}
+              <View style={[
+                styles.checkbox,
+                {
+                  backgroundColor: isCompleted ? colors.success : 'transparent',
+                  borderColor: isCompleted ? colors.success : colors.muted + '80',
+                },
+              ]}>
+                {isCompleted && (
+                  <IconSymbol name="checkmark" size={10} color="#fff" />
+                )}
+              </View>
+
+              {/* Block info */}
+              <View style={{ flex: 1, marginLeft: 10 }}>
+                <Text style={[
+                  { fontSize: 14, color: colors.foreground },
+                  isCompleted && { textDecorationLine: 'line-through', color: colors.muted },
+                ]}>
+                  {blockLabel}
+                </Text>
+              </View>
+
+              {/* Time */}
+              <Text style={{ fontSize: 12, color: colors.muted }}>
+                {timeDisplay}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+
+      {/* Progress Bar */}
+      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
         <View style={[styles.progressBar, { backgroundColor: colors.border }]}>
           <View
             style={[
               styles.progressFill,
               {
-                backgroundColor: colors.primary,
+                backgroundColor: allDone ? colors.success : colors.primary,
                 width: totalBlocks > 0 ? `${(completedCount / totalBlocks) * 100}%` : '0%',
               },
             ]}
           />
         </View>
-        <Text style={{ fontSize: 12, color: colors.muted, marginLeft: 8 }}>
-          {completedCount}/{totalBlocks}
+        <Text style={{ fontSize: 12, color: allDone ? colors.success : colors.muted, marginLeft: 8, fontWeight: allDone ? '600' : '400' }}>
+          {allDone ? t('dayStructure.home_card.all_done') : `${completedCount}/${totalBlocks}`}
         </Text>
       </View>
     </View>
@@ -231,12 +286,21 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  currentBlockRow: {
+  blockRow: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 8,
-    paddingHorizontal: 12,
+    paddingHorizontal: 10,
     borderRadius: 8,
+    borderWidth: 1,
+  },
+  checkbox: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 2,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   progressBar: {
     flex: 1,

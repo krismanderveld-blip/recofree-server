@@ -2124,3 +2124,7 @@
 - [x] Bug fix: Home card weekday resolution using new Date().getDay() — replaced with DayStructureTimeAdapter.getCurrentWeekday()
 - [x] Bug fix: Validation errors (start_equals_end + overlap) when copying day to weekdays — fixed: point-in-time blocks (startTime===endTime) excluded from overlap check
 - [x] Bug fix: Wake block should display as single time point (1 uur), not "van-tot" range — already correct in wizard (startTime===endTime model)
+- [x] Improvement: Validation feedback — show translated user-friendly error messages instead of raw i18n keys in Alert
+- [x] Improvement: Auto-suggest next activity start time from previous activity's end time
+- [x] Improvement: Separate weekend schema option in copy-week wizard step
+- [x] Improvement: Completion tracking with checkboxes on home card to mark blocks as done
