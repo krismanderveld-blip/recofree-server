@@ -138,29 +138,47 @@ export default function DayStructureEditorScreen() {
     const isEditing = editingBlock === item.id;
 
     if (isEditing) {
+      const isPointInTime = item.kind === 'wake' || item.kind === 'sleep';
       return (
-        <View style={[styles.blockCard, { backgroundColor: colors.surface, borderColor: colors.primary }]}>
-          <TextInput
-            value={editLabel}
-            onChangeText={setEditLabel}
-            style={[styles.editInput, { color: colors.foreground, borderColor: colors.border }]}
-            returnKeyType="done"
-          />
-          <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center', marginTop: 8 }}>
-            <View style={{ flex: 1 }}>
+        <View style={[styles.blockCard, { backgroundColor: colors.surface, borderColor: colors.primary, flexDirection: 'column', alignItems: 'stretch' }]}>
+          {!isPointInTime && (
+            <TextInput
+              value={editLabel}
+              onChangeText={setEditLabel}
+              style={[styles.editInput, { color: colors.foreground, borderColor: colors.border }]}
+              returnKeyType="done"
+            />
+          )}
+          {isPointInTime ? (
+            <View style={{ alignItems: 'center', marginTop: 8 }}>
               <ScrollWheelTimePicker
                 value={formatTime(editStartHour, editStartMinute)}
-                onChange={(t) => { const [h, m] = t.split(':').map(Number); setEditStartHour(h!); setEditStartMinute(m!); }}
+                onChange={(time) => {
+                  const [h, m] = time.split(':').map(Number);
+                  setEditStartHour(h!);
+                  setEditStartMinute(m!);
+                  setEditEndHour(h!);
+                  setEditEndMinute(m!);
+                }}
               />
             </View>
-            <Text style={{ color: colors.muted }}>–</Text>
-            <View style={{ flex: 1 }}>
-              <ScrollWheelTimePicker
-                value={formatTime(editEndHour, editEndMinute)}
-                onChange={(t) => { const [h, m] = t.split(':').map(Number); setEditEndHour(h!); setEditEndMinute(m!); }}
-              />
+          ) : (
+            <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center', marginTop: 8 }}>
+              <View style={{ flex: 1 }}>
+                <ScrollWheelTimePicker
+                  value={formatTime(editStartHour, editStartMinute)}
+                  onChange={(time) => { const [h, m] = time.split(':').map(Number); setEditStartHour(h!); setEditStartMinute(m!); }}
+                />
+              </View>
+              <Text style={{ color: colors.muted }}>–</Text>
+              <View style={{ flex: 1 }}>
+                <ScrollWheelTimePicker
+                  value={formatTime(editEndHour, editEndMinute)}
+                  onChange={(time) => { const [h, m] = time.split(':').map(Number); setEditEndHour(h!); setEditEndMinute(m!); }}
+                />
+              </View>
             </View>
-          </View>
+          )}
           <View style={{ flexDirection: 'row', gap: 12, marginTop: 12 }}>
             <TouchableOpacity
               onPress={() => setEditingBlock(null)}
@@ -192,7 +210,9 @@ export default function DayStructureEditorScreen() {
             {item.label || t(`dayStructure.blockKind.${item.kind}`)}
           </Text>
           <Text style={{ fontSize: 13, color: colors.muted, marginTop: 2 }}>
-            {item.startTime} – {item.endTime}
+            {item.kind === 'wake' || item.kind === 'sleep'
+              ? item.startTime
+              : `${item.startTime} – ${item.endTime}`}
           </Text>
         </View>
         <View style={{ flexDirection: 'row', gap: 12 }}>

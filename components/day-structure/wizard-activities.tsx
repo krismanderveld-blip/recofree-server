@@ -20,22 +20,15 @@ export function WizardActivities() {
   const { goToStep, addActivityBlock, removeBlock, state } = useWizard();
 
   const [label, setLabel] = useState('');
-  const [startHour, setStartHour] = useState(9);
-  const [startMinute, setStartMinute] = useState(0);
-  const [endHour, setEndHour] = useState(10);
-  const [endMinute, setEndMinute] = useState(0);
+  const [startTime, setStartTime] = useState('09:00');
+  const [endTime, setEndTime] = useState('10:00');
   const [showTimePicker, setShowTimePicker] = useState<'start' | 'end' | null>(null);
 
   const activityBlocks = state.draftBlocks.filter((b) => b.kind === 'activity');
 
-  const formatTime = (h: number, m: number) =>
-    `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
-
   const handleAdd = () => {
     if (!label.trim()) return;
-    const start = formatTime(startHour, startMinute);
-    const end = formatTime(endHour, endMinute);
-    addActivityBlock(label.trim(), start, end);
+    addActivityBlock(label.trim(), startTime, endTime);
     setLabel('');
     setShowTimePicker(null);
   };
@@ -98,7 +91,7 @@ export function WizardActivities() {
             activeOpacity={0.7}
           >
             <Text style={{ fontSize: 15, color: colors.foreground, fontWeight: '500' }}>
-              {formatTime(startHour, startMinute)}
+              {startTime}
             </Text>
           </TouchableOpacity>
           <Text style={{ color: colors.muted, alignSelf: 'center' }}>–</Text>
@@ -111,7 +104,7 @@ export function WizardActivities() {
             activeOpacity={0.7}
           >
             <Text style={{ fontSize: 15, color: colors.foreground, fontWeight: '500' }}>
-              {formatTime(endHour, endMinute)}
+              {endTime}
             </Text>
           </TouchableOpacity>
         </View>
@@ -119,20 +112,12 @@ export function WizardActivities() {
         {/* Inline time picker */}
         {showTimePicker === 'start' && (
           <View style={styles.pickerContainer}>
-            <ScrollWheelTimePicker
-              initialHour={startHour}
-              initialMinute={startMinute}
-              onTimeChange={(h, m) => { setStartHour(h); setStartMinute(m); }}
-            />
+            <ScrollWheelTimePicker value={startTime} onChange={setStartTime} />
           </View>
         )}
         {showTimePicker === 'end' && (
           <View style={styles.pickerContainer}>
-            <ScrollWheelTimePicker
-              initialHour={endHour}
-              initialMinute={endMinute}
-              onTimeChange={(h, m) => { setEndHour(h); setEndMinute(m); }}
-            />
+            <ScrollWheelTimePicker value={endTime} onChange={setEndTime} />
           </View>
         )}
 

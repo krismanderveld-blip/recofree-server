@@ -48,11 +48,9 @@ export function DayStructureHomeCard() {
         return;
       }
 
-      // Get today's weekday
+      // Get today's weekday using the shared time adapter
       const now = new Date();
-      const dayIndex = now.getDay(); // 0=Sun, 1=Mon, ...
-      const weekdayMap: Weekday[] = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-      const today = weekdayMap[dayIndex]!;
+      const today = DayStructureTimeAdapter.getCurrentWeekday();
 
       const daySchema = schema[today];
       if (!daySchema || daySchema.blocks.length === 0) {
@@ -185,7 +183,9 @@ export function DayStructureHomeCard() {
             {currentBlock.label || t(`dayStructure.block_kind.${currentBlock.kind}`)}
           </Text>
           <Text style={{ fontSize: 12, color: colors.muted, marginLeft: 'auto' }}>
-            {currentBlock.startTime} – {currentBlock.endTime}
+            {currentBlock.kind === 'wake' || currentBlock.kind === 'sleep'
+              ? currentBlock.startTime
+              : `${currentBlock.startTime} – ${currentBlock.endTime}`}
           </Text>
         </View>
       )}

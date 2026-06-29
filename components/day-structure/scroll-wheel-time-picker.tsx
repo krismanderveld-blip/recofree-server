@@ -135,8 +135,8 @@ function WheelColumn({ data, selectedIndex, onIndexChange }: WheelColumnProps) {
 // ─── Main Component ─────────────────────────────────────────────────────────
 
 interface ScrollWheelTimePickerProps {
-  /** Current value in "HH:MM" format */
-  value: string;
+  /** Current value in "HH:MM" format. Defaults to "07:00" if not provided. */
+  value?: string;
   /** Called when user scrolls to a new time */
   onChange: (time: string) => void;
 }
@@ -144,8 +144,9 @@ interface ScrollWheelTimePickerProps {
 export function ScrollWheelTimePicker({ value, onChange }: ScrollWheelTimePickerProps) {
   const colors = useColors();
 
-  // Parse current value
-  const parts = value.split(':');
+  // Parse current value (default to 07:00 if undefined)
+  const safeValue = value ?? '07:00';
+  const parts = safeValue.split(':');
   const currentHour = parseInt(parts[0] ?? '7', 10) || 0;
   const currentMinute = parseInt(parts[1] ?? '0', 10) || 0;
 

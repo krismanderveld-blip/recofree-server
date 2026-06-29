@@ -2116,3 +2116,9 @@
 - [x] Activities step: replace TextInput with ScrollWheelTimePicker for start/end times
 - [x] Day editor screen: view/edit/delete existing blocks per weekday (with add block form)
 - [x] Home card conditional text: navigates to editor if configured, wizard if not; different body/CTA text
+- [x] Bug fix: ScrollWheelTimePicker crash when value prop is undefined — made value optional with '07:00' default
+- [x] Bug fix: wizard-activities.tsx using wrong picker API (initialHour/onTimeChange) — rewritten to use correct value/onChange API
+- [x] Bug fix: Editor display showing wake/sleep blocks as range "startTime – endTime" — now shows single time point
+- [x] Bug fix: Editor inline-edit showing two pickers for wake/sleep — now shows single picker (syncs start+end)
+- [x] Bug fix: Home card showing wake/sleep blocks as range — now shows single time point
+- [x] Bug fix: Home card weekday resolution using new Date().getDay() — replaced with DayStructureTimeAdapter.getCurrentWeekday()
