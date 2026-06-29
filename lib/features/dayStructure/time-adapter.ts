@@ -1,11 +1,11 @@
 /**
  * Dagstructuur Feature — Time Adapter
  *
- * Implements DayStructureTimePort using LocalDeviceTimeService.
+ * Implements DayStructureTimePort using InternalClockService (single source of truth).
  * All time logic for the dagstructuur feature flows through this adapter.
  */
 
-import { LocalDeviceTimeService } from '@/lib/core/time';
+import { InternalClockService } from '@/lib/core/time';
 import type { DayStructureTimePort, Weekday } from './types';
 import { WEEKDAY_FROM_NUMBER, WEEKDAY_TO_NUMBER } from './types';
 
@@ -25,33 +25,36 @@ function toMinutesSinceMidnight(hours: number, minutes: number): number {
 }
 
 /**
- * DayStructureTimeAdapter — singleton adapter bridging LocalDeviceTimeService
+ * DayStructureTimeAdapter — singleton adapter bridging InternalClockService
  * to the dagstructuur feature's time needs.
+ *
+ * Uses InternalClockService.now() as the single source of truth for all
+ * time reads (weekday, date, timezone, local time).
  */
 export const DayStructureTimeAdapter: DayStructureTimePort = {
   getCurrentWeekday(): Weekday {
-    const snapshot = LocalDeviceTimeService.now();
-    return WEEKDAY_FROM_NUMBER[snapshot.localWeekday] ?? 'monday';
+    const clock = InternalClockService.now();
+    return WEEKDAY_FROM_NUMBER[clock.localWeekday] ?? 'monday';
   },
 
   getCurrentLocalDayKey(): string {
-    return LocalDeviceTimeService.getCurrentLocalDayKey();
+    return InternalClockService.getLocalDate();
   },
 
   getCurrentTimezone(): string {
-    return LocalDeviceTimeService.getCurrentTimeZone();
+    return InternalClockService.getTimezone();
   },
 
   getCurrentLocalTime(): string {
-    const snapshot = LocalDeviceTimeService.now();
-    const h = String(snapshot.localHour).padStart(2, '0');
-    const m = String(snapshot.localMinute).padStart(2, '0');
+    const clock = InternalClockService.now();
+    const h = String(clock.localHour).padStart(2, '0');
+    const m = String(clock.localMinute).padStart(2, '0');
     return `${h}:${m}`;
   },
 
   resolveNextOccurrence(weekday: Weekday, localTime: string): Date {
-    const snapshot = LocalDeviceTimeService.now();
-    const currentWeekdayNum = snapshot.localWeekday; // 1=Mon, 7=Sun
+    const clock = InternalClockService.now();
+    const currentWeekdayNum = clock.localWeekday; // 1=Mon, 7=Sun
     const targetWeekdayNum = WEEKDAY_TO_NUMBER[weekday];
 
     const { hours: targetH, minutes: targetM } = parseHHMM(localTime);
@@ -64,7 +67,7 @@ export const DayStructureTimeAdapter: DayStructureTimePort = {
 
     // If same day, check if time has already passed
     if (daysUntil === 0) {
-      const currentMinutes = toMinutesSinceMidnight(snapshot.localHour, snapshot.localMinute);
+      const currentMinutes = toMinutesSinceMidnight(clock.localHour, clock.localMinute);
       const targetMinutes = toMinutesSinceMidnight(targetH, targetM);
       if (targetMinutes <= currentMinutes) {
         // Time already passed today, schedule for next week
@@ -73,16 +76,11 @@ export const DayStructureTimeAdapter: DayStructureTimePort = {
     }
 
     // Build the target date in local time
-    // Start from today's local date and add daysUntil
-    const [year, month, day] = snapshot.localDate.split('-').map(Number);
+    const [year, month, day] = clock.localDate.split('-').map(Number);
     const baseDate = new Date(year!, month! - 1, day!);
     baseDate.setDate(baseDate.getDate() + daysUntil);
     baseDate.setHours(targetH, targetM, 0, 0);
 
-    // Adjust for timezone: we need to produce a Date that, when interpreted
-    // in the device timezone, shows the correct local time.
-    // Since we're constructing from local parts, this should be correct
-    // as long as we're running on the device (Date uses local timezone).
     return baseDate;
   },
 
@@ -99,12 +97,12 @@ export const DayStructureTimeAdapter: DayStructureTimePort = {
   },
 
   hasTimezoneChanged(previousTimezone: string): boolean {
-    const currentTz = LocalDeviceTimeService.getCurrentTimeZone();
+    const currentTz = InternalClockService.getTimezone();
     return currentTz !== previousTimezone;
   },
 
   getTimezoneOffsetMinutes(): number {
-    const snapshot = LocalDeviceTimeService.now();
-    return snapshot.offsetMinutes;
+    const clock = InternalClockService.now();
+    return clock.offsetMinutes;
   },
 };

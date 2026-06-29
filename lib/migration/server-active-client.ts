@@ -28,6 +28,7 @@ import type {
   EngineRequestType,
 } from './engine-input.types';
 import type { CyclePart } from '@/lib/core/time/types';
+import { InternalClockService } from '@/lib/core/time';
 import type { RecoFreePersona } from '@/lib/types/memory/memoryCore.types';
 
 // ─── Types ──────────────────────────────────────────────────────────────
@@ -100,8 +101,8 @@ export async function callServerEngine(input: ServerEngineCallInput): Promise<Se
   const startTime = Date.now();
 
   try {
-    const now = new Date();
-    const localHour = now.getHours();
+    // Read time from InternalClockService (single source of truth)
+    const clock = InternalClockService.now();
 
     // Build canonical input matching CanonicalEngineInput exactly
     const engineInput: CanonicalEngineInput = {
@@ -123,13 +124,13 @@ export async function callServerEngine(input: ServerEngineCallInput): Promise<Se
       previousZoneScore: input.previousZoneScore,
       messageCount: input.messageCount,
       deviceTimeContext: {
-        deviceNowIso: now.toISOString(),
-        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-        timezoneOffsetMinutes: now.getTimezoneOffset(),
-        localDate: now.toISOString().split('T')[0],
-        localTime: now.toTimeString().slice(0, 8),
-        greetingDaypart: getDaypart(localHour),
-        cycleTimestamp: now.toISOString().split('T')[0],
+        deviceNowIso: clock.utcIso,
+        timeZone: clock.timezone,
+        timezoneOffsetMinutes: clock.offsetMinutes,
+        localDate: clock.localDate,
+        localTime: clock.localTime,
+        greetingDaypart: clock.daypart,
+        cycleTimestamp: clock.localDate,
         sessionStartedAtDeviceIso: input.sessionStartedAtIso,
       },
     };

@@ -9,6 +9,8 @@
  */
 
 export { LocalDeviceTimeService, deriveCyclePart } from './LocalDeviceTimeService';
+export { InternalClockService } from './InternalClockService';
+export type { InternalClockSnapshot } from './InternalClockService';
 export { useLocalDeviceTime } from './useLocalDeviceTime';
 export { TimeProvider, useTimeProvider } from './TimeProvider';
 export type {

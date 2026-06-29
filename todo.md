@@ -2146,3 +2146,7 @@
 - [x] Feature: Extend AI greeting with time-of-day awareness + dagstructuur context (current block reference, off-schedule empathetic response during sleep time)
 - [x] Fix: Add implicit help signal patterns to LiveIntent detection (short-term-memory-buffer.ts)
 - [x] Fix: Add proactivity instruction to deep guidanceDepth (ai-chat.ts) — soft invitation, zone-safe
+- [x] Feature: InternalClockService — calibrates at app-start from LocalDeviceTimeService, self-increments via elapsed time calculation
+- [x] Feature: TimeProvider wires InternalClockService.calibrate() on mount + checkAndRecalibrate() on foreground return
+- [x] Feature: Greeting (server-active-client.ts) reads deviceTimeContext from InternalClockService.now() instead of new Date()
+- [x] Feature: DayStructureTimeAdapter reads all time from InternalClockService (single source of truth for dagstructuur)
