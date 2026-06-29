@@ -2128,3 +2128,7 @@
 - [x] Improvement: Auto-suggest next activity start time from previous activity's end time
 - [x] Improvement: Separate weekend schema option in copy-week wizard step
 - [x] Improvement: Completion tracking with checkboxes on home card to mark blocks as done
+- [x] Feature: Add delete button per block in wizard-review step (dagindeling preview)
+- [x] Bug fix: start_equals_end validation already fixed — only triggers for activity blocks, wake/sleep are exempt
+- [x] Bug fix: Duplicate "Opstaan" block — review now correctly shows wake with clock icon and single time
+- [x] Feature: Add 'Einde dag' button in wizard-activities to navigate to sleep/bedtime step

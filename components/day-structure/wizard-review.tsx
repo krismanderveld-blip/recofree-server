@@ -2,16 +2,17 @@
  * Wizard Step: Review
  *
  * Shows the complete day structure for review before saving.
- * User can go back to edit or proceed to copy-to-week.
+ * User can delete individual blocks or proceed to copy-to-week.
  */
 
 import React from 'react';
-import { View, Text, TouchableOpacity, FlatList, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, FlatList, StyleSheet, Alert, Platform } from 'react-native';
 import { useTranslation } from '@/lib/i18n';
 import { useColors } from '@/hooks/use-colors';
 import { useWizard } from '@/lib/features/dayStructure/wizard-context';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import type { TimeBlock } from '@/lib/features/dayStructure/types';
+import * as Haptics from 'expo-haptics';
 
 function BlockKindIcon({ kind, color }: { kind: string; color: string }) {
   switch (kind) {
@@ -27,10 +28,9 @@ function BlockKindIcon({ kind, color }: { kind: string; color: string }) {
 export function WizardReview() {
   const { t } = useTranslation();
   const colors = useColors();
-  const { goToStep, state } = useWizard();
+  const { goToStep, state, removeBlock } = useWizard();
 
   const sortedBlocks = [...state.draftBlocks].sort((a, b) => {
-    // Sort by start time
     const aMin = parseInt(a.startTime.split(':')[0]!) * 60 + parseInt(a.startTime.split(':')[1]!);
     const bMin = parseInt(b.startTime.split(':')[0]!) * 60 + parseInt(b.startTime.split(':')[1]!);
     return aMin - bMin;
@@ -42,6 +42,32 @@ export function WizardReview() {
 
   const handleConfirm = () => {
     goToStep('copy_week');
+  };
+
+  const handleDelete = (block: TimeBlock) => {
+    const label = block.kind === 'wake'
+      ? t('dayStructure.block_kind.wake')
+      : block.kind === 'sleep'
+        ? t('dayStructure.block_kind.sleep')
+        : block.label;
+
+    Alert.alert(
+      t('dayStructure.wizard.review.delete_title'),
+      t('dayStructure.wizard.review.delete_message', { label }),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: t('common.delete'),
+          style: 'destructive',
+          onPress: () => {
+            if (Platform.OS !== 'web') {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            }
+            removeBlock(block.id);
+          },
+        },
+      ],
+    );
   };
 
   const getBlockLabel = (block: TimeBlock): string => {
@@ -70,6 +96,15 @@ export function WizardReview() {
               : t('dayStructure.notification_profile.none')}
         </Text>
       </View>
+      {/* Delete button */}
+      <TouchableOpacity
+        onPress={() => handleDelete(item)}
+        activeOpacity={0.6}
+        style={styles.deleteButton}
+        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+      >
+        <IconSymbol name="xmark.circle.fill" size={20} color={colors.error + '90'} />
+      </TouchableOpacity>
     </View>
   );
 
@@ -122,5 +157,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 6,
+  },
+  deleteButton: {
+    marginLeft: 10,
+    padding: 2,
   },
 });

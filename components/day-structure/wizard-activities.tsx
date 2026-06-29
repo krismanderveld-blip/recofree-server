@@ -189,14 +189,15 @@ export function WizardActivities() {
         }
       />
 
-      {/* Next Button */}
+      {/* End of Day Button — navigates to sleep step */}
       <TouchableOpacity
         onPress={handleNext}
-        style={{ backgroundColor: colors.primary, paddingVertical: 14, borderRadius: 12, alignItems: 'center', marginTop: 16 }}
+        style={[styles.endDayButton, { backgroundColor: colors.primary, marginTop: 16 }]}
         activeOpacity={0.8}
       >
-        <Text style={{ color: '#fff', fontSize: 16, fontWeight: '600' }}>
-          {t('dayStructure.wizard.next')}
+        <IconSymbol name="moon.fill" size={18} color="#fff" />
+        <Text style={{ color: '#fff', fontSize: 16, fontWeight: '600', marginLeft: 8 }}>
+          {t('dayStructure.wizard.activities.end_day_button')}
         </Text>
       </TouchableOpacity>
     </View>
@@ -241,5 +242,12 @@ const styles = StyleSheet.create({
     padding: 14,
     borderRadius: 10,
     borderWidth: 1,
+  },
+  endDayButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    borderRadius: 12,
   },
 });
