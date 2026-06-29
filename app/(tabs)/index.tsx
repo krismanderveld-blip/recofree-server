@@ -16,6 +16,7 @@ import { colors as dc, spacing, radius, shadows, typography, cardStyles, buttonS
 import { useTranslation } from '@/lib/i18n';
 import { LocalDeviceTimeService } from "@/lib/core/time";
 import { isConfigured as isDayStructureConfigured } from '@/lib/features/dayStructure/day-structure-service';
+import { DayStructureHomeCard } from '@/components/day-structure/home-card';
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -157,7 +158,7 @@ export default function HomeScreen() {
         showsVerticalScrollIndicator={false}
         style={{ paddingHorizontal: spacing.screenHorizontal }}
       >
-        {/* Header with greeting + notification bell */}
+        {/* Header with greeting */}
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: spacing.lg }}>
           <View style={{ flex: 1 }}>
             <Pressable onPress={handleCompanionNameTap}>
@@ -178,11 +179,6 @@ export default function HomeScreen() {
                 </View>
               </Pressable>
             )}
-          </View>
-          {/* Notification bell (visual only, no functionality yet) */}
-          <View style={styles.bellContainer}>
-            <Text style={{ fontSize: 22 }}>{t('home.bell_icon')}</Text>
-            <View style={styles.bellDot} />
           </View>
         </View>
 
@@ -307,25 +303,10 @@ export default function HomeScreen() {
           </View>
                     <Text style={styles.navCardChevron}>{t('home.backpack_card.chevron')}</Text>
         </Pressable>
-        {/* Day Structure Card */}
-        <Pressable
-          onPress={() => router.push(dayStructureConfigured ? '/day-structure/editor' as Href : '/day-structure/wizard' as Href)}
-          style={({ pressed }) => [styles.navCard, { backgroundColor: '#E3F2FD', borderColor: '#90CAF9', opacity: pressed ? 0.85 : 1 }]}
-        >
-          <View style={[styles.navCardIcon, { backgroundColor: '#BBDEFB' }]}>
-            <Text style={{ fontSize: 22 }}>{t('home.daystructure_card.icon')}</Text>
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.navCardTitle}>{t('home.daystructure_card.title')}</Text>
-            <Text style={styles.navCardBody}>
-              {dayStructureConfigured ? t('home.daystructure_card.body_configured') : t('home.daystructure_card.body')}
-            </Text>
-            <Text style={[styles.navCardCta, { color: '#1565C0' }]}>
-              {dayStructureConfigured ? t('home.daystructure_card.cta_configured') : t('home.daystructure_card.cta')}
-            </Text>
-          </View>
-          <Text style={styles.navCardChevron}>{t('home.daystructure_card.chevron')}</Text>
-        </Pressable>
+        {/* Day Structure Home Card (with bell toggle + completion tracking) */}
+        <View style={{ marginBottom: spacing.md }}>
+          <DayStructureHomeCard />
+        </View>
         {/* My Profile Card */}
         <Pressable
           onPress={() => router.push('/(tabs)/profile' as Href)}
@@ -403,27 +384,7 @@ const styles = StyleSheet.create({
     color: dc.textSecondary,
     marginTop: 6,
   },
-  bellContainer: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: dc.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
-    ...shadows.soft,
-    marginTop: 4,
-  },
-  bellDot: {
-    position: 'absolute',
-    top: 8,
-    right: 10,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: dc.success,
-    borderWidth: 1.5,
-    borderColor: dc.surface,
-  },
+
   // Sobriety card
   soberCard: {
     ...cardStyles.large,

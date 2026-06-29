@@ -143,3 +143,35 @@ export async function getCompletionCounts(
     completed: validCompletions.length,
   };
 }
+
+/**
+ * Get the current streak: number of consecutive days (ending yesterday)
+ * where at least 1 block was completed.
+ */
+export async function getStreak(): Promise<number> {
+  const store = await loadStore();
+  const today = DayStructureTimeAdapter.getCurrentLocalDayKey();
+  const todayDate = new Date(today);
+  let streak = 0;
+
+  // Check yesterday backwards
+  for (let i = 1; i <= COMPLETION_RETENTION_DAYS; i++) {
+    const checkDate = new Date(todayDate);
+    checkDate.setDate(checkDate.getDate() - i);
+    const dayKey = checkDate.toISOString().slice(0, 10);
+    const dayCompletion = store[dayKey];
+    if (dayCompletion && dayCompletion.completedBlockIds.length > 0) {
+      streak++;
+    } else {
+      break;
+    }
+  }
+
+  // Also count today if any blocks completed
+  const todayCompletion = store[today];
+  if (todayCompletion && todayCompletion.completedBlockIds.length > 0) {
+    streak++;
+  }
+
+  return streak;
+}

@@ -21,6 +21,7 @@ import {
   getDocument,
   getCompletion,
   toggleBlockCompletion,
+  getStreak,
 } from '@/lib/features/dayStructure';
 import {
   scheduleAllNotifications,
@@ -39,6 +40,7 @@ export function DayStructureHomeCard() {
   const [todayBlocks, setTodayBlocks] = useState<TimeBlock[]>([]);
   const [completedIds, setCompletedIds] = useState<string[]>([]);
   const [currentBlock, setCurrentBlock] = useState<TimeBlock | null>(null);
+  const [streak, setStreak] = useState(0);
 
   const loadData = useCallback(async () => {
     try {
@@ -71,6 +73,10 @@ export function DayStructureHomeCard() {
       const localDayKey = DayStructureTimeAdapter.getCurrentLocalDayKey();
       const completion = await getCompletion(localDayKey);
       setCompletedIds(completion.completedBlockIds);
+
+      // Load streak
+      const currentStreak = await getStreak();
+      setStreak(currentStreak);
 
       // Find current block
       const nowMinutes = now.getHours() * 60 + now.getMinutes();
@@ -245,7 +251,7 @@ export function DayStructureHomeCard() {
         })}
       </View>
 
-      {/* Progress Bar */}
+      {/* Progress Bar + Streak */}
       <View style={{ flexDirection: 'row', alignItems: 'center' }}>
         <View style={[styles.progressBar, { backgroundColor: colors.border }]}>
           <View
@@ -261,6 +267,14 @@ export function DayStructureHomeCard() {
         <Text style={{ fontSize: 12, color: allDone ? colors.success : colors.muted, marginLeft: 8, fontWeight: allDone ? '600' : '400' }}>
           {allDone ? t('dayStructure.home_card.all_done') : `${completedCount}/${totalBlocks}`}
         </Text>
+        {streak > 0 && (
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginLeft: 12 }}>
+            <Text style={{ fontSize: 14 }}>{t('dayStructure.home_card.streak_icon')}</Text>
+            <Text style={{ fontSize: 12, color: colors.warning, fontWeight: '600', marginLeft: 2 }}>
+              {streak} {t('dayStructure.home_card.streak_days')}
+            </Text>
+          </View>
+        )}
       </View>
     </View>
   );

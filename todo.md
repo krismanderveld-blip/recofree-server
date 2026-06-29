@@ -2132,3 +2132,8 @@
 - [x] Bug fix: start_equals_end validation already fixed — only triggers for activity blocks, wake/sleep are exempt
 - [x] Bug fix: Duplicate "Opstaan" block — review now correctly shows wake with clock icon and single time
 - [x] Feature: Add 'Einde dag' button in wizard-activities to navigate to sleep/bedtime step
+- [x] Bug fix: Editor time picker layout — replaced with tap-to-expand start/end buttons, one picker at a time
+- [x] Feature: Add 'Einde dag (slaaptijd)' button to editor — moon icon button at bottom of editor
+- [x] Feature: Push notification toggle (bell icon) on home card — integrated DayStructureHomeCard with bell on homescreen
+- [x] Feature: Greeting integration — DayStructureHomeCard shows current block highlighted + context
+- [x] Feature: Task follow-up / streak overview — streak counter (🔥 X dagen) on home card progress bar

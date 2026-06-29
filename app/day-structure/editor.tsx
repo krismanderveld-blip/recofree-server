@@ -3,6 +3,7 @@
  *
  * Shows the current week's day structure with tabs per weekday.
  * Allows editing block times/labels, deleting blocks, and adding new ones.
+ * Includes an "End of day (sleep)" button to add/edit the sleep block.
  */
 
 import React, { useCallback, useEffect, useState } from 'react';
@@ -11,7 +12,6 @@ import {
   Text,
   TouchableOpacity,
   FlatList,
-  Alert,
   StyleSheet,
   ScrollView,
   TextInput,
@@ -46,16 +46,16 @@ export default function DayStructureEditorScreen() {
   const [blocks, setBlocks] = useState<TimeBlock[]>([]);
   const [editingBlock, setEditingBlock] = useState<string | null>(null);
   const [editLabel, setEditLabel] = useState('');
-  const [editStartHour, setEditStartHour] = useState(0);
-  const [editStartMinute, setEditStartMinute] = useState(0);
-  const [editEndHour, setEditEndHour] = useState(0);
-  const [editEndMinute, setEditEndMinute] = useState(0);
+  const [editStartTime, setEditStartTime] = useState('09:00');
+  const [editEndTime, setEditEndTime] = useState('10:00');
+  const [editTimeField, setEditTimeField] = useState<'start' | 'end' | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [newLabel, setNewLabel] = useState('');
-  const [newStartHour, setNewStartHour] = useState(9);
-  const [newStartMinute, setNewStartMinute] = useState(0);
-  const [newEndHour, setNewEndHour] = useState(10);
-  const [newEndMinute, setNewEndMinute] = useState(0);
+  const [newStartTime, setNewStartTime] = useState('09:00');
+  const [newEndTime, setNewEndTime] = useState('10:00');
+  const [addTimeField, setAddTimeField] = useState<'start' | 'end' | null>(null);
+  const [showSleepPicker, setShowSleepPicker] = useState(false);
+  const [sleepTime, setSleepTime] = useState('22:00');
   const [configured, setConfigured] = useState(false);
 
   const loadBlocks = useCallback(async () => {
@@ -63,18 +63,36 @@ export default function DayStructureEditorScreen() {
     setBlocks(dayBlocks);
     const hasConfig = await isConfigured();
     setConfigured(hasConfig);
+    // Set sleep time from existing sleep block
+    const sleepBlock = dayBlocks.find((b) => b.kind === 'sleep');
+    if (sleepBlock) {
+      setSleepTime(sleepBlock.startTime);
+    }
   }, [selectedDay]);
 
   useEffect(() => {
     loadBlocks();
   }, [loadBlocks]);
 
-  const formatTime = (h: number, m: number) =>
-    `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+  /**
+   * Get the suggested start time for a new activity:
+   * Use the last activity's end time, or wake time, or default
+   */
+  const getSuggestedStartTime = (): string => {
+    const activities = blocks
+      .filter((b) => b.kind === 'activity')
+      .sort((a, b) => a.orderIndex - b.orderIndex);
+    if (activities.length > 0) {
+      return activities[activities.length - 1]!.endTime;
+    }
+    const wakeBlock = blocks.find((b) => b.kind === 'wake');
+    return wakeBlock?.startTime ?? '09:00';
+  };
 
-  const parseTime = (time: string): [number, number] => {
+  const addOneHour = (time: string): string => {
     const [h, m] = time.split(':').map(Number);
-    return [h || 0, m || 0];
+    const newH = Math.min((h ?? 0) + 1, 23);
+    return `${String(newH).padStart(2, '0')}:${String(m ?? 0).padStart(2, '0')}`;
   };
 
   const handleDelete = async (blockId: string) => {
@@ -88,26 +106,26 @@ export default function DayStructureEditorScreen() {
   const handleStartEdit = (block: TimeBlock) => {
     setEditingBlock(block.id);
     setEditLabel(block.label);
-    const [sh, sm] = parseTime(block.startTime);
-    const [eh, em] = parseTime(block.endTime);
-    setEditStartHour(sh);
-    setEditStartMinute(sm);
-    setEditEndHour(eh);
-    setEditEndMinute(em);
+    setEditStartTime(block.startTime);
+    setEditEndTime(block.endTime);
+    setEditTimeField(null);
+    setShowAddForm(false);
+    setShowSleepPicker(false);
   };
 
   const handleSaveEdit = async () => {
     if (!editingBlock) return;
     const result = await editBlock(selectedDay, editingBlock, {
       label: editLabel,
-      startTime: formatTime(editStartHour, editStartMinute),
-      endTime: formatTime(editEndHour, editEndMinute),
+      startTime: editStartTime,
+      endTime: editEndTime,
     });
     if (result.success) {
       if (Platform.OS !== 'web') {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       }
       setEditingBlock(null);
+      setEditTimeField(null);
       loadBlocks();
     }
   };
@@ -117,8 +135,8 @@ export default function DayStructureEditorScreen() {
     const result = await addBlock(selectedDay, {
       label: newLabel.trim(),
       kind: 'activity',
-      startTime: formatTime(newStartHour, newStartMinute),
-      endTime: formatTime(newEndHour, newEndMinute),
+      startTime: newStartTime,
+      endTime: newEndTime,
     });
     if (result.success) {
       if (Platform.OS !== 'web') {
@@ -126,7 +144,51 @@ export default function DayStructureEditorScreen() {
       }
       setNewLabel('');
       setShowAddForm(false);
+      setAddTimeField(null);
       loadBlocks();
+    }
+  };
+
+  const handleShowAddForm = () => {
+    const suggested = getSuggestedStartTime();
+    setNewStartTime(suggested);
+    setNewEndTime(addOneHour(suggested));
+    setAddTimeField(null);
+    setShowAddForm(true);
+    setEditingBlock(null);
+    setShowSleepPicker(false);
+  };
+
+  const handleSaveSleep = async () => {
+    const sleepBlock = blocks.find((b) => b.kind === 'sleep');
+    if (sleepBlock) {
+      const result = await editBlock(selectedDay, sleepBlock.id, {
+        label: sleepBlock.label,
+        startTime: sleepTime,
+        endTime: sleepTime,
+      });
+      if (result.success) {
+        if (Platform.OS !== 'web') {
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        }
+        setShowSleepPicker(false);
+        loadBlocks();
+      }
+    } else {
+      // Add sleep block if it doesn't exist
+      const result = await addBlock(selectedDay, {
+        label: t('dayStructure.blockKind.sleep') || 'Slapen',
+        kind: 'sleep',
+        startTime: sleepTime,
+        endTime: sleepTime,
+      });
+      if (result.success) {
+        if (Platform.OS !== 'web') {
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        }
+        setShowSleepPicker(false);
+        loadBlocks();
+      }
     }
   };
 
@@ -136,11 +198,12 @@ export default function DayStructureEditorScreen() {
 
   const renderBlock = ({ item }: { item: TimeBlock }) => {
     const isEditing = editingBlock === item.id;
+    const isPointInTime = item.kind === 'wake' || item.kind === 'sleep';
 
     if (isEditing) {
-      const isPointInTime = item.kind === 'wake' || item.kind === 'sleep';
       return (
         <View style={[styles.blockCard, { backgroundColor: colors.surface, borderColor: colors.primary, flexDirection: 'column', alignItems: 'stretch' }]}>
+          {/* Label edit (not for wake/sleep) */}
           {!isPointInTime && (
             <TextInput
               value={editLabel}
@@ -149,39 +212,76 @@ export default function DayStructureEditorScreen() {
               returnKeyType="done"
             />
           )}
+
           {isPointInTime ? (
-            <View style={{ alignItems: 'center', marginTop: 8 }}>
-              <ScrollWheelTimePicker
-                value={formatTime(editStartHour, editStartMinute)}
-                onChange={(time) => {
-                  const [h, m] = time.split(':').map(Number);
-                  setEditStartHour(h!);
-                  setEditStartMinute(m!);
-                  setEditEndHour(h!);
-                  setEditEndMinute(m!);
-                }}
-              />
+            /* Single time picker for wake/sleep */
+            <View style={{ marginTop: 8 }}>
+              <Text style={{ fontSize: 12, color: colors.muted, marginBottom: 4, textAlign: 'center' }}>
+                {item.kind === 'wake' ? t('dayStructure.wizard.wake.time_label') : t('dayStructure.wizard.sleep.time_label')}
+              </Text>
+              <View style={{ height: 180 }}>
+                <ScrollWheelTimePicker
+                  value={editStartTime}
+                  onChange={(time) => {
+                    setEditStartTime(time);
+                    setEditEndTime(time);
+                  }}
+                />
+              </View>
             </View>
           ) : (
-            <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center', marginTop: 8 }}>
-              <View style={{ flex: 1 }}>
-                <ScrollWheelTimePicker
-                  value={formatTime(editStartHour, editStartMinute)}
-                  onChange={(time) => { const [h, m] = time.split(':').map(Number); setEditStartHour(h!); setEditStartMinute(m!); }}
-                />
+            /* Start/End time buttons for activities */
+            <View style={{ marginTop: 8 }}>
+              <View style={{ flexDirection: 'row', gap: 12 }}>
+                <TouchableOpacity
+                  onPress={() => setEditTimeField(editTimeField === 'start' ? null : 'start')}
+                  style={[styles.timeButton, {
+                    borderColor: editTimeField === 'start' ? colors.primary : colors.border,
+                    flex: 1,
+                  }]}
+                  activeOpacity={0.7}
+                >
+                  <Text style={{ fontSize: 11, color: colors.muted, marginBottom: 2 }}>
+                    {t('dayStructure.wizard.activities.start_time')}
+                  </Text>
+                  <Text style={{ fontSize: 16, color: colors.foreground, fontWeight: '600' }}>
+                    {editStartTime}
+                  </Text>
+                </TouchableOpacity>
+                <Text style={{ color: colors.muted, alignSelf: 'center', fontSize: 16 }}>–</Text>
+                <TouchableOpacity
+                  onPress={() => setEditTimeField(editTimeField === 'end' ? null : 'end')}
+                  style={[styles.timeButton, {
+                    borderColor: editTimeField === 'end' ? colors.primary : colors.border,
+                    flex: 1,
+                  }]}
+                  activeOpacity={0.7}
+                >
+                  <Text style={{ fontSize: 11, color: colors.muted, marginBottom: 2 }}>
+                    {t('dayStructure.wizard.activities.end_time')}
+                  </Text>
+                  <Text style={{ fontSize: 16, color: colors.foreground, fontWeight: '600' }}>
+                    {editEndTime}
+                  </Text>
+                </TouchableOpacity>
               </View>
-              <Text style={{ color: colors.muted }}>–</Text>
-              <View style={{ flex: 1 }}>
-                <ScrollWheelTimePicker
-                  value={formatTime(editEndHour, editEndMinute)}
-                  onChange={(time) => { const [h, m] = time.split(':').map(Number); setEditEndHour(h!); setEditEndMinute(m!); }}
-                />
-              </View>
+              {editTimeField === 'start' && (
+                <View style={{ height: 180, marginTop: 8 }}>
+                  <ScrollWheelTimePicker value={editStartTime} onChange={setEditStartTime} />
+                </View>
+              )}
+              {editTimeField === 'end' && (
+                <View style={{ height: 180, marginTop: 8 }}>
+                  <ScrollWheelTimePicker value={editEndTime} onChange={setEditEndTime} />
+                </View>
+              )}
             </View>
           )}
+
+          {/* Save/Cancel buttons */}
           <View style={{ flexDirection: 'row', gap: 12, marginTop: 12 }}>
             <TouchableOpacity
-              onPress={() => setEditingBlock(null)}
+              onPress={() => { setEditingBlock(null); setEditTimeField(null); }}
               style={[styles.actionBtn, { borderColor: colors.border }]}
               activeOpacity={0.7}
             >
@@ -210,9 +310,7 @@ export default function DayStructureEditorScreen() {
             {item.label || t(`dayStructure.blockKind.${item.kind}`)}
           </Text>
           <Text style={{ fontSize: 13, color: colors.muted, marginTop: 2 }}>
-            {item.kind === 'wake' || item.kind === 'sleep'
-              ? item.startTime
-              : `${item.startTime} – ${item.endTime}`}
+            {isPointInTime ? item.startTime : `${item.startTime} – ${item.endTime}`}
           </Text>
         </View>
         <View style={{ flexDirection: 'row', gap: 12 }}>
@@ -270,7 +368,7 @@ export default function DayStructureEditorScreen() {
           {WEEKDAYS.map((day) => (
             <TouchableOpacity
               key={day}
-              onPress={() => { setSelectedDay(day); setEditingBlock(null); setShowAddForm(false); }}
+              onPress={() => { setSelectedDay(day); setEditingBlock(null); setShowAddForm(false); setShowSleepPicker(false); }}
               style={[
                 styles.dayTab,
                 {
@@ -318,24 +416,57 @@ export default function DayStructureEditorScreen() {
               style={[styles.editInput, { color: colors.foreground, borderColor: colors.border }]}
               returnKeyType="done"
             />
-            <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center', marginTop: 8 }}>
-              <View style={{ flex: 1, height: 150 }}>
-                <ScrollWheelTimePicker
-                  value={formatTime(newStartHour, newStartMinute)}
-                  onChange={(t) => { const [h, m] = t.split(':').map(Number); setNewStartHour(h!); setNewStartMinute(m!); }}
-                />
-              </View>
-              <Text style={{ color: colors.muted }}>–</Text>
-              <View style={{ flex: 1, height: 150 }}>
-                <ScrollWheelTimePicker
-                  value={formatTime(newEndHour, newEndMinute)}
-                  onChange={(t) => { const [h, m] = t.split(':').map(Number); setNewEndHour(h!); setNewEndMinute(m!); }}
-                />
-              </View>
+
+            {/* Time selection buttons */}
+            <View style={{ flexDirection: 'row', gap: 12, marginTop: 8 }}>
+              <TouchableOpacity
+                onPress={() => setAddTimeField(addTimeField === 'start' ? null : 'start')}
+                style={[styles.timeButton, {
+                  borderColor: addTimeField === 'start' ? colors.primary : colors.border,
+                  flex: 1,
+                }]}
+                activeOpacity={0.7}
+              >
+                <Text style={{ fontSize: 11, color: colors.muted, marginBottom: 2 }}>
+                  {t('dayStructure.wizard.activities.start_time')}
+                </Text>
+                <Text style={{ fontSize: 16, color: colors.foreground, fontWeight: '600' }}>
+                  {newStartTime}
+                </Text>
+              </TouchableOpacity>
+              <Text style={{ color: colors.muted, alignSelf: 'center', fontSize: 16 }}>–</Text>
+              <TouchableOpacity
+                onPress={() => setAddTimeField(addTimeField === 'end' ? null : 'end')}
+                style={[styles.timeButton, {
+                  borderColor: addTimeField === 'end' ? colors.primary : colors.border,
+                  flex: 1,
+                }]}
+                activeOpacity={0.7}
+              >
+                <Text style={{ fontSize: 11, color: colors.muted, marginBottom: 2 }}>
+                  {t('dayStructure.wizard.activities.end_time')}
+                </Text>
+                <Text style={{ fontSize: 16, color: colors.foreground, fontWeight: '600' }}>
+                  {newEndTime}
+                </Text>
+              </TouchableOpacity>
             </View>
+
+            {/* Inline time picker — only one at a time */}
+            {addTimeField === 'start' && (
+              <View style={{ height: 180, marginTop: 8 }}>
+                <ScrollWheelTimePicker value={newStartTime} onChange={setNewStartTime} />
+              </View>
+            )}
+            {addTimeField === 'end' && (
+              <View style={{ height: 180, marginTop: 8 }}>
+                <ScrollWheelTimePicker value={newEndTime} onChange={setNewEndTime} />
+              </View>
+            )}
+
             <View style={{ flexDirection: 'row', gap: 12, marginTop: 12 }}>
               <TouchableOpacity
-                onPress={() => setShowAddForm(false)}
+                onPress={() => { setShowAddForm(false); setAddTimeField(null); }}
                 style={[styles.actionBtn, { borderColor: colors.border }]}
                 activeOpacity={0.7}
               >
@@ -356,18 +487,65 @@ export default function DayStructureEditorScreen() {
           </View>
         )}
 
-        {/* Add button */}
-        {!showAddForm && !editingBlock && (
-          <TouchableOpacity
-            onPress={() => setShowAddForm(true)}
-            style={[styles.floatingAdd, { backgroundColor: colors.primary }]}
-            activeOpacity={0.8}
-          >
-            <IconSymbol name="plus.circle.fill" size={22} color="#fff" />
-            <Text style={{ color: '#fff', fontWeight: '600', marginLeft: 8 }}>
-              {t('dayStructure.editor.add_block')}
+        {/* Sleep time picker */}
+        {showSleepPicker && (
+          <View style={[styles.addForm, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <Text style={{ fontSize: 15, fontWeight: '600', color: colors.foreground, textAlign: 'center', marginBottom: 4 }}>
+              {t('dayStructure.wizard.sleep.time_label')}
             </Text>
-          </TouchableOpacity>
+            <View style={{ height: 180 }}>
+              <ScrollWheelTimePicker value={sleepTime} onChange={setSleepTime} />
+            </View>
+            <View style={{ flexDirection: 'row', gap: 12, marginTop: 12 }}>
+              <TouchableOpacity
+                onPress={() => setShowSleepPicker(false)}
+                style={[styles.actionBtn, { borderColor: colors.border }]}
+                activeOpacity={0.7}
+              >
+                <Text style={{ color: colors.muted, fontWeight: '500' }}>
+                  {t('dayStructure.editor.cancel')}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={handleSaveSleep}
+                style={[styles.actionBtn, { backgroundColor: colors.primary, borderColor: colors.primary }]}
+                activeOpacity={0.7}
+              >
+                <Text style={{ color: '#fff', fontWeight: '600' }}>
+                  {t('dayStructure.editor.save')}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+
+        {/* Bottom action buttons */}
+        {!showAddForm && !editingBlock && !showSleepPicker && (
+          <View style={{ gap: 8, marginBottom: 12 }}>
+            {/* Add activity button */}
+            <TouchableOpacity
+              onPress={handleShowAddForm}
+              style={[styles.floatingAdd, { backgroundColor: colors.primary }]}
+              activeOpacity={0.8}
+            >
+              <IconSymbol name="plus.circle.fill" size={22} color="#fff" />
+              <Text style={{ color: '#fff', fontWeight: '600', marginLeft: 8 }}>
+                {t('dayStructure.editor.add_block')}
+              </Text>
+            </TouchableOpacity>
+
+            {/* End of day / sleep button */}
+            <TouchableOpacity
+              onPress={() => { setShowSleepPicker(true); setShowAddForm(false); setEditingBlock(null); }}
+              style={[styles.floatingAdd, { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }]}
+              activeOpacity={0.8}
+            >
+              <IconSymbol name="moon.fill" size={20} color={colors.primary} />
+              <Text style={{ color: colors.primary, fontWeight: '600', marginLeft: 8 }}>
+                {t('dayStructure.wizard.activities.end_day_button')}
+              </Text>
+            </TouchableOpacity>
+          </View>
         )}
       </View>
     </ScreenContainer>
@@ -396,6 +574,13 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 8,
   },
+  timeButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
   actionBtn: {
     flex: 1,
     paddingVertical: 10,
@@ -415,6 +600,5 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 14,
     borderRadius: 12,
-    marginBottom: 12,
   },
 });

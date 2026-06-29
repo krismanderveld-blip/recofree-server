@@ -67,6 +67,7 @@ export {
   clearDayCompletion,
   cleanupOldCompletions,
   getCompletionCounts,
+  getStreak,
 } from './completion-service';
 
 // Day Structure Service
