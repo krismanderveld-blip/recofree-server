@@ -824,5 +824,6 @@
   "home.daystructure_card.title": "Ma structure de jour",
   "home.daystructure_card.body": "Planifiez votre journée et recevez des rappels",
   "home.daystructure_card.cta": "Voir →",
-  "home.daystructure_card.chevron": "›"
+  "home.daystructure_card.chevron": "›",
+  "dayStructure.wizard.save_and_exit": "Enregistrer et continuer plus tard"
 }

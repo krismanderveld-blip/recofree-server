@@ -824,5 +824,6 @@
   "home.daystructure_card.title": "Mijn dagstructuur",
   "home.daystructure_card.body": "Plan je dag en ontvang herinneringen",
   "home.daystructure_card.cta": "Bekijken →",
-  "home.daystructure_card.chevron": "›"
+  "home.daystructure_card.chevron": "›",
+  "dayStructure.wizard.save_and_exit": "Opslaan en later verdergaan"
 }

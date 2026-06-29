@@ -201,6 +201,8 @@ export const STORAGE_KEYS = {
   NOTIFICATION_INDEX: '@recofree_daystructure_notif_index_v1',
   /** Bell state (plain, not sensitive). */
   BELL_STATE: '@recofree_daystructure_bell_state',
+  /** Wizard draft (partial, may be incomplete). */
+  WIZARD_DRAFT: '@recofree_daystructure_wizard_draft_v1',
 } as const;
 
 // ─── Validation ─────────────────────────────────────────────────────────────

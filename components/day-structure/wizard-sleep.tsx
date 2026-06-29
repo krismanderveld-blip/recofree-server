@@ -1,27 +1,30 @@
 /**
  * Wizard Step: Sleep
  *
- * User sets their bedtime. Simple time input.
+ * User sets their bedtime using a scroll-wheel time picker.
  */
 
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, TextInput } from 'react-native';
+import { View, Text, TouchableOpacity } from 'react-native';
 import { useTranslation } from '@/lib/i18n';
 import { useColors } from '@/hooks/use-colors';
 import { useWizard } from '@/lib/features/dayStructure/wizard-context';
 import { DEFAULT_SLEEP_TIME } from '@/lib/features/dayStructure/constants';
 import { IconSymbol } from '@/components/ui/icon-symbol';
+import { ScrollWheelTimePicker } from './scroll-wheel-time-picker';
 
 export function WizardSleep() {
   const { t } = useTranslation();
   const colors = useColors();
-  const { goToStep, addSleepBlock, state } = useWizard();
+  const { goToStep, addSleepBlock, updateBlock, state } = useWizard();
 
   const existingSleep = state.draftBlocks.find((b) => b.kind === 'sleep');
   const [sleepTime, setSleepTime] = useState(existingSleep?.startTime ?? DEFAULT_SLEEP_TIME);
 
   const handleNext = () => {
-    if (!existingSleep) {
+    if (existingSleep) {
+      updateBlock(existingSleep.id, { startTime: sleepTime, endTime: sleepTime });
+    } else {
       addSleepBlock(sleepTime);
     }
     goToStep('review');
@@ -45,34 +48,17 @@ export function WizardSleep() {
         {t('dayStructure.wizard.sleep.description')}
       </Text>
 
-      {/* Time Input */}
+      {/* Scroll Wheel Time Picker */}
       <View style={{ backgroundColor: colors.surface, borderRadius: 16, padding: 24, alignItems: 'center', marginBottom: 32 }}>
         <View style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: colors.primary + '15', justifyContent: 'center', alignItems: 'center', marginBottom: 16 }}>
           <IconSymbol name="moon.fill" size={28} color={colors.primary} />
         </View>
 
-        <Text style={{ fontSize: 14, color: colors.muted, marginBottom: 8 }}>
+        <Text style={{ fontSize: 14, color: colors.muted, marginBottom: 16 }}>
           {t('dayStructure.wizard.sleep.time_label')}
         </Text>
 
-        <TextInput
-          value={sleepTime}
-          onChangeText={setSleepTime}
-          placeholder="23:00"
-          placeholderTextColor={colors.muted}
-          keyboardType="numbers-and-punctuation"
-          style={{
-            fontSize: 36,
-            fontWeight: '700',
-            color: colors.foreground,
-            textAlign: 'center',
-            minWidth: 140,
-            paddingVertical: 8,
-            borderBottomWidth: 2,
-            borderBottomColor: colors.primary,
-          }}
-          maxLength={5}
-        />
+        <ScrollWheelTimePicker value={sleepTime} onChange={setSleepTime} />
       </View>
 
       {/* Next Button */}

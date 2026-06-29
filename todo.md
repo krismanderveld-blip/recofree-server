@@ -2110,3 +2110,6 @@
 - [x] Audit weekday mapping: TimeAdapter ISO 1-7 ↔ expo-notifications US 1-7 conversion confirmed correct
 - [x] Sleep notification: added "Vergeet je wekker niet te zetten!" body text + "Bedtijd 🌙" title for sleep blocks
 - [x] Home screen: dagstructuur nav card met 📅 agenda-icoon + navigatie naar /day-structure/wizard
+- [x] ScrollWheelTimePicker: build scroll-wheel component (two columns, selected big/white, adjacent grey)
+- [x] Wizard wake/sleep: replace current time input with ScrollWheelTimePicker
+- [x] Wizard save button: add persistent Save button + draft persistence (encrypted) for partial saves at any step
