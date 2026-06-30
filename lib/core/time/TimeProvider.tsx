@@ -4,7 +4,9 @@
  * Wraps the app to ensure:
  * 1. LocalDeviceTimeService is initialized on mount
  * 2. InternalClockService is calibrated on mount (single source of truth)
- * 3. On foreground return: timezone check → recalibrate if changed
+ * 3. On EVERY foreground return: refresh device context so time is always fresh
+ *    (fixes drift after long background periods)
+ * 4. If timezone changed: signal for notification rescheduling
  *
  * Usage in app/_layout.tsx:
  * ```tsx
@@ -45,10 +47,11 @@ export function TimeProvider({ children }: { children: React.ReactNode }) {
         (appStateRef.current === 'background' || appStateRef.current === 'inactive') &&
         nextState === 'active'
       ) {
-        // On foreground return: check timezone and recalibrate if changed
-        const recalibrated = InternalClockService.checkAndRecalibrate();
-        if (recalibrated) {
-          console.log('[TimeProvider] Internal clock recalibrated after timezone change');
+        // On EVERY foreground return: recalibrate to get fresh device time.
+        // This prevents stale time after long background periods.
+        const { timeZoneChanged } = InternalClockService.recalibrateOnForeground();
+        if (timeZoneChanged) {
+          console.log('[TimeProvider] Timezone changed on foreground return');
         }
       }
       appStateRef.current = nextState;
@@ -60,10 +63,7 @@ export function TimeProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const refresh = () => {
-    const result = LocalDeviceTimeService.refreshDeviceTimeContext();
-    if (result.timeZoneChanged) {
-      InternalClockService.calibrate();
-    }
+    const result = InternalClockService.recalibrateOnForeground();
     return result;
   };
 

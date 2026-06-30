@@ -55,7 +55,6 @@ export function DayStructureHomeCard() {
       }
 
       // Get today's weekday using the shared time adapter
-      const now = new Date();
       const today = DayStructureTimeAdapter.getCurrentWeekday();
 
       const daySchema = schema[today];
@@ -87,8 +86,10 @@ export function DayStructureHomeCard() {
         setStreak(0);
       }
 
-      // Find current block
-      const nowMinutes = now.getHours() * 60 + now.getMinutes();
+      // Find current block (use shared time adapter, not raw Date())
+      const currentTime = DayStructureTimeAdapter.getCurrentLocalTime();
+      const [nowH, nowM] = currentTime.split(':').map(Number);
+      const nowMinutes = (nowH ?? 0) * 60 + (nowM ?? 0);
       const active = daySchema.blocks.find((b) => {
         const [sh, sm] = b.startTime.split(':').map(Number);
         const [eh, em] = b.endTime.split(':').map(Number);

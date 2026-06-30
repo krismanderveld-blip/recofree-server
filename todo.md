@@ -2150,3 +2150,9 @@
 - [x] Feature: TimeProvider wires InternalClockService.calibrate() on mount + checkAndRecalibrate() on foreground return
 - [x] Feature: Greeting (server-active-client.ts) reads deviceTimeContext from InternalClockService.now() instead of new Date()
 - [x] Feature: DayStructureTimeAdapter reads all time from InternalClockService (single source of truth for dagstructuur)
+
+- [x] Fix: InternalClockService now reads fresh device time on every .now() call (no stale anchor drift after long background)
+- [x] Fix: TimeProvider recalibrates on EVERY foreground return (not just timezone change)
+- [x] Fix: home-card.tsx uses DayStructureTimeAdapter.getCurrentLocalTime() instead of raw new Date() for current-block detection
+- [x] Fix: day-structure-service.ts auto-reschedules OS notifications after every schema save (saveWeekSchema + saveDayBlocks) if bell is enabled
+- [x] Fix: use-day-structure-observer verifies OS-scheduled notifications exist on foreground + mount, reschedules if missing (handles force-close, reboot, iOS drops)

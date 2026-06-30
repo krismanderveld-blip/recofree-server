@@ -32,6 +32,27 @@ import {
 } from './helpers';
 import { validateDay } from './validation';
 import { DayStructureTimeAdapter } from './time-adapter';
+import { scheduleAllNotifications } from './notification-service';
+import { loadBellState } from './permission-service';
+
+// ─── Auto-Reschedule Helper ────────────────────────────────────────────────
+
+/**
+ * Reschedule OS-level notifications after any schema change,
+ * but only if the bell is currently enabled.
+ * This ensures notifications always reflect the latest schema
+ * even when the user edits blocks in the editor.
+ */
+async function autoRescheduleIfBellEnabled(weekSchema: WeekSchema): Promise<void> {
+  try {
+    const bellState = await loadBellState();
+    if (bellState !== 'enabled') return;
+    await scheduleAllNotifications(weekSchema);
+    console.log('[DayStructure/Service] Auto-rescheduled notifications after schema change');
+  } catch (error) {
+    console.error('[DayStructure/Service] Auto-reschedule failed:', error);
+  }
+}
 
 // ─── Document Lifecycle ─────────────────────────────────────────────────────
 
@@ -82,6 +103,10 @@ export async function saveWeekSchema(
   };
 
   await saveDocument(updated);
+
+  // Auto-reschedule notifications if bell is enabled
+  await autoRescheduleIfBellEnabled(weekSchema);
+
   return { success: true, errors: [] };
 }
 
@@ -134,6 +159,10 @@ export async function saveDayBlocks(
   };
 
   await saveDocument(updated);
+
+  // Auto-reschedule notifications if bell is enabled
+  await autoRescheduleIfBellEnabled(updatedSchema);
+
   return { success: true, errors: [] };
 }
 
