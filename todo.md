@@ -2171,3 +2171,4 @@
 - [x] Fix: Frame fallback narrative as "Gebruiker besprak:" thematic summary instead of raw concatenation
 - [x] Fix: Prompt explicitly forbids literal user quotes — must extract THEME and rephrase in own words
 - [x] Fix: Added FOUT/GOED examples in prompt to demonstrate correct vs incorrect greeting phrasing
+- [x] Fix: dagStructure document/completion export was silently null — added EXTRA_ENCRYPTED_KEYS to isKeyEncrypted() so readJson/writeJson/readJsonForSnapshot all route through readEncrypted/writeEncrypted for @recofree_daystructure_v1 and @recofree_daystructure_completion_v1

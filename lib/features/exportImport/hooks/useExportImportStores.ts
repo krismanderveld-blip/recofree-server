@@ -48,10 +48,17 @@ function getLogsDatKey(persona: string) { return `recofree_memory/${persona}/log
  * needs to go through the encrypted storage layer.
  * logs.dat is NOT in either list (it has its own envelope encryption).
  */
+// Keys that use readEncrypted/writeEncrypted but are NOT in SENSITIVE_KEYS or MEMORY_STORE_KEYS
+const EXTRA_ENCRYPTED_KEYS: readonly string[] = [
+  DAYSTRUCTURE_DOCUMENT_KEY,
+  DAYSTRUCTURE_COMPLETION_KEY,
+];
+
 function isKeyEncrypted(key: string): boolean {
   return (
     (SENSITIVE_KEYS as readonly string[]).includes(key) ||
-    (MEMORY_STORE_KEYS as readonly string[]).includes(key)
+    (MEMORY_STORE_KEYS as readonly string[]).includes(key) ||
+    (EXTRA_ENCRYPTED_KEYS as readonly string[]).includes(key)
   );
 }
 
@@ -323,16 +330,19 @@ function buildStoresAdapter(): ExportImportStores {
 
     dayStructureStore: {
       async exportAll() {
-        // Document and completion are encrypted; bell-state and streaks are plain AsyncStorage
+        // Document and completion are encrypted (RF_ENC_V1 format).
+        // isKeyEncrypted() now includes EXTRA_ENCRYPTED_KEYS so readJson routes correctly.
         const [document, completion, bellState, streaksEnabled] = await Promise.all([
           readJson(DAYSTRUCTURE_DOCUMENT_KEY),
           readJson(DAYSTRUCTURE_COMPLETION_KEY),
           (async () => { try { return await AsyncStorage.getItem(DAYSTRUCTURE_BELL_STATE_KEY); } catch { return null; } })(),
           (async () => { try { const v = await AsyncStorage.getItem(DAYSTRUCTURE_STREAKS_ENABLED_KEY); return v === 'true' ? true : v === 'false' ? false : null; } catch { return null; } })(),
         ]);
+        logImportDiag('EXPORT dayStructure', 'OK', `document=${document ? 'present' : 'null'}, completion=${completion ? 'present' : 'null'}, bell=${bellState}, streaks=${streaksEnabled}`);
         return { document: document ?? null, completion: completion ?? null, bellState: bellState ?? null, streaksEnabled: streaksEnabled ?? null };
       },
       async replaceAll(data) {
+        // writeJson routes through encrypted layer for keys in isKeyEncrypted()
         await Promise.all([
           writeJson(DAYSTRUCTURE_DOCUMENT_KEY, data.document),
           writeJson(DAYSTRUCTURE_COMPLETION_KEY, data.completion),
