@@ -2160,3 +2160,6 @@
 - [x] Enhancement: Increase fallback message window from 5 to 10 (chat.tsx slice(-10)) for richer fallback context
 - [x] Enhancement: Add logsDatSource debug indicator to greeting debugLog (rich_summary | previousSessionMessages_fallback | none)
 - [x] Enhancement: Extract semantic topics from raw fallback messages via keyword frequency (extractTopicsFromMessages, top 3 topics)
+- [x] Fix: Give LAST_SESSION_SUMMARY continuity-first priority in selectGreetingSynthesisSources (always slot 0)
+- [x] Fix: Prompt focuses on open endpoints ("waar waren we gebleven") instead of full narrative recap
+- [x] Fix: Max 2 state sources alongside continuity slot, with variation instruction to prevent repetitive greetings

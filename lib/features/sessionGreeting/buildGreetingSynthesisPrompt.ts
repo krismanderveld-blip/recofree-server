@@ -223,9 +223,10 @@ Formuleer ALTIJD in je EIGEN woorden — kopieer NOOIT de brontekst letterlijk.
 Je bent een vriend die terugverwijst naar wat jullie bespraken, niet een machine die tekst herhaalt.
 
 PRIORITEIT:
-1. Als er "VORIGE SESSIE" data staat: dat is je PRIMAIRE bron. Verwijs ernaar in je eigen woorden.
-2. Verwerk daarnaast maximaal ÉÉN ander feit.
-3. Eindig met een SPECIFIEKE vraag die direct voortkomt uit de feiten.
+1. Als er "VORIGE SESSIE — CONTINUÏTEIT" data staat: dat is je PRIMAIRE bron. Bouw voort op de OPEN EINDJES (niet de volledige samenvatting herhalen).
+2. Combineer dit met maximaal ÉÉN actueel feit (mood/dagboek/dankbaarheid) als dat beschikbaar is.
+3. Eindig met een SPECIFIEKE vraag die voortkomt uit de open eindjes OF het actuele feit.
+4. VARIEER: gebruik niet elke greeting dezelfde openingszin of structuur.
 
 HOE:
 - MAXIMAAL 4 zinnen totaal
@@ -397,7 +398,37 @@ function buildContextBriefing(sources: SelectedSynthesisSource[], zone: string):
       case 'LAST_SESSION_SUMMARY': {
         // Strip labels and speaker prefixes from the raw safeAnchor before presenting to GPT
         const cleanedAnchor = stripRawLabels(source.safeAnchor);
-        parts.push(`VORIGE SESSIE (inhoudelijke samenvatting — formuleer dit in je EIGEN woorden, kopieer NOOIT letterlijk):\n  ${cleanedAnchor}`);
+        // Extract open endpoints and topics for focused continuity
+        const openEndpointMatch = cleanedAnchor.match(/\[open:\s*([^\]]+)\]/g);
+        const topicMatch = cleanedAnchor.match(/\(thema's:\s*([^)]+)\)/g);
+        const openEndpoints = openEndpointMatch
+          ? openEndpointMatch.map(m => m.replace(/\[open:\s*|\]/g, '').trim()).join(', ')
+          : '';
+        const topics = topicMatch
+          ? topicMatch.map(m => m.replace(/\(thema's:\s*|\)/g, '').trim()).join(', ')
+          : '';
+
+        // Build focused continuity block: prioritize open endpoints over full narrative
+        let continuityBlock = '';
+        if (openEndpoints) {
+          continuityBlock += `OPEN EINDJES (waar jullie vorige keer mee bezig waren — bouw hierop voort):\n  ${openEndpoints}\n`;
+        }
+        if (topics) {
+          continuityBlock += `BESPROKEN THEMA'S (vorige sessie):\n  ${topics}\n`;
+        }
+        // Include a condensed narrative for context, but instruct to NOT repeat it
+        const narrativeWithoutMeta = cleanedAnchor
+          .replace(/\[open:[^\]]*\]/g, '')
+          .replace(/\(thema's:[^)]*\)/g, '')
+          .replace(/\n{2,}/g, '\n')
+          .trim();
+        if (narrativeWithoutMeta) {
+          continuityBlock += `CONTEXT (achtergrond, NIET herhalen maar gebruik als begrip):\n  ${narrativeWithoutMeta.slice(0, 400)}`;
+        }
+
+        parts.push(`VORIGE SESSIE — CONTINUÏTEIT (de inhoudelijke draad):\n${continuityBlock}\n\nINSTRUCTIE VOOR DEZE BRON:\n- Verwijs naar de OPEN EINDJES: "waar waren we gebleven", "heb je iets kunnen proberen?", "is er iets veranderd?"
+- Herhaal NIET de volledige samenvatting — bouw VOORT op wat open bleef.
+- Varieer je formulering: gebruik NIET elke keer dezelfde openingszin.`);
         break;
       }
       case 'RECURRING_PATTERN':

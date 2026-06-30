@@ -1,20 +1,27 @@
 /**
- * Session Greeting V3 — Source Selection (with Absence Awareness)
+ * Session Greeting V3 — Source Selection (with Continuity Priority)
  *
- * Selects up to 3 synthesis sources from eligible candidates.
- * For RETURN_AFTER_ABSENCE: selects up to 2 sources with different priority.
+ * Selects synthesis sources from eligible candidates.
+ * For normal SYNTHESIS mode:
+ *   1. LAST_SESSION_SUMMARY always gets the continuity slot (if eligible)
+ *   2. Then up to 2 additional state/sfeer sources from the remaining candidates
+ *   3. Balance rule: max 1 positive alongside a negative
  *
- * Normal synthesis rules:
- * 1. Only eligible candidates (eligible=true) are considered
- * 2. Sort by relevanceScore descending
- * 3. Take top 3
- * 4. Balance rule: never more than 1 "positive" source alongside a "negative" source
+ * For RETURN_AFTER_ABSENCE:
+ *   1. Filter eligible, remove CRISIS sources
+ *   2. If LONG_RETURN: remove ACTIVE_HOPE_OR_FEAR unless no other source
+ *   3. Sort by return relevance priority
+ *   4. Cap at 2
  *
- * Return after absence rules:
- * 1. Filter eligible, remove CRISIS sources
- * 2. If LONG_RETURN: remove ACTIVE_HOPE_OR_FEAR unless no other source
- * 3. Sort by return relevance priority
- * 4. Cap at 2
+ * DESIGN RATIONALE:
+ * LAST_SESSION_SUMMARY (open endpoints, topics, narrative) provides conversational
+ * continuity — "where we left off". This is the most important context for a greeting
+ * that feels like a real ongoing relationship. State sources (diary, mood, gratitude)
+ * provide the "how are you now" layer. Both together create a greeting that references
+ * the thread AND acknowledges the current state.
+ *
+ * Anti-repetition is handled in the prompt layer (focus on open endpoints, not full recap)
+ * and by the fact-grounding/validation system that rejects fabrication.
  */
 
 import type {
@@ -23,8 +30,10 @@ import type {
   GreetingSynthesisSourceType,
   MoodMetricSelection,
 } from './sessionGreetingV3.types';
-import { V3_MAX_SYNTHESIS_SOURCES } from './sessionGreetingV3.types';
 import type { SessionAbsenceResult } from './calculateSessionAbsence';
+
+/** Max additional state sources alongside the continuity slot */
+const MAX_STATE_SOURCES = 2;
 
 export interface SelectSynthesisSourcesInput {
   candidates: GreetingSynthesisCandidate[];
@@ -32,7 +41,9 @@ export interface SelectSynthesisSourcesInput {
 }
 
 /**
- * Selects up to 3 sources from eligible candidates, applying balance rules.
+ * Selects sources with continuity priority:
+ * 1. LAST_SESSION_SUMMARY always first (if eligible) — the conversational thread
+ * 2. Up to 2 additional state/sfeer sources sorted by relevanceScore
  */
 export function selectGreetingSynthesisSources(
   input: SelectSynthesisSourcesInput,
@@ -44,24 +55,36 @@ export function selectGreetingSynthesisSources(
 
   if (eligible.length === 0) return [];
 
-  // DIVERSITY RULE: All sources compete on relevanceScore.
-  // LAST_SESSION_SUMMARY no longer gets forced first-pick — it competes via recency bonus.
-  // This prevents the same session content from being repeated every greeting.
   const selected: SelectedSynthesisSource[] = [];
   let positiveCount = 0;
   let negativeCount = 0;
 
-  // Sort ALL eligible by relevance descending (recency bonus already applied)
-  const sorted = [...eligible].sort((a, b) => b.relevanceScore - a.relevanceScore);
+  // ─── CONTINUITY SLOT: LAST_SESSION_SUMMARY always first ───────────────────
+  const sessionSummary = eligible.find(c => c.sourceType === 'LAST_SESSION_SUMMARY');
+  if (sessionSummary) {
+    selected.push({
+      sourceType: sessionSummary.sourceType,
+      safeAnchor: sessionSummary.safeAnchor,
+      relevanceScore: sessionSummary.relevanceScore,
+    });
+    const valence = getSourceValence(sessionSummary, moodMetric);
+    if (valence === 'positive') positiveCount++;
+    if (valence === 'negative') negativeCount++;
+  }
 
-  for (const candidate of sorted) {
-    if (selected.length >= V3_MAX_SYNTHESIS_SOURCES) break;
+  // ─── STATE SLOTS: up to 2 additional sources from the rest ────────────────
+  const remaining = eligible
+    .filter(c => c.sourceType !== 'LAST_SESSION_SUMMARY')
+    .sort((a, b) => b.relevanceScore - a.relevanceScore);
+
+  for (const candidate of remaining) {
+    if (selected.length >= (sessionSummary ? 1 + MAX_STATE_SOURCES : MAX_STATE_SOURCES + 1)) break;
 
     const valence = getSourceValence(candidate, moodMetric);
 
     // Balance rule: max 1 positive if there's already a negative
     if (valence === 'positive' && negativeCount > 0 && positiveCount >= 1) {
-      continue; // skip this positive source
+      continue;
     }
 
     selected.push({
@@ -80,8 +103,6 @@ export function selectGreetingSynthesisSources(
 // ─── Return After Absence Source Selection ────────────────────────────────────
 
 /** Priority order for return-after-absence source selection */
-// V3.3: No fixed hierarchy between diary/gratitude/session — recency bonus already
-// determined the relevanceScore. TODAY_MOOD keeps explicit top priority (it's "now").
 const RETURN_RELEVANCE_PRIORITY: GreetingSynthesisSourceType[] = [
   'TODAY_MOOD',
   'LAST_SESSION_SUMMARY',
@@ -102,8 +123,8 @@ export interface SelectReturnAfterAbsenceSourcesInput {
 
 /**
  * Selects up to 2 sources for RETURN_AFTER_ABSENCE mode.
- * Uses different priority than normal synthesis.
- * LONG_RETURN removes fear sources unless nothing else is available.
+ * LAST_SESSION_SUMMARY is always included if eligible (continuity matters even more after absence).
+ * Then 1 additional state source.
  */
 export function selectReturnAfterAbsenceSources(
   input: SelectReturnAfterAbsenceSourcesInput,
@@ -128,26 +149,41 @@ export function selectReturnAfterAbsenceSources(
     }
   }
 
-  // V3.3: Sort by relevanceScore descending (which already includes recency bonus).
-  // This ensures the most recent source wins, regardless of source type.
-  // Fallback to RETURN_RELEVANCE_PRIORITY only as tiebreaker.
-  const sorted = [...eligible].sort((a, b) => {
-    const scoreDiff = b.relevanceScore - a.relevanceScore;
-    if (Math.abs(scoreDiff) > 0.01) return scoreDiff;
-    // Tiebreaker: use priority list
-    const aIdx = RETURN_RELEVANCE_PRIORITY.indexOf(a.sourceType);
-    const bIdx = RETURN_RELEVANCE_PRIORITY.indexOf(b.sourceType);
-    const aPriority = aIdx === -1 ? 999 : aIdx;
-    const bPriority = bIdx === -1 ? 999 : bIdx;
-    return aPriority - bPriority;
-  });
+  const selected: SelectedSynthesisSource[] = [];
 
-  // Cap at 2
-  return sorted.slice(0, RETURN_MAX_SOURCES).map(c => ({
-    sourceType: c.sourceType,
-    safeAnchor: c.safeAnchor,
-    relevanceScore: c.relevanceScore,
-  }));
+  // Continuity slot first
+  const sessionSummary = eligible.find(c => c.sourceType === 'LAST_SESSION_SUMMARY');
+  if (sessionSummary) {
+    selected.push({
+      sourceType: sessionSummary.sourceType,
+      safeAnchor: sessionSummary.safeAnchor,
+      relevanceScore: sessionSummary.relevanceScore,
+    });
+  }
+
+  // Then fill remaining slots by relevanceScore (with RETURN_RELEVANCE_PRIORITY as tiebreaker)
+  const remaining = eligible
+    .filter(c => c.sourceType !== 'LAST_SESSION_SUMMARY')
+    .sort((a, b) => {
+      const scoreDiff = b.relevanceScore - a.relevanceScore;
+      if (Math.abs(scoreDiff) > 0.01) return scoreDiff;
+      const aIdx = RETURN_RELEVANCE_PRIORITY.indexOf(a.sourceType);
+      const bIdx = RETURN_RELEVANCE_PRIORITY.indexOf(b.sourceType);
+      const aPriority = aIdx === -1 ? 999 : aIdx;
+      const bPriority = bIdx === -1 ? 999 : bIdx;
+      return aPriority - bPriority;
+    });
+
+  for (const candidate of remaining) {
+    if (selected.length >= RETURN_MAX_SOURCES) break;
+    selected.push({
+      sourceType: candidate.sourceType,
+      safeAnchor: candidate.safeAnchor,
+      relevanceScore: candidate.relevanceScore,
+    });
+  }
+
+  return selected;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -174,22 +210,21 @@ function getSourceValence(
 
     case 'RECENT_DIARY':
       // Diary valence is now inferred in buildGreetingSynthesisCandidates via the reason field
-      // Check if the reason contains 'valence=negative' or 'valence=positive'
       if (candidate.reason.includes('valence=negative')) return 'negative';
       if (candidate.reason.includes('valence=positive')) return 'positive';
-      return 'neutral'; // diary can be anything
+      return 'neutral';
 
     case 'BACKPACK_RECENT_UPDATE':
       return 'neutral';
 
     case 'SCHEMA_ROTATION':
-      return 'neutral'; // schemas are reflective, not positive/negative
+      return 'neutral';
 
     case 'LAST_SESSION_SUMMARY':
       return 'neutral'; // session continuity is contextual
 
     case 'RECURRING_PATTERN':
-      return 'neutral'; // observational cross-session insight
+      return 'neutral';
 
     default:
       return 'neutral';
