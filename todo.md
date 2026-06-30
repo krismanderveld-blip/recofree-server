@@ -2167,3 +2167,7 @@
 - [x] Feature: Backup includes app preferences (language, country)
 - [x] Feature: Import restores dagstructuur and app preferences without data loss
 - [x] Feature: Pre-import snapshot covers all new keys for safe rollback
+- [x] Fix: Sanitize fallback narrative — filter internal error strings (gpt-samenvatting niet beschikbaar, network request, berichttellers)
+- [x] Fix: Frame fallback narrative as "Gebruiker besprak:" thematic summary instead of raw concatenation
+- [x] Fix: Prompt explicitly forbids literal user quotes — must extract THEME and rephrase in own words
+- [x] Fix: Added FOUT/GOED examples in prompt to demonstrate correct vs incorrect greeting phrasing

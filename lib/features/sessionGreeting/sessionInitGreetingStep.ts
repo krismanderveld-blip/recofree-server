@@ -404,8 +404,11 @@ function adaptLogsDat(
 
 /**
  * Build a usable narrative from raw previous session messages.
- * Strips speaker prefixes and structural markers so the greeting engine
- * can reference the content without seeing internal labels.
+ * Strips speaker prefixes, structural markers, and internal error/status strings
+ * so the greeting engine can reference the CONTENT without seeing internal labels.
+ *
+ * IMPORTANT: The output is a thematic summary of what the user discussed,
+ * NOT a literal concatenation of their messages.
  */
 function buildFallbackNarrativeFromMessages(
   messages: Array<{ role: string; content: string; timestamp?: string }>,
@@ -413,17 +416,56 @@ function buildFallbackNarrativeFromMessages(
   // Take user messages only — assistant messages are Elias/Kim's own words
   const userMessages = messages
     .filter(m => m.role === 'user' && m.content && m.content.trim().length > 0)
-    .map(m => stripSpeakerPrefixes(m.content.trim()));
+    .map(m => sanitizeFallbackContent(stripSpeakerPrefixes(m.content.trim())))
+    .filter(m => m.length > 0);
 
   if (userMessages.length === 0) {
     // Fallback: use all messages if no user messages
     const allContent = messages
       .filter(m => m.content && m.content.trim().length > 0)
-      .map(m => stripSpeakerPrefixes(m.content.trim()));
-    return allContent.join(' ').slice(0, 800);
+      .map(m => sanitizeFallbackContent(stripSpeakerPrefixes(m.content.trim())))
+      .filter(m => m.length > 0);
+    if (allContent.length === 0) return '';
+    return `Gebruiker besprak: ${allContent.join('. ')}`.slice(0, 800);
   }
 
-  return userMessages.join(' ').slice(0, 800);
+  // Frame as thematic content, not raw quotes
+  return `Gebruiker besprak: ${userMessages.join('. ')}`.slice(0, 800);
+}
+
+/**
+ * Remove internal error strings, status messages, and meta-text from fallback content.
+ * These should NEVER reach the greeting prompt.
+ */
+function sanitizeFallbackContent(text: string): string {
+  if (!text) return '';
+  let cleaned = text;
+
+  // Remove internal error/status strings that leaked from session-end failures
+  const INTERNAL_PATTERNS = [
+    /gpt-samenvatting niet beschikbaar[^.]*/gi,
+    /network requ?e?s?t?[^.]*/gi,
+    /sessie be[eë]indigd \(\d+ berichten\)[^.]*/gi,
+    /samenvatting niet beschikbaar[^.]*/gi,
+    /error:?\s*[^.]*/gi,
+    /timeout[^.]*/gi,
+    /failed to fetch[^.]*/gi,
+    /connection refused[^.]*/gi,
+    /\d+ berichten\)?[.:]/gi,
+    /^Sessie-inhoud.*$/gim,
+    /^Sessie met \d+.*$/gim,
+  ];
+
+  for (const pattern of INTERNAL_PATTERNS) {
+    cleaned = cleaned.replace(pattern, '');
+  }
+
+  // Remove leftover punctuation artifacts
+  cleaned = cleaned.replace(/\.\.+/g, '.').replace(/\s{2,}/g, ' ').trim();
+  // Remove leading/trailing dots or commas
+  cleaned = cleaned.replace(/^[.,;:\s]+|[.,;:\s]+$/g, '').trim();
+
+  return cleaned;
 }
 
 /**

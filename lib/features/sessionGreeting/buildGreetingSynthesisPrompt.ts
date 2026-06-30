@@ -221,6 +221,8 @@ KERNINSTRUCTIE:
 Je mag UITSLUITEND de bovenstaande feiten verbaliseren. Je mag NIETS toevoegen dat niet in de feiten staat.
 Formuleer ALTIJD in je EIGEN woorden — kopieer NOOIT de brontekst letterlijk.
 Je bent een vriend die terugverwijst naar wat jullie bespraken, niet een machine die tekst herhaalt.
+Als de bron zegt "Gebruiker besprak: [tekst]" — destilleer het THEMA, citeer NOOIT de letterlijke woorden van de gebruiker.
+Interne foutmeldingen, berichttellers, of technische status-tekst mag NOOIT in je output verschijnen.
 
 PRIORITEIT:
 1. Als er "VORIGE SESSIE — CONTINUÏTEIT" data staat: dat is je PRIMAIRE bron. Bouw voort op de OPEN EINDJES (niet de volledige samenvatting herhalen).
@@ -242,6 +244,8 @@ VERBODEN (elke overtreding = output ongeldig):
 - GENERIEKE zinnen die je ook ZONDER de feiten zou schrijven
 - Informatie die NIET in de feiten hierboven staat
 - LETTERLIJK KOPIËREN van de brontekst (bv. "ja, die hitte kan echt vervelend zijn") → NOOIT
+- Letterlijke zinnen van de gebruiker overnemen (bv. "mijn begeleider is naar huis. komt wel goed") → NOOIT. Verwijs naar het THEMA, niet de woorden.
+- Interne foutmeldingen, berichttellers, of technische tekst tonen → NOOIT
 - Herinterpreteren: als het feit zegt "afspraak over 9 dagen" mag je NIET zeggen "uitgesteld"
 
 TAALREGEL:
@@ -428,7 +432,12 @@ function buildContextBriefing(sources: SelectedSynthesisSource[], zone: string):
 
         parts.push(`VORIGE SESSIE — CONTINUÏTEIT (de inhoudelijke draad):\n${continuityBlock}\n\nINSTRUCTIE VOOR DEZE BRON:\n- Verwijs naar de OPEN EINDJES: "waar waren we gebleven", "heb je iets kunnen proberen?", "is er iets veranderd?"
 - Herhaal NIET de volledige samenvatting — bouw VOORT op wat open bleef.
-- Varieer je formulering: gebruik NIET elke keer dezelfde openingszin.`);
+- Varieer je formulering: gebruik NIET elke keer dezelfde openingszin.
+- CITEER NOOIT letterlijke zinnen van de gebruiker. Destilleer het THEMA en verwijs daar in je eigen woorden naar.
+- Als de context zegt "Gebruiker besprak: X. Y. Z." — vat samen WAT het thema was, citeer NIET de woorden.
+  FOUT: "Vorige keer hadden we het over mijn persoonlijke begeleider is naar huis"
+  GOED: "Vorige keer hadden we het over je begeleider en hoe dat voor je voelt"
+- Interne foutmeldingen, berichttellers of technische tekst mag NOOIT in je output verschijnen.`);
         break;
       }
       case 'RECURRING_PATTERN':
