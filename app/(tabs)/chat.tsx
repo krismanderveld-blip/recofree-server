@@ -609,7 +609,7 @@ function ChatScreenInner() {
                   const msgDate = m.timestamp?.slice(0, 10);
                   return msgDate && msgDate <= lastSessionDate;
                 });
-                prevMsgsForGreeting = prevMsgs.slice(-5).map(m => ({ role: m.role, content: m.content, timestamp: m.timestamp }));
+                prevMsgsForGreeting = prevMsgs.slice(-10).map(m => ({ role: m.role, content: m.content, timestamp: m.timestamp }));
               }
             }
           } catch (prevErr) {

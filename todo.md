@@ -2157,3 +2157,6 @@
 - [x] Fix: day-structure-service.ts auto-reschedules OS notifications after every schema save (saveWeekSchema + saveDayBlocks) if bell is enabled
 - [x] Fix: use-day-structure-observer verifies OS-scheduled notifications exist on foreground + mount, reschedules if missing (handles force-close, reboot, iOS drops)
 - [x] Fix: Activate previousSessionMessages fallback in adaptLogsDat when logs.dat is empty or only has a poor live-entry
+- [x] Enhancement: Increase fallback message window from 5 to 10 (chat.tsx slice(-10)) for richer fallback context
+- [x] Enhancement: Add logsDatSource debug indicator to greeting debugLog (rich_summary | previousSessionMessages_fallback | none)
+- [x] Enhancement: Extract semantic topics from raw fallback messages via keyword frequency (extractTopicsFromMessages, top 3 topics)

@@ -82,7 +82,9 @@ export async function sessionInitGreetingStep(
   const greetingUserDat = adaptUserDat(backpack, userDat);
   const greetingStateDat = adaptStateDat(userDat);
   const greetingProjectionsDat = adaptProjectionsDat();
-  const greetingLogsDat = adaptLogsDat(input.lastSessionSummary, input.allSessions, input.previousSessionMessages);
+  const logsDatAdaptResult = adaptLogsDat(input.lastSessionSummary, input.allSessions, input.previousSessionMessages);
+  const greetingLogsDat = logsDatAdaptResult.snapshot;
+  const logsDatSource = logsDatAdaptResult.source;
   const diaryMetadata = adaptDiaryMetadata(diaryEntries);
   const gratitudeMetadata = adaptGratitudeMetadata(diaryEntries);
 
@@ -188,7 +190,7 @@ export async function sessionInitGreetingStep(
   }
 
   // Build debug log
-  const debugLog = buildV3DebugLog(engineResult, validation, retryCount, factResult.facts.length);
+  const debugLog = buildV3DebugLog(engineResult, validation, retryCount, factResult.facts.length, logsDatSource);
   console.log(debugLog);
 
   return { greeting, debugLog };
@@ -231,9 +233,10 @@ function buildV3DebugLog(
   validation: { valid: boolean; reason: string },
   retryCount: number = 0,
   factCount: number = 0,
+  logsDatSource: 'rich_summary' | 'previousSessionMessages_fallback' | 'none' = 'none',
 ): string {
   const sources = result.selectedSources.map(s => s.sourceType).join(', ') || 'none';
-  let log = `[SessionGreetingV3] mode=${result.mode} sources=[${sources}] facts=${factCount}`;
+  let log = `[SessionGreetingV3] mode=${result.mode} sources=[${sources}] facts=${factCount} logsDatSource=${logsDatSource}`;
   if (retryCount > 0) {
     log += ` retries=${retryCount}`;
   }
@@ -333,7 +336,7 @@ function adaptLogsDat(
   _lastSessionSummary?: SessionInitGreetingInput['lastSessionSummary'],
   allSessions?: import('@/lib/types/memory/logsDat.types').SessionLogSummary[],
   previousSessionMessages?: SessionInitGreetingInput['previousSessionMessages'],
-): GreetingLogsDatSnapshot {
+): { snapshot: GreetingLogsDatSnapshot; source: 'rich_summary' | 'previousSessionMessages_fallback' | 'none' } {
   const result: GreetingLogsDatSnapshot = { lastSessionOpenLoops: [] };
 
   // Sort logs.dat sessions by endedAt descending, take the most recent one.
@@ -371,7 +374,7 @@ function adaptLogsDat(
         result.previousSessionZone = zoneSorted[0].zone;
       }
 
-      return result;
+      return { snapshot: result, source: 'rich_summary' };
     }
 
     // Poor live-entry: still extract zone if available, then fall through to fallback
@@ -384,16 +387,19 @@ function adaptLogsDat(
   // ── FALLBACK: Use previousSessionMessages when logs.dat is empty or only has a poor live-entry ──
   if (previousSessionMessages && previousSessionMessages.length > 0) {
     const fallbackNarrative = buildFallbackNarrativeFromMessages(previousSessionMessages);
+    const fallbackTopics = extractTopicsFromMessages(previousSessionMessages);
     result.latestLogDigest = fallbackNarrative;
+    result.lastSessionTopics = fallbackTopics.length > 0 ? fallbackTopics : undefined;
     result.recentSessionDigests = [{
       narrative: fallbackNarrative,
-      topics: [],
+      topics: fallbackTopics,
       openEndpoints: [],
       endedAt: previousSessionMessages[previousSessionMessages.length - 1]?.timestamp || '',
     }];
+    return { snapshot: result, source: 'previousSessionMessages_fallback' };
   }
 
-  return result;
+  return { snapshot: result, source: 'none' };
 }
 
 /**
@@ -434,6 +440,69 @@ function stripSpeakerPrefixes(text: string): string {
   cleaned = cleaned.replace(/^Sessie-inhoud \(\d+ berichten\):\s*/i, '');
   cleaned = cleaned.replace(/^Sessie met \d+ berichten.*?:\s*/i, '');
   return cleaned.replace(/\n{2,}/g, '\n').trim();
+}
+
+/**
+ * Extract semantic topics from raw previous session messages using keyword frequency.
+ * Returns up to 3 topics derived from the user's messages.
+ */
+function extractTopicsFromMessages(
+  messages: Array<{ role: string; content: string; timestamp?: string }>,
+): string[] {
+  // Therapeutic/emotional keywords that indicate topics of conversation
+  const TOPIC_KEYWORDS: Record<string, string> = {
+    // Dutch keywords
+    'craving': 'craving', 'trek': 'craving', 'zucht': 'craving', 'verlangen': 'craving',
+    'alcohol': 'alcohol', 'drinken': 'alcohol', 'bier': 'alcohol', 'wijn': 'alcohol',
+    'drugs': 'middelengebruik', 'gebruiken': 'middelengebruik', 'blowen': 'middelengebruik',
+    'stress': 'stress', 'spanning': 'stress', 'druk': 'stress', 'overweldigd': 'stress',
+    'angst': 'angst', 'bang': 'angst', 'paniek': 'angst', 'onrustig': 'angst',
+    'verdriet': 'verdriet', 'verdrietig': 'verdriet', 'huilen': 'verdriet', 'rouw': 'verdriet',
+    'boos': 'boosheid', 'woede': 'boosheid', 'frustratie': 'boosheid', 'geïrriteerd': 'boosheid',
+    'slapen': 'slaap', 'slaap': 'slaap', 'insomnia': 'slaap', 'moe': 'slaap',
+    'werk': 'werk', 'baan': 'werk', 'collega': 'werk', 'baas': 'werk', 'ontslag': 'werk',
+    'relatie': 'relatie', 'partner': 'relatie', 'scheiding': 'relatie', 'ruzie': 'relatie',
+    'eenzaam': 'eenzaamheid', 'alleen': 'eenzaamheid', 'isolatie': 'eenzaamheid',
+    'gezin': 'gezin', 'kinderen': 'gezin', 'ouders': 'gezin', 'familie': 'gezin',
+    'zelfbeeld': 'zelfbeeld', 'schaamte': 'zelfbeeld', 'schuld': 'zelfbeeld', 'waardeloos': 'zelfbeeld',
+    'terugval': 'terugval', 'hervallen': 'terugval', 'uitgegleden': 'terugval',
+    'motivatie': 'motivatie', 'doelen': 'motivatie', 'vooruitgang': 'motivatie',
+    'grens': 'grenzen', 'grenzen': 'grenzen', 'nee zeggen': 'grenzen',
+    // English keywords
+    'anxiety': 'angst', 'fear': 'angst', 'worried': 'angst',
+    'sad': 'verdriet', 'grief': 'verdriet', 'depressed': 'verdriet',
+    'angry': 'boosheid', 'frustrated': 'boosheid',
+    'sleep': 'slaap', 'tired': 'slaap', 'exhausted': 'slaap',
+    'lonely': 'eenzaamheid', 'isolated': 'eenzaamheid',
+    'relapse': 'terugval', 'slip': 'terugval',
+    'relationship': 'relatie',
+    'work': 'werk', 'job': 'werk',
+    'family': 'gezin', 'children': 'gezin', 'parents': 'gezin',
+  };
+
+  const userText = messages
+    .filter(m => m.role === 'user' && m.content)
+    .map(m => m.content.toLowerCase())
+    .join(' ');
+
+  if (!userText) return [];
+
+  // Count topic occurrences
+  const topicCounts: Record<string, number> = {};
+  for (const [keyword, topic] of Object.entries(TOPIC_KEYWORDS)) {
+    // Word boundary match (simplified for multi-language)
+    const regex = new RegExp(`\\b${keyword.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&')}\\b`, 'gi');
+    const matches = userText.match(regex);
+    if (matches && matches.length > 0) {
+      topicCounts[topic] = (topicCounts[topic] || 0) + matches.length;
+    }
+  }
+
+  // Return top 3 topics sorted by frequency
+  return Object.entries(topicCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 3)
+    .map(([topic]) => topic);
 }
 
 function adaptDiaryMetadata(diaryEntries: DiaryEntry[]): GreetingDiaryMetadata | null {
