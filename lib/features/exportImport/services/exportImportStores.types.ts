@@ -59,6 +59,20 @@ export interface ExportableDerivedCacheStore {
   replaceAll(data: { backpackHash?: unknown | null; extractedEntities?: unknown | null; vspProfile?: unknown | null; vspHash?: unknown | null }): Promise<void>;
 }
 
+// ─── NEW: Day Structure Store ──────────────────────────────────────────────
+
+export interface ExportableDayStructureStore {
+  exportAll(): Promise<{ document?: unknown | null; completion?: unknown | null; bellState?: string | null; streaksEnabled?: boolean | null }>;
+  replaceAll(data: { document?: unknown | null; completion?: unknown | null; bellState?: string | null; streaksEnabled?: boolean | null }): Promise<void>;
+}
+
+// ─── NEW: App Preferences Store ────────────────────────────────────────────
+
+export interface ExportableAppPreferencesStore {
+  exportAll(): Promise<{ language?: string | null; country?: string | null }>;
+  replaceAll(data: { language?: string | null; country?: string | null }): Promise<void>;
+}
+
 // ─── Main Interface ─────────────────────────────────────────────────────────
 
 export interface ExportImportStores {
@@ -73,4 +87,6 @@ export interface ExportImportStores {
   personaProjectionStore: ExportablePersonaProjectionStore;
   emergencyContactsStore: ExportableEmergencyContactsStore;
   derivedCacheStore: ExportableDerivedCacheStore;
+  dayStructureStore: ExportableDayStructureStore;
+  appPreferencesStore: ExportableAppPreferencesStore;
 }

@@ -78,6 +78,14 @@ function createMockStores(initial?: {
       async exportAll() { return emergencyContacts; },
       async replaceAll(data) { emergencyContacts = data as any; },
     },
+    dayStructureStore: {
+      async exportAll() { return { document: null, completion: null, bellState: null, streaksEnabled: null }; },
+      async replaceAll() {},
+    },
+    appPreferencesStore: {
+      async exportAll() { return { language: null, country: null }; },
+      async replaceAll() {},
+    },
     derivedCacheStore: {
       async exportAll() { return derivedCaches; },
       async replaceAll(data) { derivedCaches = data as any; },

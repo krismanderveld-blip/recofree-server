@@ -85,6 +85,14 @@ function createMockStores(data?: Partial<{
       async exportAll() { return [{ name: 'SOS', phone: '112' }]; },
       async replaceAll(_d) { /* no-op in test */ },
     },
+    dayStructureStore: {
+      async exportAll() { return { document: null, completion: null, bellState: null, streaksEnabled: null }; },
+      async replaceAll() {},
+    },
+    appPreferencesStore: {
+      async exportAll() { return { language: null, country: null }; },
+      async replaceAll() {},
+    },
     derivedCacheStore: {
       async exportAll() { return { backpackHash: 'abc123', extractedEntities: null }; },
       async replaceAll(_d) { /* no-op in test */ },

@@ -61,6 +61,8 @@ export async function createEncryptedRecoFreeExport(input: {
       personaProjectionAll,
       emergencyContacts,
       derivedCaches,
+      dayStructureData,
+      appPreferencesData,
     ] = await Promise.all([
       stores.userDatStore.exportAllPersonas(),
       stores.stateDatStore.exportAllPersonas(),
@@ -72,6 +74,8 @@ export async function createEncryptedRecoFreeExport(input: {
       stores.personaProjectionStore.exportAllPersonas(),
       stores.emergencyContactsStore.exportAll(),
       stores.derivedCacheStore.exportAll(),
+      stores.dayStructureStore.exportAll(),
+      stores.appPreferencesStore.exportAll(),
     ]);
 
     // 2. Build persona bundles
@@ -109,6 +113,16 @@ export async function createEncryptedRecoFreeExport(input: {
         vspHash: derivedCaches.vspHash ?? null,
       },
       storageKeyBase64: storageKeyBase64 ?? null,
+      dayStructure: {
+        document: dayStructureData.document ?? null,
+        completion: dayStructureData.completion ?? null,
+        bellState: dayStructureData.bellState ?? null,
+        streaksEnabled: dayStructureData.streaksEnabled ?? null,
+      },
+      appPreferences: {
+        language: appPreferencesData.language ?? null,
+        country: appPreferencesData.country ?? null,
+      },
     };
 
     // 4. Build scope metadata
@@ -125,6 +139,8 @@ export async function createEncryptedRecoFreeExport(input: {
       includesPersonaProjections: true,
       includesEmergencyContacts: true,
       includesDerivedCaches: true,
+      includesDayStructure: !!(dayStructureData.document || dayStructureData.completion),
+      includesAppPreferences: !!(appPreferencesData.language || appPreferencesData.country),
     };
 
     // 5. Build source device metadata
@@ -228,6 +244,8 @@ export function buildRecoFreeExportPlaintextPayload(
       includesPersonaProjections: true,
       includesEmergencyContacts: true,
       includesDerivedCaches: true,
+      includesDayStructure: !!data.shared?.dayStructure,
+      includesAppPreferences: !!data.shared?.appPreferences,
     },
     data,
     integrity: { plaintextSha256Base64: integrityHash, datasetCounts },

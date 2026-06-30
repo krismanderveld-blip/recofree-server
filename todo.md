@@ -2163,3 +2163,7 @@
 - [x] Fix: Give LAST_SESSION_SUMMARY continuity-first priority in selectGreetingSynthesisSources (always slot 0)
 - [x] Fix: Prompt focuses on open endpoints ("waar waren we gebleven") instead of full narrative recap
 - [x] Fix: Max 2 state sources alongside continuity slot, with variation instruction to prevent repetitive greetings
+- [x] Feature: Backup includes dagstructuur (document, completion, bell-state, streaks-enabled)
+- [x] Feature: Backup includes app preferences (language, country)
+- [x] Feature: Import restores dagstructuur and app preferences without data loss
+- [x] Feature: Pre-import snapshot covers all new keys for safe rollback

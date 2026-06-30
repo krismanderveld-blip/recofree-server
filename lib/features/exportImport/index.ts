@@ -6,7 +6,7 @@
 export type { RecoFreeEncryptedExportEnvelope, ExportKeyDerivationMetadata, ExportEncryptionMetadata } from './types/exportEnvelope.types';
 export type { RecoFreeExportPlaintextPayload, RecoFreeExportData, RecoFreePersonaExportBundle, ExportScopeMetadata, ExportPayloadIntegrity, ExportPersonaDatasetCounts, ExportSourceDeviceMetadata } from './types/exportPayload.types';
 export type { ImportRecoFreeResult, ImportStagingPackage, ImportValidationResult, PickedRecoFreeBackupFile } from './types/importResult.types';
-export type { ExportImportStores, ExportableUserDatStore, ExportableStateDatStore, ExportableProjectionsDatStore, ExportableLogsDatStore, ExportableDiaryStore, ExportableGratitudeStore, ExportableBackpackStore } from './services/exportImportStores.types';
+export type { ExportImportStores, ExportableUserDatStore, ExportableStateDatStore, ExportableProjectionsDatStore, ExportableLogsDatStore, ExportableDiaryStore, ExportableGratitudeStore, ExportableBackpackStore, ExportableDayStructureStore, ExportableAppPreferencesStore } from './services/exportImportStores.types';
 
 // Crypto
 export { encryptExportPayload, decryptExportEnvelope, deriveExportKeyBytes, generateExportSaltBytes, generateExportIvBytes, encodeBase64, decodeBase64, sha256Base64 } from './crypto/exportImportCrypto';

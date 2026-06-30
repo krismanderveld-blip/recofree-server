@@ -124,6 +124,16 @@ export async function replaceLocalDataFromStaging(input: {
   // Derived caches (includes VSP profile and hash)
   const derivedCaches = stagingPackage.shared?.derivedCaches ?? { backpackHash: null, extractedEntities: null, vspProfile: null, vspHash: null };
   await stores.derivedCacheStore.replaceAll(derivedCaches);
+
+  // Day structure (document, completion, bell-state, streaks-enabled)
+  if (stagingPackage.shared?.dayStructure) {
+    await stores.dayStructureStore.replaceAll(stagingPackage.shared.dayStructure);
+  }
+
+  // App preferences (language, country)
+  if (stagingPackage.shared?.appPreferences) {
+    await stores.appPreferencesStore.replaceAll(stagingPackage.shared.appPreferences);
+  }
 }
 
 // ─── Legacy Pre-Import Snapshot (kept for backward compatibility) ────────────

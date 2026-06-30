@@ -33,6 +33,8 @@ export interface ExportScopeMetadata {
   includesPersonaProjections: true;
   includesEmergencyContacts: true;
   includesDerivedCaches: true;
+  includesDayStructure: boolean;
+  includesAppPreferences: boolean;
 }
 
 export interface RecoFreeExportData {
@@ -67,6 +69,18 @@ export interface RecoFreeSharedExportBundle {
   };
   /** At-rest encryption key (base64). Included so import can restore data readability. */
   storageKeyBase64?: string | null;
+  /** Day structure data (document, completion, bell-state, streaks-enabled). */
+  dayStructure?: {
+    document: unknown | null;
+    completion: unknown | null;
+    bellState: string | null;
+    streaksEnabled: boolean | null;
+  } | null;
+  /** App preferences (language, country). */
+  appPreferences?: {
+    language: string | null;
+    country: string | null;
+  } | null;
 }
 
 export interface ExportPayloadIntegrity {

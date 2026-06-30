@@ -27,6 +27,16 @@ const EXTRACTED_ENTITIES_KEY = '@recofree_extracted_entities';
 const VSP_PROFILE_KEY = '@vsp_backpack_profile';
 const VSP_HASH_KEY = '@vsp_backpack_hash';
 
+// Day structure keys
+const DAYSTRUCTURE_DOCUMENT_KEY = '@recofree_daystructure_v1';
+const DAYSTRUCTURE_COMPLETION_KEY = '@recofree_daystructure_completion_v1';
+const DAYSTRUCTURE_BELL_STATE_KEY = '@recofree_daystructure_bell_state';
+const DAYSTRUCTURE_STREAKS_ENABLED_KEY = '@recofree_daystructure_streaks_enabled';
+
+// App preferences keys
+const LANGUAGE_KEY = '@recofree_language';
+const COUNTRY_KEY = '@recofree_country';
+
 // Memory store keys
 function getUserDatKey(persona: string) { return `recofree_memory/${persona}/user.dat`; }
 function getStateDatKey(persona: string) { return `recofree_memory/${persona}/state.dat`; }
@@ -308,6 +318,55 @@ function buildStoresAdapter(): ExportImportStores {
         ]);
       },
     },
+
+    // ─── Day Structure Store ────────────────────────────────────────────────────
+
+    dayStructureStore: {
+      async exportAll() {
+        // Document and completion are encrypted; bell-state and streaks are plain AsyncStorage
+        const [document, completion, bellState, streaksEnabled] = await Promise.all([
+          readJson(DAYSTRUCTURE_DOCUMENT_KEY),
+          readJson(DAYSTRUCTURE_COMPLETION_KEY),
+          (async () => { try { return await AsyncStorage.getItem(DAYSTRUCTURE_BELL_STATE_KEY); } catch { return null; } })(),
+          (async () => { try { const v = await AsyncStorage.getItem(DAYSTRUCTURE_STREAKS_ENABLED_KEY); return v === 'true' ? true : v === 'false' ? false : null; } catch { return null; } })(),
+        ]);
+        return { document: document ?? null, completion: completion ?? null, bellState: bellState ?? null, streaksEnabled: streaksEnabled ?? null };
+      },
+      async replaceAll(data) {
+        await Promise.all([
+          writeJson(DAYSTRUCTURE_DOCUMENT_KEY, data.document),
+          writeJson(DAYSTRUCTURE_COMPLETION_KEY, data.completion),
+          data.bellState != null
+            ? AsyncStorage.setItem(DAYSTRUCTURE_BELL_STATE_KEY, data.bellState)
+            : AsyncStorage.removeItem(DAYSTRUCTURE_BELL_STATE_KEY),
+          data.streaksEnabled != null
+            ? AsyncStorage.setItem(DAYSTRUCTURE_STREAKS_ENABLED_KEY, String(data.streaksEnabled))
+            : AsyncStorage.removeItem(DAYSTRUCTURE_STREAKS_ENABLED_KEY),
+        ]);
+      },
+    },
+
+    // ─── App Preferences Store ──────────────────────────────────────────────────
+
+    appPreferencesStore: {
+      async exportAll() {
+        const [language, country] = await Promise.all([
+          (async () => { try { return await AsyncStorage.getItem(LANGUAGE_KEY); } catch { return null; } })(),
+          (async () => { try { return await AsyncStorage.getItem(COUNTRY_KEY); } catch { return null; } })(),
+        ]);
+        return { language: language ?? null, country: country ?? null };
+      },
+      async replaceAll(data) {
+        await Promise.all([
+          data.language != null
+            ? AsyncStorage.setItem(LANGUAGE_KEY, data.language)
+            : AsyncStorage.removeItem(LANGUAGE_KEY),
+          data.country != null
+            ? AsyncStorage.setItem(COUNTRY_KEY, data.country)
+            : AsyncStorage.removeItem(COUNTRY_KEY),
+        ]);
+      },
+    },
   };
 }
 
@@ -347,6 +406,11 @@ export async function createSafePreImportSnapshot(): Promise<SafePreImportSnapsh
     ELIAS_PROJECTION_KEY, KIM_PROJECTION_KEY,
     EMERGENCY_CONTACTS_KEY, BACKPACK_HASH_KEY,
     EXTRACTED_ENTITIES_KEY, VSP_PROFILE_KEY, VSP_HASH_KEY,
+    // Day structure keys
+    DAYSTRUCTURE_DOCUMENT_KEY, DAYSTRUCTURE_COMPLETION_KEY,
+    DAYSTRUCTURE_BELL_STATE_KEY, DAYSTRUCTURE_STREAKS_ENABLED_KEY,
+    // App preferences keys
+    LANGUAGE_KEY, COUNTRY_KEY,
   ];
 
   const entries = await Promise.all(
