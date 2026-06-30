@@ -332,39 +332,108 @@ function adaptProjectionsDat(): GreetingProjectionsDatSnapshot {
 function adaptLogsDat(
   _lastSessionSummary?: SessionInitGreetingInput['lastSessionSummary'],
   allSessions?: import('@/lib/types/memory/logsDat.types').SessionLogSummary[],
-  _previousSessionMessages?: SessionInitGreetingInput['previousSessionMessages'],
+  previousSessionMessages?: SessionInitGreetingInput['previousSessionMessages'],
 ): GreetingLogsDatSnapshot {
   const result: GreetingLogsDatSnapshot = { lastSessionOpenLoops: [] };
 
-  // SIMPLE: Sort logs.dat sessions by endedAt descending, take the most recent one.
-  // Its compressedNarrative already contains the last messages from that session.
-  if (!allSessions || allSessions.length === 0) return result;
+  // Sort logs.dat sessions by endedAt descending, take the most recent one.
+  if (allSessions && allSessions.length > 0) {
+    const sorted = [...allSessions].sort((a, b) => {
+      const tA = a.endedAt || a.createdAt || '';
+      const tB = b.endedAt || b.createdAt || '';
+      return tB.localeCompare(tA);
+    });
 
-  const sorted = [...allSessions].sort((a, b) => {
-    const tA = a.endedAt || a.createdAt || '';
-    const tB = b.endedAt || b.createdAt || '';
-    return tB.localeCompare(tA);
-  });
+    const mostRecent = sorted[0];
+    const narrative = mostRecent.compressedNarrative || '';
 
-  const mostRecent = sorted[0];
-  result.latestLogDigest = mostRecent.compressedNarrative || undefined;
-  result.lastSessionOpenLoops = (mostRecent.openEndpoints ?? []).map(ep => ep.label);
-  result.lastSessionTopics = mostRecent.discussedTopics?.length ? mostRecent.discussedTopics : undefined;
-  result.lastSessionEmotionalArc = (mostRecent.emotionalThemes ?? []).map(t => t.label).join(', ') || undefined;
-  result.recentSessionDigests = [{
-    narrative: mostRecent.compressedNarrative || '',
-    topics: mostRecent.discussedTopics || [],
-    openEndpoints: (mostRecent.openEndpoints || []).map(ep => ep.label),
-    endedAt: mostRecent.endedAt || mostRecent.createdAt || '',
-  }];
+    // Detect if this is a rich GPT summary or just a poor live-entry.
+    // Live entries start with "Sessie-inhoud (N berichten):" — raw concatenation, not a real summary.
+    const isPoorLiveEntry = /^Sessie-inhoud \(\d+ berichten\):/.test(narrative)
+      || /^Sessie met \d+ berichten/.test(narrative);
 
-  // Derive previous session dominant zone from zoneTrace
-  if (mostRecent.zoneTrace && mostRecent.zoneTrace.length > 0) {
-    const zoneSorted = [...mostRecent.zoneTrace].sort((a, b) => b.count - a.count);
-    result.previousSessionZone = zoneSorted[0].zone;
+    if (!isPoorLiveEntry && narrative.length > 0) {
+      // Good GPT summary available — use it as primary source
+      result.latestLogDigest = narrative;
+      result.lastSessionOpenLoops = (mostRecent.openEndpoints ?? []).map(ep => ep.label);
+      result.lastSessionTopics = mostRecent.discussedTopics?.length ? mostRecent.discussedTopics : undefined;
+      result.lastSessionEmotionalArc = (mostRecent.emotionalThemes ?? []).map(t => t.label).join(', ') || undefined;
+      result.recentSessionDigests = [{
+        narrative,
+        topics: mostRecent.discussedTopics || [],
+        openEndpoints: (mostRecent.openEndpoints || []).map(ep => ep.label),
+        endedAt: mostRecent.endedAt || mostRecent.createdAt || '',
+      }];
+
+      // Derive previous session dominant zone from zoneTrace
+      if (mostRecent.zoneTrace && mostRecent.zoneTrace.length > 0) {
+        const zoneSorted = [...mostRecent.zoneTrace].sort((a, b) => b.count - a.count);
+        result.previousSessionZone = zoneSorted[0].zone;
+      }
+
+      return result;
+    }
+
+    // Poor live-entry: still extract zone if available, then fall through to fallback
+    if (mostRecent.zoneTrace && mostRecent.zoneTrace.length > 0) {
+      const zoneSorted = [...mostRecent.zoneTrace].sort((a, b) => b.count - a.count);
+      result.previousSessionZone = zoneSorted[0].zone;
+    }
+  }
+
+  // ── FALLBACK: Use previousSessionMessages when logs.dat is empty or only has a poor live-entry ──
+  if (previousSessionMessages && previousSessionMessages.length > 0) {
+    const fallbackNarrative = buildFallbackNarrativeFromMessages(previousSessionMessages);
+    result.latestLogDigest = fallbackNarrative;
+    result.recentSessionDigests = [{
+      narrative: fallbackNarrative,
+      topics: [],
+      openEndpoints: [],
+      endedAt: previousSessionMessages[previousSessionMessages.length - 1]?.timestamp || '',
+    }];
   }
 
   return result;
+}
+
+/**
+ * Build a usable narrative from raw previous session messages.
+ * Strips speaker prefixes and structural markers so the greeting engine
+ * can reference the content without seeing internal labels.
+ */
+function buildFallbackNarrativeFromMessages(
+  messages: Array<{ role: string; content: string; timestamp?: string }>,
+): string {
+  // Take user messages only — assistant messages are Elias/Kim's own words
+  const userMessages = messages
+    .filter(m => m.role === 'user' && m.content && m.content.trim().length > 0)
+    .map(m => stripSpeakerPrefixes(m.content.trim()));
+
+  if (userMessages.length === 0) {
+    // Fallback: use all messages if no user messages
+    const allContent = messages
+      .filter(m => m.content && m.content.trim().length > 0)
+      .map(m => stripSpeakerPrefixes(m.content.trim()));
+    return allContent.join(' ').slice(0, 800);
+  }
+
+  return userMessages.join(' ').slice(0, 800);
+}
+
+/**
+ * Strip speaker prefixes and structural labels from raw message content.
+ * Similar to stripRawLabels in buildGreetingSynthesisPrompt.ts.
+ */
+function stripSpeakerPrefixes(text: string): string {
+  let cleaned = text;
+  // Strip session labels
+  cleaned = cleaned.replace(/^(?:Laatste sessie|Sessie daarvoor|Eerdere sessie|Vorige sessie):\s*/gi, '');
+  // Strip speaker prefixes
+  cleaned = cleaned.replace(/(?:^|\n)\s*(?:elias|kim|kris|gebruiker|user):\s*/gi, (m) => m.includes('\n') ? '\n' : '');
+  // Strip "Sessie-inhoud (N berichten):" prefix
+  cleaned = cleaned.replace(/^Sessie-inhoud \(\d+ berichten\):\s*/i, '');
+  cleaned = cleaned.replace(/^Sessie met \d+ berichten.*?:\s*/i, '');
+  return cleaned.replace(/\n{2,}/g, '\n').trim();
 }
 
 function adaptDiaryMetadata(diaryEntries: DiaryEntry[]): GreetingDiaryMetadata | null {

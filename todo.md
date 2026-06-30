@@ -2156,3 +2156,4 @@
 - [x] Fix: home-card.tsx uses DayStructureTimeAdapter.getCurrentLocalTime() instead of raw new Date() for current-block detection
 - [x] Fix: day-structure-service.ts auto-reschedules OS notifications after every schema save (saveWeekSchema + saveDayBlocks) if bell is enabled
 - [x] Fix: use-day-structure-observer verifies OS-scheduled notifications exist on foreground + mount, reschedules if missing (handles force-close, reboot, iOS drops)
+- [x] Fix: Activate previousSessionMessages fallback in adaptLogsDat when logs.dat is empty or only has a poor live-entry
