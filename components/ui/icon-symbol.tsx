@@ -35,6 +35,9 @@ const MAPPING = {
   "calendar": "calendar-today",
   "doc.on.doc.fill": "content-copy",
   "arrow.counterclockwise": "replay",
+  "line.3.horizontal": "drag-handle",
+  "arrow.up": "arrow-upward",
+  "arrow.down": "arrow-downward",
 } as IconMapping;
 
 export function IconSymbol({

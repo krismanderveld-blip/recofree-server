@@ -891,5 +891,8 @@
   "dayStructure.editor.copy_confirm": "Copy",
   "dayStructure.editor.restart_wizard_title": "Restart wizard",
   "dayStructure.editor.restart_wizard_message": "This will delete your current day structure and restart the wizard. Are you sure?",
-  "dayStructure.editor.restart_wizard_confirm": "Restart"
+  "dayStructure.editor.restart_wizard_confirm": "Restart",
+  "dayStructure.editor.copy_only_activities": "Copy activities only (keep wake/sleep times)",
+  "dayStructure.editor.undo_message": "Days copied",
+  "dayStructure.editor.undo_button": "Undo"
 }

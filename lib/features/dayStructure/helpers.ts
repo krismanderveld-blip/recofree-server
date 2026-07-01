@@ -141,6 +141,34 @@ export function copyDayToWeekdays(
   return newSchema;
 }
 
+/**
+ * Copy only activity blocks from one day to specific weekdays.
+ * Keeps existing wake/sleep blocks on target days intact.
+ */
+export function copyActivitiesToWeekdays(
+  weekSchema: WeekSchema,
+  sourceDay: Weekday,
+  targetDays: Weekday[],
+): WeekSchema {
+  const sourceBlocks = weekSchema[sourceDay]?.blocks ?? [];
+  const activityBlocks = sourceBlocks.filter((b) => b.kind === 'activity');
+  const newSchema = { ...weekSchema };
+
+  for (const weekday of targetDays) {
+    if (weekday === sourceDay) continue;
+    const existingBlocks = newSchema[weekday]?.blocks ?? [];
+    // Keep wake and sleep, replace activities
+    const nonActivityBlocks = existingBlocks.filter((b) => b.kind !== 'activity');
+    const copiedActivities = copyDayBlocks(activityBlocks);
+    const allBlocks = [...nonActivityBlocks, ...copiedActivities]
+      .sort((a, b) => a.orderIndex - b.orderIndex)
+      .map((block, index) => ({ ...block, orderIndex: index }));
+    newSchema[weekday] = { weekday, blocks: allBlocks };
+  }
+
+  return newSchema;
+}
+
 // ─── Block Manipulation ─────────────────────────────────────────────────────
 
 /**

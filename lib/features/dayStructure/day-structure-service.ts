@@ -23,6 +23,7 @@ import {
   createBlock,
   copyDayToAllWeekdays,
   copyDayToWeekdays,
+  copyActivitiesToWeekdays,
   insertBlock,
   removeBlock,
   updateBlock,
@@ -258,6 +259,37 @@ export async function copyToSpecificDays(
   const doc = await loadOrCreateDocument();
   const newSchema = copyDayToWeekdays(doc.weekSchema, sourceDay, targetDays);
   return saveWeekSchema(newSchema);
+}
+
+/**
+ * Copy only activity blocks from one day to specific weekdays.
+ * Keeps existing wake/sleep blocks on target days intact.
+ */
+export async function copyActivitiesToSpecificDays(
+  sourceDay: Weekday,
+  targetDays: Weekday[],
+): Promise<{ success: boolean; errors: string[] }> {
+  const doc = await loadOrCreateDocument();
+  const newSchema = copyActivitiesToWeekdays(doc.weekSchema, sourceDay, targetDays);
+  return saveWeekSchema(newSchema);
+}
+
+/**
+ * Get a snapshot of the current week schema (for undo purposes).
+ */
+export async function getWeekSchemaSnapshot(): Promise<WeekSchema> {
+  const doc = await loadOrCreateDocument();
+  // Deep clone to prevent mutation
+  return JSON.parse(JSON.stringify(doc.weekSchema));
+}
+
+/**
+ * Restore a previously saved week schema snapshot (undo).
+ */
+export async function restoreWeekSchemaSnapshot(
+  snapshot: WeekSchema,
+): Promise<{ success: boolean; errors: string[] }> {
+  return saveWeekSchema(snapshot);
 }
 
 // ─── Query Helpers ──────────────────────────────────────────────────────────

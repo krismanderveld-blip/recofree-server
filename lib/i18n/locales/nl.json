@@ -891,5 +891,8 @@
   "dayStructure.editor.copy_confirm": "Kopiëren",
   "dayStructure.editor.restart_wizard_title": "Wizard opnieuw starten",
   "dayStructure.editor.restart_wizard_message": "Dit verwijdert je huidige dagstructuur en start de wizard opnieuw. Weet je het zeker?",
-  "dayStructure.editor.restart_wizard_confirm": "Opnieuw starten"
+  "dayStructure.editor.restart_wizard_confirm": "Opnieuw starten",
+  "dayStructure.editor.copy_only_activities": "Alleen activiteiten kopiëren (behoud opstaan/slaaptijd)",
+  "dayStructure.editor.undo_message": "Dagen gekopieerd",
+  "dayStructure.editor.undo_button": "Ongedaan maken"
 }

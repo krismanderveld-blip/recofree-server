@@ -2174,3 +2174,6 @@
 - [x] Fix: dagStructure document/completion export was silently null — added EXTRA_ENCRYPTED_KEYS to isKeyEncrypted() so readJson/writeJson/readJsonForSnapshot all route through readEncrypted/writeEncrypted for @recofree_daystructure_v1 and @recofree_daystructure_completion_v1
 - [x] Feature: Copy-day functionality in dagstructuur editor (copy blocks from one day to other days after wizard is closed)
 - [x] Feature: Restart wizard button in dagstructuur editor (re-run wizard flow from scratch)
+- [x] Feature: Copy-only-activities option in dagstructuur editor (skip wake/sleep when copying to other days)
+- [x] Feature: Drag-and-drop block reordering in dagstructuur editor (up/down arrows per block)
+- [x] Feature: Undo after copy in dagstructuur editor (revert to previous state if wrong days were overwritten)

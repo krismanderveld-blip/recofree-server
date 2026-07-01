@@ -35,8 +35,13 @@ import {
   addBlock,
   isConfigured,
   copyToSpecificDays,
+  copyActivitiesToSpecificDays,
   resetDayStructure,
+  moveBlock,
+  getWeekSchemaSnapshot,
+  restoreWeekSchemaSnapshot,
 } from '@/lib/features/dayStructure/day-structure-service';
+import type { WeekSchema } from '@/lib/features/dayStructure/types';
 import { DayStructureTimeAdapter } from '@/lib/features/dayStructure/time-adapter';
 
 export default function DayStructureEditorScreen() {
@@ -64,6 +69,10 @@ export default function DayStructureEditorScreen() {
   // Copy-day state
   const [showCopyPanel, setShowCopyPanel] = useState(false);
   const [copyTargetDays, setCopyTargetDays] = useState<Weekday[]>([]);
+  const [copyOnlyActivities, setCopyOnlyActivities] = useState(false);
+  // Undo state
+  const [undoSnapshot, setUndoSnapshot] = useState<WeekSchema | null>(null);
+  const [showUndoBanner, setShowUndoBanner] = useState(false);
 
   const loadBlocks = useCallback(async () => {
     const dayBlocks = await getDayBlocks(selectedDay);
@@ -205,6 +214,7 @@ export default function DayStructureEditorScreen() {
 
   const handleShowCopyPanel = () => {
     setCopyTargetDays([]);
+    setCopyOnlyActivities(false);
     setShowCopyPanel(true);
     setShowAddForm(false);
     setEditingBlock(null);
@@ -229,19 +239,46 @@ export default function DayStructureEditorScreen() {
 
   const handleCopyConfirm = async () => {
     if (copyTargetDays.length === 0) return;
-    const result = await copyToSpecificDays(selectedDay, copyTargetDays);
+    // Save snapshot for undo
+    const snapshot = await getWeekSchemaSnapshot();
+    const result = copyOnlyActivities
+      ? await copyActivitiesToSpecificDays(selectedDay, copyTargetDays)
+      : await copyToSpecificDays(selectedDay, copyTargetDays);
     if (result.success) {
       if (Platform.OS !== 'web') {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       }
+      setUndoSnapshot(snapshot);
+      setShowUndoBanner(true);
       setShowCopyPanel(false);
       setCopyTargetDays([]);
+      loadBlocks();
     } else {
       Alert.alert(
         t('dayStructure.wizard.copy_week.error_title'),
         result.errors.join('\n') || t('dayStructure.wizard.copy_week.error_generic')
       );
     }
+  };
+
+  // ─── Undo ─────────────────────────────────────────────────────────────────
+
+  const handleUndo = async () => {
+    if (!undoSnapshot) return;
+    const result = await restoreWeekSchemaSnapshot(undoSnapshot);
+    if (result.success) {
+      if (Platform.OS !== 'web') {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      }
+      setUndoSnapshot(null);
+      setShowUndoBanner(false);
+      loadBlocks();
+    }
+  };
+
+  const dismissUndo = () => {
+    setUndoSnapshot(null);
+    setShowUndoBanner(false);
   };
 
   // ─── Restart Wizard ───────────────────────────────────────────────────────
@@ -272,7 +309,29 @@ export default function DayStructureEditorScreen() {
     return t(`dayStructure.weekdays.${day}`);
   };
 
-  const renderBlock = ({ item }: { item: TimeBlock }) => {
+  const handleMoveUp = async (index: number) => {
+    if (index <= 0) return;
+    const result = await moveBlock(selectedDay, index, index - 1);
+    if (result.success) {
+      if (Platform.OS !== 'web') {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      }
+      loadBlocks();
+    }
+  };
+
+  const handleMoveDown = async (index: number) => {
+    if (index >= blocks.length - 1) return;
+    const result = await moveBlock(selectedDay, index, index + 1);
+    if (result.success) {
+      if (Platform.OS !== 'web') {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      }
+      loadBlocks();
+    }
+  };
+
+  const renderBlock = ({ item, index }: { item: TimeBlock; index: number }) => {
     const isEditing = editingBlock === item.id;
     const isPointInTime = item.kind === 'wake' || item.kind === 'sleep';
 
@@ -381,6 +440,25 @@ export default function DayStructureEditorScreen() {
 
     return (
       <View style={[styles.blockCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+        {/* Reorder arrows */}
+        <View style={{ marginRight: 10, justifyContent: 'center', gap: 2 }}>
+          <TouchableOpacity
+            onPress={() => handleMoveUp(index)}
+            activeOpacity={0.7}
+            disabled={index === 0}
+            style={{ opacity: index === 0 ? 0.25 : 1 }}
+          >
+            <IconSymbol name="arrow.up" size={16} color={colors.muted} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => handleMoveDown(index)}
+            activeOpacity={0.7}
+            disabled={index === blocks.length - 1}
+            style={{ opacity: index === blocks.length - 1 ? 0.25 : 1 }}
+          >
+            <IconSymbol name="arrow.down" size={16} color={colors.muted} />
+          </TouchableOpacity>
+        </View>
         <View style={{ flex: 1 }}>
           <Text style={{ fontSize: 15, fontWeight: '600', color: colors.foreground }}>
             {item.label || t(`dayStructure.blockKind.${item.kind}`)}
@@ -546,6 +624,27 @@ export default function DayStructureEditorScreen() {
               })}
             </View>
 
+            {/* Activities-only toggle */}
+            <TouchableOpacity
+              onPress={() => setCopyOnlyActivities(!copyOnlyActivities)}
+              style={{ flexDirection: 'row', alignItems: 'center', marginTop: 12, gap: 8 }}
+              activeOpacity={0.7}
+            >
+              <View style={{
+                width: 20, height: 20, borderRadius: 4, borderWidth: 1.5,
+                borderColor: copyOnlyActivities ? colors.primary : colors.border,
+                backgroundColor: copyOnlyActivities ? colors.primary : 'transparent',
+                alignItems: 'center', justifyContent: 'center',
+              }}>
+                {copyOnlyActivities && (
+                  <IconSymbol name="checkmark" size={14} color="#fff" />
+                )}
+              </View>
+              <Text style={{ fontSize: 13, color: colors.foreground }}>
+                {t('dayStructure.editor.copy_only_activities')}
+              </Text>
+            </TouchableOpacity>
+
             {/* Confirm / Cancel */}
             <View style={{ flexDirection: 'row', gap: 12, marginTop: 16 }}>
               <TouchableOpacity
@@ -688,6 +787,23 @@ export default function DayStructureEditorScreen() {
           </View>
         )}
 
+        {/* Undo banner */}
+        {showUndoBanner && undoSnapshot && (
+          <View style={[styles.undoBanner, { backgroundColor: colors.foreground }]}>
+            <Text style={{ color: colors.background, fontSize: 13, fontWeight: '500', flex: 1 }}>
+              {t('dayStructure.editor.undo_message')}
+            </Text>
+            <TouchableOpacity onPress={handleUndo} activeOpacity={0.7} style={{ marginRight: 12 }}>
+              <Text style={{ color: colors.primary, fontWeight: '600', fontSize: 13 }}>
+                {t('dayStructure.editor.undo_button')}
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={dismissUndo} activeOpacity={0.7}>
+              <IconSymbol name="xmark.circle.fill" size={18} color={colors.background} />
+            </TouchableOpacity>
+          </View>
+        )}
+
         {/* Bottom action buttons */}
         {!showAddForm && !editingBlock && !showSleepPicker && !showCopyPanel && (
           <View style={{ gap: 8, marginBottom: 12 }}>
@@ -793,5 +909,13 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 8,
     borderWidth: 1,
+  },
+  undoBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 10,
+    marginBottom: 8,
   },
 });

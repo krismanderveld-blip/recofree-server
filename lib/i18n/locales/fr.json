@@ -891,5 +891,8 @@
   "dayStructure.editor.copy_confirm": "Copier",
   "dayStructure.editor.restart_wizard_title": "Redémarrer l'assistant",
   "dayStructure.editor.restart_wizard_message": "Cela supprimera votre structure de jour actuelle et redémarrera l'assistant. Êtes-vous sûr ?",
-  "dayStructure.editor.restart_wizard_confirm": "Redémarrer"
+  "dayStructure.editor.restart_wizard_confirm": "Redémarrer",
+  "dayStructure.editor.copy_only_activities": "Copier uniquement les activités (garder réveil/coucher)",
+  "dayStructure.editor.undo_message": "Jours copiés",
+  "dayStructure.editor.undo_button": "Annuler"
 }
