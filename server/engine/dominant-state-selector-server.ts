@@ -292,6 +292,13 @@ function detectShortModuleKeyword(message: string): string | null {
 
 // ─── Main Selector ──────────────────────────────────────────────
 
+export interface NanoInterpretSuggestion {
+  suggestedModule: string;
+  intent: string;
+  themes: string[];
+  translatedNL: string;
+}
+
 export interface DominantStateSelectorInput {
   buffer: BufferState;
   stateAnalysis: { riskLevel: string; priorityModules: string[] };
@@ -299,6 +306,8 @@ export interface DominantStateSelectorInput {
   userType: UserType;
   triggerPatterns: TriggerPattern[];
   vspContext?: { vspLevel: string | null; whatHelps: string | null; userMessage: string };
+  /** Pre-call nano interpretation result — replaces keyword matching when present */
+  nanoInterpret?: NanoInterpretSuggestion;
 }
 
 export function selectDominantStateServer(input: DominantStateSelectorInput): DominantState {
@@ -383,14 +392,19 @@ export function selectDominantStateServer(input: DominantStateSelectorInput): Do
   }
 
   // ── PRIORITY 2: URGENT LIVE TRIGGER FROM BUFFER ──
+  // When nano-interpret is available AND zone is urgent, use its suggestion instead of keyword matching
   if (buffer.currentTriggerGuess && buffer.currentZoneScore >= 50) {
-    const module = getTriggerModule(buffer.currentTriggerGuess, userType);
+    const module = input.nanoInterpret
+      ? input.nanoInterpret.suggestedModule
+      : getTriggerModule(buffer.currentTriggerGuess, userType);
     return {
       dominantModule: module,
       dominantTrigger: buffer.currentTriggerGuess,
       dominantDirection: buffer.responseDirection,
       dominantTone: determineTone(buffer.currentZoneColor, buffer.currentIntent, buffer.responseDirection),
-      selectionReason: `Live trigger "${buffer.currentTriggerGuess}" with zone score ${buffer.currentZoneScore}`,
+      selectionReason: input.nanoInterpret
+        ? `NanoInterpret: "${input.nanoInterpret.suggestedModule}" (trigger: "${buffer.currentTriggerGuess}", themes: ${input.nanoInterpret.themes.join(', ')})`
+        : `Live trigger "${buffer.currentTriggerGuess}" with zone score ${buffer.currentZoneScore}`,
       sourceLayer: 'live_trigger',
       riskScore: buffer.currentZoneScore,
     };
@@ -416,13 +430,17 @@ export function selectDominantStateServer(input: DominantStateSelectorInput): Do
   if (significantRepeats.length > 0) {
     const topRepeat = significantRepeats.sort((a, b) => b.count - a.count)[0];
     const trigger = topRepeat.signal;
-    const module = getTriggerModule(trigger, userType);
+    const module = input.nanoInterpret
+      ? input.nanoInterpret.suggestedModule
+      : getTriggerModule(trigger, userType);
     return {
       dominantModule: module,
       dominantTrigger: trigger,
       dominantDirection: buffer.responseDirection,
       dominantTone: determineTone(buffer.currentZoneColor, buffer.currentIntent, buffer.responseDirection),
-      selectionReason: `Session pattern: "${trigger}" repeated ${topRepeat.count}x in session`,
+      selectionReason: input.nanoInterpret
+        ? `NanoInterpret: "${input.nanoInterpret.suggestedModule}" (session pattern: "${trigger}" x${topRepeat.count})`
+        : `Session pattern: "${trigger}" repeated ${topRepeat.count}x in session`,
       sourceLayer: 'session_pattern',
       riskScore: buffer.currentZoneScore,
     };
@@ -432,19 +450,36 @@ export function selectDominantStateServer(input: DominantStateSelectorInput): Do
   const strongPatterns = triggerPatterns.filter(p => p.frequency >= 3);
   if (strongPatterns.length > 0 && buffer.currentZoneScore >= 30) {
     const topPattern = strongPatterns.sort((a, b) => b.frequency - a.frequency)[0];
-    const module = getTriggerModule(topPattern.trigger, userType);
+    const module = input.nanoInterpret
+      ? input.nanoInterpret.suggestedModule
+      : getTriggerModule(topPattern.trigger, userType);
     return {
       dominantModule: module,
       dominantTrigger: topPattern.trigger,
       dominantDirection: buffer.responseDirection,
       dominantTone: determineTone(buffer.currentZoneColor, buffer.currentIntent, buffer.responseDirection),
-      selectionReason: `User.dat pattern: "${topPattern.trigger}" (${topPattern.frequency} historical occurrences)`,
+      selectionReason: input.nanoInterpret
+        ? `NanoInterpret: "${input.nanoInterpret.suggestedModule}" (user.dat pattern: "${topPattern.trigger}" x${topPattern.frequency})`
+        : `User.dat pattern: "${topPattern.trigger}" (${topPattern.frequency} historical occurrences)`,
       sourceLayer: 'userdat_pattern',
       riskScore: buffer.currentZoneScore,
     };
   }
 
-  // ── PRIORITY 5.5: SHORT MODULE KEYWORD DETECTION (Elias only) ──
+  // ── PRIORITY 5.5: NANO-INTERPRET SEMANTIC MODULE (replaces keyword detection) ──
+  // When nano-interpret is available, it replaces both getTriggerModule AND detectShortModuleKeyword
+  if (input.nanoInterpret && input.nanoInterpret.intent !== 'greeting') {
+    return {
+      dominantModule: input.nanoInterpret.suggestedModule,
+      dominantTrigger: buffer.currentTriggerGuess || input.nanoInterpret.themes[0] || '',
+      dominantDirection: buffer.responseDirection,
+      dominantTone: determineTone(buffer.currentZoneColor, buffer.currentIntent, buffer.responseDirection),
+      selectionReason: `NanoInterpret semantic: "${input.nanoInterpret.suggestedModule}" (intent: ${input.nanoInterpret.intent}, themes: ${input.nanoInterpret.themes.join(', ')})`,
+      sourceLayer: 'short_module_keyword',
+      riskScore: buffer.currentZoneScore,
+    };
+  }
+  // Fallback: legacy keyword detection (only runs if nano-interpret failed/absent)
   if (userType === 'elias' && buffer.recentMessages && buffer.recentMessages.length > 0) {
     const lastUserMsg = buffer.recentMessages
       .filter((m: { role: string }) => m.role === 'user')
@@ -457,7 +492,7 @@ export function selectDominantStateServer(input: DominantStateSelectorInput): Do
           dominantTrigger: buffer.currentTriggerGuess || '',
           dominantDirection: buffer.responseDirection,
           dominantTone: determineTone(buffer.currentZoneColor, buffer.currentIntent, buffer.responseDirection),
-          selectionReason: `Short module keyword match: ${shortModuleId}`,
+          selectionReason: `Short module keyword match (legacy fallback): ${shortModuleId}`,
           sourceLayer: 'short_module_keyword',
           riskScore: buffer.currentZoneScore,
         };

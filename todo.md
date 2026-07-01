@@ -2193,3 +2193,10 @@
 - [x] Add server-mode trace block (buildTraceBlock) with real memory data
 - [x] Extend ServerEngineCallResult with signalDetections from server response
 - [x] Verify 0 new TypeScript errors introduced (142 pre-existing remain)
+
+## Pre-call Interpretation Layer (gpt-4.1-nano)
+- [x] Build nano-interpret.ts module (server/engine/)
+- [x] Integrate pre-call into engine-process.ts after crisis check, before module selection
+- [x] Replace keyword matching in dominant-state-selector with suggestedModule from pre-call
+- [x] Implement fallback: 1 retry, then user-facing error (no silent keyword fallback)
+- [x] Verify TypeScript compiles with 0 new errors (142 pre-existing, 0 in new files)

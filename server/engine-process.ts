@@ -47,6 +47,8 @@ import { searchPastReferencesServer } from './engine/past-reference-server';
 import type { PastReferenceSearchResult } from './engine/past-reference-server';
 import { selectDominantStateServer } from './engine/dominant-state-selector-server';
 import type { DominantState } from './engine/dominant-state-selector-server';
+import { runNanoInterpret } from './engine/nano-interpret';
+import type { NanoInterpretResult } from './engine/nano-interpret';
 
 // ─── Zod Schemas ──────────────────────────────────────────────────────
 
@@ -426,7 +428,28 @@ export async function processEngineRequest(input: EngineProcessInput): Promise<E
     input.previousZoneScore <= 80 ? 'RED' : 'PURPLE') as ZoneColor;
   const midSessionReEval = checkMidSessionReEval(previousZoneColor, buffer.currentZoneColor, buffer);
 
-  // ── P0: DominantStateSelector (before signal engine + GPT) ──────
+  // ── P0a: Nano-Interpret pre-call (semantic module selection) ─────
+  // Runs gpt-4.1-nano to interpret the user message semantically.
+  // Result feeds into DominantStateSelector to replace keyword matching.
+  // On failure: throws to caller (1 retry built into runNanoInterpret).
+  let nanoInterpretResult: NanoInterpretResult | null = null;
+  const isCrisis = stateAnalysis.riskLevel === 'critical' || buffer.currentIntent === 'crisis' || buffer.currentZoneColor === 'PURPLE';
+  // Skip nano-interpret for crisis (crisis module is hardcoded, no need for interpretation)
+  if (!isCrisis) {
+    try {
+      nanoInterpretResult = await runNanoInterpret({
+        userMessage: input.message,
+        persona: input.userType as 'elias' | 'kim',
+      });
+      console.log(`[NanoInterpret] ${input.userType}: module=${nanoInterpretResult.suggestedModule}, intent=${nanoInterpretResult.intent}, themes=[${nanoInterpretResult.themes.join(', ')}]`);
+    } catch (err: any) {
+      // No silent fallback — propagate error to user
+      console.error('[NanoInterpret] Failed after retry:', err.message);
+      throw new Error(`[NanoInterpret] Pre-call interpretation failed: ${err.message}`);
+    }
+  }
+
+  // ── P0b: DominantStateSelector (before signal engine + GPT) ──────
   const dominantState: DominantState = selectDominantStateServer({
     buffer,
     stateAnalysis: {
@@ -444,6 +467,12 @@ export async function processEngineRequest(input: EngineProcessInput): Promise<E
       vspLevel: input.vspSection.level,
       whatHelps: input.vspSection.whatHelps || null,
       userMessage: input.message,
+    } : undefined,
+    nanoInterpret: nanoInterpretResult ? {
+      suggestedModule: nanoInterpretResult.suggestedModule,
+      intent: nanoInterpretResult.intent,
+      themes: nanoInterpretResult.themes,
+      translatedNL: nanoInterpretResult.translatedNL,
     } : undefined,
   });
 
