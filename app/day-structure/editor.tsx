@@ -60,6 +60,7 @@ export default function DayStructureEditorScreen() {
   const [editStartTime, setEditStartTime] = useState('09:00');
   const [editEndTime, setEditEndTime] = useState('10:00');
   const [editTimeField, setEditTimeField] = useState<'start' | 'end' | null>(null);
+  const [editNotificationProfile, setEditNotificationProfile] = useState<'alarm' | 'push' | 'none'>('push');
   const [showAddForm, setShowAddForm] = useState(false);
   const [newLabel, setNewLabel] = useState('');
   const [newStartTime, setNewStartTime] = useState('09:00');
@@ -141,6 +142,7 @@ export default function DayStructureEditorScreen() {
     setEditLabel(block.label);
     setEditStartTime(block.startTime);
     setEditEndTime(block.endTime);
+    setEditNotificationProfile(block.notificationProfile);
     setEditTimeField(null);
     setShowAddForm(false);
     setShowSleepPicker(false);
@@ -153,6 +155,7 @@ export default function DayStructureEditorScreen() {
       label: editLabel,
       startTime: editStartTime,
       endTime: editEndTime,
+      notificationProfile: editNotificationProfile,
     });
     if (result.success) {
       if (Platform.OS !== 'web') {
@@ -478,6 +481,39 @@ export default function DayStructureEditorScreen() {
               )}
             </View>
           )}
+
+          {/* Notification profile selector */}
+          <View style={{ marginTop: 12 }}>
+            <Text style={{ fontSize: 12, color: colors.muted, marginBottom: 6 }}>
+              {t('dayStructure.editor.notification_sound')}
+            </Text>
+            <View style={{ flexDirection: 'row', gap: 8 }}>
+              {([['alarm', '🔊', t('dayStructure.editor.sound_alarm')], ['push', '🔔', t('dayStructure.editor.sound_default')], ['none', '🔕', t('dayStructure.editor.sound_none')]] as const).map(([profile, icon, label]) => (
+                <TouchableOpacity
+                  key={profile}
+                  onPress={() => {
+                    setEditNotificationProfile(profile);
+                    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  }}
+                  style={[{
+                    flex: 1,
+                    paddingVertical: 8,
+                    borderRadius: 8,
+                    alignItems: 'center',
+                    borderWidth: 1.5,
+                    borderColor: editNotificationProfile === profile ? colors.primary : colors.border,
+                    backgroundColor: editNotificationProfile === profile ? colors.primary + '10' : 'transparent',
+                  }]}
+                  activeOpacity={0.7}
+                >
+                  <Text style={{ fontSize: 16, marginBottom: 2 }}>{icon}</Text>
+                  <Text style={{ fontSize: 10, color: editNotificationProfile === profile ? colors.primary : colors.muted, fontWeight: editNotificationProfile === profile ? '600' : '400' }}>
+                    {label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
 
           {/* Save/Cancel buttons */}
           <View style={{ flexDirection: 'row', gap: 12, marginTop: 12 }}>

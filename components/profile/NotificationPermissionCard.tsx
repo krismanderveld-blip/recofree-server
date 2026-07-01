@@ -33,6 +33,7 @@ export function NotificationPermissionCard() {
   const [permissionStatus, setPermissionStatus] = useState<'granted' | 'denied' | 'undetermined'>('undetermined');
   const [bellState, setBellState] = useState<BellState>('not_configured');
   const [hasStructure, setHasStructure] = useState(false);
+  const [testSent, setTestSent] = useState(false);
 
   const loadState = useCallback(async () => {
     const status = await getPermissionStatus();
@@ -210,6 +211,46 @@ export function NotificationPermissionCard() {
           >
             <Text style={{ color: dc.danger, fontWeight: '600', fontSize: 14 }}>
               {t('profile.notifications.open_settings')}
+            </Text>
+          </Pressable>
+        )}
+
+        {/* Test notification button */}
+        {permissionStatus === 'granted' && bellState === 'enabled' && (
+          <Pressable
+            onPress={async () => {
+              await Notifications.scheduleNotificationAsync({
+                content: {
+                  title: t('profile.notifications.test_title'),
+                  body: t('profile.notifications.test_body'),
+                  sound: true,
+                },
+                trigger: { type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds: 3 },
+              });
+              setTestSent(true);
+              if (Platform.OS !== 'web') {
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+              }
+              setTimeout(() => setTestSent(false), 5000);
+            }}
+            style={({ pressed }) => [{
+              backgroundColor: dc.primarySoft,
+              borderRadius: 10,
+              paddingVertical: 10,
+              paddingHorizontal: 16,
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 8,
+              borderWidth: 1,
+              borderColor: dc.primary + '30',
+              opacity: pressed ? 0.85 : 1,
+              transform: [{ scale: pressed ? 0.97 : 1 }],
+            }]}
+          >
+            <Text style={{ fontSize: 14 }}>{testSent ? '✅' : '🔔'}</Text>
+            <Text style={{ color: dc.primary, fontWeight: '600', fontSize: 14 }}>
+              {testSent ? t('profile.notifications.test_sent') : t('profile.notifications.test_button')}
             </Text>
           </Pressable>
         )}

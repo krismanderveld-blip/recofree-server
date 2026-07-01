@@ -912,14 +912,22 @@
       "denied_title": "Notifications blocked",
       "denied_message": "Notifications are blocked by your system. Go to Settings to allow them.",
       "toggle_on": "Turn on notifications",
-      "toggle_off": "Turn off notifications"
+      "toggle_off": "Turn off notifications",
+      "test_button": "Send test notification",
+      "test_sent": "Test sent! (arrives in 3 sec)",
+      "test_title": "Test notification",
+      "test_body": "If you see this, your notifications are working!"
     }
   },
   "dayStructure": {
     "editor": {
       "copy_from_button": "Copy from another day",
       "copy_from_title": "Copy from another day",
-      "copy_from_description": "Choose a source day to copy blocks to {day}"
+      "copy_from_description": "Choose a source day to copy blocks to {day}",
+      "notification_sound": "Notification sound",
+      "sound_alarm": "Alarm",
+      "sound_default": "Default",
+      "sound_none": "Silent"
     }
   }
 }

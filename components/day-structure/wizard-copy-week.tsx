@@ -19,7 +19,7 @@ import { saveWeekSchema } from '@/lib/features/dayStructure/day-structure-servic
 import {
   scheduleAllNotifications,
 } from '@/lib/features/dayStructure/notification-service';
-import { enableBell } from '@/lib/features/dayStructure/permission-service';
+import { enableBell, requestPermission } from '@/lib/features/dayStructure/permission-service';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 
 const WEEKDAY_GROUP: Weekday[] = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'];
@@ -107,9 +107,13 @@ export function WizardCopyWeek() {
         return;
       }
 
-      // Enable notifications
-      await enableBell();
-      await scheduleAllNotifications(weekSchema);
+      // Request notification permission (shows OS popup if not yet asked)
+      const permResult = await requestPermission();
+      if (permResult === 'granted') {
+        // Enable notifications
+        await enableBell();
+        await scheduleAllNotifications(weekSchema);
+      }
 
       // Navigate back to home
       router.replace('/(tabs)');

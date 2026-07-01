@@ -912,14 +912,22 @@
       "denied_title": "Notifications bloquées",
       "denied_message": "Les notifications sont bloquées par votre système. Allez dans Réglages pour les autoriser.",
       "toggle_on": "Activer les notifications",
-      "toggle_off": "Désactiver les notifications"
+      "toggle_off": "Désactiver les notifications",
+      "test_button": "Envoyer une notification test",
+      "test_sent": "Test envoyé ! (arrive dans 3 sec)",
+      "test_title": "Notification test",
+      "test_body": "Si vous voyez ceci, vos notifications fonctionnent !"
     }
   },
   "dayStructure": {
     "editor": {
       "copy_from_button": "Copier d'un autre jour",
       "copy_from_title": "Copier d'un autre jour",
-      "copy_from_description": "Choisissez un jour source pour copier les blocs vers {day}"
+      "copy_from_description": "Choisissez un jour source pour copier les blocs vers {day}",
+      "notification_sound": "Son de notification",
+      "sound_alarm": "Alarme",
+      "sound_default": "Défaut",
+      "sound_none": "Silencieux"
     }
   }
 }

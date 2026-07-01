@@ -912,14 +912,22 @@
       "denied_title": "Meldingen geblokkeerd",
       "denied_message": "Meldingen zijn geblokkeerd door je systeem. Ga naar Instellingen om ze toe te staan.",
       "toggle_on": "Meldingen aanzetten",
-      "toggle_off": "Meldingen uitzetten"
+      "toggle_off": "Meldingen uitzetten",
+      "test_button": "Test melding versturen",
+      "test_sent": "Test verstuurd! (komt over 3 sec)",
+      "test_title": "Test melding",
+      "test_body": "Als je dit ziet, werken je meldingen correct!"
     }
   },
   "dayStructure": {
     "editor": {
       "copy_from_button": "Kopieer van andere dag",
       "copy_from_title": "Kopieer van andere dag",
-      "copy_from_description": "Kies een brondag om de blokken naar {day} te kopiëren"
+      "copy_from_description": "Kies een brondag om de blokken naar {day} te kopiëren",
+      "notification_sound": "Meldingsgeluid",
+      "sound_alarm": "Alarm",
+      "sound_default": "Standaard",
+      "sound_none": "Stil"
     }
   }
 }

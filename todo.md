@@ -2181,3 +2181,6 @@
 - [x] Feature: Visual indicator (green dot) on day-tabs showing which days already have a structure configured
 - [x] Fix: Notifications already use expo-notifications WEEKLY scheduled triggers (fire in background/closed) — confirmed working correctly
 - [x] Feature: Permissions request flow/card in profile where user is prompted for notification permission with explanation
+- [x] Feature: Auto permission prompt after wizard completion (ask notification permission immediately after finishing wizard)
+- [x] Feature: Test notification button in the notification permission card (send a test notification to verify delivery)
+- [x] Feature: Notification sound setting per block type (silent/default/alarm) in the editor
