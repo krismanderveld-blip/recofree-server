@@ -1,5 +1,5 @@
 /**
- * nano-interpret.ts — Pre-call interpretation layer (gpt-5.4-nano)
+ * nano-interpret.ts — Pre-call interpretation layer (gpt-5-nano)
  *
  * Runs AFTER crisis/safety check, BEFORE module selection.
  * The nano ONLY interprets meaning (themes + intent + translation).
@@ -437,7 +437,7 @@ export async function runNanoInterpret(
           'Authorization': `Bearer ${apiKey}`,
         },
         body: JSON.stringify({
-          model: 'gpt-5.4-nano',
+          model: 'gpt-5-nano',
           messages: [
             { role: 'system', content: systemPrompt },
             { role: 'user', content: userPrompt },
