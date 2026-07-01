@@ -33,6 +33,8 @@ const MAPPING = {
   "bell.slash.fill": "notifications-off",
   "pencil": "edit",
   "calendar": "calendar-today",
+  "doc.on.doc.fill": "content-copy",
+  "arrow.counterclockwise": "replay",
 } as IconMapping;
 
 export function IconSymbol({

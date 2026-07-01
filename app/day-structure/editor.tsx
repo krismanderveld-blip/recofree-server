@@ -4,6 +4,7 @@
  * Shows the current week's day structure with tabs per weekday.
  * Allows editing block times/labels, deleting blocks, and adding new ones.
  * Includes an "End of day (sleep)" button to add/edit the sleep block.
+ * Includes "Copy to other days" and "Restart wizard" functionality.
  */
 
 import React, { useCallback, useEffect, useState } from 'react';
@@ -16,6 +17,7 @@ import {
   ScrollView,
   TextInput,
   Platform,
+  Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ScreenContainer } from '@/components/screen-container';
@@ -32,6 +34,8 @@ import {
   editBlock,
   addBlock,
   isConfigured,
+  copyToSpecificDays,
+  resetDayStructure,
 } from '@/lib/features/dayStructure/day-structure-service';
 import { DayStructureTimeAdapter } from '@/lib/features/dayStructure/time-adapter';
 
@@ -57,6 +61,9 @@ export default function DayStructureEditorScreen() {
   const [showSleepPicker, setShowSleepPicker] = useState(false);
   const [sleepTime, setSleepTime] = useState('22:00');
   const [configured, setConfigured] = useState(false);
+  // Copy-day state
+  const [showCopyPanel, setShowCopyPanel] = useState(false);
+  const [copyTargetDays, setCopyTargetDays] = useState<Weekday[]>([]);
 
   const loadBlocks = useCallback(async () => {
     const dayBlocks = await getDayBlocks(selectedDay);
@@ -111,6 +118,7 @@ export default function DayStructureEditorScreen() {
     setEditTimeField(null);
     setShowAddForm(false);
     setShowSleepPicker(false);
+    setShowCopyPanel(false);
   };
 
   const handleSaveEdit = async () => {
@@ -157,6 +165,7 @@ export default function DayStructureEditorScreen() {
     setShowAddForm(true);
     setEditingBlock(null);
     setShowSleepPicker(false);
+    setShowCopyPanel(false);
   };
 
   const handleSaveSleep = async () => {
@@ -192,8 +201,75 @@ export default function DayStructureEditorScreen() {
     }
   };
 
+  // ─── Copy Day ─────────────────────────────────────────────────────────────
+
+  const handleShowCopyPanel = () => {
+    setCopyTargetDays([]);
+    setShowCopyPanel(true);
+    setShowAddForm(false);
+    setEditingBlock(null);
+    setShowSleepPicker(false);
+  };
+
+  const toggleCopyTarget = (day: Weekday) => {
+    setCopyTargetDays((prev) =>
+      prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]
+    );
+  };
+
+  const handleSelectWeekdays = () => {
+    const weekdays: Weekday[] = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'];
+    setCopyTargetDays(weekdays.filter((d) => d !== selectedDay));
+  };
+
+  const handleSelectWeekend = () => {
+    const weekend: Weekday[] = ['saturday', 'sunday'];
+    setCopyTargetDays(weekend.filter((d) => d !== selectedDay));
+  };
+
+  const handleCopyConfirm = async () => {
+    if (copyTargetDays.length === 0) return;
+    const result = await copyToSpecificDays(selectedDay, copyTargetDays);
+    if (result.success) {
+      if (Platform.OS !== 'web') {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      }
+      setShowCopyPanel(false);
+      setCopyTargetDays([]);
+    } else {
+      Alert.alert(
+        t('dayStructure.wizard.copy_week.error_title'),
+        result.errors.join('\n') || t('dayStructure.wizard.copy_week.error_generic')
+      );
+    }
+  };
+
+  // ─── Restart Wizard ───────────────────────────────────────────────────────
+
+  const handleRestartWizard = () => {
+    Alert.alert(
+      t('dayStructure.editor.restart_wizard_title'),
+      t('dayStructure.editor.restart_wizard_message'),
+      [
+        { text: t('dayStructure.editor.cancel'), style: 'cancel' },
+        {
+          text: t('dayStructure.editor.restart_wizard_confirm'),
+          style: 'destructive',
+          onPress: async () => {
+            await resetDayStructure();
+            router.replace('/day-structure/wizard');
+          },
+        },
+      ]
+    );
+  };
+
   const getDayLabel = (day: Weekday): string => {
     return t(`dayStructure.weekdays.${day}_short`);
+  };
+
+  const getDayLabelFull = (day: Weekday): string => {
+    return t(`dayStructure.weekdays.${day}`);
   };
 
   const renderBlock = ({ item }: { item: TimeBlock }) => {
@@ -361,6 +437,10 @@ export default function DayStructureEditorScreen() {
           <Text style={{ fontSize: 20, fontWeight: '700', color: colors.foreground, flex: 1 }}>
             {t('dayStructure.editor.title')}
           </Text>
+          {/* Restart wizard button in header */}
+          <TouchableOpacity onPress={handleRestartWizard} activeOpacity={0.7} style={{ padding: 4 }}>
+            <IconSymbol name="arrow.counterclockwise" size={20} color={colors.muted} />
+          </TouchableOpacity>
         </View>
 
         {/* Weekday tabs */}
@@ -368,7 +448,7 @@ export default function DayStructureEditorScreen() {
           {WEEKDAYS.map((day) => (
             <TouchableOpacity
               key={day}
-              onPress={() => { setSelectedDay(day); setEditingBlock(null); setShowAddForm(false); setShowSleepPicker(false); }}
+              onPress={() => { setSelectedDay(day); setEditingBlock(null); setShowAddForm(false); setShowSleepPicker(false); setShowCopyPanel(false); }}
               style={[
                 styles.dayTab,
                 {
@@ -404,6 +484,95 @@ export default function DayStructureEditorScreen() {
             </View>
           }
         />
+
+        {/* Copy day panel */}
+        {showCopyPanel && (
+          <View style={[styles.addForm, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <Text style={{ fontSize: 15, fontWeight: '600', color: colors.foreground, marginBottom: 4 }}>
+              {t('dayStructure.editor.copy_from', { day: getDayLabelFull(selectedDay) })}
+            </Text>
+            <Text style={{ fontSize: 13, color: colors.muted, marginBottom: 12 }}>
+              {t('dayStructure.editor.copy_description')}
+            </Text>
+
+            {/* Quick-select buttons */}
+            <View style={{ flexDirection: 'row', gap: 8, marginBottom: 12 }}>
+              <TouchableOpacity
+                onPress={handleSelectWeekdays}
+                style={[styles.quickSelectBtn, { borderColor: colors.border }]}
+                activeOpacity={0.7}
+              >
+                <Text style={{ fontSize: 12, color: colors.primary, fontWeight: '500' }}>
+                  {t('dayStructure.wizard.copy_week.weekdays_label')}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={handleSelectWeekend}
+                style={[styles.quickSelectBtn, { borderColor: colors.border }]}
+                activeOpacity={0.7}
+              >
+                <Text style={{ fontSize: 12, color: colors.primary, fontWeight: '500' }}>
+                  {t('dayStructure.wizard.copy_week.weekend_label')}
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Day checkboxes */}
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+              {WEEKDAYS.filter((d) => d !== selectedDay).map((day) => {
+                const isSelected = copyTargetDays.includes(day);
+                return (
+                  <TouchableOpacity
+                    key={day}
+                    onPress={() => toggleCopyTarget(day)}
+                    style={[
+                      styles.copyDayChip,
+                      {
+                        backgroundColor: isSelected ? colors.primary : colors.surface,
+                        borderColor: isSelected ? colors.primary : colors.border,
+                      },
+                    ]}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={{
+                      fontSize: 13,
+                      fontWeight: '500',
+                      color: isSelected ? '#fff' : colors.foreground,
+                    }}>
+                      {getDayLabel(day)}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+
+            {/* Confirm / Cancel */}
+            <View style={{ flexDirection: 'row', gap: 12, marginTop: 16 }}>
+              <TouchableOpacity
+                onPress={() => setShowCopyPanel(false)}
+                style={[styles.actionBtn, { borderColor: colors.border }]}
+                activeOpacity={0.7}
+              >
+                <Text style={{ color: colors.muted, fontWeight: '500' }}>
+                  {t('dayStructure.editor.cancel')}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={handleCopyConfirm}
+                style={[styles.actionBtn, {
+                  backgroundColor: copyTargetDays.length > 0 ? colors.primary : colors.border,
+                  borderColor: copyTargetDays.length > 0 ? colors.primary : colors.border,
+                }]}
+                activeOpacity={0.7}
+                disabled={copyTargetDays.length === 0}
+              >
+                <Text style={{ color: '#fff', fontWeight: '600' }}>
+                  {t('dayStructure.editor.copy_confirm')}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
 
         {/* Add block form */}
         {showAddForm && (
@@ -520,7 +689,7 @@ export default function DayStructureEditorScreen() {
         )}
 
         {/* Bottom action buttons */}
-        {!showAddForm && !editingBlock && !showSleepPicker && (
+        {!showAddForm && !editingBlock && !showSleepPicker && !showCopyPanel && (
           <View style={{ gap: 8, marginBottom: 12 }}>
             {/* Add activity button */}
             <TouchableOpacity
@@ -534,9 +703,21 @@ export default function DayStructureEditorScreen() {
               </Text>
             </TouchableOpacity>
 
+            {/* Copy day button */}
+            <TouchableOpacity
+              onPress={handleShowCopyPanel}
+              style={[styles.floatingAdd, { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }]}
+              activeOpacity={0.8}
+            >
+              <IconSymbol name="doc.on.doc.fill" size={20} color={colors.primary} />
+              <Text style={{ color: colors.primary, fontWeight: '600', marginLeft: 8 }}>
+                {t('dayStructure.editor.copy_day_button')}
+              </Text>
+            </TouchableOpacity>
+
             {/* End of day / sleep button */}
             <TouchableOpacity
-              onPress={() => { setShowSleepPicker(true); setShowAddForm(false); setEditingBlock(null); }}
+              onPress={() => { setShowSleepPicker(true); setShowAddForm(false); setEditingBlock(null); setShowCopyPanel(false); }}
               style={[styles.floatingAdd, { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }]}
               activeOpacity={0.8}
             >
@@ -600,5 +781,17 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 14,
     borderRadius: 12,
+  },
+  quickSelectBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
+    borderWidth: 1,
+  },
+  copyDayChip: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 8,
+    borderWidth: 1,
   },
 });

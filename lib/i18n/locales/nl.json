@@ -870,7 +870,7 @@
   "dayStructure.home_card.completed": "afgerond",
   "dayStructure.home_card.mark_done": "Afvinken",
   "dayStructure.home_card.all_done": "Alles afgerond!",
-  "dayStructure.home_card.streak_icon": "\ud83d\udd25",
+  "dayStructure.home_card.streak_icon": "🔥",
   "dayStructure.home_card.streak_days": "dagen",
   "dayStructure.wizard.activities.start_time": "Starttijd",
   "dayStructure.wizard.activities.end_time": "Eindtijd",
@@ -884,5 +884,12 @@
   "dayStructure.later.body": "Je kunt je dagplanning altijd later instellen. Kom gerust terug wanneer je er klaar voor bent.",
   "dayStructure.later.open_now": "Toch nu openen",
   "dayStructure.streaks.toggle_on": "Streaks aan",
-  "dayStructure.streaks.toggle_off": "Streaks uit"
+  "dayStructure.streaks.toggle_off": "Streaks uit",
+  "dayStructure.editor.copy_day_button": "Kopieer naar andere dagen",
+  "dayStructure.editor.copy_from": "Kopieer van {day}",
+  "dayStructure.editor.copy_description": "Selecteer de dagen waarnaar je deze indeling wilt kopiëren.",
+  "dayStructure.editor.copy_confirm": "Kopiëren",
+  "dayStructure.editor.restart_wizard_title": "Wizard opnieuw starten",
+  "dayStructure.editor.restart_wizard_message": "Dit verwijdert je huidige dagstructuur en start de wizard opnieuw. Weet je het zeker?",
+  "dayStructure.editor.restart_wizard_confirm": "Opnieuw starten"
 }

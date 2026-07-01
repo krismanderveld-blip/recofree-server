@@ -870,7 +870,7 @@
   "dayStructure.home_card.completed": "completed",
   "dayStructure.home_card.mark_done": "Mark done",
   "dayStructure.home_card.all_done": "All done!",
-  "dayStructure.home_card.streak_icon": "\ud83d\udd25",
+  "dayStructure.home_card.streak_icon": "🔥",
   "dayStructure.home_card.streak_days": "days",
   "dayStructure.wizard.activities.start_time": "Start time",
   "dayStructure.wizard.activities.end_time": "End time",
@@ -884,5 +884,12 @@
   "dayStructure.later.body": "You can always set up your day plan later. Come back whenever you're ready.",
   "dayStructure.later.open_now": "Open now anyway",
   "dayStructure.streaks.toggle_on": "Streaks on",
-  "dayStructure.streaks.toggle_off": "Streaks off"
+  "dayStructure.streaks.toggle_off": "Streaks off",
+  "dayStructure.editor.copy_day_button": "Copy to other days",
+  "dayStructure.editor.copy_from": "Copy from {day}",
+  "dayStructure.editor.copy_description": "Select the days you want to copy this schedule to.",
+  "dayStructure.editor.copy_confirm": "Copy",
+  "dayStructure.editor.restart_wizard_title": "Restart wizard",
+  "dayStructure.editor.restart_wizard_message": "This will delete your current day structure and restart the wizard. Are you sure?",
+  "dayStructure.editor.restart_wizard_confirm": "Restart"
 }

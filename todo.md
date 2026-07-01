@@ -2172,3 +2172,5 @@
 - [x] Fix: Prompt explicitly forbids literal user quotes — must extract THEME and rephrase in own words
 - [x] Fix: Added FOUT/GOED examples in prompt to demonstrate correct vs incorrect greeting phrasing
 - [x] Fix: dagStructure document/completion export was silently null — added EXTRA_ENCRYPTED_KEYS to isKeyEncrypted() so readJson/writeJson/readJsonForSnapshot all route through readEncrypted/writeEncrypted for @recofree_daystructure_v1 and @recofree_daystructure_completion_v1
+- [x] Feature: Copy-day functionality in dagstructuur editor (copy blocks from one day to other days after wizard is closed)
+- [x] Feature: Restart wizard button in dagstructuur editor (re-run wizard flow from scratch)

@@ -870,7 +870,7 @@
   "dayStructure.home_card.completed": "terminé",
   "dayStructure.home_card.mark_done": "Marquer comme fait",
   "dayStructure.home_card.all_done": "Tout terminé !",
-  "dayStructure.home_card.streak_icon": "\ud83d\udd25",
+  "dayStructure.home_card.streak_icon": "🔥",
   "dayStructure.home_card.streak_days": "jours",
   "dayStructure.wizard.activities.start_time": "Heure de début",
   "dayStructure.wizard.activities.end_time": "Heure de fin",
@@ -884,5 +884,12 @@
   "dayStructure.later.body": "Vous pouvez toujours configurer votre planning plus tard. Revenez quand vous êtes prêt.",
   "dayStructure.later.open_now": "Ouvrir quand même",
   "dayStructure.streaks.toggle_on": "Séries activées",
-  "dayStructure.streaks.toggle_off": "Séries désactivées"
+  "dayStructure.streaks.toggle_off": "Séries désactivées",
+  "dayStructure.editor.copy_day_button": "Copier vers d'autres jours",
+  "dayStructure.editor.copy_from": "Copier de {day}",
+  "dayStructure.editor.copy_description": "Sélectionnez les jours vers lesquels copier cette planification.",
+  "dayStructure.editor.copy_confirm": "Copier",
+  "dayStructure.editor.restart_wizard_title": "Redémarrer l'assistant",
+  "dayStructure.editor.restart_wizard_message": "Cela supprimera votre structure de jour actuelle et redémarrera l'assistant. Êtes-vous sûr ?",
+  "dayStructure.editor.restart_wizard_confirm": "Redémarrer"
 }
