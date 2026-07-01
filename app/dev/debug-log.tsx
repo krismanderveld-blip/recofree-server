@@ -470,6 +470,46 @@ export default function DebugLogScreen() {
               )}
             </Section>
 
+            <Section title="Memory Write-Back (per turn)">
+              {(() => {
+                const mwbEvents = events.filter((e: any) => e.type === 'memory_write_back');
+                const lastMwb = mwbEvents.length > 0 ? mwbEvents[mwbEvents.length - 1] : null;
+                if (!lastMwb) return <Row label="Status" value="Geen write-back events (nog geen bericht verwerkt)" />;
+                const fields = Array.isArray(lastMwb.data?.changedFields) ? (lastMwb.data.changedFields as string[]) : [];
+                const userFields = fields.filter(f => f.startsWith('user.'));
+                const stateFields = fields.filter(f => f.startsWith('state.'));
+                const projFields = fields.filter(f => f.startsWith('proj'));
+                return (
+                  <>
+                    <Row label="Patches" value={`${lastMwb.data?.patchCount ?? 0} patches applied`} />
+                    <Row label="→ user.dat" value={userFields.length > 0 ? userFields.join(', ') : '[geen]'} />
+                    <Row label="→ state.dat" value={stateFields.length > 0 ? stateFields.join(', ') : '[geen]'} />
+                    <Row label="→ projections.dat" value={projFields.length > 0 ? projFields.join(', ') : '[geen]'} />
+                    <Row label="Totaal gewijzigd" value={`${fields.length} velden`} />
+                    {mwbEvents.length > 1 && (
+                      <Row label="Historisch" value={`${mwbEvents.length} write-backs deze sessie`} />
+                    )}
+                  </>
+                );
+              })()}
+            </Section>
+
+            <Section title="logs.dat (per-turn live write)">
+              {(() => {
+                const logEvents = events.filter((e: any) => e.type === 'memory_logsdat_turn_write');
+                const lastLog = logEvents.length > 0 ? logEvents[logEvents.length - 1] : null;
+                if (!lastLog) return <Row label="Status" value="Geen per-turn logs.dat writes (nog geen bericht)" />;
+                return (
+                  <>
+                    <Row label="Laatste write" value={lastLog.data?.success ? '\u2713 OK' : '\u2717 FAILED'} />
+                    <Row label="Berichten" value={`${lastLog.data?.messageCount ?? '?'} in buffer`} />
+                    <Row label="Topics" value={`${lastLog.data?.topicCount ?? 0} gedetecteerd`} />
+                    <Row label="Totaal writes" value={`${logEvents.length} deze sessie`} />
+                  </>
+                );
+              })()}
+            </Section>
+
             <Section title="sessionAnalyses / logs.dat">
               {liveState.sessionAnalyses.length === 0 ? (
                 <Row label="Entries" value="0 entries (leeg)" />
@@ -636,6 +676,15 @@ function formatEventDataCompact(event: { type: string; data: Record<string, unkn
       return `level=${d.level} risk=${d.riskScore} src=${d.source ?? '?'}`;
     case 'model_selected':
       return `${d.model} (${d.reason ?? '?'})`;
+    case 'memory_write_back': {
+      const fields = Array.isArray(d.changedFields) ? (d.changedFields as string[]) : [];
+      const userF = fields.filter(f => (f as string).startsWith('user.'));
+      const stateF = fields.filter(f => (f as string).startsWith('state.'));
+      const projF = fields.filter(f => (f as string).startsWith('proj'));
+      return `patches=${d.patchCount ?? 0} | user.dat=[${userF.join(',')}] state.dat=[${stateF.join(',')}] proj.dat=[${projF.join(',')}]`;
+    }
+    case 'memory_logsdat_turn_write':
+      return `logs.dat: ${d.success ? '\u2713' : '\u2717'} msgs=${d.messageCount ?? '?'} topics=${d.topicCount ?? 0}`;
     default:
       return JSON.stringify(d).slice(0, 120);
   }

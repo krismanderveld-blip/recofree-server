@@ -2215,3 +2215,13 @@
 - [x] Update ai-chat.ts ChatRequestInput and MESSAGE INTERPRETATION prompt block
 - [x] Hoist nanoModuleResolution outside try block for proper scoping
 - [x] Verify 0 new TypeScript errors (142 pre-existing unchanged)
+
+## M21-M85 Theme Extension + Debug Improvements
+- [x] Extend Elias theme vocabulary to 343 tags covering M05-M85 (from short-module-routing.ts)
+- [x] Extend Kim theme vocabulary to 96 unique modules (M21-M85 + PAR01 + FIN01 + ROUW-K01 + ISOL-K01)
+- [x] Add Memory Write-Back (per turn) section to debug-log.tsx live tab
+- [x] Add logs.dat (per-turn live write) section to debug-log.tsx live tab
+- [x] Add memory_logsdat_turn_write DebugEventType
+- [x] Add logDebugEvent calls for per-turn logs.dat write (success + failure paths)
+- [x] Add memory_write_back + memory_logsdat_turn_write formatters to event renderer
+- [x] Verify 0 new TypeScript errors (142 pre-existing unchanged)

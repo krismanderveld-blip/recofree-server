@@ -975,9 +975,21 @@ function ChatScreenInner() {
               outputTokenEstimate: 0,
             };
             await stores.logsDatStore.upsertCurrentSession(persona, liveSummary as any, bundle.context.timestampIso);
+            logDebugEvent('memory_logsdat_turn_write', {
+              success: true,
+              messageCount: currentBuffer.compactMessages.length,
+              topicCount: topics.length,
+              persona,
+              sessionId: currentBuffer.sessionId,
+            });
           }
         } catch (incrErr) {
           console.warn('[LiveLogsDat] Write failed (non-critical):', incrErr);
+          logDebugEvent('memory_logsdat_turn_write', {
+            success: false,
+            error: String(incrErr),
+            persona,
+          });
         }
 
         // Debug log
