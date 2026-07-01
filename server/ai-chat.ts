@@ -317,6 +317,14 @@ interface ChatRequestInput {
 
   /** Day structure context (current block info for AI awareness) */
   dayStructureContext?: string | null;
+
+  /** Nano-interpret pre-call result (semantic message interpretation from gpt-4.1-nano) */
+  nanoInterpret?: {
+    translatedNL: string;
+    intent: string;
+    themes: string[];
+    suggestedModule: string;
+  } | null;
 }
 
 // ─── Server-side Session Cache ───────────────────────────────────
@@ -1942,6 +1950,13 @@ LIVE SESSION CONTEXT (real-time analysis):
 - Live intent: ${input.bufferSnapshot.liveIntent ?? 'none'}
 - Dominant state: ${input.bufferSnapshot.dominantState ?? 'none'}
 Use this live context to attune your tone and depth to the CURRENT moment.` : ''}
+${input.nanoInterpret ? `
+MESSAGE INTERPRETATION (pre-analyzed by system):
+- Dutch translation: ${input.nanoInterpret.translatedNL}
+- Detected intent: ${input.nanoInterpret.intent}
+- Themes: ${input.nanoInterpret.themes.join(', ')}
+- Matched module: ${input.nanoInterpret.suggestedModule}
+Use the Dutch translation as your reference for the user's meaning. The themes guide your response focus. Do NOT repeat the translation back to the user — respond naturally in the conversation language.` : ''}
 ${input.dayStructureContext ? `
 DAY STRUCTURE (user's planned daily schedule for today):
 ${input.dayStructureContext}

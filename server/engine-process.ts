@@ -619,6 +619,13 @@ export async function processEngineRequest(input: EngineProcessInput): Promise<E
         deviceTimeContext: input.deviceTimeContext,
         // Day structure context (user's daily schedule)
         dayStructureContext: (input as any).dayStructureContext || null,
+        // Nano-interpret pre-call result (semantic message interpretation)
+        nanoInterpret: nanoInterpretResult ? {
+          translatedNL: nanoInterpretResult.translatedNL,
+          intent: nanoInterpretResult.intent,
+          themes: nanoInterpretResult.themes,
+          suggestedModule: nanoInterpretResult.suggestedModule,
+        } : null,
         // Session start data
         backpack: input.backpack || null,
         userDat: input.userDat || null,

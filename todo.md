@@ -2200,3 +2200,5 @@
 - [x] Replace keyword matching in dominant-state-selector with suggestedModule from pre-call
 - [x] Implement fallback: 1 retry, then user-facing error (no silent keyword fallback)
 - [x] Verify TypeScript compiles with 0 new errors (142 pre-existing, 0 in new files)
+- [x] Add module validation (hallucination guard) in nano-interpret.ts
+- [x] Route translatedNL + nanoInterpret into GPT system prompt (MESSAGE INTERPRETATION block)

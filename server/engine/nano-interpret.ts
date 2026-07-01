@@ -86,6 +86,59 @@ If the message is a simple greeting or small talk, use the default module.
 Output format:
 {"translatedNL":"...","intent":"...","themes":["..."],"suggestedModule":"..."}`;
 
+// ─── Valid Module Sets (for validation) ───────────────────────────
+
+const VALID_ELIAS_MODULES = new Set([
+  // Core modules
+  'E01', 'E02', 'E03', 'E04', 'E05', 'E06', 'E07', 'E08',
+  // Extended modules
+  'WILSKRACHT01', 'AUTOPILOT01',
+  // Short modules M05-M85
+  'M05', 'M06', 'M07', 'M08', 'M09', 'M13', 'M16', 'M17', 'M19', 'M20',
+  'M21', 'M22', 'M23', 'M25', 'M26', 'M27', 'M29', 'M30',
+  'M33', 'M34', 'M35', 'M40', 'M41', 'M42', 'M43', 'M44',
+  'M45', 'M46', 'M47', 'M49', 'M50', 'M51', 'M52', 'M53',
+  'M54', 'M55', 'M56', 'M57', 'M58', 'M59', 'M60', 'M61',
+  'M62', 'M63', 'M64', 'M65', 'M66', 'M67', 'M68', 'M69',
+  'M70', 'M71', 'M72', 'M73', 'M74', 'M75', 'M76', 'M77',
+  'M78', 'M79', 'M80', 'M81', 'M82', 'M83', 'M84', 'M85',
+  // Advanced Elias modules
+  'VERGV01', 'IGH01', 'AGC01', 'HWK01', 'FALE01', 'VERG01',
+  'ROUW01', 'IDEN01', 'ZINK01', 'TERV01', 'MI02', 'SLAAP01',
+  'BEDR01', 'VETR01', 'GASL01', 'PAAL01', 'BLIK01', 'ONTK01',
+  'IKST01', 'COEX01', 'STO01', 'SW01',
+  // Default
+  'default',
+]);
+
+const VALID_KIM_MODULES = new Set([
+  // Core modules
+  'K01', 'K02', 'K03', 'K04', 'K05', 'K06',
+  // Extended modules
+  'KST01', 'KDL01', 'KBR01', 'KSC01',
+  // Advanced Kim modules
+  'CDP01', 'RNW01', 'PAR01', 'FIN01', 'ISO01',
+  'HOOP-K01', 'SCHAAM-K01', 'ROUW-K01', 'ISOL-K01',
+  'HERV-K01', 'NAHERV-K01', 'CRISIS-K01',
+  'GEVAAR-K01', 'KIND-K01', 'ROL-K01',
+  'VETR02-K', 'LEUGEN-K01',
+  'PAAL-K01', 'BEHE-K01', 'AANP-K01', 'CODEP-K01',
+  // Default
+  'default', 'K_CRISIS',
+]);
+
+/**
+ * Validate that suggestedModule is a known module ID for the given persona.
+ * Returns the module if valid, or the default module if invalid (hallucination guard).
+ */
+function validateModule(module: string, persona: 'elias' | 'kim'): string {
+  const validSet = persona === 'elias' ? VALID_ELIAS_MODULES : VALID_KIM_MODULES;
+  if (validSet.has(module)) return module;
+  // Log the hallucinated module for monitoring
+  console.warn(`[NanoInterpret] Invalid module "${module}" for ${persona} — falling back to default`);
+  return persona === 'elias' ? 'E02' : 'K01';
+}
+
 // ─── Main Function ────────────────────────────────────────────────
 
 export async function runNanoInterpret(
@@ -152,6 +205,9 @@ export async function runNanoInterpret(
       if (!Array.isArray(parsed.themes)) {
         parsed.themes = [];
       }
+
+      // Validate suggestedModule against known module set (hallucination guard)
+      parsed.suggestedModule = validateModule(parsed.suggestedModule, input.persona);
 
       return parsed;
     } catch (error: any) {
