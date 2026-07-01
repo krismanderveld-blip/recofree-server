@@ -49,6 +49,12 @@ export interface ServerEngineCallResult {
   error: string | null;
   /** Whether client fallback was used */
   usedClientFallback: boolean;
+  /** Signal engine detections from server (fears/hopes/triggers) for memory write-back */
+  signalDetections: {
+    fears: Array<{ keyword: string; confidence: number }>;
+    hopes: Array<{ keyword: string; confidence: number }>;
+    triggers: Array<{ keyword: string; confidence: number }>;
+  } | null;
 }
 
 export interface ServerEngineCallInput {
@@ -182,6 +188,13 @@ export async function callServerEngine(input: ServerEngineCallInput): Promise<Se
       latencyMs,
       error: null,
       usedClientFallback: false,
+      signalDetections: result.signalEngine?.signals
+        ? {
+            fears: (result.signalEngine.signals.fears ?? []).map((f: any) => ({ keyword: f.keyword, confidence: f.confidence })),
+            hopes: (result.signalEngine.signals.hopes ?? []).map((h: any) => ({ keyword: h.keyword, confidence: h.confidence })),
+            triggers: (result.signalEngine.signals.triggers ?? []).map((t: any) => ({ keyword: t.keyword, confidence: t.confidence })),
+          }
+        : null,
     };
   } catch (err: any) {
     const latencyMs = Date.now() - startTime;
@@ -194,6 +207,7 @@ export async function callServerEngine(input: ServerEngineCallInput): Promise<Se
       latencyMs,
       error: err.message || 'Unknown server engine error',
       usedClientFallback: false,
+      signalDetections: null,
     };
   }
 }

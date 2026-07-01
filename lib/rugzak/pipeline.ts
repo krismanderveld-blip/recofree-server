@@ -321,6 +321,7 @@ import { detectAutopilot01 } from '../../src/modules/elias/AUTOPILOT01/detector'
 import type { EliasPsychoEducationRuntimeInput, EliasPsychoEducationDetectionResult } from '../../src/types/eliasPsychoEducation.types';
 import type { PsychoEducationActivation } from '../types/memory/memoryCore.types';
 import { searchPastReferences } from '../pipeline/memory/pastReferenceSearch';
+import { buildDetectionBundle, runMemoryWriteBack, getSessionLifecycleManager, type PipelineResultForMemory } from '../pipeline/memory/memoryIntegration';
 import { LocalDeviceTimeService } from "@/lib/core/time";
 import { isServerEngineActive, callServerEngine, type ServerEngineCallInput } from '@/lib/migration';
 import { getApiBaseUrl } from '@/constants/oauth';
@@ -703,6 +704,148 @@ export async function processMessage(
 
         const crisisLevel = serverResult.patches?.safety?.crisisLevel ?? 0;
         const showEmergency = serverResult.patches?.safety?.showEmergency ?? false;
+
+        // ── MEMORY WRITE-BACK (per-turn) ──────────────────────────────────
+        // Routes server detections (fears/hopes/triggers/zone/module) to
+        // user.dat / state.dat / projections.dat via the existing write-back system.
+        let memoryWriteBackChangedFields: string[] = [];
+        try {
+          const lifecycleMgr = getSessionLifecycleManager();
+          const memStores = lifecycleMgr.getStores();
+          const persona = backpack.userType as 'elias' | 'kim';
+          const memUserDat = await memStores.userDatStore.load(persona, 'local_user');
+          const memStateDat = await memStores.stateDatStore.load(persona);
+          const memProjectionsDat = await memStores.projectionsDatStore.load(persona);
+          const memBuffer = memStores.sessionBufferStore.getBuffer();
+
+          // Build PipelineResultForMemory from server detections
+          const pipelineResultForMemory: PipelineResultForMemory = {
+            userMessage,
+            persona,
+            sessionId: serverResult.sessionId || `session_${Date.now()}`,
+            localUserId: 'local_user',
+            candidateSignals: serverResult.signalDetections
+              ? {
+                  fears: serverResult.signalDetections.fears.map(f => ({ label: f.keyword, confidence: f.confidence })),
+                  hopes: serverResult.signalDetections.hopes.map(h => ({ label: h.keyword, confidence: h.confidence })),
+                  goals: [],
+                  triggers: serverResult.signalDetections.triggers.map(t => ({ label: t.keyword, confidence: t.confidence, triggerType: 'craving' })),
+                }
+              : null,
+            schemaModeResult: null, // Not available server-side (schema/mode engine is client-only)
+            bufferSnapshot: serverResult.patches?.sessionState
+              ? { zoneColor: serverResult.patches.sessionState.zoneColor, zoneScore: serverResult.patches.sessionState.zoneScore }
+              : null,
+            activeModule: serverResult.patches?.sessionState?.dominantModule
+              ? { moduleId: serverResult.patches.sessionState.dominantModule, confidence: 0.9, responseMode: serverResult.patches.sessionState.regulationAction || 'reflect' }
+              : null,
+            moodSliders: moodSliders as Record<string, number> | null,
+          };
+
+          // Build detection bundle and run write-back
+          const detectionBundle = buildDetectionBundle(pipelineResultForMemory);
+          const currentSnapshot = { userDat: memUserDat, stateDat: memStateDat, projectionsDat: memProjectionsDat, sessionBuffer: memBuffer };
+          const writeBackOutput = runMemoryWriteBack(detectionBundle, currentSnapshot);
+
+          // Persist updated stores
+          if (writeBackOutput.commitResult.writtenPatches.length > 0) {
+            await memStores.userDatStore.save(writeBackOutput.updatedStores.userDat);
+            await memStores.stateDatStore.save(writeBackOutput.updatedStores.stateDat);
+            await memStores.projectionsDatStore.save(writeBackOutput.updatedStores.projectionsDat);
+          }
+
+          // Capture changed fields for debug output
+          memoryWriteBackChangedFields = writeBackOutput.commitResult.changedFields;
+
+          // Append turn snapshot to session buffer
+          if (memBuffer) {
+            memStores.sessionBufferStore.appendTurnSnapshot(memBuffer, {
+              turnId: serverResult.turnId || `turn_${Date.now()}`,
+              timestampIso: nowIso,
+              inputHash: userMessage.slice(0, 20),
+              outputHash: (serverResult.responseText || '').slice(0, 20),
+              detectedCounts: {
+                fears: detectionBundle.fears.length,
+                hopes: detectionBundle.hopes.length,
+                triggers: detectionBundle.triggers.length,
+                schemaTendencies: detectionBundle.schemaTendencies.length,
+                modeTendencies: detectionBundle.modeTendencies.length,
+              },
+              changedFields: memoryWriteBackChangedFields,
+            });
+          }
+
+          console.log(`[Pipeline/Server] Memory write-back: ${writeBackOutput.commitResult.writtenPatches.length} patches written, fields=[${memoryWriteBackChangedFields.join(', ')}]`);
+        } catch (memErr) {
+          // Non-critical: pipeline continues even if write-back fails
+          console.warn('[Pipeline/Server] Memory write-back failed (non-critical):', memErr);
+        }
+
+        // ── Build trace block for server mode ──────────────────────────────
+        const serverTraceData: import('@/lib/debug/engine-trace').EngineTraceInput = {
+          messageIndex: sessionBuffer?.messageCount ?? 1,
+          timestamp: nowIso,
+          userMessage,
+          pipelineSteps: [
+            { step: '1. ServerEngine', status: 'passed' as const, reason: `latency=${serverResult.latencyMs}ms` },
+            { step: '2. MemoryWriteBack', status: memoryWriteBackChangedFields.length > 0 ? 'passed' as const : 'skipped' as const, reason: `fields=${memoryWriteBackChangedFields.length}` },
+          ],
+          zoneDecision: {
+            vspInput: null,
+            vspSeverity: null,
+            computedZone: serverResult.patches?.sessionState?.zoneColor ?? 'GREEN',
+            computedSeverity: serverResult.patches?.sessionState?.zoneScore ?? 0,
+            finalZone: serverResult.patches?.sessionState?.zoneColor ?? 'GREEN',
+            source: 'server-engine',
+            reason: 'server-led zone decision',
+            isBlocked: false,
+            isCrisis: crisisLevel >= 2,
+          },
+          regulation: {
+            action: serverResult.patches?.sessionState?.regulationAction ?? 'none',
+            effectiveDepth: 'normal',
+            userDepth: 'normal',
+            wasSoftened: serverResult.patches?.sessionState?.regulationWasSoftened ?? false,
+            wasSkipped: false,
+            gptInstruction: null,
+            resolvedZoneInput: serverResult.patches?.sessionState?.zoneColor ?? 'GREEN',
+            isFallbackZone: false,
+          },
+          moduleSelection: {
+            dominantModule: serverResult.patches?.sessionState?.dominantModule ?? 'E01',
+            reason: 'server-engine',
+            activeModules: serverResult.patches?.sessionState?.usedModules ?? [],
+          },
+          modelRouting: {
+            selectedModel: 'server-engine',
+            riskScore: crisisLevel * 30,
+            crisisLevel,
+            routingReason: 'server-led',
+          },
+          interventionContinuity: null,
+          projectionEntries: [],
+          memory: {
+            totalSessions: currentUserDat.totalSessions ?? 0,
+            triggerPatterns: (currentUserDat.triggerPatterns || []).map(t => ({ trigger: t.trigger, count: (t as any).count ?? (t as any).frequency ?? 1 })),
+            moduleUsage: (currentUserDat.moduleUsage || []).map(m => ({ moduleId: m.moduleId, count: (m as any).count ?? (m as any).usageCount ?? 1 })),
+            changedUserDatFields: memoryWriteBackChangedFields.filter(f => f.startsWith('user.')),
+            sliders: (currentUserDat.currentMood || {}) as unknown as Record<string, string | number>,
+            changedStateFields: memoryWriteBackChangedFields.filter(f => f.startsWith('state.')),
+            bufferZone: serverResult.patches?.sessionState?.zoneColor ?? 'GREEN',
+            bufferEmotionalDirection: serverResult.patches?.sessionState?.responseDirection ?? 'reflect',
+            bufferLiveIntent: serverResult.patches?.sessionState?.emotionalState ?? '',
+            bufferDominantState: `${serverResult.patches?.sessionState?.dominantModule ?? 'E01'} (server)`,
+          },
+          payload: {
+            isSessionStart,
+            fieldsIncluded: ['serverEngine', 'signalDetections', 'statePatches', 'memoryWriteBack'],
+            promptBlocks: { serverMode: 'true', memoryWriteBack: memoryWriteBackChangedFields.length > 0 ? 'yes' : 'no' },
+            estimatedTokens: 0,
+            usedModel: 'server-engine',
+          },
+          tokens: null,
+        };
+        buildTraceBlock(serverTraceData);
 
         // Build MessageLog for chat.tsx debug panel
         const serverMessageLog: MessageLog = {
@@ -3106,8 +3249,93 @@ export async function processMessage(
     recordCallCost(tokenUsage, isSessionStart, preGPTDominantState.dominantModule);
   }
 
-  // Compose the final rugzak view (backpack unchanged)
+    // Compose the final rugzak view (backpack unchanged)
   const updatedRugzak = composeRugzak(backpack, updatedUserDat);
+
+  // ── MEMORY WRITE-BACK (per-turn, client pipeline) ──────────────────────────
+  // Routes pipeline detections (fears/hopes/triggers/schema/mode/zone/module)
+  // to user.dat / state.dat / projections.dat via the existing write-back system.
+  let clientMemoryChangedFields: string[] = [];
+  try {
+    const lifecycleMgr = getSessionLifecycleManager();
+    const memStores = lifecycleMgr.getStores();
+    const persona = backpack.userType as 'elias' | 'kim';
+    const memUserDat = await memStores.userDatStore.load(persona, 'local_user');
+    const memStateDat = await memStores.stateDatStore.load(persona);
+    const memProjectionsDat = await memStores.projectionsDatStore.load(persona);
+    const memBuffer = memStores.sessionBufferStore.getBuffer();
+
+    // Build PipelineResultForMemory from client-pipeline detections
+    const pipelineResultForMemory: PipelineResultForMemory = {
+      userMessage,
+      persona,
+      sessionId: sessionBuffer.sessionId,
+      localUserId: 'local_user',
+      candidateSignals: candidateSignals
+        ? {
+            fears: candidateSignals.fears.map(f => ({ label: f.keyword, confidence: f.confidence })),
+            hopes: candidateSignals.hopes.map(h => ({ label: h.keyword, confidence: h.confidence })),
+            goals: candidateSignals.goals.map(g => ({ label: g.keyword, confidence: g.confidence })),
+            triggers: candidateSignals.triggers.map(t => ({ label: t.keyword, confidence: t.confidence, triggerType: 'craving' })),
+          }
+        : null,
+      schemaModeResult: schemaModeResult.activated
+        ? {
+            activated: true,
+            modeDecision: {
+              acceptedModes: schemaModeResult.modeDecision.acceptedModes.map(m => ({ modeId: m.modeId, confidence: m.confidence })),
+              dominantMode: schemaModeResult.modeDecision.dominantMode,
+            },
+            schemaDecision: {
+              acceptedSchemas: schemaModeResult.schemaDecision.acceptedSchemas.map(s => ({ schemaId: s.schemaId, confidence: s.confidence, domain: s.domain })),
+              dominantSchema: schemaModeResult.schemaDecision.dominantSchema,
+              dominantDomain: schemaModeResult.schemaDecision.dominantDomain,
+            },
+          }
+        : null,
+      bufferSnapshot: { zoneColor: sessionBuffer.currentZoneColor, zoneScore: sessionBuffer.currentZoneScore },
+      activeModule: { moduleId: preGPTDominantState.dominantModule, confidence: 0.9, responseMode: preGPTDominantState.dominantDirection },
+      moodSliders: (currentUserDat.currentMood || null) as unknown as Record<string, number> | null,
+    };
+
+    // Build detection bundle and run write-back
+    const detectionBundle = buildDetectionBundle(pipelineResultForMemory);
+    const currentSnapshot = { userDat: memUserDat, stateDat: memStateDat, projectionsDat: memProjectionsDat, sessionBuffer: memBuffer };
+    const writeBackOutput = runMemoryWriteBack(detectionBundle, currentSnapshot);
+
+    // Persist updated stores
+    if (writeBackOutput.commitResult.writtenPatches.length > 0) {
+      await memStores.userDatStore.save(writeBackOutput.updatedStores.userDat);
+      await memStores.stateDatStore.save(writeBackOutput.updatedStores.stateDat);
+      await memStores.projectionsDatStore.save(writeBackOutput.updatedStores.projectionsDat);
+    }
+
+    // Capture changed fields for debug output
+    clientMemoryChangedFields = writeBackOutput.commitResult.changedFields;
+
+    // Append turn snapshot to session buffer
+    if (memBuffer) {
+      memStores.sessionBufferStore.appendTurnSnapshot(memBuffer, {
+        turnId: `turn_${sessionBuffer.messageCount}_${Date.now()}`,
+        timestampIso: LocalDeviceTimeService.now().utcIso,
+        inputHash: userMessage.slice(0, 20),
+        outputHash: response.slice(0, 20),
+        detectedCounts: {
+          fears: detectionBundle.fears.length,
+          hopes: detectionBundle.hopes.length,
+          triggers: detectionBundle.triggers.length,
+          schemaTendencies: detectionBundle.schemaTendencies.length,
+          modeTendencies: detectionBundle.modeTendencies.length,
+        },
+        changedFields: clientMemoryChangedFields,
+      });
+    }
+
+    console.log(`[Pipeline/Client] Memory write-back: ${writeBackOutput.commitResult.writtenPatches.length} patches written, fields=[${clientMemoryChangedFields.join(', ')}]`);
+  } catch (memErr) {
+    // Non-critical: pipeline continues even if write-back fails
+    console.warn('[Pipeline/Client] Memory write-back failed (non-critical):', memErr);
+  }
 
   // ── Build engine trace data for debug screen ──
   const traceData: EngineTraceInput = {
@@ -3237,9 +3465,9 @@ export async function processMessage(
       totalSessions: currentUserDat.totalSessions ?? 0,
       triggerPatterns: (currentUserDat.triggerPatterns || []).map(t => ({ trigger: t.trigger, count: t.count, weight: t.weight })),
       moduleUsage: (currentUserDat.moduleUsage || []).map((m) => ({ moduleId: m.moduleId, count: m.count || 1 })),
-      changedUserDatFields: [],
+      changedUserDatFields: clientMemoryChangedFields.filter(f => f.startsWith('user.')),
       sliders: (currentUserDat.currentMood || {}) as unknown as Record<string, string | number>,
-      changedStateFields: [],
+      changedStateFields: clientMemoryChangedFields.filter(f => f.startsWith('state.')),
       bufferZone: sessionBuffer.currentZoneColor,
       bufferEmotionalDirection: preGPTDominantState.dominantDirection,
       bufferLiveIntent: analysis.emotionalState || '',

@@ -2184,3 +2184,12 @@
 - [x] Feature: Auto permission prompt after wizard completion (ask notification permission immediately after finishing wizard)
 - [x] Feature: Test notification button in the notification permission card (send a test notification to verify delivery)
 - [x] Feature: Notification sound setting per block type (silent/default/alarm) in the editor
+
+## Memory Write-Back Integration (per-turn persistence)
+- [x] Connect executeMemoryWriteBack to server-mode pipeline (pipeline.ts lines 708-848)
+- [x] Connect executeMemoryWriteBack to client-mode pipeline (pipeline.ts lines 3255-3338)
+- [x] Replace hardcoded changedUserDatFields: [] with real values from commitResult
+- [x] Replace hardcoded changedStateFields: [] with real values from commitResult
+- [x] Add server-mode trace block (buildTraceBlock) with real memory data
+- [x] Extend ServerEngineCallResult with signalDetections from server response
+- [x] Verify 0 new TypeScript errors introduced (142 pre-existing remain)
