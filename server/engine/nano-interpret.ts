@@ -437,12 +437,12 @@ export async function runNanoInterpret(
           'Authorization': `Bearer ${apiKey}`,
         },
         body: JSON.stringify({
-          model: 'gpt-5-nano',
+          model: 'gpt-4.1-nano',
           messages: [
             { role: 'system', content: systemPrompt },
             { role: 'user', content: userPrompt },
           ],
-          max_tokens: 300,
+          max_completion_tokens: 300,
           temperature: 0.1,
           response_format: { type: 'json_object' },
         }),
