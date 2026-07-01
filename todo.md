@@ -2202,3 +2202,16 @@
 - [x] Verify TypeScript compiles with 0 new errors (142 pre-existing, 0 in new files)
 - [x] Add module validation (hallucination guard) in nano-interpret.ts
 - [x] Route translatedNL + nanoInterpret into GPT system prompt (MESSAGE INTERPRETATION block)
+
+## Deterministic Theme→Module Refactor (nano interprets, engine decides)
+- [x] Build controlled theme vocabulary per persona (ELIAS_THEMES: 42 labels, KIM_THEMES: 22 labels)
+- [x] Build THEME_TO_MODULE_ELIAS mapping (42 themes → module IDs)
+- [x] Build THEME_TO_MODULE_KIM mapping (22 themes → module IDs)
+- [x] Refactor nano-interpret.ts: output themes[] from closed list only, no suggestedModule
+- [x] Build resolveModuleFromThemes() deterministic resolver (exported from nano-interpret.ts)
+- [x] Update engine-process.ts: call resolveModuleFromThemes after nano, pass resolvedModule to selector
+- [x] Update NanoInterpretSuggestion interface: resolvedModule + matchedTheme (replaces suggestedModule)
+- [x] Update dominant-state-selector: all priorities use resolvedModule from engine (not nano)
+- [x] Update ai-chat.ts ChatRequestInput and MESSAGE INTERPRETATION prompt block
+- [x] Hoist nanoModuleResolution outside try block for proper scoping
+- [x] Verify 0 new TypeScript errors (142 pre-existing unchanged)

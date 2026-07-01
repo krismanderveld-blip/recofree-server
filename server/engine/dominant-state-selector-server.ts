@@ -293,7 +293,8 @@ function detectShortModuleKeyword(message: string): string | null {
 // ─── Main Selector ──────────────────────────────────────────────
 
 export interface NanoInterpretSuggestion {
-  suggestedModule: string;
+  resolvedModule: string;
+  matchedTheme: string | null;
   intent: string;
   themes: string[];
   translatedNL: string;
@@ -395,7 +396,7 @@ export function selectDominantStateServer(input: DominantStateSelectorInput): Do
   // When nano-interpret is available AND zone is urgent, use its suggestion instead of keyword matching
   if (buffer.currentTriggerGuess && buffer.currentZoneScore >= 50) {
     const module = input.nanoInterpret
-      ? input.nanoInterpret.suggestedModule
+      ? input.nanoInterpret.resolvedModule
       : getTriggerModule(buffer.currentTriggerGuess, userType);
     return {
       dominantModule: module,
@@ -403,7 +404,7 @@ export function selectDominantStateServer(input: DominantStateSelectorInput): Do
       dominantDirection: buffer.responseDirection,
       dominantTone: determineTone(buffer.currentZoneColor, buffer.currentIntent, buffer.responseDirection),
       selectionReason: input.nanoInterpret
-        ? `NanoInterpret: "${input.nanoInterpret.suggestedModule}" (trigger: "${buffer.currentTriggerGuess}", themes: ${input.nanoInterpret.themes.join(', ')})`
+        ? `NanoInterpret resolved: "${input.nanoInterpret.resolvedModule}" via theme "${input.nanoInterpret.matchedTheme}" (trigger: "${buffer.currentTriggerGuess}")`
         : `Live trigger "${buffer.currentTriggerGuess}" with zone score ${buffer.currentZoneScore}`,
       sourceLayer: 'live_trigger',
       riskScore: buffer.currentZoneScore,
@@ -431,7 +432,7 @@ export function selectDominantStateServer(input: DominantStateSelectorInput): Do
     const topRepeat = significantRepeats.sort((a, b) => b.count - a.count)[0];
     const trigger = topRepeat.signal;
     const module = input.nanoInterpret
-      ? input.nanoInterpret.suggestedModule
+      ? input.nanoInterpret.resolvedModule
       : getTriggerModule(trigger, userType);
     return {
       dominantModule: module,
@@ -439,7 +440,7 @@ export function selectDominantStateServer(input: DominantStateSelectorInput): Do
       dominantDirection: buffer.responseDirection,
       dominantTone: determineTone(buffer.currentZoneColor, buffer.currentIntent, buffer.responseDirection),
       selectionReason: input.nanoInterpret
-        ? `NanoInterpret: "${input.nanoInterpret.suggestedModule}" (session pattern: "${trigger}" x${topRepeat.count})`
+        ? `NanoInterpret resolved: "${input.nanoInterpret.resolvedModule}" via theme "${input.nanoInterpret.matchedTheme}" (session pattern: "${trigger}" x${topRepeat.count})`
         : `Session pattern: "${trigger}" repeated ${topRepeat.count}x in session`,
       sourceLayer: 'session_pattern',
       riskScore: buffer.currentZoneScore,
@@ -451,7 +452,7 @@ export function selectDominantStateServer(input: DominantStateSelectorInput): Do
   if (strongPatterns.length > 0 && buffer.currentZoneScore >= 30) {
     const topPattern = strongPatterns.sort((a, b) => b.frequency - a.frequency)[0];
     const module = input.nanoInterpret
-      ? input.nanoInterpret.suggestedModule
+      ? input.nanoInterpret.resolvedModule
       : getTriggerModule(topPattern.trigger, userType);
     return {
       dominantModule: module,
@@ -459,22 +460,23 @@ export function selectDominantStateServer(input: DominantStateSelectorInput): Do
       dominantDirection: buffer.responseDirection,
       dominantTone: determineTone(buffer.currentZoneColor, buffer.currentIntent, buffer.responseDirection),
       selectionReason: input.nanoInterpret
-        ? `NanoInterpret: "${input.nanoInterpret.suggestedModule}" (user.dat pattern: "${topPattern.trigger}" x${topPattern.frequency})`
+        ? `NanoInterpret resolved: "${input.nanoInterpret.resolvedModule}" via theme "${input.nanoInterpret.matchedTheme}" (user.dat pattern: "${topPattern.trigger}" x${topPattern.frequency})`
         : `User.dat pattern: "${topPattern.trigger}" (${topPattern.frequency} historical occurrences)`,
       sourceLayer: 'userdat_pattern',
       riskScore: buffer.currentZoneScore,
     };
   }
 
-  // ── PRIORITY 5.5: NANO-INTERPRET SEMANTIC MODULE (replaces keyword detection) ──
-  // When nano-interpret is available, it replaces both getTriggerModule AND detectShortModuleKeyword
+  // ── PRIORITY 5.5: NANO-INTERPRET DETERMINISTIC MODULE (replaces keyword detection) ──
+  // When nano-interpret is available, the engine resolved the module deterministically from themes.
+  // This replaces both getTriggerModule AND detectShortModuleKeyword.
   if (input.nanoInterpret && input.nanoInterpret.intent !== 'greeting') {
     return {
-      dominantModule: input.nanoInterpret.suggestedModule,
-      dominantTrigger: buffer.currentTriggerGuess || input.nanoInterpret.themes[0] || '',
+      dominantModule: input.nanoInterpret.resolvedModule,
+      dominantTrigger: buffer.currentTriggerGuess || input.nanoInterpret.matchedTheme || input.nanoInterpret.themes[0] || '',
       dominantDirection: buffer.responseDirection,
       dominantTone: determineTone(buffer.currentZoneColor, buffer.currentIntent, buffer.responseDirection),
-      selectionReason: `NanoInterpret semantic: "${input.nanoInterpret.suggestedModule}" (intent: ${input.nanoInterpret.intent}, themes: ${input.nanoInterpret.themes.join(', ')})`,
+      selectionReason: `NanoInterpret deterministic: "${input.nanoInterpret.resolvedModule}" via theme "${input.nanoInterpret.matchedTheme}" (intent: ${input.nanoInterpret.intent}, themes: ${input.nanoInterpret.themes.join(', ')})`,
       sourceLayer: 'short_module_keyword',
       riskScore: buffer.currentZoneScore,
     };

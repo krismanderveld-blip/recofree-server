@@ -47,7 +47,7 @@ import { searchPastReferencesServer } from './engine/past-reference-server';
 import type { PastReferenceSearchResult } from './engine/past-reference-server';
 import { selectDominantStateServer } from './engine/dominant-state-selector-server';
 import type { DominantState } from './engine/dominant-state-selector-server';
-import { runNanoInterpret } from './engine/nano-interpret';
+import { runNanoInterpret, resolveModuleFromThemes } from './engine/nano-interpret';
 import type { NanoInterpretResult } from './engine/nano-interpret';
 
 // ─── Zod Schemas ──────────────────────────────────────────────────────
@@ -433,6 +433,7 @@ export async function processEngineRequest(input: EngineProcessInput): Promise<E
   // Result feeds into DominantStateSelector to replace keyword matching.
   // On failure: throws to caller (1 retry built into runNanoInterpret).
   let nanoInterpretResult: NanoInterpretResult | null = null;
+  let nanoModuleResolution: { moduleId: string; matchedTheme: string | null } | null = null;
   const isCrisis = stateAnalysis.riskLevel === 'critical' || buffer.currentIntent === 'crisis' || buffer.currentZoneColor === 'PURPLE';
   // Skip nano-interpret for crisis (crisis module is hardcoded, no need for interpretation)
   if (!isCrisis) {
@@ -441,7 +442,8 @@ export async function processEngineRequest(input: EngineProcessInput): Promise<E
         userMessage: input.message,
         persona: input.userType as 'elias' | 'kim',
       });
-      console.log(`[NanoInterpret] ${input.userType}: module=${nanoInterpretResult.suggestedModule}, intent=${nanoInterpretResult.intent}, themes=[${nanoInterpretResult.themes.join(', ')}]`);
+      nanoModuleResolution = resolveModuleFromThemes(nanoInterpretResult.themes, input.userType as 'elias' | 'kim');
+      console.log(`[NanoInterpret] ${input.userType}: resolvedModule=${nanoModuleResolution.moduleId}, matchedTheme=${nanoModuleResolution.matchedTheme}, intent=${nanoInterpretResult.intent}, themes=[${nanoInterpretResult.themes.join(', ')}]`);
     } catch (err: any) {
       // No silent fallback — propagate error to user
       console.error('[NanoInterpret] Failed after retry:', err.message);
@@ -469,7 +471,8 @@ export async function processEngineRequest(input: EngineProcessInput): Promise<E
       userMessage: input.message,
     } : undefined,
     nanoInterpret: nanoInterpretResult ? {
-      suggestedModule: nanoInterpretResult.suggestedModule,
+      resolvedModule: nanoModuleResolution!.moduleId,
+      matchedTheme: nanoModuleResolution!.matchedTheme,
       intent: nanoInterpretResult.intent,
       themes: nanoInterpretResult.themes,
       translatedNL: nanoInterpretResult.translatedNL,
@@ -624,7 +627,8 @@ export async function processEngineRequest(input: EngineProcessInput): Promise<E
           translatedNL: nanoInterpretResult.translatedNL,
           intent: nanoInterpretResult.intent,
           themes: nanoInterpretResult.themes,
-          suggestedModule: nanoInterpretResult.suggestedModule,
+          resolvedModule: nanoModuleResolution!.moduleId,
+          matchedTheme: nanoModuleResolution!.matchedTheme,
         } : null,
         // Session start data
         backpack: input.backpack || null,

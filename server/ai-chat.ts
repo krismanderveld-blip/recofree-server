@@ -323,7 +323,8 @@ interface ChatRequestInput {
     translatedNL: string;
     intent: string;
     themes: string[];
-    suggestedModule: string;
+    resolvedModule: string | null;
+    matchedTheme: string | null;
   } | null;
 }
 
@@ -1955,7 +1956,7 @@ MESSAGE INTERPRETATION (pre-analyzed by system):
 - Dutch translation: ${input.nanoInterpret.translatedNL}
 - Detected intent: ${input.nanoInterpret.intent}
 - Themes: ${input.nanoInterpret.themes.join(', ')}
-- Matched module: ${input.nanoInterpret.suggestedModule}
+- Resolved module: ${input.nanoInterpret.resolvedModule} (via theme: ${input.nanoInterpret.matchedTheme ?? 'default'})
 Use the Dutch translation as your reference for the user's meaning. The themes guide your response focus. Do NOT repeat the translation back to the user — respond naturally in the conversation language.` : ''}
 ${input.dayStructureContext ? `
 DAY STRUCTURE (user's planned daily schedule for today):
