@@ -17,6 +17,7 @@ import { DataPrivacySection } from '@/lib/features/exportImport/ui/DataPrivacySe
 import { useExportImportStores } from '@/lib/features/exportImport/hooks/useExportImportStores';
 import { loadVspInsightProfile, buildPdfPlainText } from '@/src/features/vspInsight';
 import { BalkmetafoorCard } from '@/components/profile/BalkmetafoorCard';
+import { NotificationPermissionCard } from '@/components/profile/NotificationPermissionCard';
 import { createEmptyBalkmetafoor } from '@/src/types/balkmetafoor.types';
 import type { BalkmetafoorData, BalkmetafoorEntry } from '@/src/types/balkmetafoor.types';
 import { useTranslation } from '@/lib/i18n';
@@ -470,6 +471,11 @@ export default function ProfileScreen() {
             </View>
           </Pressable>
         </View>
+
+        {/* Notification Permissions */}
+        {Platform.OS !== 'web' && (
+          <NotificationPermissionCard />
+        )}
 
         {/* Data & Privacy — Export / Import */}
         <View style={{ marginBottom: spacing.xl }}>

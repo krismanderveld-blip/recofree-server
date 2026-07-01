@@ -894,5 +894,32 @@
   "dayStructure.editor.restart_wizard_confirm": "Restart",
   "dayStructure.editor.copy_only_activities": "Copy activities only (keep wake/sleep times)",
   "dayStructure.editor.undo_message": "Days copied",
-  "dayStructure.editor.undo_button": "Undo"
+  "dayStructure.editor.undo_button": "Undo",
+  "profile": {
+    "notifications": {
+      "section_title": "NOTIFICATIONS",
+      "status_denied": "Notifications blocked",
+      "status_not_asked": "Notifications not set up",
+      "status_active": "Notifications active",
+      "status_disabled": "Notifications disabled",
+      "denied_help": "Go to Settings to allow notifications",
+      "not_asked_help": "Allow notifications to receive reminders for your day structure",
+      "active_help": "You will receive reminders for your day structure activities",
+      "disabled_help": "Notifications are disabled. Enable to receive reminders.",
+      "enable_button": "Enable notifications",
+      "open_settings": "Open Settings",
+      "cancel": "Cancel",
+      "denied_title": "Notifications blocked",
+      "denied_message": "Notifications are blocked by your system. Go to Settings to allow them.",
+      "toggle_on": "Turn on notifications",
+      "toggle_off": "Turn off notifications"
+    }
+  },
+  "dayStructure": {
+    "editor": {
+      "copy_from_button": "Copy from another day",
+      "copy_from_title": "Copy from another day",
+      "copy_from_description": "Choose a source day to copy blocks to {day}"
+    }
+  }
 }

@@ -894,5 +894,32 @@
   "dayStructure.editor.restart_wizard_confirm": "Opnieuw starten",
   "dayStructure.editor.copy_only_activities": "Alleen activiteiten kopiëren (behoud opstaan/slaaptijd)",
   "dayStructure.editor.undo_message": "Dagen gekopieerd",
-  "dayStructure.editor.undo_button": "Ongedaan maken"
+  "dayStructure.editor.undo_button": "Ongedaan maken",
+  "profile": {
+    "notifications": {
+      "section_title": "MELDINGEN",
+      "status_denied": "Meldingen geblokkeerd",
+      "status_not_asked": "Meldingen niet ingesteld",
+      "status_active": "Meldingen actief",
+      "status_disabled": "Meldingen uitgeschakeld",
+      "denied_help": "Ga naar Instellingen om meldingen toe te staan",
+      "not_asked_help": "Sta meldingen toe om herinneringen te ontvangen voor je dagstructuur",
+      "active_help": "Je ontvangt herinneringen voor je dagstructuur-activiteiten",
+      "disabled_help": "Meldingen zijn uitgeschakeld. Schakel in om herinneringen te ontvangen.",
+      "enable_button": "Meldingen inschakelen",
+      "open_settings": "Open Instellingen",
+      "cancel": "Annuleren",
+      "denied_title": "Meldingen geblokkeerd",
+      "denied_message": "Meldingen zijn geblokkeerd door je systeem. Ga naar Instellingen om ze toe te staan.",
+      "toggle_on": "Meldingen aanzetten",
+      "toggle_off": "Meldingen uitzetten"
+    }
+  },
+  "dayStructure": {
+    "editor": {
+      "copy_from_button": "Kopieer van andere dag",
+      "copy_from_title": "Kopieer van andere dag",
+      "copy_from_description": "Kies een brondag om de blokken naar {day} te kopiëren"
+    }
+  }
 }

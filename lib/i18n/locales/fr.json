@@ -894,5 +894,32 @@
   "dayStructure.editor.restart_wizard_confirm": "Redémarrer",
   "dayStructure.editor.copy_only_activities": "Copier uniquement les activités (garder réveil/coucher)",
   "dayStructure.editor.undo_message": "Jours copiés",
-  "dayStructure.editor.undo_button": "Annuler"
+  "dayStructure.editor.undo_button": "Annuler",
+  "profile": {
+    "notifications": {
+      "section_title": "NOTIFICATIONS",
+      "status_denied": "Notifications bloquées",
+      "status_not_asked": "Notifications non configurées",
+      "status_active": "Notifications actives",
+      "status_disabled": "Notifications désactivées",
+      "denied_help": "Allez dans Réglages pour autoriser les notifications",
+      "not_asked_help": "Autorisez les notifications pour recevoir des rappels pour votre structure de journée",
+      "active_help": "Vous recevrez des rappels pour vos activités de structure de journée",
+      "disabled_help": "Les notifications sont désactivées. Activez-les pour recevoir des rappels.",
+      "enable_button": "Activer les notifications",
+      "open_settings": "Ouvrir les Réglages",
+      "cancel": "Annuler",
+      "denied_title": "Notifications bloquées",
+      "denied_message": "Les notifications sont bloquées par votre système. Allez dans Réglages pour les autoriser.",
+      "toggle_on": "Activer les notifications",
+      "toggle_off": "Désactiver les notifications"
+    }
+  },
+  "dayStructure": {
+    "editor": {
+      "copy_from_button": "Copier d'un autre jour",
+      "copy_from_title": "Copier d'un autre jour",
+      "copy_from_description": "Choisissez un jour source pour copier les blocs vers {day}"
+    }
+  }
 }

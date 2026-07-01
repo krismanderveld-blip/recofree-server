@@ -2177,3 +2177,7 @@
 - [x] Feature: Copy-only-activities option in dagstructuur editor (skip wake/sleep when copying to other days)
 - [x] Feature: Drag-and-drop block reordering in dagstructuur editor (up/down arrows per block)
 - [x] Feature: Undo after copy in dagstructuur editor (revert to previous state if wrong days were overwritten)
+- [x] Feature: Copy-from-another-day option in dagstructuur editor (import blocks from a chosen source day to current day)
+- [x] Feature: Visual indicator (green dot) on day-tabs showing which days already have a structure configured
+- [x] Fix: Notifications already use expo-notifications WEEKLY scheduled triggers (fire in background/closed) — confirmed working correctly
+- [x] Feature: Permissions request flow/card in profile where user is prompted for notification permission with explanation
