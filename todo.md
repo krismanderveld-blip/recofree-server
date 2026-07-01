@@ -2225,3 +2225,12 @@
 - [x] Add logDebugEvent calls for per-turn logs.dat write (success + failure paths)
 - [x] Add memory_write_back + memory_logsdat_turn_write formatters to event renderer
 - [x] Verify 0 new TypeScript errors (142 pre-existing unchanged)
+
+## Nano-Interpret Debug Trace Routing
+- [x] Add nanoInterpret to EngineProcessResponse interface + return object in engine-process.ts
+- [x] Add nanoInterpret to ServerEngineCallResult interface + both return paths in server-active-client.ts
+- [x] Add nanoInterpret field to EngineTraceInput interface in engine-trace.ts
+- [x] Add NANO-INTERPRET renderer section to buildTraceBlock() in engine-trace.ts (themes, resolvedModule, matchedTheme, intent, translatedNL)
+- [x] Route nanoInterpret into server-mode serverTraceData in pipeline.ts
+- [x] Add nanoInterpret: null to client-mode traceData in pipeline.ts (server-only feature)
+- [x] Verify 0 new TypeScript errors (142 pre-existing unchanged)

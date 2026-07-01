@@ -95,6 +95,15 @@ export interface EngineTraceInput {
     action: string;
   }>;
 
+  // Nano-interpret pre-call (semantic message interpretation)
+  nanoInterpret: {
+    translatedNL: string;
+    intent: string;
+    themes: string[];
+    resolvedModule: string | null;
+    matchedTheme: string | null;
+  } | null;
+
   // Memory layers
   memory: {
     totalSessions: number;
@@ -251,6 +260,22 @@ export function buildTraceBlock(input: EngineTraceInput): string {
     }
   } else {
     lines.push('  (geen actieve entries)');
+  }
+  lines.push('');
+
+  // Nano-Interpret (server-side semantic pre-call)
+  lines.push('NANO-INTERPRET:');
+  if (input.nanoInterpret) {
+    const ni = input.nanoInterpret;
+    lines.push(`  intent: ${ni.intent}`);
+    lines.push(`  themes: [${ni.themes.join(', ')}]`);
+    lines.push(`  resolvedModule: ${ni.resolvedModule ?? 'none'}`);
+    lines.push(`  matchedTheme: ${ni.matchedTheme ?? 'none'}`);
+    if (ni.translatedNL) {
+      lines.push(`  translatedNL: ${ni.translatedNL}`);
+    }
+  } else {
+    lines.push('  (niet beschikbaar — client-mode of nano uitgeschakeld)');
   }
   lines.push('');
 

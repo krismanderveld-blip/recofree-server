@@ -824,6 +824,7 @@ export async function processMessage(
           },
           interventionContinuity: null,
           projectionEntries: [],
+          nanoInterpret: serverResult.nanoInterpret ?? null,
           memory: {
             totalSessions: currentUserDat.totalSessions ?? 0,
             triggerPatterns: (currentUserDat.triggerPatterns || []).map(t => ({ trigger: t.trigger, count: (t as any).count ?? (t as any).frequency ?? 1 })),
@@ -3461,6 +3462,7 @@ export async function processMessage(
         }));
       } catch { return []; }
     })(),
+    nanoInterpret: null, // client-mode: nano-interpret runs server-side only
     memory: {
       totalSessions: currentUserDat.totalSessions ?? 0,
       triggerPatterns: (currentUserDat.triggerPatterns || []).map(t => ({ trigger: t.trigger, count: t.count, weight: t.weight })),

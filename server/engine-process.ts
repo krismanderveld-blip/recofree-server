@@ -252,6 +252,14 @@ export interface EngineProcessResponse {
   pastReference: PastReferenceSearchResult | null;
   /** Model routing decision (exposed even without GPT response for shadow comparison) */
   modelRoutingDecision: string;
+  /** Nano-interpret pre-call result (semantic message interpretation) */
+  nanoInterpret: {
+    translatedNL: string;
+    intent: string;
+    themes: string[];
+    resolvedModule: string | null;
+    matchedTheme: string | null;
+  } | null;
   /** Server engine version for shadow comparison */
   engineVersion: string;
   /** Processing latency in ms */
@@ -759,6 +767,13 @@ export async function processEngineRequest(input: EngineProcessInput): Promise<E
       if (HIGH_COMPLEXITY.some(m => dominantModuleForRouting.includes(m))) return 'gpt-4o';
       return 'gpt-4o-mini';
     })(),
+    nanoInterpret: nanoInterpretResult ? {
+      translatedNL: nanoInterpretResult.translatedNL,
+      intent: nanoInterpretResult.intent,
+      themes: nanoInterpretResult.themes,
+      resolvedModule: nanoModuleResolution?.moduleId ?? null,
+      matchedTheme: nanoModuleResolution?.matchedTheme ?? null,
+    } : null,
     engineVersion: 'server-v0.7.0-shadow-validated',
     latencyMs,
     gptResponse,

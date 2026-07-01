@@ -55,6 +55,14 @@ export interface ServerEngineCallResult {
     hopes: Array<{ keyword: string; confidence: number }>;
     triggers: Array<{ keyword: string; confidence: number }>;
   } | null;
+  /** Nano-interpret pre-call result (semantic message interpretation) */
+  nanoInterpret: {
+    translatedNL: string;
+    intent: string;
+    themes: string[];
+    resolvedModule: string | null;
+    matchedTheme: string | null;
+  } | null;
 }
 
 export interface ServerEngineCallInput {
@@ -195,6 +203,7 @@ export async function callServerEngine(input: ServerEngineCallInput): Promise<Se
             triggers: (result.signalEngine.signals.triggers ?? []).map((t: any) => ({ keyword: t.keyword, confidence: t.confidence })),
           }
         : null,
+      nanoInterpret: result.nanoInterpret ?? null,
     };
   } catch (err: any) {
     const latencyMs = Date.now() - startTime;
@@ -208,6 +217,7 @@ export async function callServerEngine(input: ServerEngineCallInput): Promise<Se
       error: err.message || 'Unknown server engine error',
       usedClientFallback: false,
       signalDetections: null,
+      nanoInterpret: null,
     };
   }
 }
