@@ -2283,3 +2283,6 @@
 - [x] Tests: 22 tests passing (error filter + second-person conversion + boundary truncation)
 - [x] Regression: all 41 greeting/session-end/logsDat tests still passing
 - [x] 0 new TS errors in source files (pre-existing test-only errors unchanged)
+## Logs.dat Cleanup Migration + Greeting Timeout (2 Jul 2026)
+- [x] Build logs.dat migration: remove entries with error narratives on app start
+- [x] Increase greeting-call timeout to reduce fallback triggers during Railway cold starts

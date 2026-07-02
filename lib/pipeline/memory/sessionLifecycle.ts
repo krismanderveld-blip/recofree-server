@@ -83,9 +83,9 @@ export function createSessionLifecycleManager(): SessionLifecycleManager {
           // ── Retention policy: compress old entries, prune >6mo ──
           if (logsDat.sessions.length > 0) {
             const retentionResult = applyRetentionToLogsDat(logsDat);
-            if (retentionResult.compressed > 0 || retentionResult.pruned > 0) {
+            if (retentionResult.compressed > 0 || retentionResult.pruned > 0 || retentionResult.errorNarrativesCleaned > 0) {
               await stores.logsDatStore.save(persona, logsDat);
-              console.log(`[SessionLifecycle] Retention applied: kept=${retentionResult.keptFull}, compressed=${retentionResult.compressed}, pruned=${retentionResult.pruned}`);
+              console.log(`[SessionLifecycle] Retention applied: kept=${retentionResult.keptFull}, compressed=${retentionResult.compressed}, pruned=${retentionResult.pruned}, errorsCleaned=${retentionResult.errorNarrativesCleaned}`);
             }
           }
 

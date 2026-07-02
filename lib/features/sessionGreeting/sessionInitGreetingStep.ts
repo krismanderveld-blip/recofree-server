@@ -206,24 +206,32 @@ async function callSessionGreetingEndpoint(
   vspInsightContext: string | null = null,
 ): Promise<string> {
   const url = `${apiBaseUrl}/api/session-greeting`;
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    body: JSON.stringify({ systemPrompt, userName, clinicalModeActive, vspInsightContext }),
-  });
+  // 15s timeout to accommodate Railway cold starts (typically 3-5s)
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 15000);
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ systemPrompt, userName, clinicalModeActive, vspInsightContext }),
+      signal: controller.signal,
+    });
 
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Session greeting endpoint error: ${response.status} - ${errorText}`);
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Session greeting endpoint error: ${response.status} - ${errorText}`);
+    }
+
+    const data = await response.json() as { success: boolean; greeting: string };
+    if (!data.success || !data.greeting) {
+      throw new Error('Invalid response from session greeting endpoint');
+    }
+
+    return data.greeting;
+  } finally {
+    clearTimeout(timeoutId);
   }
-
-  const data = await response.json() as { success: boolean; greeting: string };
-  if (!data.success || !data.greeting) {
-    throw new Error('Invalid response from session greeting endpoint');
-  }
-
-  return data.greeting;
 }
 
 // ─── Debug Log ──────────────────────────────────────────────────────────────

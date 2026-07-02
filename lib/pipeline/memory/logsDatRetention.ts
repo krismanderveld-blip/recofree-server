@@ -20,6 +20,7 @@ export interface RetentionResult {
   keptFull: number;
   compressed: number;
   pruned: number;
+  errorNarrativesCleaned: number;
 }
 
 /**
@@ -36,6 +37,7 @@ export function applyLogsDatRetention(sessions: SessionLogSummary[]): {
     keptFull: 0,
     compressed: 0,
     pruned: 0,
+    errorNarrativesCleaned: 0,
   };
 
   const retained: SessionLogSummary[] = [];
@@ -57,7 +59,41 @@ export function applyLogsDatRetention(sessions: SessionLogSummary[]): {
     }
   }
 
+  // ── Error narrative cleanup: sanitize corrupted entries ──
+  for (const session of retained) {
+    if (isErrorNarrativeInLogs(session.compressedNarrative)) {
+      session.compressedNarrative = '';
+      session.discussedTopics = [];
+      result.errorNarrativesCleaned++;
+    }
+  }
+
   return { sessions: retained, result };
+}
+
+/**
+ * Detect error narratives stored in logs.dat due to failed GPT summarization.
+ * These contain raw error messages instead of real session content.
+ */
+function isErrorNarrativeInLogs(text: string): boolean {
+  if (!text || text.length > 200) return false;
+  const lower = text.toLowerCase();
+  const ERROR_INDICATORS = [
+    'niet beschikbaar',
+    'network requ',
+    'network error',
+    'failed to fetch',
+    'connection refused',
+    'timeout',
+    'http 5',
+    'http 4',
+    'internal server error',
+    'openai error',
+    'gpt-samenvatting niet',
+    'samenvatting niet beschikbaar',
+    'error:',
+  ];
+  return ERROR_INDICATORS.some(indicator => lower.includes(indicator));
 }
 
 /**
