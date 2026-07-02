@@ -2253,3 +2253,10 @@
 - [x] Fix: safe logging in ai-chat.ts (optional chaining for backpack.lifeStory and userDat fields)
 - [x] Verified via curl: Railway returns full GPT response with realistic app payload
 - [ ] Verify end-to-end on device: app uses Railway response instead of falling back to client-mode
+## Option B: Railway GPT-Proxy Migration (2 Jul 2026)
+- [x] Verify client pipeline builds correct ChatRequestInput for tRPC call
+- [x] Set engine-mode to client-primary (disable server-active-client shadow)
+- [x] Build /api/gpt-proxy endpoint on Railway
+- [x] Route client GPT calls to Railway /api/gpt-proxy
+- [x] Maintain fallback to sandbox tRPC if Railway fails
+- [ ] Test end-to-end on device (awaiting user test)

@@ -14,6 +14,7 @@ import { registerVspTextExtractRoute } from "../vsp-text-extract";
 import { registerSessionGreetingRoute } from "../session-greeting";
 import { registerEngineProcessRoute } from "../engine-process";
 import { registerDebugPromptRoute, setSessionCacheGetter } from "../debug-prompt";
+import { registerGptProxyRoute } from "../gpt-proxy";
 import { getSessionCache } from "../ai-chat";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
@@ -75,6 +76,7 @@ async function startServer() {
   registerBackpackDocumentParseRoute(app);
   registerSessionGreetingRoute(app);
   registerEngineProcessRoute(app);
+  registerGptProxyRoute(app);
   registerDebugPromptRoute(app);
   setSessionCacheGetter(getSessionCache);
 

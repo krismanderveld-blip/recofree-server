@@ -1,7 +1,7 @@
 import type { AIProvider, AIResult, ChatContext } from './types';
 import { getApiBaseUrl } from '@/constants/oauth';
 import * as Auth from '@/lib/_core/auth';
-import superjson from 'superjson';
+// superjson is dynamically imported only in tRPC fallback path
 import { analyzeBackpackRelevance } from '@/lib/rugzak/backpack-relevance-analyzer';
 import { buildGPTPayload } from '@/lib/rugzak/gpt-payload-builder';
 import { detectRelationalAnchor, extractRelationalAnchors } from '@/lib/rugzak/relational-anchor-detector';
@@ -840,10 +840,19 @@ export class OpenAIProvider implements AIProvider {
         console.log('[OpenAIProvider] LIVE_MESSAGE: Dynamic payload only (no static fields)');
       }
 
-      // ── STEP 4: Send to server (with retry for cold starts) ──
+      // ── STEP 4: Send to server via /api/gpt-proxy (plain JSON, no tRPC envelope) ──
       // Final sanitization: ensure all triggers arrays are clean before Zod validation
       const sanitizedPayload = sanitizeChatPayload(inputPayload as Record<string, unknown>);
-      const serialized = superjson.serialize(sanitizedPayload);
+
+      // Serialize loopDetected and languageRecovery to strings if they are objects
+      // (server Zod expects string | null, client builds objects)
+      if (sanitizedPayload.loopDetected && typeof sanitizedPayload.loopDetected === 'object') {
+        sanitizedPayload.loopDetected = (sanitizedPayload.loopDetected as any).instruction ?? JSON.stringify(sanitizedPayload.loopDetected);
+      }
+      if (sanitizedPayload.languageRecovery && typeof sanitizedPayload.languageRecovery === 'object') {
+        sanitizedPayload.languageRecovery = (sanitizedPayload.languageRecovery as any).instruction ?? JSON.stringify(sanitizedPayload.languageRecovery);
+      }
+
       const token = await Auth.getSessionToken();
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
@@ -852,10 +861,11 @@ export class OpenAIProvider implements AIProvider {
         headers['Authorization'] = `Bearer ${token}`;
       }
 
-      const url = `${apiBaseUrl}/api/trpc/ai.chat`;
+      // Primary: /api/gpt-proxy (plain JSON, works on Railway)
+      const proxyUrl = `${apiBaseUrl}/api/gpt-proxy`;
 
       // Logging
-      console.log('[OpenAIProvider] Calling:', url, isSessionStart ? '(SESSION_INIT)' : '(LIVE_MESSAGE)');
+      console.log('[OpenAIProvider] Calling:', proxyUrl, isSessionStart ? '(SESSION_INIT)' : '(LIVE_MESSAGE)');
       console.log('[OpenAIProvider] Dominant module:', gptPayload.dominantModule);
       console.log('[OpenAIProvider] Risk score:', gptPayload.riskScore);
       console.log('[OpenAIProvider] Selected triggers:', gptPayload.selectedTriggers.map(t => t.trigger).join(', ') || 'none');
@@ -867,23 +877,39 @@ export class OpenAIProvider implements AIProvider {
         console.log('[OpenAIProvider] Full backpack included (SESSION_INIT)');
       }
 
-      // Use fetchWithRetry instead of plain fetch for resilience against cold starts
-      const response = await fetchWithRetry(url, {
-        method: 'POST',
-        headers,
-        credentials: 'include',
-        body: JSON.stringify(serialized),
-      });
+      // Use fetchWithRetry for resilience against cold starts
+      let response: globalThis.Response;
+      let usedProxy = true;
+      try {
+        response = await fetchWithRetry(proxyUrl, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify(sanitizedPayload),
+        });
+      } catch (proxyError) {
+        // Proxy unreachable — fallback to tRPC route (sandbox dev server)
+        console.warn('[OpenAIProvider] /api/gpt-proxy failed, falling back to tRPC:', (proxyError as Error)?.message);
+        usedProxy = false;
+        const superjson = await import('superjson');
+        const serialized = superjson.default.serialize(sanitizedPayload);
+        const trpcUrl = `${apiBaseUrl}/api/trpc/ai.chat`;
+        response = await fetchWithRetry(trpcUrl, {
+          method: 'POST',
+          headers,
+          credentials: 'include',
+          body: JSON.stringify(serialized),
+        });
+      }
 
-      console.log('[OpenAIProvider] Response status:', response.status);
+      console.log('[OpenAIProvider] Response status:', response.status, usedProxy ? '(gpt-proxy)' : '(tRPC fallback)');
 
       if (!response.ok) {
         const errorText = await response.text();
         console.error('[OpenAIProvider] Backend error:', response.status, errorText);
-        // Instead of throwing (which gives generic message), return the actual error
         const shortError = errorText.length > 200 ? errorText.substring(0, 200) + '...' : errorText;
+        const usedUrl = usedProxy ? proxyUrl : `${apiBaseUrl}/api/trpc/ai.chat`;
         return {
-          response: `[DEBUG] Server returned ${response.status}.\n\nURL: ${url}\nDetails: ${shortError}\n\nPlease screenshot this and report it.`,
+          response: `[DEBUG] Server returned ${response.status}.\n\nURL: ${usedUrl}\nDetails: ${shortError}\n\nPlease screenshot this and report it.`,
           advisoryEmotion: undefined,
           advisoryConfidence: undefined,
           tokenUsage: undefined,
@@ -893,18 +919,25 @@ export class OpenAIProvider implements AIProvider {
       const data = await response.json();
 
       let result: any;
-      if (data?.result?.data) {
-        try {
-          result = superjson.deserialize(data.result.data);
-        } catch {
-          result = data.result.data.json ?? data.result.data;
-        }
-      } else {
+      if (usedProxy) {
+        // /api/gpt-proxy returns plain JSON: { success, response, tokenUsage, selectedModel }
         result = data;
+      } else {
+        // tRPC returns envelope: { result: { data: superjson } }
+        if (data?.result?.data) {
+          try {
+            const superjson = await import('superjson');
+            result = superjson.default.deserialize(data.result.data);
+          } catch {
+            result = data.result.data.json ?? data.result.data;
+          }
+        } else {
+          result = data;
+        }
       }
 
       if (result?.success === false) {
-        console.warn('[OpenAIProvider] Backend returned failure:', result.response);
+        console.warn('[OpenAIProvider] Backend returned failure:', result.error || result.response);
       }
 
       // Log token usage
@@ -927,7 +960,7 @@ export class OpenAIProvider implements AIProvider {
       const apiUrl = getApiBaseUrl();
 
       return {
-        response: `[DEBUG] Connection failed.\n\nURL: ${apiUrl}/api/trpc/ai.chat\nError: ${errorMessage}\n\nPlease screenshot this and report it.`,
+        response: `[DEBUG] Connection failed.\n\nURL: ${apiUrl}/api/gpt-proxy\nError: ${errorMessage}\n\nPlease screenshot this and report it.`,
         advisoryEmotion: undefined,
         advisoryConfidence: undefined,
         tokenUsage: undefined,

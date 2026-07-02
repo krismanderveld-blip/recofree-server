@@ -29,7 +29,7 @@ export type EngineMode =
  * Current engine mode. Start: CLIENT_ACTIVE_SERVER_OFF.
  * This will be advanced as migration phases complete.
  */
-let currentEngineMode: EngineMode = 'SERVER_ACTIVE_CLIENT_SHADOW';
+let currentEngineMode: EngineMode = 'CLIENT_ACTIVE_SERVER_OFF';
 
 /**
  * Get the current engine mode.
