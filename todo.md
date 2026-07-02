@@ -2234,3 +2234,13 @@
 - [x] Route nanoInterpret into server-mode serverTraceData in pipeline.ts
 - [x] Add nanoInterpret: null to client-mode traceData in pipeline.ts (server-only feature)
 - [x] Verify 0 new TypeScript errors (142 pre-existing unchanged)
+
+## Railway Backend End-to-End Integration
+- [x] Railway /api/engine-process endpoint fully working (GPT response + nano-interpret + engine patches)
+- [x] Server returns gptResponse.response (gpt-4o-mini), nanoInterpret, statePatches, signalEngine, bufferState
+- [x] Pipeline server-mode early return path (line 690) correctly triggers when serverResult.responseText is present
+- [x] Client pipeline applies server patches to sessionBuffer and sessionDominantState
+- [x] Memory write-back runs with server signalDetections
+- [x] nanoInterpret data routed into trace block for debug visibility
+- [x] Unit test: server-pipeline-integration.test.ts (3 tests passing)
+- [x] Verified 0 new TypeScript errors (142 pre-existing unchanged)

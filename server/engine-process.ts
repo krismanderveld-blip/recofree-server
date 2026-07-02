@@ -93,8 +93,8 @@ const logsSessionSchema = z.object({
 
 const userDatSummarySchema = z.object({
   totalSessions: z.number(),
-  lastSessionDate: z.string().nullable(),
-  currentMood: moodSlidersSchema,
+  lastSessionDate: z.string().nullable().optional().default(null),
+  currentMood: moodSlidersSchema.optional().default({}),
   moodHistory: z.array(z.object({
     date: z.string(),
     sliders: moodSlidersSchema,
@@ -108,9 +108,9 @@ const userDatSummarySchema = z.object({
     moduleId: z.string(),
     count: z.number(),
     lastUsed: z.string(),
-  })),
-  stageOfChange: z.string(),
-  clinicalModeActive: z.boolean(),
+  })).optional().default([]),
+  stageOfChange: z.string().optional().default('contemplation'),
+  clinicalModeActive: z.boolean().optional().default(false),
   guidanceDepth: z.string().optional(),
   schemaTendencies: z.array(z.object({
     domain: z.string(),
@@ -129,7 +129,7 @@ export const engineProcessInputSchema = z.object({
   locale: z.enum(['nl', 'en', 'fr']),
   country: z.enum(['NL', 'BE', 'FR', 'UK', 'US']),
   guidanceDepth: z.string(),
-  clinicalModeActive: z.boolean(),
+  clinicalModeActive: z.boolean().optional().default(false),
   message: z.string(),
   conversationHistory: z.array(conversationMessageSchema),
   moodSliders: moodSlidersSchema,

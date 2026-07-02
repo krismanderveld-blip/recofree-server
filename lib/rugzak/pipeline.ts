@@ -665,6 +665,28 @@ export async function processMessage(
         serverNanoInterpretData = serverResult.nanoInterpret;
       }
 
+      // Apply server patches whenever server succeeds (regardless of GPT response)
+      if (serverResult.success && serverResult.patches) {
+        const p = serverResult.patches;
+        if (p.sessionState) {
+          if (sessionBuffer) {
+            sessionBuffer.currentZoneScore = p.sessionState.zoneScore;
+            sessionBuffer.currentZoneColor = p.sessionState.zoneColor as any;
+            sessionBuffer.usedModules = p.sessionState.usedModules;
+            sessionBuffer.messageCount = (sessionBuffer.messageCount ?? 0) + 1;
+          }
+          sessionDominantState = {
+            dominantModule: p.sessionState.dominantModule,
+            dominantTrigger: '',
+            dominantDirection: (p.sessionState.responseDirection || 'reflect') as any,
+            dominantTone: 'warm',
+            riskScore: p.safety?.crisisLevel ? p.safety.crisisLevel * 30 : 0,
+            selectionReason: 'server-engine',
+            sourceLayer: 'default',
+          };
+        }
+      }
+
       if (serverResult.success && serverResult.responseText) {
         const finalResponseText = serverResult.responseText;
         // Build updated chatHistory with user + AI messages
