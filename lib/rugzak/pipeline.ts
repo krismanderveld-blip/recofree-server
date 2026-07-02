@@ -570,6 +570,7 @@ export async function processMessage(
   // The server does: buffer, decay, dominant state, regulation, signal engine, GPT.
   // On failure: graceful degradation to client pipeline below.
   // ══════════════════════════════════════════════════════════════
+  let serverNanoInterpretData: any = null;
   if (isServerEngineActive()) {
     try {
       // Build conversation history (last 20 messages)
@@ -659,7 +660,13 @@ export async function processMessage(
 
       const serverResult = await callServerEngine(serverInput);
 
+      // Store server nanoInterpret for use in client pipeline trace (even if GPT response is null)
+      if (serverResult.success && serverResult.nanoInterpret) {
+        serverNanoInterpretData = serverResult.nanoInterpret;
+      }
+
       if (serverResult.success && serverResult.responseText) {
+        const finalResponseText = serverResult.responseText;
         // Build updated chatHistory with user + AI messages
         const nowIso = LocalDeviceTimeService.now().utcIso;
         const userMsg: ChatMessage = {
@@ -671,7 +678,7 @@ export async function processMessage(
         const aiMsg: ChatMessage = {
           id: `msg_ai_${Date.now() + 1}`,
           role: 'assistant',
-          content: serverResult.responseText,
+          content: finalResponseText,
           timestamp: nowIso,
         };
         const updatedChatHistory = [...(currentUserDat.chatHistory || []), userMsg, aiMsg];
@@ -878,7 +885,7 @@ export async function processMessage(
           },
           gpt: {
             selectedModel: 'server-engine',
-            responseLength: serverResult.responseText.length,
+            responseLength: (serverResult.responseText || '').length,
           },
           postGPT: {
             updatedZoneScore: serverResult.patches?.sessionState?.zoneScore ?? 0,
@@ -890,7 +897,7 @@ export async function processMessage(
         };
 
         return {
-          response: serverResult.responseText,
+          response: finalResponseText,
           updatedUserDat,
           updatedRugzak: composeRugzak(backpack, updatedUserDat),
           crisisLevel,
@@ -911,8 +918,13 @@ export async function processMessage(
         };
       }
 
-      // Server call failed — fall through to client pipeline
-      console.warn('[Pipeline] Server engine call failed, falling back to client pipeline:', serverResult.error);
+      // Server call succeeded but no GPT response, or failed entirely — fall through to client pipeline
+      // serverNanoInterpretData is preserved for use in the client pipeline trace below
+      if (!serverResult.success) {
+        console.warn('[Pipeline] Server engine call failed, falling back to client pipeline:', serverResult.error);
+      } else {
+        console.log('[Pipeline] Server engine OK but no GPT response — using client pipeline with server nanoInterpret');
+      }
     } catch (serverErr) {
       console.warn('[Pipeline] Server engine exception, falling back to client pipeline:', serverErr);
     }
@@ -3462,7 +3474,7 @@ export async function processMessage(
         }));
       } catch { return []; }
     })(),
-    nanoInterpret: null, // client-mode: nano-interpret runs server-side only
+    nanoInterpret: serverNanoInterpretData ?? null, // uses server nanoInterpret if engine call succeeded
     memory: {
       totalSessions: currentUserDat.totalSessions ?? 0,
       triggerPatterns: (currentUserDat.triggerPatterns || []).map(t => ({ trigger: t.trigger, count: t.count, weight: t.weight })),

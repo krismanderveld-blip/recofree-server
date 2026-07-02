@@ -129,7 +129,7 @@ interface ChatRequestInput {
   startEmotion: string;
 
   // User-controlled guidance depth
-  guidanceDepth?: 'light' | 'normal' | 'deep';
+  guidanceDepth?: 'light' | 'normal' | 'deep' | null;
 
   // Live buffer snapshot from ShortTermMemoryBuffer (per-message)
   bufferSnapshot?: {
