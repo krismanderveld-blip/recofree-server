@@ -2244,3 +2244,12 @@
 - [x] nanoInterpret data routed into trace block for debug visibility
 - [x] Unit test: server-pipeline-integration.test.ts (3 tests passing)
 - [x] Verified 0 new TypeScript errors (142 pre-existing unchanged)
+## Railway Schema & Format Fixes (2 Jul 2026)
+- [x] Fix Zod schema: moodSliders accepts string values (vsp: "GEEL"), lastSeen/lastUsed optional
+- [x] Fix: server/engine-process.ts was the actual import path (not root engine-process.ts)
+- [x] Fix: filter non-numeric moodSliders before passing to generateAIResponse
+- [x] Fix: adapt backpack format (app sends sections → server expects lifeStory)
+- [x] Fix: adapt userDat format (app sends frequency → server expects count, sessionAnalyses optional)
+- [x] Fix: safe logging in ai-chat.ts (optional chaining for backpack.lifeStory and userDat fields)
+- [x] Verified via curl: Railway returns full GPT response with realistic app payload
+- [ ] Verify end-to-end on device: app uses Railway response instead of falling back to client-mode
