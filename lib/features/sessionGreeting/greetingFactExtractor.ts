@@ -1,5 +1,5 @@
 /**
- * Greeting Fact Extractor — FIX 2
+ * Greeting Fact Extractor — FIX 3
  *
  * The engine determines TAGGED FACTS from selected sources.
  * GPT may ONLY verbalize these facts — it cannot add, interpret, or invent.
@@ -9,6 +9,10 @@
  * - source: which data layer it came from
  * - content: the literal text/value from the source
  * - relation: how this fact should relate to the greeting (engine-decided)
+ *
+ * FIX 3: buildDeterministicFallback now converts raw third-person narrative
+ * ("kris voelt zich overweldigd") to natural second-person greeting text.
+ * No raw logs.dat text is ever shown to the user.
  */
 
 import type { SelectedSynthesisSource } from './sessionGreetingV3.types';
@@ -160,6 +164,11 @@ function extractCoreFact(sourceType: string, safeAnchor: string): string {
 /**
  * Build a deterministic fallback greeting from facts alone (no GPT).
  * Used when GPT hallucinates or fails after retries.
+ *
+ * CRITICAL: This fallback must produce NATURAL SECOND-PERSON text.
+ * Raw logs.dat narratives are in third-person ("kris voelt zich overweldigd")
+ * and must NEVER appear verbatim. Instead, extract the TOPIC and embed it
+ * in a natural template sentence.
  */
 function buildDeterministicFallback(
   facts: GreetingFact[],
@@ -174,23 +183,26 @@ function buildDeterministicFallback(
   // Find continuity fact (previous session)
   const continuityFact = facts.find(f => f.relation === 'continuity_reference');
   if (continuityFact) {
-    // Extract key topic from the session summary
-    const topic = extractTopicFromNarrative(continuityFact.content);
+    // Convert raw narrative to a safe second-person topic reference
+    const topic = narrativeToSecondPersonTopic(continuityFact.content);
     if (topic) {
-      greeting += ` Vorige keer hadden we het over ${topic}.`;
+      greeting += ` ${topic}`;
     }
   }
 
   // Find state acknowledgment
   const stateFact = facts.find(f => f.relation === 'acknowledge_state');
   if (stateFact && !continuityFact) {
-    greeting += ` ${truncateAtBoundary(stateFact.content, 80)}.`;
+    const stateText = narrativeToSecondPersonState(stateFact.content);
+    if (stateText) {
+      greeting += ` ${stateText}`;
+    }
   }
 
   // Find coping suggestion for elevated zones
   const copingFact = facts.find(f => f.relation === 'coping_suggestion');
   if (copingFact && ['ORANJE', 'ROOD', 'PAARS'].includes(zone)) {
-    greeting += ` Denk aan wat je zelf zei dat helpt: ${copingFact.content}.`;
+    greeting += ` Denk aan wat je zelf zei dat helpt: ${truncateAtBoundary(copingFact.content, 60)}.`;
   }
 
   // End with zone-appropriate question
@@ -205,52 +217,157 @@ function buildDeterministicFallback(
   return greeting;
 }
 
+// ─── Narrative-to-Second-Person Converters ─────────────────────────────────
+
 /**
- * Extract the main topic from a session narrative.
- * Returns a short phrase suitable for "Vorige keer hadden we het over [X]"
+ * Convert a raw third-person narrative into a natural second-person topic reference.
  *
- * IMPORTANT: Never truncates mid-word or mid-sentence.
- * Uses sentence boundaries or word boundaries to produce clean output.
+ * Input examples (raw from logs.dat):
+ *   "kris voelt zich overweldigd door de situatie met zijn begeleider"
+ *   "gebruiker besprak stress op werk en relatieproblemen"
+ *   "craving en copingstrategieën bij sociale druk"
+ *
+ * Output examples:
+ *   "Vorige keer hadden we het over hoe je je voelde bij de situatie met je begeleider."
+ *   "Vorige keer hadden we het over stress op werk."
+ *   "Vorige keer hadden we het over craving bij sociale druk."
+ *
+ * If the narrative is too messy to convert cleanly, returns a generic continuity line.
  */
-function extractTopicFromNarrative(narrative: string): string | null {
+function narrativeToSecondPersonTopic(narrative: string): string | null {
   if (!narrative || narrative.length < 10) return null;
 
+  // Step 1: Extract the core topic (strip prefixes, names, third-person constructions)
+  let topic = extractTopicCore(narrative);
+  if (!topic || topic.length < 5) {
+    // If we can't extract a clean topic, use generic continuity
+    return 'We pakken de draad op van vorige keer.';
+  }
+
+  // Step 2: Convert third-person to second-person
+  topic = thirdToSecondPerson(topic);
+
+  // Step 3: Ensure clean sentence boundary
+  topic = truncateAtBoundary(topic, 70);
+
+  if (!topic || topic.length < 5) {
+    return 'We pakken de draad op van vorige keer.';
+  }
+
+  return `Vorige keer hadden we het over ${topic}.`;
+}
+
+/**
+ * Convert a raw state/mood narrative into a natural second-person acknowledgment.
+ */
+function narrativeToSecondPersonState(narrative: string): string | null {
+  if (!narrative || narrative.length < 5) return null;
+
+  let text = extractTopicCore(narrative);
+  if (!text || text.length < 5) return null;
+
+  text = thirdToSecondPerson(text);
+  text = truncateAtBoundary(text, 60);
+
+  if (!text || text.length < 5) return null;
+
+  return `Ik zie dat ${text}.`;
+}
+
+/**
+ * Extract the core topic from a narrative, stripping all meta-prefixes,
+ * names, and structural markers.
+ */
+function extractTopicCore(narrative: string): string | null {
+  let clean = narrative.trim().toLowerCase();
+
+  // Strip common narrative prefixes
+  clean = clean
+    .replace(/^sessie-inhoud \(\d+ berichten\):\s*/i, '')
+    .replace(/^sessie met \d+ berichten.*?:\s*/i, '')
+    .replace(/^gebruiker besprak:?\s*/i, '')
+    .replace(/^de gebruiker besprak:?\s*/i, '')
+    .replace(/^gebruiker vertelde:?\s*/i, '')
+    .replace(/^de gebruiker vertelde:?\s*/i, '')
+    .replace(/^samenvatting:?\s*/i, '');
+
+  // Strip user names at the start (common pattern: "kris voelt zich...", "jan besprak...")
+  // Match: [name] [verb] ... → strip the name
+  clean = clean.replace(/^[a-z]{2,15}\s+(?=voelt|voelde|besprak|vertelde|heeft|had|is|was|ervaart|ervoer|maakt|maakte|denkt|dacht|wil|wilde|zoekt|zocht|merkt|merkte|praat|praatte|sprak|spreekt)/i, '');
+
   // If narrative contains pipe-separated messages, take the most substantive one
-  if (narrative.includes(' | ')) {
-    const parts = narrative.split(' | ');
-    // Find the longest meaningful part (likely the main topic)
+  if (clean.includes(' | ')) {
+    const parts = clean.split(' | ');
     const substantive = parts
       .filter(p => p.length > 15)
       .sort((a, b) => b.length - a.length)[0];
     if (substantive) {
-      return truncateAtBoundary(substantive.toLowerCase(), 80);
+      clean = substantive.trim();
     }
   }
 
-  // Otherwise use the narrative directly
-  const clean = narrative
-    .replace(/^Sessie-inhoud \(\d+ berichten\):\s*/i, '')
-    .replace(/^Sessie met \d+ berichten.*?:\s*/i, '')
-    .replace(/^Gebruiker besprak:\s*/i, '')
-    .trim();
-
-  if (clean.length < 10) return null;
-
-  // Try to get the first complete sentence
+  // Try to get the first complete sentence if multiple exist
   const firstSentence = clean.match(/^[^.!?]+[.!?]/)?.[0];
   if (firstSentence && firstSentence.length >= 10 && firstSentence.length <= 100) {
-    // Remove trailing punctuation for natural embedding in "we het over [X]"
-    return firstSentence.replace(/[.!?]+$/, '').toLowerCase().trim();
+    clean = firstSentence.replace(/[.!?]+$/, '').trim();
   }
 
-  return truncateAtBoundary(clean.toLowerCase(), 80);
+  if (clean.length < 5) return null;
+  return clean;
 }
+
+/**
+ * Convert Dutch third-person constructions to second-person.
+ * Handles common patterns from GPT-generated session summaries.
+ *
+ * "voelt zich overweldigd" → "je je overweldigd voelt"
+ * "heeft moeite met..." → "je moeite hebt met..."
+ * "is bang voor..." → "je bang bent voor..."
+ */
+function thirdToSecondPerson(text: string): string {
+  let result = text;
+
+  // Pattern: "voelt zich [X]" → "hoe je je [X] voelt"
+  result = result.replace(/^voelt zich\s+(.+)$/i, 'hoe je je $1 voelt');
+  result = result.replace(/^voelde zich\s+(.+)$/i, 'hoe je je $1 voelde');
+
+  // Pattern: "heeft [X]" → "je [X] hebt"
+  result = result.replace(/^heeft\s+(.+)$/i, 'je $1 hebt');
+  result = result.replace(/^had\s+(.+)$/i, 'je $1 had');
+
+  // Pattern: "is [X]" → "je [X] bent"
+  result = result.replace(/^is\s+(.+)$/i, 'je $1 bent');
+  result = result.replace(/^was\s+(.+)$/i, 'je $1 was');
+
+  // Pattern: "ervaart [X]" → "wat je ervaart met [X]"
+  result = result.replace(/^ervaart\s+(.+)$/i, 'wat je ervaart met $1');
+  result = result.replace(/^ervoer\s+(.+)$/i, 'wat je ervoer met $1');
+
+  // Pattern: "maakt zich zorgen over [X]" → "je zorgen over [X]"
+  result = result.replace(/^maakt zich zorgen over\s+(.+)$/i, 'je zorgen over $1');
+  result = result.replace(/^maakte zich zorgen over\s+(.+)$/i, 'je zorgen over $1');
+
+  // Pattern: "denkt na over [X]" → "waar je over nadenkt"
+  result = result.replace(/^denkt na over\s+(.+)$/i, 'waar je over nadenkt: $1');
+
+  // Pattern: "wil [X]" → "wat je wilt: [X]"
+  result = result.replace(/^wil\s+(.+)$/i, 'wat je wilt: $1');
+  result = result.replace(/^wilde\s+(.+)$/i, 'wat je wilde: $1');
+
+  // Replace possessive "zijn/haar" with "je" when it appears to refer to the user
+  result = result.replace(/\bzijn\s+(begeleider|partner|moeder|vader|broer|zus|vriend|vriendin|baas|collega|kind|kinderen|gezin|familie|werk|baan|relatie|situatie|gevoel|gevoelens|gedachten|angst|stress|craving)\b/gi, 'je $1');
+  result = result.replace(/\bhaar\s+(begeleider|partner|moeder|vader|broer|zus|vriend|vriendin|baas|collega|kind|kinderen|gezin|familie|werk|baan|relatie|situatie|gevoel|gevoelens|gedachten|angst|stress|craving)\b/gi, 'je $1');
+
+  return result;
+}
+
+// ─── Utility Functions ─────────────────────────────────────────────────────
 
 /**
  * Truncate text at a word boundary, never mid-word.
  * Returns text up to maxLen chars, cut at the last space before maxLen.
  */
-function truncateAtBoundary(text: string, maxLen: number): string {
+export function truncateAtBoundary(text: string, maxLen: number): string {
   if (text.length <= maxLen) return text.replace(/[.!?,;:]+$/, '').trim();
 
   // Find last space before maxLen

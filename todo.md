@@ -2272,3 +2272,14 @@
 - [x] Add truncateAtBoundary() utility function in greetingFactExtractor.ts
 - [x] Tests: 15 new tests for error filtering + topic extraction + boundary truncation (all passing)
 - [x] Regression: all existing session-end + greeting tests still passing
+## Greeting Fallback: Second-Person Conversion (2 Jul 2026)
+- [x] Confirmed: greeting GPT call already routes via Railway /api/session-greeting (getApiBaseUrl → PRODUCTION_API_URL)
+- [x] Rewrote buildDeterministicFallback to use narrativeToSecondPersonTopic() instead of raw text
+- [x] Added narrativeToSecondPersonState() for mood/state acknowledgments
+- [x] Added extractTopicCore(): strips names, prefixes, meta-labels from raw narrative
+- [x] Added thirdToSecondPerson(): converts "voelt zich/heeft/is/maakt zich zorgen" to second-person
+- [x] Possessive "zijn/haar [relatie-noun]" → "je [relatie-noun]" conversion
+- [x] Generic fallback "We pakken de draad op van vorige keer." when topic extraction fails
+- [x] Tests: 22 tests passing (error filter + second-person conversion + boundary truncation)
+- [x] Regression: all 41 greeting/session-end/logsDat tests still passing
+- [x] 0 new TS errors in source files (pre-existing test-only errors unchanged)
