@@ -2263,3 +2263,12 @@
 ## Railway Cold Start Mitigation (2 Jul 2026)
 - [x] Added warmup ping on app mount (GET /api/health) to wake Railway container before greeting/chat
 - [x] Greeting already routes via Railway /api/session-greeting (confirmed working ~2s via curl)
+## Greeting Fix: Error Narratives + Halve Zinnen (2 Jul 2026)
+- [x] Fix sessionEndSummarizer.ts: fallback narrative never contains raw error messages
+- [x] Fix sessionEndSummarizer.ts: clean minimal summary from user messages when GPT fails
+- [x] Add isErrorNarrative() defense-in-depth filter in adaptLogsDat() (sessionInitGreetingStep.ts)
+- [x] Fix extractTopicFromNarrative(): respect word/sentence boundaries (no mid-word truncation)
+- [x] Fix stateFact.content slice: use truncateAtBoundary() instead of raw .slice(0,80)
+- [x] Add truncateAtBoundary() utility function in greetingFactExtractor.ts
+- [x] Tests: 15 new tests for error filtering + topic extraction + boundary truncation (all passing)
+- [x] Regression: all existing session-end + greeting tests still passing

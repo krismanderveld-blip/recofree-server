@@ -332,6 +332,40 @@ function adaptProjectionsDat(): GreetingProjectionsDatSnapshot {
   return { fears: [] };
 }
 
+/**
+ * Defense-in-depth: detect narratives that are actually error messages.
+ * These should NEVER be shown in the greeting.
+ */
+function isErrorNarrative(text: string): boolean {
+  if (!text) return false;
+  const lower = text.toLowerCase();
+  const ERROR_INDICATORS = [
+    'niet beschikbaar',
+    'network requ',
+    'network error',
+    'failed to fetch',
+    'connection refused',
+    'timeout',
+    'http 5',
+    'http 4',
+    'internal server error',
+    'openai error',
+    'gpt-samenvatting niet',
+    'samenvatting niet beschikbaar',
+    'error:',
+  ];
+  // If the narrative contains error indicators AND is short (< 200 chars),
+  // it's almost certainly an error fallback, not real content
+  const hasError = ERROR_INDICATORS.some(indicator => lower.includes(indicator));
+  if (!hasError) return false;
+  // Short narratives with errors are always bad
+  if (text.length < 200) return true;
+  // Longer narratives: only reject if error indicator is in the first 100 chars
+  // (real narratives might mention "network" in context)
+  const first100 = lower.slice(0, 100);
+  return ERROR_INDICATORS.some(indicator => first100.includes(indicator));
+}
+
 function adaptLogsDat(
   _lastSessionSummary?: SessionInitGreetingInput['lastSessionSummary'],
   allSessions?: import('@/lib/types/memory/logsDat.types').SessionLogSummary[],
@@ -348,7 +382,9 @@ function adaptLogsDat(
     });
 
     const mostRecent = sorted[0];
-    const narrative = mostRecent.compressedNarrative || '';
+    const rawNarrative = mostRecent.compressedNarrative || '';
+    // Defense-in-depth: filter out narratives that contain error messages
+    const narrative = isErrorNarrative(rawNarrative) ? '' : rawNarrative;
 
     // Detect if this is a rich GPT summary or just a poor live-entry.
     // Live entries start with "Sessie-inhoud (N berichten):" — raw concatenation, not a real summary.

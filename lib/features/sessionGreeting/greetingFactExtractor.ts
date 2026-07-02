@@ -184,7 +184,7 @@ function buildDeterministicFallback(
   // Find state acknowledgment
   const stateFact = facts.find(f => f.relation === 'acknowledge_state');
   if (stateFact && !continuityFact) {
-    greeting += ` ${stateFact.content.slice(0, 80)}.`;
+    greeting += ` ${truncateAtBoundary(stateFact.content, 80)}.`;
   }
 
   // Find coping suggestion for elevated zones
@@ -208,6 +208,9 @@ function buildDeterministicFallback(
 /**
  * Extract the main topic from a session narrative.
  * Returns a short phrase suitable for "Vorige keer hadden we het over [X]"
+ *
+ * IMPORTANT: Never truncates mid-word or mid-sentence.
+ * Uses sentence boundaries or word boundaries to produce clean output.
  */
 function extractTopicFromNarrative(narrative: string): string | null {
   if (!narrative || narrative.length < 10) return null;
@@ -220,16 +223,41 @@ function extractTopicFromNarrative(narrative: string): string | null {
       .filter(p => p.length > 15)
       .sort((a, b) => b.length - a.length)[0];
     if (substantive) {
-      return substantive.slice(0, 80).toLowerCase();
+      return truncateAtBoundary(substantive.toLowerCase(), 80);
     }
   }
 
-  // Otherwise take first 80 chars of the narrative
+  // Otherwise use the narrative directly
   const clean = narrative
     .replace(/^Sessie-inhoud \(\d+ berichten\):\s*/i, '')
     .replace(/^Sessie met \d+ berichten.*?:\s*/i, '')
+    .replace(/^Gebruiker besprak:\s*/i, '')
     .trim();
 
   if (clean.length < 10) return null;
-  return clean.slice(0, 80).toLowerCase();
+
+  // Try to get the first complete sentence
+  const firstSentence = clean.match(/^[^.!?]+[.!?]/)?.[0];
+  if (firstSentence && firstSentence.length >= 10 && firstSentence.length <= 100) {
+    // Remove trailing punctuation for natural embedding in "we het over [X]"
+    return firstSentence.replace(/[.!?]+$/, '').toLowerCase().trim();
+  }
+
+  return truncateAtBoundary(clean.toLowerCase(), 80);
+}
+
+/**
+ * Truncate text at a word boundary, never mid-word.
+ * Returns text up to maxLen chars, cut at the last space before maxLen.
+ */
+function truncateAtBoundary(text: string, maxLen: number): string {
+  if (text.length <= maxLen) return text.replace(/[.!?,;:]+$/, '').trim();
+
+  // Find last space before maxLen
+  const truncated = text.slice(0, maxLen);
+  const lastSpace = truncated.lastIndexOf(' ');
+  const result = lastSpace > 20 ? truncated.slice(0, lastSpace) : truncated;
+
+  // Remove trailing punctuation for clean embedding
+  return result.replace(/[.!?,;:\s]+$/, '').trim();
 }

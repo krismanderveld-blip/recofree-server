@@ -2,6 +2,10 @@
  * Session End Summarizer — Generates a session summary via GPT-4o-mini.
  * Called when a session ends (app background, explicit end, or timeout).
  * store:false on all OpenAI calls.
+ *
+ * Routes the GPT call to the Railway backend (/api/signal-engine) which is
+ * reachable from both sandbox (web) and device (APK). The apiBaseUrl is
+ * resolved via getApiBaseUrl() which returns Railway URL on device.
  */
 import type { SessionBuffer } from "@/lib/types/memory/sessionBuffer.types";
 import type { SessionLogSummary } from "@/lib/types/memory/logsDat.types";
@@ -56,10 +60,22 @@ Retourneer ALLEEN geldige JSON in dit formaat:
 
 /**
  * Build a minimal but valid SessionLogSummary (used as fallback or when GPT is unreachable).
+ * IMPORTANT: The narrative must NEVER contain raw error messages or technical details.
  */
-function buildMinimalSummary(request: SessionSummaryRequest, narrative: string): SessionLogSummary {
+function buildMinimalSummary(request: SessionSummaryRequest): SessionLogSummary {
   const snapshot = LocalDeviceTimeService.now();
   const now = snapshot.utcIso;
+
+  // Extract a clean narrative from user messages (no error text)
+  const userMessages = request.buffer.compactMessages
+    .filter((m) => m.role === "user")
+    .slice(-5)
+    .map((m) => m.text.slice(0, 300));
+
+  const narrative = userMessages.length > 0
+    ? `Sessie-inhoud (${request.buffer.compactMessages.length} berichten): ${userMessages.join(" | ")}`.slice(0, 1500)
+    : `Sessie met ${request.buffer.compactMessages.length} berichten`;
+
   return {
     summaryId: `summary_${request.sessionId}_${snapshot.epochMs}`,
     sessionId: request.sessionId,
@@ -91,7 +107,8 @@ function buildMinimalSummary(request: SessionSummaryRequest, narrative: string):
 
 /**
  * Call GPT-4o-mini to generate session summary.
- * Falls back to a minimal summary if the call fails.
+ * Falls back to a clean minimal summary if the call fails.
+ * NEVER stores raw error messages in the compressedNarrative.
  */
 export async function generateSessionSummary(
   request: SessionSummaryRequest
@@ -170,9 +187,9 @@ export async function generateSessionSummary(
       tokenCount: estimateTokens(prompt) + estimateTokens(rawOutput),
     };
   } catch (err) {
-    // Graceful fallback — minimal summary without GPT
-    const narrative = `Sessie beëindigd (${request.buffer.compactMessages.length} berichten). GPT-samenvatting niet beschikbaar: ${err instanceof Error ? err.message : String(err)}`;
-    const fallbackSummary = buildMinimalSummary(request, narrative);
+    // Graceful fallback — clean minimal summary WITHOUT error text in narrative
+    console.warn(`[SessionEndSummarizer] GPT call failed: ${err instanceof Error ? err.message : String(err)}`);
+    const fallbackSummary = buildMinimalSummary(request);
 
     return {
       summary: fallbackSummary,
