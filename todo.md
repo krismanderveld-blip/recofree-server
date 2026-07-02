@@ -2260,3 +2260,6 @@
 - [x] Route client GPT calls to Railway /api/gpt-proxy
 - [x] Maintain fallback to sandbox tRPC if Railway fails
 - [ ] Test end-to-end on device (awaiting user test)
+## Railway Cold Start Mitigation (2 Jul 2026)
+- [x] Added warmup ping on app mount (GET /api/health) to wake Railway container before greeting/chat
+- [x] Greeting already routes via Railway /api/session-greeting (confirmed working ~2s via curl)

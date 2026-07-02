@@ -95,6 +95,13 @@ export default function RootLayout() {
     initManusRuntime();
   }, []);
 
+  // Warmup ping to Railway — wake up the container so greeting/chat calls are fast
+  useEffect(() => {
+    if (Platform.OS === "web") return; // Only on native device
+    const RAILWAY_URL = "https://railwayappdashboard-production.up.railway.app";
+    fetch(`${RAILWAY_URL}/api/health`, { method: "GET" }).catch(() => {});
+  }, []);
+
   // Day structure: timezone observer + notification rescheduling
   useDayStructureObserver();
 
