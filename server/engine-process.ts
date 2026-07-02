@@ -69,9 +69,11 @@ const vspSectionSchema = z.object({
   signals: z.string().optional(),
   whatHelps: z.string().optional(),
   anchorPhrase: z.string().optional(),
+  lastUpdated: z.string().optional(),
+  source: z.string().optional(),
 });
 
-const moodSlidersSchema = z.record(z.string(), z.union([z.number(), z.null()]).optional());
+const moodSlidersSchema = z.record(z.string(), z.union([z.number(), z.string(), z.null()]).optional());
 
 const conversationMessageSchema = z.object({
   role: z.enum(['user', 'assistant']),
@@ -102,12 +104,12 @@ const userDatSummarySchema = z.object({
   triggerPatterns: z.array(z.object({
     trigger: z.string(),
     frequency: z.number(),
-    lastSeen: z.string(),
+    lastSeen: z.string().optional().default(''),
   })),
   moduleUsage: z.array(z.object({
     moduleId: z.string(),
     count: z.number(),
-    lastUsed: z.string(),
+    lastUsed: z.string().optional().default(''),
   })).optional().default([]),
   stageOfChange: z.string().optional().default('contemplation'),
   clinicalModeActive: z.boolean().optional().default(false),
