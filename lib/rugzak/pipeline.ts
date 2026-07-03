@@ -325,6 +325,7 @@ import { buildDetectionBundle, runMemoryWriteBack, getSessionLifecycleManager, t
 import { LocalDeviceTimeService } from "@/lib/core/time";
 import { isServerEngineActive, callServerEngine, type ServerEngineCallInput } from '@/lib/migration';
 import { getApiBaseUrl } from '@/constants/oauth';
+import { callNanoInterpret, type ClientNanoInterpretResult } from '@/lib/pipeline/nano-interpret-client';
 
 // ─── Pattern Marking (post-GPT local state) ─────────────────
 
@@ -1030,6 +1031,25 @@ export async function processMessage(
     analysis.priorityModules[0] || (backpack.userType === 'elias' ? ELIAS_DEFAULT_MODULE : KIM_DEFAULT_MODULE),
   );
 
+  // ── PRE-GPT STEP 3b: Nano-Interpret pre-call (semantic module selection via Railway proxy) ──
+  // Calls gpt-4.1-nano to interpret the user message semantically.
+  // On success: overrides the dominant module from selectDominantState.
+  // On failure: falls back to keyword-based detection (existing behavior).
+  let clientNanoResult: ClientNanoInterpretResult | null = null;
+  const isCrisisForNano = sessionBuffer?.currentZoneColor === 'PURPLE' || sessionBuffer?.currentIntent === 'crisis';
+  if (!isCrisisForNano) {
+    clientNanoResult = await callNanoInterpret(userMessage, backpack.userType as 'elias' | 'kim');
+    if (clientNanoResult) {
+      console.log(`[Pipeline] NANO-INTERPRET: resolvedModule=${clientNanoResult.resolvedModule}, matchedTheme=${clientNanoResult.matchedTheme}, intent=${clientNanoResult.intent}, themes=[${clientNanoResult.themes.join(', ')}]`);
+      // Store for trace
+      serverNanoInterpretData = clientNanoResult;
+    } else {
+      console.warn('[Pipeline] NANO-INTERPRET: unavailable, falling back to keyword matching');
+    }
+  } else {
+    console.log('[Pipeline] NANO-INTERPRET: skipped (crisis mode)');
+  }
+
   // Select dominant state (pre-GPT decision variable — NOT reselected after GPT)
   // Build VSP context for module selection: active zone + what helps for that zone
   const earlyMood = currentUserDat.currentMood || (ELIAS_DEFAULT_MOOD as any);
@@ -1059,7 +1079,9 @@ export async function processMessage(
     currentUserDat.triggerPatterns || [],
     analysis.priorityModules,
     backpack.userType === 'elias' ? { vspLevel: earlyVspLevel, whatHelps: vspWhatHelps, userMessage } : undefined,
+    clientNanoResult ?? undefined,
   );
+
 
   // ── LOOPBLOCKER: Per-session module repetition detection ──
   // If the selected module was already used in this session (and it's not a crisis),

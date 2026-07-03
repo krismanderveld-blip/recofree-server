@@ -267,6 +267,7 @@ export function buildTraceBlock(input: EngineTraceInput): string {
   lines.push('NANO-INTERPRET:');
   if (input.nanoInterpret) {
     const ni = input.nanoInterpret;
+    lines.push(`  source: client-proxy (Railway /api/nano-interpret)`);
     lines.push(`  intent: ${ni.intent}`);
     lines.push(`  themes: [${ni.themes.join(', ')}]`);
     lines.push(`  resolvedModule: ${ni.resolvedModule ?? 'none'}`);
@@ -275,7 +276,7 @@ export function buildTraceBlock(input: EngineTraceInput): string {
       lines.push(`  translatedNL: ${ni.translatedNL}`);
     }
   } else {
-    lines.push('  (niet beschikbaar — client-mode of nano uitgeschakeld)');
+    lines.push('  (niet beschikbaar — proxy timeout/error, fallback naar keyword matching)');
   }
   lines.push('');
 

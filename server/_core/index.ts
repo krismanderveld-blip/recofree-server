@@ -15,6 +15,7 @@ import { registerSessionGreetingRoute } from "../session-greeting";
 import { registerEngineProcessRoute } from "../engine-process";
 import { registerDebugPromptRoute, setSessionCacheGetter } from "../debug-prompt";
 import { registerGptProxyRoute } from "../gpt-proxy";
+import { registerNanoInterpretRoute } from "../nano-interpret-proxy";
 import { getSessionCache } from "../ai-chat";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
@@ -77,6 +78,7 @@ async function startServer() {
   registerSessionGreetingRoute(app);
   registerEngineProcessRoute(app);
   registerGptProxyRoute(app);
+  registerNanoInterpretRoute(app);
   registerDebugPromptRoute(app);
   setSessionCacheGetter(getSessionCache);
 

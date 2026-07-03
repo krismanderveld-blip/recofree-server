@@ -44,6 +44,7 @@ import {
 } from '../engine/elias/module-catalog';
 import { detectShortModuleTrigger } from '../engine/elias/short-module-detector';
 import { SHORT_MODULE_TAG_MAP } from '../engine/elias/short-module-routing';
+import type { ClientNanoInterpretResult } from '../pipeline/nano-interpret-client';
 
 // ─── Output Types ────────────────────────────────────────────
 
@@ -59,7 +60,7 @@ export interface DominantState {
   /** Why this was selected (for debugging/logging) */
   selectionReason: string;
   /** The source layer that won (for priority tracking) */
-  sourceLayer: 'crisis' | 'live_trigger' | 'extreme_slider' | 'session_pattern' | 'userdat_pattern' | 'short_module_keyword' | 'backpack_relevance' | 'default';
+  sourceLayer: 'crisis' | 'live_trigger' | 'extreme_slider' | 'session_pattern' | 'userdat_pattern' | 'short_module_keyword' | 'backpack_relevance' | 'nano_interpret' | 'default';
   /** Risk score on 0-100 scale */
   riskScore: number;
 }
@@ -201,7 +202,8 @@ export function selectDominantState(
   userType: UserType,
   triggerPatterns: TriggerPattern[],
   analyzerModules: string[],
-  vspContext?: { vspLevel: string | null; whatHelps: string | null; userMessage: string }
+  vspContext?: { vspLevel: string | null; whatHelps: string | null; userMessage: string },
+  nanoInterpret?: ClientNanoInterpretResult,
 ): DominantState {
   const distress = getDistress100(mood, userType);
   const resilience = getResilience100(mood, userType);
@@ -359,8 +361,8 @@ export function selectDominantState(
   }
 
   // ── PRIORITY 5.5: SHORT MODULE KEYWORD DETECTION (Elias only) ──
+  // Explicit keyword matches win over semantic detection.
   if (userType === 'elias' && buffer.recentMessages && buffer.recentMessages.length > 0) {
-    // Check last user message for short module keyword matches
     const lastUserMsg = buffer.recentMessages
       .filter((m: { role: string }) => m.role === 'user')
       .pop();
@@ -378,6 +380,21 @@ export function selectDominantState(
         };
       }
     }
+  }
+
+  // ── PRIORITY 5.7: NANO-INTERPRET SEMANTIC DETECTION ──
+  // Catches nuances that keywords miss. Only fires when no keyword matched above.
+  // Falls through to backpack relevance if nano is unavailable or returned no match.
+  if (nanoInterpret?.resolvedModule) {
+    return {
+      dominantModule: nanoInterpret.resolvedModule,
+      dominantTrigger: buffer.currentTriggerGuess || '',
+      dominantDirection: buffer.responseDirection,
+      dominantTone: determineTone(buffer.currentZoneColor, buffer.currentIntent, buffer.responseDirection),
+      selectionReason: `nano-interpret: theme=${nanoInterpret.matchedTheme}, intent=${nanoInterpret.intent}`,
+      sourceLayer: 'nano_interpret',
+      riskScore: buffer.currentZoneScore,
+    };
   }
 
   // ── PRIORITY 6: BACKPACK RELEVANCE / ANALYZER MODULES ──
