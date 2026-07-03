@@ -56,7 +56,7 @@
   "chat.migration.success": "Terminé : ${result.migrated} migrés, ${result.skipped} ignorés.",
   "chat.migration.failed_unexpected": "Échec. Réessaie après le redémarrage de l’app.",
   "chat.header.back": "←",
-  "chat.header.typing": "Écriture...",
+  "chat.header.typing": "En train d'écrire...",
   "chat.header.online": "En ligne",
   "chat.header.end_button": "Terminer",
   "chat.toast.session_saved": "Session précédente enregistrée en sécurité",

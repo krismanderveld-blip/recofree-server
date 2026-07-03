@@ -44,7 +44,7 @@ import { logDebugEvent } from '@/lib/debug/session-logger';
 import { initGptSignalEngine } from '@/lib/engine/local-llm/engine-provider';
 import { getApiBaseUrl } from '@/constants/oauth';
 import { getSessionLifecycleManager, buildDetectionBundle, runMemoryWriteBack, type PipelineResultForMemory } from '@/lib/pipeline/memory/memoryIntegration';
-import { sessionInitGreetingStep, type SessionInitGreetingInput } from '@/lib/features/sessionGreeting/sessionInitGreetingStep';
+import { greetingV4, type GreetingV4Input } from '@/lib/features/greetingV4/greetingV4';
 import type { MemoryStoresSnapshot } from '@/lib/pipeline/memory/memoryCommitService';
 import { createEmptyUserDat } from '@/lib/types/memory/userDat.types';
 import { createEmptyStateDat } from '@/lib/types/memory/stateDat.types';
@@ -518,40 +518,26 @@ function ChatScreenInner() {
 
       const provider = getAIProvider();
 
-      // ── Session Greeting Engine: deterministic anchor selection + GPT greeting ──
+      // ── Greeting V4: parametric greeting via Railway proxy ──
       let greetingText: string | null = null;
       try {
         const apiUrl = getApiBaseUrl();
         if (apiUrl) {
-          // Load last session summary from logs.dat via lifecycle manager
-          let lastSessionSummary: SessionInitGreetingInput['lastSessionSummary'] = null;
-          let allSessions: SessionInitGreetingInput['allSessions'] = undefined;
+          // Load logs.dat sessions for logsDatSessionsRef (used by per-message pipeline)
           try {
             const lifecycleMgr = getSessionLifecycleManager();
             const stores = lifecycleMgr.getStores();
             const persona = (state.userType === 'elias' ? 'elias' : 'kim') as any;
             const logsDat = await stores.logsDatStore.load(persona);
             if (logsDat && logsDat.sessions.length > 0) {
-              const lastSession = logsDat.sessions[logsDat.sessions.length - 1];
-              lastSessionSummary = {
-                compressedNarrative: lastSession.compressedNarrative ?? '',
-                discussedTopics: lastSession.discussedTopics ?? [],
-                unresolvedTensions: (lastSession.openEndpoints ?? []).map((ep) => ep.label),
-                suggestedFollowUp: (lastSession.openEndpoints ?? []).filter((ep) => ep.category === 'follow_up').map((ep) => ep.label),
-                emotionalArc: (lastSession.emotionalThemes ?? []).map((t) => t.label).join(', ') || undefined,
-                turnCount: lastSession.moduleTrace?.reduce((sum, m) => sum + m.count, 0) ?? undefined,
-              };
-              // Pass all sessions for cross-session pattern detection
-              allSessions = logsDat.sessions;
               logsDatSessionsRef.current = logsDat.sessions;
             }
-            // ── Transfer Diagnostic Point 5: Greeting read from logs.dat ──
             logDebugEvent('transfer_5_greeting_read', {
               success: true,
               logsDatSessionCount: logsDat?.sessions?.length ?? 0,
-              hasLastSessionSummary: lastSessionSummary !== null,
-              readFrom: `recofree_memory/${(state.userType === 'elias' ? 'elias' : 'kim')}/logs.dat`,
-              sessionAnalysesCount: '(separate store: @recofree_userdat — NOT read here)',
+              hasLastSessionSummary: logsDat?.sessions?.length > 0,
+              readFrom: `recofree_memory/${persona}/logs.dat`,
+              sessionAnalysesCount: '(separate store)',
             });
           } catch (logsErr) {
             console.warn('[Chat] Could not load logs.dat for greeting context:', logsErr);
@@ -559,44 +545,12 @@ function ChatScreenInner() {
               success: false,
               error: logsErr instanceof Error ? logsErr.message : String(logsErr),
               logsDatSessionCount: 0,
-              readFrom: `recofree_memory/${(state.userType === 'elias' ? 'elias' : 'kim')}/logs.dat`,
-              sessionAnalysesCount: '(separate store: @recofree_userdat)',
+              readFrom: `recofree_memory/${state.userType === 'elias' ? 'elias' : 'kim'}/logs.dat`,
+              sessionAnalysesCount: '(separate store)',
             });
           }
 
-          // Generate VSP Insight context for clinical annotation
-          let vspInsightCtx: string | null = null;
-          try {
-            const vspLevel = (userDat?.currentMood as any)?.vsp as string | undefined;
-            if (vspLevel) {
-              const { runVspInsightLayer } = await import('@/src/features/vspInsight/vspInsightPipelineLayer');
-              const vspResult = runVspInsightLayer({
-                persona: (state.userType === 'elias' ? 'elias' : 'kim') as any,
-                userMessage: '',
-                recentMessages: [],
-                moodSliders: {},
-                selfReportedZone: vspLevel as any,
-                sessionTurnCount: 0,
-                safetyCore: {
-                  finalZone: vspLevel as any,
-                  userReportedZone: vspLevel as any,
-                  safetyOverrideActive: false,
-                  crisisDetected: false,
-                  relapseIntentDetected: false,
-                  modelRoutingDecision: 'gpt-4o',
-                  activeSafetyModuleId: null,
-                },
-                profile: null,
-              });
-              if (vspResult.active) {
-                vspInsightCtx = vspResult.contextString;
-              }
-            }
-          } catch (vspErr) {
-            console.warn('[Chat] VSP Insight for greeting failed:', vspErr);
-          }
-
-          // Load previous session messages for greeting context (last 5)
+          // Load previous session messages (last 10) for V4 inline summary
           let prevMsgsForGreeting: Array<{ role: string; content: string; timestamp?: string }> = [];
           try {
             const udJsonForPrev = await readEncrypted(USERDAT_KEY);
@@ -616,24 +570,35 @@ function ChatScreenInner() {
             console.warn('[Chat] Could not load previous msgs for greeting:', prevErr);
           }
 
-          const greetingResult = await sessionInitGreetingStep({
+          // Load today's day structure for greeting context
+          let todayDayStructureCtx: string | null = null;
+          try {
+            const todayBlocks = await getTodayBlocks();
+            if (todayBlocks.length > 0) {
+              todayDayStructureCtx = todayBlocks.map(b => {
+                if (b.kind === 'wake') return `Opstaan: ${b.startTime}`;
+                if (b.kind === 'sleep') return `Slapen: ${b.startTime}`;
+                return `${b.label}: ${b.startTime} \u2013 ${b.endTime}`;
+              }).join(', ');
+            }
+          } catch { /* non-fatal */ }
+
+          // Call Greeting V4
+          const greetingResult = await greetingV4({
             backpack,
             userDat,
             diaryEntries,
             apiBaseUrl: apiUrl,
-            timezone: LocalDeviceTimeService.getCurrentTimeZone(),
-            clinicalModeActive: userDat?.clinicalModeActive ?? false,
-            lastSessionSummary,
-            allSessions,
-            vspInsightContext: vspInsightCtx,
-            previousSessionMessages: prevMsgsForGreeting,
             locale: locale as 'nl' | 'en' | 'fr',
+            previousSessionMessages: prevMsgsForGreeting,
+            todayDayStructure: todayDayStructureCtx,
+            clinicalModeActive: userDat?.clinicalModeActive ?? false,
           });
           greetingText = greetingResult.greeting;
           console.log(greetingResult.debugLog);
         }
       } catch (greetingErr) {
-        console.warn('[Chat] Session Greeting Engine failed, falling back to pipeline greeting:', greetingErr);
+        console.warn('[Chat] Greeting V4 failed, falling back to pipeline greeting:', greetingErr);
       }
 
       // If greeting engine produced a result, use it directly
@@ -644,7 +609,7 @@ function ChatScreenInner() {
         resetSessionState();
         clearSessionInitCache();
         v3GreetingUsedRef.current = true;
-        console.log('[Chat] V3 greeting used — pipeline state reset, first follow-up will be SESSION_INIT');
+        console.log('[Chat] V4 greeting used — pipeline state reset, first follow-up will be SESSION_INIT');
 
         const greetingMsg: ChatMessage = {
           id: `msg_greeting_${LocalDeviceTimeService.now().epochMs}`,
@@ -652,10 +617,10 @@ function ChatScreenInner() {
           content: greetingText,
           timestamp: LocalDeviceTimeService.now().utcIso,
           clinicalInfo: {
-            module: 'SESSION_GREETING_V3',
+            module: 'SESSION_GREETING_V4',
             zone: 'SESSION_START',
             model: 'gpt-4o-mini',
-            source: 'greeting-engine',
+            source: 'greeting-v4',
           },
         };
         // Append to chatHistory and persist

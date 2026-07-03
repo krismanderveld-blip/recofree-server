@@ -56,7 +56,7 @@
   "chat.migration.success": "Klaar: ${result.migrated} gemigreerd, ${result.skipped} overgeslagen.",
   "chat.migration.failed_unexpected": "Niet gelukt. Probeer opnieuw na app herstart.",
   "chat.header.back": "←",
-  "chat.header.typing": "Aan het typen...",
+  "chat.header.typing": "Aan het schrijven...",
   "chat.header.online": "Online",
   "chat.header.end_button": "Stoppen",
   "chat.toast.session_saved": "Vorige sessie veilig opgeslagen",

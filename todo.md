@@ -2286,3 +2286,12 @@
 ## Logs.dat Cleanup Migration + Greeting Timeout (2 Jul 2026)
 - [x] Build logs.dat migration: remove entries with error narratives on app start
 - [x] Increase greeting-call timeout to reduce fallback triggers during Railway cold starts
+## Greeting V4 — Full Replacement (3 Jul 2026)
+- [x] Build V4 greeting engine (source collector, zone-arc, prompt builder)
+- [x] Wire V4 into chat.tsx, replace V3 call path
+- [x] Typing indicator in user language during greeting load
+- [x] Deterministic fallback (second-person, no raw text)
+- [x] Both personas parametric (Elias: VSP + sliders; Kim: Eigen Regie + her sources)
+- [x] Warm default for first session
+- [x] 15s timeout with AbortController on proxy call
+- [x] 0 new TS errors, all 12 V4 tests green
