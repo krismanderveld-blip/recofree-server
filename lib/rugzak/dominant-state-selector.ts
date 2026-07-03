@@ -296,7 +296,27 @@ export function selectDominantState(
     }
   }
 
-  // ── PRIORITY 2: URGENT LIVE TRIGGER FROM BUFFER ──
+  // ── PRIORITY 2: NANO-INTERPRET (primary semantic detection) ──
+  // The nano is the first and primary module detection layer.
+  // It understands nuances, context, and intent that no keyword or slider can capture.
+  // Everything below is fallback for when nano is unavailable (proxy timeout/error).
+  if (nanoInterpret?.resolvedModule) {
+    return {
+      dominantModule: nanoInterpret.resolvedModule,
+      dominantTrigger: buffer.currentTriggerGuess || '',
+      dominantDirection: buffer.responseDirection,
+      dominantTone: determineTone(buffer.currentZoneColor, buffer.currentIntent, buffer.responseDirection),
+      selectionReason: `nano-interpret: theme=${nanoInterpret.matchedTheme}, intent=${nanoInterpret.intent}`,
+      sourceLayer: 'nano_interpret',
+      riskScore: buffer.currentZoneScore,
+    };
+  }
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // FALLBACK LAYERS (only reached when nano is unavailable)
+  // ──────────────────────────────────────────────────────────────────────────
+
+  // ── FALLBACK 1: URGENT LIVE TRIGGER FROM BUFFER ──
   if (buffer.currentTriggerGuess && buffer.currentZoneScore >= 50) {
     const module = getTriggerModule(buffer.currentTriggerGuess, userType);
     return {
@@ -310,7 +330,7 @@ export function selectDominantState(
     };
   }
 
-  // ── PRIORITY 3: EXTREME SLIDER STATE ──
+  // ── FALLBACK 2: EXTREME SLIDER STATE ──
   if (primaryConcern >= 70 || (distress >= 65 && resilience <= 30)) {
     const module = getSliderModule(mood, userType);
     const score = Math.max(distress, primaryConcern);
@@ -325,7 +345,7 @@ export function selectDominantState(
     };
   }
 
-  // ── PRIORITY 4: REPEATED SESSION PATTERN (buffer) ──
+  // ── FALLBACK 3: REPEATED SESSION PATTERN (buffer) ──
   const significantRepeats = buffer.temporaryRepeats.filter((r) => r.count >= 3);
   if (significantRepeats.length > 0) {
     // Pick the most repeated signal
@@ -343,7 +363,7 @@ export function selectDominantState(
     };
   }
 
-  // ── PRIORITY 5: LONG-TERM USER.DAT PATTERN ──
+  // ── FALLBACK 4: LONG-TERM USER.DAT PATTERN ──
   // Only if buffer doesn't have strong live signals
   const strongPatterns = triggerPatterns.filter((p) => p.count >= 3);
   if (strongPatterns.length > 0 && buffer.currentZoneScore >= 30) {
@@ -360,8 +380,7 @@ export function selectDominantState(
     };
   }
 
-  // ── PRIORITY 5.5: SHORT MODULE KEYWORD DETECTION (Elias only) ──
-  // Explicit keyword matches win over semantic detection.
+  // ── FALLBACK 5: SHORT MODULE KEYWORD DETECTION (Elias only) ──
   if (userType === 'elias' && buffer.recentMessages && buffer.recentMessages.length > 0) {
     const lastUserMsg = buffer.recentMessages
       .filter((m: { role: string }) => m.role === 'user')
@@ -382,22 +401,7 @@ export function selectDominantState(
     }
   }
 
-  // ── PRIORITY 5.7: NANO-INTERPRET SEMANTIC DETECTION ──
-  // Catches nuances that keywords miss. Only fires when no keyword matched above.
-  // Falls through to backpack relevance if nano is unavailable or returned no match.
-  if (nanoInterpret?.resolvedModule) {
-    return {
-      dominantModule: nanoInterpret.resolvedModule,
-      dominantTrigger: buffer.currentTriggerGuess || '',
-      dominantDirection: buffer.responseDirection,
-      dominantTone: determineTone(buffer.currentZoneColor, buffer.currentIntent, buffer.responseDirection),
-      selectionReason: `nano-interpret: theme=${nanoInterpret.matchedTheme}, intent=${nanoInterpret.intent}`,
-      sourceLayer: 'nano_interpret',
-      riskScore: buffer.currentZoneScore,
-    };
-  }
-
-  // ── PRIORITY 6: BACKPACK RELEVANCE / ANALYZER MODULES ──
+  // ── FALLBACK 6: BACKPACK RELEVANCE / ANALYZER MODULES ──
   if (analyzerModules.length > 0) {
     return {
       dominantModule: analyzerModules[0],

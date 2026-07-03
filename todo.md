@@ -2297,6 +2297,6 @@
 - [x] 0 new TS errors, all 12 V4 tests green
 ## Nano-Interpret in Client Pipeline (3 Jul 2026)
 - [x] Build client-side nano-interpret caller (routes via Railway /api/nano-interpret proxy)
-- [x] Wire nano result into client selectDominantState (priority 5.7, below keywords, above backpack)
+- [x] Wire nano result into client selectDominantState (priority 2: first non-crisis layer, primary detection)
 - [x] Update trace to show nano result from client-side call
 - [x] Engine mode stays CLIENT_ACTIVE_SERVER_OFF — nano runs client-side via proxy
