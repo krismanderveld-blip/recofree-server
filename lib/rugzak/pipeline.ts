@@ -875,6 +875,9 @@ export async function processMessage(
             usedModel: 'server-engine',
           },
           tokens: null,
+          routeStatus: [
+            { step: 'server-engine', route: 'sandbox' as const, status: 'succes' as const, detail: 'full server engine path' },
+          ],
         };
         buildTraceBlock(serverTraceData);
 
@@ -3518,7 +3521,16 @@ export async function processMessage(
         }));
       } catch { return []; }
     })(),
-    nanoInterpret: serverNanoInterpretData ?? null, // uses server nanoInterpret if engine call succeeded
+    nanoInterpret: serverNanoInterpretData ?? null,
+    routeStatus: [
+      { step: 'nano-interpret', route: 'railway' as const, status: serverNanoInterpretData ? 'succes' as const : 'gefaald' as const, detail: serverNanoInterpretData ? `module=${serverNanoInterpretData.resolvedModule}` : 'fallback naar keyword/backpack' },
+      { step: 'gpt-chat', route: 'railway' as const, status: 'succes' as const, detail: `model=${selectedModel ?? 'unknown'}` },
+      { step: 'zone-decision', route: 'client' as const, status: elisDecision || kimDecision ? 'succes' as const : 'overgeslagen' as const, detail: elisDecision ? `zone=${elisDecision.zone.computed.label}` : kimDecision ? `kim-engine` : 'geen zone' },
+      { step: 'regulation', route: 'client' as const, status: regulationResult.wasSkipped ? 'overgeslagen' as const : 'succes' as const, detail: `action=${regulationResult.action}` },
+      { step: 'module-selection', route: 'client' as const, status: 'succes' as const, detail: `module=${preGPTDominantState.dominantModule} (${preGPTDominantState.sourceLayer})` },
+      { step: 'projection', route: 'client' as const, status: projectionResult.injectionBlock ? 'succes' as const : 'overgeslagen' as const, detail: projectionResult.injectionBlock ? 'injected' : 'geen actieve entries' },
+      { step: 'session-end-summary', route: 'railway' as const, status: 'overgeslagen' as const, detail: 'alleen bij sessie-einde' },
+    ],
     memory: {
       totalSessions: currentUserDat.totalSessions ?? 0,
       triggerPatterns: (currentUserDat.triggerPatterns || []).map(t => ({ trigger: t.trigger, count: t.count, weight: t.weight })),

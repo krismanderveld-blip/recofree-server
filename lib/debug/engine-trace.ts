@@ -104,6 +104,15 @@ export interface EngineTraceInput {
     matchedTheme: string | null;
   } | null;
 
+  // Route status per engine step (shows client/server, sandbox/railway, succes/gefaald)
+  routeStatus: Array<{
+    step: string;
+    route: 'client' | 'railway' | 'sandbox';
+    status: 'succes' | 'gefaald' | 'fallback' | 'overgeslagen';
+    latencyMs?: number;
+    detail?: string;
+  }>;
+
   // Memory layers
   memory: {
     totalSessions: number;
@@ -118,6 +127,10 @@ export interface EngineTraceInput {
     bufferEmotionalDirection: string;
     bufferLiveIntent: string;
     bufferDominantState: string;
+
+    backpackAnalysis?: { schemaCount: number; modiCount: number; triggerCount: number; analyzedAt: string | null } | null;
+    schemaTendencies?: Array<{ schemaId: string; confidence: number; last: string | null }>;
+    modeTendencies?: Array<{ modeId: string; confidence: number; last: string | null }>;
   };
 
   // Payload to server
@@ -263,11 +276,25 @@ export function buildTraceBlock(input: EngineTraceInput): string {
   }
   lines.push('');
 
-  // Nano-Interpret (server-side semantic pre-call)
+  // Route status overview
+  lines.push('ROUTE STATUS:');
+  if (input.routeStatus && input.routeStatus.length > 0) {
+    for (const rs of input.routeStatus) {
+      const latency = rs.latencyMs !== undefined ? ` (${rs.latencyMs}ms)` : '';
+      const detail = rs.detail ? ` — ${rs.detail}` : '';
+      lines.push(`  ${rs.step}: [${rs.route}] ${rs.status}${latency}${detail}`);
+    }
+  } else {
+    lines.push('  (geen route data)');
+  }
+  lines.push('');
+
+  // Nano-Interpret
   lines.push('NANO-INTERPRET:');
   if (input.nanoInterpret) {
     const ni = input.nanoInterpret;
-    lines.push(`  source: client-proxy (Railway /api/nano-interpret)`);
+    lines.push(`  route: railway (/api/nano-interpret)`);
+    lines.push(`  status: succes`);
     lines.push(`  intent: ${ni.intent}`);
     lines.push(`  themes: [${ni.themes.join(', ')}]`);
     lines.push(`  resolvedModule: ${ni.resolvedModule ?? 'none'}`);
@@ -276,7 +303,8 @@ export function buildTraceBlock(input: EngineTraceInput): string {
       lines.push(`  translatedNL: ${ni.translatedNL}`);
     }
   } else {
-    lines.push('  (niet beschikbaar — proxy timeout/error, fallback naar keyword matching)');
+    lines.push('  route: railway (/api/nano-interpret)');
+    lines.push('  status: gefaald — fallback naar lokale keyword/backpack matching');
   }
   lines.push('');
 
