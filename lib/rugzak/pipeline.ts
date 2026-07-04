@@ -3618,7 +3618,18 @@ export async function processMessage(
       isSessionStart,
       fieldsIncluded: isSessionStart
         ? (context.contextDatSerialized ? ['contextDat', 'deepeningBlock', 'moodSliders', 'bufferSnapshot', 'regulationResult', 'engineDirective'] : ['backpack', 'userDat', 'diaryEntries', 'moodSliders', 'bufferSnapshot', 'regulationResult', 'engineDirective', 'interventionContinuity', 'projectionContext', 'stoaContext'])
-        : ['message', 'conversationHistory', 'moodSliders', 'bufferSnapshot', 'regulationResult', 'engineDirective', 'interventionContinuity', 'projectionContext', 'stoaContext'],
+        : ['SLIM_LIVE_MESSAGE', 'core(~15)', ...[
+            context.regulationResult && 'regulationResult',
+            context.engineDirective && 'engineDirective',
+            context.interventionContinuity && 'interventionContinuity',
+            context.projectionContext && 'projectionContext',
+            context.stoaContext && 'stoaContext',
+            context.schemaModeContext && 'schemaModeContext',
+            context.actContext && 'actContext',
+            context.cgtContext && 'cgtContext',
+            context.dgtContext && 'dgtContext',
+            context.mbtContext && 'mbtContext',
+          ].filter(Boolean) as string[]],
       promptBlocks: {
         regulation: regulationResult.action !== 'reflect' ? regulationResult.action : 'skipped',
         engineDirective: engineDirective ? 'yes' : 'no',

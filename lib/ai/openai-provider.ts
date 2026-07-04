@@ -6,6 +6,7 @@ import { analyzeBackpackRelevance } from '@/lib/rugzak/backpack-relevance-analyz
 import { buildGPTPayload } from '@/lib/rugzak/gpt-payload-builder';
 import { detectRelationalAnchor, extractRelationalAnchors } from '@/lib/rugzak/relational-anchor-detector';
 import { analyzeRelationalPatterns } from '@/lib/rugzak/relational-pattern-analyzer';
+import { buildSlimLivePayload } from '@/lib/ai/live-message-filter';
 import { ELIAS_DEFAULT_MODULE } from '@/lib/engine/elias/module-catalog';
 import { LocalDeviceTimeService } from "@/lib/core/time";
 
@@ -702,153 +703,20 @@ export class OpenAIProvider implements AIProvider {
 
       } else {
         // ═══════════════════════════════════════════════════════
-        // LIVE_MESSAGE: Dynamic data only. No static fields.
+        // LIVE_MESSAGE: Slim payload — only active/relevant fields per turn.
+        // Inactive module contexts (null/undefined) are OMITTED entirely.
         // ═══════════════════════════════════════════════════════
-        inputPayload = {
-          // Identity (always needed for routing)
-          userType: gptPayload.route,
-          userName: gptPayload.userName,
-          isSessionStart: false,
+        const { payload: slimPayload, stats: slimStats } = buildSlimLivePayload(
+          gptPayload,
+          context,
+          { buildActiveSignals, buildKnownUserPatterns },
+        );
+        inputPayload = slimPayload;
 
-          // Dynamic live data (changes per message)
-          message: gptPayload.message,
-          conversationHistory: gptPayload.conversationWindow,
-          moodSliders: gptPayload.sliders,
-          activeModules: [gptPayload.dominantModule],
-          crisisLevel: gptPayload.crisisLevel,
-          isCrisis: context.isCrisis ?? false,
-          vspLevel: context.vspLevel ?? null,
-          detectedEmotion: gptPayload.detectedEmotion,
-          therapeuticStance: gptPayload.therapeuticStance,
-          sessionDurationMinutes: gptPayload.sessionDurationMinutes,
-          urgency: gptPayload.urgency,
-          startEmotion: gptPayload.startEmotion,
-          dominantModule: gptPayload.dominantModule,
-          riskScore: gptPayload.riskScore,
-          stageOfChange: gptPayload.stageOfChange,
-
-          // Live-selected triggers (re-analyzed per message from buffer)
-          selectedTriggers: gptPayload.selectedTriggers,
-
-          // Buffer snapshot (live session state from pipeline)
-          bufferSnapshot: gptPayload.bufferSnapshot ?? null,
-
-          // User-controlled guidance depth
-          guidanceDepth: gptPayload.guidanceDepth ?? 'normal',
-
-          // Regulation result (from regulation layer)
-          regulationResult: gptPayload.regulationResult ?? null,
-
-          // Engine directive (from orchestration routing)
-          engineDirective: gptPayload.engineDirective ?? null,
-
-          // Intervention continuity (Elias only, zone-linked therapeutic memory)
-          interventionContinuity: gptPayload.interventionContinuity ?? null,
-          // Projection layer (future-facing fears/hopes/goals)
-          projectionContext: gptPayload.projectionContext ?? null,
-          projectionDeepening: gptPayload.projectionDeepening ?? null,
-          // STOA engine (Elias only, Stoic session injection)
-          stoaContext: gptPayload.stoaContext ?? null,
-          // Schema/Mode engine (deterministic intervention context)
-          schemaModeContext: gptPayload.schemaModeContext ?? null,
-          // ACT engine (values-based intervention context)
-          actContext: gptPayload.actContext ?? null,
-          // CBT/CGT engine (cognitive distortion intervention context)
-          cgtContext: gptPayload.cgtContext ?? null,
-          // DGT/DBT engine (emotional/behavioral signal intervention context)
-          dgtContext: gptPayload.dgtContext ?? null,
-          // MBT++ engine (mentalizing state + response mode)
-          mbtContext: gptPayload.mbtContext ?? null,
-          // KO1 Recognition & Validation (Kim only)
-          ko1Context: gptPayload.ko1Context ?? null,
-          // K05 Communication Skills (Kim only)
-          k05Context: gptPayload.k05Context ?? null,
-          k02Context: gptPayload.k02Context ?? null,
-          k04Context: gptPayload.k04Context ?? null,
-          k04s4Context: gptPayload.k04s4Context ?? null,
-          k06Context: gptPayload.k06Context ?? null,
-          // K01 Boundary Setting (Kim only)
-          k01Context: gptPayload.k01Context ?? null,
-          // K03 Self-Care With Shadow Layer (Elias + Kim)
-          k03Context: gptPayload.k03Context ?? null,
-          // SW01 Shadow Work (Elias only)
-          sw01Context: gptPayload.sw01Context ?? null,
-          // STO01 Stoicism Integration (Elias only)
-          sto01Context: gptPayload.sto01Context ?? null,
-          // VERGV01/IGH01/AGC01/HWK01 Advanced Modules
-          vergv01Context: gptPayload.vergv01Context ?? null,
-          igh01Context: gptPayload.igh01Context ?? null,
-          agc01Context: gptPayload.agc01Context ?? null,
-          hwk01Context: gptPayload.hwk01Context ?? null,
-          fale01Context: gptPayload.fale01Context ?? null,
-          verg01Context: gptPayload.verg01Context ?? null,
-          rouw01Context: gptPayload.rouw01Context ?? null,
-          iden01Context: gptPayload.iden01Context ?? null,
-          zink01Context: gptPayload.zink01Context ?? null,
-          terv01Context: gptPayload.terv01Context ?? null,
-          mi02Context: gptPayload.mi02Context ?? null,
-          slaap01EliasContext: gptPayload.slaap01EliasContext ?? null,
-          slaap01KimContext: gptPayload.slaap01KimContext ?? null,
-          bedr01Context: gptPayload.bedr01Context ?? null,
-          vetr01Context: gptPayload.vetr01Context ?? null,
-          gasl01Context: gptPayload.gasl01Context ?? null,
-          cdp01Context: gptPayload.cdp01Context ?? null,
-          rnw01Context: gptPayload.rnw01Context ?? null,
-          par01Context: gptPayload.par01Context ?? null,
-          fin01Context: gptPayload.fin01Context ?? null,
-          iso01Context: gptPayload.iso01Context ?? null,
-          // Kim cluster contexts
-          relapseClusterContext: gptPayload.relapseClusterContext ?? null,
-          dangerChildContext: gptPayload.dangerChildContext ?? null,
-          relationalDynamicsContext: gptPayload.relationalDynamicsContext ?? null,
-          emotionalLossContext: gptPayload.emotionalLossContext ?? null,
-          stoaKContext: gptPayload.stoaKContext ?? null,
-          // VSP Insight System (MI/MBT/DGT framework selection, store:false)
-          vspInsightContext: gptPayload.vspInsightContext ?? null,
-          // VSP Backpack Profile (LLM-analyzed zone signals from recurringThemes, Elias only)
-          vspBackpackProfile: (gptPayload as any).vspBackpackProfile ?? null,
-          // VSP Structured Section (user's own per-zone signals, whatHelps, anchorSentence, Elias only)
-          vspStructuredSection: (gptPayload as any).vspStructuredSection ?? null,
-          // PsychoEducation continuity (WILSKRACHT01/AUTOPILOT01, Elias only)
-          psychoEducationContext: gptPayload.psychoEducationContext ?? null,
-          // Steunpilaren continuity (PAAL01, Elias only)
-          steunpilarenContext: gptPayload.steunpilarenContext ?? null,
-          // Self-acceptance cluster continuity (BLIK01/ONTK01/IKST01/COEX01, Elias only)
-          selfAcceptanceContext: gptPayload.selfAcceptanceContext ?? null,
-          // Kim pattern support continuity (PAAL-K01/BEHE-K01/AANP-K01/CODEP-K01, Kim only)
-          kimPatternSupportContext: gptPayload.kimPatternSupportContext ?? null,
-          // Signal engine: relevance scores for context gating (threshold 0.3))
-          relevanceScores: context.relevanceScores ?? null,
-          // Signal engine: compressed context summary (replaces full lifeStorySummary)
-          contextSummary: context.contextSummary ?? null,
-
-          // LOOPBLOCKER: cross-session repeating pattern directive
-          loopDetected: gptPayload.loopDetected ?? null,
-
-          // LANGUAGE_RECOVERY: diminishing negative intensity directive
-          languageRecovery: gptPayload.languageRecovery ?? null,
-
-          // Clinical Mode (easter egg)
-          clinicalModeActive: context.userDat?.clinicalModeActive ?? false,
-
-          // Active signals for clinical annotation
-          activeSignals: buildActiveSignals(context),
-
-          // Backpack deep analysis (schemas, modes, triggers from GPT-4o)
-          backpackAnalysis: context.userDat?.backpackAnalysis ?? null,
-
-          // Known user patterns (compact, every turn) — in clinical mode, show ALL candidates
-          knownUserPatterns: buildKnownUserPatterns(context.userDat, context.userDat?.clinicalModeActive ?? false),
-
-          // User-selected app language (from i18n provider)
-          locale: context.locale ?? null,
-
-          // NO backpack, NO userDat, NO diaryEntries, NO coreWound,
-          // NO contextLine, NO relationshipAnchor, NO relationalPattern
-          // These were sent at SESSION_INIT and cached server-side.
-        };
-
-        console.log('[OpenAIProvider] LIVE_MESSAGE: Dynamic payload only (no static fields)');
+        console.log(`[OpenAIProvider] LIVE_MESSAGE SLIM: ${slimStats.totalFieldsAfter} fields sent (${slimStats.droppedNullFields} null fields omitted)`);
+        if (slimStats.activeContextFields.length > 0) {
+          console.log(`[OpenAIProvider] Active context: ${slimStats.activeContextFields.join(', ')}`);
+        }
       }
 
       // ── STEP 4: Send to server via /api/gpt-proxy (plain JSON, no tRPC envelope) ──

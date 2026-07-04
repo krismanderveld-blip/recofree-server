@@ -2318,3 +2318,13 @@
 - [x] Handle empty/new user gracefully (minimal/empty context.dat, no crash)
 - [x] Debug trace: show distilled context contents + token size old vs new
 - [x] 0 new TS errors, 34 tests green
+
+## Payload Optimization: Deepening Cap + LIVE_MESSAGE Slim (4 Jul 2026)
+- [ ] Cap deepening layer at 500 tokens max (priority-ranked fragments, truncate lowest priority)
+- [x] LIVE_MESSAGE: only send active/relevant engine contexts per turn (not all 30+ fields)
+- [x] Built `lib/ai/live-message-filter.ts` — buildSlimLivePayload() drops all null/undefined optional context fields
+- [x] Integrated into openai-provider.ts LIVE_MESSAGE branch (replaces 150-line explicit field list)
+- [x] Updated pipeline.ts trace to show dynamically active fields per turn
+- [x] 15 dedicated tests green (`__tests__/liveMessageFilter/slimPayload.test.ts`)
+- [x] e2e chain tests pass (knownUserPatterns + backpackAnalysis preserved in LIVE_MESSAGE)
+- [x] 0 new TS errors (133 total = 6 FEWER than before, pre-existing errors only)
