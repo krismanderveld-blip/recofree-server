@@ -404,6 +404,8 @@ function ChatScreenInner() {
         // Restore projection state from AsyncStorage BEFORE sending greeting
         // Must await so projection entries are loaded before first pipeline run
         (async () => {
+          // Unlock memory cache: decrypt all registered keys into memory for this session
+          await SessionMemoryCache.unlock();
           try {
             if (state.userType === 'elias') {
               await loadAndRestoreEliasProjection();
