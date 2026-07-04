@@ -2300,3 +2300,13 @@
 - [x] Wire nano result into client selectDominantState (priority 2: first non-crisis layer, primary detection)
 - [x] Update trace to show nano result from client-side call
 - [x] Engine mode stays CLIENT_ACTIVE_SERVER_OFF — nano runs client-side via proxy
+## Session-Based Encryption (4 Jul 2026)
+- [x] Build SessionMemoryCache: in-memory store with decrypt-on-open, dirty tracking
+- [x] Wire cache into pipeline/chat.tsx (replace per-message readEncrypted/writeEncrypted)
+- [x] Wire cache into user-context.tsx (persistBackpack/persistUserDat)
+- [x] Wire cache into diary.tsx (3 calls replaced)
+- [x] Wire cache into atomicJsonStore.ts (state.dat, projections.dat)
+- [x] Add AppState/background listener for encrypt-on-background/close
+- [x] Add 10min inactivity timer for periodic encrypt-and-flush
+- [x] Preserve persona separation in cache
+- [x] 0 new TS errors, 34 tests green

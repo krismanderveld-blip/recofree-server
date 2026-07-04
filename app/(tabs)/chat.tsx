@@ -21,7 +21,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { readEncrypted, writeEncrypted } from '@/lib/crypto/storage-encryption';
+import { SessionMemoryCache } from '@/lib/crypto/session-memory-cache';
 import { useRouter, useFocusEffect, useNavigation, type Href } from 'expo-router';
 import { useUser } from '@/lib/user-context';
 import { fixUnicode } from '@/lib/utils';
@@ -116,6 +116,8 @@ function ChatScreenInner() {
   useEffect(() => {
     const url = getApiBaseUrl();
     if (url) initGptSignalEngine(url);
+    // Register diary key with session memory cache (backpack/userdat registered in user-context)
+    SessionMemoryCache.registerKeys([DIARY_KEY]);
   }, []);
 
   // Reset chat state when user data is cleared (e.g. after Reset All Data)
@@ -212,7 +214,7 @@ function ChatScreenInner() {
     setFirstChatSeen(true);
     const ud = await getUserDat();
     const updated = { ...ud, firstChatSeen: true } as UserDat;
-    await writeEncrypted(USERDAT_KEY, JSON.stringify(updated));
+    await SessionMemoryCache.set(USERDAT_KEY, JSON.stringify(updated));
   }, [getUserDat]);
 
   // ── Pre-chat gate: VSP/Self-Direction ALWAYS shown at every chat start ──
@@ -323,7 +325,7 @@ function ChatScreenInner() {
   const handleMigrationTrigger = async () => {
     try {
       const persona = (state.userType === 'elias' ? 'elias' : 'kim') as 'elias' | 'kim';
-      const udJson = await readEncrypted(USERDAT_KEY);
+      const udJson = await SessionMemoryCache.get(USERDAT_KEY);
       if (!udJson) {
         Alert.alert(t('chat.migration.title'), t('chat.migration.no_userdat'));
         return;
@@ -354,7 +356,7 @@ function ChatScreenInner() {
   useEffect(() => {
     (async () => {
       try {
-        const udJson = await readEncrypted(USERDAT_KEY);
+        const udJson = await SessionMemoryCache.get(USERDAT_KEY);
         if (udJson) {
           const ud = JSON.parse(udJson);
           const history: ChatMessage[] = ud.chatHistory ?? [];
@@ -417,7 +419,7 @@ function ChatScreenInner() {
             triggerBackpackAnalysisIfNeeded(state.backpack, state.userDat)
               .then(async (result) => {
                 if (result) {
-                  await writeEncrypted(USERDAT_KEY, JSON.stringify(result.updatedUserDat));
+                  await SessionMemoryCache.set(USERDAT_KEY, JSON.stringify(result.updatedUserDat));
                   console.log('[Chat] Backpack schema/mode analysis completed for sections:', result.analyzedSectionIds);
                 }
               })
@@ -435,8 +437,8 @@ function ChatScreenInner() {
     let backpack: Backpack | null = null;
     let userDat: UserDat | null = null;
     try {
-      const bpJson = await readEncrypted(BACKPACK_KEY);
-      const udJson = await readEncrypted(USERDAT_KEY);
+      const bpJson = await SessionMemoryCache.get(BACKPACK_KEY);
+      const udJson = await SessionMemoryCache.get(USERDAT_KEY);
       if (bpJson) backpack = JSON.parse(bpJson);
       if (udJson) userDat = JSON.parse(udJson);
     } catch (e) {
@@ -458,7 +460,7 @@ function ChatScreenInner() {
       // Load diary entries for session-start context
       let diaryEntries: DiaryEntry[] = [];
       try {
-        const diaryJson = await readEncrypted(DIARY_KEY);
+        const diaryJson = await SessionMemoryCache.get(DIARY_KEY);
         if (diaryJson) {
           const allEntries: DiaryEntry[] = JSON.parse(diaryJson);
           // Send last 10 diary entries (most recent first)
@@ -553,7 +555,7 @@ function ChatScreenInner() {
           // Load previous session messages (last 10) for V4 inline summary
           let prevMsgsForGreeting: Array<{ role: string; content: string; timestamp?: string }> = [];
           try {
-            const udJsonForPrev = await readEncrypted(USERDAT_KEY);
+            const udJsonForPrev = await SessionMemoryCache.get(USERDAT_KEY);
             if (udJsonForPrev) {
               const udPrev = JSON.parse(udJsonForPrev);
               const history: ChatMessage[] = udPrev.chatHistory ?? [];
@@ -627,7 +629,7 @@ function ChatScreenInner() {
         userDat.chatHistory = [...(userDat.chatHistory || []), greetingMsg];
         userDat.totalSessions = (userDat.totalSessions ?? 0) + 1;
         userDat.lastSessionDate = LocalDeviceTimeService.now().utcIso.slice(0, 10);
-        await writeEncrypted(USERDAT_KEY, JSON.stringify(userDat));
+        await SessionMemoryCache.set(USERDAT_KEY, JSON.stringify(userDat));
         setMessages([greetingMsg]);
         logDebugEvent('session_start', {
           userType: state.userType ?? 'unknown',
@@ -638,7 +640,7 @@ function ChatScreenInner() {
         // Fallback: use existing pipeline greeting
         const result = await generateGreeting(backpack, provider, userDat, diaryEntries, { locale: locale as 'nl' | 'en' | 'fr', country: (country || 'BE') as 'NL' | 'BE' | 'FR' | 'UK' | 'US' });
         // Only persist userDat (backpack is NEVER modified by the system)
-        await writeEncrypted(USERDAT_KEY, JSON.stringify(result.updatedUserDat));
+        await SessionMemoryCache.set(USERDAT_KEY, JSON.stringify(result.updatedUserDat));
         // Only show the greeting message (last item in chatHistory), not old session messages
         const greeting = result.updatedUserDat.chatHistory.slice(-1);
         setMessages(greeting);
@@ -706,12 +708,12 @@ function ChatScreenInner() {
       const preprocessed = await preprocessInput(rawText, locale as 'nl' | 'en' | 'fr');
       const processedText = preprocessed.processedText;
       // Load latest userDat from storage (may have been updated by greeting)
-      const userDatJson = await readEncrypted(USERDAT_KEY);
+      const userDatJson = await SessionMemoryCache.get(USERDAT_KEY);
       const currentUserDat: UserDat = userDatJson ? JSON.parse(userDatJson) : state.userDat!;
       // Read backpack from AsyncStorage to ensure latest version (avoids stale closure)
       let backpack: Backpack = state.backpack!;
       try {
-        const bpJson = await readEncrypted(BACKPACK_KEY);
+        const bpJson = await SessionMemoryCache.get(BACKPACK_KEY);
         if (bpJson) backpack = JSON.parse(bpJson);
       } catch (e) {
         console.warn('Could not read backpack from AsyncStorage, using state:', e);
@@ -738,7 +740,7 @@ function ChatScreenInner() {
           }).join('\n');
         }
       } catch { /* non-fatal */ }
-      const result = await processMessage(backpack, processedText, provider, currentUserDat, { isSessionStart: forceSessionInit, diaryEntries: forceSessionInit ? (await (async () => { try { const dj = await readEncrypted(DIARY_KEY); return dj ? JSON.parse(dj) : []; } catch { return []; } })()) : [], logsSessions: logsDatSessionsRef.current, locale: locale as 'nl' | 'en' | 'fr', country: (country || 'BE') as 'NL' | 'BE' | 'FR' | 'UK' | 'US', dayStructureContext: dayStructureCtx });
+      const result = await processMessage(backpack, processedText, provider, currentUserDat, { isSessionStart: forceSessionInit, diaryEntries: forceSessionInit ? (await (async () => { try { const dj = await SessionMemoryCache.get(DIARY_KEY); return dj ? JSON.parse(dj) : []; } catch { return []; } })()) : [], logsSessions: logsDatSessionsRef.current, locale: locale as 'nl' | 'en' | 'fr', country: (country || 'BE') as 'NL' | 'BE' | 'FR' | 'UK' | 'US', dayStructureContext: dayStructureCtx });
       // DEFENSIVE GUARD: if processMessage returns null/undefined (should never happen,
       // but observed 'undefined is not a function' crash on device — root cause unconfirmed,
       // likely Metro bundler module resolution issue or stale closure. This guardrail
@@ -747,7 +749,7 @@ function ChatScreenInner() {
         throw new Error(`processMessage returned invalid result: ${JSON.stringify(result?.response ?? 'undefined')}`);
       }
       // Only persist userDat (backpack is NEVER modified)
-      await writeEncrypted(USERDAT_KEY, JSON.stringify(result.updatedUserDat));
+      await SessionMemoryCache.set(USERDAT_KEY, JSON.stringify(result.updatedUserDat));
       if (result.crisisLevel > 0) setCrisisLevel(result.crisisLevel);
       if (result.showEmergency) setShowEmergency(true);
       // Show only current session messages: append the new user+assistant pair to existing messages
@@ -1017,20 +1019,20 @@ function ChatScreenInner() {
     };
     setMessages((prev) => [...prev, analyzingMsg]);
     try {
-      const userDatJson = await readEncrypted(USERDAT_KEY);
+      const userDatJson = await SessionMemoryCache.get(USERDAT_KEY);
       const currentUserDat: UserDat = userDatJson ? JSON.parse(userDatJson) : state.userDat!;
       const backpack = state.backpack!;
       const provider = getAIProvider();
       // Attach diary entries for gratitude streak calculation
       let diaryForSession: DiaryEntry[] = [];
       try {
-        const diaryJson = await readEncrypted(DIARY_KEY);
+        const diaryJson = await SessionMemoryCache.get(DIARY_KEY);
         if (diaryJson) diaryForSession = JSON.parse(diaryJson);
       } catch (_e) { /* ignore */ }
       const userDatWithDiary = { ...currentUserDat, _sessionDiaryEntries: diaryForSession } as any;
       const result = await endSession(backpack, provider, userDatWithDiary);
       // Only persist userDat (backpack is NEVER modified)
-      await writeEncrypted(USERDAT_KEY, JSON.stringify(result.updatedUserDat));
+      await SessionMemoryCache.set(USERDAT_KEY, JSON.stringify(result.updatedUserDat));
       await endSessionWithUserDat(result.updatedUserDat);
       const confirmationMsg: ChatMessage = {
         id: `msg_confirm_${LocalDeviceTimeService.now().epochMs}`,

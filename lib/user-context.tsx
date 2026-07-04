@@ -139,7 +139,7 @@ interface UserContextValue {
 
 // ─── Storage Keys ───────────────────────────────────────────────
 
-import { readEncrypted, writeEncrypted } from '@/lib/crypto/storage-encryption';
+import { SessionMemoryCache } from '@/lib/crypto/session-memory-cache';
 import { logImportDiag } from '@/lib/debug/import-diagnostics';
 import { LocalDeviceTimeService } from '@/lib/core/time';
 
@@ -166,11 +166,11 @@ const initialState: UserState = {
 // ─── Persist ────────────────────────────────────────────────────
 
 async function persistBackpack(backpack: Backpack) {
-  await writeEncrypted(BACKPACK_KEY, JSON.stringify(backpack));
+  await SessionMemoryCache.set(BACKPACK_KEY, JSON.stringify(backpack));
 }
 
 async function persistUserDat(userDat: UserDat) {
-  await writeEncrypted(USERDAT_KEY, JSON.stringify(userDat));
+  await SessionMemoryCache.set(USERDAT_KEY, JSON.stringify(userDat));
 }
 
 // ─── Compose helper ─────────────────────────────────────────────
@@ -297,9 +297,12 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     (async () => {
       try {
         // Try loading the new dual-store format first
+        // Unlock cache (decrypt-on-open) before reading
+        SessionMemoryCache.registerKeys([BACKPACK_KEY, USERDAT_KEY]);
+        await SessionMemoryCache.unlock();
         const [backpackJson, userDatJson] = await Promise.all([
-          readEncrypted(BACKPACK_KEY),
-          readEncrypted(USERDAT_KEY),
+          SessionMemoryCache.get(BACKPACK_KEY),
+          SessionMemoryCache.get(USERDAT_KEY),
         ]);
 
         if (backpackJson && userDatJson) {
@@ -936,8 +939,8 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   const reloadFromStorage = useCallback(async () => {
     logImportDiag('reloadFromStorage: reading keys', 'INFO');
     const [backpackJson, userDatJson] = await Promise.all([
-      readEncrypted(BACKPACK_KEY),
-      readEncrypted(USERDAT_KEY),
+      SessionMemoryCache.get(BACKPACK_KEY),
+      SessionMemoryCache.get(USERDAT_KEY),
     ]);
     logImportDiag('reloadFromStorage: keys read',
       userDatJson ? 'OK' : 'FAIL',

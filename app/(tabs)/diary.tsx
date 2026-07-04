@@ -11,7 +11,7 @@ import {
   ScrollView,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { readEncrypted, writeEncrypted } from '@/lib/crypto/storage-encryption';
+import { SessionMemoryCache } from '@/lib/crypto/session-memory-cache';
 import { ScreenContainer } from '@/components/screen-container';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useColors } from '@/hooks/use-colors';
@@ -154,7 +154,7 @@ export default function DiaryScreen() {
   useEffect(() => {
     (async () => {
       try {
-        const json = await readEncrypted(STORAGE_KEY);
+        const json = await SessionMemoryCache.get(STORAGE_KEY);
         if (json) setEntries(JSON.parse(json));
       } catch (error) {
         console.error('Failed to load diary:', error);
@@ -196,7 +196,7 @@ export default function DiaryScreen() {
     setEntries(updated);
 
     try {
-      await writeEncrypted(STORAGE_KEY, JSON.stringify(updated));
+      await SessionMemoryCache.set(STORAGE_KEY, JSON.stringify(updated));
       if (Platform.OS !== 'web') {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       }
