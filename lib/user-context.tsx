@@ -298,7 +298,21 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       try {
         // Try loading the new dual-store format first
         // Unlock cache (decrypt-on-open) before reading
-        SessionMemoryCache.registerKeys([BACKPACK_KEY, USERDAT_KEY]);
+        // Register both the pipeline keys AND the memory-layer keys for both personas.
+        // Without this, the memory-layer stores (user.dat, state.dat, projections.dat)
+        // return null from SessionMemoryCache.get() when unlocked, causing the
+        // context.dat distiller to receive empty stores.
+        SessionMemoryCache.registerKeys([
+          BACKPACK_KEY,
+          USERDAT_KEY,
+          // Memory-layer keys (both personas — only the active one will have data)
+          'recofree_memory/elias/user.dat',
+          'recofree_memory/elias/state.dat',
+          'recofree_memory/elias/projections.dat',
+          'recofree_memory/kim/user.dat',
+          'recofree_memory/kim/state.dat',
+          'recofree_memory/kim/projections.dat',
+        ]);
         await SessionMemoryCache.unlock();
         const [backpackJson, userDatJson] = await Promise.all([
           SessionMemoryCache.get(BACKPACK_KEY),

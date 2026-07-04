@@ -282,7 +282,13 @@ function inferRoleFromContext(name: string, text: string): string {
 
 function extractSchemas(userDat: UserDat, userDatMemory: UserDatMemoryLayer | null): SchemaEntry[] {
   // Prefer memory-layer schemaTendencies (more structured)
-  const source = userDatMemory?.schemaTendencies || userDat.schemaTendencies || [];
+  // FIX: Use length-guard — empty array [] is truthy, so || won't fall through.
+  // If memory-layer has data, use it; otherwise fall back to pipeline userDat.
+  const memorySource = userDatMemory?.schemaTendencies;
+  const pipelineSource = userDat.schemaTendencies;
+  const source = (memorySource && memorySource.length > 0) ? memorySource
+    : (pipelineSource && pipelineSource.length > 0) ? pipelineSource
+    : [];
   if (source.length === 0) return [];
 
   return source
@@ -298,7 +304,12 @@ function extractSchemas(userDat: UserDat, userDatMemory: UserDatMemoryLayer | nu
 }
 
 function extractModes(userDat: UserDat, userDatMemory: UserDatMemoryLayer | null): ModeEntry[] {
-  const source = userDatMemory?.modeTendencies || userDat.modeTendencies || [];
+  // FIX: Same length-guard as extractSchemas — empty [] won't block fallback.
+  const memorySource = userDatMemory?.modeTendencies;
+  const pipelineSource = userDat.modeTendencies;
+  const source = (memorySource && memorySource.length > 0) ? memorySource
+    : (pipelineSource && pipelineSource.length > 0) ? pipelineSource
+    : [];
   if (source.length === 0) return [];
 
   return source
@@ -315,6 +326,9 @@ function extractModes(userDat: UserDat, userDatMemory: UserDatMemoryLayer | null
 // ─── 7-Day Trend ──────────────────────────────────────────────
 
 function extractSevenDayTrend(stateDat: StateDat | null): TrendEntry[] {
+  // FIX: If stateDat is null or its moodHistory is empty, return early.
+  // The stateDat store may return an empty object if the memory-layer key
+  // wasn't registered with SessionMemoryCache.
   if (!stateDat?.moodHistory || stateDat.moodHistory.length === 0) return [];
 
   const now = Date.now();

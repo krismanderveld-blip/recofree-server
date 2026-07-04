@@ -2909,6 +2909,7 @@ export async function processMessage(
   // ── CONTEXT.DAT DISTILLATION (first turn only) ────────────────────────────────────
   let contextDatSerialized: string | undefined;
   let deepeningBlock: string | undefined;
+  let contextDatObject: import('../pipeline/context-dat-distiller').ContextDat | undefined;
   if (isSessionStart) {
     try {
       const { distillContextDat, serializeContextDatForGPT } = await import('../pipeline/context-dat-distiller');
@@ -2929,6 +2930,7 @@ export async function processMessage(
         userDatMemory,
         diaryEntries: options?.diaryEntries ?? [],
       });
+      contextDatObject = contextDat;
       contextDatSerialized = serializeContextDatForGPT(contextDat);
 
       // Deepening: targeted fragment retrieval if nano detected gaps
@@ -3603,12 +3605,15 @@ export async function processMessage(
     },
     contextDat: isSessionStart && context.contextDatSerialized ? {
       built: true,
-      keyFigures: (context.contextDatSerialized.match(/^- /gm) || []).length,
-      schemas: (context.contextDatSerialized.match(/schema/gi) || []).length,
-      modes: (context.contextDatSerialized.match(/modus/gi) || []).length,
-      trendDays: (context.contextDatSerialized.match(/dag/gi) || []).length,
-      sessionSummaries: (context.contextDatSerialized.match(/sessie \d/gi) || []).length,
-      projections: (context.contextDatSerialized.match(/projectie/gi) || []).length,
+      // FIX: Use the actual ContextDat object fields instead of regex on serialized string.
+      // The serializer uses English headers ([SCHEMAS], [MODES], Session 1, etc.) which
+      // didn't match the old Dutch regexes (/modus/, /dag/, /sessie/, /projectie/).
+      keyFigures: contextDatObject?.keyFigures.length ?? 0,
+      schemas: contextDatObject?.schemas.length ?? 0,
+      modes: contextDatObject?.modes.length ?? 0,
+      trendDays: contextDatObject?.sevenDayTrend.length ?? 0,
+      sessionSummaries: contextDatObject?.sessionSummaries.length ?? 0,
+      projections: contextDatObject?.activeProjections.length ?? 0,
       serializedTokens: estimateTokens(context.contextDatSerialized),
       deepeningFragments: context.deepeningBlock ? (context.deepeningBlock.match(/\[DEEPENING/g) || []).length : 0,
       deepeningTokens: context.deepeningBlock ? estimateTokens(context.deepeningBlock) : 0,

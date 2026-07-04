@@ -2335,3 +2335,17 @@
 - [x] Bewezen: minimale slim payload (alleen required fields) → Zod OK → buildSystemPrompt OK → geen crash
 - [x] 0 new TS errors (133 total = 6 FEWER than before, pre-existing errors only)
 - [x] Totaal 67 tests green over 4 test suites (deepening + slim filter + server robustness + e2e chain)
+
+## Fix: context.dat Distiller Empty Stores + Trace Regex Mismatch (4 Jul 2026)
+- [x] Fix 1A: Length-guard fallback in distiller (extractSchemas, extractModes)
+  - Empty [] is truthy → || fallback never fires → now uses explicit length check
+  - Memory-layer preferred when populated; pipeline userDat as fallback
+- [x] Fix 1B: Register memory-layer keys with SessionMemoryCache (both personas)
+  - Added 6 keys to registerKeys(): elias + kim × (user.dat, state.dat, projections.dat)
+  - Without registration, SessionMemoryCache.get() returns null → store creates empty object
+- [x] Fix 2: Replace regex-based trace counting with ContextDat object fields
+  - Old regexes used Dutch words (modus, dag, sessie, projectie) but serializer uses English headers
+  - Now uses contextDatObject.schemas.length etc. directly — always accurate
+- [x] 16 dedicated tests green (`__tests__/contextDatFix/distillerFallback.test.ts`)
+- [x] 83 tests green across 5 suites (contextDatFix + deepeningCap + slimFilter + serverRobustness + e2eChain)
+- [x] 0 new TS errors (133 total, all pre-existing)
