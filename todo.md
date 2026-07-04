@@ -2320,11 +2320,18 @@
 - [x] 0 new TS errors, 34 tests green
 
 ## Payload Optimization: Deepening Cap + LIVE_MESSAGE Slim (4 Jul 2026)
-- [ ] Cap deepening layer at 500 tokens max (priority-ranked fragments, truncate lowest priority)
+- [x] Cap deepening layer at 500 tokens max (priority-ranked fragments, truncate lowest priority)
+- [x] Added crisis/safety priority ranking: crisis schemas + crisis-context persons get priority 1
+- [x] Priority order: 1=crisis/safety, 2=person references, 3=schema deepening, 4=older session refs
+- [x] 11 dedicated deepening tests green (`__tests__/deepeningCap/deepeningCap.test.ts`)
 - [x] LIVE_MESSAGE: only send active/relevant engine contexts per turn (not all 30+ fields)
 - [x] Built `lib/ai/live-message-filter.ts` — buildSlimLivePayload() drops all null/undefined optional context fields
 - [x] Integrated into openai-provider.ts LIVE_MESSAGE branch (replaces 150-line explicit field list)
 - [x] Updated pipeline.ts trace to show dynamically active fields per turn
 - [x] 15 dedicated tests green (`__tests__/liveMessageFilter/slimPayload.test.ts`)
 - [x] e2e chain tests pass (knownUserPatterns + backpackAnalysis preserved in LIVE_MESSAGE)
+- [x] Server-side robuustheid: alle optionele velden al bewaakt met if-guards + Zod .nullable().optional()
+- [x] 17 server robustness tests green (`__tests__/e2eChain/slimPayloadServerRobustness.test.ts`)
+- [x] Bewezen: minimale slim payload (alleen required fields) → Zod OK → buildSystemPrompt OK → geen crash
 - [x] 0 new TS errors (133 total = 6 FEWER than before, pre-existing errors only)
+- [x] Totaal 67 tests green over 4 test suites (deepening + slim filter + server robustness + e2e chain)

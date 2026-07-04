@@ -57,53 +57,76 @@ export interface DeepeningInput {
 /**
  * Determine if deepening is needed and retrieve bounded fragments.
  * Fully deterministic — no GPT calls.
+ *
+ * Priority ranking (highest first):
+ *   1. Crisis/safety-related schemas (verlating, wantrouwen with crisis context)
+ *   2. Person references (relational context is therapeutically critical)
+ *   3. Schema deepening (active schema not covered by context.dat)
+ *   4. Older session references (lowest priority, only if budget remains)
+ *
+ * Hard cap: total deepening ≤ 500 tokens. Fragments are added in priority
+ * order until the cap is reached; remaining candidates are discarded.
  */
 export function resolveDeepening(input: DeepeningInput): DeepeningResult {
   const { contextDat, nanoResult, backpack, userDat, logsDat, currentMessage } = input;
-  const fragments: DeepeningFragment[] = [];
-  let totalTokens = 0;
 
   if (!nanoResult) {
     return { fragments: [], totalTokens: 0, triggered: false };
   }
 
-  // ── 1. Person not in context.dat keyFigures ──
+  // ── Collect ALL candidate fragments with priority scores ──
+  const candidates: Array<DeepeningFragment & { priority: number }> = [];
+
+  // Priority 1+2: Person references (crisis-related persons get priority 1, others priority 2)
   const mentionedPersons = detectPersonReferences(currentMessage, nanoResult);
   const knownNames = new Set(contextDat.keyFigures.map(kf => kf.name.toLowerCase()));
+  const isCrisisContext = detectCrisisContext(currentMessage, nanoResult);
 
   for (const person of mentionedPersons) {
     if (knownNames.has(person.toLowerCase())) continue;
-    if (totalTokens >= MAX_DEEPENING_TOKENS) break;
-
     const fragment = retrievePersonFragment(person, backpack, logsDat);
     if (fragment) {
-      totalTokens += fragment.tokenEstimate;
-      if (totalTokens <= MAX_DEEPENING_TOKENS) {
-        fragments.push(fragment);
-      } else {
-        totalTokens -= fragment.tokenEstimate;
-      }
+      // Crisis-context person references get highest priority
+      const priority = isCrisisContext ? 1 : 2;
+      candidates.push({ ...fragment, priority });
     }
   }
 
-  // ── 2. Reference to older session (beyond last 3) ──
-  const olderSessionRef = detectOlderSessionReference(currentMessage, nanoResult, contextDat);
-  if (olderSessionRef && totalTokens < MAX_DEEPENING_TOKENS) {
-    const fragment = retrieveOlderSessionFragment(olderSessionRef, logsDat);
-    if (fragment && totalTokens + fragment.tokenEstimate <= MAX_DEEPENING_TOKENS) {
-      fragments.push(fragment);
-      totalTokens += fragment.tokenEstimate;
-    }
-  }
-
-  // ── 3. Schema needing deepening ──
+  // Priority 1 or 3: Schema deepening (crisis-related schemas get priority 1)
   const schemaDeepening = detectSchemaDeepening(nanoResult, contextDat, userDat);
-  if (schemaDeepening && totalTokens < MAX_DEEPENING_TOKENS) {
+  if (schemaDeepening) {
     const fragment = retrieveSchemaFragment(schemaDeepening, userDat, logsDat);
-    if (fragment && totalTokens + fragment.tokenEstimate <= MAX_DEEPENING_TOKENS) {
-      fragments.push(fragment);
-      totalTokens += fragment.tokenEstimate;
+    if (fragment) {
+      const isCrisisSchema = CRISIS_SCHEMAS.has(schemaDeepening);
+      const priority = (isCrisisSchema && isCrisisContext) ? 1 : 3;
+      candidates.push({ ...fragment, priority });
     }
+  }
+
+  // Priority 4: Older session reference (lowest priority)
+  const olderSessionRef = detectOlderSessionReference(currentMessage, nanoResult, contextDat);
+  if (olderSessionRef) {
+    const fragment = retrieveOlderSessionFragment(olderSessionRef, logsDat);
+    if (fragment) {
+      candidates.push({ ...fragment, priority: 4 });
+    }
+  }
+
+  // ── Sort by priority (lowest number = highest priority) ──
+  candidates.sort((a, b) => a.priority - b.priority);
+
+  // ── Fill up to MAX_DEEPENING_TOKENS ──
+  const fragments: DeepeningFragment[] = [];
+  let totalTokens = 0;
+
+  for (const candidate of candidates) {
+    if (totalTokens + candidate.tokenEstimate > MAX_DEEPENING_TOKENS) {
+      continue; // Skip this one, try smaller ones
+    }
+    const { priority: _p, ...fragment } = candidate;
+    fragments.push(fragment);
+    totalTokens += fragment.tokenEstimate;
+    if (totalTokens >= MAX_DEEPENING_TOKENS) break;
   }
 
   return {
@@ -111,6 +134,32 @@ export function resolveDeepening(input: DeepeningInput): DeepeningResult {
     totalTokens,
     triggered: fragments.length > 0,
   };
+}
+
+// ─── Crisis Context Detection ────────────────────────────────
+
+/** Schemas that are safety-critical and get priority boost in crisis context */
+const CRISIS_SCHEMAS = new Set([
+  'verlating', 'wantrouwen', 'emotionele_verwaarlozing', 'tekortschieten',
+]);
+
+/** Detect if the current message/nano context suggests crisis or safety concern */
+function detectCrisisContext(message: string, nanoResult: NanoInterpretResult): boolean {
+  const lower = message.toLowerCase();
+  const crisisMarkers = [
+    'niet meer', 'wil dood', 'geen zin', 'opgeven', 'einde',
+    'zelfmoord', 'suïcide', 'pijn', 'wanhoop', 'hopeloos',
+    'can\'t go on', 'give up', 'end it', 'hopeless', 'suicide',
+  ];
+  if (crisisMarkers.some(m => lower.includes(m))) return true;
+
+  // Check nano themes for crisis indicators
+  if (nanoResult.themes) {
+    const themeText = nanoResult.themes.join(' ').toLowerCase();
+    if (crisisMarkers.some(m => themeText.includes(m))) return true;
+  }
+
+  return false;
 }
 
 // ─── Person Detection & Retrieval ─────────────────────────────
