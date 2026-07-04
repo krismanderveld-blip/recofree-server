@@ -1042,6 +1042,8 @@ function ChatScreenInner() {
       };
       setMessages((prev) => [...prev, confirmationMsg]);
       setSessionPhase('completed');
+      // Lock memory cache: flush dirty entries to encrypted storage and clear RAM
+      await SessionMemoryCache.lock();
       // Debug: log session end
       logDebugEvent('session_end', {
         messageCount: result.updatedUserDat.chatHistory.length,
@@ -1182,6 +1184,8 @@ function ChatScreenInner() {
     } catch (err) {
       console.warn('[QuietClose] Non-critical error:', err);
     }
+    // Lock memory cache: flush dirty entries to encrypted storage and clear RAM
+    await SessionMemoryCache.lock();
   }, [sessionPhase, messages, state.userType]);
   closeSessionQuietlyRef.current = closeSessionQuietly;
 
