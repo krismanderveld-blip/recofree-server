@@ -228,6 +228,10 @@ export interface GPTPayload {
   extractedEntities?: import('../backpack-extractor/types').ExtractedEntities;
   /** Whether backpack content changed since last extraction (triggers full backpack resend) */
   backpackChanged?: boolean;
+  /** context.dat: distilled compact context that replaces full backpack/userDat/diary at SESSION_INIT */
+  contextDat?: string;
+  /** Deepening fragments: targeted raw-layer fragments for gaps detected by nano */
+  deepeningBlock?: string;
 }
 
 // ─── Builder ───────────────────────────────────────────────────
@@ -341,6 +345,10 @@ export interface PayloadBuilderInput {
   extractedEntities?: import('../backpack-extractor/types').ExtractedEntities;
   /** Whether backpack changed since last extraction (forces full backpack resend) */
   backpackChanged?: boolean;
+  /** context.dat: serialized distilled context (replaces full layers at SESSION_INIT) */
+  contextDatSerialized?: string;
+  /** Deepening fragments: targeted raw-layer fragments for gaps detected by nano */
+  deepeningBlock?: string;
 }
 
 // ─── Conversation History Optimisation (Patch N Step 5) ─────────────────────
@@ -737,67 +745,98 @@ export function buildGPTPayload(input: PayloadBuilderInput): GPTPayload {
   }
 
   // ── Session start: add backpack context + userDat + diary ──
-  // ALWAYS send full backpack at session start — no compact/entities mode
+  // SESSION_INIT payload: use context.dat (distilled) when available, otherwise full raw layers
   if (isSessionStart) {
-    payload.backpack = {
-      naam: backpack.naam || '',
-      userType: backpack.userType || 'elias',
-      lifeStory: (backpack.sections || []).map((s) => ({
-        id: s.id,
-        label: s.label,
-        ageRange: s.ageRange,
-        content: s.content,
-      })),
-      ...(backpack.kimBackpack ? { kimBackpack: backpack.kimBackpack } : {}),
-      intakeContext: {
-        stageOfChange: backpack.intakeContext?.stageOfChange || ELIAS_DEFAULT_STAGE,
-        startEmotion: backpack.intakeContext?.startEmotion || '',
-        urgency: backpack.intakeContext?.urgency || 'midden',
-        initialContext: backpack.intakeContext?.initialContext || '',
-        intakeDate: backpack.intakeContext?.intakeDate || '',
-      },
-      createdAt: backpack.createdAt || LocalDeviceTimeService.now().utcIso,
-    };
-    payload.backpackChanged = true;
-    // Also send extractedEntities if available (supplementary structured memory)
-    if (input.extractedEntities && input.extractedEntities.persons.length > 0) {
-      payload.extractedEntities = input.extractedEntities;
-    }
+    if (input.contextDatSerialized) {
+      // ── context.dat mode: compact distilled context replaces full layers ──
+      payload.contextDat = input.contextDatSerialized;
+      if (input.deepeningBlock) {
+        payload.deepeningBlock = input.deepeningBlock;
+      }
+      // Minimal identity (needed for persona routing)
+      payload.backpack = {
+        naam: backpack.naam || '',
+        userType: backpack.userType || 'elias',
+        lifeStory: [],
+        intakeContext: {
+          stageOfChange: backpack.intakeContext?.stageOfChange || ELIAS_DEFAULT_STAGE,
+          startEmotion: backpack.intakeContext?.startEmotion || '',
+          urgency: backpack.intakeContext?.urgency || 'midden',
+          initialContext: '',
+          intakeDate: backpack.intakeContext?.intakeDate || '',
+        },
+        createdAt: backpack.createdAt || LocalDeviceTimeService.now().utcIso,
+      };
+      payload.backpackChanged = false;
+      payload.userDat = {
+        totalSessions: userDat.totalSessions || 0,
+        triggerPatterns: [],
+        moodHistory: [],
+        moduleUsageSummary: [...new Set((userDat.moduleUsage || []).map((m) => m.moduleId))],
+        lastSessionDate: userDat.lastSessionDate,
+        sessionAnalyses: [],
+      };
+    } else {
+      // ── Full payload mode (fallback when context.dat distillation failed) ──
+      payload.backpack = {
+        naam: backpack.naam || '',
+        userType: backpack.userType || 'elias',
+        lifeStory: (backpack.sections || []).map((s) => ({
+          id: s.id,
+          label: s.label,
+          ageRange: s.ageRange,
+          content: s.content,
+        })),
+        ...(backpack.kimBackpack ? { kimBackpack: backpack.kimBackpack } : {}),
+        intakeContext: {
+          stageOfChange: backpack.intakeContext?.stageOfChange || ELIAS_DEFAULT_STAGE,
+          startEmotion: backpack.intakeContext?.startEmotion || '',
+          urgency: backpack.intakeContext?.urgency || 'midden',
+          initialContext: backpack.intakeContext?.initialContext || '',
+          intakeDate: backpack.intakeContext?.intakeDate || '',
+        },
+        createdAt: backpack.createdAt || LocalDeviceTimeService.now().utcIso,
+      };
+      payload.backpackChanged = true;
+      if (input.extractedEntities && input.extractedEntities.persons.length > 0) {
+        payload.extractedEntities = input.extractedEntities;
+      }
 
-    payload.userDat = {
-      totalSessions: userDat.totalSessions || 0,
-      triggerPatterns: (userDat.triggerPatterns || []).map((tp) => ({
-        trigger: tp.trigger,
-        count: tp.count,
-        firstSeen: tp.firstSeen,
-        lastSeen: tp.lastSeen,
-      })),
-      moodHistory: (userDat.moodHistory || []).slice(-5).map((mh) => ({
-        sliders: (() => { const s = sanitizeSliders(mh.sliders as unknown as Record<string, unknown>); delete s.vspScore; return s; })(),
-        timestamp: mh.timestamp,
-      })),
-      moduleUsageSummary: [...new Set((userDat.moduleUsage || []).map((m) => m.moduleId))],
-      lastSessionDate: userDat.lastSessionDate,
-      sessionAnalyses: (userDat.sessionAnalyses || []).map((sa) => ({
-        sessionNumber: sa.sessionNumber,
-        date: sa.date,
-        messageCount: sa.messageCount,
-        durationMinutes: sa.durationMinutes,
-        dominantEmotion: sa.dominantEmotion,
-        themes: sa.themes,
-        newTriggers: sa.newTriggers,
-        modulesUsed: sa.modulesUsed,
-        moodDelta: sa.moodDelta,
-        endRiskLevel: sa.endRiskLevel,
-      })),
-    };
+      payload.userDat = {
+        totalSessions: userDat.totalSessions || 0,
+        triggerPatterns: (userDat.triggerPatterns || []).map((tp) => ({
+          trigger: tp.trigger,
+          count: tp.count,
+          firstSeen: tp.firstSeen,
+          lastSeen: tp.lastSeen,
+        })),
+        moodHistory: (userDat.moodHistory || []).slice(-5).map((mh) => ({
+          sliders: (() => { const s = sanitizeSliders(mh.sliders as unknown as Record<string, unknown>); delete s.vspScore; return s; })(),
+          timestamp: mh.timestamp,
+        })),
+        moduleUsageSummary: [...new Set((userDat.moduleUsage || []).map((m) => m.moduleId))],
+        lastSessionDate: userDat.lastSessionDate,
+        sessionAnalyses: (userDat.sessionAnalyses || []).map((sa) => ({
+          sessionNumber: sa.sessionNumber,
+          date: sa.date,
+          messageCount: sa.messageCount,
+          durationMinutes: sa.durationMinutes,
+          dominantEmotion: sa.dominantEmotion,
+          themes: sa.themes,
+          newTriggers: sa.newTriggers,
+          modulesUsed: sa.modulesUsed,
+          moodDelta: sa.moodDelta,
+          endRiskLevel: sa.endRiskLevel,
+        })),
+      };
 
-    if (input.diaryEntries && input.diaryEntries.length > 0) {
-      payload.diaryEntries = input.diaryEntries.map((e) => ({
-        content: e.content,
-        moodTag: e.moodTag,
-        timestamp: e.timestamp,
-      }));
+      if (input.diaryEntries && input.diaryEntries.length > 0) {
+        payload.diaryEntries = input.diaryEntries.map((e) => ({
+          content: e.content,
+          moodTag: e.moodTag,
+          timestamp: e.timestamp,
+        }));
+      }
     }
   }
 

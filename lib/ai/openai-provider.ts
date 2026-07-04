@@ -512,6 +512,8 @@ export class OpenAIProvider implements AIProvider {
         vspStructuredSection: context.vspStructuredSection,
         extractedEntities: context.extractedEntities,
         backpackChanged: context.backpackChanged,
+        contextDatSerialized: context.contextDatSerialized,
+        deepeningBlock: context.deepeningBlock,
       });
 
       // ── STEP 3: Build server payload based on SESSION_INIT / LIVE_MESSAGE split ──
@@ -666,10 +668,19 @@ export class OpenAIProvider implements AIProvider {
           selfAcceptanceContext: gptPayload.selfAcceptanceContext ?? null,
           kimPatternSupportContext: gptPayload.kimPatternSupportContext ?? null,
 
-          // Full data (SESSION_INIT only)
-          backpack: gptPayload.backpack,
-          userDat: gptPayload.userDat,
-          diaryEntries: gptPayload.diaryEntries,
+          // Full data (SESSION_INIT only) — uses context.dat when available
+          ...(gptPayload.contextDat
+            ? {
+                contextDat: gptPayload.contextDat,
+                deepeningBlock: gptPayload.deepeningBlock ?? null,
+                backpack: gptPayload.backpack, // minimal identity only
+                userDat: gptPayload.userDat, // minimal stats only
+              }
+            : {
+                backpack: gptPayload.backpack,
+                userDat: gptPayload.userDat,
+                diaryEntries: gptPayload.diaryEntries,
+              }),
 
           // User-selected app language (from i18n provider)
           locale: context.locale ?? null,

@@ -867,6 +867,7 @@ export async function processMessage(
             bufferLiveIntent: serverResult.patches?.sessionState?.emotionalState ?? '',
             bufferDominantState: `${serverResult.patches?.sessionState?.dominantModule ?? 'E01'} (server)`,
           },
+          contextDat: null,
           payload: {
             isSessionStart,
             fieldsIncluded: ['serverEngine', 'signalDetections', 'statePatches', 'memoryWriteBack'],
@@ -2905,6 +2906,53 @@ export async function processMessage(
     }
   }
 
+  // ── CONTEXT.DAT DISTILLATION (first turn only) ────────────────────────────────────
+  let contextDatSerialized: string | undefined;
+  let deepeningBlock: string | undefined;
+  if (isSessionStart) {
+    try {
+      const { distillContextDat, serializeContextDatForGPT } = await import('../pipeline/context-dat-distiller');
+      const { resolveDeepening, serializeDeepeningForGPT } = await import('../pipeline/context-dat-deepening');
+      const lifecycleMgr = getSessionLifecycleManager();
+      const memStores = lifecycleMgr.getStores();
+      const persona = (backpack.userType || 'elias') as 'elias' | 'kim';
+      const stateDat = await memStores.stateDatStore.load(persona);
+      const projectionsDat = await memStores.projectionsDatStore.load(persona);
+      const userDatMemory = await memStores.userDatStore.load(persona, 'local_user');
+
+      const contextDat = distillContextDat({
+        backpack,
+        userDat: currentUserDat,
+        logsDat: options?.logsSessions ? { sessions: options.logsSessions, routingAudit: [] } as any : null,
+        stateDat,
+        projectionsDat,
+        userDatMemory,
+        diaryEntries: options?.diaryEntries ?? [],
+      });
+      contextDatSerialized = serializeContextDatForGPT(contextDat);
+
+      // Deepening: targeted fragment retrieval if nano detected gaps
+      if (clientNanoResult) {
+        const deepeningResult = resolveDeepening({
+          contextDat,
+          nanoResult: clientNanoResult,
+          backpack,
+          userDat: currentUserDat,
+          logsDat: options?.logsSessions ? { sessions: options.logsSessions, routingAudit: [] } as any : null,
+          currentMessage: userMessage,
+        });
+        if (deepeningResult.triggered) {
+          deepeningBlock = serializeDeepeningForGPT(deepeningResult);
+        }
+      }
+    } catch (e) {
+      // Graceful fallback: if distillation fails, proceed without context.dat (full payload)
+      console.warn('[context.dat] Distillation failed, falling back to full payload:', e);
+      contextDatSerialized = undefined;
+      deepeningBlock = undefined;
+    }
+  }
+
   // ── CLIENT FALLBACK: ChatContext + GPT call (only reached when server-led block above fails) ──
   const context: ChatContext = {
     userType: backpack.userType,
@@ -2917,6 +2965,8 @@ export async function processMessage(
     userDat: currentUserDat,
     isSessionStart,
     diaryEntries: options?.diaryEntries ?? [],
+    contextDatSerialized,
+    deepeningBlock,
     activeModules: [activeDecision ? activeDecision.dominantModule : preGPTDominantState.dominantModule],
     crisisLevel: activeDecision ? activeDecision.crisisLevel : crisisLevel,
     isCrisis: (elisDecision?.zone.resolved?.isCrisis ?? false) || (kimDecision?.isKimCrisis ?? false),
@@ -3551,10 +3601,23 @@ export async function processMessage(
       schemaTendencies: (currentUserDat.schemaTendencies || []).map((s: any) => ({ schemaId: s.schemaId, confidence: s.confidence ?? 0, last: (s.lastUpdatedAt || s.lastSeen || '').slice(0, 10) || null })),
       modeTendencies: (currentUserDat.modeTendencies || []).map((m: any) => ({ modeId: m.modeId, confidence: m.confidence ?? 0, last: (m.lastUpdatedAt || m.lastSeen || '').slice(0, 10) || null })),
     },
+    contextDat: isSessionStart && context.contextDatSerialized ? {
+      built: true,
+      keyFigures: (context.contextDatSerialized.match(/^- /gm) || []).length,
+      schemas: (context.contextDatSerialized.match(/schema/gi) || []).length,
+      modes: (context.contextDatSerialized.match(/modus/gi) || []).length,
+      trendDays: (context.contextDatSerialized.match(/dag/gi) || []).length,
+      sessionSummaries: (context.contextDatSerialized.match(/sessie \d/gi) || []).length,
+      projections: (context.contextDatSerialized.match(/projectie/gi) || []).length,
+      serializedTokens: estimateTokens(context.contextDatSerialized),
+      deepeningFragments: context.deepeningBlock ? (context.deepeningBlock.match(/\[DEEPENING/g) || []).length : 0,
+      deepeningTokens: context.deepeningBlock ? estimateTokens(context.deepeningBlock) : 0,
+      legacyTokensEstimate: estimateTokens(JSON.stringify({ backpack: context.backpack, userDat: context.userDat, diary: context.diaryEntries })),
+    } : null,
     payload: {
       isSessionStart,
       fieldsIncluded: isSessionStart
-        ? ['backpack', 'userDat', 'diaryEntries', 'moodSliders', 'bufferSnapshot', 'regulationResult', 'engineDirective', 'interventionContinuity', 'projectionContext', 'stoaContext']
+        ? (context.contextDatSerialized ? ['contextDat', 'deepeningBlock', 'moodSliders', 'bufferSnapshot', 'regulationResult', 'engineDirective'] : ['backpack', 'userDat', 'diaryEntries', 'moodSliders', 'bufferSnapshot', 'regulationResult', 'engineDirective', 'interventionContinuity', 'projectionContext', 'stoaContext'])
         : ['message', 'conversationHistory', 'moodSliders', 'bufferSnapshot', 'regulationResult', 'engineDirective', 'interventionContinuity', 'projectionContext', 'stoaContext'],
       promptBlocks: {
         regulation: regulationResult.action !== 'reflect' ? regulationResult.action : 'skipped',

@@ -1065,6 +1065,11 @@ export interface ChatContext {
   isSessionStart: boolean;
   /** Recent diary entries — included at session start for AI context */
   diaryEntries: DiaryEntry[];
+  /** context.dat: distilled in-memory context that replaces full backpack/userDat/diary at SESSION_INIT.
+   * When present, the payload builder uses this instead of raw layers. */
+  contextDatSerialized?: string;
+  /** Deepening fragments: targeted raw-layer fragments retrieved by the deepening layer */
+  deepeningBlock?: string;
   activeModules: string[];
   crisisLevel: number;
   /** Whether the resolved zone is a crisis state (PAARS / severity 5). From ResolvedEliasZone.isCrisis. */

@@ -133,6 +133,21 @@ export interface EngineTraceInput {
     modeTendencies?: Array<{ modeId: string; confidence: number; last: string | null }>;
   };
 
+  // context.dat distillation (first message only)
+  contextDat: {
+    built: boolean;
+    keyFigures: number;
+    schemas: number;
+    modes: number;
+    trendDays: number;
+    sessionSummaries: number;
+    projections: number;
+    serializedTokens: number;
+    deepeningFragments: number;
+    deepeningTokens: number;
+    legacyTokensEstimate: number;
+  } | null;
+
   // Payload to server
   payload: {
     isSessionStart: boolean;
@@ -348,6 +363,27 @@ export function buildTraceBlock(input: EngineTraceInput): string {
     lines.push('    (projection state niet beschikbaar)');
   }
   lines.push('');
+
+  // context.dat distillation
+  if (input.contextDat) {
+    const cd = input.contextDat;
+    lines.push('CONTEXT.DAT (gedistilleerd):');
+    lines.push(`  gebouwd: ${cd.built ? 'ja' : 'nee (niet eerste beurt)'}`);
+    if (cd.built) {
+      lines.push(`  key figures: ${cd.keyFigures}/7`);
+      lines.push(`  schema's: ${cd.schemas}/5`);
+      lines.push(`  modi: ${cd.modes}/5`);
+      lines.push(`  trend dagen: ${cd.trendDays}/7`);
+      lines.push(`  sessie-samenvattingen: ${cd.sessionSummaries}/3`);
+      lines.push(`  actieve projecties: ${cd.projections}/2`);
+      lines.push(`  context.dat tokens: ~${cd.serializedTokens}`);
+      lines.push(`  deepening fragmenten: ${cd.deepeningFragments} (~${cd.deepeningTokens} tokens)`);
+      lines.push(`  TOTAAL NIEUW: ~${cd.serializedTokens + cd.deepeningTokens} tokens`);
+      lines.push(`  LEGACY (oud): ~${cd.legacyTokensEstimate} tokens`);
+      lines.push(`  BESPARING: ~${cd.legacyTokensEstimate - cd.serializedTokens - cd.deepeningTokens} tokens (${Math.round((1 - (cd.serializedTokens + cd.deepeningTokens) / cd.legacyTokensEstimate) * 100)}%)`);
+    }
+    lines.push('');
+  }
 
   // Payload to server
   lines.push('PAYLOAD NAAR SERVER:');

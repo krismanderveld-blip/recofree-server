@@ -2310,3 +2310,11 @@
 - [x] Add 10min inactivity timer for periodic encrypt-and-flush
 - [x] Preserve persona separation in cache
 - [x] 0 new TS errors, 34 tests green
+
+## context.dat — In-Memory Distilled Context (4 Jul 2026)
+- [x] Build context.dat distiller (key figures max 7, schemas max 5, modes max 5, 7-day trend, last 3 session summaries, active projections max 2)
+- [x] Build deepening layer (targeted fragment retrieval: person/theme not in context, older session ref, active schema needing depth)
+- [x] Wire into pipeline: distill at first user message after greeting, replace full backpack/userDat/diary payload
+- [x] Handle empty/new user gracefully (minimal/empty context.dat, no crash)
+- [x] Debug trace: show distilled context contents + token size old vs new
+- [x] 0 new TS errors, 34 tests green
