@@ -2358,3 +2358,13 @@
 - [x] clearDeepeningCache() called at session start in pipeline.ts
 - [x] E2E validation test: 12 tests proving schemas/modes/trend/sessions/cache all work correctly
 - [x] 94 tests green across 6 suites, 0 new TS errors (134 total, 1 fewer than before)
+
+## Conversation Window Optimisation + Project Structure Map (12 Jul 2026)
+- [x] Reduce RECENT_WINDOW from 20 to 10 messages (both client + server)
+- [x] Improve thematic summary: include assistant key interventions (schema/mode work, grounding, techniques, reflective questioning)
+- [x] Add token-aware truncation: long messages capped at ~200 tokens (800 chars) with ellipsis
+- [x] Preserve crisis messages regardless of position (max 3 retained, never summarized)
+- [x] Retain most emotionally salient non-crisis message from earlier pool
+- [x] 14 dedicated tests green (`__tests__/payloadRefinements/conversationWindow.test.ts`)
+- [x] Server-side mirror: identical logic in `server/engine/gpt-payload-server.ts`
+- [x] Generated full project structure map: `STRUCTURE_MAP.md` (502 lines, architecture overview, file tree, pipeline flow, memory layers, personas, payload stack)

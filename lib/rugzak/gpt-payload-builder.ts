@@ -400,45 +400,60 @@ function buildOptimisedConversationWindow(
   chatHistory: ChatMessage[],
   isSessionStart: boolean,
 ): Array<{ role: 'user' | 'assistant'; content: string; isSummary?: boolean }> {
-  // ── Recency-weighted window: last 20 messages are PRIMARY context ──
-  // All 60 messages in chatHistory are available, but we send up to 20 recent
-  // messages in full (the most contextually relevant for continuity), plus a
-  // thematic summary of older messages and one emotionally salient message.
-  const RECENT_WINDOW = 20;
-  const maxMessages = isSessionStart ? 24 : RECENT_WINDOW;
+  // ── Optimised window: last 10 messages in full + summary + crisis/emotional retention ──
+  // Reduced from 20 to 10 recent messages to save ~1-2k tokens per turn.
+  // Crisis messages are NEVER summarized — they're always preserved in full.
+  const RECENT_WINDOW = 10;
+  const MAX_MSG_TOKENS = 200; // ~800 chars per message max
+  const maxMessages = isSessionStart ? 14 : RECENT_WINDOW;
 
-  // If history fits within window, no optimisation needed
+  // If history fits within window, just truncate long messages
   if (chatHistory.length <= maxMessages) {
-    return chatHistory.map((msg) => ({ role: msg.role, content: msg.content }));
+    return chatHistory.map((msg) => ({
+      role: msg.role,
+      content: truncateMessage(msg.content, MAX_MSG_TOKENS),
+    }));
   }
 
-  // ── Split: recent (last 20) vs. earlier ──
+  // ── Split: recent (last 10) vs. earlier ──
   const recentMessages = chatHistory.slice(-RECENT_WINDOW);
   const earlierMessages = chatHistory.slice(0, -RECENT_WINDOW);
 
-  // ── Find most emotionally relevant message from earlier pool ──
+  // ── Preserve ALL crisis messages from earlier pool (never summarize) ──
+  const crisisMessages: ChatMessage[] = [];
+  const nonCrisisEarlier: ChatMessage[] = [];
+  for (const msg of earlierMessages) {
+    if (msg.role === 'user' && computeEmotionalIntensity(msg.content) >= 3) {
+      crisisMessages.push(msg);
+    } else {
+      nonCrisisEarlier.push(msg);
+    }
+  }
+  // Cap crisis messages at 3 to prevent unbounded growth
+  const retainedCrisis = crisisMessages.slice(-3);
+
+  // ── Find most emotionally relevant non-crisis message ──
   let bestEmotionalMsg: ChatMessage | null = null;
   let bestEmotionalScore = 0;
-
-  for (let i = 0; i < earlierMessages.length; i++) {
-    if (earlierMessages[i].role !== 'user') continue;
-    const score = computeEmotionalIntensity(earlierMessages[i].content);
+  for (const msg of nonCrisisEarlier) {
+    if (msg.role !== 'user') continue;
+    const score = computeEmotionalIntensity(msg.content);
     if (score > bestEmotionalScore) {
       bestEmotionalScore = score;
-      bestEmotionalMsg = earlierMessages[i];
+      bestEmotionalMsg = msg;
     }
   }
 
-  // ── Summarize earlier messages (excluding the emotional one) ──
+  // ── Build thematic summary of dropped messages ──
   const droppedMessages = bestEmotionalMsg
-    ? earlierMessages.filter((m) => m !== bestEmotionalMsg)
-    : earlierMessages;
+    ? nonCrisisEarlier.filter((m) => m !== bestEmotionalMsg)
+    : nonCrisisEarlier;
 
   const result: Array<{ role: 'user' | 'assistant'; content: string; isSummary?: boolean }> = [];
 
-  // Add thematic summary of earlier messages
   if (droppedMessages.length > 0) {
     const userDropped = droppedMessages.filter((m) => m.role === 'user');
+    const assistantDropped = droppedMessages.filter((m) => m.role === 'assistant');
     const themes: string[] = [];
     for (const msg of userDropped) {
       const lower = msg.content.toLowerCase();
@@ -451,25 +466,54 @@ function buildOptimisedConversationWindow(
       if (/sleep|tired|exhaust|insomnia/.test(lower)) themes.push('sleep');
       if (/guilt|shame|regret/.test(lower)) themes.push('guilt/shame');
     }
+    // Extract key assistant interventions (questions, techniques mentioned)
+    const interventions: string[] = [];
+    for (const msg of assistantDropped) {
+      const lower = msg.content.toLowerCase();
+      if (/schema|modus|mode/.test(lower)) interventions.push('schema/mode work');
+      if (/oefening|exercise|technique/.test(lower)) interventions.push('technique offered');
+      if (/veilig|safe|grounding/.test(lower)) interventions.push('grounding/safety');
+      if (/vraag|question|what.*feel|hoe.*voel/.test(lower)) interventions.push('reflective questioning');
+    }
     const uniqueThemes = [...new Set(themes)];
-    const summaryText = uniqueThemes.length > 0
-      ? `[Earlier in this conversation (${droppedMessages.length} messages summarized): User discussed ${uniqueThemes.join(', ')}. These provide background — prioritize the recent messages below for continuity.]`
-      : `[Earlier in this conversation: ${droppedMessages.length} messages exchanged. Prioritize the recent messages below for continuity.]`;
+    const uniqueInterventions = [...new Set(interventions)].slice(0, 3);
+
+    let summaryText = uniqueThemes.length > 0
+      ? `[Earlier (${droppedMessages.length} msgs): User themes: ${uniqueThemes.join(', ')}.`
+      : `[Earlier: ${droppedMessages.length} messages exchanged.`;
+    if (uniqueInterventions.length > 0) {
+      summaryText += ` Interventions: ${uniqueInterventions.join(', ')}.`;
+    }
+    summaryText += ' Prioritize recent messages for continuity.]';
     result.push({ role: 'assistant', content: summaryText, isSummary: true });
   }
 
-  // Add the most emotionally salient earlier message (if found)
-  if (bestEmotionalMsg && bestEmotionalScore > 0) {
-    result.push({ role: bestEmotionalMsg.role, content: bestEmotionalMsg.content });
+  // Add retained crisis messages (always preserved, truncated to MAX_MSG_TOKENS)
+  for (const msg of retainedCrisis) {
+    result.push({ role: msg.role, content: truncateMessage(msg.content, MAX_MSG_TOKENS) });
   }
 
-  // ── Add all 20 recent messages (full content, chronological) ──
-  // These are the PRIMARY context for GPT — most recent = most relevant for continuity
+  // Add the most emotionally salient non-crisis message (if found)
+  if (bestEmotionalMsg && bestEmotionalScore > 0) {
+    result.push({ role: bestEmotionalMsg.role, content: truncateMessage(bestEmotionalMsg.content, MAX_MSG_TOKENS) });
+  }
+
+  // ── Add last 10 recent messages (truncated to MAX_MSG_TOKENS each) ──
   for (const msg of recentMessages) {
-    result.push({ role: msg.role, content: msg.content });
+    result.push({ role: msg.role, content: truncateMessage(msg.content, MAX_MSG_TOKENS) });
   }
 
   return result;
+}
+
+/**
+ * Truncate a message to approximately maxTokens (~4 chars per token).
+ * Preserves the beginning and adds ellipsis if truncated.
+ */
+function truncateMessage(content: string, maxTokens: number): string {
+  const maxChars = maxTokens * 4;
+  if (content.length <= maxChars) return content;
+  return content.slice(0, maxChars - 3) + '...';
 }
 
 /**

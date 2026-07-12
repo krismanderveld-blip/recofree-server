@@ -128,19 +128,37 @@ function buildOptimisedConversationWindow(
   chatHistory: Array<{ role: string; content: string }>,
   isSessionStart: boolean,
 ): Array<{ role: 'user' | 'assistant'; content: string }> {
-  const RECENT_WINDOW = 20;
-  const maxMessages = isSessionStart ? 24 : RECENT_WINDOW;
+  // Optimised: last 10 messages + summary + crisis retention + token truncation
+  const RECENT_WINDOW = 10;
+  const MAX_MSG_TOKENS = 200; // ~800 chars per message max
+  const maxMessages = isSessionStart ? 14 : RECENT_WINDOW;
 
   if (chatHistory.length <= maxMessages) {
-    return chatHistory.map((msg) => ({ role: msg.role as 'user' | 'assistant', content: msg.content }));
+    return chatHistory.map((msg) => ({
+      role: msg.role as 'user' | 'assistant',
+      content: truncateMessage(msg.content, MAX_MSG_TOKENS),
+    }));
   }
 
   const recentMessages = chatHistory.slice(-RECENT_WINDOW);
   const earlierMessages = chatHistory.slice(0, -RECENT_WINDOW);
 
+  // Preserve crisis messages (emotional intensity >= 3)
+  const crisisMessages: (typeof chatHistory)[0][] = [];
+  const nonCrisisEarlier: (typeof chatHistory)[0][] = [];
+  for (const msg of earlierMessages) {
+    if (msg.role === 'user' && computeEmotionalIntensity(msg.content) >= 3) {
+      crisisMessages.push(msg);
+    } else {
+      nonCrisisEarlier.push(msg);
+    }
+  }
+  const retainedCrisis = crisisMessages.slice(-3);
+
+  // Find most emotionally relevant non-crisis message
   let bestEmotionalMsg: (typeof chatHistory)[0] | null = null;
   let bestEmotionalScore = 0;
-  for (const msg of earlierMessages) {
+  for (const msg of nonCrisisEarlier) {
     if (msg.role !== 'user') continue;
     const score = computeEmotionalIntensity(msg.content);
     if (score > bestEmotionalScore) {
@@ -150,13 +168,14 @@ function buildOptimisedConversationWindow(
   }
 
   const droppedMessages = bestEmotionalMsg
-    ? earlierMessages.filter((m) => m !== bestEmotionalMsg)
-    : earlierMessages;
+    ? nonCrisisEarlier.filter((m) => m !== bestEmotionalMsg)
+    : nonCrisisEarlier;
 
   const result: Array<{ role: 'user' | 'assistant'; content: string }> = [];
 
   if (droppedMessages.length > 0) {
     const userDropped = droppedMessages.filter((m) => m.role === 'user');
+    const assistantDropped = droppedMessages.filter((m) => m.role === 'assistant');
     const themes: string[] = [];
     for (const msg of userDropped) {
       const lower = msg.content.toLowerCase();
@@ -169,22 +188,47 @@ function buildOptimisedConversationWindow(
       if (/sleep|tired|exhaust|insomnia/.test(lower)) themes.push('sleep');
       if (/guilt|shame|regret/.test(lower)) themes.push('guilt/shame');
     }
+    const interventions: string[] = [];
+    for (const msg of assistantDropped) {
+      const lower = msg.content.toLowerCase();
+      if (/schema|modus|mode/.test(lower)) interventions.push('schema/mode work');
+      if (/oefening|exercise|technique/.test(lower)) interventions.push('technique offered');
+      if (/veilig|safe|grounding/.test(lower)) interventions.push('grounding/safety');
+      if (/vraag|question|what.*feel|hoe.*voel/.test(lower)) interventions.push('reflective questioning');
+    }
     const uniqueThemes = [...new Set(themes)];
-    const summaryText = uniqueThemes.length > 0
-      ? `[Earlier in this conversation (${droppedMessages.length} messages summarized): User discussed ${uniqueThemes.join(', ')}. These provide background — prioritize the recent messages below for continuity.]`
-      : `[Earlier in this conversation: ${droppedMessages.length} messages exchanged. Prioritize the recent messages below for continuity.]`;
+    const uniqueInterventions = [...new Set(interventions)].slice(0, 3);
+
+    let summaryText = uniqueThemes.length > 0
+      ? `[Earlier (${droppedMessages.length} msgs): User themes: ${uniqueThemes.join(', ')}.`
+      : `[Earlier: ${droppedMessages.length} messages exchanged.`;
+    if (uniqueInterventions.length > 0) {
+      summaryText += ` Interventions: ${uniqueInterventions.join(', ')}.`;
+    }
+    summaryText += ' Prioritize recent messages for continuity.]';
     result.push({ role: 'assistant', content: summaryText });
   }
 
+  // Add retained crisis messages
+  for (const msg of retainedCrisis) {
+    result.push({ role: msg.role as 'user' | 'assistant', content: truncateMessage(msg.content, MAX_MSG_TOKENS) });
+  }
+
   if (bestEmotionalMsg && bestEmotionalScore > 0) {
-    result.push({ role: bestEmotionalMsg.role as 'user' | 'assistant', content: bestEmotionalMsg.content });
+    result.push({ role: bestEmotionalMsg.role as 'user' | 'assistant', content: truncateMessage(bestEmotionalMsg.content, MAX_MSG_TOKENS) });
   }
 
   for (const msg of recentMessages) {
-    result.push({ role: msg.role as 'user' | 'assistant', content: msg.content });
+    result.push({ role: msg.role as 'user' | 'assistant', content: truncateMessage(msg.content, MAX_MSG_TOKENS) });
   }
 
   return result;
+}
+
+function truncateMessage(content: string, maxTokens: number): string {
+  const maxChars = maxTokens * 4;
+  if (content.length <= maxChars) return content;
+  return content.slice(0, maxChars - 3) + '...';
 }
 
 // ─── Main Builder ────────────────────────────────────────────────────────────
