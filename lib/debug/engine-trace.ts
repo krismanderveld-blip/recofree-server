@@ -142,10 +142,10 @@ export interface EngineTraceInput {
     trendDays: number;
     sessionSummaries: number;
     projections: number;
-    serializedTokens: number;
+    contextDatTokens: number;
     deepeningFragments: number;
     deepeningTokens: number;
-    legacyTokensEstimate: number;
+    legacyDataDumpTokens: number;
   } | null;
 
   // Payload to server
@@ -153,7 +153,7 @@ export interface EngineTraceInput {
     isSessionStart: boolean;
     fieldsIncluded: string[];
     promptBlocks: Record<string, boolean | string>;
-    estimatedTokens: number;
+    chatContextJsonTokens: number;
     usedModel: string;
   };
 
@@ -376,11 +376,11 @@ export function buildTraceBlock(input: EngineTraceInput): string {
       lines.push(`  trend dagen: ${cd.trendDays}/7`);
       lines.push(`  sessie-samenvattingen: ${cd.sessionSummaries}/3`);
       lines.push(`  actieve projecties: ${cd.projections}/2`);
-      lines.push(`  context.dat tokens: ~${cd.serializedTokens}`);
+      lines.push(`  context.dat tokens: ~${cd.contextDatTokens}`);
       lines.push(`  deepening fragmenten: ${cd.deepeningFragments} (~${cd.deepeningTokens} tokens)`);
-      lines.push(`  TOTAAL NIEUW: ~${cd.serializedTokens + cd.deepeningTokens} tokens`);
-      lines.push(`  LEGACY (oud): ~${cd.legacyTokensEstimate} tokens`);
-      lines.push(`  BESPARING: ~${cd.legacyTokensEstimate - cd.serializedTokens - cd.deepeningTokens} tokens (${Math.round((1 - (cd.serializedTokens + cd.deepeningTokens) / cd.legacyTokensEstimate) * 100)}%)`);
+      lines.push(`  TOTAAL context.dat + deepening: ~${cd.contextDatTokens + cd.deepeningTokens} tokens`);
+      lines.push(`  LEGACY data-dump (oud): ~${cd.legacyDataDumpTokens} tokens`);
+      lines.push(`  BESPARING vs legacy: ~${cd.legacyDataDumpTokens - cd.contextDatTokens - cd.deepeningTokens} tokens (${Math.round((1 - (cd.contextDatTokens + cd.deepeningTokens) / cd.legacyDataDumpTokens) * 100)}%)`);
     }
     lines.push('');
   }
@@ -394,7 +394,7 @@ export function buildTraceBlock(input: EngineTraceInput): string {
   for (const [block, val] of Object.entries(pl.promptBlocks)) {
     lines.push(`    ${block}: ${val}`);
   }
-  lines.push(`  Geschatte tokens: ${pl.estimatedTokens}`);
+  lines.push(`  ChatContext JSON tokens (struct, niet prompt): ~${pl.chatContextJsonTokens}`);
   lines.push(`  Gebruikt model: ${pl.usedModel}`);
   lines.push('');
 

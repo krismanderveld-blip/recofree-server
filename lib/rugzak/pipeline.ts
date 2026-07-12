@@ -2914,6 +2914,8 @@ export async function processMessage(
     try {
       const { distillContextDat, serializeContextDatForGPT } = await import('../pipeline/context-dat-distiller');
       const { resolveDeepening, serializeDeepeningForGPT } = await import('../pipeline/context-dat-deepening');
+      const { clearDeepeningCache } = await import('../pipeline/deepening-cache');
+      clearDeepeningCache(); // Fresh session = fresh cache
       const lifecycleMgr = getSessionLifecycleManager();
       const memStores = lifecycleMgr.getStores();
       const persona = (backpack.userType || 'elias') as 'elias' | 'kim';
@@ -3614,10 +3616,10 @@ export async function processMessage(
       trendDays: contextDatObject?.sevenDayTrend.length ?? 0,
       sessionSummaries: contextDatObject?.sessionSummaries.length ?? 0,
       projections: contextDatObject?.activeProjections.length ?? 0,
-      serializedTokens: estimateTokens(context.contextDatSerialized),
+      contextDatTokens: estimateTokens(context.contextDatSerialized),
       deepeningFragments: context.deepeningBlock ? (context.deepeningBlock.match(/\[DEEPENING/g) || []).length : 0,
       deepeningTokens: context.deepeningBlock ? estimateTokens(context.deepeningBlock) : 0,
-      legacyTokensEstimate: estimateTokens(JSON.stringify({ backpack: context.backpack, userDat: context.userDat, diary: context.diaryEntries })),
+      legacyDataDumpTokens: estimateTokens(JSON.stringify({ backpack: context.backpack, userDat: context.userDat, diary: context.diaryEntries })),
     } : null,
     payload: {
       isSessionStart,
@@ -3647,13 +3649,17 @@ export async function processMessage(
         knownPatterns: currentUserDat.schemaTendencies?.some((s: any) => (s.confidence ?? 0) >= 0.35) || currentUserDat.modeTendencies?.some((m: any) => (m.confidence ?? 0) >= 0.35) || (currentUserDat.triggerPatterns?.length ?? 0) > 0 ? 'yes' : 'no',
         backpackAnalysis: currentUserDat.backpackAnalysis ? 'yes' : 'no',
       },
-      estimatedTokens: estimateTokens(JSON.stringify(context)),
+      chatContextJsonTokens: estimateTokens(JSON.stringify(context)),
       usedModel: selectedModel ?? 'unknown',
     },
     tokens: tokenUsage ? {
       promptTokens: tokenUsage.promptTokens,
       completionTokens: tokenUsage.completionTokens,
       totalTokens: tokenUsage.totalTokens,
+      // NOTE: promptTokens is the ACTUAL token count from OpenAI for the full prompt
+      // (system + user messages). chatContextJsonTokens above is just the ChatContext
+      // struct serialized as JSON — a different (larger) number because it includes
+      // raw data that gets transformed/filtered before injection into the prompt.
     } : null,
   };
 

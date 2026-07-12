@@ -21,6 +21,7 @@ import type { ContextDat } from './context-dat-distiller';
 import type { Backpack, UserDat } from '../ai/types';
 import type { LogsDatPlaintext } from '../types/memory/logsDat.types';
 import type { ClientNanoInterpretResult as NanoInterpretResult } from './nano-interpret-client';
+import { getCachedFragment, cacheFragment, getDeepeningCacheStats, type DeepeningCacheStats } from './deepening-cache';
 
 // ─── Types ────────────────────────────────────────────────────
 
@@ -35,6 +36,7 @@ export interface DeepeningResult {
   fragments: DeepeningFragment[];
   totalTokens: number;
   triggered: boolean;
+  cacheStats?: DeepeningCacheStats;
 }
 
 // ─── Constants ────────────────────────────────────────────────
@@ -84,9 +86,11 @@ export function resolveDeepening(input: DeepeningInput): DeepeningResult {
 
   for (const person of mentionedPersons) {
     if (knownNames.has(person.toLowerCase())) continue;
-    const fragment = retrievePersonFragment(person, backpack, logsDat);
+    // Check cache first
+    const cached = getCachedFragment('person', person);
+    const fragment = cached ?? retrievePersonFragment(person, backpack, logsDat);
     if (fragment) {
-      // Crisis-context person references get highest priority
+      if (!cached) cacheFragment(fragment); // Store for future turns
       const priority = isCrisisContext ? 1 : 2;
       candidates.push({ ...fragment, priority });
     }
@@ -95,8 +99,11 @@ export function resolveDeepening(input: DeepeningInput): DeepeningResult {
   // Priority 1 or 3: Schema deepening (crisis-related schemas get priority 1)
   const schemaDeepening = detectSchemaDeepening(nanoResult, contextDat, userDat);
   if (schemaDeepening) {
-    const fragment = retrieveSchemaFragment(schemaDeepening, userDat, logsDat);
+    // Check cache first
+    const cached = getCachedFragment('schema', schemaDeepening);
+    const fragment = cached ?? retrieveSchemaFragment(schemaDeepening, userDat, logsDat);
     if (fragment) {
+      if (!cached) cacheFragment(fragment); // Store for future turns
       const isCrisisSchema = CRISIS_SCHEMAS.has(schemaDeepening);
       const priority = (isCrisisSchema && isCrisisContext) ? 1 : 3;
       candidates.push({ ...fragment, priority });
@@ -106,8 +113,11 @@ export function resolveDeepening(input: DeepeningInput): DeepeningResult {
   // Priority 4: Older session reference (lowest priority)
   const olderSessionRef = detectOlderSessionReference(currentMessage, nanoResult, contextDat);
   if (olderSessionRef) {
-    const fragment = retrieveOlderSessionFragment(olderSessionRef, logsDat);
+    // Check cache first (keyed by 'session:older')
+    const cached = getCachedFragment('session', 'older-ref');
+    const fragment = cached ?? retrieveOlderSessionFragment(olderSessionRef, logsDat);
     if (fragment) {
+      if (!cached) cacheFragment(fragment); // Store for future turns
       candidates.push({ ...fragment, priority: 4 });
     }
   }
@@ -133,6 +143,7 @@ export function resolveDeepening(input: DeepeningInput): DeepeningResult {
     fragments,
     totalTokens,
     triggered: fragments.length > 0,
+    cacheStats: getDeepeningCacheStats(),
   };
 }
 

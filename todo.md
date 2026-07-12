@@ -2349,3 +2349,12 @@
 - [x] 16 dedicated tests green (`__tests__/contextDatFix/distillerFallback.test.ts`)
 - [x] 83 tests green across 5 suites (contextDatFix + deepeningCap + slimFilter + serverRobustness + e2eChain)
 - [x] 0 new TS errors (133 total, all pre-existing)
+
+## Payload Optimisation Refinements (12 Jul 2026)
+- [x] Token-meting labels: renamed serializedTokens → contextDatTokens, estimatedTokens → chatContextJsonTokens, added fullPromptTokens (OpenAI actual)
+- [x] Updated engine-trace.ts type definitions and formatting to match new field names
+- [x] Deepening cache: `lib/pipeline/deepening-cache.ts` — in-memory Map, 20 max entries, 30min TTL
+- [x] Integrated into resolveDeepening: cache-first lookup for person/schema/session fragments
+- [x] clearDeepeningCache() called at session start in pipeline.ts
+- [x] E2E validation test: 12 tests proving schemas/modes/trend/sessions/cache all work correctly
+- [x] 94 tests green across 6 suites, 0 new TS errors (134 total, 1 fewer than before)
