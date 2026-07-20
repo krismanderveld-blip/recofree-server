@@ -273,6 +273,13 @@ export interface ChatMessage {
     intervention?: string;
     buffer?: string;
   };
+  /** Schema/Mode detection result for clinical confirmation UI */
+  schemaModeResult?: {
+    dominantMode?: string | null;
+    dominantSchema?: string | null;
+    acceptedModes?: string[];
+    acceptedSchemas?: string[];
+  };
 }
 
 /** Intake data collected during onboarding */
@@ -445,9 +452,9 @@ export interface UserDat {
   /** STOA sessions used in previous sessions (cross-session cooldown tracking) */
   stoaSessionsUsed?: Array<{ sessionId: number; usedAtSession: number }>;
   /** Schema/Mode: recurring mode tendencies (hybrid persistence — patterns only, never identity) */
-  modeTendencies?: Array<{ modeId: string; frequency: number; lastSeen: string; effectiveInterventions: string[]; /** ISO — first detection, never overwritten */ firstDetectedAt?: string; /** ISO — last confidence update */ lastUpdatedAt?: string; confidence?: number; /** Confirmed = safe to present as known pattern to GPT. Auto-confirmed when frequency≥5 AND confidence≥0.7, or via clinical/user acknowledgment */ confirmed?: boolean; /** ISO — when confirmation occurred */ confirmedAt?: string }>;
+  modeTendencies?: Array<{ modeId: string; frequency: number; lastSeen: string; effectiveInterventions: string[]; /** ISO — first detection, never overwritten */ firstDetectedAt?: string; /** ISO — last confidence update */ lastUpdatedAt?: string; confidence?: number; /** Confirmed = safe to present as known pattern to GPT */ confirmed?: boolean; /** ISO — when confirmation occurred */ confirmedAt?: string; /** Clinical acknowledgment */ clinicalAcknowledged?: boolean; clinicalAcknowledgedAt?: string | null; /** User self-acknowledgment */ userAcknowledged?: boolean; userAcknowledgedAt?: string | null; /** Weighted score (auto=+1, clinical=+2, user=+2) */ acknowledgmentScore?: number }>;
   /** Schema/Mode: recurring schema tendencies (hybrid persistence — patterns only, never diagnosis) */
-  schemaTendencies?: Array<{ schemaId: string; domain: string; frequency: number; lastSeen: string; copingStyle: string | null; /** ISO — first detection, never overwritten */ firstDetectedAt?: string; /** ISO — last confidence update */ lastUpdatedAt?: string; confidence?: number; /** Confirmed = safe to present as known pattern to GPT. Auto-confirmed when frequency≥5 AND confidence≥0.7, or via clinical/user acknowledgment */ confirmed?: boolean; /** ISO — when confirmation occurred */ confirmedAt?: string }>;
+  schemaTendencies?: Array<{ schemaId: string; domain: string; frequency: number; lastSeen: string; copingStyle: string | null; /** ISO — first detection, never overwritten */ firstDetectedAt?: string; /** ISO — last confidence update */ lastUpdatedAt?: string; confidence?: number; /** Confirmed = safe to present as known pattern to GPT */ confirmed?: boolean; /** ISO — when confirmation occurred */ confirmedAt?: string; /** Clinical acknowledgment */ clinicalAcknowledged?: boolean; clinicalAcknowledgedAt?: string | null; /** User self-acknowledgment */ userAcknowledged?: boolean; userAcknowledgedAt?: string | null; /** Weighted score (auto=+1, clinical=+2, user=+2) */ acknowledgmentScore?: number }>;
   /** Backpack analysis timestamps — tracks which sections have been analyzed by GPT and when.
    * Key = sectionId (e.g. 'childhood', 'my_story'), value = ISO timestamp of last GPT analysis.
    * Used to determine if a section needs re-analysis (section.lastUpdated > this timestamp). */

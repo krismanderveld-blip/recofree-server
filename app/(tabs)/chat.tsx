@@ -1216,6 +1216,37 @@ function ChatScreenInner() {
     router.replace('/(tabs)');
   }, [router]);
 
+  // Clinical mode: confirm schema/mode tendency
+  const handleConfirmTendency = useCallback(async (type: 'mode' | 'schema', id: string) => {
+    try {
+      const { applyClinicalAcknowledgment } = await import('@/lib/engine/shared/tendency-confirmation');
+      const udJson = await SessionMemoryCache.get(USERDAT_KEY);
+      if (!udJson) return;
+      const userDat = JSON.parse(udJson) as UserDat;
+      const now = LocalDeviceTimeService.now().utcIso;
+      if (type === 'mode') {
+        const { tendencies } = applyClinicalAcknowledgment(
+          userDat.modeTendencies ?? [],
+          'modeId',
+          id,
+          now,
+        );
+        userDat.modeTendencies = tendencies;
+      } else {
+        const { tendencies } = applyClinicalAcknowledgment(
+          userDat.schemaTendencies ?? [],
+          'schemaId',
+          id,
+          now,
+        );
+        userDat.schemaTendencies = tendencies;
+      }
+      await SessionMemoryCache.set(USERDAT_KEY, JSON.stringify(userDat));
+      console.log(`[Clinical] Acknowledged ${type}: ${id}`);
+    } catch (e) {
+      console.warn('[Clinical] Failed to confirm tendency:', e);
+    }
+  }, []);
   const renderMessage = useCallback(({ item }: { item: ChatMessage }) => {
     const isUser = item.role === 'user';
     const isElias = state.userType === 'elias';
@@ -1273,7 +1304,7 @@ function ChatScreenInner() {
             {visibleContent}
           </Text>
           {showClinical && clinicalDisplay && (
-            <ClinicalTag annotation={clinicalDisplay} />
+            <ClinicalTag annotation={clinicalDisplay} schemaModeResult={item.schemaModeResult} onConfirmTendency={handleConfirmTendency} />
           )}
         </View>
         <Text style={{ ...typography.micro, color: dc.textMuted, marginTop: 4, textAlign: isUser ? 'right' : 'left', marginHorizontal: 4 }}>
@@ -1281,7 +1312,7 @@ function ChatScreenInner() {
         </Text>
       </View>
     );
-  }, [companionName, state.userType, state.userDat?.clinicalModeActive]);
+  }, [companionName, state.userType, state.userDat?.clinicalModeActive, handleConfirmTendency]);
 
   const scrollToEnd = useCallback(() => {
     if (isUserScrolledUp.current) return;
@@ -1734,14 +1765,17 @@ function parseClinicalTag(content: string, isUser: boolean): { visibleContent: s
   return { visibleContent, clinicalAnnotation: annotation };
 }
 
-function ClinicalTag({ annotation }: { annotation: string }) {
+function ClinicalTag({ annotation, schemaModeResult, onConfirmTendency }: {
+  annotation: string;
+  schemaModeResult?: { dominantMode?: string | null; dominantSchema?: string | null; acceptedModes?: string[]; acceptedSchemas?: string[] };
+  onConfirmTendency?: (type: 'mode' | 'schema', id: string) => void;
+}) {
   const [expanded, setExpanded] = useState(false);
+  const [confirmedIds, setConfirmedIds] = useState<Set<string>>(new Set());
   const colors = useColors();
   const { t } = useTranslation();
-
   // Show fallback annotation when model did not comply (visible to clinician)
   const isFallback = annotation.includes('[not annotated') || annotation.includes('model did not comply');
-
   // Parse Signals line and VSP-Framework line from annotation
   const lines = annotation.split('\n');
   const signalsLine = lines.find(l => l.startsWith('Signals:'));
@@ -1749,6 +1783,17 @@ function ClinicalTag({ annotation }: { annotation: string }) {
   const vspFramework = vspFrameworkLine ? vspFrameworkLine.replace('VSP-Framework:', '').trim() : null;
   const otherLines = lines.filter(l => !l.startsWith('Signals:') && !l.startsWith('VSP-Framework:')).join('\n');
   const signalsValue = signalsLine ? signalsLine.replace('Signals:', '').trim() : null;
+
+  // Collect unique modes/schemas from this message's detection
+  const detectedModes = schemaModeResult?.acceptedModes?.length ? schemaModeResult.acceptedModes : (schemaModeResult?.dominantMode ? [schemaModeResult.dominantMode] : []);
+  const detectedSchemas = schemaModeResult?.acceptedSchemas?.length ? schemaModeResult.acceptedSchemas : (schemaModeResult?.dominantSchema ? [schemaModeResult.dominantSchema] : []);
+  const hasDetections = detectedModes.length > 0 || detectedSchemas.length > 0;
+
+  const handleConfirm = (type: 'mode' | 'schema', id: string) => {
+    if (confirmedIds.has(`${type}:${id}`)) return;
+    setConfirmedIds(prev => new Set([...prev, `${type}:${id}`]));
+    onConfirmTendency?.(type, id);
+  };
 
   return (
     <View style={{ marginTop: 8, borderTopWidth: 0.5, borderTopColor: colors.border, paddingTop: 6 }}>
@@ -1783,6 +1828,55 @@ function ClinicalTag({ annotation }: { annotation: string }) {
             <View style={{ marginTop: 6, paddingTop: 6, borderTopWidth: 0.5, borderTopColor: colors.border }}>
               <Text selectable style={{ fontSize: 11, color: colors.muted, fontStyle: 'italic' }}>
                 Signals: none
+              </Text>
+            </View>
+          )}
+          {/* Schema/Mode Confirmation Section */}
+          {hasDetections && (
+            <View style={{ marginTop: 8, paddingTop: 8, borderTopWidth: 0.5, borderTopColor: colors.border }}>
+              <Text style={{ fontSize: 11, fontWeight: '700', color: '#4A148C', marginBottom: 4 }}>
+                Schema/Mode Detectie:
+              </Text>
+              {detectedModes.map(mode => (
+                <View key={`mode-${mode}`} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 3 }}>
+                  <Text style={{ fontSize: 11, color: colors.foreground, flex: 1 }}>
+                    Mode: {mode}{schemaModeResult?.dominantMode === mode ? ' ★' : ''}
+                  </Text>
+                  <Pressable
+                    onPress={() => handleConfirm('mode', mode)}
+                    style={({ pressed }) => [{
+                      paddingHorizontal: 8, paddingVertical: 2, borderRadius: 4,
+                      backgroundColor: confirmedIds.has(`mode:${mode}`) ? '#C8E6C9' : '#E3F2FD',
+                      opacity: pressed ? 0.7 : 1,
+                    }]}
+                  >
+                    <Text style={{ fontSize: 10, fontWeight: '600', color: confirmedIds.has(`mode:${mode}`) ? '#2E7D32' : '#1565C0' }}>
+                      {confirmedIds.has(`mode:${mode}`) ? '✓ Bevestigd' : 'Bevestig'}
+                    </Text>
+                  </Pressable>
+                </View>
+              ))}
+              {detectedSchemas.map(schema => (
+                <View key={`schema-${schema}`} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 3 }}>
+                  <Text style={{ fontSize: 11, color: colors.foreground, flex: 1 }}>
+                    Schema: {schema}{schemaModeResult?.dominantSchema === schema ? ' ★' : ''}
+                  </Text>
+                  <Pressable
+                    onPress={() => handleConfirm('schema', schema)}
+                    style={({ pressed }) => [{
+                      paddingHorizontal: 8, paddingVertical: 2, borderRadius: 4,
+                      backgroundColor: confirmedIds.has(`schema:${schema}`) ? '#C8E6C9' : '#E3F2FD',
+                      opacity: pressed ? 0.7 : 1,
+                    }]}
+                  >
+                    <Text style={{ fontSize: 10, fontWeight: '600', color: confirmedIds.has(`schema:${schema}`) ? '#2E7D32' : '#1565C0' }}>
+                      {confirmedIds.has(`schema:${schema}`) ? '✓ Bevestigd' : 'Bevestig'}
+                    </Text>
+                  </Pressable>
+                </View>
+              ))}
+              <Text style={{ fontSize: 9, color: colors.muted, marginTop: 4, fontStyle: 'italic' }}>
+                Bevestiging = +2 acknowledgment score (meervoudige verificatie vereist voor confirmed status)
               </Text>
             </View>
           )}

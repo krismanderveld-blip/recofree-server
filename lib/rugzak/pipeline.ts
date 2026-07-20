@@ -316,6 +316,7 @@ import {
 } from '../engine/kim/kim-module-memory';
 import { applyAutoConfirmation, detectUserAcknowledgment, detectClinicalAcknowledgment, applyUserAcknowledgment, applyClinicalAcknowledgment } from '../engine/shared/tendency-confirmation';
 import { runVspInsightLayer, type VspInsightPipelineResult } from '../../src/features/vspInsight/vspInsightPipelineLayer';
+import { runVspIntakeAdapters } from '../../src/features/vspInsight/vspIntakeAdapters';
 import { detectWilskracht01 } from '../../src/modules/elias/WILSKRACHT01/detector';
 import { detectAutopilot01 } from '../../src/modules/elias/AUTOPILOT01/detector';
 import type { EliasPsychoEducationRuntimeInput, EliasPsychoEducationDetectionResult } from '../../src/types/eliasPsychoEducation.types';
@@ -3243,6 +3244,31 @@ export async function processMessage(
     console.log(`[Pipeline] FEEDBACK_LOOP: persons=${feedbackResult.routing.personsToStore.length}, triggers=${feedbackResult.routing.triggersToPromote.length}, topic=${feedbackResult.updatedBuffer.currentTopic}, moduleSwitch=${feedbackResult.moduleDecision.shouldSwitch ? feedbackResult.moduleDecision.newModuleId : 'no'}`);
   }
 
+  // ── POST-GPT STEP 6.7: VSP Output Safety Filter ──
+  // Audit GPT response for clinical terminology leakage, framework disclosure, etc.
+  try {
+    const { auditVspOutputSafety, hasHighSeverityViolation } = await import('../../src/features/vspInsight/vspOutputSafetyFilter');
+    const safetyAudit = auditVspOutputSafety({
+      responseText: feedbackResult.userText,
+      clinicalModeActive: currentUserDat.clinicalModeActive ?? false,
+      insightState: vspInsightResult.insightState ?? 'REAL_GREEN',
+      framework: vspInsightResult.framework ?? 'MI',
+      persona: (backpack.userType || 'elias') as 'elias' | 'kim',
+    });
+    if (safetyAudit.hasViolations) {
+      console.warn(`[Pipeline] VSP OUTPUT SAFETY: ${safetyAudit.violationCount} violations (max=${safetyAudit.maxSeverity}): ${safetyAudit.violations.map(v => v.ruleRef).join(', ')}`);
+      logDebugEvent('vsp_output_safety', {
+        violationCount: safetyAudit.violationCount,
+        maxSeverity: safetyAudit.maxSeverity,
+        violations: safetyAudit.violations.map(v => ({ rule: v.ruleRef, severity: v.severity, match: v.matchedText })),
+        rulesApplied: safetyAudit.rulesApplied,
+      });
+    }
+  } catch (e) {
+    // Non-blocking: if safety filter fails, continue without it
+    console.warn('[Pipeline] VSP Output Safety filter error (non-blocking):', e);
+  }
+
   // ── POST-GPT STEP 7: Update internal stored state ──
   // We do NOT reselect dominantState. The pre-GPT state is the decision variable.
   // We only update the buffer with the assistant response and adjust internal state.
@@ -3299,6 +3325,12 @@ export async function processMessage(
       intervention: interventionContinuity ? `${interventionContinuity.lastInterventionType} (goal=${interventionContinuity.interventionGoal}, turns=${interventionContinuity.turnsActive}, eff=${interventionContinuity.effectivenessScore})` : undefined,
       buffer: `msg#${sessionBuffer.messageCount} zone=${sessionBuffer.currentZoneColor}(${sessionBuffer.currentZoneScore}) intent=${(sessionBuffer as any).liveIntent ?? 'none'}`,
     },
+    schemaModeResult: schemaModeResult.activated ? {
+      dominantMode: schemaModeResult.modeDecision.dominantMode ?? null,
+      dominantSchema: schemaModeResult.schemaDecision.dominantSchema ?? null,
+      acceptedModes: schemaModeResult.modeDecision.acceptedModes ?? [],
+      acceptedSchemas: schemaModeResult.schemaDecision.acceptedSchemas ?? [],
+    } : undefined,
   };
   updatedUserDat = {
     ...updatedUserDat,
@@ -3949,6 +3981,58 @@ export async function generateGreeting(
     ? (currentMood as import('../ai/types').EliasMoodSliders).vsp
     : null;
 
+  // ── VSP Intake Adapters: extract signals from intake data at SESSION_INIT ──
+  const intakeAdapterResult = runVspIntakeAdapters({
+    stageOfChange: backpack.intakeContext?.stageOfChange ?? null,
+    intakeDate: (backpack as any).intakeCompletedAt ?? new Date().toISOString(),
+    vspZones: backpack.vspSection?.zones ? {
+      green: backpack.vspSection.zones.green ? { signals: backpack.vspSection.zones.green.signals || '' } : undefined,
+      yellow: backpack.vspSection.zones.yellow ? { signals: backpack.vspSection.zones.yellow.signals || '' } : undefined,
+      orange: backpack.vspSection.zones.orange ? { signals: backpack.vspSection.zones.orange.signals || '' } : undefined,
+      red: backpack.vspSection.zones.red ? { signals: backpack.vspSection.zones.red.signals || '' } : undefined,
+    } : undefined,
+    vspLastUpdated: (backpack.vspSection as any)?.lastUpdated ?? null,
+    sections: backpack.sections ?? undefined,
+    anchorSentences: backpack.vspSection?.zones ? {
+      green: backpack.vspSection.zones.green?.anchorSentence,
+      yellow: backpack.vspSection.zones.yellow?.anchorSentence,
+      orange: backpack.vspSection.zones.orange?.anchorSentence,
+      red: backpack.vspSection.zones.red?.anchorSentence,
+    } : undefined,
+    kimBackpack: backpack.userType === 'kim' ? {
+      my_story: (backpack as any).kimSections?.my_story ?? '',
+      the_relationship: (backpack as any).kimSections?.the_relationship ?? '',
+      the_impact: (backpack as any).kimSections?.the_impact ?? '',
+      my_boundaries: (backpack as any).kimSections?.my_boundaries ?? '',
+      my_strength: (backpack as any).kimSections?.my_strength ?? '',
+    } : undefined,
+  });
+  console.log(`[Pipeline] VSP Intake Adapters: wheelOfChange=${intakeAdapterResult.wheelOfChange.currentStage}, earlySigns=${intakeAdapterResult.selfReportedEarlySigns.length}, observedSigns=${intakeAdapterResult.observedEarlySigns.length}`);
+
+  // Merge intake adapter results into VspInsightProfile (async, fire-and-forget for greeting speed)
+  let greetingVspProfile: import('../../src/features/vspInsight/vspInsightTypes').VspInsightProfile | null = null;
+  if (intakeAdapterResult.selfReportedEarlySigns.length > 0 || intakeAdapterResult.observedEarlySigns.length > 0) {
+    try {
+      const { applyVspInsightProfilePatch } = await import('../../src/features/vspInsight/vspInsightStorage');
+      greetingVspProfile = await applyVspInsightProfilePatch(
+        'local_user',
+        backpack.userType as 'elias' | 'kim',
+        {
+          profileVersion: 'vsp_insight_profile.v1',
+          persona: backpack.userType as 'elias' | 'kim',
+          updatedAt: new Date().toISOString(),
+          upsertSelfReportedEarlySigns: intakeAdapterResult.selfReportedEarlySigns,
+          upsertObservedEarlySigns: intakeAdapterResult.observedEarlySigns,
+          upsertPhaseTransitionExamples: [],
+          upsertDiscrepancyEvents: [],
+        }
+      );
+      console.log(`[Pipeline] VSP Intake: profile patched with ${intakeAdapterResult.selfReportedEarlySigns.length} self-reported + ${intakeAdapterResult.observedEarlySigns.length} observed signs`);
+    } catch (e) {
+      console.warn('[Pipeline] VSP Intake profile patch failed (non-blocking):', e);
+    }
+  }
+
   // ── VSP Insight Layer for greeting ──
   const greetingVspResult = runVspInsightLayer({
     persona: backpack.userType as 'elias' | 'kim',
@@ -3971,9 +4055,8 @@ export async function generateGreeting(
       modelRoutingDecision: 'gpt-4o-mini',
       activeSafetyModuleId: null,
     },
-    profile: null,
+    profile: greetingVspProfile,
   });
-
   // ══════════════════════════════════════════════════════════════
   // SERVER-LED GREETING (same pattern as processMessage server block)
   // ══════════════════════════════════════════════════════════════

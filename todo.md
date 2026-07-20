@@ -2378,3 +2378,8 @@
 - [ ] Update prompt injection: acknowledged candidates get exploratory injection (not assertive)
 - [ ] Tests for multi-source confirmation logic
 - [ ] Checkpoint
+
+## VSP Insight Wiring (Pipeline + Safety Filter + Clinical UI)
+- [x] Pipeline integration: call runVspIntakeAdapters() at SESSION_INIT and merge into VspInsightProfile
+- [x] Output safety filter: call auditVspOutputSafety() after GPT response and log violations to debug trace
+- [x] Clinical mode UI: add schema/mode confirmation button in clinical dropdown
