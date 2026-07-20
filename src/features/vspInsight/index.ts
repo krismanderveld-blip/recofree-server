@@ -63,3 +63,29 @@ export type { KimVspRouterInput, KimVspRouterResult } from "./kimVspVariant";
 // PDF export
 export { buildPdfSections, buildPdfPlainText } from "./vspInsightPdfExport";
 export type { VspPdfSection } from "./vspInsightPdfExport";
+
+// Intake adapters
+export {
+  adaptWheelOfChange,
+  adaptEarlySigns,
+  adaptSelfImage,
+  runVspIntakeAdapters,
+} from "./vspIntakeAdapters";
+export type {
+  WheelOfChangeAdapterInput,
+  EarlySignsAdapterInput,
+  SelfImageAdapterInput,
+  VspIntakeAdapterInput,
+  VspIntakeAdapterResult,
+} from "./vspIntakeAdapters";
+
+// Output safety filter
+export {
+  auditVspOutputSafety,
+  hasHighSeverityViolation,
+} from "./vspOutputSafetyFilter";
+export type {
+  VspOutputSafetyInput,
+  VspOutputSafetyViolation,
+  VspOutputSafetyResult,
+} from "./vspOutputSafetyFilter";

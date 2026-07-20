@@ -1937,6 +1937,19 @@ This is a HARD SAFETY RULE. Violation = harm. No exceptions.`}
 ─── END KNOWN USER PATTERNS ───`;
       console.log(`[AI Chat] Known patterns injected: ${kp.schemas.length} schemas, ${kp.modes.length} modes, ${kp.triggers.length} triggers`);
     }
+    // Build ACKNOWLEDGED CANDIDATES block (exploratory, voorzichtig)
+    let acknowledgedCandidatesBlock = '';
+    if ((input as any).acknowledgedCandidates) {
+      const ac = (input as any).acknowledgedCandidates as { schemas: Array<{ name: string; confidence: number }>; modes: Array<{ name: string; confidence: number }> };
+      const ackSchemas = ac.schemas.filter(s => s.confidence >= 0.3);
+      const ackModes = ac.modes.filter(m => m.confidence >= 0.3);
+      if (ackSchemas.length > 0 || ackModes.length > 0) {
+        const ackSchemaLines = ackSchemas.map(s => `${s.name} (${(s.confidence * 100).toFixed(0)}%)`).join(', ');
+        const ackModeLines = ackModes.map(m => `${m.name} (${(m.confidence * 100).toFixed(0)}%)`).join(', ');
+        acknowledgedCandidatesBlock = `\n\u2500\u2500\u2500 MOGELIJKE PATRONEN (EXPLORATIEF) \u2500\u2500\u2500\nSchemas: ${ackSchemaLines || 'geen'}\nModes: ${ackModeLines || 'geen'}\nDeze patronen zijn door gebruiker of therapeut herkend maar nog NIET bevestigd.\nJe MAG voorzichtig exploreren ("Ik merk dat...", "Herken je...") maar NOOIT als feit presenteren.\n\u2500\u2500\u2500 END MOGELIJKE PATRONEN \u2500\u2500\u2500`;
+        console.log(`[AI Chat] Acknowledged candidates injected: ${ackSchemas.length} schemas, ${ackModes.length} modes`);
+      }
+    }
 
     // Inject previous session summary (compact, from cache)
     const sessionHistoryBlock = sessionCache?.sessionAnalysesSummary || '';
@@ -1948,7 +1961,7 @@ ${lifeStoryContext}
 ${sessionHistoryBlock}
 ${backpackAnalysisContext}
 ${knownPatternsBlock}
-
+${acknowledgedCandidatesBlock}
 The user's name is ${name}. Address them by name occasionally.
 
 ${antiHallucination}

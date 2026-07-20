@@ -30,6 +30,8 @@ function makeBuffer(overrides: Partial<BufferState> = {}): BufferState {
     currentTopic: '',
     moduleSwitchCount: 0,
     currentModuleMessageCount: 3,
+    lastPresentedMode: null,
+    lastPresentedSchema: null,
     ...overrides,
   };
 }

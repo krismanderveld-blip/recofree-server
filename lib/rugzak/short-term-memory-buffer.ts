@@ -95,6 +95,11 @@ export interface BufferState {
   moduleSwitchCount: number;
   /** How many messages the current module has been active */
   currentModuleMessageCount: number;
+  // ─── Schema/Mode Acknowledgment Tracking ───
+  /** Mode that was active in the previous turn (for user-ack detection) */
+  lastPresentedMode: string | null;
+  /** Schema that was active in the previous turn (for user-ack detection) */
+  lastPresentedSchema: string | null;
 }
 
 // ─── Constants ────────────────────────────────────────────────
@@ -136,6 +141,8 @@ export function createBuffer(): BufferState {
     currentTopic: '',
     moduleSwitchCount: 0,
     currentModuleMessageCount: 0,
+    lastPresentedMode: null,
+    lastPresentedSchema: null,
   };
 }
 
@@ -681,9 +688,11 @@ export function updateBuffer(
     currentTopic: current.currentTopic,
     moduleSwitchCount: current.moduleSwitchCount,
     currentModuleMessageCount: current.currentModuleMessageCount + 1,
+    lastPresentedMode: current.lastPresentedMode,
+    lastPresentedSchema: current.lastPresentedSchema,
   };
 }
-// ─── Buffer Snapshot for GPT Payload ─────────────────────────
+// ─── Buffer Snapshot for GPT Payload ─────────────────────
 
 /**
  * STABLE snapshot structure sent to GPT payload.

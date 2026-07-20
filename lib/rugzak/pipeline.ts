@@ -314,7 +314,7 @@ import {
   buildKimModuleMemoryPatch,
   applyKimModuleMemoryPatch,
 } from '../engine/kim/kim-module-memory';
-import { applyAutoConfirmation } from '../engine/shared/tendency-confirmation';
+import { applyAutoConfirmation, detectUserAcknowledgment, detectClinicalAcknowledgment, applyUserAcknowledgment, applyClinicalAcknowledgment } from '../engine/shared/tendency-confirmation';
 import { runVspInsightLayer, type VspInsightPipelineResult } from '../../src/features/vspInsight/vspInsightPipelineLayer';
 import { detectWilskracht01 } from '../../src/modules/elias/WILSKRACHT01/detector';
 import { detectAutopilot01 } from '../../src/modules/elias/AUTOPILOT01/detector';
@@ -1322,6 +1322,75 @@ export async function processMessage(
     }
   }
 
+  // ── PRE-GPT STEP 5f.2: Schema/Mode Acknowledgment Detection ──
+  {
+    // Check if user message acknowledges a schema/mode that was presented last turn
+    const lastMode = sessionBuffer.lastPresentedMode;
+    const lastSchema = sessionBuffer.lastPresentedSchema;
+    if ((lastMode || lastSchema) && detectUserAcknowledgment(userMessage)) {
+      const now = new Date().toISOString();
+      if (lastMode && currentUserDat.modeTendencies) {
+        const { tendencies: updatedModes, result: ackResult } = applyUserAcknowledgment(
+          currentUserDat.modeTendencies as any,
+          'modeId',
+          lastMode,
+          now,
+        );
+        if (ackResult?.newlyAcknowledged) {
+          currentUserDat = { ...currentUserDat, modeTendencies: updatedModes as any };
+          console.log(`[Pipeline] UserAck: mode=${lastMode} | triggered_confirm=${ackResult.triggeredConfirmation}`);
+        }
+      }
+      if (lastSchema && currentUserDat.schemaTendencies) {
+        const { tendencies: updatedSchemas, result: ackResult } = applyUserAcknowledgment(
+          currentUserDat.schemaTendencies as any,
+          'schemaId',
+          lastSchema,
+          now,
+        );
+        if (ackResult?.newlyAcknowledged) {
+          currentUserDat = { ...currentUserDat, schemaTendencies: updatedSchemas as any };
+          console.log(`[Pipeline] UserAck: schema=${lastSchema} | triggered_confirm=${ackResult.triggeredConfirmation}`);
+        }
+      }
+    }
+    // Clinical mode acknowledgment
+    if ((currentUserDat as any).clinicalModeActive && detectClinicalAcknowledgment(userMessage)) {
+      const now = new Date().toISOString();
+      const activeMode = schemaModeResult.modeDecision.dominantMode;
+      const activeSchema = schemaModeResult.schemaDecision.dominantSchema;
+      if (activeMode && currentUserDat.modeTendencies) {
+        const { tendencies: updatedModes, result: ackResult } = applyClinicalAcknowledgment(
+          currentUserDat.modeTendencies as any,
+          'modeId',
+          activeMode,
+          now,
+        );
+        if (ackResult?.newlyAcknowledged) {
+          currentUserDat = { ...currentUserDat, modeTendencies: updatedModes as any };
+          console.log(`[Pipeline] ClinicalAck: mode=${activeMode} | triggered_confirm=${ackResult.triggeredConfirmation}`);
+        }
+      }
+      if (activeSchema && currentUserDat.schemaTendencies) {
+        const { tendencies: updatedSchemas, result: ackResult } = applyClinicalAcknowledgment(
+          currentUserDat.schemaTendencies as any,
+          'schemaId',
+          activeSchema,
+          now,
+        );
+        if (ackResult?.newlyAcknowledged) {
+          currentUserDat = { ...currentUserDat, schemaTendencies: updatedSchemas as any };
+          console.log(`[Pipeline] ClinicalAck: schema=${activeSchema} | triggered_confirm=${ackResult.triggeredConfirmation}`);
+        }
+      }
+    }
+    // Update buffer with current turn's presented mode/schema for next-turn detection
+    sessionBuffer = {
+      ...sessionBuffer,
+      lastPresentedMode: schemaModeResult.modeDecision.dominantMode ?? null,
+      lastPresentedSchema: schemaModeResult.schemaDecision.dominantSchema ?? null,
+    };
+  }
   // ── PRE-GPT STEP 5g: ACT Engine (deterministic, both user types) ──
   let actResult: ACTEngineResult = {
     decision: {

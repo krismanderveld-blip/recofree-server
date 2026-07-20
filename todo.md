@@ -1394,17 +1394,17 @@
 - [x] iOS build fix: eas.json env vars HERMES_USE_PREBUILT=false + BUILD_FROM_SOURCE=true
 - [x] Clinical dropdown: show detected schemas and modi as full chat response when asked in clinical mode
 - [x] Auto-confirmation threshold lowered from 5 to 3 (faster schema/mode confirmation)
-- [ ] VSP Insight System: types files (vspInsight.types, vspState, vspDiscrepancy, vspFramework, vspSoothing, vspTransition, vspPdfExport, vspProfile)
-- [ ] VSP Insight System: engine core (state detection, rational green detector, overwhelm detector, silent discrepancy, framework selection, prompt frame builder)
-- [ ] VSP Insight System: DGT soothing flow (catalog, safety filter, selector, recorder, evaluator, prompt builder)
-- [ ] VSP Insight System: phase transition detector + example builder + profile updater + safety boundary
-- [ ] VSP Insight System: adapters (mood, chat signal, logs.dat, diary, gratitude, backpack, greeting)
-- [ ] VSP Insight System: intake adapters (wheel-of-change, early signs, self-image)
-- [ ] VSP Insight System: PDF export (builder, renderer, disclaimer, data selector)
-- [ ] VSP Insight System: Kim variant (engine, state detector, profile updater, prompt frame)
-- [ ] VSP Insight System: pipeline wiring (pipeline.ts, ai-chat.ts, openai-provider.ts)
-- [ ] VSP Insight System: 22 test cases from spec
-- [ ] VSP Insight System: output safety filter
+- [x] VSP Insight System: types files (vspInsight.types, vspState, vspDiscrepancy, vspFramework, vspSoothing, vspTransition, vspPdfExport, vspProfile)
+- [x] VSP Insight System: engine core (state detection, rational green detector, overwhelm detector, silent discrepancy, framework selection, prompt frame builder)
+- [x] VSP Insight System: DGT soothing flow (catalog, safety filter, selector, recorder, evaluator, prompt builder)
+- [x] VSP Insight System: phase transition detector + example builder + profile updater + safety boundary
+- [x] VSP Insight System: adapters (mood, chat signal, logs.dat, diary, gratitude, backpack, greeting)
+- [x] VSP Insight System: intake adapters (wheel-of-change, early signs, self-image)
+- [x] VSP Insight System: PDF export (builder, renderer, disclaimer, data selector)
+- [x] VSP Insight System: Kim variant (engine, state detector, profile updater, prompt frame)
+- [x] VSP Insight System: pipeline wiring (pipeline.ts, ai-chat.ts, openai-provider.ts)
+- [x] VSP Insight System: 22 test cases from spec
+- [x] VSP Insight System: output safety filter
 - [ ] iOS publish: show Expo Go QR code instead of failing TestFlight build
 - [x] VSP Insight System: Create vspInsightTypes.ts (full type definitions)
 - [x] VSP Insight System: Create detectVspInsightState.ts (state detection engine)
@@ -2368,3 +2368,13 @@
 - [x] 14 dedicated tests green (`__tests__/payloadRefinements/conversationWindow.test.ts`)
 - [x] Server-side mirror: identical logic in `server/engine/gpt-payload-server.ts`
 - [x] Generated full project structure map: `STRUCTURE_MAP.md` (502 lines, architecture overview, file tree, pipeline flow, memory layers, personas, payload stack)
+
+## Schema/Mode Confirmation Layer V2 — Multi-source verification
+- [ ] Extend SchemaTendency/ModeTendency types: add clinicalAcknowledged, userAcknowledged, acknowledgmentScore fields
+- [ ] Update confirmation logic: single ack stays CANDIDATE, meervoudige verificatie (auto≥3 + clinical + user OR frequency≥8) = CONFIRMED
+- [ ] Acknowledged candidates: may appear in prompt as "mogelijk patroon" (exploratory, cautious)
+- [ ] Clinical mode acknowledgment: detect clinical ack intent, set clinicalAcknowledged=true, bump acknowledgmentScore
+- [ ] User self-acknowledgment: NLU intent detection for recognition statements ("ja dat herken ik", "dat klopt")
+- [ ] Update prompt injection: acknowledged candidates get exploratory injection (not assertive)
+- [ ] Tests for multi-source confirmation logic
+- [ ] Checkpoint

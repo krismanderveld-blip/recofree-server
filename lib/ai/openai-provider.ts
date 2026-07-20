@@ -275,6 +275,23 @@ function buildKnownUserPatterns(userDat: ChatContext['userDat'], clinicalMode = 
 }
 
 /**
+ * Build acknowledged candidates (schemas/modes that have userAcknowledged or clinicalAcknowledged
+ * but are NOT yet confirmed). These are presented as "exploratory" patterns in the prompt.
+ * Only included in NORMAL mode (clinical mode already shows everything via knownUserPatterns).
+ */
+function buildAcknowledgedCandidates(userDat: ChatContext['userDat']): { schemas: Array<{ name: string; confidence: number }>; modes: Array<{ name: string; confidence: number }> } | null {
+  if (!userDat) return null;
+  const schemas = (userDat.schemaTendencies || [])
+    .filter((s: any) => !s.confirmed && (s.userAcknowledged || s.clinicalAcknowledged) && (s.confidence ?? 0) >= 0.3)
+    .map((s: any) => ({ name: s.schemaId, confidence: s.confidence ?? 0 }));
+  const modes = (userDat.modeTendencies || [])
+    .filter((m: any) => !m.confirmed && (m.userAcknowledged || m.clinicalAcknowledged) && (m.confidence ?? 0) >= 0.3)
+    .map((m: any) => ({ name: m.modeId, confidence: m.confidence ?? 0 }));
+  if (schemas.length === 0 && modes.length === 0) return null;
+  return { schemas, modes };
+}
+
+/**
  * Final-layer sanitization of the chat payload before sending to server.
  * Ensures all `triggers` arrays (in knownUserPatterns, backpackAnalysis, selectedTriggers)
  * contain only valid values that pass Zod validation.
@@ -664,6 +681,8 @@ export class OpenAIProvider implements AIProvider {
 
           // Known user patterns (compact, every turn) — in clinical mode, show ALL candidates
           knownUserPatterns: buildKnownUserPatterns(context.userDat, context.userDat?.clinicalModeActive ?? false),
+          // Acknowledged candidates (exploratory — user/clinical ack'd but not yet confirmed)
+          acknowledgedCandidates: buildAcknowledgedCandidates(context.userDat),
 
           // PsychoEducation/Steunpilaren/SelfAcceptance/KimPattern contexts (SESSION_INIT — cached server-side)
           psychoEducationContext: gptPayload.psychoEducationContext ?? null,
