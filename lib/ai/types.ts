@@ -1218,6 +1218,15 @@ export interface ChatContext {
   };
   /** PAST_REFERENCE: context from logs.dat/user.dat when user references something from the past */
   pastReferenceContext?: string;
+  /** Eigen Regie context (Kim only): zone, meaning, impact computed from user's daily self-regulation input.
+   * Replaces stageOfChange for Kim users in the GPT prompt. */
+  eigenRegieContext?: {
+    userInput: number;
+    engineScore: number;
+    zone: 'ROOD' | 'ORANJE' | 'GEEL' | 'LICHTGROEN' | 'GROEN';
+    meaning: string;
+    impact: { primaryDirective: string; secondaryDirective: string };
+  };
   /** User-selected app language (from i18n provider). Determines AI response language. */
   locale?: 'nl' | 'en' | 'fr';
 }

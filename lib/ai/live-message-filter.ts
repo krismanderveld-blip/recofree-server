@@ -110,6 +110,8 @@ const OPTIONAL_CONTEXT_KEYS: readonly string[] = [
   'contextSummary',
   // Past reference context (from logs.dat when user references past events)
   'pastReferenceContext',
+  // Eigen Regie (Kim only — zone, meaning, impact directives)
+  'eigenRegieContext',
 ] as const;
 
 // ─── Main Filter Function ─────────────────────────────────────

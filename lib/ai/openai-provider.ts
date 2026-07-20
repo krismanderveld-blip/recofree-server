@@ -546,6 +546,8 @@ export class OpenAIProvider implements AIProvider {
           dominantModule: gptPayload.dominantModule,
           riskScore: gptPayload.riskScore,
           stageOfChange: gptPayload.stageOfChange,
+          // Eigen Regie (Kim only — zone, meaning, impact directives)
+          eigenRegieContext: context.eigenRegieContext ?? null,
 
           // Static context (SESSION_INIT only — NOT resent per message)
           selectedTriggers: gptPayload.selectedTriggers,

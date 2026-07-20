@@ -55,6 +55,13 @@ interface ChatRequestInput {
   relationshipAnchor?: { name: string; role: string; roleEN?: string } | null;
   recentDiary?: Array<{ content: string; moodTag: string; date: string }> | null;
   stageOfChange?: string | null;
+  eigenRegieContext?: {
+    userInput: number;
+    engineScore: number;
+    zone: 'ROOD' | 'ORANJE' | 'GEEL' | 'LICHTGROEN' | 'GROEN';
+    meaning: string;
+    impact: { primaryDirective: string; secondaryDirective: string };
+  } | null;
   relationalPattern?: { pattern: string; schema: string; confidence: number } | null;
 
   // Full data (SESSION_INIT only)
@@ -363,6 +370,14 @@ interface SessionCache {
   selfAcceptanceContext: string | null;
   // Kim pattern support continuity context (PAAL-K01/BEHE-K01/AANP-K01/CODEP-K01, Kim only)
   kimPatternSupportContext: string | null;
+  // Eigen Regie context (Kim only — zone, meaning, impact directives)
+  eigenRegieContext: {
+    userInput: number;
+    engineScore: number;
+    zone: 'ROOD' | 'ORANJE' | 'GEEL' | 'LICHTGROEN' | 'GROEN';
+    meaning: string;
+    impact: { primaryDirective: string; secondaryDirective: string };
+  } | null;
   // Previous session analyses summary (cached at SESSION_INIT, injected in follow-up for continuity)
   sessionAnalysesSummary: string;
 }
@@ -469,6 +484,7 @@ function cacheSessionInit(input: ChatRequestInput): void {
     steunpilarenContext: input.steunpilarenContext ?? null,
     selfAcceptanceContext: input.selfAcceptanceContext ?? null,
     kimPatternSupportContext: input.kimPatternSupportContext ?? null,
+    eigenRegieContext: input.eigenRegieContext ?? null,
     sessionAnalysesSummary: buildSessionAnalysesSummary(input.userDat?.sessionAnalyses ?? []),
   };
   console.log("[AI Chat] Session cache created for:", input.userName, hasStructuredEntities ? '(structured entities)' : '(text-based)');
@@ -601,6 +617,16 @@ export const chatInputSchema = z.object({
     z.object({ content: z.string(), moodTag: z.string(), date: z.string() })
   ).nullable().optional(),
   stageOfChange: z.string().nullable().optional(),
+  eigenRegieContext: z.object({
+    userInput: z.number(),
+    engineScore: z.number(),
+    zone: z.enum(['ROOD', 'ORANJE', 'GEEL', 'LICHTGROEN', 'GROEN']),
+    meaning: z.string(),
+    impact: z.object({
+      primaryDirective: z.string(),
+      secondaryDirective: z.string(),
+    }),
+  }).nullable().optional(),
   relationalPattern: z.object({
     pattern: z.string(),
     schema: z.string(),
@@ -1115,6 +1141,13 @@ interface ConditionalContext {
   coreWound: string | null;
   recentDiary: Array<{ content: string; moodTag: string; date: string }>;
   stageOfChange: string | null;
+  eigenRegieContext: {
+    userInput: number;
+    engineScore: number;
+    zone: 'ROOD' | 'ORANJE' | 'GEEL' | 'LICHTGROEN' | 'GROEN';
+    meaning: string;
+    impact: { primaryDirective: string; secondaryDirective: string };
+  } | null;
   relationshipMap: string;
 }
 
@@ -1139,6 +1172,7 @@ function resolveConditionalContext(
     coreWound: cache.coreWound,
     recentDiary: cache.recentDiary,
     stageOfChange: cache.stageOfChange,
+    eigenRegieContext: cache.eigenRegieContext ?? null,
     relationshipMap: cache.relationshipMap,
   };
 }
@@ -1191,10 +1225,19 @@ function buildSelectiveRelevanceBlock(
     parts.push(`  → VERPLICHT: Noem dit patroon wanneer je het herkent in wat de gebruiker zegt.`);
   }
 
-  // Stage of Change (ALWAYS injected)
-  if (conditional.stageOfChange) {
+  // Stage of Change (Elias only — ALWAYS injected)
+  if (input.userType === 'elias' && conditional.stageOfChange) {
     const desc = ELIAS_STAGE_DESCRIPTIONS_SHORT[conditional.stageOfChange] || conditional.stageOfChange;
     parts.push(`STAGE: ${conditional.stageOfChange} — ${desc}`);
+  }
+
+  // Eigen Regie (Kim only — replaces stageOfChange for Kim users)
+  if (conditional.eigenRegieContext) {
+    const er = conditional.eigenRegieContext;
+    parts.push(`EIGEN REGIE ZONE: ${er.zone} (gebruiker: ${er.userInput}/100, engine: ${er.engineScore}/100)`);
+    parts.push(`  Betekenis: ${er.meaning}`);
+    parts.push(`  → PRIMAIR: ${er.impact.primaryDirective}`);
+    parts.push(`  → SECUNDAIR: ${er.impact.secondaryDirective}`);
   }
 
   // Recent diary (ALWAYS injected)
@@ -1297,11 +1340,22 @@ function buildFullRelevanceBlock(input: ChatRequestInput): string {
     parts.push(`  → This is a recurring relational pattern. Name it carefully if relevant to the current conversation.`);
   }
 
-  if (input.stageOfChange) {
+  // Stage of Change (Elias only)
+  if (input.userType === 'elias' && input.stageOfChange) {
     const desc = ELIAS_STAGE_DESCRIPTIONS_FULL[input.stageOfChange] || input.stageOfChange;
     parts.push(`STAGE OF CHANGE: ${input.stageOfChange}`);
     parts.push(`  ${desc}`);
     parts.push(`  → Adapt your approach to this stage. Do NOT move faster than the user.`);
+  }
+
+  // Eigen Regie (Kim only — injected at SESSION_INIT when available)
+  if (input.eigenRegieContext) {
+    const er = input.eigenRegieContext;
+    parts.push(`EIGEN REGIE ZONE: ${er.zone} (gebruiker: ${er.userInput}/100, engine: ${er.engineScore}/100)`);
+    parts.push(`  Betekenis: ${er.meaning}`);
+    parts.push(`  → PRIMAIR: ${er.impact.primaryDirective}`);
+    parts.push(`  → SECUNDAIR: ${er.impact.secondaryDirective}`);
+    parts.push(`  → Pas je toon en aanpak aan op deze zone. Respecteer het huidige niveau van eigen regie.`);
   }
 
   const diary = input.recentDiary || [];
@@ -1445,7 +1499,7 @@ VIOLATION OF THIS PROTOCOL IS UNACCEPTABLE.`;
     .join(", ");
 
   const totalSessions = sessionCache?.totalSessions ?? input.userDat?.totalSessions ?? 0;
-  const stageLabel = (input.stageOfChange || sessionCache?.stageOfChange)
+  const stageLabel = isElias && (input.stageOfChange || sessionCache?.stageOfChange)
     ? ` Stage: ${input.stageOfChange || sessionCache?.stageOfChange}.`
     : '';
   const sessionInfo = `Session #${totalSessions + 1}. Duration: ${input.sessionDurationMinutes} minutes. Initial emotion: ${input.startEmotion}. Current detected emotion: ${input.detectedEmotion}.${stageLabel}`;
@@ -1788,6 +1842,7 @@ Keep it short (3-5 sentences max). Do NOT ask new questions.`;
           coreWound: null,
           recentDiary: [],
           stageOfChange: null,
+          eigenRegieContext: null,
           relationshipMap: "",
         };
 
@@ -1801,6 +1856,7 @@ Keep it short (3-5 sentences max). Do NOT ask new questions.`;
     if (conditional.coreWound) included.push('wound');
     if (conditional.recentDiary.length > 0) included.push(`diary(${conditional.recentDiary.length})`);
     if (conditional.stageOfChange) included.push('stage');
+    if (conditional.eigenRegieContext) included.push(`eigenRegie(${conditional.eigenRegieContext.zone})`);
     if (conditional.relationshipMap) included.push('relationMap');
     console.log(`[AI Chat] Follow-up selective injection: [${included.join(', ') || 'none'}]`);
     if (conditional.relationshipMap) {

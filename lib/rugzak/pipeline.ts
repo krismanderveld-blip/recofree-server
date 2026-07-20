@@ -3103,6 +3103,17 @@ export async function processMessage(
     })(),
     // PAST_REFERENCE: inject context from logs.dat/user.dat when user references past events
     pastReferenceContext,
+    // Eigen Regie context (Kim only): zone + meaning + impact directives. Replaces stageOfChange for Kim.
+    eigenRegieContext: kimDecision?.eigenRegie ? {
+      userInput: kimDecision.eigenRegie.userInput,
+      engineScore: kimDecision.eigenRegie.engineScore,
+      zone: kimDecision.eigenRegie.zone,
+      meaning: kimDecision.eigenRegie.meaning,
+      impact: {
+        primaryDirective: kimDecision.eigenRegie.impact.primaryDirective,
+        secondaryDirective: kimDecision.eigenRegie.impact.secondaryDirective,
+      },
+    } : undefined,
     // User-selected app language (from i18n provider)
     locale: options?.locale,
     // User-selected country (for crisis numbers)

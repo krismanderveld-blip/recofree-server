@@ -261,19 +261,19 @@
 - [x] FIX: Add server health check / wake-up ping before first API call after app resume
 
 ## KIM Patch: Eigen Regie Meter (replaces Stage of Change for KIM users)
-- [ ] Add kimRecoveryState { eigenRegie: number } to data model (types.ts, Backpack, UserDat)
-- [ ] Add legacyStageOfChange migration field for backward compatibility
-- [ ] Update pipeline: route eigenRegie for KIM, keep stageOfChange for Elias
-- [ ] Add Eigen Regie zone mapping (0-30=RED, 31-50=ORANGE, 51-70=YELLOW, 71-100=GREEN)
-- [ ] Add intervention mapping per zone (low/medium/high eigen regie)
-- [ ] Update GPT payload builder: include eigenRegie for KIM users instead of stageOfChange
-- [ ] Update server Zod schema: add eigenRegie field
-- [ ] Update server system prompt: inject Eigen Regie context + intervention guidance for KIM
-- [ ] Update UI: replace Stage of Change card with Eigen Regie Meter for KIM users
-- [ ] Add Eigen Regie slider/input in mood check or profile screen
-- [ ] Ensure stageOfChange still works for Elias users (no regression)
-- [ ] TypeScript check + tests
-- [ ] Checkpoint
+- [x] Add kimRecoveryState { eigenRegie: number } to data model (types.ts, Backpack, UserDat)
+- [x] Add legacyStageOfChange migration field for backward compatibility
+- [x] Update pipeline: route eigenRegie for KIM, keep stageOfChange for Elias
+- [x] Add Eigen Regie zone mapping (0-30=RED, 31-50=ORANGE, 51-70=YELLOW, 71-100=GREEN)
+- [x] Add intervention mapping per zone (low/medium/high eigen regie)
+- [x] Update GPT payload builder: include eigenRegie for KIM users instead of stageOfChange
+- [x] Update server Zod schema: add eigenRegie field
+- [x] Update server system prompt: inject Eigen Regie context + intervention guidance for KIM
+- [x] Update UI: replace Stage of Change card with Eigen Regie Meter for KIM users
+- [x] Add Eigen Regie slider/input in mood check or profile screen
+- [x] Ensure stageOfChange still works for Elias users (no regression)
+- [x] TypeScript check + tests (15 dedicated tests green, 134 pre-existing TS errors unchanged)
+- [x] Checkpoint
 
 ## Shared Engine — Controlled Architecture
 - [x] Block 1: Zone Core — enum (1-5), session zone state, explicit init, read-only access (lib/engine/shared/zone-core.ts)
