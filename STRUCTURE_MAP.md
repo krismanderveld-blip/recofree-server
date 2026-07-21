@@ -1,6 +1,6 @@
 # RecoFree — Project Structure Map
 
-Generated: 12 Jul 2026 | 660+ source files | Expo SDK 54 + Express backend
+Generated: 21 Jul 2026 | 680+ source files | Expo SDK 54 + Express backend
 
 ## Architecture Overview
 
@@ -13,6 +13,8 @@ Generated: 12 Jul 2026 | 660+ source files | Expo SDK 54 + Express backend
 | **Signal & Regulation** | `lib/signal/`, `lib/regulation/`, `lib/crisis/` | Semantic signal detection, mood regulation, crisis handling |
 | **Backend Server** | `server/` | Express + tRPC, server-side GPT payload, auth |
 | **Advanced Features** | `src/features/`, `src/modules/` | VSP insight, psycho-education, advanced therapy modules |
+| **Confirmation Layer** | `lib/engine/shared/tendency-confirmation.ts` | Multi-source schema/mode verification (auto + clinical + user ack) |
+| **Eigen Regie (Kim)** | `lib/engine/kim/eigen-regie-engine.ts` | Kim-specific eigen regie zone system (replaces stageOfChange) |
 
 ## File Tree
 
@@ -424,8 +426,22 @@ specs/ [1 files]
     PAAL01_SPEC_COMPARISON_ANALYSIS.md
 src/ — Extended source modules (advanced features)
     features/ — Feature modules (balkmetafoor, dagstructuur, milestones, psychoEducation, vspInsight)
-      vspInsight/ [13 files]
-        (13 files)
+      vspInsight/ [15 files]
+        detectOverwhelmSignals.ts
+        detectRationalGreenSignals.ts
+        detectVspInsightState.ts
+        index.ts
+        kimVspVariant.ts
+        vspChatSignalAdapter.ts
+        vspDgtSoothingFlow.ts
+        vspInsightPdfExport.ts
+        vspInsightPhaseTracker.ts
+        vspInsightPipelineLayer.ts
+        vspInsightRouter.ts
+        vspInsightStorage.ts
+        vspInsightTypes.ts
+        vspIntakeAdapters.ts          ← NEW: wheel-of-change, early signs, self-image adapters
+        vspOutputSafetyFilter.ts      ← NEW: post-GPT audit (clinical term leakage, framework disclosure)
     modules/ — Advanced therapy modules (Elias + Kim)
       elias/ — Elias advanced modules (AUTOPILOT01, BLIK01, COEX01, IKST01, ONTK01, PAAL01, WILSKRACHT01) [2 files]
         (2 files)
@@ -489,12 +505,92 @@ User message → chat.tsx
 | **Elias** | Verslaafde (addicted person) | RETP, STOA, STO01, SW01, ACT, CGT, DBT, MBT, SchemaMode, EKT01, MI01, M05-M85, AUTOPILOT01, BLIK01, COEX01, IKST01, ONTK01, PAAL01, WILSKRACHT01 |
 | **Kim** | Naaste (caregiver/loved one) | K01-K06, KST01, KDL01, KBR01, KSC01, CDP01, RNW01, ISO01, AANP-K01, BEHE-K01, CODEP-K01, PAAL-K01 |
 
+### Persona-Specific Gating
+
+| Feature | Elias | Kim |
+|---------|-------|-----|
+| stageOfChange (prompt injection) | Yes (contemplation→maintenance) | No (gated out) |
+| eigenRegieContext (prompt injection) | No | Yes (zone-based directives) |
+| Eigen Regie slider (mood screen) | Hidden | Visible (0-100) |
+| Schema/Mode confirmation | Both | Both |
+
+### Eigen Regie System (Kim-only, replaces stageOfChange)
+
+```
+Kim mood input (0-100 slider)
+  → lib/engine/kim/eigen-regie-engine.ts (zone mapping: RED/ORANGE/YELLOW/LIGHTGREEN/GREEN)
+    → processEigenRegie() → EigenRegieContext { zone, score, meaning, primaryDirective, secondaryDirective }
+  → lib/ai/openai-provider.ts (SESSION_INIT + LIVE_MESSAGE payload)
+  → server/ai-chat.ts (system prompt injection: "EIGEN REGIE ZONE: ...")
+```
+
+| Zone | Score Range | Meaning |
+|------|-------------|----------|
+| RED | 0-20 | Minimale eigen regie, maximale ondersteuning nodig |
+| ORANGE | 21-40 | Beperkte eigen regie, veel begeleiding nodig |
+| YELLOW | 41-60 | Matige eigen regie, gerichte ondersteuning |
+| LIGHTGREEN | 61-80 | Goede eigen regie, lichte coaching |
+| GREEN | 81-100 | Sterke eigen regie, bekrachtiging |
+
+### Schema/Mode Confirmation Layer V2 (Multi-Source Verification)
+
+```
+Detection (auto, per-turn)
+  → lib/engine/shared/schema-mode-router.ts (detects modes/schemas from user message)
+  → lib/engine/shared/tendency-confirmation.ts (tracks acknowledgment score)
+
+Acknowledgment sources:
+  1. Auto-detect: +1 per detection (frequency≥3 needed)
+  2. Clinical ack: +2 (therapist confirms via ClinicalTag button)
+  3. User self-ack: +2 (user says "ja dat herken ik" etc.)
+
+Confirmation threshold: acknowledgmentScore ≥ 5 AND frequency ≥ 3 AND confidence ≥ 0.6
+
+Prompt injection:
+  - CANDIDATE: not injected in KNOWN USER PATTERNS
+  - CANDIDATE + acknowledged: injected as "MOGELIJKE PATRONEN (EXPLORATIEF)" (voorzichtig)
+  - CONFIRMED: injected in KNOWN USER PATTERNS (vaststaand)
+```
+
+| File | Role |
+|------|------|
+| `lib/engine/shared/tendency-confirmation.ts` | Core logic: apply ack, check confirmation, detect user/clinical ack |
+| `lib/rugzak/pipeline.ts` (step 5f.2) | Detects user-ack and clinical-ack per turn |
+| `lib/rugzak/short-term-memory-buffer.ts` | Stores lastPresentedMode/Schema for next-turn detection |
+| `lib/ai/openai-provider.ts` | Builds acknowledgedCandidates payload |
+| `server/ai-chat.ts` | Injects MOGELIJKE PATRONEN block in system prompt |
+| `app/(tabs)/chat.tsx` (ClinicalTag) | Confirm button UI for clinicians |
+
+### VSP Insight Intake Adapters
+
+```
+SESSION_INIT (pipeline.ts)
+  → runVspIntakeAdapters(backpack, userDat)
+    → adaptWheelOfChange(): maps stageOfChange → WheelOfChangeSnapshot
+    → adaptEarlySigns(): extracts signals from VSP zones → VspSelfReportedEarlySign[]
+    → adaptSelfImage(): extracts self-image patterns from backpack sections
+  → applyVspInsightProfilePatch(profile, result) → merged VspInsightProfile
+  → runVspInsightLayer(input with enriched profile)
+```
+
+### VSP Output Safety Filter
+
+```
+Post-GPT (pipeline.ts)
+  → auditVspOutputSafety(response, { insightState, framework, clinicalModeActive })
+    → Checks: clinical terminology, framework disclosure, discrepancy disclosure,
+              store violations, percentage leaks, schema/mode naming
+    → Returns: { safe, violations[], severity, suggestedRedaction }
+    → Clinical mode: bypasses all checks
+  → Violations logged to debug trace (no response modification)
+```
+
 ### Payload Optimisation Stack
 
 | Component | File | Token Saving |
 |-----------|------|--------------|
 | context.dat distiller | `lib/pipeline/context-dat-distiller.ts` | ~24k tokens vs raw JSON dump |
-| Slim LIVE_MESSAGE filter | `lib/ai/live-message-filter.ts` | Only active fields per turn |
+| Slim LIVE_MESSAGE filter | `lib/ai/live-message-filter.ts` | Only active fields per turn (incl. eigenRegieContext) |
 | Deepening cap (500 tok) | `lib/pipeline/context-dat-deepening.ts` | Priority-ranked, crisis-first |
 | Deepening cache | `lib/pipeline/deepening-cache.ts` | Avoids re-scanning same fragments |
 | Conversation window (10) | `lib/rugzak/gpt-payload-builder.ts` | 10 recent + summary + crisis retention |
