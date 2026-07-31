@@ -648,6 +648,14 @@ export async function processMessage(
           stageOfChange: currentUserDat.stageOfChange ?? backpack.intakeContext?.stageOfChange ?? 'contemplation',
           clinicalModeActive: currentUserDat.clinicalModeActive ?? false,
           guidanceDepth: (currentUserDat as any).guidanceDepth ?? (backpack.intakeContext as any)?.guidanceDepth ?? 'normal',
+          recentRelapseEvent: (() => {
+            const events = (currentUserDat as any).relapseEvents ?? [];
+            if (events.length === 0) return null;
+            const last = events[events.length - 1];
+            const ageMs = Date.now() - new Date(last.timestamp).getTime();
+            if (ageMs > 7 * 24 * 60 * 60 * 1000) return null;
+            return { type: last.type, daysAgo: Math.floor(ageMs / (24 * 60 * 60 * 1000)), context: last.context ?? null };
+          })(),
         },
         usedModules: sessionBuffer?.usedModules ?? [],
         previousZoneScore: sessionBuffer?.currentZoneScore ?? 0,
@@ -4083,6 +4091,15 @@ export async function generateGreeting(
           lastMilestoneShown: (currentUserDat as any).lastMilestoneShown ?? null,
           gratitudeStreak: (currentUserDat as any).gratitudeStreak ?? 0,
           consecutiveSessionsWithoutEngagement: (currentUserDat as any).consecutiveSessionsWithoutEngagement ?? 0,
+          recentRelapseEvent: (() => {
+            const events = (currentUserDat as any).relapseEvents ?? [];
+            if (events.length === 0) return null;
+            const last = events[events.length - 1];
+            // Signal to greeting if event was within last 7 days
+            const ageMs = Date.now() - new Date(last.timestamp).getTime();
+            if (ageMs > 7 * 24 * 60 * 60 * 1000) return null;
+            return { type: last.type, daysAgo: Math.floor(ageMs / (24 * 60 * 60 * 1000)), context: last.context ?? null };
+          })(),
         } as any,
         usedModules: [],
         previousZoneScore: 0,

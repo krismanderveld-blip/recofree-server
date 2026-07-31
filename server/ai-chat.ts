@@ -1231,6 +1231,23 @@ function buildSelectiveRelevanceBlock(
     parts.push(`STAGE: ${conditional.stageOfChange} — ${desc}`);
   }
 
+  // Relapse/Slip signal (Elias only — injected when recent event exists)
+  const relapseEvent = (input as any).recentRelapseEvent ?? (input as any).userDatSummary?.recentRelapseEvent ?? null;
+  if (input.userType === 'elias' && relapseEvent) {
+    if (relapseEvent.type === 'herval') {
+      parts.push(`⚠️ HERVAL: De gebruiker heeft ${relapseEvent.daysAgo === 0 ? 'vandaag' : `${relapseEvent.daysAgo} dag(en) geleden`} een herval gemeld. Nuchterheidsdatum is gereset.`);
+      parts.push(`  → Toon compassie, GEEN oordeel. Erken de moed om dit te melden.`);
+      parts.push(`  → Vraag hoe het nu gaat en wat er nodig is. Verwijs NIET direct naar modules.`);
+    } else {
+      parts.push(`⚠️ TERUGVAL: De gebruiker heeft ${relapseEvent.daysAgo === 0 ? 'vandaag' : `${relapseEvent.daysAgo} dag(en) geleden`} een terugval (slip) gemeld. Traject loopt door.`);
+      parts.push(`  → Normaliseer: een terugval is geen falen. Erken de eerlijkheid.`);
+      parts.push(`  → Exploreer wat er speelde. Geen directe oplossingen tenzij gevraagd.`);
+    }
+    if (relapseEvent.context) {
+      parts.push(`  Context: "${relapseEvent.context}"`);
+    }
+  }
+
   // Eigen Regie (Kim only — replaces stageOfChange for Kim users)
   if (conditional.eigenRegieContext) {
     const er = conditional.eigenRegieContext;

@@ -2398,3 +2398,21 @@
 ## Bug Fixes — Session Persistence
 - [x] Fix diary/gratitude entries disappearing after days: @recofree_diary key not registered in user-context.tsx before unlock() — entries were never decrypted into SessionMemoryCache at app start
 - [x] Fix vitest expo-modules-core/expo-constants/expo-linking mock failures: added __mocks__/expo-modules-core.ts, __mocks__/expo-constants.ts, __mocks__/expo-linking.ts + vitest.config.ts aliases
+
+## Gratitude Persistence + Structure Consolidation + Diary Search
+- [x] Fix gratitude key registration: ALREADY FIXED — gratitude uses same @recofree_diary key (entries have .gratitude field), diary key was registered in previous fix
+- [x] Structure consolidation P1: Move modules/elias/* → lib/engine/elias/modules/ (ALREADY DONE — modules/ dir doesn't exist, content in lib/engine/elias/modules/)
+- [x] Structure consolidation P1: Move modules/kim/* → lib/engine/kim/modules/ (ALREADY DONE — content in lib/engine/kim/modules/)
+- [x] Structure consolidation P1: Move src/modules/elias/* → lib/engine/elias/modules/ (ALREADY DONE — src/ dir doesn't exist)
+- [x] Structure consolidation P1: Move src/modules/kim/* → lib/engine/kim/modules/ (ALREADY DONE)
+- [x] Structure consolidation P2: Move src/features/vspInsight → lib/features/vspInsight (ALREADY DONE — in lib/features/)
+- [x] Structure consolidation P2: Move src/pipeline/memory/ → lib/pipeline/memory/ (ALREADY DONE — in lib/pipeline/memory/)
+- [x] Structure consolidation P3: Remove empty src/ directory (ALREADY DONE — src/ doesn't exist)
+- [x] Add diary search functionality: advanced search with mood filter chips, date range, proper search icon, and "no results" state
+
+## Herval/Terugval in Wiel van Verandering
+- [x] Add "Terugval of Herval" subsection to Wiel van Verandering (Stage of Change)
+- [x] Herval: resets sobriety date, stays in current wheel stage until user picks another, sends signal to greeting
+- [x] Terugval: preserves trajectory + sobriety date, but sends signal to greeting (same as herval)
+- [x] Wire herval/terugval signals into greeting pipeline (sessionGreeting reads relapse events)
+- [x] Persist herval/terugval events in user.dat (timestamp, type, context)

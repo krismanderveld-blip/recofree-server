@@ -654,6 +654,17 @@ export interface UserDat {
     /** Zone after escalation */
     zoneAfterEscalation: string;
   }>;
+  /** User-reported relapse/slip events — persisted for greeting signals and pattern tracking */
+  relapseEvents?: Array<{
+    /** ISO timestamp of event */
+    timestamp: string;
+    /** 'herval' = full relapse (resets sobriety date), 'terugval' = slip (preserves sobriety) */
+    type: 'herval' | 'terugval';
+    /** Optional user context/note */
+    context?: string;
+    /** Session number when reported */
+    sessionNumber: number;
+  }>;
 }
 
 /** A record of a completed session's analysis */

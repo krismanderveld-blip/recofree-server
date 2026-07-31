@@ -38,6 +38,9 @@ const MAPPING = {
   "line.3.horizontal": "drag-handle",
   "arrow.up": "arrow-upward",
   "arrow.down": "arrow-downward",
+  "magnifyingglass": "search",
+  "slider.horizontal.3": "tune",
+  "xmark": "close",
 } as IconMapping;
 
 export function IconSymbol({

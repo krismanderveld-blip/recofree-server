@@ -50,7 +50,7 @@ const STAGE_COLORS: Record<StageOfChange, string> = {
 };
 
 export default function BackpackScreen() {
-  const { state, updateBackpackSection, updateKimBackpackSection, updateStageOfChange, updateVspSection, replaceBackpack } = useUser();
+  const { state, updateBackpackSection, updateKimBackpackSection, updateStageOfChange, updateVspSection, replaceBackpack, recordRelapseEvent } = useUser();
   const colors = useColors();
   const [expandedSection, setExpandedSection] = useState<LifePhaseId | KimBackpackSectionId | null>(null);
   const [editingSection, setEditingSection] = useState<LifePhaseId | KimBackpackSectionId | null>(null);
@@ -407,6 +407,110 @@ export default function BackpackScreen() {
                 </Pressable>
               );
             })}
+          </View>
+        )}
+
+        {/* Terugval of Herval subsection (Elias only, below Stage of Change) */}
+        {!isKim && state.backpack?.userType === 'elias' && (
+          <View style={{ marginBottom: 24 }}>
+            <Text style={{ fontSize: 16, fontWeight: '700', color: colors.foreground, marginBottom: 4 }}>{t('backpack.relapse.title')}</Text>
+            <Text style={{ fontSize: 13, color: colors.muted, marginBottom: 16, lineHeight: 18 }}>
+              {t('backpack.relapse.description')}
+            </Text>
+            {/* Herval button */}
+            <Pressable
+              onPress={() => {
+                if (Platform.OS === 'web') {
+                  if (confirm(t('backpack.relapse.confirm_herval_message'))) {
+                    recordRelapseEvent('herval');
+                  }
+                } else {
+                  Alert.alert(
+                    t('backpack.relapse.confirm_herval_title'),
+                    t('backpack.relapse.confirm_herval_message'),
+                    [
+                      { text: t('backpack.relapse.cancel'), style: 'cancel' },
+                      { text: t('backpack.relapse.confirm'), style: 'destructive', onPress: () => recordRelapseEvent('herval') },
+                    ]
+                  );
+                }
+              }}
+              style={({ pressed }) => [{ opacity: pressed ? 0.8 : 1, marginBottom: 8 }]}
+            >
+              <View style={{
+                borderRadius: 14,
+                padding: 14,
+                borderWidth: 1,
+                borderColor: colors.error + '60',
+                backgroundColor: colors.error + '08',
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 12,
+              }}>
+                <View style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: colors.error, alignItems: 'center', justifyContent: 'center' }}>
+                  <Text style={{ color: '#fff', fontSize: 12, fontWeight: '700' }}>{'!'}</Text>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: 14, fontWeight: '600', color: colors.error }}>{t('backpack.relapse.herval_button')}</Text>
+                  <Text style={{ fontSize: 12, color: colors.muted, marginTop: 2 }}>{t('backpack.relapse.herval_description')}</Text>
+                </View>
+              </View>
+            </Pressable>
+            {/* Terugval button */}
+            <Pressable
+              onPress={() => {
+                if (Platform.OS === 'web') {
+                  if (confirm(t('backpack.relapse.confirm_terugval_message'))) {
+                    recordRelapseEvent('terugval');
+                  }
+                } else {
+                  Alert.alert(
+                    t('backpack.relapse.confirm_terugval_title'),
+                    t('backpack.relapse.confirm_terugval_message'),
+                    [
+                      { text: t('backpack.relapse.cancel'), style: 'cancel' },
+                      { text: t('backpack.relapse.confirm'), onPress: () => recordRelapseEvent('terugval') },
+                    ]
+                  );
+                }
+              }}
+              style={({ pressed }) => [{ opacity: pressed ? 0.8 : 1, marginBottom: 8 }]}
+            >
+              <View style={{
+                borderRadius: 14,
+                padding: 14,
+                borderWidth: 1,
+                borderColor: colors.warning + '60',
+                backgroundColor: colors.warning + '08',
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 12,
+              }}>
+                <View style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: colors.warning, alignItems: 'center', justifyContent: 'center' }}>
+                  <Text style={{ color: '#fff', fontSize: 12, fontWeight: '700' }}>{'~'}</Text>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: 14, fontWeight: '600', color: colors.warning }}>{t('backpack.relapse.terugval_button')}</Text>
+                  <Text style={{ fontSize: 12, color: colors.muted, marginTop: 2 }}>{t('backpack.relapse.terugval_description')}</Text>
+                </View>
+              </View>
+            </Pressable>
+            {/* Show last event if exists */}
+            {(() => {
+              const events = state.userDat?.relapseEvents ?? [];
+              const lastEvent = events.length > 0 ? events[events.length - 1] : null;
+              if (!lastEvent) return null;
+              const dateStr = lastEvent.timestamp.slice(0, 10);
+              return (
+                <View style={{ marginTop: 8, paddingHorizontal: 4 }}>
+                  <Text style={{ fontSize: 12, color: colors.muted, fontStyle: 'italic' }}>
+                    {t('backpack.relapse.last_event')}: {lastEvent.type === 'herval'
+                      ? t('backpack.relapse.herval_recorded', { date: dateStr })
+                      : t('backpack.relapse.terugval_recorded', { date: dateStr })}
+                  </Text>
+                </View>
+              );
+            })()}
           </View>
         )}
 

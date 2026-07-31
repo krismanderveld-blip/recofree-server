@@ -117,6 +117,10 @@ export default function DiaryScreen() {
   const [editorTab, setEditorTab] = useState<DiaryTab>('journal');
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchActive, setIsSearchActive] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
+  const [selectedMoodFilters, setSelectedMoodFilters] = useState<string[]>([]);
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
   const { t } = useTranslation();
 
   const moodTags = useMemo(() => [
@@ -208,6 +212,21 @@ export default function DiaryScreen() {
     setIsSaving(false);
   }, [editorText, editorMood, gratitude1, gratitude2, gratitude3, entries, isSaving, resetEditor]);
 
+  const hasActiveFilters = selectedMoodFilters.length > 0 || dateFrom.length > 0 || dateTo.length > 0;
+  const clearAllFilters = useCallback(() => {
+    setSelectedMoodFilters([]);
+    setDateFrom('');
+    setDateTo('');
+    setSearchQuery('');
+    setIsSearchActive(false);
+    setShowFilters(false);
+  }, []);
+  const toggleMoodFilter = useCallback((mood: string) => {
+    setSelectedMoodFilters(prev =>
+      prev.includes(mood) ? prev.filter(m => m !== mood) : [...prev, mood]
+    );
+  }, []);
+
   const filteredEntries = entries.filter((entry) => {
     // Search filter
     if (isSearchActive && searchQuery.trim().length > 0) {
@@ -219,6 +238,21 @@ export default function DiaryScreen() {
         : false;
       const moodMatch = entry.moodTag.toLowerCase().includes(q);
       if (!contentMatch && !gratitudeMatch && !moodMatch) return false;
+    }
+    // Mood filter
+    if (selectedMoodFilters.length > 0) {
+      if (!selectedMoodFilters.includes(entry.moodTag)) return false;
+    }
+    // Date range filter
+    if (dateFrom) {
+      const entryTime = new Date(entry.timestamp).getTime();
+      const fromTime = new Date(dateFrom).getTime();
+      if (!isNaN(fromTime) && entryTime < fromTime) return false;
+    }
+    if (dateTo) {
+      const entryTime = new Date(entry.timestamp).getTime();
+      const toTime = new Date(dateTo + 'T23:59:59').getTime();
+      if (!isNaN(toTime) && entryTime > toTime) return false;
     }
     // Tab filter
     if (activeTab === 'gratitude') {
@@ -320,8 +354,8 @@ export default function DiaryScreen() {
 
 
       {/* Search Bar */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12, backgroundColor: '#fff', borderRadius: 12, borderWidth: 1, borderColor: colors.border, paddingHorizontal: 12 }}>
-        <IconSymbol name="house.fill" size={16} color={colors.muted} />
+      <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8, backgroundColor: colors.surface, borderRadius: 12, borderWidth: 1, borderColor: colors.border, paddingHorizontal: 12 }}>
+        <IconSymbol name="magnifyingglass" size={16} color={colors.muted} />
         <TextInput
           value={searchQuery}
           onChangeText={(text) => { setSearchQuery(text); setIsSearchActive(text.length > 0); }}
@@ -332,10 +366,87 @@ export default function DiaryScreen() {
         />
         {searchQuery.length > 0 && (
           <Pressable onPress={() => { setSearchQuery(''); setIsSearchActive(false); }} style={({ pressed }) => [{ opacity: pressed ? 0.5 : 1, padding: 4 }]}>
-            <Text style={{ fontSize: 18, color: colors.muted, fontWeight: '600' }}>{t('diary.search.clear')}</Text>
+            <IconSymbol name="xmark" size={16} color={colors.muted} />
           </Pressable>
         )}
+        <Pressable
+          onPress={() => setShowFilters(!showFilters)}
+          style={({ pressed }) => [{ opacity: pressed ? 0.5 : 1, padding: 4, marginLeft: 4 }]}
+        >
+          <IconSymbol name="slider.horizontal.3" size={18} color={hasActiveFilters ? colors.primary : colors.muted} />
+        </Pressable>
       </View>
+      {/* Advanced Filters Panel */}
+      {showFilters && (
+        <View style={{ backgroundColor: colors.surface, borderRadius: 12, borderWidth: 1, borderColor: colors.border, padding: 12, marginBottom: 12 }}>
+          {/* Mood Filter Chips */}
+          <Text style={{ fontSize: 12, fontWeight: '600', color: colors.foreground, marginBottom: 8 }}>{t('diary.search.mood_filter')}</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 12 }}>
+            <View style={{ flexDirection: 'row', gap: 6 }}>
+              {moodTags.map((mood) => {
+                const isSelected = selectedMoodFilters.includes(mood);
+                const moodColor = MOOD_TAG_COLORS[mood] || '#6B7280';
+                return (
+                  <Pressable
+                    key={mood}
+                    onPress={() => toggleMoodFilter(mood)}
+                    style={({ pressed }) => [{
+                      backgroundColor: isSelected ? moodColor + '25' : 'transparent',
+                      borderWidth: 1,
+                      borderColor: isSelected ? moodColor : colors.border,
+                      borderRadius: 16,
+                      paddingHorizontal: 10,
+                      paddingVertical: 5,
+                      opacity: pressed ? 0.7 : 1,
+                    }]}
+                  >
+                    <Text style={{ fontSize: 12, color: isSelected ? moodColor : colors.muted, fontWeight: isSelected ? '600' : '400' }}>{mood}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </ScrollView>
+          {/* Date Range */}
+          <Text style={{ fontSize: 12, fontWeight: '600', color: colors.foreground, marginBottom: 8 }}>{t('diary.search.date_from')} / {t('diary.search.date_to')}</Text>
+          <View style={{ flexDirection: 'row', gap: 8, marginBottom: 12 }}>
+            <TextInput
+              value={dateFrom}
+              onChangeText={setDateFrom}
+              placeholder="YYYY-MM-DD"
+              placeholderTextColor={colors.muted}
+              style={{ flex: 1, backgroundColor: colors.background, borderRadius: 8, borderWidth: 1, borderColor: colors.border, paddingHorizontal: 10, paddingVertical: 8, fontSize: 13, color: colors.foreground }}
+              keyboardType="numbers-and-punctuation"
+            />
+            <TextInput
+              value={dateTo}
+              onChangeText={setDateTo}
+              placeholder="YYYY-MM-DD"
+              placeholderTextColor={colors.muted}
+              style={{ flex: 1, backgroundColor: colors.background, borderRadius: 8, borderWidth: 1, borderColor: colors.border, paddingHorizontal: 10, paddingVertical: 8, fontSize: 13, color: colors.foreground }}
+              keyboardType="numbers-and-punctuation"
+            />
+          </View>
+          {/* Clear Filters + Results Count */}
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+            {hasActiveFilters ? (
+              <Pressable onPress={clearAllFilters} style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1 }]}>
+                <Text style={{ fontSize: 12, color: colors.primary, fontWeight: '500' }}>{t('diary.search.clear_filters')}</Text>
+              </Pressable>
+            ) : <View />}
+            <Text style={{ fontSize: 11, color: colors.muted }}>
+              {t('diary.search.results_count', { count: String(filteredEntries.length) })}
+            </Text>
+          </View>
+        </View>
+      )}
+      {/* Active filter indicator */}
+      {hasActiveFilters && !showFilters && (
+        <Pressable onPress={() => setShowFilters(true)} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1, marginBottom: 8 }]}>
+          <Text style={{ fontSize: 11, color: colors.primary, fontWeight: '500' }}>
+            {t('diary.search.filters_active')} ({selectedMoodFilters.length + (dateFrom ? 1 : 0) + (dateTo ? 1 : 0)})
+          </Text>
+        </Pressable>
+      )}
 
       {/* Entry List */}
       <FlatList
@@ -346,15 +457,29 @@ export default function DiaryScreen() {
         contentContainerStyle={{ paddingBottom: 24, flexGrow: 1 }}
         ListEmptyComponent={
           <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 40 }}>
-            <Text style={{ fontSize: 32, marginBottom: 12 }}>{activeTab === 'journal' ? '📝' : '🙏'}</Text>
-            <Text style={{ fontSize: 16, fontWeight: '600', color: colors.foreground, marginBottom: 4 }}>
-              {activeTab === 'journal' ? t('diary.empty.journal.title') : t('diary.empty.gratitude.title')}
-            </Text>
-            <Text style={{ fontSize: 13, color: colors.muted, textAlign: 'center' }}>
-              {activeTab === 'journal'
-                ? t('diary.empty.journal.subtitle')
-                : t('diary.empty.gratitude.subtitle')}
-            </Text>
+            {(isSearchActive || hasActiveFilters) ? (
+              <>
+                <Text style={{ fontSize: 32, marginBottom: 12 }}>🔍</Text>
+                <Text style={{ fontSize: 16, fontWeight: '600', color: colors.foreground, marginBottom: 4 }}>
+                  {t('diary.search.no_results')}
+                </Text>
+                <Text style={{ fontSize: 13, color: colors.muted, textAlign: 'center', paddingHorizontal: 20 }}>
+                  {t('diary.search.no_results_hint')}
+                </Text>
+              </>
+            ) : (
+              <>
+                <Text style={{ fontSize: 32, marginBottom: 12 }}>{activeTab === 'journal' ? '📝' : '🙏'}</Text>
+                <Text style={{ fontSize: 16, fontWeight: '600', color: colors.foreground, marginBottom: 4 }}>
+                  {activeTab === 'journal' ? t('diary.empty.journal.title') : t('diary.empty.gratitude.title')}
+                </Text>
+                <Text style={{ fontSize: 13, color: colors.muted, textAlign: 'center' }}>
+                  {activeTab === 'journal'
+                    ? t('diary.empty.journal.subtitle')
+                    : t('diary.empty.gratitude.subtitle')}
+                </Text>
+              </>
+            )}
           </View>
         }
       />
