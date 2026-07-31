@@ -34,11 +34,11 @@ export interface TendencyAcknowledgmentFields {
   /** Whether a clinician has acknowledged this pattern in clinical mode */
   clinicalAcknowledged?: boolean;
   /** ISO timestamp of clinical acknowledgment */
-  clinicalAcknowledgedAt?: string;
+  clinicalAcknowledgedAt?: string | null;
   /** Whether the user has self-acknowledged this pattern in chat */
   userAcknowledged?: boolean;
   /** ISO timestamp of user acknowledgment */
-  userAcknowledgedAt?: string;
+  userAcknowledgedAt?: string | null;
   /** Cumulative acknowledgment score (auto=1 per detect, clinical=2, user=2) */
   acknowledgmentScore?: number;
 }

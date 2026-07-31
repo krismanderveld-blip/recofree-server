@@ -209,7 +209,7 @@ export interface MemoryWritePatch {
   operation: MemoryPatchOperation;
   path: string;
   source: MemorySource;
-  payload: unknown;
+  payload: any;
   shouldWrite: boolean;
   reason: string;
 }

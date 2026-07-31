@@ -122,6 +122,12 @@ export interface UserDatSummaryPayload {
     value: number;
     timestamp: string;
   }>;
+  /** Recent relapse/slip event (Elias only) */
+  recentRelapseEvent?: { type: string; daysAgo: number; context?: string | null } | null;
+  /** Prevention plan (zone-filtered) */
+  preventionPlan?: { zone?: string; warningSigns?: string; copingStrategies?: string; supportContacts?: string; safeActivities?: string; motivation?: string } | null;
+  /** Whether prevention plan is missing */
+  preventionPlanMissing?: boolean;
 }
 
 // ─── Logs Sessions ────────────────────────────────────────────────────

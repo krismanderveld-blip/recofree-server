@@ -84,6 +84,7 @@ export interface KST01RuntimeInputs {
   k06SafetyGate: 'cleared' | 'partial_with_grounding' | 'blocked' | 'not_run';
   stabilizationStatus: 'stable' | 'partially_stable' | 'unstable' | 'unknown';
   caregiverFrustrationLevel?: number;
+  caregiverShameLevel?: number;
   emotionalOverloadLevel?: number;
   selfLossLevel?: number;
   controlLoopLevel?: number;

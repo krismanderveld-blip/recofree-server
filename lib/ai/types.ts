@@ -1262,6 +1262,10 @@ export interface ChatContext {
   };
   /** User-selected app language (from i18n provider). Determines AI response language. */
   locale?: 'nl' | 'en' | 'fr';
+  /** User country code for emergency numbers */
+  country?: 'NL' | 'BE' | 'FR' | 'UK' | 'US';
+  /** Backpack deep analysis: schema/mode/trigger context from GPT-4o */
+  backpackAnalysis?: { triggers?: string[]; coreBeliefs?: string[]; copingPatterns?: string[]; schemaHypotheses?: string[] };
 }
 
 /**

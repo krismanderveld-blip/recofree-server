@@ -65,6 +65,16 @@ export interface SessionLogSummary {
   }>;
   inputTokenEstimate: number;
   outputTokenEstimate: number;
+  /** Number of turns in this session */
+  turnCount?: number;
+  /** Dominant themes detected during session */
+  dominantThemes?: string[];
+  /** Emotional arc description */
+  emotionalArc?: string;
+  /** Unresolved tensions from session */
+  unresolvedTensions?: string[];
+  /** Suggested follow-up for next session */
+  suggestedFollowUp?: string;
 }
 
 export interface SessionExtractionCandidates {

@@ -152,6 +152,15 @@ export interface GPTPayload {
   /** Kim pattern support continuity context (PAAL-K01/BEHE-K01/AANP-K01/CODEP-K01, Kim only) */
   kimPatternSupportContext?: string;
 
+  // ── Kim cluster contexts ──
+  relapseClusterContext?: string;
+  dangerChildContext?: string;
+  relationalDynamicsContext?: string;
+  emotionalLossContext?: string;
+  stoaKContext?: string;
+  /** VSP Insight System (MI/MBT/DGT framework selection, store:false) */
+  vspInsightContext?: string;
+
   // ── Loopblocker: cross-session repeating pattern directive ──
   loopDetected?: {
     active: true;
@@ -341,6 +350,18 @@ export interface PayloadBuilderInput {
   selfAcceptanceContext?: string;
   /** Kim pattern support continuity context (PAAL-K01/BEHE-K01/AANP-K01/CODEP-K01, Kim only) */
   kimPatternSupportContext?: string;
+  // ── Kim cluster contexts ──
+  relapseClusterContext?: string;
+  dangerChildContext?: string;
+  relationalDynamicsContext?: string;
+  emotionalLossContext?: string;
+  stoaKContext?: string;
+  /** VSP Insight System (MI/MBT/DGT framework selection, store:false) */
+  vspInsightContext?: string;
+  /** VSP Backpack Profile (LLM-analyzed zone signals from recurringThemes, Elias only) */
+  vspBackpackProfile?: string;
+  /** VSP Structured Section (user's own per-zone signals, whatHelps, anchorSentence, Elias only) */
+  vspStructuredSection?: string;
   /** Structured entities extracted from backpack (if available, sent instead of full backpack) */
   extractedEntities?: import('../backpack-extractor/types').ExtractedEntities;
   /** Whether backpack changed since last extraction (forces full backpack resend) */

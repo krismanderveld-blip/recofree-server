@@ -3,7 +3,7 @@ import { COOKIE_NAME } from "../shared/const.js";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router } from "./_core/trpc";
-import { chatInputSchema, generateAIResponse } from "./ai-chat";
+import { chatInputSchema, generateAIResponse, type ChatRequestInput } from "./ai-chat";
 import { extractionInputSchema, extractEntitiesFromBackpack } from "./backpack-extractor";
 import { analyzeBackpackInputSchema, analyzeBackpackForSchemas } from "./backpack-analyzer";
 import { engineProcessInputSchema, processEngineRequest } from "./engine-process";
@@ -31,7 +31,7 @@ export const appRouter = router({
         console.log('[ROUTER] isSessionStart:', input.isSessionStart);
 
         try {
-          const result = await generateAIResponse(input);
+          const result = await generateAIResponse(input as ChatRequestInput);
           return result;
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : String(error);

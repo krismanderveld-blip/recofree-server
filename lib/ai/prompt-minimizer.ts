@@ -84,12 +84,12 @@ export function minimizeBackpack(backpack: Backpack | null | undefined): Minimiz
   }
 
   // Build context summary (max 500 chars from intake context)
-  const contextSummary = backpack.intakeContext
-    ? backpack.intakeContext.substring(0, 500)
+  const contextSummary = backpack.intakeContext?.initialContext
+    ? backpack.intakeContext.initialContext.substring(0, 500)
     : '';
 
   return {
-    userName: backpack.name || 'User',
+    userName: backpack.naam || 'User',
     userType: backpack.userType as 'elias' | 'kim',
     contextSummary,
     activeTriggers: triggers,
@@ -110,12 +110,12 @@ export function minimizeUserDat(userDat: UserDat | null | undefined): MinimizedU
 
   const triggerKeywords = (userDat.triggerPatterns || [])
     .slice(0, 5)
-    .map(t => t.trigger || t.keyword || '')
+    .map(t => (t as any).trigger || (t as any).keyword || '')
     .filter(Boolean);
 
   return {
     currentMood: latestMood
-      ? { score: latestMood.overallScore ?? 0, label: latestMood.dominantEmotion ?? 'unknown' }
+      ? { score: (latestMood as any).overallScore ?? 0, label: (latestMood as any).dominantEmotion ?? 'unknown' }
       : null,
     totalSessions: userDat.totalSessions || 0,
     triggerKeywords,

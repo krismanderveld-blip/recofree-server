@@ -29,7 +29,8 @@ export type DebugEventType =
   // Unified session end writer
   | 'unified_session_end_skipped'
   | 'unified_session_end_success'
-  | 'unified_session_end_fallback';
+  | 'unified_session_end_fallback'
+  | 'vsp_output_safety';
 
 export interface DebugEvent {
   id: number;

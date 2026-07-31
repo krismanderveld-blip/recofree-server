@@ -9,7 +9,7 @@ import frStrings from './locales/fr.json';
 export type SupportedLanguage = 'nl' | 'en' | 'fr';
 export type SupportedCountry = 'NL' | 'BE' | 'FR' | 'UK' | 'US';
 
-type TranslationStrings = Record<string, string>;
+type TranslationStrings = Record<string, any>;
 
 const LANGUAGE_MAP: Record<SupportedLanguage, TranslationStrings> = {
   en: enStrings,

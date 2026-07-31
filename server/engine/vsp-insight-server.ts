@@ -152,7 +152,7 @@ export function runVspInsightServer(input: VspInsightServerInput): VspInsightSer
       persona: persona as RecoFreePersona,
       mood,
       immutableCore,
-      profile: profile ?? undefined,
+      profile: profile ?? null,
     });
   }
 

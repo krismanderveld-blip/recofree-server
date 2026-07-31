@@ -2437,3 +2437,32 @@
 - [x] VspInsight live feed: profile wordt bijgewerkt tijdens LIVE_MESSAGE turns (niet alleen bij SESSION_INIT)
 - [x] Balkmetafoor chat feed parser: extraheert draaglast/draagkracht items uit AI-antwoorden
 - [x] NullEngine test suite: 12 tests verifiëren geen API calls + deterministische fallbacks werken
+
+## Zod Schema Audit & TS Error Fixes (July 2025)
+- [x] Audit zod chatInputSchema vs client payload fields (openai-provider.ts)
+- [x] Identified: gratitude in diaryEntries was STRIPPED by zod v4 nested object stripping
+- [x] Added gratitude field to diaryEntries in zod schema + ChatRequestInput interface
+- [x] Added recentRelapseEvent, preventionPlan, preventionPlanMissing, acknowledgedCandidates to schema + interface
+- [x] Removed (input as any) casts — now properly typed
+- [x] Exported ChatRequestInput from ai-chat.ts
+- [x] Fixed pipeline.ts: kimAdvancedP7Result.active → .activeModule
+- [x] Fixed pipeline.ts: analysis.riskLevel narrowing errors (TS2367) with string casts
+- [x] Fixed pipeline.ts: sessionId → sessionBuffer.sessionId
+- [x] Fixed pipeline.ts: resolvedZone → zone.engine?.label
+- [x] Fixed pipeline.ts: recommendedModel (removed — not on type)
+- [x] Fixed pipeline.ts: estimatedTokens → chatContextJsonTokens
+- [x] Fixed pipeline.ts: schemaModeResult type mismatch (map acceptedModes/Schemas to string[])
+- [x] Fixed pipeline.ts: mergePersons type mismatch (as any cast)
+- [x] Fixed pipeline.ts: TendencyConfirmable null compatibility (clinicalAcknowledgedAt, userAcknowledgedAt allow null)
+- [x] Fixed pipeline.ts: applyAutoConfirmation calls (as any cast for mode/schema tendencies)
+- [x] Fixed ChatContext: added country + backpackAnalysis fields
+- [x] Fixed DebugEventType: added 'vsp_output_safety'
+- [x] Fixed SessionLogSummary: added turnCount, dominantThemes, emotionalArc, unresolvedTensions, suggestedFollowUp
+- [x] Fixed sessionInitContextBuilder.ts: null-safe access for optional SessionLogSummary fields
+- [x] Fixed prompt-minimizer.ts: backpack.intakeContext → .intakeContext.initialContext, .name → .naam
+- [x] Fixed KST01RuntimeInputs: added caregiverShameLevel
+- [x] Fixed i18n-provider.tsx: TranslationStrings type allows nested objects
+- [x] Fixed MemoryWritePatch.payload: unknown → any
+- [x] Fixed GPTPayload + PayloadBuilderInput: added Kim cluster context fields
+- [x] Fixed UserDatSummaryPayload: added recentRelapseEvent + preventionPlan
+- [x] Result: 0 non-test TS errors, dev server starts cleanly

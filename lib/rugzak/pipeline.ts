@@ -895,7 +895,7 @@ export async function processMessage(
             isSessionStart,
             fieldsIncluded: ['serverEngine', 'signalDetections', 'statePatches', 'memoryWriteBack'],
             promptBlocks: { serverMode: 'true', memoryWriteBack: memoryWriteBackChangedFields.length > 0 ? 'yes' : 'no' },
-            estimatedTokens: 0,
+            chatContextJsonTokens: 0,
             usedModel: 'server-engine',
           },
           tokens: null,
@@ -2339,7 +2339,7 @@ export async function processMessage(
       latestUserMessage: userMessage,
       recentMessages: sessionBuffer.recentMessages.slice(-3).map(m => m.content),
       language: (currentUserDat as any).detectedLanguage ?? 'nl',
-      sessionId: sessionId ?? 'unknown',
+      sessionId: sessionBuffer.sessionId ?? 'unknown',
       turnId: `turn-${LocalDeviceTimeService.now().epochMs}`,
       immediateDanger: analysis.riskLevel === 'critical',
       childPresentOrAffected: (currentUserDat as any).childrenInvolved ?? false,
@@ -2373,7 +2373,7 @@ export async function processMessage(
       latestUserMessage: userMessage,
       recentMessages: sessionBuffer.recentMessages.slice(-3).map(m => m.content),
       language: (currentUserDat as any).detectedLanguage ?? 'nl',
-      sessionId: sessionId ?? 'unknown',
+      sessionId: sessionBuffer.sessionId ?? 'unknown',
       turnId: `turn-${LocalDeviceTimeService.now().epochMs}`,
       caregiverState: (currentUserDat as any).caregiverState ?? 'unknown',
       safetyRiskLevel: analysis.riskLevel === 'critical' ? 'IMMEDIATE' : analysis.riskLevel === 'high' ? 'HIGH' : 'NONE',
@@ -2401,7 +2401,7 @@ export async function processMessage(
     memoryPatch: null,
     promptContext: null,
   };
-  if (backpack.userType === 'kim' && !!(backpack as any).intake?.startEmotion && !kimAdvancedP6Result.overridesLowerModules && !kimAdvancedP7Result.active) {
+  if (backpack.userType === 'kim' && !!(backpack as any).intake?.startEmotion && !kimAdvancedP6Result.overridesLowerModules && !kimAdvancedP7Result.activeModule) {
     kimP8Result = runKimAdvancedModulesP8({
       intakeCompleted: true,
       persona: 'kim',
@@ -2429,7 +2429,7 @@ export async function processMessage(
       betrayalPainDetected: /(?:vertrouw.*niet|trust.*not|confiance.*plus)/i.test(userMessage),
       lovedOneUseContext: /(?:hij|zij|he|she|il|elle)/i.test(userMessage),
       firstPersonUseContext: /\b(ik|I|je)\b.*\b(gebruik|drink|use|consume)\b/i.test(userMessage),
-      sessionId: sessionId ?? 'unknown',
+      sessionId: sessionBuffer.sessionId ?? 'unknown',
       turnId: `turn-${LocalDeviceTimeService.now().epochMs}`,
       timestampIso: LocalDeviceTimeService.now().utcIso,
     });
@@ -2444,7 +2444,7 @@ export async function processMessage(
     payload: null,
     contextString: '',
   };
-  if (backpack.userType === 'kim' && !!(backpack as any).intake?.startEmotion && !kimAdvancedP6Result.overridesLowerModules && !kimAdvancedP7Result.active && !kimP8Result.active) {
+  if (backpack.userType === 'kim' && !!(backpack as any).intake?.startEmotion && !kimAdvancedP6Result.overridesLowerModules && !kimAdvancedP7Result.activeModule && !kimP8Result.active) {
     kimP9Result = runKimAdvancedP9({
       message: userMessage,
       persona: 'kim',
@@ -2479,7 +2479,7 @@ export async function processMessage(
     memoryPatch: null,
     contextString: '',
   };
-  if (backpack.userType === 'kim' && !!(backpack as any).intake?.startEmotion && !kimAdvancedP6Result.overridesLowerModules && !kimAdvancedP7Result.active && !kimP8Result.active && !kimP9Result.active) {
+  if (backpack.userType === 'kim' && !!(backpack as any).intake?.startEmotion && !kimAdvancedP6Result.overridesLowerModules && !kimAdvancedP7Result.activeModule && !kimP8Result.active && !kimP9Result.active) {
     kimP10Result = runKimAdvancedP10({
       message: userMessage,
       persona: 'kim',
@@ -2517,14 +2517,14 @@ export async function processMessage(
       recentMessages: sessionBuffer.recentMessages.slice(-3).map(m => m.content),
       language: (currentUserDat as any).detectedLanguage ?? 'nl',
       detectedMarkers: (currentUserDat as any).detectedMarkers ?? [],
-      crisisProtocolStatus: analysis.riskLevel === 'critical' ? 'ACTIVE' : analysis.riskLevel === 'high' ? 'MONITOR' : 'CLEAR',
+      crisisProtocolStatus: ((analysis.riskLevel as string) === 'critical') ? 'ACTIVE' : ((analysis.riskLevel as string) === 'high') ? 'MONITOR' : 'CLEAR',
       K06StabilizationStatus: (currentUserDat as any).k06StabilizationStatus ?? 'NOT_RUN',
       acuteShockDominant: (currentUserDat as any).acuteShockDominant ?? false,
       discoveryJustHappened: (currentUserDat as any).discoveryJustHappened ?? false,
       bodyDysregulation: (currentUserDat as any).bodyDysregulation ?? false,
       decisionPressure: (currentUserDat as any).decisionPressure ?? false,
       childrenInvolved: (currentUserDat as any).childrenInvolved ?? false,
-      safetyRisk: analysis.riskLevel === 'critical' ? 0.9 : analysis.riskLevel === 'high' ? 0.7 : 0.1,
+      safetyRisk: (analysis.riskLevel as string) === 'critical' ? 0.9 : (analysis.riskLevel as string) === 'high' ? 0.7 : 0.1,
       legalAdviceRequest: (currentUserDat as any).legalAdviceRequest ?? false,
       guiltInnocenceRequest: (currentUserDat as any).guiltInnocenceRequest ?? false,
       trustRepairQuestion: (currentUserDat as any).trustRepairQuestion ?? false,
@@ -2558,7 +2558,7 @@ export async function processMessage(
       recentMessages: sessionBuffer.recentMessages.slice(-3).map(m => m.content),
       language: (currentUserDat as any).detectedLanguage ?? 'nl',
       detectedMarkers: (currentUserDat as any).detectedMarkers ?? [],
-      crisisProtocolStatus: analysis.riskLevel === 'critical' ? 'ACTIVE' : analysis.riskLevel === 'high' ? 'MONITOR' : 'CLEAR',
+      crisisProtocolStatus: (analysis.riskLevel as string) === 'critical' ? 'ACTIVE' : (analysis.riskLevel as string) === 'high' ? 'MONITOR' : 'CLEAR',
       K06StabilizationStatus: (currentUserDat as any).k06StabilizationStatus ?? 'NOT_RUN',
       // CDP01 signals
       selfLossPattern: (currentUserDat as any).selfLossPattern ?? false,
@@ -2580,7 +2580,7 @@ export async function processMessage(
       guiltAboutGrieving: (currentUserDat as any).guiltAboutGrieving ?? false,
       futureLoss: (currentUserDat as any).futureLoss ?? false,
       acuteFlooding: (currentUserDat as any).acuteFlooding ?? false,
-      safetyRisk: analysis.riskLevel === 'critical' ? 0.9 : analysis.riskLevel === 'high' ? 0.7 : 0.1,
+      safetyRisk: (analysis.riskLevel as string) === 'critical' ? 0.9 : (analysis.riskLevel as string) === 'high' ? 0.7 : 0.1,
       timestampIso: LocalDeviceTimeService.now().utcIso,
     });
   }
@@ -2599,11 +2599,11 @@ export async function processMessage(
       latestUserMessage: userMessage,
       recentMessages: sessionBuffer.recentMessages.slice(-3).map(m => m.content),
       language: (currentUserDat as any).detectedLanguage ?? 'nl',
-      crisisProtocolStatus: analysis.riskLevel === 'critical' ? 'ACTIVE' : analysis.riskLevel === 'high' ? 'MONITOR' : 'CLEAR',
+      crisisProtocolStatus: (analysis.riskLevel as string) === 'critical' ? 'ACTIVE' : (analysis.riskLevel as string) === 'high' ? 'MONITOR' : 'CLEAR',
       K06StabilizationStatus: (currentUserDat as any).k06StabilizationStatus ?? 'NOT_RUN',
       par01PreviousDetections: (currentUserDat as any).par01Detections ?? [],
       fin01PreviousDetections: (currentUserDat as any).fin01Detections ?? [],
-      safetyRisk: analysis.riskLevel === 'critical' ? 0.9 : analysis.riskLevel === 'high' ? 0.7 : 0.1,
+      safetyRisk: (analysis.riskLevel as string) === 'critical' ? 0.9 : (analysis.riskLevel as string) === 'high' ? 0.7 : 0.1,
       timestampIso: LocalDeviceTimeService.now().utcIso,
       backpackContext: JSON.stringify((backpack as any).sections ?? {}),
     });
@@ -2635,7 +2635,7 @@ export async function processMessage(
       recentMessages: recentTexts,
       language: (currentUserDat as any).detectedLanguage ?? 'nl',
       detectedMarkers: [...iso01Concepts],
-      crisisProtocolStatus: analysis.riskLevel === 'critical' ? 'ACTIVE' : analysis.riskLevel === 'high' ? 'MONITOR' : 'CLEAR',
+      crisisProtocolStatus: (analysis.riskLevel as string) === 'critical' ? 'ACTIVE' : (analysis.riskLevel as string) === 'high' ? 'MONITOR' : 'CLEAR',
       K06StabilizationStatus: (currentUserDat as any).k06StabilizationStatus ?? 'NOT_RUN',
       socialWithdrawal: iso01Concepts.has('social-withdrawal') || genericIsolation,
       shameAboutTalking: iso01Concepts.has('shame-about-talking'),
@@ -2649,7 +2649,7 @@ export async function processMessage(
       painfulLoneliness: iso01Concepts.has('painful-loneliness') || genericIsolation,
       wantsConnectionButScared: iso01Concepts.has('social-withdrawal') && iso01Concepts.has('painful-loneliness'),
       acuteOverload: analysis.riskLevel === 'high',
-      safetyRisk: analysis.riskLevel === 'critical' ? 0.9 : analysis.riskLevel === 'high' ? 0.7 : 0.1,
+      safetyRisk: (analysis.riskLevel as string) === 'critical' ? 0.9 : (analysis.riskLevel as string) === 'high' ? 0.7 : 0.1,
       timestampIso: LocalDeviceTimeService.now().utcIso,
     });
   }
@@ -2961,12 +2961,12 @@ export async function processMessage(
     selfReportedZone: (vspLevel ?? 'GROEN') as any,
     sessionTurnCount: sessionBuffer.recentMessages.length,
     safetyCore: {
-      finalZone: (elisDecision?.zone.resolved?.finalZoneLabel ?? kimDecision?.resolvedZone ?? vspLevel ?? 'GROEN') as any,
+      finalZone: (elisDecision?.zone.resolved?.finalZoneLabel ?? kimDecision?.zone.engine?.label ?? kimDecision?.zone.calculated ?? vspLevel ?? 'GROEN') as any,
       userReportedZone: (vspLevel ?? 'GROEN') as any,
       safetyOverrideActive: analysis.riskLevel === 'critical',
       crisisDetected: (elisDecision?.zone.resolved?.isCrisis ?? false) || (kimDecision?.isKimCrisis ?? false),
       relapseIntentDetected: relapseIntentResult?.detected ?? false,
-      modelRoutingDecision: elisDecision?.recommendedModel ?? kimDecision?.recommendedModel ?? 'gpt-4o-mini',
+      modelRoutingDecision: 'gpt-4o-mini',
       activeSafetyModuleId: null,
     },
     profile: null, // Profile loaded from AsyncStorage on device — not available in pipeline
@@ -3143,7 +3143,7 @@ export async function processMessage(
     // Kim Emotional Loss Cluster (HOOP-K01/SCHAAM-K01/ROUW-K01/ISOL-K01) — reflective modules below acute + relational dynamics
     emotionalLossContext: (kimAdvancedP7Result.overridesLowerModules || kimAdvancedP6Result.overridesLowerModules || kimP8Result.active) ? undefined : (kimP9Result.active ? kimP9Result.contextString || undefined : undefined),
     // Kim STOA-K (Stoic Reflective Framework) — lowest reflective priority, suppressed when any higher module active
-    stoaKContext: (kimAdvancedP6Result.overridesLowerModules || kimAdvancedP7Result.active || kimP8Result.active || kimP9Result.active) ? undefined : (kimP10Result.active ? kimP10Result.contextString || undefined : undefined),
+    stoaKContext: (kimAdvancedP6Result.overridesLowerModules || kimAdvancedP7Result.activeModule || kimP8Result.active || kimP9Result.active) ? undefined : (kimP10Result.active ? kimP10Result.contextString || undefined : undefined),
     // PsychoEducation continuity (WILSKRACHT01/AUTOPILOT01, Elias only)
     psychoEducationContext: psychoEducationActivation && !psychoEducationActivation.crisisOverride
       ? `[PSYCHO-EDUCATIE ${psychoEducationActivation.moduleId}] mode=${psychoEducationActivation.responseMode} confidence=${psychoEducationActivation.activationConfidence.toFixed(2)} markers=[${psychoEducationActivation.detectedMarkers.join(',')}]${psychoEducationActivation.memoryHints ? ' continuity=active' : ''}`
@@ -3304,7 +3304,7 @@ export async function processMessage(
       ...updatedUserDat,
       extractedEntities: {
         ...updatedUserDat.extractedEntities,
-        persons: mergePersons(existingPersons, feedbackResult.routing.personsToStore),
+        persons: mergePersons(existingPersons as any, feedbackResult.routing.personsToStore as any) as any,
       },
     };
   }
@@ -3348,10 +3348,10 @@ export async function processMessage(
       buffer: `msg#${sessionBuffer.messageCount} zone=${sessionBuffer.currentZoneColor}(${sessionBuffer.currentZoneScore}) intent=${(sessionBuffer as any).liveIntent ?? 'none'}`,
     },
     schemaModeResult: schemaModeResult.activated ? {
-      dominantMode: schemaModeResult.modeDecision.dominantMode ?? null,
-      dominantSchema: schemaModeResult.schemaDecision.dominantSchema ?? null,
-      acceptedModes: schemaModeResult.modeDecision.acceptedModes ?? [],
-      acceptedSchemas: schemaModeResult.schemaDecision.acceptedSchemas ?? [],
+      dominantMode: (schemaModeResult.modeDecision.dominantMode ?? null) as string | null,
+      dominantSchema: (schemaModeResult.schemaDecision.dominantSchema ?? null) as string | null,
+      acceptedModes: (schemaModeResult.modeDecision.acceptedModes ?? []).map((m: any) => typeof m === 'string' ? m : m.id ?? m.modeId ?? String(m)) as string[],
+      acceptedSchemas: (schemaModeResult.schemaDecision.acceptedSchemas ?? []).map((s: any) => typeof s === 'string' ? s : s.id ?? s.schemaId ?? String(s)) as string[],
     } : undefined,
   };
   updatedUserDat = {
@@ -3836,7 +3836,7 @@ export async function processMessage(
         persona: backpack.userType as 'elias' | 'kim',
         userMessage,
         insightState: vspInsightResult.insightState,
-        detectedZone: elisDecision?.zone.resolved?.finalZoneLabel ?? kimDecision?.resolvedZone ?? vspLevel ?? 'GROEN',
+        detectedZone: elisDecision?.zone.resolved?.finalZoneLabel ?? kimDecision?.zone.engine?.label ?? kimDecision?.zone.calculated ?? vspLevel ?? 'GROEN',
         userReportedZone: vspLevel ?? null,
         sessionTurnCount: sessionBuffer.recentMessages.length,
       });
@@ -4613,7 +4613,7 @@ export async function endSession(
       modeTendencies = modeTendencies.slice(0, MAX_TENDENCIES);
     }
     // Apply auto-confirmation to modes meeting threshold (freq≥5 AND conf≥0.7)
-    modeTendencies = applyAutoConfirmation(modeTendencies, now);
+    modeTendencies = applyAutoConfirmation(modeTendencies as any, now) as typeof modeTendencies;
     updatedUserDat = { ...updatedUserDat, modeTendencies };
 
     // --- Schema tendencies: decay unseen, prune, cap ---
@@ -4643,7 +4643,7 @@ export async function endSession(
       schemaTendencies = schemaTendencies.slice(0, MAX_TENDENCIES);
     }
     // Apply auto-confirmation to schemas meeting threshold (freq≥5 AND conf≥0.7)
-    schemaTendencies = applyAutoConfirmation(schemaTendencies, now);
+    schemaTendencies = applyAutoConfirmation(schemaTendencies as any, now) as typeof schemaTendencies;
     updatedUserDat = { ...updatedUserDat, schemaTendencies };
 
     const decayedModes = modeTendencies.length;

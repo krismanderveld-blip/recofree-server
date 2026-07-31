@@ -33,7 +33,7 @@ import { ELIAS_STAGE_DESCRIPTIONS_SHORT, ELIAS_STAGE_DESCRIPTIONS_FULL } from ".
 
 // ─── Types ────────────────────────────────────────────────────────
 
-interface ChatRequestInput {
+export interface ChatRequestInput {
   userType: "elias" | "kim";
   userName: string;
   message: string;
@@ -123,6 +123,7 @@ interface ChatRequestInput {
     content: string;
     moodTag: string;
     timestamp: string;
+    gratitude?: { entry1?: string | null; entry2?: string | null; entry3?: string | null } | null;
   }> | null;
 
   activeModules: string[];
@@ -225,7 +226,7 @@ interface ChatRequestInput {
     schemaVersion: number;
   } | null;
   /** Whether backpack content changed since last extraction (forces full backpack resend) */
-  backpackChanged?: boolean;
+  backpackChanged?: boolean | null;
 
   /** Deep analysis of backpack (schemas, modes, triggers, core beliefs, coping patterns) from GPT-4o */
   backpackAnalysis?: {
@@ -333,6 +334,20 @@ interface ChatRequestInput {
     resolvedModule: string | null;
     matchedTheme: string | null;
   } | null;
+
+  /** Distilled context.dat: compact serialized identity/patterns/schemas — replaces full backpack at SESSION_INIT */
+  contextDat?: string | null;
+  /** Deepening block: targeted fragment retrieval based on nano-detected gaps */
+  deepeningBlock?: string | null;
+
+  /** Recent relapse/slip event (Elias only — from userDatSummary) */
+  recentRelapseEvent?: { type: string; daysAgo: number; context?: string | null } | null;
+  /** Prevention plan (zone-filtered, from terugval-preventieplan) */
+  preventionPlan?: { zone?: string; warningSigns?: string; copingStrategies?: string; supportContacts?: string; safeActivities?: string; motivation?: string } | null;
+  /** Whether prevention plan is missing (triggers hint in greeting) */
+  preventionPlanMissing?: boolean | null;
+  /** Acknowledged candidates (schemas/modes recognized but not yet confirmed) */
+  acknowledgedCandidates?: { schemas: Array<{ name: string; confidence: number }>; modes: Array<{ name: string; confidence: number }> } | null;
 }
 
 // ─── Server-side Session Cache ───────────────────────────────────
@@ -701,6 +716,11 @@ export const chatInputSchema = z.object({
       content: z.string(),
       moodTag: z.string(),
       timestamp: z.string(),
+      gratitude: z.object({
+        entry1: z.string().nullable().optional(),
+        entry2: z.string().nullable().optional(),
+        entry3: z.string().nullable().optional(),
+      }).nullable().optional(),
     })
   ).nullable().optional(),
   activeModules: z.array(z.string()),
@@ -893,6 +913,32 @@ export const chatInputSchema = z.object({
   /** User-selected app language. Determines AI response language. */
   locale: z.enum(['nl', 'en', 'fr']).nullable().optional(),
   country: z.enum(['NL', 'BE', 'FR', 'UK', 'US']).nullable().optional(),
+  /** Distilled context.dat: compact serialized identity/patterns/schemas — replaces full backpack at SESSION_INIT */
+  contextDat: z.string().nullable().optional(),
+  /** Deepening block: targeted fragment retrieval based on nano-detected gaps */
+  deepeningBlock: z.string().nullable().optional(),
+  /** Recent relapse/slip event (Elias only — from userDatSummary) */
+  recentRelapseEvent: z.object({
+    type: z.string(),
+    daysAgo: z.number(),
+    context: z.string().nullable().optional(),
+  }).nullable().optional(),
+  /** Prevention plan (zone-filtered, from terugval-preventieplan) */
+  preventionPlan: z.object({
+    zone: z.string().optional(),
+    warningSigns: z.string().optional(),
+    copingStrategies: z.string().optional(),
+    supportContacts: z.string().optional(),
+    safeActivities: z.string().optional(),
+    motivation: z.string().optional(),
+  }).nullable().optional(),
+  /** Whether prevention plan is missing (triggers hint in greeting) */
+  preventionPlanMissing: z.boolean().nullable().optional(),
+  /** Acknowledged candidates (schemas/modes recognized but not yet confirmed) */
+  acknowledgedCandidates: z.object({
+    schemas: z.array(z.object({ name: z.string(), confidence: z.number() })),
+    modes: z.array(z.object({ name: z.string(), confidence: z.number() })),
+  }).nullable().optional(),
 }).passthrough();
 
 // ─── Structured Memory Block Builder (from extractedEntities) ──────────────
@@ -1232,7 +1278,7 @@ function buildSelectiveRelevanceBlock(
   }
 
   // Relapse/Slip signal (Elias only — injected when recent event exists)
-  const relapseEvent = (input as any).recentRelapseEvent ?? (input as any).userDatSummary?.recentRelapseEvent ?? null;
+  const relapseEvent = input.recentRelapseEvent ?? null;
   if (input.userType === 'elias' && relapseEvent) {
     if (relapseEvent.type === 'herval') {
       parts.push(`⚠️ HERVAL: De gebruiker heeft ${relapseEvent.daysAgo === 0 ? 'vandaag' : `${relapseEvent.daysAgo} dag(en) geleden`} een herval gemeld. Nuchterheidsdatum is gereset.`);
@@ -1247,7 +1293,7 @@ function buildSelectiveRelevanceBlock(
       parts.push(`  Context: "${relapseEvent.context}"`);
     }
     // Inject zone-filtered prevention plan (only zone-relevant fields are sent)
-    const preventionPlan = (input as any).preventionPlan ?? (input as any).userDatSummary?.preventionPlan ?? null;
+    const preventionPlan = input.preventionPlan ?? null;
     if (preventionPlan) {
       const zoneLabel = preventionPlan.zone ? ` (zone: ${preventionPlan.zone})` : '';
       parts.push(`  \ud83d\udccb TERUGVAL-PREVENTIEPLAN${zoneLabel} — relevante velden voor huidige zone:`);
@@ -1259,7 +1305,7 @@ function buildSelectiveRelevanceBlock(
       parts.push(`  \u2192 Gebruik SPECIFIEK deze velden om de gebruiker te herinneren aan eigen kracht en hulpbronnen. Verwijs concreet naar wat zij zelf hebben opgeschreven.`);
     }
     // If prevention plan is not filled yet, hint to Elias to suggest it
-    const preventionPlanMissing = (input as any).preventionPlanMissing ?? (input as any).userDatSummary?.preventionPlanMissing ?? false;
+    const preventionPlanMissing = input.preventionPlanMissing ?? false;
     if (preventionPlanMissing && !preventionPlan) {
       parts.push(`  \u2139\ufe0f De gebruiker heeft nog geen terugval-preventieplan ingevuld. Als het moment gepast is (niet bij crisis), noem kort dat zij in de rugzak een preventieplan kunnen invullen — zonder druk.`);
     }
@@ -1267,7 +1313,7 @@ function buildSelectiveRelevanceBlock(
 
   // Prevention plan missing hint (outside relapse block — shown at any greeting if plan is empty)
   if (!relapseEvent) {
-    const preventionPlanMissing2 = (input as any).preventionPlanMissing ?? (input as any).userDatSummary?.preventionPlanMissing ?? false;
+    const preventionPlanMissing2 = input.preventionPlanMissing ?? false;
     if (preventionPlanMissing2) {
       parts.push(`\u2139\ufe0f De gebruiker heeft nog geen terugval-preventieplan ingevuld. Als het moment gepast is, noem kort dat zij in de rugzak een preventieplan kunnen invullen \u2014 zonder druk.`);
     }
@@ -1844,9 +1890,18 @@ These are not suggestions. These are minimum requirements.
   let shortModuleBlock = '';
   if (isElias) {
     const dominantMod = (input.dominantModule || '').toUpperCase();
-    const matchedModule = ELIAS_SHORT_MODULE_PROMPTS.find(m => m.id === dominantMod);
-    if (matchedModule) {
-      shortModuleBlock = `\n\n═══ ACTIVE SHORT MODULE: ${matchedModule.id} — ${matchedModule.name} ═══\n${matchedModule.promptBlock}\n═══ END ACTIVE SHORT MODULE ═══`;
+    const isHighZoneVsp = (input.vspLevel === 'ROOD' || input.vspLevel === 'RED' || input.vspLevel === 'PAARS' || input.vspLevel === 'PURPLE') && input.vspStructuredSection;
+    // HIGH ZONE VSP OVERRIDE: When user is in ROOD/PAARS AND has a VSP with 'wat helpt',
+    // suppress the therapeutic module — the user's OWN safety plan takes absolute priority.
+    // The module would compete with VSP instructions and cause generic responses.
+    if (!isHighZoneVsp) {
+      const matchedModule = ELIAS_SHORT_MODULE_PROMPTS.find(m => m.id === dominantMod);
+      if (matchedModule) {
+        shortModuleBlock = `\n\n═══ ACTIVE SHORT MODULE: ${matchedModule.id} — ${matchedModule.name} ═══\n${matchedModule.promptBlock}\n═══ END ACTIVE SHORT MODULE ═══`;
+      }
+    } else {
+      // In ROOD/PAARS with VSP: inject a short directive instead of full module
+      shortModuleBlock = `\n\n═══ VSP OVERRIDE (ZONE ${input.vspLevel}) ═══\nDe therapeutische module is UITGESCHAKELD voor deze beurt.\nREDEN: De gebruiker heeft een persoonlijk veiligheidsplan met specifieke strategieën.\nJe ENIGE taak nu: gebruik HUN 'wat helpt' content hieronder als primaire interventie.\nGeen generiek grounding. Geen module-technieken. Alleen HUN plan.\n═══ END VSP OVERRIDE ═══`;
     }
   }
 
@@ -1987,8 +2042,8 @@ This is a HARD SAFETY RULE. Violation = harm. No exceptions.`}
     }
     // Build ACKNOWLEDGED CANDIDATES block (exploratory, voorzichtig)
     let acknowledgedCandidatesBlock = '';
-    if ((input as any).acknowledgedCandidates) {
-      const ac = (input as any).acknowledgedCandidates as { schemas: Array<{ name: string; confidence: number }>; modes: Array<{ name: string; confidence: number }> };
+    if (input.acknowledgedCandidates) {
+      const ac = input.acknowledgedCandidates;
       const ackSchemas = ac.schemas.filter(s => s.confidence >= 0.3);
       const ackModes = ac.modes.filter(m => m.confidence >= 0.3);
       if (ackSchemas.length > 0 || ackModes.length > 0) {
@@ -2311,7 +2366,22 @@ Rules:
   const backpack = input.backpack;
   let identityMemory = "";
 
-  if (backpack && !input.backpackEmpty) {
+  // ── CONTEXT.DAT MODE: Use distilled compact context instead of full backpack ──
+  if (input.contextDat) {
+    identityMemory += `\n╔══════════════════════════════════════════════════════╗`;
+    identityMemory += `\n║  IDENTITY CONTEXT OF ${name.toUpperCase()} (distilled)`;
+    identityMemory += `\n╚══════════════════════════════════════════════════════╝`;
+    identityMemory += `\n${input.contextDat}`;
+    if (input.deepeningBlock) {
+      identityMemory += `\n\n─── DEEPENING (targeted retrieval) ───`;
+      identityMemory += `\n${input.deepeningBlock}`;
+    }
+    identityMemory += `\n\nYou KNOW ${name}. If they mention a person, place, or event from this context, you recognize it IMMEDIATELY.`;
+    identityMemory += `\nIf something is NOT in this context, do NOT fabricate it. Ask about it instead.`;
+    console.log(`[AI Chat] SESSION_INIT using context.dat (distilled) — ${input.contextDat.length} chars`);
+  } else if (backpack && !input.backpackEmpty) {
+    // ── FALLBACK: Full backpack when context.dat distillation failed ──
+    console.log(`[AI Chat] SESSION_INIT using FULL BACKPACK (context.dat not available) — fallback mode`);
     identityMemory += `\n╔══════════════════════════════════════════════════════╗`;
     identityMemory += `\n║  BACKPACK — IDENTITY ANCHOR OF ${name.toUpperCase()}`;
     identityMemory += `\n║  Written by ${name} personally.`;
@@ -2396,8 +2466,8 @@ Rules:
       const timeLabel = hoursAgo < 1 ? 'net geschreven' : hoursAgo < 24 ? `${hoursAgo}u geleden (vandaag)` : hoursAgo < 48 ? 'gisteren' : `${Math.floor(hoursAgo / 24)} dagen geleden`;
       const date = new Date(entry.timestamp).toLocaleDateString();
       diaryMemory += `\n\n[${date}] (⏰ ${timeLabel}) (mood: ${entry.moodTag}):\n${entry.content}`;
-      if ((entry as any).gratitude) {
-        const g = (entry as any).gratitude;
+      if (entry.gratitude) {
+        const g = entry.gratitude;
         diaryMemory += `\n  ✨ Gratitude: ${g.entry1 || '-'} | ${g.entry2 || '-'} | ${g.entry3 || '-'}`;
       }
     }

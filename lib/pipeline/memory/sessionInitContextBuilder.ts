@@ -90,19 +90,19 @@ export function buildSessionInitContext(
 
 function buildLastSessionBlock(session: SessionLogSummary): string | null {
   const parts: string[] = [];
-  parts.push(`Vorige sessie (${session.turnCount} beurten):`);
+  parts.push(`Vorige sessie (${session.turnCount ?? '?'} beurten):`);
 
-  if (session.dominantThemes.length > 0) {
+  if (session.dominantThemes && session.dominantThemes.length > 0) {
     parts.push(`- Thema's: ${session.dominantThemes.join(", ")}`);
   }
   if (session.emotionalArc) {
     parts.push(`- Emotioneel verloop: ${session.emotionalArc}`);
   }
-  if (session.unresolvedTensions.length > 0) {
+  if (session.unresolvedTensions && session.unresolvedTensions.length > 0) {
     parts.push(`- Onopgelost: ${session.unresolvedTensions.join(", ")}`);
   }
-  if (session.suggestedFollowUp.length > 0) {
-    parts.push(`- Vervolg: ${session.suggestedFollowUp.join(", ")}`);
+  if (session.suggestedFollowUp && session.suggestedFollowUp.length > 0) {
+    parts.push(`- Vervolg: ${session.suggestedFollowUp}`);
   }
 
   return parts.length > 1 ? parts.join("\n") : null;
