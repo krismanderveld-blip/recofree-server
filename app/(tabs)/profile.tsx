@@ -133,11 +133,12 @@ export default function ProfileScreen() {
         includeRawUserSelectedExamples: false,
         selectedExampleIds: [],
         exportedAt: LocalDeviceTimeService.now().utcIso,
+        vspSection: backpack?.vspSection ?? undefined,
       });
       // Write to temp file and share
       const FileSystem = await import('expo-file-system/legacy');
       const Sharing = await import('expo-sharing');
-      const fileUri = FileSystem.documentDirectory + 'vsp-insight-overzicht.txt';
+      const fileUri = FileSystem.documentDirectory + 'veiligheidsplan-overzicht.txt';
       await FileSystem.writeAsStringAsync(fileUri, plainText, { encoding: FileSystem.EncodingType.UTF8 });
       await Sharing.shareAsync(fileUri, { mimeType: 'text/plain', dialogTitle: t('profile.vsp_insight.share_title') });
       if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);

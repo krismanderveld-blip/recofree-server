@@ -1490,9 +1490,14 @@ export function buildSystemPrompt(input: ChatRequestInput): string {
     '- MI01: Motivational Interviewing — ambivalentie verkennen en verandermotivatie',
     '- EKT01: Emotionele Kerntherapie — fasering (verheldering, spiegel, contract, exit)',
   ].join('\n');
-  const dynamicModuleList = isElias
+  // Full module list (~3000 chars) — only inject when user asks about capabilities or at SESSION_INIT
+  const capabilityQuestionRx = /wat\s+(kun|kan)\s+je|what\s+can\s+you|welke\s+modules|wat\s+bied|qu.est-ce\s+que\s+tu\s+peux|wat\s+doe\s+je|therapie.n.*bied/i;
+  const userAsksCapabilities = capabilityQuestionRx.test(input.message || '');
+  const dynamicModuleListFull = isElias
     ? `YOUR ACTUAL MODULES AND CAPABILITIES (use EXACT codes when listing):\n${eliasModules}\n${eliasExtra}\n\nSHORT MODULES (M05-M85) — thematic deep-dive modules:\n${eliasShortModules}`
     : `YOUR ACTUAL MODULES AND CAPABILITIES (use EXACT codes when listing):\n${kimModules}\n${kimExtra}`;
+  const dynamicModuleListCompact = `You have therapeutic modules (CGT, ACT, MI, DBT, Schema, STOA, Shadow Work, EKT, MBT, and M05-M85 thematic modules). List them only if the user explicitly asks.`;
+  const dynamicModuleList = (input.isSessionStart || userAsksCapabilities) ? dynamicModuleListFull : dynamicModuleListCompact;
 
   // ══════════════════════════════════════════════════════════════
   // CORE IDENTITY — Based on elias.dat V19 / kim.dat V1

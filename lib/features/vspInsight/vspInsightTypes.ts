@@ -440,6 +440,20 @@ export interface VspPdfExportInput {
   includeRawUserSelectedExamples: boolean;
   selectedExampleIds: string[];
   exportedAt: string;
+  /** Optional: the user-filled VSP (backpack.vspSection) to include in the combined export */
+  vspSection?: {
+    zones: {
+      green: { signals: string; whatHelps: string; anchorSentence: string };
+      yellow: { signals: string; whatHelps: string; anchorSentence: string };
+      orange: { signals: string; whatHelps: string; anchorSentence: string };
+      red: { signals: string; whatHelps: string; anchorSentence: string };
+      purple: { signals: string; whatHelps: string; anchorSentence: string };
+    };
+    triggers: { trigger: string; counterThought: string }[];
+    recoveryRules: string[];
+    mainAnchorSentence: string;
+    lastUpdated: string | null;
+  };
 }
 
 export interface VspPdfExportResult {

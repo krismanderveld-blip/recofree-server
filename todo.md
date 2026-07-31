@@ -2423,10 +2423,17 @@
 - [x] Terugval-preventieplan in backpack: invulbaar plan dat automatisch wordt meegestuurd naar Elias bij herval/terugval melding
 
 ## Zone-based Prevention Plan + Fixes
-- [ ] Refactor preventionPlan injection: send only zone-relevant field (PAARS→supportContacts+crisis, ROOD→warningSigns+supportContacts, ORANJE→warningSigns+copingStrategies, GEEL→copingStrategies+safeActivities, GROEN→motivation)
-- [ ] Greeting check: if preventionPlan not filled, Elias mentions it as suggestion
-- [ ] Fix profile.notifications.* i18n keys not translated (section_title, status_active, active_help, test_button, toggle_off)
-- [ ] VSP export: combine ingevuld VSP (backpack.vspSection) + VspInsightProfile (AI-patronen) in één export document
-- [ ] Balkmetafoor auto-init: pipeline zet initialized=true bij eerste PAAL01 FIRST_USE_INTRODUCTION
-- [ ] Balkmetafoor feed from chat: post-response parser extraheert draaglast/draagkracht items uit AI-antwoord en schrijft terug naar backpack
-- [ ] Balkmetafoor manual start: "Start balkmetafoor" knop in UI voor handmatige initialisatie
+- [x] Refactor preventionPlan injection: send only zone-relevant field (PAARS→supportContacts+crisis, ROOD→warningSigns+supportContacts, ORANJE→warningSigns+copingStrategies, GEEL→copingStrategies+safeActivities, GROEN→motivation)
+- [x] Greeting check: if preventionPlan not filled, Elias mentions it as suggestion
+- [x] Fix profile.notifications.* i18n keys not translated (section_title, status_active, active_help, test_button, toggle_off)
+- [x] VSP export: combine ingevuld VSP (backpack.vspSection) + VspInsightProfile (AI-patronen) in één export document
+- [x] Balkmetafoor auto-init: pipeline zet initialized=true bij eerste PAAL01 FIRST_USE_INTRODUCTION
+- [x] Balkmetafoor feed from chat: post-response parser extraheert draaglast/draagkracht items uit AI-antwoord en schrijft terug naar backpack
+- [x] Balkmetafoor manual start: "Start balkmetafoor" knop in UI voor handmatige initialisatie
+
+## Cost Optimization + VspInsight Live Feed
+- [x] Disable GptSignalEngine (4 redundant API calls per message removed — NullEngine active)
+- [x] System prompt: dynamicModuleList conditioneel (alleen bij SESSION_INIT of capability-vraag, bespaart ~3000 chars per message)
+- [x] VspInsight live feed: profile wordt bijgewerkt tijdens LIVE_MESSAGE turns (niet alleen bij SESSION_INIT)
+- [x] Balkmetafoor chat feed parser: extraheert draaglast/draagkracht items uit AI-antwoorden
+- [x] NullEngine test suite: 12 tests verifiëren geen API calls + deterministische fallbacks werken

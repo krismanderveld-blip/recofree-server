@@ -3826,6 +3826,34 @@ export async function processMessage(
   const k06Status = (currentUserDat as any).k06StabilizationStatus ?? 'NOT_RUN';
   const crisisProtocolActive = analysis.riskLevel === 'critical' || crisisLevel >= 2;
 
+  // ── VspInsight Live Feed (LIVE_MESSAGE only) ──────────────────────────────
+  // Update VspInsightProfile with observed early signs and discrepancy events
+  // detected from the current user message during normal chat turns.
+  if (!isSessionStart) {
+    try {
+      const { runVspInsightLiveFeed } = await import('../../lib/features/vspInsight/vspInsightLiveFeed');
+      const liveFeedResult = runVspInsightLiveFeed({
+        persona: backpack.userType as 'elias' | 'kim',
+        userMessage,
+        insightState: vspInsightResult.insightState,
+        detectedZone: elisDecision?.zone.resolved?.finalZoneLabel ?? kimDecision?.resolvedZone ?? vspLevel ?? 'GROEN',
+        userReportedZone: vspLevel ?? null,
+        sessionTurnCount: sessionBuffer.recentMessages.length,
+      });
+      if (liveFeedResult.shouldPatch && liveFeedResult.patch) {
+        const { applyVspInsightProfilePatch } = await import('../../lib/features/vspInsight/vspInsightStorage');
+        await applyVspInsightProfilePatch(
+          'local_user',
+          backpack.userType as 'elias' | 'kim',
+          liveFeedResult.patch
+        );
+        console.log(`[Pipeline] VspInsight live feed: ${liveFeedResult.debug.reason}`);
+      }
+    } catch (vspLiveErr) {
+      console.warn('[Pipeline] VspInsight live feed error (non-critical):', vspLiveErr);
+    }
+  }
+
   return {
     response,
     analysis,

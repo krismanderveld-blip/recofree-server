@@ -41,7 +41,8 @@ import type { VspLevel } from '@/lib/engine/elias/vsp';
 import { loadAndRestoreEliasProjection } from '@/lib/engine/elias/projection';
 import { loadAndRestoreKimProjection } from '@/lib/engine/kim/projection';
 import { logDebugEvent } from '@/lib/debug/session-logger';
-import { initGptSignalEngine } from '@/lib/engine/local-llm/engine-provider';
+// DISABLED: Signal engine removed (4 redundant API calls per message)
+// import { initGptSignalEngine } from '@/lib/engine/local-llm/engine-provider';
 import { getApiBaseUrl } from '@/constants/oauth';
 import { getSessionLifecycleManager, buildDetectionBundle, runMemoryWriteBack, type PipelineResultForMemory } from '@/lib/pipeline/memory/memoryIntegration';
 import { greetingV4, type GreetingV4Input } from '@/lib/features/greetingV4/greetingV4';
@@ -56,7 +57,7 @@ import { triggerBackpackAnalysisIfNeeded } from '@/lib/backpack-analysis/schema-
 import { useTranslation } from '@/lib/i18n';
 import { LocalDeviceTimeService } from "@/lib/core/time";
 import { getTodayBlocks } from '@/lib/features/dayStructure';
-
+import { extractBalkmetafoorItemsFromResponse } from '@/lib/features/balkmetafoor/balkmetafoorChatFeed';
 const BACKPACK_KEY = '@recofree_backpack';
 const USERDAT_KEY = '@recofree_userdat';
 // PENDING_CLOSE_KEY removed — no longer needed (one path to session-end, no fallback markers)
@@ -114,8 +115,12 @@ function ChatScreenInner() {
 
   // ── Initialize GptSignalEngine once at mount ──────────────────────────
   useEffect(() => {
-    const url = getApiBaseUrl();
-    if (url) initGptSignalEngine(url);
+    // DISABLED: GptSignalEngine was making 4 extra OpenAI API calls per message
+    // (detectSignals, scoreRelevance, summarizeContext, detectRelapseIntent).
+    // The deterministic engine + nano interpret handle all this locally.
+    // Relapse detection uses the deterministic fallback (NL/EN/FR markers).
+    // const url = getApiBaseUrl();
+    // if (url) initGptSignalEngine(url);
     // Register diary key with session memory cache (backpack/userdat registered in user-context)
     SessionMemoryCache.registerKeys([DIARY_KEY]);
   }, []);
@@ -973,6 +978,71 @@ function ChatScreenInner() {
       } catch (memErr) {
         // Memory write-back is non-critical — log and continue
         console.warn('[MemoryWriteBack] Error (non-critical):', memErr);
+      }
+      // ── Balkmetafoor Auto-Init + Chat Feed (PAAL01) ──────────────────────
+      // When PAAL01 activates with FIRST_USE_INTRODUCTION, auto-initialize balkmetafoor.
+      // When PAAL01 activates with QUALITATIVE reflection, parse draaglast/draagkracht from AI response.
+      try {
+        if (result.paal01Activation && state.userType === 'elias') {
+          const currentBp = getBackpack();
+          const currentBalk = currentBp?.balkmetafoor ?? { initialized: false, initializedAt: null, lastUpdatedAt: null, draaglast: [], draagkracht: [] };
+          // Auto-init on first use
+          if (result.paal01Activation.triggerContext === 'FIRST_USE_INTRODUCTION' && !currentBalk.initialized) {
+            // Direct backpack update via SessionMemoryCache (hooks not callable here)
+            const updatedBalk = {
+              ...currentBalk,
+              initialized: true,
+              initializedAt: LocalDeviceTimeService.now().utcIso,
+              lastUpdatedAt: LocalDeviceTimeService.now().utcIso,
+            };
+            // Update backpack directly via user-context dispatch
+            if (currentBp) {
+              const updatedBackpack = { ...currentBp, balkmetafoor: updatedBalk };
+              await SessionMemoryCache.set(BACKPACK_KEY, JSON.stringify(updatedBackpack));
+              console.log('[Balkmetafoor] Auto-initialized via PAAL01 FIRST_USE_INTRODUCTION');
+            }
+          }
+          // Chat feed: extract draaglast/draagkracht items from AI response
+          if (result.paal01Activation.triggerContext === 'STABLE_REFLECTION' ||
+              result.paal01Activation.triggerContext === 'PERIODIC_UPDATE_INVITATION') {
+            const aiText = result.response ?? '';
+            const balkItems = extractBalkmetafoorItemsFromResponse(aiText);
+            if (balkItems.draaglast.length > 0 || balkItems.draagkracht.length > 0) {
+              const now = LocalDeviceTimeService.now();
+              const updatedBalk = {
+                ...currentBalk,
+                initialized: true,
+                initializedAt: currentBalk.initializedAt || now.utcIso,
+                lastUpdatedAt: now.utcIso,
+                draaglast: [
+                  ...currentBalk.draaglast,
+                  ...balkItems.draaglast.map((text, i) => ({
+                    id: `dl_paal01_${now.epochMs}_${i}`,
+                    text,
+                    addedAt: now.utcIso,
+                    sourceModuleId: 'PAAL01' as const,
+                  })),
+                ],
+                draagkracht: [
+                  ...currentBalk.draagkracht,
+                  ...balkItems.draagkracht.map((text, i) => ({
+                    id: `dk_paal01_${now.epochMs}_${i}`,
+                    text,
+                    addedAt: now.utcIso,
+                    sourceModuleId: 'PAAL01' as const,
+                  })),
+                ],
+              };
+              if (currentBp) {
+                const updatedBackpack = { ...currentBp, balkmetafoor: updatedBalk };
+                await SessionMemoryCache.set(BACKPACK_KEY, JSON.stringify(updatedBackpack));
+                console.log(`[Balkmetafoor] Chat feed: +${balkItems.draaglast.length} draaglast, +${balkItems.draagkracht.length} draagkracht`);
+              }
+            }
+          }
+        }
+      } catch (balkErr) {
+        console.warn('[Balkmetafoor] Auto-init/feed error (non-critical):', balkErr);
       }
     } catch (error) {
       console.error('Pipeline error:', error);

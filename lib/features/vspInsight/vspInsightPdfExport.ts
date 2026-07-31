@@ -38,7 +38,7 @@ export interface VspPdfSection {
  * This function prepares the content structure.
  */
 export function buildPdfSections(input: VspPdfExportInput): VspPdfSection[] {
-  const { persona, profile, includeRawUserSelectedExamples, selectedExampleIds } = input;
+  const { persona, profile, includeRawUserSelectedExamples, selectedExampleIds, vspSection } = input;
   const personaLabel = persona === "elias" ? "Elias" : "Kim";
   const sections: VspPdfSection[] = [];
 
@@ -84,6 +84,55 @@ export function buildPdfSections(input: VspPdfExportInput): VspPdfSection[] {
       `Waargenomen vroege signalen: ${profile.observedEarlySigns.length}`,
     ].join("\n"),
   });
+
+  // ─── Ingevuld Veiligheidsplan (user-written) ─────────────────────────────
+  if (vspSection) {
+    const vspLines: string[] = [];
+    const zoneNames: Array<{ key: keyof typeof vspSection.zones; label: string; emoji: string }> = [
+      { key: 'green', label: 'Groen (veilig)', emoji: '🟢' },
+      { key: 'yellow', label: 'Geel (waakzaam)', emoji: '🟡' },
+      { key: 'orange', label: 'Oranje (risico)', emoji: '🟠' },
+      { key: 'red', label: 'Rood (gevaar)', emoji: '🔴' },
+      { key: 'purple', label: 'Paars (crisis)', emoji: '🟣' },
+    ];
+    for (const z of zoneNames) {
+      const zone = vspSection.zones[z.key];
+      if (zone.signals || zone.whatHelps || zone.anchorSentence) {
+        vspLines.push(`${z.emoji} ${z.label}`);
+        if (zone.signals) vspLines.push(`  Signalen: ${zone.signals}`);
+        if (zone.whatHelps) vspLines.push(`  Wat helpt: ${zone.whatHelps}`);
+        if (zone.anchorSentence) vspLines.push(`  Kernzin: "${zone.anchorSentence}"`);
+        vspLines.push('');
+      }
+    }
+    if (vspSection.triggers.length > 0) {
+      vspLines.push('Triggers & Tegenzinnen:');
+      for (const t of vspSection.triggers) {
+        vspLines.push(`  • ${t.trigger} → ${t.counterThought}`);
+      }
+      vspLines.push('');
+    }
+    if (vspSection.recoveryRules.length > 0) {
+      vspLines.push('Herstelregels:');
+      for (const r of vspSection.recoveryRules) {
+        vspLines.push(`  • ${r}`);
+      }
+      vspLines.push('');
+    }
+    if (vspSection.mainAnchorSentence) {
+      vspLines.push(`Hoofdkernzin: "${vspSection.mainAnchorSentence}"`);
+      vspLines.push('');
+    }
+    if (vspSection.lastUpdated) {
+      vspLines.push(`Laatst bijgewerkt: ${formatDate(vspSection.lastUpdated)}`);
+    }
+    if (vspLines.length > 0) {
+      sections.push({
+        title: 'Mijn Veiligheidsplan (Ingevuld)',
+        content: vspLines.join('\n'),
+      });
+    }
+  }
 
   // ─── Self-Reported Early Signs ────────────────────────────────────────────
   if (profile.selfReportedEarlySigns.length > 0) {
@@ -177,7 +226,7 @@ export function buildPdfPlainText(input: VspPdfExportInput): string {
   const sections = buildPdfSections(input);
   const lines: string[] = [
     "═══════════════════════════════════════════════════════════",
-    "  RECOFREE — VSP INSIGHT OVERZICHT",
+    "  RECOFREE — VEILIGHEIDSPLAN & INSIGHT OVERZICHT",
     "═══════════════════════════════════════════════════════════",
     "",
   ];
