@@ -2,7 +2,7 @@
  * KERP01 — Eigen Regie Plan Wizard
  *
  * Multi-step wizard that guides the user through building their plan:
- * 1. Intro + source selection (manual / from backpack)
+ * 1. Intro + source selection (manual / AI-generated from backpack)
  * 2. Per-zone: signals, body signals, thoughts, behaviour
  * 3. Per-zone: what helps, boundary actions
  * 4. Per-zone: anchor sentence
@@ -12,13 +12,14 @@
  */
 
 import { useState, useCallback } from 'react';
-import { Text, View, ScrollView, TextInput, Pressable, Platform, StyleSheet, KeyboardAvoidingView } from 'react-native';
+import { Text, View, ScrollView, TextInput, Pressable, Platform, StyleSheet, KeyboardAvoidingView, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ScreenContainer } from '@/components/screen-container';
 import { useUser } from '@/lib/user-context';
 import { colors as dc } from '@/constants/design';
 import type { EigenRegiePlan, EigenRegieZoneId, EigenRegieZoneEntry, EigenRegieTrigger } from '@/lib/engine/kim/kerp01-types';
 import { DEFAULT_EIGEN_REGIE_PLAN } from '@/lib/engine/kim/kerp01-types';
+import { callGenerateEigenRegiePlan, convertProposalToPlan } from '@/lib/engine/kim/kerp01-generate-client';
 
 const ZONES: { id: EigenRegieZoneId; color: string; emoji: string; label: string; description: string }[] = [
   { id: 'donkergroen', color: '#16A34A', emoji: '🌿', label: 'Vrij van verslaving', description: 'Stabiel, geen drang. Hoe voelt dat voor jou?' },
@@ -54,11 +55,16 @@ const STEPS = getStepSequence();
 
 export default function WizardScreen() {
   const router = useRouter();
-  const { updateEigenRegiePlan, getEigenRegiePlan } = useUser();
+  const { updateEigenRegiePlan, getEigenRegiePlan, getBackpack } = useUser();
   const existingPlan = getEigenRegiePlan();
 
   const [stepIndex, setStepIndex] = useState(0);
   const [plan, setPlan] = useState<EigenRegiePlan>(existingPlan ?? { ...DEFAULT_EIGEN_REGIE_PLAN });
+
+  // AI generation state
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generateError, setGenerateError] = useState<string | null>(null);
+  const [isAiGenerated, setIsAiGenerated] = useState(false);
 
   // Temp state for current inputs
   const [tempSignals, setTempSignals] = useState('');
@@ -120,6 +126,101 @@ export default function WizardScreen() {
     setPlan(prev => ({ ...prev, zones: { ...prev.zones, [zoneId]: updated } }));
   }, [plan, tempAnchor]);
 
+  // ─── AI Generation ──────────────────────────────────────────────
+  const handleAIGenerate = useCallback(async () => {
+    const backpack = getBackpack();
+    if (!backpack?.kimBackpack) {
+      setGenerateError('Geen levensverhaal gevonden. Vul eerst je rugzak in.');
+      return;
+    }
+
+    const kimSections = backpack.kimBackpack;
+    const lifeStorySections = [
+      { title: 'Mijn verhaal', content: kimSections.my_story || '' },
+      { title: 'De relatie', content: kimSections.the_relationship || '' },
+      { title: 'De impact', content: kimSections.the_impact || '' },
+      { title: 'Mijn grenzen', content: kimSections.my_boundaries || '' },
+      { title: 'Mijn kracht', content: kimSections.my_strength || '' },
+    ].filter(s => s.content.trim().length > 0);
+
+    if (lifeStorySections.length === 0) {
+      setGenerateError('Geen levensverhaal gevonden. Vul eerst je rugzak in.');
+      return;
+    }
+
+    // Gather known patterns from extracted entities if available
+    const knownTriggers: string[] = [];
+    const knownPatterns: string[] = [];
+
+    const entities = (backpack as unknown as Record<string, unknown>)['extractedEntities'] as
+      | { patterns?: Array<{ description: string }>; events?: Array<{ description: string; isTriggerSource?: boolean }> }
+      | undefined;
+
+    if (entities?.patterns) {
+      for (const p of entities.patterns) {
+        knownPatterns.push(p.description);
+      }
+    }
+    if (entities?.events) {
+      for (const e of entities.events) {
+        if (e.isTriggerSource) {
+          knownTriggers.push(e.description);
+        }
+      }
+    }
+
+    setIsGenerating(true);
+    setGenerateError(null);
+
+    if (Platform.OS !== 'web') {
+      const Haptics = require('expo-haptics');
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+
+    try {
+      const result = await callGenerateEigenRegiePlan({
+        lifeStorySections,
+        knownTriggers: knownTriggers.length > 0 ? knownTriggers : undefined,
+        knownPatterns: knownPatterns.length > 0 ? knownPatterns : undefined,
+        intakeContext: backpack.intakeContext?.initialContext || undefined,
+        userName: undefined, // Privacy: don't send name to LLM
+        language: 'nl',
+      });
+
+      if (!result.success) {
+        setGenerateError(result.error || 'Generatie mislukt. Probeer opnieuw.');
+        return;
+      }
+
+      const proposedPlan = convertProposalToPlan(result);
+      if (!proposedPlan || !proposedPlan.zones) {
+        setGenerateError('AI gaf een onvolledig plan terug. Probeer opnieuw of vul handmatig in.');
+        return;
+      }
+
+      // Merge AI proposals into the plan state
+      setPlan(prev => ({
+        ...prev,
+        zones: proposedPlan.zones ?? prev.zones,
+        triggers: proposedPlan.triggers ?? prev.triggers,
+        boundaryRules: proposedPlan.boundaryRules ?? prev.boundaryRules,
+        mainAnchorSentence: proposedPlan.mainAnchorSentence ?? prev.mainAnchorSentence,
+      }));
+      setTempMainAnchor(proposedPlan.mainAnchorSentence ?? '');
+      setIsAiGenerated(true);
+
+      if (Platform.OS !== 'web') {
+        const Haptics = require('expo-haptics');
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setGenerateError(`Fout: ${msg}`);
+    } finally {
+      setIsGenerating(false);
+    }
+  }, [getBackpack]);
+
   const handleNext = useCallback(() => {
     // Save current step data
     if (currentStep.type === 'zone_signals') saveZoneSignals(currentStep.zoneIndex);
@@ -163,8 +264,10 @@ export default function WizardScreen() {
       mainAnchorSentence: tempMainAnchor.trim(),
       lastUpdated: new Date().toISOString(),
       source: {
-        createdFrom: 'wizard',
-        usedBackpackSections: [],
+        createdFrom: isAiGenerated ? 'life_story_wizard' : 'wizard',
+        usedBackpackSections: isAiGenerated
+          ? ['my_story', 'the_relationship', 'the_impact', 'my_boundaries', 'my_strength']
+          : [],
         generatedAt: new Date().toISOString(),
         userReviewed: true,
       },
@@ -175,7 +278,7 @@ export default function WizardScreen() {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     }
     router.back();
-  }, [plan, tempMainAnchor, updateEigenRegiePlan, router]);
+  }, [plan, tempMainAnchor, updateEigenRegiePlan, router, isAiGenerated]);
 
   const addTrigger = useCallback(() => {
     const text = tempTrigger.trim();
@@ -211,6 +314,54 @@ export default function WizardScreen() {
         • Een ankerzin die je kracht geeft{'\n\n'}
         Je kunt altijd later nog aanpassen.
       </Text>
+
+      {/* AI Generation Button */}
+      <View style={styles.aiSection}>
+        <Pressable
+          onPress={handleAIGenerate}
+          disabled={isGenerating}
+          style={({ pressed }) => [
+            styles.aiButton,
+            { opacity: pressed || isGenerating ? 0.7 : 1 },
+          ]}
+        >
+          {isGenerating ? (
+            <View style={styles.aiButtonContent}>
+              <ActivityIndicator size="small" color="#fff" />
+              <Text style={styles.aiButtonText}>Plan wordt gegenereerd...</Text>
+            </View>
+          ) : (
+            <View style={styles.aiButtonContent}>
+              <Text style={{ fontSize: 20 }}>✨</Text>
+              <Text style={styles.aiButtonText}>AI-genereer plan vanuit rugzak</Text>
+            </View>
+          )}
+        </Pressable>
+        <Text style={[styles.aiHint, { color: dc.textTertiary }]}>
+          Genereert een voorstel op basis van je levensverhaal. Je kunt alles nog aanpassen.
+        </Text>
+        {generateError && (
+          <Text style={styles.aiError}>{generateError}</Text>
+        )}
+        {isAiGenerated && !generateError && (
+          <View style={styles.aiSuccessBanner}>
+            <Text style={styles.aiSuccessText}>
+              ✓ Plan gegenereerd — controleer en pas aan in de volgende stappen
+            </Text>
+          </View>
+        )}
+      </View>
+
+      {/* Divider */}
+      <View style={styles.divider}>
+        <View style={styles.dividerLine} />
+        <Text style={[styles.dividerText, { color: dc.textTertiary }]}>of</Text>
+        <View style={styles.dividerLine} />
+      </View>
+
+      <Text style={[styles.manualHint, { color: dc.textSecondary }]}>
+        Druk op "Volgende" om handmatig stap voor stap in te vullen.
+      </Text>
     </View>
   );
 
@@ -222,6 +373,11 @@ export default function WizardScreen() {
           <Text style={{ fontSize: 24 }}>{zone.emoji}</Text>
           <Text style={styles.zoneBadgeText}>{zone.label}</Text>
         </View>
+        {isAiGenerated && (
+          <View style={styles.aiNotice}>
+            <Text style={styles.aiNoticeText}>Gegenereerd door AI — controleer en pas aan</Text>
+          </View>
+        )}
         <Text style={[styles.stepDescription, { color: dc.textSecondary }]}>{zone.description}</Text>
         <Text style={[styles.fieldLabel, { color: dc.textPrimary }]}>📡 Signalen (één per regel)</Text>
         <TextInput
@@ -271,6 +427,11 @@ export default function WizardScreen() {
           <Text style={{ fontSize: 24 }}>{zone.emoji}</Text>
           <Text style={styles.zoneBadgeText}>{zone.label} — Wat helpt</Text>
         </View>
+        {isAiGenerated && (
+          <View style={styles.aiNotice}>
+            <Text style={styles.aiNoticeText}>Gegenereerd door AI — controleer en pas aan</Text>
+          </View>
+        )}
         <Text style={[styles.fieldLabel, { color: dc.textPrimary }]}>💚 Wat helpt (één per regel)</Text>
         <TextInput
           value={tempWhatHelps}
@@ -301,6 +462,11 @@ export default function WizardScreen() {
           <Text style={{ fontSize: 24 }}>{zone.emoji}</Text>
           <Text style={styles.zoneBadgeText}>{zone.label} — Ankerzin</Text>
         </View>
+        {isAiGenerated && (
+          <View style={styles.aiNotice}>
+            <Text style={styles.aiNoticeText}>Gegenereerd door AI — controleer en pas aan</Text>
+          </View>
+        )}
         <Text style={[styles.stepDescription, { color: dc.textSecondary }]}>
           Eén zin die je herinnert aan je kracht als je in deze zone bent.
         </Text>
@@ -319,6 +485,11 @@ export default function WizardScreen() {
   const renderTriggers = () => (
     <View style={styles.stepContent}>
       <Text style={[styles.stepTitle, { color: dc.textPrimary }]}>🎯 Triggers & Grensregels</Text>
+      {isAiGenerated && (
+        <View style={styles.aiNotice}>
+          <Text style={styles.aiNoticeText}>Gegenereerd door AI — controleer en pas aan</Text>
+        </View>
+      )}
       <Text style={[styles.stepDescription, { color: dc.textSecondary }]}>
         Wat trekt je richting oud gedrag? En welke afspraken maak je met jezelf?
       </Text>
@@ -379,6 +550,11 @@ export default function WizardScreen() {
     <View style={styles.stepContent}>
       <Text style={[styles.stepEmoji, { fontSize: 48 }]}>⚓</Text>
       <Text style={[styles.stepTitle, { color: dc.textPrimary }]}>Jouw hoofdankerzin</Text>
+      {isAiGenerated && (
+        <View style={styles.aiNotice}>
+          <Text style={styles.aiNoticeText}>Gegenereerd door AI — controleer en pas aan</Text>
+        </View>
+      )}
       <Text style={[styles.stepDescription, { color: dc.textSecondary }]}>
         Eén zin die alles samenvat. Je kompas als het moeilijk wordt.
       </Text>
@@ -398,7 +574,7 @@ export default function WizardScreen() {
       <Text style={[styles.stepEmoji, { fontSize: 48 }]}>✅</Text>
       <Text style={[styles.stepTitle, { color: dc.textPrimary }]}>Klaar!</Text>
       <Text style={[styles.stepDescription, { color: dc.textSecondary }]}>
-        Je Eigen Regie Plan is opgebouwd. Je kunt het altijd later aanpassen.
+        Je Eigen Regie Plan is opgebouwd.{isAiGenerated ? ' AI heeft je geholpen — je hebt alles kunnen controleren.' : ''} Je kunt het altijd later aanpassen.
       </Text>
       {plan.mainAnchorSentence || tempMainAnchor ? (
         <View style={[styles.reviewAnchor, { backgroundColor: dc.surfaceKim }]}>
@@ -500,4 +676,19 @@ const styles = StyleSheet.create({
   navBtnText: { fontSize: 15, fontWeight: '500' },
   navBtnPrimary: { paddingVertical: 12, paddingHorizontal: 24, borderRadius: 10 },
   navBtnPrimaryText: { color: '#fff', fontSize: 15, fontWeight: '600' },
+  // AI generation styles
+  aiSection: { marginTop: 24, marginBottom: 8 },
+  aiButton: { backgroundColor: '#6366F1', borderRadius: 12, paddingVertical: 14, paddingHorizontal: 20, alignItems: 'center' },
+  aiButtonContent: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  aiButtonText: { color: '#fff', fontSize: 15, fontWeight: '600' },
+  aiHint: { fontSize: 12, textAlign: 'center', marginTop: 8 },
+  aiError: { color: '#EF4444', fontSize: 13, textAlign: 'center', marginTop: 8 },
+  aiSuccessBanner: { backgroundColor: '#ECFDF5', borderRadius: 8, padding: 12, marginTop: 10 },
+  aiSuccessText: { color: '#059669', fontSize: 13, fontWeight: '500', textAlign: 'center' },
+  aiNotice: { backgroundColor: '#EEF2FF', borderRadius: 8, padding: 8, marginBottom: 12 },
+  aiNoticeText: { color: '#4F46E5', fontSize: 12, fontWeight: '500', textAlign: 'center' },
+  divider: { flexDirection: 'row', alignItems: 'center', marginVertical: 20, gap: 12 },
+  dividerLine: { flex: 1, height: 1, backgroundColor: '#e0e0e0' },
+  dividerText: { fontSize: 13 },
+  manualHint: { fontSize: 13, textAlign: 'center' },
 });

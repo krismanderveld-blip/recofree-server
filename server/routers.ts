@@ -7,6 +7,7 @@ import { chatInputSchema, generateAIResponse, type ChatRequestInput } from "./ai
 import { extractionInputSchema, extractEntitiesFromBackpack } from "./backpack-extractor";
 import { analyzeBackpackInputSchema, analyzeBackpackForSchemas } from "./backpack-analyzer";
 import { engineProcessInputSchema, processEngineRequest } from "./engine-process";
+import { kerp01GenerateInputSchema, generateEigenRegiePlan } from "./kerp01-generate";
 
 export const appRouter = router({
   // if you need to use socket.io, read and register route in server/_core/index.ts, all api should start with '/api/' so that the gateway can route correctly
@@ -80,6 +81,24 @@ export const appRouter = router({
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : String(error);
           console.error(`[ROUTER ERROR] engineProcess:`, errorMessage);
+          throw new TRPCError({
+            code: 'INTERNAL_SERVER_ERROR',
+            message: errorMessage,
+          });
+        }
+      }),
+
+    // KERP01 — AI-powered Eigen Regie Plan generation from life story
+    generateEigenRegiePlan: publicProcedure
+      .input(kerp01GenerateInputSchema)
+      .mutation(async ({ input }) => {
+        console.log('[ROUTER] generateEigenRegiePlan for:', input.userName);
+        try {
+          const result = await generateEigenRegiePlan(input);
+          return result;
+        } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          console.error(`[ROUTER ERROR] generateEigenRegiePlan:`, errorMessage);
           throw new TRPCError({
             code: 'INTERNAL_SERVER_ERROR',
             message: errorMessage,

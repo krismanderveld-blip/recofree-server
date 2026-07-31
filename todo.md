@@ -2502,3 +2502,17 @@
 - [x] KERP01: Inject eigenRegiePlanContext into GPT prompt builder (server-side)
 - [x] KERP01: Build text export (share with therapist)
 - [x] KERP01: Fix TS errors and run tests (0 TS errors, 1616 tests passing)
+
+## Phase 4: AI Wizard + Notification Reminder
+
+- [x] AI Wizard: Read backend LLM docs and understand invokeLLM pattern
+- [x] AI Wizard: Create server endpoint (server/kerp01-generate.ts) that generates zone proposals from life story via invokeLLM
+- [x] AI Wizard: Create client-side caller (lib/engine/kim/kerp01-generate-client.ts) following backpack-extractor pattern
+- [x] AI Wizard: Update wizard UI with "AI-genereer plan vanuit rugzak" button on intro step
+- [x] AI Wizard: Show AI-generated proposals pre-filled in wizard with "Gegenereerd door AI — controleer en pas aan" notice
+- [x] AI Wizard: User can review/edit all AI proposals in normal wizard flow before saving
+- [x] Notification: Create notification service (lib/features/eigenRegie/notification-service.ts) using expo-notifications
+- [x] Notification: Daily trigger at configurable time (default 20:00) with 3-day inactivity threshold
+- [x] Notification: Add reminder toggle to eigen-regie plan overview screen
+- [x] Notification: Record last check timestamp on plan screen open
+- [x] Fix TS errors (0 errors) and run tests (1616 passed, 0 failed)

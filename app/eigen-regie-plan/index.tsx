@@ -6,7 +6,7 @@
  * Includes access to wizard and export.
  */
 
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState, useEffect } from 'react';
 import { Text, View, ScrollView, Pressable, Alert, Platform, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ScreenContainer } from '@/components/screen-container';
@@ -17,6 +17,13 @@ import { HomeButton } from '@/components/home-button';
 import type { EigenRegieZoneId, EigenRegiePlan } from '@/lib/engine/kim/kerp01-types';
 import { DEFAULT_EIGEN_REGIE_PLAN } from '@/lib/engine/kim/kerp01-types';
 import { isPlanFilled } from '@/lib/engine/kim/kerp01-storage';
+import {
+  loadSettings as loadNotifSettings,
+  enableReminder,
+  disableReminder,
+  recordEigenRegieCheck,
+  type EigenRegieNotificationSettings,
+} from '@/lib/features/eigenRegie/notification-service';
 
 const ZONE_CONFIG: { id: EigenRegieZoneId; color: string; emoji: string; shortLabel: string }[] = [
   { id: 'donkergroen', color: '#16A34A', emoji: '🌿', shortLabel: 'Vrij' },
@@ -32,6 +39,29 @@ export default function EigenRegiePlanScreen() {
   const router = useRouter();
   const plan = getEigenRegiePlan() ?? DEFAULT_EIGEN_REGIE_PLAN;
   const filled = isPlanFilled(plan);
+
+  // Notification reminder state
+  const [reminderEnabled, setReminderEnabled] = useState(false);
+
+  useEffect(() => {
+    loadNotifSettings().then(s => setReminderEnabled(s.enabled));
+    // Record that user opened the plan (counts as a check)
+    recordEigenRegieCheck();
+  }, []);
+
+  const toggleReminder = useCallback(async () => {
+    if (reminderEnabled) {
+      await disableReminder();
+      setReminderEnabled(false);
+    } else {
+      await enableReminder(20, 0, 3);
+      setReminderEnabled(true);
+      if (Platform.OS !== 'web') {
+        const Haptics = require('expo-haptics');
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      }
+    }
+  }, [reminderEnabled]);
 
   const handleZonePress = useCallback((zoneId: EigenRegieZoneId) => {
     router.push(`/eigen-regie-plan/zone?id=${zoneId}` as any);
@@ -149,6 +179,27 @@ export default function EigenRegiePlanScreen() {
           </Text>
         </Pressable>
 
+        {/* Notification Reminder */}
+        <Pressable
+          onPress={toggleReminder}
+          style={({ pressed }) => [styles.reminderCard, { opacity: pressed ? 0.9 : 1 }]}
+        >
+          <View style={styles.reminderContent}>
+            <Text style={{ fontSize: 20 }}>{reminderEnabled ? '🔔' : '🔕'}</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.reminderTitle, { color: dc.textPrimary }]}>
+                Dagelijkse herinnering
+              </Text>
+              <Text style={[styles.reminderSubtitle, { color: dc.textTertiary }]}>
+                {reminderEnabled ? 'Actief — elke dag om 20:00 als je 3 dagen niet checkt' : 'Uit — tik om in te schakelen'}
+              </Text>
+            </View>
+            <View style={[styles.reminderToggle, { backgroundColor: reminderEnabled ? '#16A34A' : '#e0e0e0' }]}>
+              <View style={[styles.reminderToggleKnob, { alignSelf: reminderEnabled ? 'flex-end' : 'flex-start' }]} />
+            </View>
+          </View>
+        </Pressable>
+
         {/* Action Buttons */}
         <View style={styles.actions}>
           <Pressable
@@ -203,4 +254,10 @@ const styles = StyleSheet.create({
   primaryButtonText: { color: '#fff', fontSize: 15, fontWeight: '600' },
   secondaryButton: { paddingVertical: 14, borderRadius: 12, alignItems: 'center', borderWidth: 1.5 },
   secondaryButtonText: { fontSize: 15, fontWeight: '600' },
+  reminderCard: { backgroundColor: '#fff', borderRadius: 12, padding: 14, marginBottom: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 3, elevation: 1 },
+  reminderContent: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  reminderTitle: { fontSize: 14, fontWeight: '600' },
+  reminderSubtitle: { fontSize: 12, marginTop: 2 },
+  reminderToggle: { width: 44, height: 24, borderRadius: 12, padding: 2, justifyContent: 'center' },
+  reminderToggleKnob: { width: 20, height: 20, borderRadius: 10, backgroundColor: '#fff' },
 });
