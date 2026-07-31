@@ -1246,9 +1246,20 @@ function buildSelectiveRelevanceBlock(
     if (relapseEvent.context) {
       parts.push(`  Context: "${relapseEvent.context}"`);
     }
+    // Inject prevention plan if available
+    const preventionPlan = (input as any).preventionPlan ?? (input as any).userDatSummary?.preventionPlan ?? null;
+    if (preventionPlan) {
+      parts.push(`  \ud83d\udccb TERUGVAL-PREVENTIEPLAN van de gebruiker:`);
+      if (preventionPlan.warningSigns) parts.push(`    \u2022 Waarschuwingssignalen: ${preventionPlan.warningSigns}`);
+      if (preventionPlan.copingStrategies) parts.push(`    \u2022 Wat helpt: ${preventionPlan.copingStrategies}`);
+      if (preventionPlan.supportContacts) parts.push(`    \u2022 Steunpersonen: ${preventionPlan.supportContacts}`);
+      if (preventionPlan.safeActivities) parts.push(`    \u2022 Veilige activiteiten: ${preventionPlan.safeActivities}`);
+      if (preventionPlan.motivation) parts.push(`    \u2022 Motivatie: ${preventionPlan.motivation}`);
+      parts.push(`  \u2192 Gebruik dit plan om de gebruiker te herinneren aan eigen kracht en hulpbronnen.`);
+    }
   }
 
-  // Eigen Regie (Kim only — replaces stageOfChange for Kim users)
+  // Eigen Regie (Kim only \u2014 replaces stageOfChange for Kim users)
   if (conditional.eigenRegieContext) {
     const er = conditional.eigenRegieContext;
     parts.push(`EIGEN REGIE ZONE: ${er.zone} (gebruiker: ${er.userInput}/100, engine: ${er.engineScore}/100)`);

@@ -9,7 +9,10 @@ import {
   Platform,
   Modal,
   ScrollView,
+  Alert,
+  TouchableOpacity,
 } from 'react-native';
+import { exportDiary } from '@/lib/features/diary-export/diary-export';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SessionMemoryCache } from '@/lib/crypto/session-memory-cache';
 import { ScreenContainer } from '@/components/screen-container';
@@ -300,8 +303,29 @@ export default function DiaryScreen() {
 
   return (
     <ScreenContainer containerClassName="bg-backgroundWarm">
-      <View style={{ paddingHorizontal: spacing.screenHorizontal, paddingTop: spacing.screenTop }}>
+      <View style={{ paddingHorizontal: spacing.screenHorizontal, paddingTop: spacing.screenTop, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
         <HomeButton />
+        {entries.length > 0 && (
+          <TouchableOpacity
+            onPress={async () => {
+              const userName = state.backpack?.name || 'Gebruiker';
+              const result = await exportDiary({
+                entries: filteredEntries.length > 0 ? filteredEntries : entries,
+                userName,
+                includeGratitude: true,
+                format: 'html',
+              });
+              if (result.success) {
+                if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+              } else {
+                Alert.alert(t('diary.export.error_title'), result.error || t('diary.export.error_message'));
+              }
+            }}
+            style={{ paddingHorizontal: 12, paddingVertical: 6, backgroundColor: colors.primary + '15', borderRadius: 8 }}
+          >
+            <Text style={{ fontSize: 13, fontWeight: '600', color: colors.primary }}>{t('diary.export.button')}</Text>
+          </TouchableOpacity>
+        )}
       </View>
       {/* Tab Selector */}
       <TabSelector activeTab={activeTab} onTabChange={setActiveTab} colors={colors} />

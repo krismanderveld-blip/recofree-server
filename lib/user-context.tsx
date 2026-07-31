@@ -115,6 +115,8 @@ interface UserContextValue {
   getEigenRegieHistory: () => import('./ai/types').EigenRegieEntry[];
   /** Record a relapse event (herval resets sobriety, terugval preserves it). Elias only. */
   recordRelapseEvent: (type: 'herval' | 'terugval', context?: string) => Promise<void>;
+  /** Update the terugval-preventieplan (Elias only). */
+  updatePreventionPlan: (plan: { warningSigns: string; copingStrategies: string; supportContacts: string; safeActivities: string; motivation: string }) => Promise<void>;
   /** Update sobriety date (Elias users only). */
   updateSobrietyDate: (date: string | null) => Promise<void>;
   /** Update last milestone shown date. */
@@ -828,6 +830,16 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     await persistUserDat(updatedUserDat);
   }, [state.userDat]);
 
+  const updatePreventionPlan = useCallback(async (plan: { warningSigns: string; copingStrategies: string; supportContacts: string; safeActivities: string; motivation: string }) => {
+    if (!state.userDat) return;
+    const updatedUserDat: UserDat = {
+      ...state.userDat,
+      preventionPlan: { ...plan, updatedAt: LocalDeviceTimeService.now().utcIso },
+    };
+    dispatch({ type: 'UPDATE_USERDAT', payload: updatedUserDat });
+    await persistUserDat(updatedUserDat);
+  }, [state.userDat]);
+
   const updateSobrietyDate = useCallback(async (date: string | null) => {
     if (!state.userDat) return;
     const updatedUserDat: UserDat = { ...state.userDat, sobrietyDate: date };
@@ -1095,6 +1107,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         updateEigenRegie,
         getEigenRegieHistory,
         recordRelapseEvent,
+        updatePreventionPlan,
         updateSobrietyDate,
         updateMilestoneShown,
         acceptGdpr,

@@ -565,6 +565,7 @@ export class OpenAIProvider implements AIProvider {
           stageOfChange: gptPayload.stageOfChange,
           // Relapse/slip signal (Elias only — from userDatSummary)
           recentRelapseEvent: (gptPayload as any).userDatSummary?.recentRelapseEvent ?? null,
+          preventionPlan: (gptPayload as any).userDatSummary?.preventionPlan ?? null,
           // Eigen Regie (Kim only — zone, meaning, impact directives)
           eigenRegieContext: context.eigenRegieContext ?? null,
 
@@ -721,6 +722,7 @@ export class OpenAIProvider implements AIProvider {
                     recentDiary: gptPayload.recentDiary,
           stageOfChange: gptPayload.stageOfChange,
           recentRelapseEvent: (gptPayload as any).userDatSummary?.recentRelapseEvent ?? null,
+          preventionPlan: (gptPayload as any).userDatSummary?.preventionPlan ?? null,
         };
         console.log('[OpenAIProvider] SESSION_INIT: Full payload sent + cached locally');
 

@@ -665,6 +665,21 @@ export interface UserDat {
     /** Session number when reported */
     sessionNumber: number;
   }>;
+  /** Terugval-preventieplan — user-filled relapse prevention plan */
+  preventionPlan?: {
+    /** Warning signs the user recognizes */
+    warningSigns: string;
+    /** Coping strategies that work for the user */
+    copingStrategies: string;
+    /** People to contact in crisis */
+    supportContacts: string;
+    /** Safe activities to do instead */
+    safeActivities: string;
+    /** Personal motivation / reasons to stay clean */
+    motivation: string;
+    /** Last updated timestamp */
+    updatedAt: string;
+  };
 }
 
 /** A record of a completed session's analysis */

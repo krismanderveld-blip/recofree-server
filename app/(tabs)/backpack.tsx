@@ -9,6 +9,7 @@ import {
   Platform,
 } from 'react-native';
 import { ScreenContainer } from '@/components/screen-container';
+import { PreventionPlan } from '@/components/prevention-plan';
 import { fixUnicode } from '@/lib/utils';
 import { useUser } from '@/lib/user-context';
 import type { LifePhaseId, LifePhaseSection, StageOfChange, KimBackpackSectionId } from '@/lib/ai/types';
@@ -50,7 +51,7 @@ const STAGE_COLORS: Record<StageOfChange, string> = {
 };
 
 export default function BackpackScreen() {
-  const { state, updateBackpackSection, updateKimBackpackSection, updateStageOfChange, updateVspSection, replaceBackpack, recordRelapseEvent } = useUser();
+  const { state, updateBackpackSection, updateKimBackpackSection, updateStageOfChange, updateVspSection, replaceBackpack, recordRelapseEvent, updatePreventionPlan } = useUser();
   const colors = useColors();
   const [expandedSection, setExpandedSection] = useState<LifePhaseId | KimBackpackSectionId | null>(null);
   const [editingSection, setEditingSection] = useState<LifePhaseId | KimBackpackSectionId | null>(null);
@@ -495,23 +496,57 @@ export default function BackpackScreen() {
                 </View>
               </View>
             </Pressable>
-            {/* Show last event if exists */}
+            {/* Herval-historie timeline */}
             {(() => {
-              const events = state.userDat?.relapseEvents ?? [];
-              const lastEvent = events.length > 0 ? events[events.length - 1] : null;
-              if (!lastEvent) return null;
-              const dateStr = lastEvent.timestamp.slice(0, 10);
+              const events = (state.userDat?.relapseEvents ?? []) as Array<{ type: string; timestamp: string; context?: string }>;
+              if (events.length === 0) return null;
+              const lastEvent = events[events.length - 1];
+              const daysSinceLast = Math.floor((Date.now() - new Date(lastEvent.timestamp).getTime()) / (24 * 60 * 60 * 1000));
               return (
-                <View style={{ marginTop: 8, paddingHorizontal: 4 }}>
-                  <Text style={{ fontSize: 12, color: colors.muted, fontStyle: 'italic' }}>
-                    {t('backpack.relapse.last_event')}: {lastEvent.type === 'herval'
-                      ? t('backpack.relapse.herval_recorded', { date: dateStr })
-                      : t('backpack.relapse.terugval_recorded', { date: dateStr })}
-                  </Text>
+                <View style={{ marginTop: 12, padding: 12, backgroundColor: colors.surface, borderRadius: 10, borderWidth: 1, borderColor: colors.border }}>
+                  {/* Days since last event badge */}
+                  <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
+                    <View style={{ backgroundColor: daysSinceLast > 30 ? colors.success + '20' : colors.warning + '20', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 }}>
+                      <Text style={{ fontSize: 13, fontWeight: '700', color: daysSinceLast > 30 ? colors.success : colors.warning }}>
+                        {daysSinceLast === 0 ? t('backpack.relapse.today') : t('backpack.relapse.days_since', { days: daysSinceLast })}
+                      </Text>
+                    </View>
+                    <Text style={{ fontSize: 12, color: colors.muted, marginLeft: 8 }}>
+                      {t('backpack.relapse.history_count', { count: events.length })}
+                    </Text>
+                  </View>
+                  {/* Timeline (last 5 events, newest first) */}
+                  {events.slice(-5).reverse().map((ev, idx) => {
+                    const dateStr = ev.timestamp.slice(0, 10);
+                    const isHerval = ev.type === 'herval';
+                    return (
+                      <View key={idx} style={{ flexDirection: 'row', alignItems: 'flex-start', marginBottom: idx < Math.min(events.length, 5) - 1 ? 8 : 0 }}>
+                        <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: isHerval ? colors.error : colors.warning, marginTop: 4, marginRight: 10 }} />
+                        <View style={{ flex: 1 }}>
+                          <Text style={{ fontSize: 13, fontWeight: '600', color: colors.foreground }}>
+                            {dateStr} — {isHerval ? t('backpack.relapse.herval_button') : t('backpack.relapse.terugval_button')}
+                          </Text>
+                          {ev.context ? (
+                            <Text style={{ fontSize: 12, color: colors.muted, marginTop: 2 }} numberOfLines={2}>
+                              {ev.context}
+                            </Text>
+                          ) : null}
+                        </View>
+                      </View>
+                    );
+                  })}
                 </View>
               );
             })()}
           </View>
+        )}
+
+        {/* Terugval-preventieplan */}
+        {!isKim && (
+          <PreventionPlan
+            plan={state.userDat?.preventionPlan}
+            onSave={updatePreventionPlan}
+          />
         )}
 
         {/* Backpack Wizard CTA */}

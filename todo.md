@@ -2416,3 +2416,15 @@
 - [x] Terugval: preserves trajectory + sobriety date, but sends signal to greeting (same as herval)
 - [x] Wire herval/terugval signals into greeting pipeline (sessionGreeting reads relapse events)
 - [x] Persist herval/terugval events in user.dat (timestamp, type, context)
+
+## Herval-historie + Dagboek Export + Preventieplan
+- [x] Herval-historie overzicht in backpack: timeline met datum, type (herval/terugval), context, en "X dagen sinds laatste event"
+- [x] Dagboek export als PDF/tekst: exporteer dagboek-entries met datum, mood, content voor therapeut-gesprekken (lokaal opslaan)
+- [x] Terugval-preventieplan in backpack: invulbaar plan dat automatisch wordt meegestuurd naar Elias bij herval/terugval melding
+
+## Bug: Missing i18n keys
+- [ ] Fix profile.notifications.* i18n keys not translated (section_title, status_active, active_help, test_button, toggle_off)
+
+## Backlog (voor later)
+- [ ] VSP export fix
+- [ ] Balkmetafoor functie

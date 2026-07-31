@@ -656,6 +656,7 @@ export async function processMessage(
             if (ageMs > 7 * 24 * 60 * 60 * 1000) return null;
             return { type: last.type, daysAgo: Math.floor(ageMs / (24 * 60 * 60 * 1000)), context: last.context ?? null };
           })(),
+          preventionPlan: (currentUserDat as any).preventionPlan ?? null,
         },
         usedModules: sessionBuffer?.usedModules ?? [],
         previousZoneScore: sessionBuffer?.currentZoneScore ?? 0,
@@ -4100,6 +4101,7 @@ export async function generateGreeting(
             if (ageMs > 7 * 24 * 60 * 60 * 1000) return null;
             return { type: last.type, daysAgo: Math.floor(ageMs / (24 * 60 * 60 * 1000)), context: last.context ?? null };
           })(),
+          preventionPlan: (currentUserDat as any).preventionPlan ?? null,
         } as any,
         usedModules: [],
         previousZoneScore: 0,
