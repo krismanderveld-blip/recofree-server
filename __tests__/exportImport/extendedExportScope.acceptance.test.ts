@@ -110,9 +110,9 @@ describe('Extended Export Scope', () => {
 
     const result = await createEncryptedRecoFreeExport({
       password: TEST_PASSWORD,
+      nowIso: new Date().toISOString(),
       appVersion: APP_VERSION,
       stores,
-      nowIso: new Date().toISOString(),
       platform: 'android',
       expoSdkVersion: '54',
     });
@@ -144,9 +144,9 @@ describe('Extended Export Scope', () => {
 
     const result = await createEncryptedRecoFreeExport({
       password: TEST_PASSWORD,
+      nowIso: new Date().toISOString(),
       appVersion: APP_VERSION,
       stores,
-      nowIso: new Date().toISOString(),
       platform: 'android',
       expoSdkVersion: '54',
     });
@@ -179,9 +179,9 @@ describe('Extended Export Scope', () => {
 
     const result = await createEncryptedRecoFreeExport({
       password: TEST_PASSWORD,
+      nowIso: new Date().toISOString(),
       appVersion: APP_VERSION,
       stores,
-      nowIso: new Date().toISOString(),
       platform: 'android',
       expoSdkVersion: '54',
     });
@@ -209,7 +209,10 @@ describe('Extended Export Scope', () => {
 
     const exportResult = await createEncryptedRecoFreeExport({
       password: TEST_PASSWORD,
+      nowIso: new Date().toISOString(),
       appVersion: APP_VERSION,
+      platform: 'ios' as const,
+      expoSdkVersion: '54',
       stores: sourceStores,
     });
 
@@ -239,7 +242,10 @@ describe('Extended Export Scope', () => {
 
     const exportResult = await createEncryptedRecoFreeExport({
       password: TEST_PASSWORD,
+      nowIso: new Date().toISOString(),
       appVersion: APP_VERSION,
+      platform: 'ios' as const,
+      expoSdkVersion: '54',
       stores: sourceStores,
     });
 
@@ -271,7 +277,10 @@ describe('Extended Export Scope', () => {
 
     const exportResult = await createEncryptedRecoFreeExport({
       password: TEST_PASSWORD,
+      nowIso: new Date().toISOString(),
       appVersion: APP_VERSION,
+      platform: 'ios' as const,
+      expoSdkVersion: '54',
       stores: sourceStores,
     });
 
@@ -314,7 +323,10 @@ describe('Extended Export Scope', () => {
 
     const exportResult = await createEncryptedRecoFreeExport({
       password: TEST_PASSWORD,
+      nowIso: new Date().toISOString(),
       appVersion: APP_VERSION,
+      platform: 'ios' as const,
+      expoSdkVersion: '54',
       stores: sourceStores,
     });
 

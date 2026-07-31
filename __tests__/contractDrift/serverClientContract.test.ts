@@ -38,7 +38,7 @@ function basePayload() {
     detectedEmotion: 'anxiety',
     therapeuticStance: 'tone:warm | Reflective listening.',
     sessionDurationMinutes: 8,
-    urgency: 'gemiddeld',
+    urgency: 'midden',
     startEmotion: 'anxious',
   };
 }
@@ -185,7 +185,7 @@ function buildSessionInitPayload() {
       naam: 'TestUser',
       userType: 'elias' as const,
       lifeStory: [{ id: '1', label: 'Kindertijd', ageRange: '0-12', content: 'Vader vertrok toen ik 8 was.' }],
-      intakeContext: { startEmotion: 'anxious', urgency: 'gemiddeld', initialContext: 'Werkstress en relatieproblemen.', intakeDate: '2026-06-01' },
+      intakeContext: { startEmotion: 'anxious', urgency: 'midden', initialContext: 'Werkstress en relatieproblemen.', intakeDate: '2026-06-01' },
       createdAt: '2026-06-01T10:00:00Z',
     },
     userDat: {
@@ -242,7 +242,7 @@ function buildKimSessionInitPayload() {
         my_boundaries: 'Ik zeg nooit nee.',
         my_strength: 'Ik ben loyaal en zorgzaam.',
       },
-      intakeContext: { startEmotion: 'exhausted', urgency: 'gemiddeld', initialContext: 'Mantelzorg overbelasting.', intakeDate: '2026-06-15' },
+      intakeContext: { startEmotion: 'exhausted', urgency: 'midden', initialContext: 'Mantelzorg overbelasting.', intakeDate: '2026-06-15' },
       createdAt: '2026-06-15T10:00:00Z',
     },
     moodSliders: { stress: 7, boundaryFatigue: 6, emotionalBurden: 5 },

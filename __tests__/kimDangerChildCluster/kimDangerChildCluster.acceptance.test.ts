@@ -135,18 +135,18 @@ describe('Kim Cluster 2: Priority Resolution', () => {
 
 describe('Kim Cluster 2: Output Safety Filter', () => {
   it('rejects rescue/control language', () => {
-    const result = filterDangerChildOutput('Je moet hem tegenhouden en fysiek ingrijpen');
+    const result = filterDangerChildOutput('Je moet hem tegenhouden en fysiek ingrijpen', 'GEVAAR-K01');
     expect(result.passed).toBe(false);
     expect(result.violations.length).toBeGreaterThan(0);
   });
 
   it('rejects diagnosis language', () => {
-    const result = filterDangerChildOutput('Hij heeft waarschijnlijk een antisociale persoonlijkheidsstoornis');
+    const result = filterDangerChildOutput('Hij heeft waarschijnlijk een antisociale persoonlijkheidsstoornis', 'GEVAAR-K01');
     expect(result.passed).toBe(false);
   });
 
   it('passes safe supportive language', () => {
-    const result = filterDangerChildOutput('Ik hoor dat je je onveilig voelt. Laten we samen kijken wat je nu kunt doen voor jezelf.');
+    const result = filterDangerChildOutput('Ik hoor dat je je onveilig voelt. Laten we samen kijken wat je nu kunt doen voor jezelf.', 'GEVAAR-K01');
     expect(result.passed).toBe(true);
   });
 });

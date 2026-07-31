@@ -66,6 +66,9 @@ export interface SelectedSynthesisSource {
   sourceType: GreetingSynthesisSourceType;
   safeAnchor: string;
   relevanceScore: number;
+  dataTimestamp?: string;
+  eligible?: boolean;
+  reason?: string;
 }
 
 // ─── Mood Metric Types ──────────────────────────────────────────────────────
@@ -172,3 +175,5 @@ export interface SessionAbsenceResultForPrompt {
   absenceDaysRounded: number | null; // rounded to 1 decimal
   wordingHint: 'short_return' | 'return_after_absence' | 'long_return_soft';
 }
+
+export type { GreetingLogsDatSnapshot } from './sessionGreeting.types';

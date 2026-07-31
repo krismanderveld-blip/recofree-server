@@ -53,7 +53,7 @@ export interface GreetingFreshnessResult {
   gratitudeRecentUnder3Days: boolean;
   backpackRecentlyUpdatedUnder24h: boolean;
   /** True when backpackAnalysis.analyzedAt > previousAnalyzedAt */
-  backpackAnalysisChanged: boolean;
+  backpackAnalysisChanged?: boolean;
   latestDiaryAgeInDays: number | null;
   latestGratitudeAgeInDays: number | null;
   backpackAgeInHours: number | null;

@@ -202,13 +202,13 @@ describe('Diary valence inference', () => {
 describe('MISSING_DATA override with logs.dat', () => {
   it('T7: logs.dat with open loops prevents MISSING_DATA override', () => {
     const candidates = [
-      { sourceType: 'TODAY_MOOD' as const, eligible: false, relevanceScore: 0, reason: '', safeAnchor: '' },
-      { sourceType: 'RECENT_DIARY' as const, eligible: false, relevanceScore: 0, reason: '', safeAnchor: '' },
-      { sourceType: 'RECENT_GRATITUDE' as const, eligible: false, relevanceScore: 0, reason: '', safeAnchor: '' },
-      { sourceType: 'BACKPACK_RECENT_UPDATE' as const, eligible: false, relevanceScore: 0, reason: '', safeAnchor: '' },
-      { sourceType: 'ACTIVE_HOPE_OR_FEAR' as const, eligible: false, relevanceScore: 0, reason: '', safeAnchor: '' },
-      { sourceType: 'SCHEMA_ROTATION' as const, eligible: false, relevanceScore: 0, reason: '', safeAnchor: '' },
-      { sourceType: 'LAST_SESSION_SUMMARY' as const, eligible: true, relevanceScore: 0.88, reason: 'open loops', safeAnchor: 'Vorige sessie: onzekerheid over werk' },
+      { sourceType: 'TODAY_MOOD' as const, relevanceScore: 0, reason: '', safeAnchor: '' , eligible: true },
+      { sourceType: 'RECENT_DIARY' as const, relevanceScore: 0, reason: '', safeAnchor: '' , eligible: true },
+      { sourceType: 'RECENT_GRATITUDE' as const, relevanceScore: 0, reason: '', safeAnchor: '' , eligible: true },
+      { sourceType: 'BACKPACK_RECENT_UPDATE' as const, relevanceScore: 0, reason: '', safeAnchor: '' , eligible: true },
+      { sourceType: 'ACTIVE_HOPE_OR_FEAR' as const, relevanceScore: 0, reason: '', safeAnchor: '' , eligible: true },
+      { sourceType: 'SCHEMA_ROTATION' as const, relevanceScore: 0, reason: '', safeAnchor: '' , eligible: true },
+      { sourceType: 'LAST_SESSION_SUMMARY' as const, relevanceScore: 0.88, reason: 'open loops', safeAnchor: 'Vorige sessie: onzekerheid over werk' , eligible: true },
     ];
 
     const override = resolveGreetingOverride({
@@ -221,7 +221,7 @@ describe('MISSING_DATA override with logs.dat', () => {
         backpackRecentlyUpdatedUnder24h: false,
       }),
       synthesisCandidates: candidates,
-      absence: { isReturnAfterAbsence: false, band: 'NONE' as any, absenceDaysExact: 0.5 },
+      absence: { isReturnAfterAbsence: false, band: 'NONE' as any, absenceDaysExact: 0.5, absenceHoursExact: 12, lastSessionStartedAt: null, thresholdDays: 3, reason: 'no_absence' },
     });
 
     // Should NOT trigger MISSING_DATA because logs.dat is available
@@ -230,13 +230,13 @@ describe('MISSING_DATA override with logs.dat', () => {
 
   it('T8: Without logs.dat and no fresh data, MISSING_DATA triggers', () => {
     const candidates = [
-      { sourceType: 'TODAY_MOOD' as const, eligible: false, relevanceScore: 0, reason: '', safeAnchor: '' },
-      { sourceType: 'RECENT_DIARY' as const, eligible: false, relevanceScore: 0, reason: '', safeAnchor: '' },
-      { sourceType: 'RECENT_GRATITUDE' as const, eligible: false, relevanceScore: 0, reason: '', safeAnchor: '' },
-      { sourceType: 'BACKPACK_RECENT_UPDATE' as const, eligible: false, relevanceScore: 0, reason: '', safeAnchor: '' },
-      { sourceType: 'ACTIVE_HOPE_OR_FEAR' as const, eligible: false, relevanceScore: 0, reason: '', safeAnchor: '' },
-      { sourceType: 'SCHEMA_ROTATION' as const, eligible: false, relevanceScore: 0, reason: '', safeAnchor: '' },
-      { sourceType: 'LAST_SESSION_SUMMARY' as const, eligible: false, relevanceScore: 0, reason: '', safeAnchor: '' },
+      { sourceType: 'TODAY_MOOD' as const, relevanceScore: 0, reason: '', safeAnchor: '' , eligible: true },
+      { sourceType: 'RECENT_DIARY' as const, relevanceScore: 0, reason: '', safeAnchor: '' , eligible: true },
+      { sourceType: 'RECENT_GRATITUDE' as const, relevanceScore: 0, reason: '', safeAnchor: '' , eligible: true },
+      { sourceType: 'BACKPACK_RECENT_UPDATE' as const, relevanceScore: 0, reason: '', safeAnchor: '' , eligible: true },
+      { sourceType: 'ACTIVE_HOPE_OR_FEAR' as const, relevanceScore: 0, reason: '', safeAnchor: '' , eligible: true },
+      { sourceType: 'SCHEMA_ROTATION' as const, relevanceScore: 0, reason: '', safeAnchor: '' , eligible: true },
+      { sourceType: 'LAST_SESSION_SUMMARY' as const, relevanceScore: 0, reason: '', safeAnchor: '' , eligible: true },
     ];
 
     const override = resolveGreetingOverride({
@@ -249,7 +249,7 @@ describe('MISSING_DATA override with logs.dat', () => {
         backpackRecentlyUpdatedUnder24h: false,
       }),
       synthesisCandidates: candidates,
-      absence: { isReturnAfterAbsence: false, band: 'NONE' as any, absenceDaysExact: 0.5 },
+      absence: { isReturnAfterAbsence: false, band: 'NONE' as any, absenceDaysExact: 0.5, absenceHoursExact: 12, lastSessionStartedAt: null, thresholdDays: 3, reason: 'no_absence' },
     });
 
     expect(override).not.toBeNull();
@@ -262,14 +262,14 @@ describe('MISSING_DATA override with logs.dat', () => {
 describe('Zone-framed prompt construction', () => {
   it('T9: GEEL zone prompt contains zone tone instruction', () => {
     const sources = [
-      { sourceType: 'RECENT_DIARY' as const, safeAnchor: 'onzeker over uitgang', relevanceScore: 0.9 },
-      { sourceType: 'TODAY_MOOD' as const, safeAnchor: 'check-in toont lichte spanning', relevanceScore: 0.7 },
+      { sourceType: 'RECENT_DIARY' as const, safeAnchor: 'onzeker over uitgang', relevanceScore: 0.9 , eligible: true, reason: 'test' },
+      { sourceType: 'TODAY_MOOD' as const, safeAnchor: 'check-in toont lichte spanning', relevanceScore: 0.7 , eligible: true, reason: 'test' },
     ];
 
     const payload = buildGreetingSynthesisPromptPayload({
       userName: 'Kris',
       selectedSources: sources,
-      absence: { isReturnAfterAbsence: false, band: 'NONE' as any, absenceDaysExact: 0.5 },
+      absence: { isReturnAfterAbsence: false, band: 'NONE' as any, absenceDaysExact: 0.5, absenceHoursExact: 12, lastSessionStartedAt: null, thresholdDays: 3, reason: 'no_absence' },
       mode: 'SYNTHESIS',
       vspZone: 'GEEL',
     });
@@ -282,13 +282,13 @@ describe('Zone-framed prompt construction', () => {
 
   it('T10: GROEN zone prompt has open/warm tone', () => {
     const sources = [
-      { sourceType: 'RECENT_GRATITUDE' as const, safeAnchor: 'dankbaar voor steun', relevanceScore: 0.8 },
+      { sourceType: 'RECENT_GRATITUDE' as const, safeAnchor: 'dankbaar voor steun', relevanceScore: 0.8 , eligible: true, reason: 'test' },
     ];
 
     const payload = buildGreetingSynthesisPromptPayload({
       userName: 'Kris',
       selectedSources: sources,
-      absence: { isReturnAfterAbsence: false, band: 'NONE' as any, absenceDaysExact: 0.5 },
+      absence: { isReturnAfterAbsence: false, band: 'NONE' as any, absenceDaysExact: 0.5, absenceHoursExact: 12, lastSessionStartedAt: null, thresholdDays: 3, reason: 'no_absence' },
       mode: 'SYNTHESIS',
       vspZone: 'GROEN',
     });
@@ -438,7 +438,7 @@ describe('Zone chronology block (zone transition between sessions)', () => {
 
   it('T20: Zone chronology block is included in SYNTHESIS prompt when zones differ', () => {
     const sources = [
-      { sourceType: 'LAST_SESSION_SUMMARY' as const, safeAnchor: 'bespraken frustraties', relevanceScore: 0.95 },
+      { sourceType: 'LAST_SESSION_SUMMARY' as const, safeAnchor: 'bespraken frustraties', relevanceScore: 0.95 , eligible: true, reason: 'test' },
     ];
 
     const payload = buildGreetingSynthesisPromptPayload({
@@ -457,7 +457,7 @@ describe('Zone chronology block (zone transition between sessions)', () => {
 
   it('T21: Zone chronology block is NOT included when zones are the same', () => {
     const sources = [
-      { sourceType: 'LAST_SESSION_SUMMARY' as const, safeAnchor: 'bespraken frustraties', relevanceScore: 0.95 },
+      { sourceType: 'LAST_SESSION_SUMMARY' as const, safeAnchor: 'bespraken frustraties', relevanceScore: 0.95 , eligible: true, reason: 'test' },
     ];
 
     const payload = buildGreetingSynthesisPromptPayload({
@@ -474,7 +474,7 @@ describe('Zone chronology block (zone transition between sessions)', () => {
 
   it('T22: Zone chronology block is included in RETURN_AFTER_ABSENCE prompt when zones differ', () => {
     const sources = [
-      { sourceType: 'LAST_SESSION_SUMMARY' as const, safeAnchor: 'bespraken frustraties over werk', relevanceScore: 0.95 },
+      { sourceType: 'LAST_SESSION_SUMMARY' as const, safeAnchor: 'bespraken frustraties over werk', relevanceScore: 0.95 , eligible: true, reason: 'test' },
     ];
 
     const payload = buildGreetingSynthesisPromptPayload({

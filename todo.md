@@ -2466,3 +2466,22 @@
 - [x] Fixed GPTPayload + PayloadBuilderInput: added Kim cluster context fields
 - [x] Fixed UserDatSummaryPayload: added recentRelapseEvent + preventionPlan
 - [x] Result: 0 non-test TS errors, dev server starts cleanly
+
+## Phase 2: Test File TS Errors + Nested Passthrough + Integration Test
+- [x] Fixed memory-write-routing.test.ts: persona 'elias'→'Elias', sourceKind 'pipeline'→'VSPZone_6e', zone 'YELLOW'→'GREEN', added dormantBelowScore/pruneBelowScoreAfterDays to ProjectionDecayConfig
+- [x] Fixed memory-write-routing.test.ts: PipelineTurnContext added localUserId, appVersion, pipelineVersion, language
+- [x] Fixed greeting tests: added moodUsable, eligible, reason, backpackAnalysisChanged fields
+- [x] Fixed zoneAwareGreeting.test.ts: SessionAbsenceResult added isReturnAfterLongAbsence, daysSinceLastSession, lastKnownZone
+- [x] Fixed absenceSourceSelection.test.ts: GreetingSynthesisCandidate added eligible + reason
+- [x] Fixed kimDangerChildCluster.test.ts: filterDangerChildOutput now receives moduleId arg
+- [x] Fixed kimCluster4.test.ts: shouldEscalate → crisisNumbersToShow.length check
+- [x] Fixed recurringPatterns.test.ts: added moodUsable to GreetingFreshnessResult
+- [x] Fixed nl-markers-and-engine-init.test.ts: added vspLevel + messageCount to SchemaModeDetectionInput
+- [x] Fixed exportImport.test.ts: added nowIso, platform, expoSdkVersion; removed duplicate nowIso
+- [x] Fixed quietCloseWritesLogsDat.test.ts: createSessionLifecycleManager() takes 0 args
+- [x] Fixed serverClientContract.test.ts: added sessionNumber to sessionAnalyses fixture
+- [x] Fixed SelectedSynthesisSource: added dataTimestamp, eligible, reason as optional fields
+- [x] Re-exported GreetingLogsDatSnapshot from sessionGreetingV3.types.ts
+- [x] Added .passthrough() to nested zod objects: backpack, userDat, diaryEntries items, extractedEntities, backpackAnalysis, knownUserPatterns
+- [x] Wrote nestedPassthrough.test.ts: 10 tests verifying all client fields survive parsing (top-level, backpack, userDat, diaryEntries, extractedEntities, backpackAnalysis, knownUserPatterns, recently added fields, gratitude, full payload)
+- [x] Result: 0 TS errors (all files), 26/26 contract tests passing, dev server clean

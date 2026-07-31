@@ -65,7 +65,6 @@ const mockUserDat = {
   lastSessionDate: "2026-06-20",
   sessionAnalyses: [
     {
-      sessionNumber: 4,
       date: "2026-06-18",
       messageCount: 12,
       durationMinutes: 25,
@@ -112,7 +111,7 @@ const mockUserDat = {
   lastMilestoneShown: null,
   clinicalModeActive: false,
   consecutiveSessionsWithoutEngagement: 0,
-} as UserDat;
+} as unknown as UserDat;
 
 // ─── Tests ──────────────────────────────────────────────────────────────────
 
@@ -232,7 +231,7 @@ describe("pastReferenceSearch", () => {
         lastMilestoneShown: null,
         clinicalModeActive: false,
         consecutiveSessionsWithoutEngagement: 0,
-      } as UserDat;
+      } as unknown as UserDat;
 
       const result = searchPastReferences("investering", [mockSession], emptyUserDat);
 

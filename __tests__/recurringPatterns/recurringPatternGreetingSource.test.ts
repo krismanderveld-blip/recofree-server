@@ -9,13 +9,13 @@ import type { GreetingLogsDatSnapshot, GreetingFreshnessResult } from '@/lib/fea
 function makeFreshness(overrides: Partial<GreetingFreshnessResult> = {}): GreetingFreshnessResult {
   return {
     slidersFilledToday: false,
+    moodUsable: false,
     diaryRecentUnder3Days: false,
     gratitudeRecentUnder3Days: false,
     backpackRecentlyUpdatedUnder24h: false,
     latestDiaryAgeInDays: 10,
     latestGratitudeAgeInDays: 10,
     backpackAgeInHours: 100,
-    sessionNumber: 5,
     ...overrides,
   };
 }

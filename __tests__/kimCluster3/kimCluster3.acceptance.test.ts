@@ -165,7 +165,7 @@ describe('Kim Cluster 3 — Acceptance Tests', () => {
     const output = enforceKimCluster3OutputSafety({
       moduleId: 'LEUGEN-K01',
       text: 'Je moet zijn telefoon controleren om de waarheid te achterhalen.',
-      responseMode: 'REFLECTIVE',
+      responseMode: 'CAREGIVER_ROLE_DROP_EMOTIONS',
       crisisNumbersToShow: [],
     });
     // Should be replaced with fallback
@@ -178,7 +178,7 @@ describe('Kim Cluster 3 — Acceptance Tests', () => {
     const output = enforceKimCluster3OutputSafety({
       moduleId: 'VETR02-K',
       text: 'Je bent getraumatiseerd door zijn gedrag.',
-      responseMode: 'REFLECTIVE',
+      responseMode: 'CAREGIVER_ROLE_DROP_EMOTIONS',
       crisisNumbersToShow: [],
     });
     expect(output).not.toContain('getraumatiseerd');
@@ -189,7 +189,7 @@ describe('Kim Cluster 3 — Acceptance Tests', () => {
     const output = enforceKimCluster3OutputSafety({
       moduleId: 'ROL-K01',
       text: 'Je moet gewoon ontspannen nu hij weg is.',
-      responseMode: 'REFLECTIVE',
+      responseMode: 'CAREGIVER_ROLE_DROP_EMOTIONS',
       crisisNumbersToShow: [],
     });
     expect(output).not.toContain('gewoon ontspannen');

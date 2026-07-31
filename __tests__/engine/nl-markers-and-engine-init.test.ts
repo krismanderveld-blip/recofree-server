@@ -21,7 +21,8 @@ function makeInput(message: string, userType: 'elias' | 'kim' = 'elias'): Schema
     schemaTendencies: [],
     modeTendencies: [],
     activeProjections: [],
-    sessionHistory: [],
+    vspLevel: '3',
+    messageCount: 1,
   };
 }
 

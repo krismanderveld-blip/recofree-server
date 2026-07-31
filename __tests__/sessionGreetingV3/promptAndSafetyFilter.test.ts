@@ -16,8 +16,8 @@ import type { SelectedSynthesisSource } from '@/lib/features/sessionGreeting/ses
 describe('Synthesis Prompt Building', () => {
   it('T14: Prompt contains all selected sources', () => {
     const sources: SelectedSynthesisSource[] = [
-      { sourceType: 'TODAY_MOOD', safeAnchor: 'frustration=6, focus=3', relevanceScore: 0.8 },
-      { sourceType: 'RECENT_DIARY', safeAnchor: 'Vandaag was het moeilijk op werk', relevanceScore: 0.7 },
+      { sourceType: 'TODAY_MOOD', safeAnchor: 'frustration=6, focus=3', relevanceScore: 0.8 , eligible: true, reason: 'test' },
+      { sourceType: 'RECENT_DIARY', safeAnchor: 'Vandaag was het moeilijk op werk', relevanceScore: 0.7 , eligible: true, reason: 'test' },
     ];
 
     const payload = buildGreetingSynthesisPromptPayload({
@@ -35,7 +35,7 @@ describe('Synthesis Prompt Building', () => {
 
   it('T15: Prompt includes language rule for correct Dutch', () => {
     const sources: SelectedSynthesisSource[] = [
-      { sourceType: 'RECENT_GRATITUDE', safeAnchor: 'Dankbaar voor rust', relevanceScore: 0.6 },
+      { sourceType: 'RECENT_GRATITUDE', safeAnchor: 'Dankbaar voor rust', relevanceScore: 0.6 , eligible: true, reason: 'test' },
     ];
 
     const payload = buildGreetingSynthesisPromptPayload({

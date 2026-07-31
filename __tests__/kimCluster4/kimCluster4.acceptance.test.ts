@@ -195,6 +195,6 @@ describe('Kim Cluster 4 — Critical Acceptance Tests', () => {
     expect(result.activationStatus).toBe('ACTIVE');
     expect(result.moduleId).toBe('SCHAAM-K01');
     // No crisis escalation for pure reflective
-    expect(result.crisisEscalation).toBeFalsy();
+    expect(result.crisisNumbersToShow.length).toBe(0);
   });
 });

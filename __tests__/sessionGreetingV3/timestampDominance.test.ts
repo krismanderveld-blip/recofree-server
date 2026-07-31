@@ -63,7 +63,7 @@ function makeProjections(): GreetingProjectionsDatSnapshot {
 function makeLogsDat(endedAt: string): GreetingLogsDatSnapshot {
   return {
     lastSessionOpenLoops: [],
-    latestLogDigest: null,
+    latestLogDigest: undefined,
     recentSessionDigests: [
       {
         narrative: 'We spraken over de afspraak met Dr. Peuskens en het herstelproces.',

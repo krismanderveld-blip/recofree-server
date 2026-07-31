@@ -67,13 +67,7 @@ describe('Quiet close writes full summary to logs.dat', () => {
     const stateDatStore = createStateDatStore();
     const projectionsDatStore = createProjectionsDatStore();
 
-    lifecycleManager = createSessionLifecycleManager({
-      logsDatStore,
-      sessionBufferStore,
-      userDatStore,
-      stateDatStore,
-      projectionsDatStore,
-    });
+    lifecycleManager = createSessionLifecycleManager();
   });
 
   it('writes a GPT-summarized entry (not incremental_) after quiet close', async () => {

@@ -21,15 +21,15 @@ describe('Greeting Fact Grounding', () => {
         sourceType: 'LAST_SESSION_SUMMARY',
         relevanceScore: 1.0,
         safeAnchor: 'Gebruiker: het is warm weer en Melissa vindt dat ook ambetant\nElias: Hoe ga je daarmee om?',
-        eligible: true,
         dataTimestamp: new Date(Date.now() - 3600000).toISOString(), // 1h ago
+        eligible: true, reason: 'test',
       },
       {
-        sourceType: 'TODAY_DIARY',
+        sourceType: 'RECENT_DIARY',
         relevanceScore: 0.85,
         safeAnchor: 'Blij dat Melissa er was vandaag',
-        eligible: true,
         dataTimestamp: new Date(Date.now() - 1800000).toISOString(), // 30min ago
+        eligible: true, reason: 'test',
       },
     ];
 
@@ -50,7 +50,7 @@ describe('Greeting Fact Grounding', () => {
       f.content.toLowerCase().includes('melissa') && f.content.toLowerCase().includes('blij')
     );
     expect(diaryFact).toBeDefined();
-    expect(diaryFact!.source).toBe('TODAY_DIARY');
+    expect(diaryFact!.source).toBe('RECENT_DIARY');
 
     // Validator: a greeting that fabricates a connection should FAIL
     const fabricatedGreeting = 'Kris, ik zie dat Melissa je blij maakt ondanks het warme weer dat jullie allebei vervelend vinden.';
@@ -98,9 +98,8 @@ describe('Greeting Fact Grounding', () => {
         sourceType: 'TODAY_MOOD',
         relevanceScore: 0.95,
         safeAnchor: 'HIGH_ALARM: craving=9, mood=1',
-        eligible: true,
         dataTimestamp: new Date().toISOString(),
-        moodAlarmLevel: 'high_alarm',
+        eligible: true, reason: 'test',
       },
     ];
 
@@ -118,11 +117,11 @@ describe('Greeting Fact Grounding', () => {
   it('TEST 4: Eén bron → warme greeting met dat ene feit', () => {
     const sources: SelectedSynthesisSource[] = [
       {
-        sourceType: 'TODAY_DIARY',
+        sourceType: 'RECENT_DIARY',
         relevanceScore: 0.90,
         safeAnchor: 'Vandaag gewandeld met de hond in het park',
-        eligible: true,
         dataTimestamp: new Date(Date.now() - 600000).toISOString(), // 10min ago
+        eligible: true, reason: 'test',
       },
     ];
 
@@ -132,7 +131,7 @@ describe('Greeting Fact Grounding', () => {
     expect(result.facts.length).toBeGreaterThanOrEqual(1);
     
     // The fact must contain the diary content
-    const diaryFact = result.facts.find(f => f.source === 'TODAY_DIARY');
+    const diaryFact = result.facts.find(f => f.source === 'RECENT_DIARY');
     expect(diaryFact).toBeDefined();
     expect(diaryFact!.content).toContain('gewandeld');
 

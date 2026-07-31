@@ -67,7 +67,7 @@ function createEliasBackpack(): Backpack {
     stageOfChange: 'contemplation',
     eigenRegieLevel: null,
     startEmotion: 'neutraal',
-    urgency: 'gemiddeld',
+    urgency: 'midden',
     initialContext: 'Ik ben op wandel in Tienen.',
   });
 }

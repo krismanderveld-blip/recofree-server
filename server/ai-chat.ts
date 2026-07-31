@@ -674,7 +674,7 @@ export const chatInputSchema = z.object({
       intakeDate: z.string(),
     }),
     createdAt: z.string(),
-  }).nullable().optional(),
+  }).passthrough().nullable().optional(),
   userDat: z.object({
     totalSessions: z.number(),
     triggerPatterns: z.array(
@@ -710,7 +710,7 @@ export const chatInputSchema = z.object({
         endRiskLevel: z.string(),
       })
     ),
-  }).nullable().optional(),
+  }).passthrough().nullable().optional(),
   diaryEntries: z.array(
     z.object({
       content: z.string(),
@@ -721,7 +721,7 @@ export const chatInputSchema = z.object({
         entry2: z.string().nullable().optional(),
         entry3: z.string().nullable().optional(),
       }).nullable().optional(),
-    })
+    }).passthrough()
   ).nullable().optional(),
   activeModules: z.array(z.string()),
   crisisLevel: z.number(),
@@ -888,7 +888,7 @@ export const chatInputSchema = z.object({
     extractedAt: z.string(),
     sourceHash: z.string(),
     schemaVersion: z.number(),
-  }).nullable().optional(),
+  }).passthrough().nullable().optional(),
   /** Whether backpack content changed since last extraction */
   backpackChanged: z.boolean().nullable().optional(),
 
@@ -902,14 +902,14 @@ export const chatInputSchema = z.object({
     analysisVersion: z.number(),
     analyzedAt: z.string(),
     previousAnalyzedAt: z.string().nullable(),
-  }).nullable().optional(),
+  }).passthrough().nullable().optional(),
 
   /** Compact known user patterns (schemas, modes, triggers) — injected every turn */
   knownUserPatterns: z.object({
     schemas: z.array(z.object({ name: z.string(), confidence: z.number() })),
     modes: z.array(z.object({ name: z.string(), confidence: z.number() })),
     triggers: z.array(z.string()),
-  }).nullable().optional(),
+  }).passthrough().nullable().optional(),
   /** User-selected app language. Determines AI response language. */
   locale: z.enum(['nl', 'en', 'fr']).nullable().optional(),
   country: z.enum(['NL', 'BE', 'FR', 'UK', 'US']).nullable().optional(),

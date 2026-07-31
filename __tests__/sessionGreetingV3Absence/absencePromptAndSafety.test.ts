@@ -27,7 +27,7 @@ function makeAbsence(overrides: Partial<SessionAbsenceResult> = {}): SessionAbse
 describe('Absence Prompt Building', () => {
   it('D1: RETURN_AFTER_ABSENCE prompt acknowledges absence warmly', () => {
     const sources: SelectedSynthesisSource[] = [
-      { sourceType: 'RECENT_GRATITUDE', safeAnchor: 'Dankbaar voor rust', relevanceScore: 0.7 },
+      { sourceType: 'RECENT_GRATITUDE', safeAnchor: 'Dankbaar voor rust', relevanceScore: 0.7 , eligible: true, reason: 'test' },
     ];
     const payload = buildGreetingSynthesisPromptPayload({
       userName: 'Kris',
@@ -56,7 +56,7 @@ describe('Absence Prompt Building', () => {
 
   it('D3: Absence prompt ends with open question (not data request)', () => {
     const sources: SelectedSynthesisSource[] = [
-      { sourceType: 'TODAY_MOOD', safeAnchor: 'frustration=5', relevanceScore: 0.6 },
+      { sourceType: 'TODAY_MOOD', safeAnchor: 'frustration=5', relevanceScore: 0.6 , eligible: true, reason: 'test' },
     ];
     const payload = buildGreetingSynthesisPromptPayload({
       userName: 'Kris',
@@ -70,7 +70,7 @@ describe('Absence Prompt Building', () => {
 
   it('D4: Normal SYNTHESIS mode does NOT include absence context', () => {
     const sources: SelectedSynthesisSource[] = [
-      { sourceType: 'TODAY_MOOD', safeAnchor: 'craving=3', relevanceScore: 0.8 },
+      { sourceType: 'TODAY_MOOD', safeAnchor: 'craving=3', relevanceScore: 0.8 , eligible: true, reason: 'test' },
     ];
     const payload = buildGreetingSynthesisPromptPayload({
       userName: 'Kris',

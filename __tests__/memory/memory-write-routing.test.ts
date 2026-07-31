@@ -43,9 +43,13 @@ function createTestContext(overrides?: Partial<PipelineTurnContext>): PipelineTu
   return {
     turnId: "turn_001",
     sessionId: "session_001",
-    persona: "ELIAS",
+    persona: "elias",
     timestampIso: "2026-06-14T10:00:00.000Z",
+    localUserId: "user_test",
+    appVersion: "1.0.0",
+    pipelineVersion: "v3",
     inputHash: "abc123",
+    language: "nl" as const,
     ...overrides,
   };
 }
@@ -117,7 +121,7 @@ describe("Memory Write Routing — Acceptance Tests", () => {
       fears: [{
         label: "verlating",
         normalizedLabel: "verlating",
-        category: "relational",
+        category: "conflict",
         confidence: 0.20, // Below 0.30 threshold
         sourceKind: "explicit_user_text",
         evidenceHash: "ev1",
@@ -135,7 +139,7 @@ describe("Memory Write Routing — Acceptance Tests", () => {
       fears: [{
         label: "verlatingsangst",
         normalizedLabel: "verlatingsangst",
-        category: "relational",
+        category: "conflict",
         confidence: 0.65,
         sourceKind: "explicit_user_text",
         evidenceHash: "ev2",
@@ -155,7 +159,7 @@ describe("Memory Write Routing — Acceptance Tests", () => {
         schemaId: "ABANDONMENT",
         schemaName: "Verlating",
         confidence: 0.34,
-        sourceKind: "pattern_inference",
+        sourceKind: "session_summary",
         evidenceHash: "ev3",
       }],
     });
@@ -168,7 +172,7 @@ describe("Memory Write Routing — Acceptance Tests", () => {
         schemaId: "ABANDONMENT",
         schemaName: "Verlating",
         confidence: 0.36,
-        sourceKind: "pattern_inference",
+        sourceKind: "session_summary",
         evidenceHash: "ev4",
       }],
     });
@@ -179,12 +183,12 @@ describe("Memory Write Routing — Acceptance Tests", () => {
 
   // Test 8: mergeUserDat trigger deduplication
   it("Test 8: Trigger merge deduplicates by normalizedTrigger+triggerType", () => {
-    let userDat = createEmptyUserDat("ELIAS", "user1");
+    let userDat = createEmptyUserDat("elias", "user1");
 
     const payload1 = {
       label: "eenzaamheid",
       normalizedTrigger: "eenzaamheid",
-      triggerType: "emotional" as const,
+      triggerType: "emotion" as const,
       confidence: 0.7,
       sourceKind: "explicit_user_text" as const,
       turnId: "t1",
@@ -211,7 +215,7 @@ describe("Memory Write Routing — Acceptance Tests", () => {
       kind: "fear" as const,
       label: "verlating",
       normalizedLabel: "verlating",
-      category: "relational",
+      category: "conflict",
       currentScore: 1.0,
       baseConfidence: 0.8,
       firstSeenAt: "2026-06-01T00:00:00Z",
@@ -223,7 +227,7 @@ describe("Memory Write Routing — Acceptance Tests", () => {
       sources: [],
     };
 
-    const config = { fearHalfLifeDays: 7, hopeHalfLifeDays: 14, minimumScore: 0.05, maxScore: 1.0, reinforcementBoost: 0.2 };
+    const config = { fearHalfLifeDays: 7, hopeHalfLifeDays: 14, minimumScore: 0.05, maxScore: 1.0, reinforcementBoost: 0.2, dormantBelowScore: 0.08, pruneBelowScoreAfterDays: 60 };
 
     // After exactly 7 days → score should be ~0.5
     const decayed = applyProjectionDecay(record, "2026-06-08T00:00:00Z", config);
@@ -240,7 +244,7 @@ describe("Memory Write Routing — Acceptance Tests", () => {
       fears: [{
         label: "verlatingsangst",
         normalizedLabel: "verlatingsangst",
-        category: "relational",
+        category: "conflict",
         confidence: 0.65,
         sourceKind: "explicit_user_text",
         evidenceHash: "ev5",
@@ -248,7 +252,7 @@ describe("Memory Write Routing — Acceptance Tests", () => {
       triggers: [{
         label: "eenzaamheid",
         normalizedTrigger: "eenzaamheid",
-        triggerType: "emotional",
+        triggerType: "emotion",
         confidence: 0.55,
         sourceKind: "explicit_user_text",
         evidenceHash: "ev6",
@@ -256,10 +260,10 @@ describe("Memory Write Routing — Acceptance Tests", () => {
     });
 
     const stores = {
-      userDat: createEmptyUserDat("ELIAS", "user1"),
-      stateDat: createEmptyStateDat("ELIAS"),
-      projectionsDat: createEmptyProjectionsDat("ELIAS"),
-      sessionBuffer: createEmptySessionBuffer("ELIAS", "session_001"),
+      userDat: createEmptyUserDat("elias", "user1"),
+      stateDat: createEmptyStateDat("elias"),
+      projectionsDat: createEmptyProjectionsDat("elias"),
+      sessionBuffer: createEmptySessionBuffer("elias", "session_001"),
     };
 
     const output = executeMemoryWriteBack({ detectionBundle: bundle, currentStores: stores });
@@ -278,10 +282,10 @@ describe("Memory Write Routing — Acceptance Tests", () => {
 
   // Test 12: buildSessionInitContext returns empty when no data
   it("Test 12: buildSessionInitContext returns empty for fresh memory", () => {
-    const userDat = createEmptyUserDat("ELIAS", "user1");
-    const stateDat = createEmptyStateDat("ELIAS");
-    const projDat = createEmptyProjectionsDat("ELIAS");
-    const logsDat = createEmptyLogsDat("ELIAS");
+    const userDat = createEmptyUserDat("elias", "user1");
+    const stateDat = createEmptyStateDat("elias");
+    const projDat = createEmptyProjectionsDat("elias");
+    const logsDat = createEmptyLogsDat("elias");
 
     const ctx = buildSessionInitContext(userDat, stateDat, projDat, logsDat);
     expect(ctx.contextBlock).toBe("");
@@ -290,9 +294,9 @@ describe("Memory Write Routing — Acceptance Tests", () => {
 
   // Test 13: buildSessionInitContext includes projections when active
   it("Test 13: buildSessionInitContext includes active projections", () => {
-    const userDat = createEmptyUserDat("ELIAS", "user1");
-    const stateDat = createEmptyStateDat("ELIAS");
-    const projDat = createEmptyProjectionsDat("ELIAS");
+    const userDat = createEmptyUserDat("elias", "user1");
+    const stateDat = createEmptyStateDat("elias");
+    const projDat = createEmptyProjectionsDat("elias");
 
     // Add an active fear
     projDat.fears.push({
@@ -300,7 +304,7 @@ describe("Memory Write Routing — Acceptance Tests", () => {
       kind: "fear",
       label: "verlating",
       normalizedLabel: "verlating",
-      category: "relational",
+      category: "conflict",
       currentScore: 0.7,
       baseConfidence: 0.8,
       firstSeenAt: "2026-06-01T00:00:00Z",
@@ -325,7 +329,7 @@ describe("Memory Write Routing — Acceptance Tests", () => {
       fears: [{
         label: "verlatingsangst",
         normalizedLabel: "verlatingsangst",
-        category: "relational",
+        category: "conflict",
         confidence: 0.65,
         sourceKind: "explicit_user_text",
         evidenceHash: "ev7",
@@ -334,22 +338,22 @@ describe("Memory Write Routing — Acceptance Tests", () => {
         schemaId: "ABANDONMENT",
         schemaName: "Verlating",
         confidence: 0.50,
-        sourceKind: "pattern_inference",
+        sourceKind: "session_summary",
         evidenceHash: "ev8",
       }],
       zoneDecision: {
-        zone: "YELLOW",
+        zone: "GREEN",
         zoneNumeric: 2,
         confidence: 0.8,
-        sourceKind: "pipeline",
+        sourceKind: "VSPZone_6e",
       },
     });
 
     const stores = {
-      userDat: createEmptyUserDat("ELIAS", "user1"),
-      stateDat: createEmptyStateDat("ELIAS"),
-      projectionsDat: createEmptyProjectionsDat("ELIAS"),
-      sessionBuffer: createEmptySessionBuffer("ELIAS", "session_001"),
+      userDat: createEmptyUserDat("elias", "user1"),
+      stateDat: createEmptyStateDat("elias"),
+      projectionsDat: createEmptyProjectionsDat("elias"),
+      sessionBuffer: createEmptySessionBuffer("elias", "session_001"),
     };
 
     const plan = buildMemoryWritePlan(bundle);
@@ -374,7 +378,7 @@ describe("Memory Write Routing — Acceptance Tests", () => {
 
   // Test 15: Reinforcement boosts decayed score
   it("Test 15: Reinforcement correctly boosts a decayed projection score", () => {
-    const config = { fearHalfLifeDays: 7, hopeHalfLifeDays: 14, minimumScore: 0.05, maxScore: 1.0, reinforcementBoost: 0.2 };
+    const config = { fearHalfLifeDays: 7, hopeHalfLifeDays: 14, minimumScore: 0.05, maxScore: 1.0, reinforcementBoost: 0.2, dormantBelowScore: 0.08, pruneBelowScoreAfterDays: 60 };
 
     // Score decayed to 0.5, reinforce with confidence 0.8
     const boosted = reinforceProjectionScore(0.5, 0.8, config);
