@@ -308,7 +308,7 @@ export default function DiaryScreen() {
         {entries.length > 0 && (
           <TouchableOpacity
             onPress={async () => {
-              const userName = state.backpack?.name || 'Gebruiker';
+              const userName = state.backpack?.naam || 'Gebruiker';
               const result = await exportDiary({
                 entries: filteredEntries.length > 0 ? filteredEntries : entries,
                 userName,

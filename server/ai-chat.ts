@@ -1246,16 +1246,30 @@ function buildSelectiveRelevanceBlock(
     if (relapseEvent.context) {
       parts.push(`  Context: "${relapseEvent.context}"`);
     }
-    // Inject prevention plan if available
+    // Inject zone-filtered prevention plan (only zone-relevant fields are sent)
     const preventionPlan = (input as any).preventionPlan ?? (input as any).userDatSummary?.preventionPlan ?? null;
     if (preventionPlan) {
-      parts.push(`  \ud83d\udccb TERUGVAL-PREVENTIEPLAN van de gebruiker:`);
+      const zoneLabel = preventionPlan.zone ? ` (zone: ${preventionPlan.zone})` : '';
+      parts.push(`  \ud83d\udccb TERUGVAL-PREVENTIEPLAN${zoneLabel} — relevante velden voor huidige zone:`);
       if (preventionPlan.warningSigns) parts.push(`    \u2022 Waarschuwingssignalen: ${preventionPlan.warningSigns}`);
       if (preventionPlan.copingStrategies) parts.push(`    \u2022 Wat helpt: ${preventionPlan.copingStrategies}`);
       if (preventionPlan.supportContacts) parts.push(`    \u2022 Steunpersonen: ${preventionPlan.supportContacts}`);
       if (preventionPlan.safeActivities) parts.push(`    \u2022 Veilige activiteiten: ${preventionPlan.safeActivities}`);
       if (preventionPlan.motivation) parts.push(`    \u2022 Motivatie: ${preventionPlan.motivation}`);
-      parts.push(`  \u2192 Gebruik dit plan om de gebruiker te herinneren aan eigen kracht en hulpbronnen.`);
+      parts.push(`  \u2192 Gebruik SPECIFIEK deze velden om de gebruiker te herinneren aan eigen kracht en hulpbronnen. Verwijs concreet naar wat zij zelf hebben opgeschreven.`);
+    }
+    // If prevention plan is not filled yet, hint to Elias to suggest it
+    const preventionPlanMissing = (input as any).preventionPlanMissing ?? (input as any).userDatSummary?.preventionPlanMissing ?? false;
+    if (preventionPlanMissing && !preventionPlan) {
+      parts.push(`  \u2139\ufe0f De gebruiker heeft nog geen terugval-preventieplan ingevuld. Als het moment gepast is (niet bij crisis), noem kort dat zij in de rugzak een preventieplan kunnen invullen — zonder druk.`);
+    }
+  }
+
+  // Prevention plan missing hint (outside relapse block — shown at any greeting if plan is empty)
+  if (!relapseEvent) {
+    const preventionPlanMissing2 = (input as any).preventionPlanMissing ?? (input as any).userDatSummary?.preventionPlanMissing ?? false;
+    if (preventionPlanMissing2) {
+      parts.push(`\u2139\ufe0f De gebruiker heeft nog geen terugval-preventieplan ingevuld. Als het moment gepast is, noem kort dat zij in de rugzak een preventieplan kunnen invullen \u2014 zonder druk.`);
     }
   }
 

@@ -656,7 +656,20 @@ export async function processMessage(
             if (ageMs > 7 * 24 * 60 * 60 * 1000) return null;
             return { type: last.type, daysAgo: Math.floor(ageMs / (24 * 60 * 60 * 1000)), context: last.context ?? null };
           })(),
-          preventionPlan: (currentUserDat as any).preventionPlan ?? null,
+          preventionPlan: (() => {
+            const { filterPreventionPlanByZone } = require('../features/prevention-plan/zone-filter');
+            const liveVsp = backpack.userType === 'elias' && currentUserDat.currentMood && 'vsp' in currentUserDat.currentMood
+              ? (currentUserDat.currentMood as any).vsp : null;
+            const liveEigenRegie = backpack.userType === 'kim' && currentUserDat.currentMood && 'eigenRegie' in currentUserDat.currentMood
+              ? (currentUserDat.currentMood as any).eigenRegie : null;
+            const filtered = filterPreventionPlanByZone(
+              (currentUserDat as any).preventionPlan ?? null,
+              backpack.userType as 'elias' | 'kim',
+              liveVsp,
+              liveEigenRegie,
+            );
+            return filtered.hasPlan ? { zone: filtered.zone, ...filtered.fields } : null;
+          })(),
         },
         usedModules: sessionBuffer?.usedModules ?? [],
         previousZoneScore: sessionBuffer?.currentZoneScore ?? 0,
@@ -4101,7 +4114,20 @@ export async function generateGreeting(
             if (ageMs > 7 * 24 * 60 * 60 * 1000) return null;
             return { type: last.type, daysAgo: Math.floor(ageMs / (24 * 60 * 60 * 1000)), context: last.context ?? null };
           })(),
-          preventionPlan: (currentUserDat as any).preventionPlan ?? null,
+          preventionPlan: (() => {
+            const { filterPreventionPlanByZone } = require('../features/prevention-plan/zone-filter');
+            const eigenRegieVal = backpack.userType === 'kim' && currentMood && 'eigenRegie' in currentMood
+              ? (currentMood as any).eigenRegie : null;
+            const filtered = filterPreventionPlanByZone(
+              (currentUserDat as any).preventionPlan ?? null,
+              backpack.userType as 'elias' | 'kim',
+              vspLevel,
+              eigenRegieVal,
+            );
+            return filtered.hasPlan ? { zone: filtered.zone, ...filtered.fields } : null;
+          })(),
+          preventionPlanMissing: !((currentUserDat as any).preventionPlan &&
+            Object.values((currentUserDat as any).preventionPlan).some((v: any) => v && typeof v === 'string' && v.trim().length > 0)),
         } as any,
         usedModules: [],
         previousZoneScore: 0,

@@ -2422,9 +2422,11 @@
 - [x] Dagboek export als PDF/tekst: exporteer dagboek-entries met datum, mood, content voor therapeut-gesprekken (lokaal opslaan)
 - [x] Terugval-preventieplan in backpack: invulbaar plan dat automatisch wordt meegestuurd naar Elias bij herval/terugval melding
 
-## Bug: Missing i18n keys
+## Zone-based Prevention Plan + Fixes
+- [ ] Refactor preventionPlan injection: send only zone-relevant field (PAARS→supportContacts+crisis, ROOD→warningSigns+supportContacts, ORANJE→warningSigns+copingStrategies, GEEL→copingStrategies+safeActivities, GROEN→motivation)
+- [ ] Greeting check: if preventionPlan not filled, Elias mentions it as suggestion
 - [ ] Fix profile.notifications.* i18n keys not translated (section_title, status_active, active_help, test_button, toggle_off)
-
-## Backlog (voor later)
-- [ ] VSP export fix
-- [ ] Balkmetafoor functie
+- [ ] VSP export: combine ingevuld VSP (backpack.vspSection) + VspInsightProfile (AI-patronen) in één export document
+- [ ] Balkmetafoor auto-init: pipeline zet initialized=true bij eerste PAAL01 FIRST_USE_INTRODUCTION
+- [ ] Balkmetafoor feed from chat: post-response parser extraheert draaglast/draagkracht items uit AI-antwoord en schrijft terug naar backpack
+- [ ] Balkmetafoor manual start: "Start balkmetafoor" knop in UI voor handmatige initialisatie

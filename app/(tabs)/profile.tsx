@@ -15,7 +15,7 @@ import { colors as dc, spacing, radius, typography, shadows, cardStyles } from '
 import { HomeButton } from '@/components/home-button';
 import { DataPrivacySection } from '@/lib/features/exportImport/ui/DataPrivacySection';
 import { useExportImportStores } from '@/lib/features/exportImport/hooks/useExportImportStores';
-import { loadVspInsightProfile, buildPdfPlainText } from '@/lib/features/vspInsight';
+import { loadVspInsightProfile, buildPdfPlainText, saveVspInsightProfile } from '@/lib/features/vspInsight';
 import { BalkmetafoorCard } from '@/components/profile/BalkmetafoorCard';
 import { NotificationPermissionCard } from '@/components/profile/NotificationPermissionCard';
 import { createEmptyBalkmetafoor } from '@/lib/types/balkmetafoor.types';
@@ -101,11 +101,31 @@ export default function ProfileScreen() {
     setVspExporting(true);
     try {
       const persona = (state.userType === 'elias' ? 'elias' : 'kim') as 'elias' | 'kim';
-      const profile = await loadVspInsightProfile('local_user', persona);
+      let profile = await loadVspInsightProfile('local_user', persona);
       if (!profile) {
-        Alert.alert(t('profile.alert.no_data.title'), t('profile.alert.no_data.message'));
-        setVspExporting(false);
-        return;
+        // Create an empty profile so the user can still export (shows minimal data)
+        const now = LocalDeviceTimeService.now().utcIso;
+        profile = {
+          profileVersion: 'vsp_insight_profile.v1',
+          persona,
+          userId: 'local_user',
+          createdAt: now,
+          updatedAt: now,
+          selfReportedEarlySigns: [],
+          observedEarlySigns: [],
+          rationalGreenPattern: { patternId: `${persona}_rational_green`, label: 'Rational Green Pattern', confidence: 0, markers: [], examples: [], firstDetectedAt: null, lastUpdatedAt: null },
+          overwhelmPattern: { patternId: `${persona}_overwhelm`, label: 'Overwhelm Pattern', confidence: 0, markers: [], examples: [], firstDetectedAt: null, lastUpdatedAt: null },
+          realGreenPattern: { patternId: `${persona}_real_green`, label: 'Real Green Pattern', confidence: 0, markers: [], examples: [], firstDetectedAt: null, lastUpdatedAt: null },
+          soothingProfile: { genericOptionsUsed: [], personalizedEffectiveOptions: [], excludedOptions: [] },
+          phaseTransitionExamples: [],
+          wheelOfChangeHistory: [],
+          discrepancyHistory: [],
+          lastInsightState: null,
+          lastUserReportedZone: null,
+          lastMoodSnapshot: null,
+          lastSoothingChoiceEvent: null,
+        };
+        await saveVspInsightProfile('local_user', persona, profile);
       }
       const plainText = buildPdfPlainText({
         persona,
