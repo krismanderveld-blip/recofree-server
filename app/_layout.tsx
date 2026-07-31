@@ -169,6 +169,11 @@ export default function RootLayout() {
               <Stack.Screen name="dev/debug-log" options={{ presentation: 'modal' }} />
               <Stack.Screen name="day-structure/wizard" options={{ presentation: 'modal', gestureEnabled: false }} />
               <Stack.Screen name="day-structure/editor" options={{ presentation: 'modal', headerShown: false }} />
+              <Stack.Screen name="eigen-regie-plan/index" options={{ headerShown: false }} />
+              <Stack.Screen name="eigen-regie-plan/zone" options={{ headerShown: false }} />
+              <Stack.Screen name="eigen-regie-plan/triggers" options={{ headerShown: false }} />
+              <Stack.Screen name="eigen-regie-plan/wizard" options={{ presentation: 'modal', gestureEnabled: false, headerShown: false }} />
+              <Stack.Screen name="eigen-regie-plan/export" options={{ presentation: 'modal', headerShown: false }} />
             </Stack>
             <StatusBar style="auto" />
           </QueryClientProvider>

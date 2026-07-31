@@ -55,7 +55,7 @@ describe('Absence Source Selection (Return After Absence)', () => {
 
   it('C3: Returns empty array when no eligible candidates', () => {
     const candidates: GreetingSynthesisCandidate[] = [
-      { sourceType: 'TODAY_MOOD', relevanceScore: 0.5, safeAnchor: 'mood', eligible: true, reason: 'test' },
+      { sourceType: 'TODAY_MOOD', relevanceScore: 0.5, safeAnchor: 'mood', eligible: false, reason: 'below threshold' },
     ];
     const result = selectReturnAfterAbsenceSources({ candidates, absence: defaultAbsence });
     expect(result.length).toBe(0);
@@ -73,7 +73,7 @@ describe('Absence Source Selection (Return After Absence)', () => {
   it('C5: Only selects eligible candidates', () => {
     const candidates: GreetingSynthesisCandidate[] = [
       makeCandidate('TODAY_MOOD', 0.9, 'mood'),
-      { sourceType: 'RECENT_DIARY', relevanceScore: 0.95, safeAnchor: 'diary', eligible: true, reason: 'test' },
+      { sourceType: 'RECENT_DIARY', relevanceScore: 0.95, safeAnchor: 'diary', eligible: false, reason: 'not relevant for absence' },
       makeCandidate('RECENT_GRATITUDE', 0.7, 'gratitude'),
     ];
     const result = selectReturnAfterAbsenceSources({ candidates, absence: defaultAbsence });

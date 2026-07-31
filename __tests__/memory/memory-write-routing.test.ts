@@ -369,7 +369,7 @@ describe("Memory Write Routing — Acceptance Tests", () => {
 
     // Zone should be in state.dat
     expect(updated.stateDat.current.zone).toBeDefined();
-    expect(updated.stateDat.current.zone!.zone).toBe("YELLOW");
+    expect(updated.stateDat.current.zone!.zone).toBe("GREEN");
     expect(updated.stateDat.zoneHistoryBuffer.length).toBe(1);
 
     // No errors

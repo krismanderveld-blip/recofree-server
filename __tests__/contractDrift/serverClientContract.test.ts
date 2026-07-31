@@ -19,6 +19,9 @@
 import { describe, it, expect } from 'vitest';
 import { chatInputSchema } from '../../server/ai-chat';
 
+/** Typed helper for passthrough-parsed data */
+type ParsedData = Record<string, any>;
+
 // ─── Fixtures ──────────────────────────────────────────────────────
 
 /** Minimal required fields that EVERY payload must have */
@@ -399,8 +402,8 @@ describe('P4: Server/Client Contract — Drift Detection', () => {
       if (!result.success) return;
 
       // .passthrough() preserves unknown fields
-      expect((result.data as any).contextDat).toBe(payload.contextDat);
-      expect((result.data as any).deepeningBlock).toBe(payload.deepeningBlock);
+      expect((result.data as ParsedData).contextDat).toBe(payload.contextDat);
+      expect((result.data as ParsedData).deepeningBlock).toBe(payload.deepeningBlock);
     });
 
     it('acknowledgedCandidates passes through without rejection', () => {
@@ -409,7 +412,7 @@ describe('P4: Server/Client Contract — Drift Detection', () => {
       expect(result.success).toBe(true);
       if (!result.success) return;
 
-      expect((result.data as any).acknowledgedCandidates).toEqual({
+      expect((result.data as ParsedData).acknowledgedCandidates).toEqual({
         schemas: [{ name: 'verlating', confidence: 0.75 }],
         modes: [{ name: 'kwetsbaar_kind', confidence: 0.65 }],
       });

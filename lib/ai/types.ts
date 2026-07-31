@@ -401,6 +401,8 @@ export interface Backpack {
     initialContext: string;
     intakeDate: string;
   };
+  /** Eigen Regie Plan — structured self-direction plan (Kim only) */
+  eigenRegiePlan?: import('@/lib/engine/kim/kerp01-types').EigenRegiePlan;
   /** Balkmetafoor — qualitative draaglast/draagkracht balance (Elias only) */
   balkmetafoor?: import('@/lib/types/balkmetafoor.types').BalkmetafoorData;
   /** When the backpack was created */
@@ -1264,6 +1266,13 @@ export interface ChatContext {
   locale?: 'nl' | 'en' | 'fr';
   /** User country code for emergency numbers */
   country?: 'NL' | 'BE' | 'FR' | 'UK' | 'US';
+  /** KERP01: Eigen Regie Plan context — zone-specific signals, helps, anchors, triggers, boundary rules */
+  eigenRegiePlanContext?: {
+    currentZoneEntry: import('@/lib/engine/kim/kerp01-types').EigenRegieZoneEntry | null;
+    mainAnchorSentence: string;
+    triggers: import('@/lib/engine/kim/kerp01-types').EigenRegieTrigger[];
+    boundaryRules: string[];
+  };
   /** Backpack deep analysis: schema/mode/trigger context from GPT-4o */
   backpackAnalysis?: { triggers?: string[]; coreBeliefs?: string[]; copingPatterns?: string[]; schemaHypotheses?: string[] };
 }

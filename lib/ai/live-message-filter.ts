@@ -112,6 +112,8 @@ const OPTIONAL_CONTEXT_KEYS: readonly string[] = [
   'pastReferenceContext',
   // Eigen Regie (Kim only — zone, meaning, impact directives)
   'eigenRegieContext',
+  // KERP01: Eigen Regie Plan (Kim only — zone-specific signals, helps, anchors, triggers, boundary rules)
+  'eigenRegiePlanContext',
 ] as const;
 
 // ─── Main Filter Function ─────────────────────────────────────

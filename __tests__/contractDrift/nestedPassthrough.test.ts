@@ -14,6 +14,9 @@
 import { describe, it, expect } from 'vitest';
 import { chatInputSchema } from '../../server/ai-chat';
 
+/** Typed helper for passthrough-parsed data */
+type ParsedData = Record<string, any>;
+
 // ─── Fixtures ──────────────────────────────────────────────────────
 
 function basePayload() {
@@ -49,8 +52,8 @@ describe('Nested .passthrough() — unknown fields preserved in nested objects',
     const result = chatInputSchema.safeParse(payload);
     expect(result.success).toBe(true);
     if (!result.success) return;
-    expect((result.data as any).futureTopLevelField).toBe('should survive');
-    expect((result.data as any).anotherFutureField).toEqual({ nested: true });
+    expect((result.data as ParsedData).futureTopLevelField).toBe('should survive');
+    expect((result.data as ParsedData).anotherFutureField).toEqual({ nested: true });
   });
 
   it('BACKPACK: unknown fields inside backpack are preserved', () => {
@@ -77,7 +80,7 @@ describe('Nested .passthrough() — unknown fields preserved in nested objects',
     const result = chatInputSchema.safeParse(payload);
     expect(result.success).toBe(true);
     if (!result.success) return;
-    const backpack = (result.data as any).backpack;
+    const backpack = (result.data as ParsedData).backpack;
     expect(backpack.vspSection).toEqual({ zone: 'GROEN', whatHelps: ['wandelen'] });
     expect(backpack.selfImage).toBe('Ik ben sterk');
     expect(backpack.wheelOfChange).toEqual({ stage: 'action', confidence: 0.8 });
@@ -104,7 +107,7 @@ describe('Nested .passthrough() — unknown fields preserved in nested objects',
     const result = chatInputSchema.safeParse(payload);
     expect(result.success).toBe(true);
     if (!result.success) return;
-    const userDat = (result.data as any).userDat;
+    const userDat = (result.data as ParsedData).userDat;
     expect(userDat.schemaTendencies).toEqual([{ schemaId: 'ABANDONMENT', confidence: 0.7 }]);
     expect(userDat.modeTendencies).toEqual([{ modeId: 'VULNERABLE_CHILD', confidence: 0.6 }]);
     expect(userDat.clinicalModeActive).toBe(true);
@@ -131,7 +134,7 @@ describe('Nested .passthrough() — unknown fields preserved in nested objects',
     const result = chatInputSchema.safeParse(payload);
     expect(result.success).toBe(true);
     if (!result.success) return;
-    const entry = (result.data as any).diaryEntries[0];
+    const entry = (result.data as ParsedData).diaryEntries[0];
     expect(entry.id).toBe('diary-001');
     expect(entry.category).toBe('reflectie');
     expect(entry.linkedTrigger).toBe('werkstress');
@@ -159,7 +162,7 @@ describe('Nested .passthrough() — unknown fields preserved in nested objects',
     const result = chatInputSchema.safeParse(payload);
     expect(result.success).toBe(true);
     if (!result.success) return;
-    const entities = (result.data as any).extractedEntities;
+    const entities = (result.data as ParsedData).extractedEntities;
     expect(entities.futureEntityField).toBe('preserved');
     expect(entities.enrichmentVersion).toBe(3);
   });
@@ -184,7 +187,7 @@ describe('Nested .passthrough() — unknown fields preserved in nested objects',
     const result = chatInputSchema.safeParse(payload);
     expect(result.success).toBe(true);
     if (!result.success) return;
-    const analysis = (result.data as any).backpackAnalysis;
+    const analysis = (result.data as ParsedData).backpackAnalysis;
     expect(analysis.futureAnalysisField).toBe('preserved');
     expect(analysis.modelUsed).toBe('gpt-4o-2025-06');
   });
@@ -204,7 +207,7 @@ describe('Nested .passthrough() — unknown fields preserved in nested objects',
     const result = chatInputSchema.safeParse(payload);
     expect(result.success).toBe(true);
     if (!result.success) return;
-    const patterns = (result.data as any).knownUserPatterns;
+    const patterns = (result.data as ParsedData).knownUserPatterns;
     expect(patterns.futurePatternField).toBe('preserved');
     expect(patterns.lastUpdated).toBe('2025-06-01');
   });
@@ -324,9 +327,9 @@ describe('Nested .passthrough() — unknown fields preserved in nested objects',
     }
 
     // Verify nested passthrough fields survived
-    expect((result.data as any).backpack.vspSection).toEqual({ zone: 'GROEN' });
-    expect((result.data as any).userDat.schemaTendencies).toEqual([{ schemaId: 'ABANDONMENT', confidence: 0.7 }]);
-    expect((result.data as any).diaryEntries[0].id).toBe('diary-001');
+    expect((result.data as ParsedData).backpack.vspSection).toEqual({ zone: 'GROEN' });
+    expect((result.data as ParsedData).userDat.schemaTendencies).toEqual([{ schemaId: 'ABANDONMENT', confidence: 0.7 }]);
+    expect((result.data as ParsedData).diaryEntries[0].id).toBe('diary-001');
     expect(result.data.diaryEntries![0].gratitude!.entry1).toBe('Zon');
     expect(result.data.contextDat).toBe('serialized context.dat content');
     expect(result.data.deepeningBlock).toBe('targeted fragment content');

@@ -62,8 +62,22 @@ export interface ChatRequestInput {
     meaning: string;
     impact: { primaryDirective: string; secondaryDirective: string };
   } | null;
-  relationalPattern?: { pattern: string; schema: string; confidence: number } | null;
-
+    relationalPattern?: { pattern: string; schema: string; confidence: number } | null;
+  eigenRegiePlanContext?: {
+    currentZoneEntry: {
+      signals: string;
+      bodySignals: string;
+      thoughts: string;
+      behaviour: string;
+      whatHelps: string;
+      boundaryActions: string;
+      contactRule: string;
+      anchorSentence: string;
+    } | null;
+    mainAnchorSentence: string;
+    triggers: Array<{ trigger: string; lossOfRegiePattern: string; healthyResponse: string }>;
+    boundaryRules: string[];
+  } | null;
   // Full data (SESSION_INIT only)
   backpack?: {
     naam: string;
@@ -640,8 +654,28 @@ export const chatInputSchema = z.object({
     impact: z.object({
       primaryDirective: z.string(),
       secondaryDirective: z.string(),
-    }),
-  }).nullable().optional(),
+    }).passthrough(),
+  }).passthrough().nullable().optional(),
+  // KERP01: Eigen Regie Plan context (Kim only)
+  eigenRegiePlanContext: z.object({
+    currentZoneEntry: z.object({
+      signals: z.string(),
+      bodySignals: z.string(),
+      thoughts: z.string(),
+      behaviour: z.string(),
+      whatHelps: z.string(),
+      boundaryActions: z.string(),
+      contactRule: z.string(),
+      anchorSentence: z.string(),
+    }).passthrough().nullable(),
+    mainAnchorSentence: z.string(),
+    triggers: z.array(z.object({
+      trigger: z.string(),
+      lossOfRegiePattern: z.string(),
+      healthyResponse: z.string(),
+    }).passthrough()),
+    boundaryRules: z.array(z.string()),
+  }).passthrough().nullable().optional(),
   relationalPattern: z.object({
     pattern: z.string(),
     schema: z.string(),
@@ -835,7 +869,7 @@ export const chatInputSchema = z.object({
     diaryRelevance: z.number(),
     triggerRelevance: z.number(),
     projectionRelevance: z.number(),
-  }).nullable().optional(),
+  }).passthrough().nullable().optional(),
   // Signal engine: compressed context summary (replaces full lifeStorySummary in LIVE_MESSAGE)
   contextSummary: z.string().nullable().optional(),
 
@@ -1443,9 +1477,41 @@ function buildFullRelevanceBlock(input: ChatRequestInput): string {
     parts.push(`  Betekenis: ${er.meaning}`);
     parts.push(`  → PRIMAIR: ${er.impact.primaryDirective}`);
     parts.push(`  → SECUNDAIR: ${er.impact.secondaryDirective}`);
-    parts.push(`  → Pas je toon en aanpak aan op deze zone. Respecteer het huidige niveau van eigen regie.`);
+        parts.push(`  → Pas je toon en aanpak aan op deze zone. Respecteer het huidige niveau van eigen regie.`);
   }
-
+  // KERP01: Eigen Regie Plan context (Kim only — zone-specific signals, helps, anchors, triggers, boundary rules)
+  if (input.eigenRegiePlanContext) {
+    const erp = input.eigenRegiePlanContext;
+    parts.push(`\nEIGEN REGIE PLAN (persoonlijk veiligheidsplan):`);
+    if (erp.mainAnchorSentence) {
+      parts.push(`  Ankerzin: "${erp.mainAnchorSentence}"`);
+    }
+    if (erp.currentZoneEntry) {
+      const ze = erp.currentZoneEntry;
+      parts.push(`  HUIDIGE ZONE-SIGNALEN:`);
+      if (ze.signals) parts.push(`    Herkenningssignalen: ${ze.signals}`);
+      if (ze.bodySignals) parts.push(`    Lichaamssignalen: ${ze.bodySignals}`);
+      if (ze.thoughts) parts.push(`    Gedachten: ${ze.thoughts}`);
+      if (ze.behaviour) parts.push(`    Gedrag: ${ze.behaviour}`);
+      if (ze.whatHelps) parts.push(`    Wat helpt: ${ze.whatHelps}`);
+      if (ze.boundaryActions) parts.push(`    Grensacties: ${ze.boundaryActions}`);
+      if (ze.contactRule) parts.push(`    Contactregel: ${ze.contactRule}`);
+      if (ze.anchorSentence) parts.push(`    Zone-ankerzin: "${ze.anchorSentence}"`);
+    }
+    if (erp.triggers.length > 0) {
+      parts.push(`  TRIGGERS & TEGENACTIES:`);
+      for (const t of erp.triggers) {
+        parts.push(`    - "${t.trigger}": verliespatroon = "${t.lossOfRegiePattern}", gezonde reactie = "${t.healthyResponse}"`);
+      }
+    }
+    if (erp.boundaryRules.length > 0) {
+      parts.push(`  GRENSREGELS:`);
+      for (const rule of erp.boundaryRules) {
+        parts.push(`    - ${rule}`);
+      }
+    }
+    parts.push(`  → Gebruik dit plan als referentie. Verwijs naar signalen/ankerzinnen wanneer relevant. Help de gebruiker hun eigen plan te volgen.`);
+  }
   const diary = input.recentDiary || [];
   if (diary.length > 0) {
     parts.push(`RECENT DIARY ENTRIES:`);

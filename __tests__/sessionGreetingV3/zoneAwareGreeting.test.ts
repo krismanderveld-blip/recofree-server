@@ -230,13 +230,13 @@ describe('MISSING_DATA override with logs.dat', () => {
 
   it('T8: Without logs.dat and no fresh data, MISSING_DATA triggers', () => {
     const candidates = [
-      { sourceType: 'TODAY_MOOD' as const, relevanceScore: 0, reason: '', safeAnchor: '' , eligible: true },
-      { sourceType: 'RECENT_DIARY' as const, relevanceScore: 0, reason: '', safeAnchor: '' , eligible: true },
-      { sourceType: 'RECENT_GRATITUDE' as const, relevanceScore: 0, reason: '', safeAnchor: '' , eligible: true },
-      { sourceType: 'BACKPACK_RECENT_UPDATE' as const, relevanceScore: 0, reason: '', safeAnchor: '' , eligible: true },
-      { sourceType: 'ACTIVE_HOPE_OR_FEAR' as const, relevanceScore: 0, reason: '', safeAnchor: '' , eligible: true },
-      { sourceType: 'SCHEMA_ROTATION' as const, relevanceScore: 0, reason: '', safeAnchor: '' , eligible: true },
-      { sourceType: 'LAST_SESSION_SUMMARY' as const, relevanceScore: 0, reason: '', safeAnchor: '' , eligible: true },
+      { sourceType: 'TODAY_MOOD' as const, relevanceScore: 0, reason: '', safeAnchor: '' , eligible: false },
+      { sourceType: 'RECENT_DIARY' as const, relevanceScore: 0, reason: '', safeAnchor: '' , eligible: false },
+      { sourceType: 'RECENT_GRATITUDE' as const, relevanceScore: 0, reason: '', safeAnchor: '' , eligible: false },
+      { sourceType: 'BACKPACK_RECENT_UPDATE' as const, relevanceScore: 0, reason: '', safeAnchor: '' , eligible: false },
+      { sourceType: 'ACTIVE_HOPE_OR_FEAR' as const, relevanceScore: 0, reason: '', safeAnchor: '' , eligible: false },
+      { sourceType: 'SCHEMA_ROTATION' as const, relevanceScore: 0, reason: '', safeAnchor: '' , eligible: false },
+      { sourceType: 'LAST_SESSION_SUMMARY' as const, relevanceScore: 0, reason: '', safeAnchor: '' , eligible: false },
     ];
 
     const override = resolveGreetingOverride({

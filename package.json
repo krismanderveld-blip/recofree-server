@@ -10,6 +10,7 @@
     "build": "esbuild server/_core/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist",
     "start": "NODE_ENV=production node dist/index.js",
     "check": "tsc --noEmit",
+    "ci:typecheck": "tsc --noEmit --pretty",
     "lint": "expo lint",
     "format": "prettier --write .",
     "test": "vitest run",

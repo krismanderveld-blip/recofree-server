@@ -3206,6 +3206,30 @@ export async function processMessage(
         secondaryDirective: kimDecision.eigenRegie.impact.secondaryDirective,
       },
     } : undefined,
+    // KERP01: Eigen Regie Plan context (Kim only) — zone-specific signals, helps, anchors, triggers, boundary rules
+    eigenRegiePlanContext: (() => {
+      if (backpack.userType !== 'kim' || !backpack.eigenRegiePlan) return undefined;
+      const plan = backpack.eigenRegiePlan;
+      // Map current eigenRegie score to the corresponding zone
+      const erScore: number | null = 'eigenRegie' in currentMood
+        ? (currentMood as import('../ai/types').KimMoodSliders).eigenRegie
+        : null;
+      let currentZoneId: import('../engine/kim/kerp01-types').EigenRegieZoneId = 'geel';
+      if (erScore != null) {
+        if (erScore >= 80) currentZoneId = 'donkergroen';
+        else if (erScore >= 60) currentZoneId = 'lichtgroen';
+        else if (erScore >= 40) currentZoneId = 'geel';
+        else if (erScore >= 20) currentZoneId = 'oranje';
+        else currentZoneId = 'rood';
+      }
+      const currentZoneEntry = plan.zones[currentZoneId] ?? null;
+      return {
+        currentZoneEntry,
+        mainAnchorSentence: plan.mainAnchorSentence,
+        triggers: plan.triggers,
+        boundaryRules: plan.boundaryRules,
+      };
+    })(),
     // User-selected app language (from i18n provider)
     locale: options?.locale,
     // User-selected country (for crisis numbers)

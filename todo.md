@@ -2485,3 +2485,20 @@
 - [x] Added .passthrough() to nested zod objects: backpack, userDat, diaryEntries items, extractedEntities, backpackAnalysis, knownUserPatterns
 - [x] Wrote nestedPassthrough.test.ts: 10 tests verifying all client fields survive parsing (top-level, backpack, userDat, diaryEntries, extractedEntities, backpackAnalysis, knownUserPatterns, recently added fields, gratitude, full payload)
 - [x] Result: 0 TS errors (all files), 26/26 contract tests passing, dev server clean
+
+## Phase 3: Quick Improvements + KERP01 Kim Eigen Regie Plan
+- [x] Add .passthrough() to eigenRegieContext.impact and relevanceScores nested objects in zod schema
+- [x] Add CI tsc check script to package.json
+- [x] Remove (result.data as any) casts in contract tests — use proper typed helper (ParsedData)
+- [x] KERP01: Define EigenRegiePlan, EigenRegieZoneEntry, EigenRegieTrigger, EigenRegiePlanSource types
+- [x] KERP01: Add eigenRegiePlan field to Backpack type
+- [x] KERP01: Build storage layer (read/write eigenRegiePlan in backpack AsyncStorage)
+- [x] KERP01: Build Eigen Regie Plan overview screen (zone bar, zone cards)
+- [x] KERP01: Build zone detail/edit screen (signals, bodySignals, thoughts, behaviour, whatHelps, boundaryActions, contactRule, anchorSentence)
+- [x] KERP01: Build wizard flow (source selection → pattern detection → zone proposals → whatHelps → anchor sentences → triggers/rules → review)
+- [x] KERP01: Integrate into pipeline SESSION_INIT (inject current zone entry + anchor + boundary rules)
+- [x] KERP01: Integrate into pipeline LIVE_MESSAGE (detect regie-relevant topics, inject zone entry)
+- [x] KERP01: Add eigenRegiePlanContext to server zod schema + ChatRequestInput interface
+- [x] KERP01: Inject eigenRegiePlanContext into GPT prompt builder (server-side)
+- [x] KERP01: Build text export (share with therapist)
+- [x] KERP01: Fix TS errors and run tests (0 TS errors, 1616 tests passing)

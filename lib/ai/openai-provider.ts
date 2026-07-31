@@ -568,6 +568,8 @@ export class OpenAIProvider implements AIProvider {
           preventionPlan: (gptPayload as any).userDatSummary?.preventionPlan ?? null,
           // Eigen Regie (Kim only — zone, meaning, impact directives)
           eigenRegieContext: context.eigenRegieContext ?? null,
+          // KERP01: Eigen Regie Plan (Kim only — zone-specific signals, helps, anchors, triggers, boundary rules)
+          eigenRegiePlanContext: context.eigenRegiePlanContext ?? null,
 
           // Static context (SESSION_INIT only — NOT resent per message)
           selectedTriggers: gptPayload.selectedTriggers,

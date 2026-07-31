@@ -131,6 +131,10 @@ interface UserContextValue {
   getVsp: () => import('./engine/elias/vsp').VspLevel | null;
   /** Replace the entire backpack (used by Backpack Wizard after upload/manual fill) */
   replaceBackpack: (backpack: Backpack) => Promise<void>;
+  /** Update the Eigen Regie Plan (Kim only) */
+  updateEigenRegiePlan: (plan: import('./engine/kim/kerp01-types').EigenRegiePlan) => Promise<void>;
+  /** Get current Eigen Regie Plan (Kim only) */
+  getEigenRegiePlan: () => import('./engine/kim/kerp01-types').EigenRegiePlan | null;
   /** Convenience getters */
   getUserName: () => string;
   getMood: () => MoodSliders;
@@ -1068,9 +1072,20 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     return state.backpack;
   }, [state.backpack]);
 
-  const getUserDat = useCallback(() => {
+    const getUserDat = useCallback(() => {
     return state.userDat;
   }, [state.userDat]);
+
+  const updateEigenRegiePlan = useCallback(async (plan: import('./engine/kim/kerp01-types').EigenRegiePlan) => {
+    if (!state.backpack) return;
+    const updatedBackpack = { ...state.backpack, eigenRegiePlan: plan };
+    dispatch({ type: 'UPDATE_BACKPACK', payload: updatedBackpack });
+    await persistBackpack(updatedBackpack);
+  }, [state.backpack]);
+
+  const getEigenRegiePlan = useCallback(() => {
+    return state.backpack?.eigenRegiePlan ?? null;
+  }, [state.backpack]);
 
   return (
     <UserContext.Provider
@@ -1115,6 +1130,8 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         updateVsp,
         getVsp,
         replaceBackpack,
+        updateEigenRegiePlan,
+        getEigenRegiePlan,
       }}
     >
       {children}

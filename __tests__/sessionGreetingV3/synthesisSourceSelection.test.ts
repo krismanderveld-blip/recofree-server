@@ -158,8 +158,8 @@ describe('Synthesis Source Selection', () => {
   it('T13: Returns empty array when no candidates are eligible', () => {
     const selected = selectGreetingSynthesisSources({
       candidates: [
-        { sourceType: 'TODAY_MOOD', relevanceScore: 0, safeAnchor: '', reason: 'no data' , eligible: true },
-        { sourceType: 'RECENT_DIARY', relevanceScore: 0, safeAnchor: '', reason: 'no data' , eligible: true },
+        { sourceType: 'TODAY_MOOD', relevanceScore: 0, safeAnchor: '', reason: 'no data' , eligible: false },
+        { sourceType: 'RECENT_DIARY', relevanceScore: 0, safeAnchor: '', reason: 'no data' , eligible: false },
       ],
       moodMetric: null,
     });
