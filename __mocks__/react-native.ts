@@ -14,4 +14,5 @@ export const Dimensions = { get: () => ({ width: 375, height: 812 }) };
 export const Animated = { View, Text, createAnimatedComponent: (c: any) => c, Value: class { constructor() {} } };
 export const Keyboard = { dismiss: () => {}, addListener: () => ({ remove: () => {} }) };
 export const AppState = { currentState: "active", addEventListener: () => ({ remove: () => {} }) };
-export default { Platform, StyleSheet, View, Text };
+export const NativeModules = {};
+export default { Platform, StyleSheet, View, Text, NativeModules };

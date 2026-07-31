@@ -5,11 +5,11 @@
  * Replaces LocalDeviceTimeService.now().utcIso with new Date().toISOString().
  * The pipeline layer function is inlined here to avoid the @/lib/core/time import.
  */
-import { detectVspInsightState } from '../../src/features/vspInsight/detectVspInsightState';
-import { routeVspInsight } from '../../src/features/vspInsight/vspInsightRouter';
-import { routeKimVspInsight, mapToKimInsightState } from '../../src/features/vspInsight/kimVspVariant';
-import { extractChatSignals } from '../../src/features/vspInsight/vspChatSignalAdapter';
-import { buildDgtSoothingFlow } from '../../src/features/vspInsight/vspDgtSoothingFlow';
+import { detectVspInsightState } from '../../lib/features/vspInsight/detectVspInsightState';
+import { routeVspInsight } from '../../lib/features/vspInsight/vspInsightRouter';
+import { routeKimVspInsight, mapToKimInsightState } from '../../lib/features/vspInsight/kimVspVariant';
+import { extractChatSignals } from '../../lib/features/vspInsight/vspChatSignalAdapter';
+import { buildDgtSoothingFlow } from '../../lib/features/vspInsight/vspDgtSoothingFlow';
 import type {
   VspInsightState,
   VspFrameworkSelection,
@@ -20,7 +20,7 @@ import type {
   VspZone,
   RecoFreePersona,
   ImmutableSafetyCoreSnapshot,
-} from '../../src/features/vspInsight/vspInsightTypes';
+} from '../../lib/features/vspInsight/vspInsightTypes';
 
 // ─── Types ──────────────────────────────────────────────────────
 export interface VspInsightServerInput {

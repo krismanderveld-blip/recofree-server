@@ -11,12 +11,12 @@ import {
   buildKimCluster4Payload,
   buildKimCluster4MemoryPatch,
   applyKimCluster4SafetyFilter,
-} from '@/modules/kim/emotionalLossCluster';
+} from '@/lib/engine/kim/modules/emotionalLossCluster';
 import type {
   KimCluster4RuntimeInput,
   KimCluster4DetectionResult,
   KimCluster4PromptPayload,
-} from '@/modules/kim/emotionalLossCluster';
+} from '@/lib/engine/kim/modules/emotionalLossCluster';
 
 export interface KimP9Input {
   message: string;

@@ -596,3 +596,37 @@ Post-GPT (pipeline.ts)
 | Conversation window (10) | `lib/rugzak/gpt-payload-builder.ts` | 10 recent + summary + crisis retention |
 | Token truncation (200/msg) | `lib/rugzak/gpt-payload-builder.ts` | Long messages capped at ~800 chars |
 
+### Test Infrastructure — Vitest Mocks
+| Mock | File | Purpose |
+|------|------|---------|
+| react-native | `__mocks__/react-native.ts` | Platform, StyleSheet, NativeModules stubs |
+| expo-modules-core | `__mocks__/expo-modules-core.ts` | EventEmitter, NativeModule stubs |
+| expo-constants | `__mocks__/expo-constants.ts` | Constants.expoConfig stub |
+| expo-linking | `__mocks__/expo-linking.ts` | createURL, parse stubs |
+| expo-secure-store | `__mocks__/expo-secure-store.ts` | In-memory key-value store |
+| async-storage | `__mocks__/async-storage.ts` | In-memory key-value store |
+
+### Contract Tests — Server/Client Drift Detection
+```
+__tests__/contractDrift/serverClientContract.test.ts (16 tests)
+  → SESSION_INIT: Elias full payload passes chatInputSchema
+  → SESSION_INIT: Kim full payload (eigenRegieContext) passes
+  → SESSION_INIT: all fields preserved after parse
+  → LIVE_MESSAGE: slim payload passes
+  → LIVE_MESSAGE: single/multiple module contexts pass
+  → Passthrough fields: contextDat, deepeningBlock, acknowledgedCandidates preserved
+  → Persona gating: Elias stageOfChange / Kim eigenRegieContext
+  → Edge cases: loopDetected/languageRecovery as strings, missing required fields fail, invalid enums fail
+```
+
+### Bug Fix: Diary Persistence (SessionMemoryCache timing)
+```
+Root cause: @recofree_diary was registered in chat.tsx (line 120) but NOT in
+user-context.tsx before unlock(). Since unlock() only decrypts registered keys,
+diary entries were never loaded into the in-memory cache at app start.
+
+Fix: Added '@recofree_diary' to registerKeys() in user-context.tsx (line 308)
+before the unlock() call (line 317). Now diary entries are decrypted at app
+startup regardless of which tab the user opens first.
+```
+

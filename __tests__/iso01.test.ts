@@ -2,11 +2,11 @@
  * ISO01 Test Cases — Isolatie en Sociale Terugtrekking (Kim only)
  */
 import { describe, it, expect } from 'vitest';
-import { detectISO01 } from '@/modules/kim/iso01/detector';
-import { buildISO01PromptPayload } from '@/modules/kim/iso01/prompt';
-import { buildISO01StoragePatch } from '@/modules/kim/iso01/storage';
-import { routeISO01 } from '@/modules/kim/iso01/router';
-import type { ISO01RuntimeInput } from '@/modules/kim/iso01/types';
+import { detectISO01 } from '@/lib/engine/kim/modules/iso01/detector';
+import { buildISO01PromptPayload } from '@/lib/engine/kim/modules/iso01/prompt';
+import { buildISO01StoragePatch } from '@/lib/engine/kim/modules/iso01/storage';
+import { routeISO01 } from '@/lib/engine/kim/modules/iso01/router';
+import type { ISO01RuntimeInput } from '@/lib/engine/kim/modules/iso01/types';
 
 function baseInput(overrides: Partial<ISO01RuntimeInput> = {}): ISO01RuntimeInput {
   return {

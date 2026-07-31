@@ -14,27 +14,27 @@
  *   KST01 → K06_SAFETY when crisisLevel >= 2
  */
 
-import { detectKST01 } from '../../../modules/kim/kst01/kst01-detector';
-import { routeKST01 } from '../../../modules/kim/kst01/kst01-router';
-import { buildKST01PromptPayload, buildKST01FullPromptBlock } from '../../../modules/kim/kst01/kst01-prompt';
-import type { KST01RuntimeInputs, KST01DetectionResult, KST01OutputContract, KST01StorageState } from '../../../modules/kim/kst01/kst01-types';
+import { detectKST01 } from './modules/kst01/kst01-detector';
+import { routeKST01 } from './modules/kst01/kst01-router';
+import { buildKST01PromptPayload, buildKST01FullPromptBlock } from './modules/kst01/kst01-prompt';
+import type { KST01RuntimeInputs, KST01DetectionResult, KST01OutputContract, KST01StorageState } from './modules/kst01/kst01-types';
 
-import { detectKDL01 } from '../../../modules/kim/kdl01/kdl01-detector';
-import { routeKDL01 } from '../../../modules/kim/kdl01/kdl01-router';
-import { buildKDL01PromptPayload, buildKDL01FullPromptBlock } from '../../../modules/kim/kdl01/kdl01-prompt';
-import type { KDL01RuntimeInputs, KDL01DetectionResult, KDL01OutputContract, KDL01StorageState } from '../../../modules/kim/kdl01/kdl01-types';
+import { detectKDL01 } from './modules/kdl01/kdl01-detector';
+import { routeKDL01 } from './modules/kdl01/kdl01-router';
+import { buildKDL01PromptPayload, buildKDL01FullPromptBlock } from './modules/kdl01/kdl01-prompt';
+import type { KDL01RuntimeInputs, KDL01DetectionResult, KDL01OutputContract, KDL01StorageState } from './modules/kdl01/kdl01-types';
 
-import { detectKBR01 } from '../../../modules/kim/kbr01/kbr01-detector';
-import { routeKBR01 } from '../../../modules/kim/kbr01/kbr01-router';
-import { buildKBR01PromptPayload, buildKBR01FullPromptBlock } from '../../../modules/kim/kbr01/kbr01-prompt';
-import type { KBR01RuntimeInputs, KBR01DetectionResult, KBR01OutputContract, KBR01StorageState } from '../../../modules/kim/kbr01/kbr01-types';
+import { detectKBR01 } from './modules/kbr01/kbr01-detector';
+import { routeKBR01 } from './modules/kbr01/kbr01-router';
+import { buildKBR01PromptPayload, buildKBR01FullPromptBlock } from './modules/kbr01/kbr01-prompt';
+import type { KBR01RuntimeInputs, KBR01DetectionResult, KBR01OutputContract, KBR01StorageState } from './modules/kbr01/kbr01-types';
 
-import { detectKSC01 } from '../../../modules/kim/ksc01/ksc01-detector';
-import { routeKSC01 } from '../../../modules/kim/ksc01/ksc01-router';
-import { buildKSC01PromptPayload, buildKSC01FullPromptBlock } from '../../../modules/kim/ksc01/ksc01-prompt';
-import type { KSC01RuntimeInputs, KSC01DetectionResult, KSC01OutputContract, KSC01StorageState } from '../../../modules/kim/ksc01/ksc01-types';
+import { detectKSC01 } from './modules/ksc01/ksc01-detector';
+import { routeKSC01 } from './modules/ksc01/ksc01-router';
+import { buildKSC01PromptPayload, buildKSC01FullPromptBlock } from './modules/ksc01/ksc01-prompt';
+import type { KSC01RuntimeInputs, KSC01DetectionResult, KSC01OutputContract, KSC01StorageState } from './modules/ksc01/ksc01-types';
 
-import type { KimModuleRouteTarget } from '../../../modules/kim/kst01/kst01-types';
+import type { KimModuleRouteTarget } from './modules/kst01/kst01-types';
 
 // ─── Combined Result ───────────────────────────────────────────────
 

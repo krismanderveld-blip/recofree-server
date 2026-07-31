@@ -3,16 +3,16 @@
  * Validates both modules' detectors, prompts, storage, and routing
  */
 import { describe, it, expect } from 'vitest';
-import { detectTERV01 } from '../modules/elias/terv01/terv01-detector';
-import { buildTERV01PromptPayload } from '../modules/elias/terv01/terv01-prompt';
-import { buildTERV01StoragePatch } from '../modules/elias/terv01/terv01-storage';
-import { routeTERV01 } from '../modules/elias/terv01/terv01-router';
-import { detectMI02 } from '../modules/elias/mi02/mi02-detector';
-import { buildMI02PromptPayload } from '../modules/elias/mi02/mi02-prompt';
-import { buildMI02StoragePatch } from '../modules/elias/mi02/mi02-storage';
-import { routeMI02 } from '../modules/elias/mi02/mi02-router';
-import type { TERV01RuntimeInput } from '../modules/elias/terv01/terv01-types';
-import type { MI02RuntimeInput } from '../modules/elias/mi02/mi02-types';
+import { detectTERV01 } from '../lib/engine/elias/modules/terv01/terv01-detector';
+import { buildTERV01PromptPayload } from '../lib/engine/elias/modules/terv01/terv01-prompt';
+import { buildTERV01StoragePatch } from '../lib/engine/elias/modules/terv01/terv01-storage';
+import { routeTERV01 } from '../lib/engine/elias/modules/terv01/terv01-router';
+import { detectMI02 } from '../lib/engine/elias/modules/mi02/mi02-detector';
+import { buildMI02PromptPayload } from '../lib/engine/elias/modules/mi02/mi02-prompt';
+import { buildMI02StoragePatch } from '../lib/engine/elias/modules/mi02/mi02-storage';
+import { routeMI02 } from '../lib/engine/elias/modules/mi02/mi02-router';
+import type { TERV01RuntimeInput } from '../lib/engine/elias/modules/terv01/terv01-types';
+import type { MI02RuntimeInput } from '../lib/engine/elias/modules/mi02/mi02-types';
 
 // ── TERV01 Tests ──
 

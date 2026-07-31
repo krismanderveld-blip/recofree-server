@@ -20,13 +20,13 @@ import {
   buildKindK01Payload,
   buildDangerChildMemoryPatch,
   filterDangerChildOutput,
-} from '../../../modules/kim/dangerChildCluster';
+} from './modules/dangerChildCluster';
 import type {
   KimCluster2RuntimeInput,
   KimCluster2DetectionResult,
   KimCluster2ModuleId,
   KimCluster2MemoryPatch,
-} from '../../../modules/kim/dangerChildCluster';
+} from './modules/dangerChildCluster';
 
 export interface KimAdvancedP7Input {
   intakeCompleted: boolean;

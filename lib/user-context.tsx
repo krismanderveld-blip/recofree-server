@@ -90,7 +90,7 @@ interface UserContextValue {
   /** Update the structured VSP section (Elias only) */
   updateVspSection: (vspPlan: import('./ai/types').VspStructuredPlan) => Promise<void>;
   /** Update the balkmetafoor data (Elias only) */
-  updateBalkmetafoor: (balkmetafoor: import('@/src/types/balkmetafoor.types').BalkmetafoorData) => Promise<void>;
+  updateBalkmetafoor: (balkmetafoor: import('@/lib/types/balkmetafoor.types').BalkmetafoorData) => Promise<void>;
   /** Recompute Rugzak influence (call on every message) */
   recomputeInfluence: () => void;
   setCrisisLevel: (level: number) => void;
@@ -305,6 +305,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         SessionMemoryCache.registerKeys([
           BACKPACK_KEY,
           USERDAT_KEY,
+          '@recofree_diary',
           // Memory-layer keys (both personas — only the active one will have data)
           'recofree_memory/elias/user.dat',
           'recofree_memory/elias/state.dat',
@@ -704,7 +705,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
   // ── Balkmetafoor (Elias only, qualitative draaglast/draagkracht) ──
 
-  const updateBalkmetafoor = useCallback(async (balkmetafoor: import('@/src/types/balkmetafoor.types').BalkmetafoorData) => {
+  const updateBalkmetafoor = useCallback(async (balkmetafoor: import('@/lib/types/balkmetafoor.types').BalkmetafoorData) => {
     if (!state.backpack) return;
     const updatedBackpack: Backpack = {
       ...state.backpack,

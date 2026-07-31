@@ -18,17 +18,17 @@
  *   - All modules are Elias-only, never Kim
  */
 
-import { RELAPSE_MARKERS_NL, RELAPSE_MARKERS_EN } from '@/modules/elias/fale01/fale01-detector';
-import { FORGIVENESS_MARKERS_NL, FORGIVENESS_MARKERS_EN } from '@/modules/elias/verg01/verg01-detector';
-import { GRIEF_MARKERS_NL, GRIEF_MARKERS_EN } from '@/modules/elias/rouw01/rouw01-detector';
-import { IDENTITY_MARKERS_NL, IDENTITY_MARKERS_EN } from '@/modules/elias/iden01/iden01-detector';
-import { MEANING_MARKERS_NL, MEANING_MARKERS_EN } from '@/modules/elias/zink01/zink01-detector';
+import { RELAPSE_MARKERS_NL, RELAPSE_MARKERS_EN } from '@/lib/engine/elias/modules/fale01/fale01-detector';
+import { FORGIVENESS_MARKERS_NL, FORGIVENESS_MARKERS_EN } from '@/lib/engine/elias/modules/verg01/verg01-detector';
+import { GRIEF_MARKERS_NL, GRIEF_MARKERS_EN } from '@/lib/engine/elias/modules/rouw01/rouw01-detector';
+import { IDENTITY_MARKERS_NL, IDENTITY_MARKERS_EN } from '@/lib/engine/elias/modules/iden01/iden01-detector';
+import { MEANING_MARKERS_NL, MEANING_MARKERS_EN } from '@/lib/engine/elias/modules/zink01/zink01-detector';
 
-import { buildFALE01FullPromptBlock } from '@/modules/elias/fale01/fale01-prompt';
-import { buildVERG01FullPromptBlock } from '@/modules/elias/verg01/verg01-prompt';
-import { buildROUW01FullPromptBlock } from '@/modules/elias/rouw01/rouw01-prompt';
-import { buildIDEN01FullPromptBlock } from '@/modules/elias/iden01/iden01-prompt';
-import { buildZINK01FullPromptBlock } from '@/modules/elias/zink01/zink01-prompt';
+import { buildFALE01FullPromptBlock } from '@/lib/engine/elias/modules/fale01/fale01-prompt';
+import { buildVERG01FullPromptBlock } from '@/lib/engine/elias/modules/verg01/verg01-prompt';
+import { buildROUW01FullPromptBlock } from '@/lib/engine/elias/modules/rouw01/rouw01-prompt';
+import { buildIDEN01FullPromptBlock } from '@/lib/engine/elias/modules/iden01/iden01-prompt';
+import { buildZINK01FullPromptBlock } from '@/lib/engine/elias/modules/zink01/zink01-prompt';
 
 // ─── Types ──────────────────────────────────────────────────────────────────────
 

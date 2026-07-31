@@ -4,8 +4,8 @@
  * Runs only when no acute module is active.
  */
 
-import type { KimCluster3RuntimeInput, KimCluster3DetectionResult, KimCluster3PromptPayload, KimCluster3MemoryPatch } from '@/modules/kim/relationalDynamicsCluster';
-import { resolveCluster3Priority, buildKimCluster3Payload, buildKimCluster3MemoryPatch, enforceKimCluster3OutputSafety } from '@/modules/kim/relationalDynamicsCluster';
+import type { KimCluster3RuntimeInput, KimCluster3DetectionResult, KimCluster3PromptPayload, KimCluster3MemoryPatch } from '@/lib/engine/kim/modules/relationalDynamicsCluster';
+import { resolveCluster3Priority, buildKimCluster3Payload, buildKimCluster3MemoryPatch, enforceKimCluster3OutputSafety } from '@/lib/engine/kim/modules/relationalDynamicsCluster';
 
 export interface KimP8Input {
   persona: 'kim' | 'elias' | 'unknown';

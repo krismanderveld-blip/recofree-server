@@ -47,10 +47,10 @@ describe('Absence Source Selection (Return After Absence)', () => {
     ];
     const result = selectReturnAfterAbsenceSources({ candidates, absence: defaultAbsence });
     expect(result.length).toBe(2);
-    // V3.3: relevanceScore determines order (includes recency bonus from buildCandidates).
-    // RECENT_DIARY has 0.9 (highest), TODAY_MOOD has 0.5 (second).
-    expect(result[0].sourceType).toBe('RECENT_DIARY');
-    expect(result[1].sourceType).toBe('TODAY_MOOD');
+    // LAST_SESSION_SUMMARY always gets continuity slot (first) when eligible in return-after-absence.
+    // Second slot goes to highest relevanceScore among remaining (RECENT_DIARY: 0.9).
+    expect(result[0].sourceType).toBe('LAST_SESSION_SUMMARY');
+    expect(result[1].sourceType).toBe('RECENT_DIARY');
   });
 
   it('C3: Returns empty array when no eligible candidates', () => {

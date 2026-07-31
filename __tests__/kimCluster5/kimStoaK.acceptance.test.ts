@@ -5,12 +5,12 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { detectStoaK } from '@/modules/kim/stoaK/kimStoaKDetector';
-import { buildKimStoaKPayload } from '@/modules/kim/stoaK/kimStoaKPayload';
-import { buildKimStoaKMemoryPatch } from '@/modules/kim/stoaK/kimStoaKMemoryPatch';
-import { enforceKimStoaKOutputSafety } from '@/modules/kim/stoaK/kimStoaKSafetyFilter';
+import { detectStoaK } from '@/lib/engine/kim/modules/stoaK/kimStoaKDetector';
+import { buildKimStoaKPayload } from '@/lib/engine/kim/modules/stoaK/kimStoaKPayload';
+import { buildKimStoaKMemoryPatch } from '@/lib/engine/kim/modules/stoaK/kimStoaKMemoryPatch';
+import { enforceKimStoaKOutputSafety } from '@/lib/engine/kim/modules/stoaK/kimStoaKSafetyFilter';
 import { runKimAdvancedP10 } from '@/lib/engine/kim/kim-advanced-modules-p10';
-import type { KimStoaRuntimeInput } from '@/modules/kim/stoaK/kimStoaK.types';
+import type { KimStoaRuntimeInput } from '@/lib/engine/kim/modules/stoaK/kimStoaK.types';
 
 function makeBaseInput(overrides: Partial<KimStoaRuntimeInput> = {}): KimStoaRuntimeInput {
   return {

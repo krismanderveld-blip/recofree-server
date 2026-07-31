@@ -11,13 +11,13 @@
  * Kim only. Never reads Elias data. Crisis/safety override.
  */
 
-import { detectCDP01 } from "@/modules/kim/cdp01/cdp01-detector";
-import { routeCDP01 } from "@/modules/kim/cdp01/cdp01-router";
-import { detectRNW01 } from "@/modules/kim/rnw01/rnw01-detector";
-import { routeRNW01 } from "@/modules/kim/rnw01/rnw01-router";
+import { detectCDP01 } from "@/lib/engine/kim/modules/cdp01/cdp01-detector";
+import { routeCDP01 } from "@/lib/engine/kim/modules/cdp01/cdp01-router";
+import { detectRNW01 } from "@/lib/engine/kim/modules/rnw01/rnw01-detector";
+import { routeRNW01 } from "@/lib/engine/kim/modules/rnw01/rnw01-router";
 
-import type { CDP01RuntimeInput } from "@/modules/kim/cdp01/cdp01-types";
-import type { RNW01RuntimeInput } from "@/modules/kim/rnw01/rnw01-types";
+import type { CDP01RuntimeInput } from "@/lib/engine/kim/modules/cdp01/cdp01-types";
+import type { RNW01RuntimeInput } from "@/lib/engine/kim/modules/rnw01/rnw01-types";
 
 export interface KimAdvancedP3Input {
   intakeCompleted: boolean;

@@ -15,12 +15,12 @@
  *   - TERV01 never activates DURING an active PAARS session
  */
 
-import { detectTERV01 } from '@/modules/elias/terv01/terv01-detector';
-import { buildTERV01PromptPayload } from '@/modules/elias/terv01/terv01-prompt';
-import { detectMI02 } from '@/modules/elias/mi02/mi02-detector';
-import { buildMI02PromptPayload } from '@/modules/elias/mi02/mi02-prompt';
-import type { TERV01RuntimeInput } from '@/modules/elias/terv01/terv01-types';
-import type { MI02RuntimeInput } from '@/modules/elias/mi02/mi02-types';
+import { detectTERV01 } from '@/lib/engine/elias/modules/terv01/terv01-detector';
+import { buildTERV01PromptPayload } from '@/lib/engine/elias/modules/terv01/terv01-prompt';
+import { detectMI02 } from '@/lib/engine/elias/modules/mi02/mi02-detector';
+import { buildMI02PromptPayload } from '@/lib/engine/elias/modules/mi02/mi02-prompt';
+import type { TERV01RuntimeInput } from '@/lib/engine/elias/modules/terv01/terv01-types';
+import type { MI02RuntimeInput } from '@/lib/engine/elias/modules/mi02/mi02-types';
 import { LocalDeviceTimeService } from "@/lib/core/time";
 
 // ─── Types ──────────────────────────────────────────────────────────────────────

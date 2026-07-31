@@ -4,11 +4,11 @@
  * Persona-separated: reads only Elias data.
  */
 
-import { detectSLAAP01Elias } from "@/modules/elias/slaap01/slaap01-detector";
-import { routeSLAAP01Elias } from "@/modules/elias/slaap01/slaap01-router";
-import { buildSLAAP01EliasPromptPayload } from "@/modules/elias/slaap01/slaap01-prompt";
-import { buildSLAAP01EliasStoragePatch } from "@/modules/elias/slaap01/slaap01-storage";
-import type { SLAAP01EliasRuntimeInput } from "@/modules/elias/slaap01/slaap01-types";
+import { detectSLAAP01Elias } from "@/lib/engine/elias/modules/slaap01/slaap01-detector";
+import { routeSLAAP01Elias } from "@/lib/engine/elias/modules/slaap01/slaap01-router";
+import { buildSLAAP01EliasPromptPayload } from "@/lib/engine/elias/modules/slaap01/slaap01-prompt";
+import { buildSLAAP01EliasStoragePatch } from "@/lib/engine/elias/modules/slaap01/slaap01-storage";
+import type { SLAAP01EliasRuntimeInput } from "@/lib/engine/elias/modules/slaap01/slaap01-types";
 
 export interface EliasP4Input {
   persona: string;

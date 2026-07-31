@@ -14,23 +14,23 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { detectVspInsightState } from "@/src/features/vspInsight/detectVspInsightState";
-import { detectRationalGreenSignals } from "@/src/features/vspInsight/detectRationalGreenSignals";
-import { detectOverwhelmSignals } from "@/src/features/vspInsight/detectOverwhelmSignals";
-import { routeVspInsight } from "@/src/features/vspInsight/vspInsightRouter";
-import { routeKimVspInsight, mapToKimInsightState, detectKimOverwhelmBoost, detectKimRationalGreenBoost } from "@/src/features/vspInsight/kimVspVariant";
-import { extractChatSignals, mergeChatSignals, createEmptyChatSignals } from "@/src/features/vspInsight/vspChatSignalAdapter";
-import { buildDgtSoothingFlow, getAllSoothingOptions } from "@/src/features/vspInsight/vspDgtSoothingFlow";
-import { buildPdfSections, buildPdfPlainText } from "@/src/features/vspInsight/vspInsightPdfExport";
-import { detectPhaseTransition, createPhaseTrackerState } from "@/src/features/vspInsight/vspInsightPhaseTracker";
-import { runVspInsightLayer } from "@/src/features/vspInsight/vspInsightPipelineLayer";
+import { detectVspInsightState } from "@/lib/features/vspInsight/detectVspInsightState";
+import { detectRationalGreenSignals } from "@/lib/features/vspInsight/detectRationalGreenSignals";
+import { detectOverwhelmSignals } from "@/lib/features/vspInsight/detectOverwhelmSignals";
+import { routeVspInsight } from "@/lib/features/vspInsight/vspInsightRouter";
+import { routeKimVspInsight, mapToKimInsightState, detectKimOverwhelmBoost, detectKimRationalGreenBoost } from "@/lib/features/vspInsight/kimVspVariant";
+import { extractChatSignals, mergeChatSignals, createEmptyChatSignals } from "@/lib/features/vspInsight/vspChatSignalAdapter";
+import { buildDgtSoothingFlow, getAllSoothingOptions } from "@/lib/features/vspInsight/vspDgtSoothingFlow";
+import { buildPdfSections, buildPdfPlainText } from "@/lib/features/vspInsight/vspInsightPdfExport";
+import { detectPhaseTransition, createPhaseTrackerState } from "@/lib/features/vspInsight/vspInsightPhaseTracker";
+import { runVspInsightLayer } from "@/lib/features/vspInsight/vspInsightPipelineLayer";
 import type {
   VspMoodSlidersSnapshot,
   VspChatSignalSnapshot,
   ImmutableSafetyCoreSnapshot,
   VspInsightProfile,
   VspPdfExportInput,
-} from "@/src/features/vspInsight/vspInsightTypes";
+} from "@/lib/features/vspInsight/vspInsightTypes";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 

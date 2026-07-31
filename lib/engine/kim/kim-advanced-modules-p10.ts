@@ -10,13 +10,13 @@ import {
   buildKimStoaKPayload,
   buildKimStoaKMemoryPatch,
   enforceKimStoaKOutputSafety,
-} from '@/modules/kim/stoaK';
+} from '@/lib/engine/kim/modules/stoaK';
 import type {
   KimStoaRuntimeInput,
   KimStoaDetectionResult,
   KimStoaPromptPayload,
   KimStoaMemoryPatch,
-} from '@/modules/kim/stoaK';
+} from '@/lib/engine/kim/modules/stoaK';
 
 export interface KimP10Input {
   message: string;

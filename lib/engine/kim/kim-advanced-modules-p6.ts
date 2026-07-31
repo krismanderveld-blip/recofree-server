@@ -17,15 +17,15 @@ import {
   routeKimRelapseCluster,
   filterKimRelapseClusterOutput,
   scanMarkers,
-} from '../../../modules/kim/relapseCluster';
+} from './modules/relapseCluster';
 import type {
   KimRelapseClusterRuntimeInput,
   KimRelapseClusterLanguage,
   KimCaregiverState,
   KimSafetyRiskLevel,
   KimRelapseClusterModuleId,
-} from '../../../modules/kim/relapseCluster';
-import type { KimRelapseClusterRouterOutput } from '../../../modules/kim/relapseCluster';
+} from './modules/relapseCluster';
+import type { KimRelapseClusterRouterOutput } from './modules/relapseCluster';
 
 export interface KimAdvancedP6Input {
   intakeCompleted: boolean;

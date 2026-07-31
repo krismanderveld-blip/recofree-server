@@ -5,8 +5,8 @@
 
 import { View, Text, FlatList, TextInput, TouchableOpacity } from "react-native";
 import { useState, useCallback } from "react";
-import type { BalkmetafoorData, BalkmetafoorEntry } from "@/src/types/balkmetafoor.types";
-import { deriveBalkmetafoorVisualState } from "@/src/types/balkmetafoor.types";
+import type { BalkmetafoorData, BalkmetafoorEntry } from "@/lib/types/balkmetafoor.types";
+import { deriveBalkmetafoorVisualState } from "@/lib/types/balkmetafoor.types";
 import { useTranslation, tStatic } from '@/lib/i18n';
 
 interface BalkmetafoorCardProps {

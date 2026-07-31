@@ -2383,3 +2383,18 @@
 - [x] Pipeline integration: call runVspIntakeAdapters() at SESSION_INIT and merge into VspInsightProfile
 - [x] Output safety filter: call auditVspOutputSafety() after GPT response and log violations to debug trace
 - [x] Clinical mode UI: add schema/mode confirmation button in clinical dropdown
+
+## Structure Consolidation Refactor
+- [ ] P2: Move src/features/vspInsight → lib/features/vspInsight
+- [ ] P2: Move src/pipeline/memory/ → lib/pipeline/memory/
+- [ ] P1: Move modules/elias/* → lib/engine/elias/modules/
+- [ ] P1: Move modules/kim/* → lib/engine/kim/modules/
+- [ ] P1: Move src/modules/elias/* → lib/engine/elias/modules/
+- [ ] P1: Move src/modules/kim/* → lib/engine/kim/modules/
+- [ ] P3: Remove empty src/ directory
+- [x] P4: Add contract tests for server/client engine drift (__tests__/contractDrift/serverClientContract.test.ts — 16 tests)
+- [ ] Update STRUCTURE_MAP.md with new layout
+
+## Bug Fixes — Session Persistence
+- [x] Fix diary/gratitude entries disappearing after days: @recofree_diary key not registered in user-context.tsx before unlock() — entries were never decrypted into SessionMemoryCache at app start
+- [x] Fix vitest expo-modules-core/expo-constants/expo-linking mock failures: added __mocks__/expo-modules-core.ts, __mocks__/expo-constants.ts, __mocks__/expo-linking.ts + vitest.config.ts aliases

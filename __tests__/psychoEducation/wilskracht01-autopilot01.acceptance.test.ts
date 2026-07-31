@@ -11,19 +11,19 @@
  * 7. VSP PAARS → safety deferral
  */
 import { describe, it, expect } from "vitest";
-import { detectWilskracht01 } from "@/src/modules/elias/WILSKRACHT01/detector";
-import { detectAutopilot01 } from "@/src/modules/elias/AUTOPILOT01/detector";
-import { buildWilskracht01PromptPayload } from "@/src/modules/elias/WILSKRACHT01/promptPayloadBuilder";
-import { buildAutopilot01PromptPayload } from "@/src/modules/elias/AUTOPILOT01/promptPayloadBuilder";
-import { buildEliasPsychoEducationMemoryPatch } from "@/src/modules/elias/psychoEducation/memoryPatchBuilder";
-import { readPsychoEducationMemoryHints } from "@/src/modules/elias/psychoEducation/readPsychoEducationMemoryHints";
-import { enforceEliasPsychoEducationOutputSafety } from "@/src/modules/elias/psychoEducation/outputSafetyFilter";
+import { detectWilskracht01 } from "@/lib/engine/elias/modules/WILSKRACHT01/detector";
+import { detectAutopilot01 } from "@/lib/engine/elias/modules/AUTOPILOT01/detector";
+import { buildWilskracht01PromptPayload } from "@/lib/engine/elias/modules/WILSKRACHT01/promptPayloadBuilder";
+import { buildAutopilot01PromptPayload } from "@/lib/engine/elias/modules/AUTOPILOT01/promptPayloadBuilder";
+import { buildEliasPsychoEducationMemoryPatch } from "@/lib/engine/elias/modules/psychoEducation/memoryPatchBuilder";
+import { readPsychoEducationMemoryHints } from "@/lib/engine/elias/modules/psychoEducation/readPsychoEducationMemoryHints";
+import { enforceEliasPsychoEducationOutputSafety } from "@/lib/engine/elias/modules/psychoEducation/outputSafetyFilter";
 import { buildDetectionBundle } from "@/lib/pipeline/memory/memoryIntegration";
 import { buildMemoryWritePlan } from "@/lib/pipeline/memory/memoryWriteRouter";
 import type {
   EliasPsychoEducationRuntimeInput,
   EliasPsychoEducationMemoryHint,
-} from "@/src/types/eliasPsychoEducation.types";
+} from "@/lib/types/eliasPsychoEducation.types";
 
 // ─── Test Helpers ────────────────────────────────────────────────────────────
 

@@ -6,33 +6,33 @@
 import { describe, it, expect } from "vitest";
 
 // Detectors
-import { detectBlik01 } from "@/src/modules/elias/BLIK01/blik01.detector";
-import { detectOntk01 } from "@/src/modules/elias/ONTK01/ontk01.detector";
-import { detectIkst01 } from "@/src/modules/elias/IKST01/ikst01.detector";
-import { detectCoex01 } from "@/src/modules/elias/COEX01/coex01.detector";
+import { detectBlik01 } from "@/lib/engine/elias/modules/BLIK01/blik01.detector";
+import { detectOntk01 } from "@/lib/engine/elias/modules/ONTK01/ontk01.detector";
+import { detectIkst01 } from "@/lib/engine/elias/modules/IKST01/ikst01.detector";
+import { detectCoex01 } from "@/lib/engine/elias/modules/COEX01/coex01.detector";
 
 // Memory patch builders
-import { buildBlik01MemoryPatch } from "@/src/modules/elias/BLIK01/blik01.memoryPatchBuilder";
-import { buildOntk01MemoryPatch } from "@/src/modules/elias/ONTK01/ontk01.memoryPatchBuilder";
-import { buildIkst01MemoryPatch } from "@/src/modules/elias/IKST01/ikst01.memoryPatchBuilder";
-import { buildCoex01MemoryPatch } from "@/src/modules/elias/COEX01/coex01.memoryPatchBuilder";
+import { buildBlik01MemoryPatch } from "@/lib/engine/elias/modules/BLIK01/blik01.memoryPatchBuilder";
+import { buildOntk01MemoryPatch } from "@/lib/engine/elias/modules/ONTK01/ontk01.memoryPatchBuilder";
+import { buildIkst01MemoryPatch } from "@/lib/engine/elias/modules/IKST01/ikst01.memoryPatchBuilder";
+import { buildCoex01MemoryPatch } from "@/lib/engine/elias/modules/COEX01/coex01.memoryPatchBuilder";
 
 // Prompt builders
-import { buildBlik01PromptPayload } from "@/src/modules/elias/BLIK01/blik01.promptBuilder";
-import { buildOntk01PromptPayload } from "@/src/modules/elias/ONTK01/ontk01.promptBuilder";
-import { buildIkst01PromptPayload } from "@/src/modules/elias/IKST01/ikst01.promptBuilder";
-import { buildCoex01PromptPayload } from "@/src/modules/elias/COEX01/coex01.promptBuilder";
+import { buildBlik01PromptPayload } from "@/lib/engine/elias/modules/BLIK01/blik01.promptBuilder";
+import { buildOntk01PromptPayload } from "@/lib/engine/elias/modules/ONTK01/ontk01.promptBuilder";
+import { buildIkst01PromptPayload } from "@/lib/engine/elias/modules/IKST01/ikst01.promptBuilder";
+import { buildCoex01PromptPayload } from "@/lib/engine/elias/modules/COEX01/coex01.promptBuilder";
 
 // Output safety filter
-import { enforceSelfAcceptanceClusterOutputSafety } from "@/src/modules/elias/selfAcceptanceClusterOutputSafetyFilter";
+import { enforceSelfAcceptanceClusterOutputSafety } from "@/lib/engine/elias/modules/selfAcceptanceClusterOutputSafetyFilter";
 
 // Context assembler
-import { assembleEliasSelfAcceptanceMemoryContext } from "@/src/pipeline/memory/eliasSelfAcceptanceContextAssembler";
+import { assembleEliasSelfAcceptanceMemoryContext } from "@/lib/pipeline/memory/eliasSelfAcceptanceContextAssembler";
 
 // Memory write router
 import { buildMemoryWritePlan } from "@/lib/pipeline/memory/memoryWriteRouter";
 import type { PipelineDetectionBundle, PipelineTurnContext } from "@/lib/types/memory/memoryCore.types";
-import type { EliasSelfAcceptanceRuntimeInput, EliasSelfAcceptanceMemoryHints } from "@/src/types/eliasSelfAcceptanceCluster.types";
+import type { EliasSelfAcceptanceRuntimeInput, EliasSelfAcceptanceMemoryHints } from "@/lib/types/eliasSelfAcceptanceCluster.types";
 
 // ─── HELPERS ─────────────────────────────────────────────────
 

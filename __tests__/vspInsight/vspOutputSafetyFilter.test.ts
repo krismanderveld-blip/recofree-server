@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   auditVspOutputSafety,
   hasHighSeverityViolation,
-} from "../../src/features/vspInsight/vspOutputSafetyFilter";
+} from "../../lib/features/vspInsight/vspOutputSafetyFilter";
 
 const baseInput = {
   clinicalModeActive: false,

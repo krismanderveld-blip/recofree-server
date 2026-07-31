@@ -11,10 +11,10 @@ import {
   buildRuntimeInput,
   filterKimRelapseClusterOutput,
   BELGIAN_CRISIS_NUMBERS,
-} from '../../modules/kim/relapseCluster';
+} from '../../lib/engine/kim/modules/relapseCluster';
 import type {
   KimRelapseClusterRuntimeInput,
-} from '../../modules/kim/relapseCluster';
+} from '../../lib/engine/kim/modules/relapseCluster';
 
 // Helper to build a minimal Kim runtime input
 function kimInput(

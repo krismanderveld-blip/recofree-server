@@ -7,8 +7,8 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { detectPAR01 } from '@/modules/kim/par01/par01-detector';
-import type { PAR01DetectionInput } from '@/modules/kim/par01/par01-types';
+import { detectPAR01 } from '@/lib/engine/kim/modules/par01/par01-detector';
+import type { PAR01DetectionInput } from '@/lib/engine/kim/modules/par01/par01-types';
 
 function makeInput(message: string, overrides?: Partial<PAR01DetectionInput>): PAR01DetectionInput {
   return {

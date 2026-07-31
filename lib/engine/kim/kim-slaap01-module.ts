@@ -4,11 +4,11 @@
  * Persona-separated: reads only Kim data.
  */
 
-import { detectSLAAP01Kim } from "@/modules/kim/slaap01/slaap01-detector";
-import { routeSLAAP01Kim } from "@/modules/kim/slaap01/slaap01-router";
-import { buildSLAAP01KimPromptPayload } from "@/modules/kim/slaap01/slaap01-prompt";
-import { buildSLAAP01KimStoragePatch } from "@/modules/kim/slaap01/slaap01-storage";
-import type { SLAAP01KimRuntimeInput } from "@/modules/kim/slaap01/slaap01-types";
+import { detectSLAAP01Kim } from "@/lib/engine/kim/modules/slaap01/slaap01-detector";
+import { routeSLAAP01Kim } from "@/lib/engine/kim/modules/slaap01/slaap01-router";
+import { buildSLAAP01KimPromptPayload } from "@/lib/engine/kim/modules/slaap01/slaap01-prompt";
+import { buildSLAAP01KimStoragePatch } from "@/lib/engine/kim/modules/slaap01/slaap01-storage";
+import type { SLAAP01KimRuntimeInput } from "@/lib/engine/kim/modules/slaap01/slaap01-types";
 
 export interface KimSLAAP01Input {
   persona: string;

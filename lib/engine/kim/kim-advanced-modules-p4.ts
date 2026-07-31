@@ -12,15 +12,15 @@
  * Kim only. Never reads Elias data. Crisis/safety override.
  */
 
-import { detectPAR01 } from "@/modules/kim/par01/par01-detector";
-import { routePAR01 } from "@/modules/kim/par01/par01-router";
-import { buildPAR01Prompt } from "@/modules/kim/par01/par01-prompt";
-import { detectFIN01 } from "@/modules/kim/fin01/fin01-detector";
-import { routeFIN01 } from "@/modules/kim/fin01/fin01-router";
-import { buildFIN01Prompt } from "@/modules/kim/fin01/fin01-prompt";
+import { detectPAR01 } from "@/lib/engine/kim/modules/par01/par01-detector";
+import { routePAR01 } from "@/lib/engine/kim/modules/par01/par01-router";
+import { buildPAR01Prompt } from "@/lib/engine/kim/modules/par01/par01-prompt";
+import { detectFIN01 } from "@/lib/engine/kim/modules/fin01/fin01-detector";
+import { routeFIN01 } from "@/lib/engine/kim/modules/fin01/fin01-router";
+import { buildFIN01Prompt } from "@/lib/engine/kim/modules/fin01/fin01-prompt";
 
-import type { PAR01DetectionInput } from "@/modules/kim/par01/par01-types";
-import type { FIN01DetectionInput } from "@/modules/kim/fin01/fin01-types";
+import type { PAR01DetectionInput } from "@/lib/engine/kim/modules/par01/par01-types";
+import type { FIN01DetectionInput } from "@/lib/engine/kim/modules/fin01/fin01-types";
 
 export interface KimAdvancedP4Input {
   intakeCompleted: boolean;

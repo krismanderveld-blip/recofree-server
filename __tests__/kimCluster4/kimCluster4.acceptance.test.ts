@@ -11,11 +11,11 @@
  * 6. Safety filter blocks diagnosis/prescription language
  */
 import { describe, it, expect } from 'vitest';
-import { resolveCluster4Priority } from '@/modules/kim/emotionalLossCluster/kimCluster4Detector';
-import { buildKimCluster4Payload } from '@/modules/kim/emotionalLossCluster/kimCluster4Payloads';
-import { applyKimCluster4SafetyFilter } from '@/modules/kim/emotionalLossCluster/kimCluster4SafetyFilter';
+import { resolveCluster4Priority } from '@/lib/engine/kim/modules/emotionalLossCluster/kimCluster4Detector';
+import { buildKimCluster4Payload } from '@/lib/engine/kim/modules/emotionalLossCluster/kimCluster4Payloads';
+import { applyKimCluster4SafetyFilter } from '@/lib/engine/kim/modules/emotionalLossCluster/kimCluster4SafetyFilter';
 import { runKimAdvancedP9 } from '@/lib/engine/kim/kim-advanced-modules-p9';
-import type { KimCluster4RuntimeInput } from '@/modules/kim/emotionalLossCluster/kimCluster4.types';
+import type { KimCluster4RuntimeInput } from '@/lib/engine/kim/modules/emotionalLossCluster/kimCluster4.types';
 
 function makeInput(overrides: Partial<KimCluster4RuntimeInput> = {}): KimCluster4RuntimeInput {
   return {

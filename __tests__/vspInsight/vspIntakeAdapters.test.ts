@@ -4,7 +4,7 @@ import {
   adaptEarlySigns,
   adaptSelfImage,
   runVspIntakeAdapters,
-} from "../../src/features/vspInsight/vspIntakeAdapters";
+} from "../../lib/features/vspInsight/vspIntakeAdapters";
 
 describe("VSP Intake Adapters", () => {
   describe("adaptWheelOfChange", () => {

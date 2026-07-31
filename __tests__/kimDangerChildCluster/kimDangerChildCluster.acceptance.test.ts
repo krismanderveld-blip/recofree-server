@@ -17,11 +17,11 @@ import {
   detectKindK01,
   resolveCluster2Priority,
   scanMarkers,
-} from '@/modules/kim/dangerChildCluster/kimDangerChildDetector';
-import { buildGevaarK01Payload, buildKindK01Payload } from '@/modules/kim/dangerChildCluster/kimDangerChildPayloads';
-import { buildDangerChildMemoryPatch } from '@/modules/kim/dangerChildCluster/kimDangerChildMemoryPatch';
-import { filterDangerChildOutput } from '@/modules/kim/dangerChildCluster/kimDangerChildSafetyFilter';
-import type { KimCluster2RuntimeInput, FixedBelgianCrisisNumber } from '@/modules/kim/dangerChildCluster/kimDangerChildCluster.types';
+} from '@/lib/engine/kim/modules/dangerChildCluster/kimDangerChildDetector';
+import { buildGevaarK01Payload, buildKindK01Payload } from '@/lib/engine/kim/modules/dangerChildCluster/kimDangerChildPayloads';
+import { buildDangerChildMemoryPatch } from '@/lib/engine/kim/modules/dangerChildCluster/kimDangerChildMemoryPatch';
+import { filterDangerChildOutput } from '@/lib/engine/kim/modules/dangerChildCluster/kimDangerChildSafetyFilter';
+import type { KimCluster2RuntimeInput, FixedBelgianCrisisNumber } from '@/lib/engine/kim/modules/dangerChildCluster/kimDangerChildCluster.types';
 import { GptSignalEngine } from '@/lib/engine/local-llm/gpt-signal-engine';
 import { NullSignalEngine } from '@/lib/engine/local-llm/null-engine';
 

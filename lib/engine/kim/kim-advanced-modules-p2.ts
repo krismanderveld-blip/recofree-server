@@ -11,16 +11,16 @@
  * Kim only. Never reads Elias data. Crisis/safety override.
  */
 
-import { detectBEDR01 } from "@/modules/kim/bedr01/bedr01-detector";
-import { routeBEDR01 } from "@/modules/kim/bedr01/bedr01-router";
-import { detectVETR01 } from "@/modules/kim/vetr01/vetr01-detector";
-import { routeVETR01 } from "@/modules/kim/vetr01/vetr01-router";
-import { detectGASL01 } from "@/modules/kim/gasl01/gasl01-detector";
-import { routeGASL01 } from "@/modules/kim/gasl01/gasl01-router";
+import { detectBEDR01 } from "@/lib/engine/kim/modules/bedr01/bedr01-detector";
+import { routeBEDR01 } from "@/lib/engine/kim/modules/bedr01/bedr01-router";
+import { detectVETR01 } from "@/lib/engine/kim/modules/vetr01/vetr01-detector";
+import { routeVETR01 } from "@/lib/engine/kim/modules/vetr01/vetr01-router";
+import { detectGASL01 } from "@/lib/engine/kim/modules/gasl01/gasl01-detector";
+import { routeGASL01 } from "@/lib/engine/kim/modules/gasl01/gasl01-router";
 
-import type { BEDR01RuntimeInput } from "@/modules/kim/bedr01/bedr01-types";
-import type { VETR01RuntimeInput } from "@/modules/kim/vetr01/vetr01-types";
-import type { GASL01RuntimeInput } from "@/modules/kim/gasl01/gasl01-types";
+import type { BEDR01RuntimeInput } from "@/lib/engine/kim/modules/bedr01/bedr01-types";
+import type { VETR01RuntimeInput } from "@/lib/engine/kim/modules/vetr01/vetr01-types";
+import type { GASL01RuntimeInput } from "@/lib/engine/kim/modules/gasl01/gasl01-types";
 
 export interface KimAdvancedP2Input {
   intakeCompleted: boolean;

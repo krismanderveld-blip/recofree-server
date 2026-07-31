@@ -14,9 +14,9 @@
  * Kim only. Never reads Elias data. Crisis/safety override.
  */
 
-import { detectISO01 } from '@/modules/kim/iso01/detector';
-import { buildISO01PromptPayload } from '@/modules/kim/iso01/prompt';
-import type { ISO01RuntimeInput } from '@/modules/kim/iso01/types';
+import { detectISO01 } from '@/lib/engine/kim/modules/iso01/detector';
+import { buildISO01PromptPayload } from '@/lib/engine/kim/modules/iso01/prompt';
+import type { ISO01RuntimeInput } from '@/lib/engine/kim/modules/iso01/types';
 
 export interface KimAdvancedP5Input {
   intakeCompleted: boolean;

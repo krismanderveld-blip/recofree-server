@@ -9,12 +9,12 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { resolveCluster3Priority } from '@/modules/kim/relationalDynamicsCluster/kimCluster3Detector';
-import { buildKimCluster3Payload } from '@/modules/kim/relationalDynamicsCluster/kimCluster3Payloads';
-import { buildKimCluster3MemoryPatch } from '@/modules/kim/relationalDynamicsCluster/kimCluster3MemoryPatch';
-import { enforceKimCluster3OutputSafety } from '@/modules/kim/relationalDynamicsCluster/kimCluster3SafetyFilter';
+import { resolveCluster3Priority } from '@/lib/engine/kim/modules/relationalDynamicsCluster/kimCluster3Detector';
+import { buildKimCluster3Payload } from '@/lib/engine/kim/modules/relationalDynamicsCluster/kimCluster3Payloads';
+import { buildKimCluster3MemoryPatch } from '@/lib/engine/kim/modules/relationalDynamicsCluster/kimCluster3MemoryPatch';
+import { enforceKimCluster3OutputSafety } from '@/lib/engine/kim/modules/relationalDynamicsCluster/kimCluster3SafetyFilter';
 import { runKimAdvancedModulesP8 } from '@/lib/engine/kim/kim-advanced-modules-p8';
-import type { KimCluster3RuntimeInput } from '@/modules/kim/relationalDynamicsCluster/kimCluster3.types';
+import type { KimCluster3RuntimeInput } from '@/lib/engine/kim/modules/relationalDynamicsCluster/kimCluster3.types';
 
 function makeBaseInput(overrides: Partial<KimCluster3RuntimeInput> = {}): KimCluster3RuntimeInput {
   return {

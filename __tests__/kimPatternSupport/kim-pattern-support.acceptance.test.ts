@@ -6,23 +6,23 @@
  * memory continuity, output safety, prompt builders, memory write router.
  */
 import { describe, it, expect } from "vitest";
-import { detectPaalK01 } from "@/src/modules/kim/PAAL-K01/paalK01.detector";
-import { detectBeheK01 } from "@/src/modules/kim/BEHE-K01/beheK01.detector";
-import { detectAanpK01 } from "@/src/modules/kim/AANP-K01/aanpK01.detector";
-import { detectCodepK01 } from "@/src/modules/kim/CODEP-K01/codepK01.detector";
-import { buildPaalK01MemoryPatch } from "@/src/modules/kim/PAAL-K01/paalK01.memoryPatchBuilder";
-import { buildBeheK01MemoryPatch } from "@/src/modules/kim/BEHE-K01/beheK01.memoryPatchBuilder";
-import { buildAanpK01MemoryPatch } from "@/src/modules/kim/AANP-K01/aanpK01.memoryPatchBuilder";
-import { buildCodepK01MemoryPatch } from "@/src/modules/kim/CODEP-K01/codepK01.memoryPatchBuilder";
-import { buildPaalK01PromptPayload } from "@/src/modules/kim/PAAL-K01/paalK01.promptBuilder";
-import { buildBeheK01PromptPayload } from "@/src/modules/kim/BEHE-K01/beheK01.promptBuilder";
-import { buildAanpK01PromptPayload } from "@/src/modules/kim/AANP-K01/aanpK01.promptBuilder";
-import { buildCodepK01PromptPayload } from "@/src/modules/kim/CODEP-K01/codepK01.promptBuilder";
-import { enforceKimPatternSupportOutputSafety } from "@/src/modules/kim/patternSupportOutputSafetyFilter";
-import { assembleKimPatternSupportMemoryContext } from "@/src/pipeline/memory/kimPatternSupportContextAssembler";
+import { detectPaalK01 } from "@/lib/engine/kim/modules/PAAL-K01/paalK01.detector";
+import { detectBeheK01 } from "@/lib/engine/kim/modules/BEHE-K01/beheK01.detector";
+import { detectAanpK01 } from "@/lib/engine/kim/modules/AANP-K01/aanpK01.detector";
+import { detectCodepK01 } from "@/lib/engine/kim/modules/CODEP-K01/codepK01.detector";
+import { buildPaalK01MemoryPatch } from "@/lib/engine/kim/modules/PAAL-K01/paalK01.memoryPatchBuilder";
+import { buildBeheK01MemoryPatch } from "@/lib/engine/kim/modules/BEHE-K01/beheK01.memoryPatchBuilder";
+import { buildAanpK01MemoryPatch } from "@/lib/engine/kim/modules/AANP-K01/aanpK01.memoryPatchBuilder";
+import { buildCodepK01MemoryPatch } from "@/lib/engine/kim/modules/CODEP-K01/codepK01.memoryPatchBuilder";
+import { buildPaalK01PromptPayload } from "@/lib/engine/kim/modules/PAAL-K01/paalK01.promptBuilder";
+import { buildBeheK01PromptPayload } from "@/lib/engine/kim/modules/BEHE-K01/beheK01.promptBuilder";
+import { buildAanpK01PromptPayload } from "@/lib/engine/kim/modules/AANP-K01/aanpK01.promptBuilder";
+import { buildCodepK01PromptPayload } from "@/lib/engine/kim/modules/CODEP-K01/codepK01.promptBuilder";
+import { enforceKimPatternSupportOutputSafety } from "@/lib/engine/kim/modules/patternSupportOutputSafetyFilter";
+import { assembleKimPatternSupportMemoryContext } from "@/lib/pipeline/memory/kimPatternSupportContextAssembler";
 import { buildMemoryWritePlan } from "@/lib/pipeline/memory/memoryWriteRouter";
 import type { PipelineDetectionBundle, PipelineTurnContext } from "@/lib/types/memory/memoryCore.types";
-import type { KimPatternRuntimeInput } from "@/src/types/kimPatternsSupport.types";
+import type { KimPatternRuntimeInput } from "@/lib/types/kimPatternsSupport.types";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 

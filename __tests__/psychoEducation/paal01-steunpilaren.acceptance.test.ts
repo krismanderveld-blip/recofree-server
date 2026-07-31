@@ -5,16 +5,16 @@
  * conditional state.dat, layerJustification, intervention types, updated safety filter.
  */
 import { describe, it, expect } from "vitest";
-import { detectPaal01 } from "@/src/modules/elias/PAAL01/paal01.detector";
-import { buildPaal01MemoryPatch } from "@/src/modules/elias/PAAL01/paal01.memoryPatchBuilder";
-import { buildPaal01PromptPayload } from "@/src/modules/elias/PAAL01/paal01.promptBuilder";
-import { enforceSteunpilarenOutputSafety } from "@/src/modules/elias/steunpilarenOutputSafetyFilter";
-import { deriveBalkmetafoorVisualState, createEmptyBalkmetafoor } from "@/src/types/balkmetafoor.types";
-import type { SteunpilarenRuntimeInput } from "@/src/types/eliasSteunpilaren.types";
-import type { BalkmetafoorData } from "@/src/types/balkmetafoor.types";
+import { detectPaal01 } from "@/lib/engine/elias/modules/PAAL01/paal01.detector";
+import { buildPaal01MemoryPatch } from "@/lib/engine/elias/modules/PAAL01/paal01.memoryPatchBuilder";
+import { buildPaal01PromptPayload } from "@/lib/engine/elias/modules/PAAL01/paal01.promptBuilder";
+import { enforceSteunpilarenOutputSafety } from "@/lib/engine/elias/modules/steunpilarenOutputSafetyFilter";
+import { deriveBalkmetafoorVisualState, createEmptyBalkmetafoor } from "@/lib/types/balkmetafoor.types";
+import type { SteunpilarenRuntimeInput } from "@/lib/types/eliasSteunpilaren.types";
+import type { BalkmetafoorData } from "@/lib/types/balkmetafoor.types";
 import { buildMemoryWritePlan } from "@/lib/pipeline/memory/memoryWriteRouter";
 import type { PipelineDetectionBundle, PipelineTurnContext } from "@/lib/types/memory/memoryCore.types";
-import { assembleEliasSteunpilarenMemoryContext } from "@/src/pipeline/memory/eliasSteunpilarenContextAssembler";
+import { assembleEliasSteunpilarenMemoryContext } from "@/lib/pipeline/memory/eliasSteunpilarenContextAssembler";
 
 function createBaseInput(overrides?: Partial<SteunpilarenRuntimeInput>): SteunpilarenRuntimeInput {
   return {

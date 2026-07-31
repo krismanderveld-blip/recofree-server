@@ -315,11 +315,11 @@ import {
   applyKimModuleMemoryPatch,
 } from '../engine/kim/kim-module-memory';
 import { applyAutoConfirmation, detectUserAcknowledgment, detectClinicalAcknowledgment, applyUserAcknowledgment, applyClinicalAcknowledgment } from '../engine/shared/tendency-confirmation';
-import { runVspInsightLayer, type VspInsightPipelineResult } from '../../src/features/vspInsight/vspInsightPipelineLayer';
-import { runVspIntakeAdapters } from '../../src/features/vspInsight/vspIntakeAdapters';
-import { detectWilskracht01 } from '../../src/modules/elias/WILSKRACHT01/detector';
-import { detectAutopilot01 } from '../../src/modules/elias/AUTOPILOT01/detector';
-import type { EliasPsychoEducationRuntimeInput, EliasPsychoEducationDetectionResult } from '../../src/types/eliasPsychoEducation.types';
+import { runVspInsightLayer, type VspInsightPipelineResult } from '@/lib/features/vspInsight/vspInsightPipelineLayer';
+import { runVspIntakeAdapters } from '@/lib/features/vspInsight/vspIntakeAdapters';
+import { detectWilskracht01 } from '@/lib/engine/elias/modules/WILSKRACHT01/detector';
+import { detectAutopilot01 } from '@/lib/engine/elias/modules/AUTOPILOT01/detector';
+import type { EliasPsychoEducationRuntimeInput, EliasPsychoEducationDetectionResult } from '@/lib/types/eliasPsychoEducation.types';
 import type { PsychoEducationActivation } from '../types/memory/memoryCore.types';
 import { searchPastReferences } from '../pipeline/memory/pastReferenceSearch';
 import { buildDetectionBundle, runMemoryWriteBack, getSessionLifecycleManager, type PipelineResultForMemory } from '../pipeline/memory/memoryIntegration';
@@ -2094,7 +2094,7 @@ export async function processMessage(
   // ── STEP 5e8a3: Elias Steunpilaren (PAAL01) ──
   let paal01Activation: { moduleId: 'PAAL01'; triggerContext: string; confidence: number; matchedMarkers: string[] } | null = null;
   if (backpack.userType === 'elias' && !!(backpack as any).intake?.startEmotion) {
-    const { detectPaal01 } = require('@/src/modules/elias/PAAL01/paal01.detector');
+    const { detectPaal01 } = require('@/lib/engine/elias/modules/PAAL01/paal01.detector');
     const currentZoneLabel = (sessionBuffer.currentZoneColor?.toUpperCase() ?? 'UNKNOWN') as 'GROEN' | 'GEEL' | 'ORANJE' | 'ROOD' | 'PAARS' | 'UNKNOWN';
     const storedPilaren = (currentUserDat as any).steunpilaren ?? [];
     const balkInit = (currentUserDat as any).balkmetafoor?.initialized === true;
@@ -2150,10 +2150,10 @@ export async function processMessage(
   // ── STEP 5e8a4: Elias Self-Acceptance Cluster (BLIK01/ONTK01/IKST01/COEX01) ──
   let selfAcceptanceActivation: { moduleId: 'BLIK01' | 'ONTK01' | 'IKST01' | 'COEX01'; confidence: number; matchedMarkers: string[]; interventionType: string; patternType?: string } | null = null;
   if (backpack.userType === 'elias' && !!(backpack as any).intake?.startEmotion) {
-    const { detectBlik01 } = require('@/src/modules/elias/BLIK01/blik01.detector');
-    const { detectOntk01 } = require('@/src/modules/elias/ONTK01/ontk01.detector');
-    const { detectIkst01 } = require('@/src/modules/elias/IKST01/ikst01.detector');
-    const { detectCoex01 } = require('@/src/modules/elias/COEX01/coex01.detector');
+    const { detectBlik01 } = require('@/lib/engine/elias/modules/BLIK01/blik01.detector');
+    const { detectOntk01 } = require('@/lib/engine/elias/modules/ONTK01/ontk01.detector');
+    const { detectIkst01 } = require('@/lib/engine/elias/modules/IKST01/ikst01.detector');
+    const { detectCoex01 } = require('@/lib/engine/elias/modules/COEX01/coex01.detector');
     const sacZone = (sessionBuffer.currentZoneColor?.toUpperCase() ?? 'UNKNOWN') as 'GROEN' | 'GEEL' | 'ORANJE' | 'ROOD' | 'PAARS' | 'UNKNOWN';
     const sacInput = {
       persona: 'elias' as const,
@@ -2211,10 +2211,10 @@ export async function processMessage(
   // ── STEP 5e8a5: Kim Pattern Support (PAAL-K01, BEHE-K01, AANP-K01, CODEP-K01) ──
   let kimPatternSupportActivation: { moduleId: 'PAAL-K01' | 'BEHE-K01' | 'AANP-K01' | 'CODEP-K01'; confidence: number; matchedMarkers: string[]; interventionType: string } | null = null;
   if (backpack.userType === 'kim' && !!(backpack as any).intake?.startEmotion) {
-    const { detectPaalK01 } = require('@/src/modules/kim/PAAL-K01/paalK01.detector');
-    const { detectBeheK01 } = require('@/src/modules/kim/BEHE-K01/beheK01.detector');
-    const { detectAanpK01 } = require('@/src/modules/kim/AANP-K01/aanpK01.detector');
-    const { detectCodepK01 } = require('@/src/modules/kim/CODEP-K01/codepK01.detector');
+    const { detectPaalK01 } = require('@/lib/engine/kim/modules/PAAL-K01/paalK01.detector');
+    const { detectBeheK01 } = require('@/lib/engine/kim/modules/BEHE-K01/beheK01.detector');
+    const { detectAanpK01 } = require('@/lib/engine/kim/modules/AANP-K01/aanpK01.detector');
+    const { detectCodepK01 } = require('@/lib/engine/kim/modules/CODEP-K01/codepK01.detector');
     const kimZone = (sessionBuffer.currentZoneColor?.toUpperCase() ?? 'UNKNOWN') as 'GROEN' | 'GEEL' | 'ORANJE' | 'ROOD' | 'PAARS' | 'UNKNOWN';
     const kimPatternInput = {
       persona: 'kim' as const,
@@ -3247,7 +3247,7 @@ export async function processMessage(
   // ── POST-GPT STEP 6.7: VSP Output Safety Filter ──
   // Audit GPT response for clinical terminology leakage, framework disclosure, etc.
   try {
-    const { auditVspOutputSafety, hasHighSeverityViolation } = await import('../../src/features/vspInsight/vspOutputSafetyFilter');
+    const { auditVspOutputSafety, hasHighSeverityViolation } = await import('../../lib/features/vspInsight/vspOutputSafetyFilter');
     const safetyAudit = auditVspOutputSafety({
       responseText: feedbackResult.userText,
       clinicalModeActive: currentUserDat.clinicalModeActive ?? false,
@@ -4010,10 +4010,10 @@ export async function generateGreeting(
   console.log(`[Pipeline] VSP Intake Adapters: wheelOfChange=${intakeAdapterResult.wheelOfChange.currentStage}, earlySigns=${intakeAdapterResult.selfReportedEarlySigns.length}, observedSigns=${intakeAdapterResult.observedEarlySigns.length}`);
 
   // Merge intake adapter results into VspInsightProfile (async, fire-and-forget for greeting speed)
-  let greetingVspProfile: import('../../src/features/vspInsight/vspInsightTypes').VspInsightProfile | null = null;
+  let greetingVspProfile: import('../../lib/features/vspInsight/vspInsightTypes').VspInsightProfile | null = null;
   if (intakeAdapterResult.selfReportedEarlySigns.length > 0 || intakeAdapterResult.observedEarlySigns.length > 0) {
     try {
-      const { applyVspInsightProfilePatch } = await import('../../src/features/vspInsight/vspInsightStorage');
+      const { applyVspInsightProfilePatch } = await import('../../lib/features/vspInsight/vspInsightStorage');
       greetingVspProfile = await applyVspInsightProfilePatch(
         'local_user',
         backpack.userType as 'elias' | 'kim',

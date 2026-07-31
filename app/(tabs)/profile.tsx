@@ -15,11 +15,11 @@ import { colors as dc, spacing, radius, typography, shadows, cardStyles } from '
 import { HomeButton } from '@/components/home-button';
 import { DataPrivacySection } from '@/lib/features/exportImport/ui/DataPrivacySection';
 import { useExportImportStores } from '@/lib/features/exportImport/hooks/useExportImportStores';
-import { loadVspInsightProfile, buildPdfPlainText } from '@/src/features/vspInsight';
+import { loadVspInsightProfile, buildPdfPlainText } from '@/lib/features/vspInsight';
 import { BalkmetafoorCard } from '@/components/profile/BalkmetafoorCard';
 import { NotificationPermissionCard } from '@/components/profile/NotificationPermissionCard';
-import { createEmptyBalkmetafoor } from '@/src/types/balkmetafoor.types';
-import type { BalkmetafoorData, BalkmetafoorEntry } from '@/src/types/balkmetafoor.types';
+import { createEmptyBalkmetafoor } from '@/lib/types/balkmetafoor.types';
+import type { BalkmetafoorData, BalkmetafoorEntry } from '@/lib/types/balkmetafoor.types';
 import { useTranslation } from '@/lib/i18n';
 import { LocalDeviceTimeService } from "@/lib/core/time";
 
