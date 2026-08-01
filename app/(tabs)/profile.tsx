@@ -493,6 +493,38 @@ export default function ProfileScreen() {
           </Pressable>
         </View>
 
+        {/* Distillation Proposal History */}
+        <View style={{ marginBottom: spacing.xl }}>
+          <Text style={{ ...typography.micro, color: dc.textTertiary, marginBottom: spacing.xs, fontWeight: '700', letterSpacing: 0.5 }}>
+            {t('profile.proposal_history.title')}
+          </Text>
+          <Text style={{ ...typography.bodySmall, color: dc.textSecondary, marginBottom: spacing.md, lineHeight: 18 }}>
+            {t('profile.proposal_history.description')}
+          </Text>
+          <Pressable
+            onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.push('/proposal-history' as any); }}
+            style={({ pressed }) => [{ opacity: pressed ? 0.85 : 1, transform: [{ scale: pressed ? 0.97 : 1 }] }]}
+          >
+            <View style={{
+              ...cardStyles.default,
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 12,
+            }}>
+              <View style={{ width: 32, height: 32, borderRadius: 8, backgroundColor: dc.primarySoft, alignItems: 'center', justifyContent: 'center' }}>
+                <Text style={{ fontSize: 16 }}>📝</Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ ...typography.bodyMedium, fontWeight: '600', color: dc.primary }}>
+                  {t('profile.proposal_history.button')}
+                </Text>
+                <Text style={{ ...typography.caption, color: dc.textSecondary, marginTop: 2 }}>{t('profile.proposal_history.button_description')}</Text>
+              </View>
+              <IconSymbol name="chevron.right" size={16} color={dc.textTertiary} />
+            </View>
+          </Pressable>
+        </View>
+
         {/* Notification Permissions */}
         {Platform.OS !== 'web' && (
           <NotificationPermissionCard />

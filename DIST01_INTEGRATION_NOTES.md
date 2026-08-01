@@ -58,10 +58,36 @@
 - Dedup: same signal ID, same normalizedPatternKey, or same key in target document → skip
 - Rejected proposals are permanently suppressed for that pattern
 
-## Phase 3 (Route B — TODO)
-- Wire accept/edit action to actually write to target documents (backpack, VSP, eigen-regie-plan)
-- Update promotionStatus in distillation store from 'proposed' to 'promoted'
-- Handle auto-save for eligible signals (eligibleForAutoSave flag)
+## Files Created (Phase 3 — Route B + Auto-Save + History)
+- `lib/engine/shared/dist01-proposal-writer.ts` — Route B writer (writeProposalToDocument, processAutoSave, updateSignalPromotionStatus)
+- `app/proposal-history.tsx` — Full proposal history/analytics screen with filter tabs and stats
+- `__tests__/dist01-phase3-writer.test.ts` — 24 tests for writer and auto-save
+
+## Files Modified (Phase 3 — completed)
+- `lib/rugzak/pipeline.ts` — Added Step 6.11 auto-save, imported processAutoSave + getRoutingRulesForPersona
+- `lib/engine/shared/dist01-proposal-generator.ts` — Added getRoutingRulesForPersona export
+- `app/(tabs)/chat.tsx` — handleProposalAction now writes to target documents via Route B writer
+- `app/(tabs)/profile.tsx` — Added navigation card to proposal history screen
+- `lib/i18n/locales/nl.json` — Added 27 proposal_history.* + profile.proposal_history.* keys
+- `lib/i18n/locales/en.json` — Added 27 proposal_history.* + profile.proposal_history.* keys
+- `lib/i18n/locales/fr.json` — Added 27 proposal_history.* + profile.proposal_history.* keys
+
+## Phase 3 Architecture
+- **Route B Writer**: writeProposalToDocument maps each TargetDocument to the correct backpack/VSP/EigenRegie field
+  - Elias: vsp_trigger, vsp_zone, vsp_recovery_rule, vsp_anchor_sentence, backpack sections
+  - Kim: eigen_regie_trigger, eigen_regie_zone, eigen_regie_boundary_rule, eigen_regie_anchor_sentence, kimBackpack
+  - Zone inference from clinicalMeaning (e.g., early_signal → orange, relapse_warning → red)
+  - Dedup: avoids duplicate triggers/rules (case-insensitive)
+  - InsertMode: append / add_note / add_nuance
+- **Auto-Save**: Pipeline Step 6.11 (after Step 6.10 proposals)
+  - Filters: eligibleForAutoSave + in_store + not suppressed + not contradicted
+  - Max 2 per turn (configurable)
+  - Uses same writeProposalToDocument function
+  - Updates promotionStatus to 'auto_saved'
+- **History Screen**: app/proposal-history.tsx
+  - Filter tabs: All / Accepted / Rejected / Auto-saved / Expired
+  - Stats summary row
+  - Navigable from Profile → "Inzichten & voorstellen"
 
 ## Key Patterns
 - OPTIONAL_CONTEXT_KEYS in live-message-filter.ts: auto-includes non-null fields in LIVE_MESSAGE

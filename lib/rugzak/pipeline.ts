@@ -332,8 +332,9 @@ import { detectDistillation } from '@/lib/engine/shared/dist01-detector';
 import { buildDistillationContext } from '@/lib/engine/shared/dist01-context-injector';
 import type { DistillationContextForChat } from '@/lib/engine/shared/dist01-types';
 import { createProposalStore } from '@/lib/engine/shared/dist01-proposal-store';
-import { generateProposals, evaluateProposalTiming } from '@/lib/engine/shared/dist01-proposal-generator';
+import { generateProposals, evaluateProposalTiming, getRoutingRulesForPersona } from '@/lib/engine/shared/dist01-proposal-generator';
 import type { DistillationProposal } from '@/lib/engine/shared/dist01-proposal-types';
+import { processAutoSave } from '@/lib/engine/shared/dist01-proposal-writer';
 
 // ─── Pattern Marking (post-GPT local state) ─────────────────
 
@@ -3473,6 +3474,30 @@ export async function processMessage(
     await proposalStoreApi.save(proposalData);
   } catch (e) {
     console.warn('[DIST01] Phase 2 proposal generation failed (non-blocking):', e);
+  }
+
+  // ── POST-GPT STEP 6.11: DIST01 Phase 3 — Auto-save eligible signals (Route B) ──
+  try {
+    if (crisisLevel < 2) {
+      const distPersonaAutoSave = (backpack.userType || 'elias') as 'elias' | 'kim';
+      const distStoreAutoSave = createDistillationStore();
+      const distDataAutoSave = await distStoreAutoSave.load(distPersonaAutoSave);
+      const routingRules = getRoutingRulesForPersona(distPersonaAutoSave);
+      const autoSaveResult = processAutoSave(backpack, distDataAutoSave, routingRules, 2);
+      if (autoSaveResult.autoSavedCount > 0) {
+        // Persist updated distillation store (promotionStatus changes)
+        await distStoreAutoSave.save(autoSaveResult.updatedStore);
+        // Note: backpack persistence happens via chat.tsx (caller reads from SessionMemoryCache)
+        // For pipeline-level auto-save, we persist directly
+        if (autoSaveResult.updatedBackpack) {
+          const { SessionMemoryCache } = await import('@/lib/crypto/session-memory-cache');
+          await SessionMemoryCache.set('@recofree_backpack', JSON.stringify(autoSaveResult.updatedBackpack));
+        }
+        console.log(`[DIST01] Phase 3 Auto-save: ${autoSaveResult.autoSavedCount} signals auto-saved (IDs: ${autoSaveResult.autoSavedSignalIds.join(', ')})`);
+      }
+    }
+  } catch (e) {
+    console.warn('[DIST01] Phase 3 auto-save failed (non-blocking):', e);
   }
 
   // ── POST-GPT STEP 7: Update internal stored state ──

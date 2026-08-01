@@ -306,6 +306,13 @@ export function getTargetFieldLabel(field: string): string {
   return TARGET_FIELD_LABELS[field] || field;
 }
 
-// ─── Export routing rules for testing ─────────────────────────────────────
+// ─── Export routing rules for testing and auto-save ─────────────────────────────
 
 export { ELIAS_ROUTING_RULES, KIM_ROUTING_RULES };
+
+/**
+ * Get routing rules for a specific persona (used by auto-save and pipeline).
+ */
+export function getRoutingRulesForPersona(persona: RecoFreePersona): RoutingRule[] {
+  return persona === 'kim' ? KIM_ROUTING_RULES : ELIAS_ROUTING_RULES;
+}

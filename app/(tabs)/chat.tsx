@@ -61,6 +61,8 @@ import { extractBalkmetafoorItemsFromResponse } from '@/lib/features/balkmetafoo
 import { DistillationProposalCard } from '@/components/distillation/ProposalCard';
 import { createProposalStore } from '@/lib/engine/shared/dist01-proposal-store';
 import type { DistillationProposal, ProposalUserAction } from '@/lib/engine/shared/dist01-proposal-types';
+import { writeProposalToDocument, processAutoSave, updateSignalPromotionStatus } from '@/lib/engine/shared/dist01-proposal-writer';
+import { createDistillationStore } from '@/lib/engine/shared/dist01-store';
 const BACKPACK_KEY = '@recofree_backpack';
 const USERDAT_KEY = '@recofree_userdat';
 // PENDING_CLOSE_KEY removed — no longer needed (one path to session-end, no fallback markers)
@@ -1088,7 +1090,7 @@ function ChatScreenInner() {
     }
   }, [inputText, isTyping, state.backpack, state.userDat, sessionPhase]);
 
-  // ── DIST01 Phase 2: Handle proposal user actions ──────────────────────
+  // ── DIST01 Phase 3: Handle proposal user actions (Route B — write to target) ──
   const handleProposalAction = useCallback(async (proposalId: string, action: ProposalUserAction, editedText?: string) => {
     try {
       const persona = (state.userType === 'elias' ? 'elias' : 'kim') as 'elias' | 'kim';
@@ -1098,16 +1100,51 @@ function ChatScreenInner() {
       await proposalStoreApi.save(proposalData);
       // Remove from pending UI
       setPendingProposals((prev) => prev.filter((p) => p.id !== proposalId));
-      // If accepted/edited, the actual write to target document happens in Phase 3 (Route B)
-      // For now, log the action
       logDebugEvent('dist01_proposal_action', { proposalId, action, persona });
+
+      // ── Route B: Write accepted/edited proposals to target documents ──
       if (action === 'accept' || action === 'edit') {
-        console.log(`[DIST01] Proposal ${proposalId} ${action}ed — will be written to target in Phase 3`);
+        const proposal = proposalData.proposals.find((p) => p.id === proposalId);
+        if (proposal && state.backpack) {
+          // Apply editedText to proposal for the writer
+          const proposalToWrite = editedText ? { ...proposal, editedText } : proposal;
+          const writeResult = writeProposalToDocument(proposalToWrite, state.backpack);
+          if (writeResult.success && writeResult.updatedBackpack) {
+            // Persist updated backpack
+            await SessionMemoryCache.set(BACKPACK_KEY, JSON.stringify(writeResult.updatedBackpack));
+            console.log(`[DIST01] Route B: Written to ${writeResult.writtenField}: "${writeResult.writtenText.slice(0, 50)}"`);
+            // Update signal promotionStatus in distillation store
+            if (proposal.signalId) {
+              const distStore = createDistillationStore();
+              let distData = await distStore.load(persona);
+              distData = updateSignalPromotionStatus(distData, proposal.signalId, 'accepted');
+              await distStore.save(distData);
+            }
+          } else {
+            console.warn(`[DIST01] Route B write failed: ${writeResult.error}`);
+          }
+        }
+      } else if (action === 'reject') {
+        // Update signal promotionStatus to 'rejected' (suppresses future proposals for this pattern)
+        const proposal = proposalData.proposals.find((p) => p.id === proposalId);
+        if (proposal?.signalId) {
+          const distStore = createDistillationStore();
+          let distData = await distStore.load(persona);
+          distData = updateSignalPromotionStatus(distData, proposal.signalId, 'rejected');
+          // Also suppress the signal
+          distData = {
+            ...distData,
+            signals: distData.signals.map((s) =>
+              s.id === proposal.signalId ? { ...s, suppressedByUser: true } : s
+            ),
+          };
+          await distStore.save(distData);
+        }
       }
     } catch (err) {
       console.warn('[DIST01] Proposal action failed:', err);
     }
-  }, [state.userType]);
+  }, [state.userType, state.backpack]);
 
   const handleEndConversation = useCallback(async () => {
     if (!state.backpack || !state.userDat || sessionPhase !== 'active') return;

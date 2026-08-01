@@ -2574,4 +2574,21 @@
 - [x] Add 11 i18n keys (distillation.proposal.*) to nl.json, en.json, fr.json
 - [x] Write 22 tests for proposal generator (routing, thresholds, dedup, timing, crisis-block, constants)
 - [x] Verify TS compiles (0 errors) and all 1681 tests pass
-- [ ] Phase 3 (Route B): Wire accept action to write to target documents (backpack, VSP, eigen-regie-plan)
+- [x] Phase 3 (Route B): Wire accept action to write to target documents (backpack, VSP, eigen-regie-plan)
+
+## Phase 10: DIST01 — Fase 3: Route B + Auto-Save + History Scherm
+
+- [x] Route B: Read target document write APIs (backpack, VSP, eigen-regie-plan)
+- [x] Route B: Create dist01-proposal-writer.ts (writeProposalToDocument, processAutoSave, updateSignalPromotionStatus)
+- [x] Route B: Wire writer into handleProposalAction in chat.tsx (accept/edit → write to target + persist)
+- [x] Route B: Update promotionStatus in distillation store (accepted/rejected/auto_saved)
+- [x] Route B: On reject → suppress signal + update promotionStatus to 'rejected'
+- [x] Auto-save: processAutoSave function with eligibleForAutoSave filter + maxAutoSavePerTurn
+- [x] Auto-save: Pipeline Step 6.11 — auto-save eligible signals each turn (non-blocking)
+- [x] Auto-save: getRoutingRulesForPersona export for pipeline use
+- [x] History: Create app/proposal-history.tsx (full screen with filter tabs + stats)
+- [x] History: Show accepted/rejected/expired/auto-saved proposals with timestamps + target info
+- [x] History: Add navigation card from profile.tsx to history screen
+- [x] History: Add 27 i18n keys for history screen (NL/EN/FR)
+- [x] Write 24 tests for proposal writer and auto-save logic
+- [x] Verify TS compiles (0 errors) and all 1705 tests pass
