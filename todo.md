@@ -2651,3 +2651,4 @@
 - [x] FIX: Greeting blocks due to synchronous forceExtract — made non-blocking when entities already exist (background check)
 - [x] FIX: Greeting now uses actual names from extractedEntities (instruction 4: "Zeg Ellen of Jules, NIET een belangrijk persoon")
 - [x] FIX: Removed redundant generic question — greeting now ends with specific question tied to previous session topic
+- [x] FIX: Greeting now also extracts person names from previousSessionMessages (chat logs) as fallback for names not yet in extractedEntities

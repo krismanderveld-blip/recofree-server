@@ -88,8 +88,8 @@ export async function greetingV4(input: GreetingV4Input): Promise<GreetingV4Resu
   // ── Build zone arc
   const zoneArc = buildZoneArc(input, persona);
 
-  // ── Build key figures from backpack (persons, relationships, context)
-  const keyFigures = buildKeyFigures(input.backpack, input.userDat);
+  // ── Build key figures from backpack (persons, relationships, context) + chat logs
+  const keyFigures = buildKeyFigures(input.backpack, input.userDat, input.previousSessionMessages);
 
   // ── Build prompt
   const systemPrompt = buildGreetingV4Prompt({
@@ -455,8 +455,13 @@ function getFallbackTemplates(locale: string): FallbackTemplates {
  * relational anchors, and contextual info). This gives the greeting GPT awareness
  * of WHO the user is and who matters in their life.
  */
-function buildKeyFigures(backpack: Backpack, userDat: UserDat): string | undefined {
+function buildKeyFigures(
+  backpack: Backpack,
+  userDat: UserDat,
+  previousMessages?: Array<{ role: string; content: string }>,
+): string | undefined {
   const lines: string[] = [];
+  const knownNames = new Set<string>();
 
   // 1. Extracted entities (persons) from backpack analysis
   const entities = userDat.extractedEntities;
@@ -465,21 +470,31 @@ function buildKeyFigures(backpack: Backpack, userDat: UserDat): string | undefin
       let line = `- ${person.name}: ${person.relationshipNL || person.relationship}`;
       if (person.context) line += ` (${person.context.slice(0, 80)})`;
       lines.push(line);
+      knownNames.add(person.name.toLowerCase());
     }
   }
 
   // 2. Relational anchors (from user.dat — may have persons not in extractedEntities)
   const anchors = userDat.relationalAnchors;
   if (anchors && anchors.length > 0) {
-    const entityNames = new Set((entities?.persons || []).map(p => p.name.toLowerCase()));
     for (const anchor of anchors) {
-      if (!entityNames.has(anchor.name.toLowerCase())) {
+      if (!knownNames.has(anchor.name.toLowerCase())) {
         lines.push(`- ${anchor.name}: ${anchor.role}`);
+        knownNames.add(anchor.name.toLowerCase());
       }
     }
   }
 
-  // 3. Key context from backpack analysis (triggers, core beliefs)
+  // 3. Persons mentioned in previous session chat logs (not yet in extractedEntities/anchors)
+  if (previousMessages && previousMessages.length > 0) {
+    const chatPersons = extractPersonsFromChatLogs(previousMessages, knownNames);
+    for (const cp of chatPersons) {
+      lines.push(`- ${cp.name}: (genoemd in vorige sessie) ${cp.context}`);
+      knownNames.add(cp.name.toLowerCase());
+    }
+  }
+
+  // 4. Key context from backpack analysis (triggers, core beliefs)
   const analysis = userDat.backpackAnalysis;
   if (analysis) {
     if (analysis.triggers && analysis.triggers.length > 0) {
@@ -487,7 +502,7 @@ function buildKeyFigures(backpack: Backpack, userDat: UserDat): string | undefin
     }
   }
 
-  // 4. Intake context (brief)
+  // 5. Intake context (brief)
   if (backpack.intakeContext?.initialContext) {
     const ctx = backpack.intakeContext.initialContext.slice(0, 120);
     lines.push(`- Eerste context: ${ctx}`);
@@ -495,6 +510,63 @@ function buildKeyFigures(backpack: Backpack, userDat: UserDat): string | undefin
 
   if (lines.length === 0) return undefined;
   return lines.join('\n');
+}
+
+// ─── Chat Log Person Extractor ──────────────────────────────────────────────
+
+/**
+ * Extract person names mentioned in chat logs that aren't already known.
+ * Uses capitalized word detection (Dutch/English names start with uppercase).
+ * Returns up to 4 new persons with surrounding context.
+ */
+function extractPersonsFromChatLogs(
+  messages: Array<{ role: string; content: string }>,
+  knownNames: Set<string>,
+): Array<{ name: string; context: string }> {
+  const found = new Map<string, string>(); // name → context snippet
+
+  // Common Dutch/English words that look like names but aren't
+  const skipWords = new Set([
+    'ik', 'je', 'jij', 'hij', 'zij', 'we', 'wij', 'het', 'de', 'een', 'maar', 'ook',
+    'dat', 'dit', 'die', 'wat', 'hoe', 'wel', 'niet', 'nog', 'dan', 'als', 'met',
+    'voor', 'naar', 'van', 'bij', 'uit', 'aan', 'door', 'over', 'tot', 'kan',
+    'elias', 'kim', 'recofree', 'recobase', 'hey', 'hoi', 'dag', 'ja', 'nee',
+    'goed', 'fijn', 'oké', 'okay', 'thanks', 'dank', 'sorry',
+    'maandag', 'dinsdag', 'woensdag', 'donderdag', 'vrijdag', 'zaterdag', 'zondag',
+    'januari', 'februari', 'maart', 'april', 'mei', 'juni', 'juli', 'augustus',
+    'september', 'oktober', 'november', 'december',
+  ]);
+
+  // Only scan user messages (assistant messages may echo names)
+  const userMsgs = messages.filter(m => m.role === 'user');
+
+  for (const msg of userMsgs) {
+    // Match capitalized words that could be names (2+ chars, not common words)
+    const namePattern = /(?:^|[,;!?]\s+|\s)([A-Z][a-z\u00e0-\u00ff]{1,15})(?=\s|[.,;!?]|$)/g;
+    let match: RegExpExecArray | null;
+    while ((match = namePattern.exec(msg.content)) !== null) {
+      const candidate = match[1];
+      const lower = candidate.toLowerCase();
+      if (skipWords.has(lower)) continue;
+      if (knownNames.has(lower)) continue;
+      if (found.has(lower)) continue;
+
+      // Extract surrounding context (up to 60 chars around the name)
+      const idx = match.index;
+      const start = Math.max(0, idx - 20);
+      const end = Math.min(msg.content.length, idx + candidate.length + 40);
+      const context = msg.content.slice(start, end).replace(/\n/g, ' ').trim();
+      found.set(lower, context);
+
+      if (found.size >= 4) break;
+    }
+    if (found.size >= 4) break;
+  }
+
+  return Array.from(found.entries()).map(([name, context]) => ({
+    name: name.charAt(0).toUpperCase() + name.slice(1),
+    context,
+  }));
 }
 
 // ─── Debug Log ──────────────────────────────────────────────────────────────
