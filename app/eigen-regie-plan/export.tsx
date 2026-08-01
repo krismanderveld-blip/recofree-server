@@ -13,6 +13,7 @@ import * as Sharing from 'expo-sharing';
 import * as FileSystem from 'expo-file-system/legacy';
 import { ScreenContainer } from '@/components/screen-container';
 import { useColors } from '@/hooks/use-colors';
+import { useTranslation } from '@/lib/i18n';
 import { useUser } from '@/lib/user-context';
 import { exportEigenRegiePlanAsText } from '@/lib/engine/kim/kerp01-export';
 import { DEFAULT_EIGEN_REGIE_PLAN } from '@/lib/engine/kim/kerp01-types';
@@ -20,6 +21,7 @@ import { DEFAULT_EIGEN_REGIE_PLAN } from '@/lib/engine/kim/kerp01-types';
 export default function ExportScreen() {
   const router = useRouter();
   const colors = useColors();
+  const { t } = useTranslation();
   const { state } = useUser();
   const backpack = state.backpack;
   const [exportText, setExportText] = useState('');
@@ -75,9 +77,9 @@ export default function ExportScreen() {
     <ScreenContainer edges={['top', 'left', 'right', 'bottom']}>
       <View style={[styles.header, { borderBottomColor: colors.border }]}>
         <Pressable onPress={() => router.back()} style={({ pressed }) => [styles.backBtn, pressed && { opacity: 0.6 }]}>
-          <Text style={[styles.backText, { color: colors.primary }]}>← Terug</Text>
+          <Text style={[styles.backText, { color: colors.primary }]}>{t('kerp.export.back')}</Text>
         </Pressable>
-        <Text style={[styles.title, { color: colors.foreground }]}>Exporteren</Text>
+        <Text style={[styles.title, { color: colors.foreground }]}>{t('kerp.export.title')}</Text>
         <View style={{ width: 60 }} />
       </View>
 
@@ -87,7 +89,7 @@ export default function ExportScreen() {
           onPress={handleShare}
           style={({ pressed }) => [styles.actionBtn, { backgroundColor: colors.primary }, pressed && { opacity: 0.85 }]}
         >
-          <Text style={styles.actionBtnText}>📤 Delen met therapeut</Text>
+          <Text style={styles.actionBtnText}>{t('kerp.export.share_button')}</Text>
         </Pressable>
         <Pressable
           onPress={handleCopy}
@@ -101,7 +103,7 @@ export default function ExportScreen() {
 
       {/* Preview */}
       <View style={styles.previewLabel}>
-        <Text style={[styles.previewLabelText, { color: colors.muted }]}>Voorbeeld:</Text>
+        <Text style={[styles.previewLabelText, { color: colors.muted }]}>{t('kerp.export.preview_label')}</Text>
       </View>
 
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>

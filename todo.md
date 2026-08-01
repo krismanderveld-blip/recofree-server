@@ -2526,3 +2526,14 @@
 - [x] Replace section.prompt and section.subtitle in backpack.tsx with t() calls
 - [x] Add 43 new Dutch translations to nl.json (backpack.wizard.* keys)
 - [x] Verify TypeScript compiles (0 errors) and tests pass (1616 passed)
+
+## Phase 6: i18n Completeness
+
+- [x] Add 43 missing English translations to en.json (backpack.wizard.* keys)
+- [x] Scan entire app for remaining hardcoded UI strings not using t()
+- [x] Fix hardcoded strings in eigen-regie-plan (wizard, index, zone, triggers, export) — 30+ strings
+- [x] Fix hardcoded strings in VspWizardScreen — 11 strings
+- [x] Fix hardcoded strings in intake.tsx (country step) — 5 strings
+- [x] Add all new i18n keys to nl.json, fr.json, en.json (now 1057 keys each, fully in sync)
+- [x] Add i18n completeness test (__tests__/i18n-completeness.test.ts) — 8 assertions
+- [x] Verify TS compiles (0 errors) and tests pass (1624 passed, 0 failed)

@@ -345,8 +345,8 @@ export default function IntakeScreen() {
               <Animated.View style={[styles.flex1, animatedStepStyle]}>
                 <View style={styles.heroSection}>
                   <Text style={styles.heroEmoji}>📍</Text>
-                  <Text style={styles.heroTitle}>Where do you live?</Text>
-                  <Text style={styles.heroSubtitle}>This determines which emergency numbers you see</Text>
+                  <Text style={styles.heroTitle}>{t('intake.country.title')}</Text>
+                  <Text style={styles.heroSubtitle}>{t('intake.country.subtitle')}</Text>
                 </View>
 
                 <View style={styles.optionsGroup}>
@@ -366,7 +366,7 @@ export default function IntakeScreen() {
                       >
                         <Text style={styles.optionTitle}>
                           {c === 'BE' ? '🇧🇪' : c === 'NL' ? '🇳🇱' : c === 'FR' ? '🇫🇷' : c === 'UK' ? '🇬🇧' : '🇺🇸'}{' '}
-                          {c === 'BE' ? 'Belgium' : c === 'NL' ? 'Netherlands' : c === 'FR' ? 'France' : c === 'UK' ? 'United Kingdom' : 'United States'}
+                          {t(`intake.country.option.${c}`)}
                         </Text>
                       </View>
                     </Pressable>
@@ -383,7 +383,7 @@ export default function IntakeScreen() {
                       pressed && canProceedStep0 && { transform: [{ scale: 0.97 }] },
                     ]}
                   >
-                    <Text style={styles.primaryButtonText}>Continue</Text>
+                    <Text style={styles.primaryButtonText}>{t('intake.country.button.continue')}</Text>
                   </Pressable>
                 </View>
               </Animated.View>

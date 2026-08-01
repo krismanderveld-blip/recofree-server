@@ -10,6 +10,7 @@ import { useRouter } from 'expo-router';
 import { ScreenContainer } from '@/components/screen-container';
 import { useUser } from '@/lib/user-context';
 import { colors as dc } from '@/constants/design';
+import { useTranslation } from '@/lib/i18n';
 import type { EigenRegieTrigger, EigenRegieZoneId, EigenRegiePlan } from '@/lib/engine/kim/kerp01-types';
 import { DEFAULT_EIGEN_REGIE_PLAN } from '@/lib/engine/kim/kerp01-types';
 
@@ -22,6 +23,7 @@ const ZONE_OPTIONS: { id: EigenRegieZoneId; label: string; color: string }[] = [
 
 export default function TriggersScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const { getEigenRegiePlan, updateEigenRegiePlan } = useUser();
   const plan = getEigenRegiePlan() ?? DEFAULT_EIGEN_REGIE_PLAN;
 
@@ -87,13 +89,13 @@ export default function TriggersScreen() {
         <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
           {/* Header */}
           <Pressable onPress={() => router.back()} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1, paddingVertical: 8 }]}>
-            <Text style={{ fontSize: 16, color: dc.primary }}>← Terug</Text>
+            <Text style={{ fontSize: 16, color: dc.primary }}>{t('kerp.triggers.back')}</Text>
           </Pressable>
-          <Text style={[styles.title, { color: dc.textPrimary }]}>🎯 Triggers & Grensregels</Text>
+          <Text style={[styles.title, { color: dc.textPrimary }]}>{t('kerp.triggers.title')}</Text>
 
           {/* Triggers Section */}
           <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: dc.textPrimary }]}>Triggers</Text>
+            <Text style={[styles.sectionTitle, { color: dc.textPrimary }]}>{t('kerp.triggers.section_triggers')}</Text>
             <Text style={[styles.sectionDesc, { color: dc.textTertiary }]}>
               Situaties, personen of gevoelens die je richting oud gedrag trekken.
             </Text>
@@ -149,14 +151,14 @@ export default function TriggersScreen() {
                 onSubmitEditing={addTrigger}
               />
               <Pressable onPress={addTrigger} style={({ pressed }) => [styles.addBtn, { backgroundColor: dc.primary, opacity: pressed ? 0.8 : 1 }]}>
-                <Text style={{ color: '#fff', fontWeight: '600' }}>+ Trigger toevoegen</Text>
+                <Text style={{ color: '#fff', fontWeight: '600' }}>{t('kerp.triggers.add_trigger')}</Text>
               </Pressable>
             </View>
           </View>
 
           {/* Boundary Rules Section */}
           <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: dc.textPrimary }]}>Grensregels</Text>
+            <Text style={[styles.sectionTitle, { color: dc.textPrimary }]}>{t('kerp.triggers.section_rules')}</Text>
             <Text style={[styles.sectionDesc, { color: dc.textTertiary }]}>
               Concrete afspraken met jezelf over wat je wel en niet doet.
             </Text>
@@ -194,7 +196,7 @@ export default function TriggersScreen() {
               onPress={handleSave}
               style={({ pressed }) => [styles.saveBtn, { backgroundColor: dc.primary, opacity: pressed ? 0.9 : 1 }]}
             >
-              <Text style={styles.saveBtnText}>💾 Opslaan</Text>
+              <Text style={styles.saveBtnText}>{t('kerp.triggers.save')}</Text>
             </Pressable>
           </View>
         )}

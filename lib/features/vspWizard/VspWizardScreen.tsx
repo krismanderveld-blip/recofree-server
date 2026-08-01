@@ -23,6 +23,7 @@ import {
 import type { VspStructuredPlan, VspZoneEntry, VspTrigger } from '@/lib/ai/types';
 import { DEFAULT_VSP_STRUCTURED_PLAN } from '@/lib/ai/types';
 import { useColors } from '@/hooks/use-colors';
+import { useTranslation } from '@/lib/i18n';
 import { pickAndParseVspDocument } from './vsp-document-upload-client';
 import { LocalDeviceTimeService } from "@/lib/core/time";
 
@@ -64,6 +65,7 @@ const FIELD_CONFIG: { key: keyof VspZoneEntry; label: string; placeholder: strin
 
 export function VspWizardScreen({ existingPlan, onSave, onCancel }: VspWizardScreenProps) {
   const colors = useColors();
+  const { t } = useTranslation();
   const [step, setStep] = useState<WizardStep>('choose_method');
   const [plan, setPlan] = useState<VspStructuredPlan>(existingPlan ?? { ...DEFAULT_VSP_STRUCTURED_PLAN });
   const [activeZoneIdx, setActiveZoneIdx] = useState(0);
@@ -267,7 +269,7 @@ export function VspWizardScreen({ existingPlan, onSave, onCancel }: VspWizardScr
 
       {/* Cancel */}
       <Pressable onPress={onCancel} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1, alignSelf: 'center', marginTop: 8 }]}>
-        <Text style={{ fontSize: 14, color: colors.muted }}>Cancel</Text>
+        <Text style={{ fontSize: 14, color: colors.muted }}>{t('vsp.wizard.cancel')}</Text>
       </Pressable>
     </View>
   );
@@ -275,9 +277,9 @@ export function VspWizardScreen({ existingPlan, onSave, onCancel }: VspWizardScr
   const renderUploading = () => (
     <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', gap: 16, padding: 24 }}>
       <ActivityIndicator size="large" color={colors.primary} />
-      <Text style={{ fontSize: 16, fontWeight: '600', color: colors.foreground }}>Processing document...</Text>
+      <Text style={{ fontSize: 16, fontWeight: '600', color: colors.foreground }}>{t('vsp.wizard.processing')}</Text>
       <Text style={{ fontSize: 13, color: colors.muted, textAlign: 'center', lineHeight: 18 }}>
-        Your document is being read and the fields will be filled in automatically. This may take a moment.
+        {t('vsp.wizard.processing_description')}
       </Text>
     </View>
   );
@@ -344,7 +346,7 @@ export function VspWizardScreen({ existingPlan, onSave, onCancel }: VspWizardScr
           {activeZoneIdx > 0 && (
             <Pressable onPress={prevZone} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1, flex: 1 }]}>
               <View style={{ backgroundColor: colors.surface, borderRadius: 12, padding: 14, alignItems: 'center', borderWidth: 1, borderColor: colors.border }}>
-                <Text style={{ fontSize: 14, fontWeight: '600', color: colors.foreground }}>Previous</Text>
+                <Text style={{ fontSize: 14, fontWeight: '600', color: colors.foreground }}>{t('vsp.wizard.previous')}</Text>
               </View>
             </Pressable>
           )}
@@ -427,7 +429,7 @@ export function VspWizardScreen({ existingPlan, onSave, onCancel }: VspWizardScr
         />
         <Pressable onPress={addTrigger} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}>
           <View style={{ backgroundColor: colors.primary + '15', borderRadius: 10, padding: 12, alignItems: 'center' }}>
-            <Text style={{ fontSize: 14, fontWeight: '600', color: colors.primary }}>+ Add trigger</Text>
+            <Text style={{ fontSize: 14, fontWeight: '600', color: colors.primary }}>{t('vsp.wizard.add_trigger')}</Text>
           </View>
         </Pressable>
       </View>
@@ -461,12 +463,12 @@ export function VspWizardScreen({ existingPlan, onSave, onCancel }: VspWizardScr
       <View style={{ flexDirection: 'row', gap: 12, marginTop: 24 }}>
         <Pressable onPress={() => { setActiveZoneIdx(ZONE_CONFIG.length - 1); setStep('review_zones'); }} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1, flex: 1 }]}>
           <View style={{ backgroundColor: colors.surface, borderRadius: 12, padding: 14, alignItems: 'center', borderWidth: 1, borderColor: colors.border }}>
-            <Text style={{ fontSize: 14, fontWeight: '600', color: colors.foreground }}>Back</Text>
+            <Text style={{ fontSize: 14, fontWeight: '600', color: colors.foreground }}>{t('vsp.wizard.back')}</Text>
           </View>
         </Pressable>
         <Pressable onPress={() => setStep('review_rules')} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1, flex: 1 }]}>
           <View style={{ backgroundColor: colors.primary, borderRadius: 12, padding: 14, alignItems: 'center' }}>
-            <Text style={{ fontSize: 14, fontWeight: '600', color: '#fff' }}>To recovery rules</Text>
+            <Text style={{ fontSize: 14, fontWeight: '600', color: '#fff' }}>{t('vsp.wizard.to_recovery_rules')}</Text>
           </View>
         </Pressable>
       </View>
@@ -527,7 +529,7 @@ export function VspWizardScreen({ existingPlan, onSave, onCancel }: VspWizardScr
       <View style={{ flexDirection: 'row', gap: 12, marginTop: 24 }}>
         <Pressable onPress={() => setStep('review_triggers')} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1, flex: 1 }]}>
           <View style={{ backgroundColor: colors.surface, borderRadius: 12, padding: 14, alignItems: 'center', borderWidth: 1, borderColor: colors.border }}>
-            <Text style={{ fontSize: 14, fontWeight: '600', color: colors.foreground }}>Back</Text>
+            <Text style={{ fontSize: 14, fontWeight: '600', color: colors.foreground }}>{t('vsp.wizard.back')}</Text>
           </View>
         </Pressable>
         <Pressable onPress={handleSave} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1, flex: 1 }]}>
@@ -535,7 +537,7 @@ export function VspWizardScreen({ existingPlan, onSave, onCancel }: VspWizardScr
             {saving ? (
               <ActivityIndicator size="small" color="#fff" />
             ) : (
-              <Text style={{ fontSize: 14, fontWeight: '700', color: '#fff' }}>Save</Text>
+              <Text style={{ fontSize: 14, fontWeight: '700', color: '#fff' }}>{t('vsp.wizard.save')}</Text>
             )}
           </View>
         </Pressable>
@@ -550,13 +552,13 @@ export function VspWizardScreen({ existingPlan, onSave, onCancel }: VspWizardScr
   const renderDone = () => (
     <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', gap: 16, padding: 24 }}>
       <Text style={{ fontSize: 48 }}>{'✅'}</Text>
-      <Text style={{ fontSize: 20, fontWeight: '700', color: colors.foreground }}>Saved!</Text>
+      <Text style={{ fontSize: 20, fontWeight: '700', color: colors.foreground }}>{t('vsp.wizard.saved')}</Text>
       <Text style={{ fontSize: 14, color: colors.muted, textAlign: 'center', lineHeight: 20, maxWidth: 280 }}>
-        Your safety plan has been saved. Elias uses this to guide you better in your own words.
+        {t('vsp.wizard.saved_description')}
       </Text>
       <Pressable onPress={onCancel} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1, marginTop: 16 }]}>
         <View style={{ backgroundColor: colors.primary, borderRadius: 12, paddingHorizontal: 32, paddingVertical: 14 }}>
-          <Text style={{ fontSize: 14, fontWeight: '600', color: '#fff' }}>Close</Text>
+          <Text style={{ fontSize: 14, fontWeight: '600', color: '#fff' }}>{t('vsp.wizard.close')}</Text>
         </View>
       </Pressable>
     </View>

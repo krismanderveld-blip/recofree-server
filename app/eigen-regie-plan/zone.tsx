@@ -17,6 +17,7 @@ import { ScreenContainer } from '@/components/screen-container';
 import { useUser } from '@/lib/user-context';
 import { useColors } from '@/hooks/use-colors';
 import { colors as dc } from '@/constants/design';
+import { useTranslation } from '@/lib/i18n';
 import type { EigenRegieZoneId, EigenRegieZoneEntry, EigenRegiePlan } from '@/lib/engine/kim/kerp01-types';
 import { DEFAULT_EIGEN_REGIE_PLAN } from '@/lib/engine/kim/kerp01-types';
 
@@ -44,6 +45,7 @@ export default function ZoneDetailScreen() {
   const zoneId = (id || 'donkergroen') as EigenRegieZoneId;
   const meta = ZONE_META[zoneId];
   const router = useRouter();
+  const { t } = useTranslation();
   const { getEigenRegiePlan, updateEigenRegiePlan } = useUser();
   const plan = getEigenRegiePlan() ?? DEFAULT_EIGEN_REGIE_PLAN;
   const entry = plan.zones[zoneId];
@@ -123,7 +125,7 @@ export default function ZoneDetailScreen() {
           {/* Header */}
           <View style={styles.header}>
             <Pressable onPress={handleBack} style={({ pressed }) => [styles.backBtn, { opacity: pressed ? 0.7 : 1 }]}>
-              <Text style={{ fontSize: 16, color: dc.primary }}>← Terug</Text>
+              <Text style={{ fontSize: 16, color: dc.primary }}>{t('kerp.zone.back')}</Text>
             </Pressable>
             <View style={[styles.zoneBadge, { backgroundColor: meta.color }]}>
               <Text style={{ fontSize: 20 }}>{meta.emoji}</Text>
@@ -134,7 +136,7 @@ export default function ZoneDetailScreen() {
 
           {/* User Meaning */}
           <View style={styles.section}>
-            <Text style={[styles.sectionLabel, { color: dc.textSecondary }]}>Wat betekent deze zone voor jou?</Text>
+            <Text style={[styles.sectionLabel, { color: dc.textSecondary }]}>{t('kerp.zone.meaning_label')}</Text>
             <TextInput
               value={userMeaning}
               onChangeText={(t) => { setUserMeaning(t); setDirty(true); }}
@@ -179,7 +181,7 @@ export default function ZoneDetailScreen() {
 
           {/* Contact Rule */}
           <View style={styles.section}>
-            <Text style={[styles.sectionLabel, { color: dc.textSecondary }]}>📞 Contactregel</Text>
+            <Text style={[styles.sectionLabel, { color: dc.textSecondary }]}>{t('kerp.zone.contact_label')}</Text>
             <TextInput
               value={contactRule}
               onChangeText={(t) => { setContactRule(t); setDirty(true); }}
@@ -193,7 +195,7 @@ export default function ZoneDetailScreen() {
 
           {/* Anchor Sentence */}
           <View style={styles.section}>
-            <Text style={[styles.sectionLabel, { color: dc.textSecondary }]}>⚓ Ankerzin voor deze zone</Text>
+            <Text style={[styles.sectionLabel, { color: dc.textSecondary }]}>{t('kerp.zone.anchor_label')}</Text>
             <TextInput
               value={anchorSentence}
               onChangeText={(t) => { setAnchorSentence(t); setDirty(true); }}
@@ -212,7 +214,7 @@ export default function ZoneDetailScreen() {
               onPress={handleSave}
               style={({ pressed }) => [styles.saveBtn, { backgroundColor: dc.primary, opacity: pressed ? 0.9 : 1 }]}
             >
-              <Text style={styles.saveBtnText}>💾 Opslaan</Text>
+              <Text style={styles.saveBtnText}>{t('kerp.zone.save')}</Text>
             </Pressable>
           </View>
         )}

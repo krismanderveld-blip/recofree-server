@@ -13,6 +13,7 @@ import { ScreenContainer } from '@/components/screen-container';
 import { useUser } from '@/lib/user-context';
 import { useColors } from '@/hooks/use-colors';
 import { colors as dc, spacing, radius, typography } from '@/constants/design';
+import { useTranslation } from '@/lib/i18n';
 import { HomeButton } from '@/components/home-button';
 import type { EigenRegieZoneId, EigenRegiePlan } from '@/lib/engine/kim/kerp01-types';
 import { DEFAULT_EIGEN_REGIE_PLAN } from '@/lib/engine/kim/kerp01-types';
@@ -36,6 +37,7 @@ const ZONE_CONFIG: { id: EigenRegieZoneId; color: string; emoji: string; shortLa
 export default function EigenRegiePlanScreen() {
   const { getEigenRegiePlan, state } = useUser();
   const colors = useColors();
+  const { t } = useTranslation();
   const router = useRouter();
   const plan = getEigenRegiePlan() ?? DEFAULT_EIGEN_REGIE_PLAN;
   const filled = isPlanFilled(plan);
@@ -85,7 +87,7 @@ export default function EigenRegiePlanScreen() {
         {/* Header */}
         <View style={styles.header}>
           <HomeButton />
-          <Text style={[styles.title, { color: dc.textPrimary }]}>Mijn Eigen Regie Plan</Text>
+          <Text style={[styles.title, { color: dc.textPrimary }]}>{t('kerp.title')}</Text>
           <Text style={[styles.subtitle, { color: dc.textTertiary }]}>
             Jouw persoonlijke plan voor zelfrichting en grenzen
           </Text>
@@ -115,7 +117,7 @@ export default function EigenRegiePlanScreen() {
         {/* Main Anchor Sentence */}
         {plan.mainAnchorSentence ? (
           <View style={[styles.anchorCard, { backgroundColor: dc.surfaceKim }]}>
-            <Text style={[styles.anchorLabel, { color: dc.textTertiary }]}>Mijn ankerzin</Text>
+            <Text style={[styles.anchorLabel, { color: dc.textTertiary }]}>{t('kerp.anchor_label')}</Text>
             <Text style={[styles.anchorText, { color: dc.textPrimary }]}>"{plan.mainAnchorSentence}"</Text>
           </View>
         ) : null}

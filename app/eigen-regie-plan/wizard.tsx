@@ -17,6 +17,7 @@ import { useRouter } from 'expo-router';
 import { ScreenContainer } from '@/components/screen-container';
 import { useUser } from '@/lib/user-context';
 import { colors as dc } from '@/constants/design';
+import { useTranslation } from '@/lib/i18n';
 import type { EigenRegiePlan, EigenRegieZoneId, EigenRegieZoneEntry, EigenRegieTrigger } from '@/lib/engine/kim/kerp01-types';
 import { DEFAULT_EIGEN_REGIE_PLAN } from '@/lib/engine/kim/kerp01-types';
 import { callGenerateEigenRegiePlan, convertProposalToPlan } from '@/lib/engine/kim/kerp01-generate-client';
@@ -55,6 +56,7 @@ const STEPS = getStepSequence();
 
 export default function WizardScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const { updateEigenRegiePlan, getEigenRegiePlan, getBackpack } = useUser();
   const existingPlan = getEigenRegiePlan();
 
@@ -305,7 +307,7 @@ export default function WizardScreen() {
   const renderIntro = () => (
     <View style={styles.stepContent}>
       <Text style={[styles.stepEmoji, { fontSize: 48 }]}>📋</Text>
-      <Text style={[styles.stepTitle, { color: dc.textPrimary }]}>Jouw Eigen Regie Plan</Text>
+      <Text style={[styles.stepTitle, { color: dc.textPrimary }]}>{t('kerp.wizard.title')}</Text>
       <Text style={[styles.stepDescription, { color: dc.textSecondary }]}>
         In de volgende stappen bouw je stap voor stap jouw persoonlijke plan op.{'\n\n'}
         Per zone vul je in:{'\n'}
@@ -328,12 +330,12 @@ export default function WizardScreen() {
           {isGenerating ? (
             <View style={styles.aiButtonContent}>
               <ActivityIndicator size="small" color="#fff" />
-              <Text style={styles.aiButtonText}>Plan wordt gegenereerd...</Text>
+              <Text style={styles.aiButtonText}>{t('kerp.wizard.generating')}</Text>
             </View>
           ) : (
             <View style={styles.aiButtonContent}>
               <Text style={{ fontSize: 20 }}>✨</Text>
-              <Text style={styles.aiButtonText}>AI-genereer plan vanuit rugzak</Text>
+              <Text style={styles.aiButtonText}>{t('kerp.wizard.ai_generate')}</Text>
             </View>
           )}
         </Pressable>
@@ -355,7 +357,7 @@ export default function WizardScreen() {
       {/* Divider */}
       <View style={styles.divider}>
         <View style={styles.dividerLine} />
-        <Text style={[styles.dividerText, { color: dc.textTertiary }]}>of</Text>
+        <Text style={[styles.dividerText, { color: dc.textTertiary }]}>{t('kerp.wizard.or')}</Text>
         <View style={styles.dividerLine} />
       </View>
 
@@ -375,11 +377,11 @@ export default function WizardScreen() {
         </View>
         {isAiGenerated && (
           <View style={styles.aiNotice}>
-            <Text style={styles.aiNoticeText}>Gegenereerd door AI — controleer en pas aan</Text>
+            <Text style={styles.aiNoticeText}>{t('kerp.wizard.ai_notice')}</Text>
           </View>
         )}
         <Text style={[styles.stepDescription, { color: dc.textSecondary }]}>{zone.description}</Text>
-        <Text style={[styles.fieldLabel, { color: dc.textPrimary }]}>📡 Signalen (één per regel)</Text>
+        <Text style={[styles.fieldLabel, { color: dc.textPrimary }]}>{t('kerp.wizard.signals')}</Text>
         <TextInput
           value={tempSignals}
           onChangeText={setTempSignals}
@@ -388,7 +390,7 @@ export default function WizardScreen() {
           style={[styles.textArea, { color: dc.textPrimary }]}
           multiline
         />
-        <Text style={[styles.fieldLabel, { color: dc.textPrimary }]}>🫀 Lichaamssignalen</Text>
+        <Text style={[styles.fieldLabel, { color: dc.textPrimary }]}>{t('kerp.wizard.body_signals')}</Text>
         <TextInput
           value={tempBodySignals}
           onChangeText={setTempBodySignals}
@@ -397,7 +399,7 @@ export default function WizardScreen() {
           style={[styles.textArea, { color: dc.textPrimary }]}
           multiline
         />
-        <Text style={[styles.fieldLabel, { color: dc.textPrimary }]}>💭 Gedachten</Text>
+        <Text style={[styles.fieldLabel, { color: dc.textPrimary }]}>{t('kerp.wizard.thoughts')}</Text>
         <TextInput
           value={tempThoughts}
           onChangeText={setTempThoughts}
@@ -406,7 +408,7 @@ export default function WizardScreen() {
           style={[styles.textArea, { color: dc.textPrimary }]}
           multiline
         />
-        <Text style={[styles.fieldLabel, { color: dc.textPrimary }]}>🎭 Gedrag</Text>
+        <Text style={[styles.fieldLabel, { color: dc.textPrimary }]}>{t('kerp.wizard.behaviour')}</Text>
         <TextInput
           value={tempBehaviour}
           onChangeText={setTempBehaviour}
@@ -429,10 +431,10 @@ export default function WizardScreen() {
         </View>
         {isAiGenerated && (
           <View style={styles.aiNotice}>
-            <Text style={styles.aiNoticeText}>Gegenereerd door AI — controleer en pas aan</Text>
+            <Text style={styles.aiNoticeText}>{t('kerp.wizard.ai_notice')}</Text>
           </View>
         )}
-        <Text style={[styles.fieldLabel, { color: dc.textPrimary }]}>💚 Wat helpt (één per regel)</Text>
+        <Text style={[styles.fieldLabel, { color: dc.textPrimary }]}>{t('kerp.wizard.what_helps')}</Text>
         <TextInput
           value={tempWhatHelps}
           onChangeText={setTempWhatHelps}
@@ -441,7 +443,7 @@ export default function WizardScreen() {
           style={[styles.textArea, { color: dc.textPrimary }]}
           multiline
         />
-        <Text style={[styles.fieldLabel, { color: dc.textPrimary }]}>🛡 Grensacties</Text>
+        <Text style={[styles.fieldLabel, { color: dc.textPrimary }]}>{t('kerp.wizard.boundary_actions')}</Text>
         <TextInput
           value={tempBoundaryActions}
           onChangeText={setTempBoundaryActions}
@@ -464,7 +466,7 @@ export default function WizardScreen() {
         </View>
         {isAiGenerated && (
           <View style={styles.aiNotice}>
-            <Text style={styles.aiNoticeText}>Gegenereerd door AI — controleer en pas aan</Text>
+            <Text style={styles.aiNoticeText}>{t('kerp.wizard.ai_notice')}</Text>
           </View>
         )}
         <Text style={[styles.stepDescription, { color: dc.textSecondary }]}>
@@ -484,10 +486,10 @@ export default function WizardScreen() {
 
   const renderTriggers = () => (
     <View style={styles.stepContent}>
-      <Text style={[styles.stepTitle, { color: dc.textPrimary }]}>🎯 Triggers & Grensregels</Text>
+      <Text style={[styles.stepTitle, { color: dc.textPrimary }]}>{t('kerp.wizard.triggers_title')}</Text>
       {isAiGenerated && (
         <View style={styles.aiNotice}>
-          <Text style={styles.aiNoticeText}>Gegenereerd door AI — controleer en pas aan</Text>
+          <Text style={styles.aiNoticeText}>{t('kerp.wizard.ai_notice')}</Text>
         </View>
       )}
       <Text style={[styles.stepDescription, { color: dc.textSecondary }]}>
@@ -523,11 +525,11 @@ export default function WizardScreen() {
         onSubmitEditing={addTrigger}
       />
       <Pressable onPress={addTrigger} style={({ pressed }) => [styles.addBtn, { opacity: pressed ? 0.8 : 1 }]}>
-        <Text style={{ color: dc.primary, fontWeight: '600' }}>+ Trigger toevoegen</Text>
+        <Text style={{ color: dc.primary, fontWeight: '600' }}>{t('kerp.wizard.add_trigger')}</Text>
       </Pressable>
 
       {/* Boundary rules */}
-      <Text style={[styles.fieldLabel, { color: dc.textPrimary, marginTop: 20 }]}>🛡 Grensregels</Text>
+      <Text style={[styles.fieldLabel, { color: dc.textPrimary, marginTop: 20 }]}>{t('kerp.wizard.boundary_rules')}</Text>
       {plan.boundaryRules.map((r, idx) => (
         <Text key={idx} style={[styles.ruleText, { color: dc.textPrimary }]}>• {r}</Text>
       ))}
@@ -541,7 +543,7 @@ export default function WizardScreen() {
         onSubmitEditing={addRule}
       />
       <Pressable onPress={addRule} style={({ pressed }) => [styles.addBtn, { opacity: pressed ? 0.8 : 1 }]}>
-        <Text style={{ color: dc.primary, fontWeight: '600' }}>+ Grensregel toevoegen</Text>
+        <Text style={{ color: dc.primary, fontWeight: '600' }}>{t('kerp.wizard.add_rule')}</Text>
       </Pressable>
     </View>
   );
@@ -549,10 +551,10 @@ export default function WizardScreen() {
   const renderMainAnchor = () => (
     <View style={styles.stepContent}>
       <Text style={[styles.stepEmoji, { fontSize: 48 }]}>⚓</Text>
-      <Text style={[styles.stepTitle, { color: dc.textPrimary }]}>Jouw hoofdankerzin</Text>
+      <Text style={[styles.stepTitle, { color: dc.textPrimary }]}>{t('kerp.wizard.anchor_title')}</Text>
       {isAiGenerated && (
         <View style={styles.aiNotice}>
-          <Text style={styles.aiNoticeText}>Gegenereerd door AI — controleer en pas aan</Text>
+          <Text style={styles.aiNoticeText}>{t('kerp.wizard.ai_notice')}</Text>
         </View>
       )}
       <Text style={[styles.stepDescription, { color: dc.textSecondary }]}>
@@ -572,13 +574,13 @@ export default function WizardScreen() {
   const renderReview = () => (
     <View style={styles.stepContent}>
       <Text style={[styles.stepEmoji, { fontSize: 48 }]}>✅</Text>
-      <Text style={[styles.stepTitle, { color: dc.textPrimary }]}>Klaar!</Text>
+      <Text style={[styles.stepTitle, { color: dc.textPrimary }]}>{t('kerp.wizard.done_title')}</Text>
       <Text style={[styles.stepDescription, { color: dc.textSecondary }]}>
         Je Eigen Regie Plan is opgebouwd.{isAiGenerated ? ' AI heeft je geholpen — je hebt alles kunnen controleren.' : ''} Je kunt het altijd later aanpassen.
       </Text>
       {plan.mainAnchorSentence || tempMainAnchor ? (
         <View style={[styles.reviewAnchor, { backgroundColor: dc.surfaceKim }]}>
-          <Text style={[styles.reviewAnchorLabel, { color: dc.textTertiary }]}>Jouw ankerzin:</Text>
+          <Text style={[styles.reviewAnchorLabel, { color: dc.textTertiary }]}>{t('kerp.wizard.your_anchor')}</Text>
           <Text style={[styles.reviewAnchorText, { color: dc.primary }]}>
             "{tempMainAnchor || plan.mainAnchorSentence}"
           </Text>
@@ -634,11 +636,11 @@ export default function WizardScreen() {
 
           {currentStep.type === 'review' ? (
             <Pressable onPress={handleFinish} style={({ pressed }) => [styles.navBtnPrimary, { backgroundColor: dc.primary, opacity: pressed ? 0.9 : 1 }]}>
-              <Text style={styles.navBtnPrimaryText}>✓ Plan opslaan</Text>
+              <Text style={styles.navBtnPrimaryText}>{t('kerp.wizard.save_plan')}</Text>
             </Pressable>
           ) : (
             <Pressable onPress={handleNext} style={({ pressed }) => [styles.navBtnPrimary, { backgroundColor: dc.primary, opacity: pressed ? 0.9 : 1 }]}>
-              <Text style={styles.navBtnPrimaryText}>Volgende →</Text>
+              <Text style={styles.navBtnPrimaryText}>{t('kerp.wizard.next')}</Text>
             </Pressable>
           )}
         </View>
