@@ -478,7 +478,8 @@ function ChatScreenInner() {
       const entitiesEmpty = !userDat.extractedEntities || userDat.extractedEntities.persons.length === 0;
       const backpackHasContent = backpack.sections.some((s: any) => s.content?.trim().length > 10);
       if (backpackHasContent && entitiesEmpty) {
-        console.log('[Chat] Session-start: extractedEntities empty but backpack has content → forcing extraction');
+        // BLOCKING only when entities are truly empty (first time) — greeting needs this data
+        console.log('[Chat] Session-start: extractedEntities empty but backpack has content → forcing extraction (blocking)');
         const entities = await forceExtract(backpack, callExtractionEndpoint);
         if (entities) {
           userDat = { ...userDat, extractedEntities: entities };
@@ -486,16 +487,22 @@ function ChatScreenInner() {
           console.log('[Chat] Session-start: extraction complete, user.dat fed with', entities.persons.length, 'persons');
         }
       } else if (backpackHasContent) {
-        const hasChanged = await hasBackpackChangedSinceExtraction(backpack);
-        if (hasChanged) {
-          console.log('[Chat] Session-start: backpack manually changed since last extraction → re-extracting');
-          const entities = await forceExtract(backpack, callExtractionEndpoint);
-          if (entities) {
-            userDat = { ...userDat, extractedEntities: entities };
-            await SessionMemoryCache.set(USERDAT_KEY, JSON.stringify(userDat));
-            console.log('[Chat] Session-start: re-extraction complete, user.dat updated with', entities.persons.length, 'persons');
+        // NON-BLOCKING: entities exist, check for changes in background (don't delay greeting)
+        hasBackpackChangedSinceExtraction(backpack).then(async (hasChanged) => {
+          if (hasChanged) {
+            console.log('[Chat] Session-start: backpack changed since last extraction → background re-extraction');
+            const entities = await forceExtract(backpack, callExtractionEndpoint);
+            if (entities) {
+              const udJson = await SessionMemoryCache.get(USERDAT_KEY);
+              if (udJson) {
+                const ud = JSON.parse(udJson);
+                ud.extractedEntities = entities;
+                await SessionMemoryCache.set(USERDAT_KEY, JSON.stringify(ud));
+                console.log('[Chat] Background re-extraction complete:', entities.persons.length, 'persons');
+              }
+            }
           }
-        }
+        }).catch((err) => console.warn('[Chat] Background extraction check failed:', err));
       }
     } catch (extractErr) {
       // Non-blocking: if extraction fails, continue with whatever entities exist

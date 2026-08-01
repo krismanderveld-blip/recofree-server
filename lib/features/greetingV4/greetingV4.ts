@@ -304,8 +304,8 @@ function buildGreetingV4Prompt(input: PromptBuildInput): string {
 - Startsignaal: ${zoneArc.startSignal}
 - Eindsignaal vorige sessie: ${zoneArc.endSignal}
 - Interpretatie: ${zoneArc.isHeavy
-    ? 'ZWAAR — open voorzichtig, check hoe het nu gaat, bied ruimte. Slotvraag: "Hoe is het nu met je?" of "Wil je daar verder over praten?"'
-    : 'STABIEL — warme open vraag. Slotvraag: "Waar wil je het vandaag over hebben?" of "Wat houdt je bezig?"'
+    ? 'ZWAAR — open voorzichtig, check hoe het nu gaat, bied ruimte. Slotvraag: specifiek op het onderwerp, bv "Hoe gaat het nu met [naam/situatie]?"'
+    : 'STABIEL — warme open vraag die AANSLUIT op de vorige sessie. Verwijs naar het concrete onderwerp of de persoon die besproken werd. Geen generieke "Waar wil je het over hebben?"'
   }
 - NOOIT de technische zone-term of kleur hardop noemen (geen "oranje", "zone", "VSP", "Eigen Regie").`;
 
@@ -316,11 +316,12 @@ Je schrijft een opening voor een nieuwe sessie met ${userName}.
 ## INSTRUCTIES
 1. Gebruik de brondata en de samenvatting van de vorige sessie om een persoonlijke, warme greeting te schrijven.
 2. De greeting moet NATUURLIJK klinken — alsof een goede vriend/begeleider de draad oppakt.
-3. Verwijs NOOIT letterlijk naar ruwe data ("je stress was 7/10"). Vertaal naar menselijke taal.
-4. Eindig ALTIJD met een open vraag die past bij de zone-boog.
-5. Vrije lengte zolang het natuurlijk klinkt. Knip NOOIT af als dat halve informatie oplevert.
-6. Als er weinig brondata is: houd het kort en warm, stel een open vraag.
-7. Zelfde data → zelfde greeting. Geen kunstmatige variatie.
+3. Verwijs NOOIT letterlijk naar ruwe scores/getallen ("je stress was 7/10"). Vertaal naar menselijke taal.
+4. GEBRUIK WEL de namen van personen uit de kernfiguren-sectie. Zeg "Ellen" of "Jules", NIET "een belangrijk persoon" of "iemand".
+5. Eindig met een open vraag die SPECIFIEK aansluit op het onderwerp van de vorige sessie. NIET de generieke "Waar wil je het vandaag over hebben?" als je al een richting hebt voorgesteld.
+6. Vrije lengte zolang het natuurlijk klinkt. Knip NOOIT af als dat halve informatie oplevert.
+7. Als er weinig brondata is: houd het kort en warm, stel een open vraag.
+8. Zelfde data → zelfde greeting. Geen kunstmatige variatie.
 ${keyFiguresSection}${sourceSection}${messagesSection}${zoneSection}
 
 ## TAAL

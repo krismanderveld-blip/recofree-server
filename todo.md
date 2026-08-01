@@ -2648,3 +2648,6 @@
 - [x] FIX: BackpackHashState type extended with changeSource field
 - [x] FIX: DIST01 handleProposalAction now triggers extraction after backpack write — user.dat (analysis) is fed alongside backpack (narrative)
 - [x] FIX: processAutoSave in pipeline.ts now triggers extraction after auto-save backpack write — user.dat stays in sync with narrative
+- [x] FIX: Greeting blocks due to synchronous forceExtract — made non-blocking when entities already exist (background check)
+- [x] FIX: Greeting now uses actual names from extractedEntities (instruction 4: "Zeg Ellen of Jules, NIET een belangrijk persoon")
+- [x] FIX: Removed redundant generic question — greeting now ends with specific question tied to previous session topic
