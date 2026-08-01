@@ -327,6 +327,10 @@ import { LocalDeviceTimeService } from "@/lib/core/time";
 import { isServerEngineActive, callServerEngine, type ServerEngineCallInput } from '@/lib/migration';
 import { getApiBaseUrl } from '@/constants/oauth';
 import { callNanoInterpret, type ClientNanoInterpretResult } from '@/lib/pipeline/nano-interpret-client';
+import { createDistillationStore } from '@/lib/engine/shared/dist01-store';
+import { detectDistillation } from '@/lib/engine/shared/dist01-detector';
+import { buildDistillationContext } from '@/lib/engine/shared/dist01-context-injector';
+import type { DistillationContextForChat } from '@/lib/engine/shared/dist01-types';
 
 // ─── Pattern Marking (post-GPT local state) ─────────────────
 
@@ -612,6 +616,34 @@ export async function processMessage(
         zoneTrace: (s as any).zoneTrace ?? [],
       }));
 
+      // DIST01: Run detector on user message and build context for server injection
+      let serverDistillationContext: string | null = null;
+      try {
+        const distPersona = backpack.userType as 'elias' | 'kim';
+        const distStoreApi = createDistillationStore();
+        let distData = await distStoreApi.load(distPersona);
+        const localDayKey = new Date().toISOString().slice(0, 10);
+        const sessionId = `s_${Date.now()}`;
+        const detections = detectDistillation({
+          userText: userMessage,
+          source: 'chat',
+          persona: distPersona,
+          sessionId,
+          localDayKey,
+          userName: backpack.naam || 'Gebruiker',
+        });
+        if (detections.entities.length > 0 || detections.signals.length > 0 || detections.contexts.length > 0) {
+          distData = distStoreApi.mergeDetections(distData, detections.entities, detections.signals, detections.contexts, 'chat', sessionId, localDayKey);
+          await distStoreApi.save(distData);
+        }
+        const contextObj = buildDistillationContext(distData, sessionId);
+        // Serialize the context object to a string for the server
+        if (contextObj.knownPersons.length > 0 || contextObj.recentContext.length > 0 || contextObj.activeSignals.length > 0) {
+          serverDistillationContext = JSON.stringify(contextObj);
+        }
+      } catch (e) {
+        console.warn('[DIST01] Pre-server detection failed (non-blocking):', e);
+      }
       // Build server engine input
       const serverInput: ServerEngineCallInput = {
         persona: backpack.userType as 'elias' | 'kim',
@@ -679,9 +711,9 @@ export async function processMessage(
         backpack: backpack,
         userDat: currentUserDat,
         diaryEntries: options?.diaryEntries ?? [],
-        dayStructureContext: options?.dayStructureContext ?? null,
+                dayStructureContext: options?.dayStructureContext ?? null,
+        distillationContext: serverDistillationContext,
       };
-
       const serverResult = await callServerEngine(serverInput);
 
       // Store server nanoInterpret for use in client pipeline trace (even if GPT response is null)
@@ -3049,6 +3081,36 @@ export async function processMessage(
     }
   }
 
+  // ── DIST01: Build distillation context (continuous entity/signal extraction) ──
+  let distillationContextStr: string | undefined;
+  try {
+    const distPersona = (backpack.userType || 'elias') as 'elias' | 'kim';
+    const distStoreApi = createDistillationStore();
+    let distData = await distStoreApi.load(distPersona);
+    const localDayKey = new Date().toISOString().slice(0, 10);
+    const sessionId = `s_${Date.now()}`;
+    const detections = detectDistillation({
+      userText: userMessage,
+      source: 'chat',
+      persona: distPersona,
+      sessionId,
+      localDayKey,
+      userName: backpack.naam || 'Gebruiker',
+    });
+    if (detections.entities.length > 0 || detections.signals.length > 0 || detections.contexts.length > 0) {
+      distData = distStoreApi.mergeDetections(distData, detections.entities, detections.signals, detections.contexts, 'chat', sessionId, localDayKey);
+      await distStoreApi.save(distData);
+    }
+    const contextObj = buildDistillationContext(distData, sessionId);
+    if (contextObj.knownPersons.length > 0 || contextObj.recentContext.length > 0 || contextObj.activeSignals.length > 0) {
+      distillationContextStr = JSON.stringify(contextObj);
+      console.log(`[DIST01] Context built: ${distillationContextStr.length} chars, ${distData.entities.length} entities, ${distData.signals.length} signals`);
+    }
+  } catch (e) {
+    console.warn('[DIST01] Distillation failed (non-blocking):', e);
+    distillationContextStr = undefined;
+  }
+
   // ── CLIENT FALLBACK: ChatContext + GPT call (only reached when server-led block above fails) ──
   const context: ChatContext = {
     userType: backpack.userType,
@@ -3234,6 +3296,8 @@ export async function processMessage(
     locale: options?.locale,
     // User-selected country (for crisis numbers)
     country: options?.country,
+    // DIST01: Distillation context (persons, life context, signals from continuous extraction)
+    distillationContext: distillationContextStr ?? undefined,
   };
 
   // ── CLIENT-SIDE GPT CALL (DEPRECATED — server-led is primary) ──
@@ -3313,6 +3377,30 @@ export async function processMessage(
   } catch (e) {
     // Non-blocking: if safety filter fails, continue without it
     console.warn('[Pipeline] VSP Output Safety filter error (non-blocking):', e);
+  }
+
+  // ── POST-GPT STEP 6.9: DIST01 — Run detector on GPT response (extract entities mentioned by assistant) ──
+  try {
+    const distPersonaPost = (backpack.userType || 'elias') as 'elias' | 'kim';
+    const localDayKeyPost = new Date().toISOString().slice(0, 10);
+    const sessionIdPost = `s_${Date.now()}`;
+    const responseDetections = detectDistillation({
+      userText: feedbackResult.userText,
+      source: 'chat',
+      persona: distPersonaPost,
+      sessionId: sessionIdPost,
+      localDayKey: localDayKeyPost,
+      userName: backpack.naam || 'Gebruiker',
+    });
+    if (responseDetections.entities.length > 0 || responseDetections.signals.length > 0 || responseDetections.contexts.length > 0) {
+      const distStoreApiPost = createDistillationStore();
+      let distDataPost = await distStoreApiPost.load(distPersonaPost);
+      distDataPost = distStoreApiPost.mergeDetections(distDataPost, responseDetections.entities, responseDetections.signals, responseDetections.contexts, 'chat', sessionIdPost, localDayKeyPost);
+      await distStoreApiPost.save(distDataPost);
+      console.log(`[DIST01] POST-GPT: +${responseDetections.entities.length} entities, +${responseDetections.signals.length} signals from response`);
+    }
+  } catch (e) {
+    console.warn('[DIST01] POST-GPT detection failed (non-blocking):', e);
   }
 
   // ── POST-GPT STEP 7: Update internal stored state ──

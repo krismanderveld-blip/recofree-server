@@ -95,6 +95,8 @@ export interface ServerEngineCallInput {
   requestType?: 'process_message' | 'greeting' | 'session_start' | 'session_end';
   /** Day structure context string for AI awareness of user's daily schedule */
   dayStructureContext?: string | null;
+  /** DIST01: Serialized distillation context (persons, life context, signals from continuous extraction) */
+  distillationContext?: string | null;
 }
 
 // ─── Server Engine Call ──────────────────────────────────────────────────
@@ -163,6 +165,7 @@ export async function callServerEngine(input: ServerEngineCallInput): Promise<Se
         userDat: input.userDat ?? null,
         diaryEntries: input.diaryEntries ?? null,
         dayStructureContext: input.dayStructureContext ?? null,
+        distillationContext: input.distillationContext ?? null,
       }),
       signal: controller.signal,
     });

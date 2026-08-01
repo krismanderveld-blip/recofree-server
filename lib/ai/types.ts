@@ -1275,6 +1275,8 @@ export interface ChatContext {
   };
   /** Backpack deep analysis: schema/mode/trigger context from GPT-4o */
   backpackAnalysis?: { triggers?: string[]; coreBeliefs?: string[]; copingPatterns?: string[]; schemaHypotheses?: string[] };
+  /** DIST01: Serialized distillation context for GPT prompt injection (persons, life context, signals) */
+  distillationContext?: string | null;
 }
 
 /**

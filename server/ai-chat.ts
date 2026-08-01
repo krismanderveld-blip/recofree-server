@@ -362,6 +362,8 @@ export interface ChatRequestInput {
   preventionPlanMissing?: boolean | null;
   /** Acknowledged candidates (schemas/modes recognized but not yet confirmed) */
   acknowledgedCandidates?: { schemas: Array<{ name: string; confidence: number }>; modes: Array<{ name: string; confidence: number }> } | null;
+  /** DIST01: Serialized distillation context (persons, life context, signals from continuous extraction) */
+  distillationContext?: string | null;
 }
 
 // ─── Server-side Session Cache ───────────────────────────────────
@@ -409,6 +411,8 @@ interface SessionCache {
   } | null;
   // Previous session analyses summary (cached at SESSION_INIT, injected in follow-up for continuity)
   sessionAnalysesSummary: string;
+  // DIST01: Distillation context (persons, life context, signals — cached at SESSION_INIT)
+  distillationContext: string | null;
 }
 
 // Single-user cache: one active session per server instance (not multi-user safe)
@@ -515,6 +519,7 @@ function cacheSessionInit(input: ChatRequestInput): void {
     kimPatternSupportContext: input.kimPatternSupportContext ?? null,
     eigenRegieContext: input.eigenRegieContext ?? null,
     sessionAnalysesSummary: buildSessionAnalysesSummary(input.userDat?.sessionAnalyses ?? []),
+    distillationContext: input.distillationContext ?? null,
   };
   console.log("[AI Chat] Session cache created for:", input.userName, hasStructuredEntities ? '(structured entities)' : '(text-based)');
   // Log PERSONEN-LOOKUP for debugging person recognition
@@ -676,6 +681,8 @@ export const chatInputSchema = z.object({
     }).passthrough()),
     boundaryRules: z.array(z.string()),
   }).passthrough().nullable().optional(),
+  // DIST01: Distillation context (serialized persons, life context, signals)
+  distillationContext: z.string().nullable().optional(),
   relationalPattern: z.object({
     pattern: z.string(),
     schema: z.string(),
@@ -2120,14 +2127,15 @@ This is a HARD SAFETY RULE. Violation = harm. No exceptions.`}
       }
     }
 
-    // Inject previous session summary (compact, from cache)
+        // Inject previous session summary (compact, from cache)
     const sessionHistoryBlock = sessionCache?.sessionAnalysesSummary || '';
-
+    // DIST01: Inject distillation context (persons, life context, signals from continuous extraction)
+    const distillationBlock = (input.distillationContext || sessionCache?.distillationContext) ?? '';
     return `${identity}
-
 ${conditional.relationshipMap}
 ${lifeStoryContext}
 ${sessionHistoryBlock}
+${distillationBlock}
 ${backpackAnalysisContext}
 ${knownPatternsBlock}
 ${acknowledgedCandidatesBlock}
@@ -2637,11 +2645,13 @@ Rules:
   // ══════════════════════════════════════════════════════════════
   // ASSEMBLE FULL SESSION-START PROMPT
   // ══════════════════════════════════════════════════════════════
+    // DIST01: Inject distillation context at session start
+  const sessionStartDistillation = input.distillationContext ?? '';
   return `${identity}
 ${schemaRecognition}
-
 The user's name is ${name}. Address them by name occasionally.
 ${identityMemory}
+${sessionStartDistillation}
 ${diaryMemory}
 ${sessionMemory}
 ${sessionStartBackpackAnalysis}

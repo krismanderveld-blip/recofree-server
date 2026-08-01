@@ -681,6 +681,9 @@ export class OpenAIProvider implements AIProvider {
           extractedEntities: gptPayload.extractedEntities ?? null,
           backpackChanged: gptPayload.backpackChanged ?? false,
 
+          // DIST01: Distillation context (persons, life context, signals from continuous extraction)
+          distillationContext: context.distillationContext ?? null,
+
           // Backpack deep analysis (schemas, modes, triggers from GPT-4o)
           backpackAnalysis: context.userDat?.backpackAnalysis ?? null,
 

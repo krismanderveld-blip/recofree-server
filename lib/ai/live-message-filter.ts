@@ -114,6 +114,8 @@ const OPTIONAL_CONTEXT_KEYS: readonly string[] = [
   'eigenRegieContext',
   // KERP01: Eigen Regie Plan (Kim only — zone-specific signals, helps, anchors, triggers, boundary rules)
   'eigenRegiePlanContext',
+  // DIST01: Distillation context (persons, life context, signals from continuous extraction)
+  'distillationContext',
 ] as const;
 
 // ─── Main Filter Function ─────────────────────────────────────

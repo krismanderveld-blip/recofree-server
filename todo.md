@@ -2547,3 +2547,16 @@
 - [x] Result: all user-facing screens already use t() — only dev-only debug-log has English (intentional)
 - [x] Remaining "strings" are UI symbols (›, ×, +, ✕) and emoji — not translatable text
 - [x] Verify TS compiles (0 errors) and tests pass (1624 passed, 0 failed)
+
+## Phase 8: DIST01 — Continue Wederzijdse Distillatie (Fase 1: Stille Kennisopbouw)
+
+- [x] Create dist01-types.ts (DetectedEntity, DetectedSignal, DetectedContext, DistillationStore, DistillationContextForChat)
+- [x] Create dist01-store.ts (encrypted local persistence, merge, dedup, limits, query helpers)
+- [x] Create dist01-detector.ts (50 regex patterns: persons, relationships, signals, contexts, anchors)
+- [x] Create dist01-context-injector.ts (serialize distillation data for GPT prompt, max 7 persons, high-conf signals)
+- [x] Wire into pipeline.ts (PRE-GPT: build context + POST-GPT: run detector on user+GPT text)
+- [x] Wire into server/ai-chat.ts (Zod schema, SessionCache, prompt injection for SESSION_INIT + LIVE_MESSAGE)
+- [x] Wire into openai-provider.ts + live-message-filter.ts (pass distillationContext field)
+- [x] Wire into server-active-client.ts (ServerEngineCallInput + fetch body)
+- [x] Write 35 tests (17 detector, 11 store, 7 context-injector) — all passing
+- [x] Verify TS compiles (0 errors) and full test suite passes (1659 tests, 0 failures)
