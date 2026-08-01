@@ -2646,3 +2646,4 @@
 - [x] FIX: Session-start extraction guarantee — if backpack has manual changes or extractedEntities is empty, run extraction SYNCHRONOUSLY before greeting
 - [x] FIX: checkAndExtract now accepts changeSource ('manual' | 'auto_fill') — auto_fill skips extraction (user.dat is already the source)
 - [x] FIX: BackpackHashState type extended with changeSource field
+- [x] FIX: DIST01 handleProposalAction now triggers extraction after backpack write — user.dat (analysis) is fed alongside backpack (narrative)

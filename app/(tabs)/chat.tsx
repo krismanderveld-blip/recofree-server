@@ -1145,9 +1145,24 @@ function ChatScreenInner() {
           const proposalToWrite = editedText ? { ...proposal, editedText } : proposal;
           const writeResult = writeProposalToDocument(proposalToWrite, state.backpack);
           if (writeResult.success && writeResult.updatedBackpack) {
-            // Persist updated backpack
+            // Persist updated backpack (narrative/verhaal)
             await SessionMemoryCache.set(BACKPACK_KEY, JSON.stringify(writeResult.updatedBackpack));
             console.log(`[DIST01] Route B: Written to ${writeResult.writtenField}: "${writeResult.writtenText.slice(0, 50)}"`);
+            // Feed user.dat (analysis: personen, schemas, triggers) from updated backpack
+            // This is a manual change (user accepted/edited proposal) → extraction should run
+            forceExtract(writeResult.updatedBackpack, callExtractionEndpoint)
+              .then(async (entities) => {
+                if (entities) {
+                  const udJson = await SessionMemoryCache.get(USERDAT_KEY);
+                  if (udJson) {
+                    const ud = JSON.parse(udJson);
+                    ud.extractedEntities = entities;
+                    await SessionMemoryCache.set(USERDAT_KEY, JSON.stringify(ud));
+                    console.log(`[DIST01] Route B: user.dat fed with ${entities.persons.length} persons after proposal write`);
+                  }
+                }
+              })
+              .catch((err) => console.warn('[DIST01] Route B extraction failed (non-blocking):', err));
             // Update signal promotionStatus in distillation store
             if (proposal.signalId) {
               const distStore = createDistillationStore();
