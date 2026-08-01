@@ -12,26 +12,16 @@
 - `lib/ai/openai-provider.ts` — Added `distillationContext: context.distillationContext ?? null` to SESSION_INIT payload (line 685)
 - `server/ai-chat.ts` — Added `distillationContext?: string | null` to ChatRequestInput interface (line 366)
 
-## Remaining Integration Steps
+## Server-Side Integration (ALL COMPLETE)
 
-### 1. Add Zod validation for distillationContext in server/ai-chat.ts
-- Around line 680 (after eigenRegiePlanContext Zod schema), add:
-  `distillationContext: z.string().nullable().optional(),`
+All server-side steps were implemented in a previous session:
 
-### 2. Add distillationContext injection in server/ai-chat.ts prompt builder
-- Around line 2150+ (where stoaBlock/schemaModeBlock are injected), add distillation block
-- Include in the system prompt template for both SESSION_INIT and LIVE_MESSAGE
-
-### 3. Wire DIST01 into pipeline.ts
-- Import dist01 modules at top of pipeline.ts
-- After POST-GPT feedback loop (around line 3320), run detector on user message
-- Merge detections into store
-- At PRE-GPT (before ChatContext build at line 3053), load store + build context + set context.distillationContext
-
-### 4. Session cache in server/ai-chat.ts
-- Add `distillationContext: string | null` to SessionCache interface (around line 371)
-- Store it at SESSION_INIT
-- Inject it on LIVE_MESSAGE follow-ups
+1. **Zod validation** (line 685): `distillationContext: z.string().nullable().optional()` ✔️
+2. **SessionCache** (line 415): `distillationContext: string | null` ✔️
+3. **SESSION_INIT storage** (line 522): `distillationContext: input.distillationContext ?? null` ✔️
+4. **LIVE_MESSAGE injection** (line 2133): `const distillationBlock = (input.distillationContext || sessionCache?.distillationContext) ?? ''` ✔️
+5. **SESSION_INIT prompt** (line 2649+2654): `sessionStartDistillation` injected in system prompt ✔️
+6. **Pipeline wiring** (pipeline.ts): PRE-GPT loads store + builds context; POST-GPT runs detector + merges ✔️
 
 ## Files Created (Phase 2 — Route A: Promotie)
 - `lib/engine/shared/dist01-proposal-types.ts` — Proposal data model (DistillationProposal, TargetDocument, RoutingRule, timing constants)

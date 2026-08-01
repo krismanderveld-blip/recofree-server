@@ -2592,3 +2592,18 @@
 - [x] History: Add 27 i18n keys for history screen (NL/EN/FR)
 - [x] Write 24 tests for proposal writer and auto-save logic
 - [x] Verify TS compiles (0 errors) and all 1705 tests pass
+
+## Backlog: DIST01 — Toekomstige opties (indien nodig)
+
+- [ ] Undo/terugdraai-functie: Laat gebruikers een auto-saved of geaccepteerd voorstel ongedaan maken vanuit het history-scherm
+- [ ] Contradictie-detectie: Logica die detecteert wanneer een nieuw signaal in tegenspraak is met bestaande document-inhoud (contradictionFlag activeren)
+
+## Phase 11: DIST01 — Server-side integratie afronden
+
+- [x] Zod validation for distillationContext (line 685 server/ai-chat.ts) — was al geïmplementeerd
+- [x] SessionCache interface + SESSION_INIT opslag (line 415, 522) — was al geïmplementeerd
+- [x] LIVE_MESSAGE injection from session cache (line 2133) — was al geïmplementeerd
+- [x] GPT system prompt template injection (SESSION_INIT line 2649, LIVE_MESSAGE line 2133) — was al geïmplementeerd
+- [x] Pipeline wiring (PRE-GPT context build + POST-GPT detector) — was al geïmplementeerd
+- [x] DIST01_INTEGRATION_NOTES.md bijgewerkt (verouderde TODO's verwijderd)
+- [x] Verify TS compiles (0 errors) and all 1705 tests pass
