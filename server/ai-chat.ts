@@ -364,6 +364,17 @@ export interface ChatRequestInput {
   acknowledgedCandidates?: { schemas: Array<{ name: string; confidence: number }>; modes: Array<{ name: string; confidence: number }> } | null;
   /** DIST01: Serialized distillation context (persons, life context, signals from continuous extraction) */
   distillationContext?: string | null;
+
+  // ─── PRE-BUILT PROMPT BLOCKS (from local pipeline) ───
+  // These replace server-side extraction. When present, the server uses them directly.
+  /** Ready-to-inject PERSONEN-LOOKUP block (built locally from extractedEntities/relationalAnchors) */
+  personLookupBlock?: string | null;
+  /** Ready-to-inject PERSONAL MEMORY block (built locally from backpack sections) */
+  lifeContextBlock?: string | null;
+  /** Ready-to-inject STRUCTURED MEMORY block (built locally from extractedEntities) */
+  prebuiltStructuredMemory?: string | null;
+  /** Ready-to-inject session history summary (built locally from sessionAnalyses) */
+  prebuiltSessionHistory?: string | null;
 }
 
 // ─── Server-side Session Cache ───────────────────────────────────
@@ -486,6 +497,42 @@ function cacheSessionInit(input: ChatRequestInput): void {
     console.log(`[AI Chat DIAG] NO backpack received at session-start!`);
   }
 
+  // ═══ PRE-BUILT BLOCKS: prefer client-supplied blocks, fallback to server extraction ═══
+  const resolvedRelationshipMap = input.personLookupBlock
+    ? input.personLookupBlock
+    : (input.backpack
+      ? extractRelationshipMap(input.backpack.lifeStory, input.backpack.intakeContext.initialContext, input.extractedEntities)
+      : "");
+
+  const resolvedLifeStorySummary = input.lifeContextBlock
+    ? input.lifeContextBlock
+    : (hasStructuredEntities
+      ? structuredMemory
+      : (input.backpack
+        ? buildCompactLifeStorySummary(input.backpack.lifeStory, input.backpack.intakeContext.initialContext, input.userName, input.backpack.kimBackpack)
+        : ""));
+
+  const resolvedStructuredMemory = input.prebuiltStructuredMemory
+    ? input.prebuiltStructuredMemory
+    : structuredMemory;
+
+  const resolvedSessionHistory = input.prebuiltSessionHistory
+    ? input.prebuiltSessionHistory
+    : buildSessionAnalysesSummary(input.userDat?.sessionAnalyses ?? []);
+
+  if (input.personLookupBlock) {
+    console.log('[AI Chat] Using PRE-BUILT personLookupBlock from local pipeline');
+  }
+  if (input.lifeContextBlock) {
+    console.log('[AI Chat] Using PRE-BUILT lifeContextBlock from local pipeline');
+  }
+  if (input.prebuiltStructuredMemory) {
+    console.log('[AI Chat] Using PRE-BUILT structuredMemory from local pipeline');
+  }
+  if (input.prebuiltSessionHistory) {
+    console.log('[AI Chat] Using PRE-BUILT sessionHistory from local pipeline');
+  }
+
   sessionCache = {
     userName: input.userName,
     userType: input.userType,
@@ -495,14 +542,8 @@ function cacheSessionInit(input: ChatRequestInput): void {
     relationalPattern: input.relationalPattern ?? null,
     recentDiary: input.recentDiary ?? [],
     stageOfChange: input.stageOfChange ?? null,
-    relationshipMap: input.backpack
-      ? extractRelationshipMap(input.backpack.lifeStory, input.backpack.intakeContext.initialContext, input.extractedEntities)
-      : "",
-    lifeStorySummary: hasStructuredEntities
-      ? structuredMemory  // Use structured entities (only when backpack NOT changed)
-      : (input.backpack
-        ? buildCompactLifeStorySummary(input.backpack.lifeStory, input.backpack.intakeContext.initialContext, input.userName, input.backpack.kimBackpack)
-        : ""),
+    relationshipMap: resolvedRelationshipMap,
+    lifeStorySummary: resolvedLifeStorySummary,
     totalSessions: input.userDat?.totalSessions ?? 0,
     triggerPatterns: (input.userDat?.triggerPatterns ?? []).map(tp => ({
       trigger: tp.trigger,
@@ -510,15 +551,15 @@ function cacheSessionInit(input: ChatRequestInput): void {
     })),
     messageCount: 0,
     guidanceDepth: input.guidanceDepth ?? 'normal',
-    structuredMemory,
-    hasStructuredEntities,
+    structuredMemory: resolvedStructuredMemory,
+    hasStructuredEntities: hasStructuredEntities || !!input.prebuiltStructuredMemory,
     cumulativeTokens: { prompt: 0, completion: 0, total: 0, turnCount: 0 },
     psychoEducationContext: input.psychoEducationContext ?? null,
     steunpilarenContext: input.steunpilarenContext ?? null,
     selfAcceptanceContext: input.selfAcceptanceContext ?? null,
     kimPatternSupportContext: input.kimPatternSupportContext ?? null,
     eigenRegieContext: input.eigenRegieContext ?? null,
-    sessionAnalysesSummary: buildSessionAnalysesSummary(input.userDat?.sessionAnalyses ?? []),
+    sessionAnalysesSummary: resolvedSessionHistory,
     distillationContext: input.distillationContext ?? null,
   };
   console.log("[AI Chat] Session cache created for:", input.userName, hasStructuredEntities ? '(structured entities)' : '(text-based)');
@@ -980,6 +1021,12 @@ export const chatInputSchema = z.object({
     schemas: z.array(z.object({ name: z.string(), confidence: z.number() })),
     modes: z.array(z.object({ name: z.string(), confidence: z.number() })),
   }).nullable().optional(),
+
+  // Pre-built prompt blocks (from local pipeline — replaces server-side extraction when present)
+  personLookupBlock: z.string().nullable().optional(),
+  lifeContextBlock: z.string().nullable().optional(),
+  prebuiltStructuredMemory: z.string().nullable().optional(),
+  prebuiltSessionHistory: z.string().nullable().optional(),
 }).passthrough();
 
 // ─── Structured Memory Block Builder (from extractedEntities) ──────────────

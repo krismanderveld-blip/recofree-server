@@ -327,6 +327,7 @@ import { LocalDeviceTimeService } from "@/lib/core/time";
 import { isServerEngineActive, callServerEngine, type ServerEngineCallInput } from '@/lib/migration';
 import { getApiBaseUrl } from '@/constants/oauth';
 import { callNanoInterpret, type ClientNanoInterpretResult } from '@/lib/pipeline/nano-interpret-client';
+import { buildPrebuiltPromptBlocks } from '@/lib/pipeline/prebuilt-prompt-blocks';
 import { createDistillationStore } from '@/lib/engine/shared/dist01-store';
 import { detectDistillation } from '@/lib/engine/shared/dist01-detector';
 import { buildDistillationContext } from '@/lib/engine/shared/dist01-context-injector';
@@ -3123,6 +3124,15 @@ export async function processMessage(
     distillationContextStr = undefined;
   }
 
+  // ── BUILD PRE-BUILT PROMPT BLOCKS (local intelligence → server as pure proxy) ──
+  const prebuiltBlocks = buildPrebuiltPromptBlocks({
+    backpack,
+    userDat: currentUserDat,
+    extractedEntities: currentUserDat.extractedEntities ?? undefined,
+    diaryEntries: options?.diaryEntries ?? [],
+    sessionAnalyses: currentUserDat.sessionAnalyses ?? [],
+  });
+
   // ── CLIENT FALLBACK: ChatContext + GPT call (only reached when server-led block above fails) ──
   const context: ChatContext = {
     userType: backpack.userType,
@@ -3310,6 +3320,8 @@ export async function processMessage(
     country: options?.country,
     // DIST01: Distillation context (persons, life context, signals from continuous extraction)
     distillationContext: distillationContextStr ?? undefined,
+    // PRE-BUILT PROMPT BLOCKS (local pipeline → server as pure proxy)
+    ...prebuiltBlocks,
   };
 
   // ── CLIENT-SIDE GPT CALL (DEPRECATED — server-led is primary) ──

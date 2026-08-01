@@ -2635,3 +2635,11 @@
 - [x] AUDIT: Fix openai-provider SESSION_INIT to always include full data alongside context.dat
 - [ ] AUDIT: Add extractRelationalAnchors fallback to pastReferenceSearch.ts
 - [ ] AUDIT: Delete dead code prompt-minimizer.ts
+- [x] REFACTOR: Add prebuilt-prompt-blocks.ts (local person/life/memory block builder)
+- [x] REFACTOR: ai-chat.ts accepts pre-built blocks from client, falls back to old extraction
+- [x] REFACTOR: ChatContext + ChatRequestInput + chatInputSchema updated with new fields
+- [x] REFACTOR: pipeline.ts calls buildPrebuiltPromptBlocks() and spreads into ChatContext
+- [x] REFACTOR: openai-provider.ts forwards pre-built blocks to server
+- [ ] FUTURE: Remove raw backpack from SESSION_INIT once pre-built blocks proven stable
+- [ ] FUTURE: Remove extractRelationshipMap/buildCompactLifeStorySummary from ai-chat.ts (dead code after migration)
+- [ ] FUTURE: Token optimization — context.dat replaces full backpack once vice-versa learning is stable

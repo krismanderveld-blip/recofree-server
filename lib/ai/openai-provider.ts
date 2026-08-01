@@ -709,6 +709,12 @@ export class OpenAIProvider implements AIProvider {
               }
             : {}),
 
+          // PRE-BUILT PROMPT BLOCKS (local pipeline → server as pure proxy)
+          personLookupBlock: context.personLookupBlock ?? null,
+          lifeContextBlock: context.lifeContextBlock ?? null,
+          prebuiltStructuredMemory: context.prebuiltStructuredMemory ?? null,
+          prebuiltSessionHistory: context.prebuiltSessionHistory ?? null,
+
           // User-selected app language (from i18n provider)
           locale: context.locale ?? null,
         };

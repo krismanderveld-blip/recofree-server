@@ -1277,6 +1277,16 @@ export interface ChatContext {
   backpackAnalysis?: { triggers?: string[]; coreBeliefs?: string[]; copingPatterns?: string[]; schemaHypotheses?: string[] };
   /** DIST01: Serialized distillation context for GPT prompt injection (persons, life context, signals) */
   distillationContext?: string | null;
+
+  // ─── PRE-BUILT PROMPT BLOCKS (from local pipeline) ───
+  /** Ready-to-inject PERSONEN-LOOKUP block (built locally) */
+  personLookupBlock?: string | null;
+  /** Ready-to-inject PERSONAL MEMORY block (built locally) */
+  lifeContextBlock?: string | null;
+  /** Ready-to-inject STRUCTURED MEMORY block (built locally) */
+  prebuiltStructuredMemory?: string | null;
+  /** Ready-to-inject session history summary (built locally) */
+  prebuiltSessionHistory?: string | null;
 }
 
 /**
