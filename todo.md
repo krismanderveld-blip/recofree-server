@@ -2631,3 +2631,7 @@
 - [x] Oorzaak: context.dat commit (60b7980) verving volledige backpack door gedistilleerde versie, maar distiller miste data
 - [x] Fix: context-dat-distiller.ts valt nu terug op extractRelationalAnchors(backpack) als relationalAnchors leeg is
 - [x] Verify: 0 TS errors, 1711 tests groen
+- [x] AUDIT: Fix context.dat zeroing memory layers — always send full backpack/userDat (context.dat is additive only)
+- [x] AUDIT: Fix openai-provider SESSION_INIT to always include full data alongside context.dat
+- [ ] AUDIT: Add extractRelationalAnchors fallback to pastReferenceSearch.ts
+- [ ] AUDIT: Delete dead code prompt-minimizer.ts

@@ -698,19 +698,16 @@ export class OpenAIProvider implements AIProvider {
           selfAcceptanceContext: gptPayload.selfAcceptanceContext ?? null,
           kimPatternSupportContext: gptPayload.kimPatternSupportContext ?? null,
 
-          // Full data (SESSION_INIT only) — uses context.dat when available
+          // Full data (SESSION_INIT only) — context.dat is ADDITIVE, memory layers always sent in full
+          backpack: gptPayload.backpack,
+          userDat: gptPayload.userDat,
+          diaryEntries: gptPayload.diaryEntries,
           ...(gptPayload.contextDat
             ? {
                 contextDat: gptPayload.contextDat,
                 deepeningBlock: gptPayload.deepeningBlock ?? null,
-                backpack: gptPayload.backpack, // minimal identity only
-                userDat: gptPayload.userDat, // minimal stats only
               }
-            : {
-                backpack: gptPayload.backpack,
-                userDat: gptPayload.userDat,
-                diaryEntries: gptPayload.diaryEntries,
-              }),
+            : {}),
 
           // User-selected app language (from i18n provider)
           locale: context.locale ?? null,
