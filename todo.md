@@ -2614,3 +2614,13 @@
 - [x] Root cause: greetingV4 prompt bevatte GEEN rugzak key figures (personen, relaties, triggers)
 - [x] Fix: buildKeyFigures() toegevoegd aan greetingV4.ts — injecteert personen, relational anchors, triggers, intake context in greeting prompt
 - [x] Verify: 0 TS errors, 1705 tests groen
+
+## Phase 12: GreetingV4 Key Figures Test + Context.dat Refresh na Rugzak-edit
+
+- [x] Write 6 tests for buildKeyFigures() in greetingV4 (persons, relational anchors dedup, triggers, intake context, empty backpack, max 8 limit)
+- [x] Implement context.dat refresh after backpack edit:
+  - [x] Created backpack-dirty-flag.ts (markBackpackDirty/isBackpackDirty/clearBackpackDirty)
+  - [x] Added markBackpackDirty() calls to all 4 backpack save functions in user-context.tsx
+  - [x] Modified pipeline.ts: shouldBuildContextDat = isSessionStart || isBackpackDirty()
+  - [x] Pipeline rebuilds context.dat on next message after any backpack edit
+- [x] Verify TS compiles (0 errors) and all 1711 tests pass

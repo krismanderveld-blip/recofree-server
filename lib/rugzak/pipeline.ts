@@ -3036,16 +3036,22 @@ export async function processMessage(
     }
   }
 
-  // ── CONTEXT.DAT DISTILLATION (first turn only) ────────────────────────────────────
+  // ── CONTEXT.DAT DISTILLATION (first turn OR after backpack edit) ────────────────────
   let contextDatSerialized: string | undefined;
   let deepeningBlock: string | undefined;
   let contextDatObject: import('../pipeline/context-dat-distiller').ContextDat | undefined;
-  if (isSessionStart) {
+  const { isBackpackDirty, clearBackpackDirty } = await import('../engine/shared/backpack-dirty-flag');
+  const shouldBuildContextDat = isSessionStart || isBackpackDirty();
+  if (shouldBuildContextDat) {
+    if (!isSessionStart) {
+      console.log('[context.dat] Rebuilding after backpack edit (dirty flag set)');
+    }
+    clearBackpackDirty();
     try {
       const { distillContextDat, serializeContextDatForGPT } = await import('../pipeline/context-dat-distiller');
       const { resolveDeepening, serializeDeepeningForGPT } = await import('../pipeline/context-dat-deepening');
       const { clearDeepeningCache } = await import('../pipeline/deepening-cache');
-      clearDeepeningCache(); // Fresh session = fresh cache
+      if (isSessionStart) clearDeepeningCache(); // Fresh session = fresh cache
       const lifecycleMgr = getSessionLifecycleManager();
       const memStores = lifecycleMgr.getStores();
       const persona = (backpack.userType || 'elias') as 'elias' | 'kim';

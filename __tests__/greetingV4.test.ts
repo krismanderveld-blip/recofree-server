@@ -270,6 +270,211 @@ describe('Greeting V4', () => {
     });
   });
 
+  describe('Key figures (buildKeyFigures)', () => {
+    it('includes extracted persons in greeting prompt', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ success: true, greeting: 'Test greeting with Melissa' }),
+      });
+
+      const input = makeBaseInput({
+        previousSessionMessages: [{ role: 'user', content: 'test' }],
+        userDat: {
+          naam: 'Kris',
+          currentMood: { stress: 5 },
+          moodHistory: [],
+          chatHistory: [],
+          totalSessions: 3,
+          extractedEntities: {
+            persons: [
+              { name: 'Melissa', relationship: 'partner', relationshipNL: 'partner', age: null, livingSituation: null, emotionalValence: 'ambivalent', context: 'Spanningen in de relatie tijdens opname', sourceSection: 'current' },
+              { name: 'Lisa', relationship: 'daughter', relationshipNL: 'dochter', age: '14', livingSituation: null, emotionalValence: 'positive', context: 'Woont bij ex-partner', sourceSection: 'family' },
+            ],
+            events: [],
+            patterns: [],
+            contexts: [],
+            extractedAt: '2026-07-01T10:00:00Z',
+            sourceHash: 'abc123',
+            schemaVersion: 1,
+          },
+        } as any,
+      });
+
+      await greetingV4(input);
+      const callBody = JSON.parse(mockFetch.mock.calls[0][1].body);
+      expect(callBody.systemPrompt).toContain('Melissa: partner');
+      expect(callBody.systemPrompt).toContain('Lisa: dochter');
+      expect(callBody.systemPrompt).toContain('Spanningen in de relatie');
+      expect(callBody.systemPrompt).toContain('WIE IS KRIS?');
+    });
+
+    it('includes relational anchors not in extractedEntities', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ success: true, greeting: 'Test' }),
+      });
+
+      const input = makeBaseInput({
+        previousSessionMessages: [{ role: 'user', content: 'test' }],
+        userDat: {
+          naam: 'Kris',
+          currentMood: { stress: 5 },
+          moodHistory: [],
+          chatHistory: [],
+          totalSessions: 3,
+          extractedEntities: {
+            persons: [
+              { name: 'Melissa', relationship: 'partner', relationshipNL: 'partner', age: null, livingSituation: null, emotionalValence: 'ambivalent', context: '', sourceSection: 'current' },
+            ],
+            events: [],
+            patterns: [],
+            contexts: [],
+            extractedAt: '2026-07-01T10:00:00Z',
+            sourceHash: 'abc',
+            schemaVersion: 1,
+          },
+          relationalAnchors: [
+            { name: 'Melissa', role: 'partner', roleEN: 'partner', emotionalWeight: 8 },
+            { name: 'Jan', role: 'begeleider', roleEN: 'counselor', emotionalWeight: 5 },
+          ],
+        } as any,
+      });
+
+      await greetingV4(input);
+      const callBody = JSON.parse(mockFetch.mock.calls[0][1].body);
+      // Jan should be added (not in extractedEntities), Melissa should NOT be duplicated
+      expect(callBody.systemPrompt).toContain('Jan: begeleider');
+      // Count occurrences of 'Melissa' — should appear only once in the key figures section
+      const keyFiguresSection = callBody.systemPrompt.split('WIE IS KRIS?')[1]?.split('##')[0] || '';
+      const melissaCount = (keyFiguresSection.match(/Melissa/g) || []).length;
+      expect(melissaCount).toBe(1);
+    });
+
+    it('includes triggers from backpackAnalysis', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ success: true, greeting: 'Test' }),
+      });
+
+      const input = makeBaseInput({
+        previousSessionMessages: [{ role: 'user', content: 'test' }],
+        userDat: {
+          naam: 'Kris',
+          currentMood: { stress: 5 },
+          moodHistory: [],
+          chatHistory: [],
+          totalSessions: 3,
+          backpackAnalysis: {
+            schemas: [],
+            modi: [],
+            triggers: ['eenzaamheid', 'conflict met Melissa', 'werkdruk'],
+          },
+        } as any,
+      });
+
+      await greetingV4(input);
+      const callBody = JSON.parse(mockFetch.mock.calls[0][1].body);
+      expect(callBody.systemPrompt).toContain('Triggers: eenzaamheid, conflict met Melissa, werkdruk');
+    });
+
+    it('includes intake context from backpack', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ success: true, greeting: 'Test' }),
+      });
+
+      const input = makeBaseInput({
+        backpack: {
+          naam: 'Kris',
+          userType: 'elias',
+          sections: [],
+          intakeContext: {
+            initialContext: 'Ik wil stoppen met drinken, mijn relatie staat op het spel',
+          },
+        } as any,
+        previousSessionMessages: [{ role: 'user', content: 'test' }],
+        userDat: {
+          naam: 'Kris',
+          currentMood: { stress: 5 },
+          moodHistory: [],
+          chatHistory: [],
+          totalSessions: 3,
+        } as any,
+      });
+
+      await greetingV4(input);
+      const callBody = JSON.parse(mockFetch.mock.calls[0][1].body);
+      expect(callBody.systemPrompt).toContain('Eerste context: Ik wil stoppen met drinken');
+    });
+
+    it('returns no key figures section when backpack is empty', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ success: true, greeting: 'Test' }),
+      });
+
+      const input = makeBaseInput({
+        previousSessionMessages: [{ role: 'user', content: 'test' }],
+        backpack: {
+          naam: 'Kris',
+          userType: 'elias',
+          sections: [],
+        } as any,
+        userDat: {
+          naam: 'Kris',
+          currentMood: { stress: 5 },
+          moodHistory: [],
+          chatHistory: [],
+          totalSessions: 3,
+        } as any,
+      });
+
+      await greetingV4(input);
+      const callBody = JSON.parse(mockFetch.mock.calls[0][1].body);
+      expect(callBody.systemPrompt).not.toContain('WIE IS KRIS?');
+    });
+
+    it('limits persons to max 8', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ success: true, greeting: 'Test' }),
+      });
+
+      const manyPersons = Array.from({ length: 12 }, (_, i) => ({
+        name: `Person${i}`, relationship: 'friend', relationshipNL: 'vriend',
+        age: null, livingSituation: null, emotionalValence: 'neutral' as const,
+        context: '', sourceSection: 'current',
+      }));
+
+      const input = makeBaseInput({
+        previousSessionMessages: [{ role: 'user', content: 'test' }],
+        userDat: {
+          naam: 'Kris',
+          currentMood: { stress: 5 },
+          moodHistory: [],
+          chatHistory: [],
+          totalSessions: 3,
+          extractedEntities: {
+            persons: manyPersons,
+            events: [],
+            patterns: [],
+            contexts: [],
+            extractedAt: '2026-07-01T10:00:00Z',
+            sourceHash: 'abc',
+            schemaVersion: 1,
+          },
+        } as any,
+      });
+
+      await greetingV4(input);
+      const callBody = JSON.parse(mockFetch.mock.calls[0][1].body);
+      // Should have max 8 persons
+      expect(callBody.systemPrompt).toContain('Person0');
+      expect(callBody.systemPrompt).toContain('Person7');
+      expect(callBody.systemPrompt).not.toContain('Person8');
+    });
+  });
+
   describe('Source collection', () => {
     it('picks 2 most recent sources from combined pool', async () => {
       mockFetch.mockResolvedValueOnce({

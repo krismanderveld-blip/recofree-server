@@ -23,6 +23,7 @@ import { callExtractionEndpoint } from './backpack-extractor/client';
 import { callBackpackAnalysis } from './backpack-analysis/client';
 import { checkAndAnalyzeVspProfile } from './backpack-extractor/vsp-backpack-analyzer';
 import { callVspBackpackAnalysis } from './backpack-extractor/vsp-backpack-client';
+import { markBackpackDirty } from './engine/shared/backpack-dirty-flag';
 
 // ─── State Types ────────────────────────────────────────────────
 
@@ -669,6 +670,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     };
     dispatch({ type: 'UPDATE_BACKPACK', payload: updatedBackpack });
     await persistBackpack(updatedBackpack);
+    markBackpackDirty(); // Signal pipeline to rebuild context.dat on next message
     // Fire-and-forget: trigger extraction if content changed
     triggerExtractionIfNeeded(updatedBackpack);
   }, [state.backpack]);
@@ -693,6 +695,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     };
     dispatch({ type: 'UPDATE_BACKPACK', payload: updatedBackpack });
     await persistBackpack(updatedBackpack);
+    markBackpackDirty(); // Signal pipeline to rebuild context.dat on next message
     // Fire-and-forget: trigger extraction if content changed
     triggerExtractionIfNeeded(updatedBackpack);
   }, [state.backpack]);
@@ -707,6 +710,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     };
     dispatch({ type: 'UPDATE_BACKPACK', payload: updatedBackpack });
     await persistBackpack(updatedBackpack);
+    markBackpackDirty(); // Signal pipeline to rebuild context.dat on next message
     // Fire-and-forget: trigger extraction if content changed
     triggerExtractionIfNeeded(updatedBackpack);
   }, [state.backpack]);
@@ -728,6 +732,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   const replaceBackpack = useCallback(async (newBackpack: Backpack) => {
     dispatch({ type: 'UPDATE_BACKPACK', payload: newBackpack });
     await persistBackpack(newBackpack);
+    markBackpackDirty(); // Signal pipeline to rebuild context.dat on next message
     // Fire-and-forget: trigger extraction for the new content
     triggerExtractionIfNeeded(newBackpack);
     // Reset extractedEntities so next session sends full backpack (not stale entities)
