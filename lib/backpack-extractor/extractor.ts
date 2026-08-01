@@ -74,10 +74,12 @@ export async function checkAndExtract(
     intakeContext: string;
     sourceHash: string;
   }) => Promise<ExtractedEntities | null>,
+  changeSource: 'manual' | 'auto_fill' = 'manual',
 ): Promise<ExtractedEntities | null> {
   try {
     // 1. Compute current hash
     const currentHash = computeBackpackHash(backpack);
+    currentHash.changeSource = changeSource;
 
     // 2. Load previous hash
     const previousHash = await loadBackpackHash();
@@ -90,11 +92,19 @@ export async function checkAndExtract(
       console.log('[BackpackExtractor] No change detected, using cached entities');
       return cachedEntities;
     }
+
+    // 3b. If change came from auto_fill (vice-versa), skip extraction — user.dat is already the source
+    if (changeSource === 'auto_fill') {
+      console.log('[BackpackExtractor] Change from auto_fill (vice-versa) — skipping extraction, user.dat is source');
+      await saveBackpackHash(currentHash);
+      return cachedEntities;
+    }
+
     if (schemaOutdated) {
       console.log(`[BackpackExtractor] Schema outdated (${cachedEntities.schemaVersion} → ${CURRENT_SCHEMA_VERSION}), re-extracting...`);
     }
 
-    console.log('[BackpackExtractor] Change detected, triggering extraction...');
+    console.log('[BackpackExtractor] Manual change detected, triggering extraction...');
 
     // 4. Call server extraction
     const sections = backpack.sections.map(s => ({

@@ -2643,3 +2643,6 @@
 - [ ] FUTURE: Remove raw backpack from SESSION_INIT once pre-built blocks proven stable
 - [ ] FUTURE: Remove extractRelationshipMap/buildCompactLifeStorySummary from ai-chat.ts (dead code after migration)
 - [ ] FUTURE: Token optimization — context.dat replaces full backpack once vice-versa learning is stable
+- [x] FIX: Session-start extraction guarantee — if backpack has manual changes or extractedEntities is empty, run extraction SYNCHRONOUSLY before greeting
+- [x] FIX: checkAndExtract now accepts changeSource ('manual' | 'auto_fill') — auto_fill skips extraction (user.dat is already the source)
+- [x] FIX: BackpackHashState type extended with changeSource field

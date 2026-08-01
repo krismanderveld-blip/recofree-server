@@ -54,6 +54,8 @@ import { migrateSessionAnalysesToLogsDat } from '@/lib/pipeline/memory/migrateSe
 import { ChatErrorBoundary } from '@/components/chat-error-boundary';
 import { colors as dc, spacing, radius, typography, shadows } from '@/constants/design';
 import { triggerBackpackAnalysisIfNeeded } from '@/lib/backpack-analysis/schema-mode-trigger';
+import { hasBackpackChangedSinceExtraction, forceExtract } from '@/lib/backpack-extractor/extractor';
+import { callExtractionEndpoint } from '@/lib/backpack-extractor/client';
 import { useTranslation } from '@/lib/i18n';
 import { LocalDeviceTimeService } from "@/lib/core/time";
 import { getTodayBlocks } from '@/lib/features/dayStructure';
@@ -467,6 +469,39 @@ function ChatScreenInner() {
     if (reactUserDat?.clinicalModeActive && !userDat.clinicalModeActive) {
       userDat = { ...userDat, clinicalModeActive: true };
     }
+    // ── SESSION-START EXTRACTION GUARANTEE ──────────────────────────────────
+    // If backpack has manual changes that haven't been extracted yet, or if
+    // extractedEntities is empty, run extraction SYNCHRONOUSLY before greeting.
+    // This ensures user.dat is always fed before the greeting is built.
+    // Auto-fill changes (vice-versa from user.dat) are skipped — user.dat is already the source.
+    try {
+      const entitiesEmpty = !userDat.extractedEntities || userDat.extractedEntities.persons.length === 0;
+      const backpackHasContent = backpack.sections.some((s: any) => s.content?.trim().length > 10);
+      if (backpackHasContent && entitiesEmpty) {
+        console.log('[Chat] Session-start: extractedEntities empty but backpack has content → forcing extraction');
+        const entities = await forceExtract(backpack, callExtractionEndpoint);
+        if (entities) {
+          userDat = { ...userDat, extractedEntities: entities };
+          await SessionMemoryCache.set(USERDAT_KEY, JSON.stringify(userDat));
+          console.log('[Chat] Session-start: extraction complete, user.dat fed with', entities.persons.length, 'persons');
+        }
+      } else if (backpackHasContent) {
+        const hasChanged = await hasBackpackChangedSinceExtraction(backpack);
+        if (hasChanged) {
+          console.log('[Chat] Session-start: backpack manually changed since last extraction → re-extracting');
+          const entities = await forceExtract(backpack, callExtractionEndpoint);
+          if (entities) {
+            userDat = { ...userDat, extractedEntities: entities };
+            await SessionMemoryCache.set(USERDAT_KEY, JSON.stringify(userDat));
+            console.log('[Chat] Session-start: re-extraction complete, user.dat updated with', entities.persons.length, 'persons');
+          }
+        }
+      }
+    } catch (extractErr) {
+      // Non-blocking: if extraction fails, continue with whatever entities exist
+      console.warn('[Chat] Session-start extraction check failed (non-blocking):', extractErr);
+    }
+
     console.log('[Chat] sendGreeting — backpack sections:', backpack.sections?.length, 'filled:', backpack.sections?.filter((s: any) => s.content?.trim().length > 0).length);
     setIsTyping(true);
     try {

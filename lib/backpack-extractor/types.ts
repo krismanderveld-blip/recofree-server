@@ -113,6 +113,8 @@ export interface BackpackHashState {
   combinedHash: string;
   /** ISO timestamp */
   computedAt: string;
+  /** Source of the last change: 'manual' (user edited) or 'auto_fill' (vice-versa from user.dat) */
+  changeSource?: 'manual' | 'auto_fill';
 }
 
 // ─── Extraction Request/Response ───────────────────────────────
