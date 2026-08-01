@@ -2516,3 +2516,13 @@
 - [x] Notification: Add reminder toggle to eigen-regie plan overview screen
 - [x] Notification: Record last check timestamp on plan screen open
 - [x] Fix TS errors (0 errors) and run tests (1616 passed, 0 failed)
+
+## Phase 5: Rugzak i18n — Engels naar Nederlands
+
+- [x] Replace hardcoded English in DEFAULT_KIM_BACKPACK_SECTIONS (lib/ai/types.ts) with Dutch text
+- [x] Replace hardcoded English in DEFAULT_BACKPACK_SECTIONS (lib/ai/types.ts) with Dutch text
+- [x] Replace hardcoded English in KIM_SECTION_CONFIG + ELIAS_SECTION_CONFIG (BackpackWizardScreen.tsx) with Dutch
+- [x] Replace all hardcoded English UI strings in BackpackWizardScreen.tsx with t() calls (45+ strings)
+- [x] Replace section.prompt and section.subtitle in backpack.tsx with t() calls
+- [x] Add 43 new Dutch translations to nl.json (backpack.wizard.* keys)
+- [x] Verify TypeScript compiles (0 errors) and tests pass (1616 passed)

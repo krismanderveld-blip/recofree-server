@@ -59,21 +59,21 @@ interface BackpackWizardScreenProps {
 // ─── Section config for Elias ────────────────────────────────────────────────
 
 const ELIAS_SECTION_CONFIG = [
-  { id: 'childhood' as const, label: 'Childhood', ageRange: '6–12 years', emoji: '🧒', color: '#81C784' },
-  { id: 'adolescence' as const, label: 'Adolescence', ageRange: '12–18 years', emoji: '🧑', color: '#4DD0E1' },
-  { id: 'adulthood' as const, label: 'Adulthood', ageRange: '18–50 years', emoji: '👤', color: '#7986CB' },
-  { id: 'family' as const, label: 'Family', ageRange: 'Throughout life', emoji: '👨‍👩‍👧', color: '#FFD54F' },
-  { id: 'themes' as const, label: 'Recurring Themes', ageRange: 'Across all phases', emoji: '🔄', color: '#CE93D8' },
+  { id: 'childhood' as const, label: 'Kindertijd', ageRange: '6–12 jaar', emoji: '🧒', color: '#81C784' },
+  { id: 'adolescence' as const, label: 'Adolescentie', ageRange: '12–18 jaar', emoji: '🧑', color: '#4DD0E1' },
+  { id: 'adulthood' as const, label: 'Volwassenheid', ageRange: '18–50 jaar', emoji: '👤', color: '#7986CB' },
+  { id: 'family' as const, label: 'Familie', ageRange: 'Heel het leven', emoji: '👨‍👩‍👧', color: '#FFD54F' },
+  { id: 'themes' as const, label: 'Terugkerende thema\'s', ageRange: 'Door alle fases heen', emoji: '🔄', color: '#CE93D8' },
 ];
 
 // ─── Section config for Kim ──────────────────────────────────────────────────
 
 const KIM_SECTION_CONFIG = [
-  { id: 'my_story' as const, label: 'My Story', subtitle: 'Who am I outside of this relationship?', emoji: '👤', color: '#E57373' },
-  { id: 'the_relationship' as const, label: 'The Relationship', subtitle: 'How did it evolve? When did it change?', emoji: '🔗', color: '#81C784' },
-  { id: 'the_impact' as const, label: 'The Impact', subtitle: 'What has addiction done to my life?', emoji: '🌊', color: '#4DD0E1' },
-  { id: 'my_boundaries' as const, label: 'My Boundaries', subtitle: 'What can I carry? What have I tried?', emoji: '🛡️', color: '#FFD54F' },
-  { id: 'my_strength' as const, label: 'My Strength', subtitle: 'Where do I find strength?', emoji: '💪', color: '#CE93D8' },
+  { id: 'my_story' as const, label: 'Mijn verhaal', subtitle: 'Wie ben ik buiten deze relatie?', emoji: '👤', color: '#E57373' },
+  { id: 'the_relationship' as const, label: 'De relatie', subtitle: 'Hoe is het geëvolueerd? Wanneer veranderde het?', emoji: '🔗', color: '#81C784' },
+  { id: 'the_impact' as const, label: 'De impact', subtitle: 'Wat heeft verslaving gedaan met mijn leven?', emoji: '🌊', color: '#4DD0E1' },
+  { id: 'my_boundaries' as const, label: 'Mijn grenzen', subtitle: 'Wat kan ik dragen? Wat heb ik al geprobeerd?', emoji: '🛡️', color: '#FFD54F' },
+  { id: 'my_strength' as const, label: 'Mijn kracht', subtitle: 'Waar vind ik kracht?', emoji: '💪', color: '#CE93D8' },
 ];
 
 // ─── Component ───────────────────────────────────────────────────────────────
@@ -148,7 +148,7 @@ export function BackpackWizardScreen({ existingBackpack, userType: initialUserTy
     }
 
     if (!result.success || !result.data) {
-      setUploadError(result.error || 'Something went wrong while processing the document.');
+      setUploadError(result.error || t('backpack.wizard.error.upload'));
       setStep('choose_method');
       return;
     }
@@ -279,10 +279,10 @@ export function BackpackWizardScreen({ existingBackpack, userType: initialUserTy
       <View style={{ alignItems: 'center', gap: 8, marginBottom: 16 }}>
         <Text style={{ fontSize: 28 }}>{'🎒'}</Text>
         <Text style={{ fontSize: 22, fontWeight: '700', color: colors.foreground, textAlign: 'center' }}>
-          Fill in your Backpack
+          {t('backpack.wizard.choose_method.title')}
         </Text>
         <Text style={{ fontSize: 14, color: colors.muted, textAlign: 'center', lineHeight: 20, maxWidth: 300 }}>
-          Your life story helps the AI understand you better. You can upload a document or fill it in step by step.
+          {t('backpack.wizard.choose_method.description')}
         </Text>
       </View>
 
@@ -306,10 +306,10 @@ export function BackpackWizardScreen({ existingBackpack, userType: initialUserTy
             <Text style={{ fontSize: 24 }}>{'📄'}</Text>
             <View style={{ flex: 1 }}>
               <Text style={{ fontSize: 16, fontWeight: '600', color: colors.foreground }}>
-                Upload life story document
+                {t('backpack.wizard.upload.title')}
               </Text>
               <Text style={{ fontSize: 13, color: colors.muted, lineHeight: 18, marginTop: 2 }}>
-                Upload your bilan or life story (Word or text). Fields will be filled in automatically.
+                {t('backpack.wizard.upload.description')}
               </Text>
             </View>
           </View>
@@ -330,10 +330,10 @@ export function BackpackWizardScreen({ existingBackpack, userType: initialUserTy
             <Text style={{ fontSize: 24 }}>{'✏️'}</Text>
             <View style={{ flex: 1 }}>
               <Text style={{ fontSize: 16, fontWeight: '600', color: colors.foreground }}>
-                Fill in manually
+                {t('backpack.wizard.manual.title')}
               </Text>
               <Text style={{ fontSize: 13, color: colors.muted, lineHeight: 18, marginTop: 2 }}>
-                Fill in your story step by step per life phase. You can skip sections and come back later.
+                {t('backpack.wizard.manual.description')}
               </Text>
             </View>
           </View>
@@ -342,7 +342,7 @@ export function BackpackWizardScreen({ existingBackpack, userType: initialUserTy
 
       {/* Cancel */}
       <Pressable onPress={onCancel} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1, alignSelf: 'center', marginTop: 8 }]}>
-        <Text style={{ fontSize: 14, color: colors.muted }}>Cancel</Text>
+        <Text style={{ fontSize: 14, color: colors.muted }}>{t('backpack.wizard.cancel')}</Text>
       </Pressable>
     </View>
   );
@@ -352,9 +352,9 @@ export function BackpackWizardScreen({ existingBackpack, userType: initialUserTy
   const renderUploading = () => (
     <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', gap: 16, padding: 24 }}>
       <ActivityIndicator size="large" color={colors.primary} />
-      <Text style={{ fontSize: 16, fontWeight: '600', color: colors.foreground }}>Processing document...</Text>
+      <Text style={{ fontSize: 16, fontWeight: '600', color: colors.foreground }}>{t('backpack.wizard.uploading.title')}</Text>
       <Text style={{ fontSize: 13, color: colors.muted, textAlign: 'center', lineHeight: 18 }}>
-        Your life story is being read and the sections will be filled in automatically. This may take a moment.
+        {t('backpack.wizard.uploading.description')}
       </Text>
     </View>
   );
@@ -364,15 +364,15 @@ export function BackpackWizardScreen({ existingBackpack, userType: initialUserTy
   const renderNameStep = () => (
     <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 24, paddingBottom: 40 }}>
       <Text style={{ fontSize: 20, fontWeight: '700', color: colors.foreground, marginBottom: 8 }}>
-        About you
+        {t('backpack.wizard.name.title')}
       </Text>
       <Text style={{ fontSize: 13, color: colors.muted, marginBottom: 24, lineHeight: 18 }}>
-        This helps the AI address you personally and understand your perspective.
+        {t('backpack.wizard.name.description')}
       </Text>
 
       {/* Name */}
       <Text style={{ fontSize: 14, fontWeight: '600', color: colors.foreground, marginBottom: 6 }}>
-        Your first name
+        {t('backpack.wizard.name.label')}
       </Text>
       <TextInput
         style={{
@@ -385,7 +385,7 @@ export function BackpackWizardScreen({ existingBackpack, userType: initialUserTy
           color: colors.foreground,
           marginBottom: 24,
         }}
-        placeholder="Your name"
+        placeholder={t('backpack.wizard.name.placeholder')}
         placeholderTextColor={colors.muted}
         value={naam}
         onChangeText={setNaam}
@@ -395,7 +395,7 @@ export function BackpackWizardScreen({ existingBackpack, userType: initialUserTy
 
       {/* User Type */}
       <Text style={{ fontSize: 14, fontWeight: '600', color: colors.foreground, marginBottom: 6 }}>
-        I am...
+        {t('backpack.wizard.name.iam')}
       </Text>
       <View style={{ gap: 10, marginBottom: 24 }}>
         <Pressable
@@ -410,10 +410,10 @@ export function BackpackWizardScreen({ existingBackpack, userType: initialUserTy
             borderColor: currentUserType === 'elias' ? colors.primary : colors.border,
           }}>
             <Text style={{ fontSize: 15, fontWeight: '600', color: colors.foreground }}>
-              Someone in recovery
+              {t('backpack.wizard.name.elias.title')}
             </Text>
             <Text style={{ fontSize: 13, color: colors.muted, marginTop: 2 }}>
-              I deal with addiction myself and want support in my recovery.
+              {t('backpack.wizard.name.elias.description')}
             </Text>
           </View>
         </Pressable>
@@ -430,10 +430,10 @@ export function BackpackWizardScreen({ existingBackpack, userType: initialUserTy
             borderColor: currentUserType === 'kim' ? colors.primary : colors.border,
           }}>
             <Text style={{ fontSize: 15, fontWeight: '600', color: colors.foreground }}>
-              A loved one
+              {t('backpack.wizard.name.kim.title')}
             </Text>
             <Text style={{ fontSize: 13, color: colors.muted, marginTop: 2 }}>
-              Someone close to me deals with addiction and I need support too.
+              {t('backpack.wizard.name.kim.description')}
             </Text>
           </View>
         </Pressable>
@@ -446,7 +446,7 @@ export function BackpackWizardScreen({ existingBackpack, userType: initialUserTy
       >
         <View style={{ backgroundColor: colors.primary, borderRadius: 12, padding: 14, alignItems: 'center' }}>
           <Text style={{ fontSize: 14, fontWeight: '600', color: '#fff' }}>
-            Next: Life story sections
+            {t('backpack.wizard.name.next')}
           </Text>
         </View>
       </Pressable>
@@ -514,7 +514,7 @@ export function BackpackWizardScreen({ existingBackpack, userType: initialUserTy
               textAlignVertical: 'top',
               lineHeight: 20,
             }}
-            placeholder="Write your story here..."
+            placeholder={t('backpack.wizard.section.placeholder')}
             placeholderTextColor={colors.muted}
             value={content}
             onChangeText={(text) => setSectionContent(section.id, text)}
@@ -531,14 +531,14 @@ export function BackpackWizardScreen({ existingBackpack, userType: initialUserTy
             <Pressable onPress={prevSection} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1, flex: 1 }]}>
               <View style={{ backgroundColor: colors.surface, borderRadius: 12, padding: 14, alignItems: 'center', borderWidth: 1, borderColor: colors.border }}>
                 <Text style={{ fontSize: 14, fontWeight: '600', color: colors.foreground }}>
-                  {activeSectionIdx === 0 ? 'Back to name' : 'Previous'}
+                  {activeSectionIdx === 0 ? t('backpack.wizard.section.back_to_name') : t('backpack.wizard.section.previous')}
                 </Text>
               </View>
             </Pressable>
             <Pressable onPress={nextSection} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1, flex: 1 }]}>
               <View style={{ backgroundColor: colors.primary, borderRadius: 12, padding: 14, alignItems: 'center' }}>
                 <Text style={{ fontSize: 14, fontWeight: '600', color: '#fff' }}>
-                  {activeSectionIdx < sectionConfig.length - 1 ? 'Next section' : 'To context'}
+                  {activeSectionIdx < sectionConfig.length - 1 ? t('backpack.wizard.section.next') : t('backpack.wizard.section.to_context')}
                 </Text>
               </View>
             </Pressable>
@@ -546,7 +546,7 @@ export function BackpackWizardScreen({ existingBackpack, userType: initialUserTy
 
           {/* Skip hint */}
           <Text style={{ fontSize: 12, color: colors.muted, textAlign: 'center', marginTop: 12 }}>
-            Nothing for this section? Leave it empty and continue.
+            {t('backpack.wizard.section.skip_hint')}
           </Text>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -558,15 +558,15 @@ export function BackpackWizardScreen({ existingBackpack, userType: initialUserTy
   const renderContextStep = () => (
     <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 24, paddingBottom: 40 }}>
       <Text style={{ fontSize: 20, fontWeight: '700', color: colors.foreground, marginBottom: 8 }}>
-        Your current situation
+        {t('backpack.wizard.context.title')}
       </Text>
       <Text style={{ fontSize: 13, color: colors.muted, marginBottom: 24, lineHeight: 18 }}>
-        This helps the AI understand where you are right now. You can update this later.
+        {t('backpack.wizard.context.description')}
       </Text>
 
       {/* Start emotion */}
       <Text style={{ fontSize: 14, fontWeight: '600', color: colors.foreground, marginBottom: 6 }}>
-        How are you feeling right now?
+        {t('backpack.wizard.context.feeling.label')}
       </Text>
       <TextInput
         style={{
@@ -579,7 +579,7 @@ export function BackpackWizardScreen({ existingBackpack, userType: initialUserTy
           color: colors.foreground,
           marginBottom: 20,
         }}
-        placeholder="e.g. anxious, hopeful, exhausted..."
+        placeholder={t('backpack.wizard.context.feeling.placeholder')}
         placeholderTextColor={colors.muted}
         value={startEmotion}
         onChangeText={setStartEmotion}
@@ -587,7 +587,7 @@ export function BackpackWizardScreen({ existingBackpack, userType: initialUserTy
 
       {/* Initial context */}
       <Text style={{ fontSize: 14, fontWeight: '600', color: colors.foreground, marginBottom: 6 }}>
-        Why are you here? (in your own words)
+        {t('backpack.wizard.context.why.label')}
       </Text>
       <TextInput
         style={{
@@ -603,7 +603,7 @@ export function BackpackWizardScreen({ existingBackpack, userType: initialUserTy
           lineHeight: 20,
           marginBottom: 20,
         }}
-        placeholder="What brings you to this app?"
+        placeholder={t('backpack.wizard.context.why.placeholder')}
         placeholderTextColor={colors.muted}
         value={initialContext}
         onChangeText={setInitialContext}
@@ -612,7 +612,7 @@ export function BackpackWizardScreen({ existingBackpack, userType: initialUserTy
 
       {/* Urgency */}
       <Text style={{ fontSize: 14, fontWeight: '600', color: colors.foreground, marginBottom: 6 }}>
-        How urgent does it feel?
+        {t('backpack.wizard.context.urgency.label')}
       </Text>
       <View style={{ flexDirection: 'row', gap: 8, marginBottom: 20 }}>
         {(['laag', 'midden', 'hoog'] as UrgencyLevel[]).map(level => (
@@ -630,7 +630,7 @@ export function BackpackWizardScreen({ existingBackpack, userType: initialUserTy
               borderColor: urgency === level ? colors.primary : colors.border,
             }}>
               <Text style={{ fontSize: 13, fontWeight: '600', color: urgency === level ? colors.primary : colors.foreground }}>
-                {level === 'laag' ? 'Low' : level === 'midden' ? 'Medium' : 'High'}
+                {level === 'laag' ? t('backpack.wizard.context.urgency.low') : level === 'midden' ? t('backpack.wizard.context.urgency.medium') : t('backpack.wizard.context.urgency.high')}
               </Text>
             </View>
           </Pressable>
@@ -675,7 +675,7 @@ export function BackpackWizardScreen({ existingBackpack, userType: initialUserTy
           style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1, flex: 1 }]}
         >
           <View style={{ backgroundColor: colors.surface, borderRadius: 12, padding: 14, alignItems: 'center', borderWidth: 1, borderColor: colors.border }}>
-            <Text style={{ fontSize: 14, fontWeight: '600', color: colors.foreground }}>Back</Text>
+            <Text style={{ fontSize: 14, fontWeight: '600', color: colors.foreground }}>{t('backpack.wizard.context.back')}</Text>
           </View>
         </Pressable>
         <Pressable onPress={handleSave} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1, flex: 1 }]}>
@@ -683,14 +683,14 @@ export function BackpackWizardScreen({ existingBackpack, userType: initialUserTy
             {saving ? (
               <ActivityIndicator size="small" color="#fff" />
             ) : (
-              <Text style={{ fontSize: 14, fontWeight: '700', color: '#fff' }}>Save Backpack</Text>
+              <Text style={{ fontSize: 14, fontWeight: '700', color: '#fff' }}>{t('backpack.wizard.context.save')}</Text>
             )}
           </View>
         </Pressable>
       </View>
 
       <Text style={{ fontSize: 12, color: colors.muted, textAlign: 'center', marginTop: 12 }}>
-        You can always edit your backpack later.
+        {t('backpack.wizard.context.edit_later')}
       </Text>
     </ScrollView>
   );
@@ -700,15 +700,15 @@ export function BackpackWizardScreen({ existingBackpack, userType: initialUserTy
   const renderDone = () => (
     <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', gap: 16, padding: 24 }}>
       <Text style={{ fontSize: 48 }}>{'✅'}</Text>
-      <Text style={{ fontSize: 20, fontWeight: '700', color: colors.foreground }}>Backpack saved!</Text>
+      <Text style={{ fontSize: 20, fontWeight: '700', color: colors.foreground }}>{t('backpack.wizard.done.title')}</Text>
       <Text style={{ fontSize: 14, color: colors.muted, textAlign: 'center', lineHeight: 20, maxWidth: 280 }}>
         {currentUserType === 'elias'
-          ? 'Elias now knows your story and can guide you more personally.'
-          : 'Kim now knows your story and can support you more personally.'}
+          ? t('backpack.wizard.done.elias')
+          : t('backpack.wizard.done.kim')}
       </Text>
       <Pressable onPress={onCancel} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1, marginTop: 16 }]}>
         <View style={{ backgroundColor: colors.primary, borderRadius: 12, paddingHorizontal: 32, paddingVertical: 14 }}>
-          <Text style={{ fontSize: 14, fontWeight: '600', color: '#fff' }}>Close</Text>
+          <Text style={{ fontSize: 14, fontWeight: '600', color: '#fff' }}>{t('backpack.wizard.done.close')}</Text>
         </View>
       </Pressable>
     </View>

@@ -161,7 +161,7 @@ export default function BackpackScreen() {
         {isExpanded && (
           <View style={{ backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderTopWidth: 0, borderBottomLeftRadius: 16, borderBottomRightRadius: 16, padding: 16, marginTop: -4 }}>
             <View style={{ backgroundColor: '#fff', borderRadius: 12, padding: 12, marginBottom: 12, borderWidth: 1, borderColor: colors.border }}>
-              <Text style={{ fontSize: 13, color: colors.muted, fontStyle: 'italic', lineHeight: 18 }}>{section.prompt}</Text>
+              <Text style={{ fontSize: 13, color: colors.muted, fontStyle: 'italic', lineHeight: 18 }}>{t(`backpack.section.${section.id}.prompt`)}</Text>
             </View>
 
             {isEditing ? (
@@ -259,7 +259,7 @@ export default function BackpackScreen() {
         {isExpanded && (
           <View style={{ backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderTopWidth: 0, borderBottomLeftRadius: 16, borderBottomRightRadius: 16, padding: 16, marginTop: -4 }}>
             <View style={{ backgroundColor: '#fff', borderRadius: 12, padding: 12, marginBottom: 12, borderWidth: 1, borderColor: colors.border }}>
-              <Text style={{ fontSize: 13, color: colors.muted, fontStyle: 'italic', lineHeight: 18 }}>{section.subtitle}</Text>
+              <Text style={{ fontSize: 13, color: colors.muted, fontStyle: 'italic', lineHeight: 18 }}>{t(`backpack.kim.${section.id}.subtitle`)}</Text>
             </View>
 
             {isEditing ? (
