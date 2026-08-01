@@ -88,6 +88,9 @@ export async function greetingV4(input: GreetingV4Input): Promise<GreetingV4Resu
   // ── Build zone arc
   const zoneArc = buildZoneArc(input, persona);
 
+  // ── Build key figures from backpack (persons, relationships, context)
+  const keyFigures = buildKeyFigures(input.backpack, input.userDat);
+
   // ── Build prompt
   const systemPrompt = buildGreetingV4Prompt({
     persona,
@@ -97,6 +100,7 @@ export async function greetingV4(input: GreetingV4Input): Promise<GreetingV4Resu
     zoneArc,
     previousMessages: input.previousSessionMessages,
     clinicalModeActive: input.clinicalModeActive ?? false,
+    keyFigures,
   });
 
   // ── Call proxy
@@ -259,10 +263,12 @@ interface PromptBuildInput {
   zoneArc: ZoneArc;
   previousMessages: Array<{ role: string; content: string }>;
   clinicalModeActive: boolean;
+  /** Key figures from backpack: persons, context, relational anchors */
+  keyFigures?: string;
 }
 
 function buildGreetingV4Prompt(input: PromptBuildInput): string {
-  const { persona, userName, locale, sources, zoneArc, previousMessages } = input;
+  const { persona, userName, locale, sources, zoneArc, previousMessages, keyFigures } = input;
   const companionName = persona === 'elias' ? 'Elias' : 'Kim';
 
   const langInstruction = getLanguageInstruction(locale);
@@ -287,6 +293,12 @@ function buildGreetingV4Prompt(input: PromptBuildInput): string {
     }
   }
 
+  // Key figures section (persons, relationships, context from backpack)
+  let keyFiguresSection = '';
+  if (keyFigures) {
+    keyFiguresSection = `\n## WIE IS ${userName.toUpperCase()}? (kernfiguren en context — gebruik als achtergrond)\n${keyFigures}\n`;
+  }
+
   // Zone arc section
   const zoneSection = `\n## ZONE-BOOG (stuurt je toon en slotvraag)
 - Startsignaal: ${zoneArc.startSignal}
@@ -309,7 +321,7 @@ Je schrijft een opening voor een nieuwe sessie met ${userName}.
 5. Vrije lengte zolang het natuurlijk klinkt. Knip NOOIT af als dat halve informatie oplevert.
 6. Als er weinig brondata is: houd het kort en warm, stel een open vraag.
 7. Zelfde data → zelfde greeting. Geen kunstmatige variatie.
-${sourceSection}${messagesSection}${zoneSection}
+${keyFiguresSection}${sourceSection}${messagesSection}${zoneSection}
 
 ## TAAL
 ${langInstruction}
@@ -433,6 +445,55 @@ function getFallbackTemplates(locale: string): FallbackTemplates {
         generic: (name) => `Hey ${name}, goed dat je er bent. Waar wil je het vandaag over hebben?`,
       };
   }
+}
+
+// ─── Key Figures Builder ────────────────────────────────────────────────────
+
+/**
+ * Build a concise key figures summary from backpack data (persons, relationships,
+ * relational anchors, and contextual info). This gives the greeting GPT awareness
+ * of WHO the user is and who matters in their life.
+ */
+function buildKeyFigures(backpack: Backpack, userDat: UserDat): string | undefined {
+  const lines: string[] = [];
+
+  // 1. Extracted entities (persons) from backpack analysis
+  const entities = userDat.extractedEntities;
+  if (entities?.persons && entities.persons.length > 0) {
+    for (const person of entities.persons.slice(0, 8)) {
+      let line = `- ${person.name}: ${person.relationshipNL || person.relationship}`;
+      if (person.context) line += ` (${person.context.slice(0, 80)})`;
+      lines.push(line);
+    }
+  }
+
+  // 2. Relational anchors (from user.dat — may have persons not in extractedEntities)
+  const anchors = userDat.relationalAnchors;
+  if (anchors && anchors.length > 0) {
+    const entityNames = new Set((entities?.persons || []).map(p => p.name.toLowerCase()));
+    for (const anchor of anchors) {
+      if (!entityNames.has(anchor.name.toLowerCase())) {
+        lines.push(`- ${anchor.name}: ${anchor.role}`);
+      }
+    }
+  }
+
+  // 3. Key context from backpack analysis (triggers, core beliefs)
+  const analysis = userDat.backpackAnalysis;
+  if (analysis) {
+    if (analysis.triggers && analysis.triggers.length > 0) {
+      lines.push(`- Triggers: ${analysis.triggers.slice(0, 4).join(', ')}`);
+    }
+  }
+
+  // 4. Intake context (brief)
+  if (backpack.intakeContext?.initialContext) {
+    const ctx = backpack.intakeContext.initialContext.slice(0, 120);
+    lines.push(`- Eerste context: ${ctx}`);
+  }
+
+  if (lines.length === 0) return undefined;
+  return lines.join('\n');
 }
 
 // ─── Debug Log ──────────────────────────────────────────────────────────────

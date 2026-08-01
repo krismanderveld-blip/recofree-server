@@ -2607,3 +2607,10 @@
 - [x] Pipeline wiring (PRE-GPT context build + POST-GPT detector) — was al geïmplementeerd
 - [x] DIST01_INTEGRATION_NOTES.md bijgewerkt (verouderde TODO's verwijderd)
 - [x] Verify TS compiles (0 errors) and all 1705 tests pass
+
+## Bug: Backpack niet geladen bij eerste SESSION_INIT (alleen na herstart) — FIXED
+
+- [x] Investigate: Elias kent rugzak-inhoud (partner Melissa) niet bij eerste sessie-start, wél na app-herstart
+- [x] Root cause: greetingV4 prompt bevatte GEEN rugzak key figures (personen, relaties, triggers)
+- [x] Fix: buildKeyFigures() toegevoegd aan greetingV4.ts — injecteert personen, relational anchors, triggers, intake context in greeting prompt
+- [x] Verify: 0 TS errors, 1705 tests groen
