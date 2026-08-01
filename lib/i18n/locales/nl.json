@@ -568,9 +568,9 @@
   "intake.country.subtitle": "Dit bepaalt welke noodnummers je ziet",
   "intake.country.option.BE": "België",
   "intake.country.option.NL": "Nederland",
-  "intake.country.option.FR": "France",
-  "intake.country.option.UK": "United Kingdom",
-  "intake.country.option.US": "United States",
+  "intake.country.option.FR": "Frankrijk",
+  "intake.country.option.UK": "Verenigd Koninkrijk",
+  "intake.country.option.US": "Verenigde Staten",
   "intake.country.button.continue": "Doorgaan",
   "intake.stage.precontemplation.label": "Nog niet klaar",
   "intake.stage.precontemplation.description": "Ik weet niet zeker of ik nu iets moet veranderen.",
@@ -1088,5 +1088,11 @@
   "kerp.wizard.done_title": "Klaar!",
   "kerp.wizard.your_anchor": "Jouw ankerzin:",
   "kerp.wizard.save_plan": "✓ Plan opslaan",
-  "kerp.wizard.next": "Volgende →"
+  "kerp.wizard.next": "Volgende →",
+  "kerp.wizard.cancel": "Annuleren",
+  "kerp.wizard.previous": "← Vorige",
+  "kerp.wizard.stop_confirm_title": "Wizard stoppen?",
+  "kerp.wizard.stop_confirm_message": "Je voortgang wordt niet opgeslagen. Weet je het zeker?",
+  "kerp.wizard.stop_confirm_yes": "Ja, stoppen",
+  "kerp.wizard.stop_confirm_no": "Nee, doorgaan"
 }

@@ -2537,3 +2537,13 @@
 - [x] Add all new i18n keys to nl.json, fr.json, en.json (now 1057 keys each, fully in sync)
 - [x] Add i18n completeness test (__tests__/i18n-completeness.test.ts) — 8 assertions
 - [x] Verify TS compiles (0 errors) and tests pass (1624 passed, 0 failed)
+
+## Phase 7: i18n country names + wizard stop button + remaining hardcoded strings
+
+- [x] Translate intake country names (Frankrijk, Verenigd Koninkrijk, Verenigde Staten) in nl.json + fr.json + en.json
+- [x] Add stop/back button to eigen-regie wizard with confirmation Alert ("Wizard stoppen?")
+- [x] Wizard now shows both "← Vorige" (back) and "Annuleren" (stop with confirm) buttons
+- [x] Scan remaining screens (chat, profile, diary, home, dagstructuur, day-structure, gdpr-consent)
+- [x] Result: all user-facing screens already use t() — only dev-only debug-log has English (intentional)
+- [x] Remaining "strings" are UI symbols (›, ×, +, ✕) and emoji — not translatable text
+- [x] Verify TS compiles (0 errors) and tests pass (1624 passed, 0 failed)

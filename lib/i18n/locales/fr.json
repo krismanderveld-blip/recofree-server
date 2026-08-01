@@ -1088,5 +1088,11 @@
   "kerp.wizard.done_title": "Terminé !",
   "kerp.wizard.your_anchor": "Ta phrase d'ancrage :",
   "kerp.wizard.save_plan": "✓ Sauvegarder le plan",
-  "kerp.wizard.next": "Suivant →"
+  "kerp.wizard.next": "Suivant →",
+  "kerp.wizard.cancel": "Annuler",
+  "kerp.wizard.previous": "← Précédent",
+  "kerp.wizard.stop_confirm_title": "Arrêter l'assistant ?",
+  "kerp.wizard.stop_confirm_message": "Ta progression ne sera pas sauvegardée. Es-tu sûr(e) ?",
+  "kerp.wizard.stop_confirm_yes": "Oui, arrêter",
+  "kerp.wizard.stop_confirm_no": "Non, continuer"
 }

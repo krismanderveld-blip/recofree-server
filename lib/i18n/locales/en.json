@@ -1088,5 +1088,11 @@
   "kerp.wizard.done_title": "Done!",
   "kerp.wizard.your_anchor": "Your anchor sentence:",
   "kerp.wizard.save_plan": "✓ Save plan",
-  "kerp.wizard.next": "Next →"
+  "kerp.wizard.next": "Next →",
+  "kerp.wizard.cancel": "Cancel",
+  "kerp.wizard.previous": "← Previous",
+  "kerp.wizard.stop_confirm_title": "Stop wizard?",
+  "kerp.wizard.stop_confirm_message": "Your progress will not be saved. Are you sure?",
+  "kerp.wizard.stop_confirm_yes": "Yes, stop",
+  "kerp.wizard.stop_confirm_no": "No, continue"
 }

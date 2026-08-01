@@ -12,7 +12,7 @@
  */
 
 import { useState, useCallback } from 'react';
-import { Text, View, ScrollView, TextInput, Pressable, Platform, StyleSheet, KeyboardAvoidingView, ActivityIndicator } from 'react-native';
+import { Text, View, ScrollView, TextInput, Pressable, Platform, StyleSheet, KeyboardAvoidingView, ActivityIndicator, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ScreenContainer } from '@/components/screen-container';
 import { useUser } from '@/lib/user-context';
@@ -242,9 +242,20 @@ export default function WizardScreen() {
     setStepIndex(nextIndex);
   }, [currentStep, stepIndex, saveZoneSignals, saveZoneHelps, saveZoneAnchor, tempMainAnchor, loadZoneForEditing]);
 
+  const handleStop = useCallback(() => {
+    Alert.alert(
+      t('kerp.wizard.stop_confirm_title'),
+      t('kerp.wizard.stop_confirm_message'),
+      [
+        { text: t('kerp.wizard.stop_confirm_no'), style: 'cancel' },
+        { text: t('kerp.wizard.stop_confirm_yes'), style: 'destructive', onPress: () => router.back() },
+      ]
+    );
+  }, [t, router]);
+
   const handleBack = useCallback(() => {
     if (stepIndex === 0) {
-      router.back();
+      handleStop();
       return;
     }
     // Save current step data before going back
@@ -258,7 +269,7 @@ export default function WizardScreen() {
       loadZoneForEditing(prevStep.zoneIndex);
     }
     setStepIndex(prevIndex);
-  }, [stepIndex, currentStep, saveZoneSignals, saveZoneHelps, saveZoneAnchor, loadZoneForEditing, router]);
+  }, [stepIndex, currentStep, saveZoneSignals, saveZoneHelps, saveZoneAnchor, loadZoneForEditing, handleStop]);
 
   const handleFinish = useCallback(async () => {
     const finalPlan: EigenRegiePlan = {
@@ -628,11 +639,20 @@ export default function WizardScreen() {
 
         {/* Navigation */}
         <View style={styles.navBar}>
-          <Pressable onPress={handleBack} style={({ pressed }) => [styles.navBtn, { opacity: pressed ? 0.7 : 1 }]}>
-            <Text style={[styles.navBtnText, { color: dc.textSecondary }]}>
-              {stepIndex === 0 ? 'Annuleren' : '← Vorige'}
-            </Text>
-          </Pressable>
+          <View style={styles.navLeftGroup}>
+            {stepIndex > 0 && (
+              <Pressable onPress={handleBack} style={({ pressed }) => [styles.navBtn, { opacity: pressed ? 0.7 : 1 }]}>
+                <Text style={[styles.navBtnText, { color: dc.textSecondary }]}>
+                  {t('kerp.wizard.previous')}
+                </Text>
+              </Pressable>
+            )}
+            <Pressable onPress={handleStop} style={({ pressed }) => [styles.navBtn, { opacity: pressed ? 0.7 : 1 }]}>
+              <Text style={[styles.navBtnText, { color: dc.danger }]}>
+                {t('kerp.wizard.cancel')}
+              </Text>
+            </Pressable>
+          </View>
 
           {currentStep.type === 'review' ? (
             <Pressable onPress={handleFinish} style={({ pressed }) => [styles.navBtnPrimary, { backgroundColor: dc.primary, opacity: pressed ? 0.9 : 1 }]}>
@@ -674,6 +694,7 @@ const styles = StyleSheet.create({
   reviewZoneText: { flex: 1, fontSize: 14, fontWeight: '500' },
   reviewZoneCount: { fontSize: 12 },
   navBar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, borderTopWidth: 1, borderTopColor: '#f0f0f0', backgroundColor: '#fff' },
+  navLeftGroup: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   navBtn: { paddingVertical: 10, paddingHorizontal: 16 },
   navBtnText: { fontSize: 15, fontWeight: '500' },
   navBtnPrimary: { paddingVertical: 12, paddingHorizontal: 24, borderRadius: 10 },
