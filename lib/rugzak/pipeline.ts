@@ -3512,6 +3512,29 @@ export async function processMessage(
           await SessionMemoryCache.set('@recofree_backpack', JSON.stringify(autoSaveResult.updatedBackpack));
         }
         console.log(`[DIST01] Phase 3 Auto-save: ${autoSaveResult.autoSavedCount} signals auto-saved (IDs: ${autoSaveResult.autoSavedSignalIds.join(', ')})`);
+        // Feed user.dat (analysis) from updated backpack after auto-save write
+        if (autoSaveResult.updatedBackpack) {
+          try {
+            const { forceExtract } = await import('@/lib/backpack-extractor/extractor');
+            const { callExtractionEndpoint } = await import('@/lib/backpack-extractor/client');
+            forceExtract(autoSaveResult.updatedBackpack, callExtractionEndpoint)
+              .then(async (entities) => {
+                if (entities) {
+                  const { SessionMemoryCache } = await import('@/lib/crypto/session-memory-cache');
+                  const udJson = await SessionMemoryCache.get('@recofree_userdat');
+                  if (udJson) {
+                    const ud = JSON.parse(udJson);
+                    ud.extractedEntities = entities;
+                    await SessionMemoryCache.set('@recofree_userdat', JSON.stringify(ud));
+                    console.log(`[DIST01] Auto-save: user.dat fed with ${entities.persons.length} persons`);
+                  }
+                }
+              })
+              .catch((err) => console.warn('[DIST01] Auto-save extraction failed (non-blocking):', err));
+          } catch (importErr) {
+            console.warn('[DIST01] Auto-save extraction import failed:', importErr);
+          }
+        }
       }
     }
   } catch (e) {

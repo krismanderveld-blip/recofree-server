@@ -2647,3 +2647,4 @@
 - [x] FIX: checkAndExtract now accepts changeSource ('manual' | 'auto_fill') — auto_fill skips extraction (user.dat is already the source)
 - [x] FIX: BackpackHashState type extended with changeSource field
 - [x] FIX: DIST01 handleProposalAction now triggers extraction after backpack write — user.dat (analysis) is fed alongside backpack (narrative)
+- [x] FIX: processAutoSave in pipeline.ts now triggers extraction after auto-save backpack write — user.dat stays in sync with narrative
