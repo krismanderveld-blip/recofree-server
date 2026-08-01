@@ -2624,3 +2624,10 @@
   - [x] Modified pipeline.ts: shouldBuildContextDat = isSessionStart || isBackpackDirty()
   - [x] Pipeline rebuilds context.dat on next message after any backpack edit
 - [x] Verify TS compiles (0 errors) and all 1711 tests pass
+
+## Bug: context.dat mist key figures (Jules/zoon niet herkend) — FIXED
+
+- [x] Root cause: context.dat leest userDat.relationalAnchors (altijd leeg []) → fallback regex te fragiel
+- [x] Oorzaak: context.dat commit (60b7980) verving volledige backpack door gedistilleerde versie, maar distiller miste data
+- [x] Fix: context-dat-distiller.ts valt nu terug op extractRelationalAnchors(backpack) als relationalAnchors leeg is
+- [x] Verify: 0 TS errors, 1711 tests groen

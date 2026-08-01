@@ -24,6 +24,7 @@ import type { LogsDatPlaintext, SessionLogSummary } from '../types/memory/logsDa
 import type { StateDat, MoodHistoryRecord } from '../types/memory/stateDat.types';
 import type { ProjectionsDat, ProjectionRecord } from '../types/memory/projectionsDat.types';
 import type { UserDat as UserDatMemoryLayer } from '../types/memory/userDat.types';
+import { extractRelationalAnchors } from '../rugzak/relational-anchor-detector';
 
 // ─── Output Type ──────────────────────────────────────────────
 
@@ -165,17 +166,20 @@ function extractKeyFigures(
   const figureMap = new Map<string, KeyFigure>();
 
   // From relationalAnchors in userDat (most reliable source)
-  if (userDat.relationalAnchors) {
-    for (const anchor of userDat.relationalAnchors) {
-      const key = anchor.name.toLowerCase().trim();
-      if (!key) continue;
-      figureMap.set(key, {
-        name: anchor.name,
-        role: anchor.role || anchor.roleEN || 'onbekend',
-        emotionalWeight: anchor.emotionalWeight > 0.7 ? 'zwaar' : anchor.emotionalWeight > 0.4 ? 'gemiddeld' : 'licht',
-        lastMentioned: userDat.lastSessionDate || new Date().toISOString(),
-      });
-    }
+  // If relationalAnchors is empty (never persisted), fall back to live extraction from backpack
+  const anchors = (userDat.relationalAnchors && userDat.relationalAnchors.length > 0)
+    ? userDat.relationalAnchors
+    : extractRelationalAnchors(backpack);
+
+  for (const anchor of anchors) {
+    const key = anchor.name.toLowerCase().trim();
+    if (!key) continue;
+    figureMap.set(key, {
+      name: anchor.name,
+      role: anchor.role || anchor.roleEN || 'onbekend',
+      emotionalWeight: anchor.emotionalWeight > 0.7 ? 'zwaar' : anchor.emotionalWeight > 0.4 ? 'gemiddeld' : 'licht',
+      lastMentioned: userDat.lastSessionDate || new Date().toISOString(),
+    });
   }
 
   // From backpack lifeStory sections — extract names mentioned
