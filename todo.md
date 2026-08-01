@@ -2560,3 +2560,18 @@
 - [x] Wire into server-active-client.ts (ServerEngineCallInput + fetch body)
 - [x] Write 35 tests (17 detector, 11 store, 7 context-injector) — all passing
 - [x] Verify TS compiles (0 errors) and full test suite passes (1659 tests, 0 failures)
+
+## Phase 9: DIST01 — Fase 2: Promotie (Route A)
+
+- [x] Create dist01-proposal-types.ts (DistillationProposal, ProposalStatus, TargetDocument, RoutingRule, timing constants)
+- [x] Create dist01-proposal-store.ts (local persistence, add/update/query/expire/dedup helpers)
+- [x] Create dist01-proposal-generator.ts (Elias+Kim routing tables, confidence thresholds, dedup, crisis-block, timing)
+- [x] Create DistillationProposalCard component (in-chat card with accept/edit/dismiss/reject, i18n NL/EN/FR)
+- [x] Wire proposal generation into pipeline POST-GPT Step 6.10 (after detector runs)
+- [x] Wire proposal cards into chat.tsx ListFooterComponent + handleProposalAction callback
+- [x] Add distillationProposals field to PipelineResult interface
+- [x] Add dist01_proposal_action to DebugEventType
+- [x] Add 11 i18n keys (distillation.proposal.*) to nl.json, en.json, fr.json
+- [x] Write 22 tests for proposal generator (routing, thresholds, dedup, timing, crisis-block, constants)
+- [x] Verify TS compiles (0 errors) and all 1681 tests pass
+- [ ] Phase 3 (Route B): Wire accept action to write to target documents (backpack, VSP, eigen-regie-plan)

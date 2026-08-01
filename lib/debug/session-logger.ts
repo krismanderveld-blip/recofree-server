@@ -30,7 +30,8 @@ export type DebugEventType =
   | 'unified_session_end_skipped'
   | 'unified_session_end_success'
   | 'unified_session_end_fallback'
-  | 'vsp_output_safety';
+  | 'vsp_output_safety'
+  | 'dist01_proposal_action';
 
 export interface DebugEvent {
   id: number;

@@ -1094,5 +1094,15 @@
   "kerp.wizard.stop_confirm_title": "Stop wizard?",
   "kerp.wizard.stop_confirm_message": "Your progress will not be saved. Are you sure?",
   "kerp.wizard.stop_confirm_yes": "Yes, stop",
-  "kerp.wizard.stop_confirm_no": "No, continue"
+  "kerp.wizard.stop_confirm_no": "No, continue",
+  "distillation.proposal.header": "Suggestion",
+  "distillation.proposal.suggestion_available": "A suggestion is available",
+  "distillation.proposal.source_label": "What you said:",
+  "distillation.proposal.destination_label": "Destination:",
+  "distillation.proposal.proposed_text_label": "Proposed text:",
+  "distillation.proposal.action_accept": "Add",
+  "distillation.proposal.action_edit": "Edit",
+  "distillation.proposal.action_save_edit": "Save",
+  "distillation.proposal.action_dismiss": "Not now",
+  "distillation.proposal.action_reject": "Don't save"
 }

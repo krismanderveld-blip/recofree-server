@@ -1094,5 +1094,15 @@
   "kerp.wizard.stop_confirm_title": "Arrêter l'assistant ?",
   "kerp.wizard.stop_confirm_message": "Ta progression ne sera pas sauvegardée. Es-tu sûr(e) ?",
   "kerp.wizard.stop_confirm_yes": "Oui, arrêter",
-  "kerp.wizard.stop_confirm_no": "Non, continuer"
+  "kerp.wizard.stop_confirm_no": "Non, continuer",
+  "distillation.proposal.header": "Suggestion",
+  "distillation.proposal.suggestion_available": "Une suggestion est disponible",
+  "distillation.proposal.source_label": "Ce que tu as dit :",
+  "distillation.proposal.destination_label": "Destination :",
+  "distillation.proposal.proposed_text_label": "Texte proposé :",
+  "distillation.proposal.action_accept": "Ajouter",
+  "distillation.proposal.action_edit": "Modifier",
+  "distillation.proposal.action_save_edit": "Enregistrer",
+  "distillation.proposal.action_dismiss": "Pas maintenant",
+  "distillation.proposal.action_reject": "Ne pas enregistrer"
 }

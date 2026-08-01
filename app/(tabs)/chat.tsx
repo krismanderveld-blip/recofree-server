@@ -58,6 +58,9 @@ import { useTranslation } from '@/lib/i18n';
 import { LocalDeviceTimeService } from "@/lib/core/time";
 import { getTodayBlocks } from '@/lib/features/dayStructure';
 import { extractBalkmetafoorItemsFromResponse } from '@/lib/features/balkmetafoor/balkmetafoorChatFeed';
+import { DistillationProposalCard } from '@/components/distillation/ProposalCard';
+import { createProposalStore } from '@/lib/engine/shared/dist01-proposal-store';
+import type { DistillationProposal, ProposalUserAction } from '@/lib/engine/shared/dist01-proposal-types';
 const BACKPACK_KEY = '@recofree_backpack';
 const USERDAT_KEY = '@recofree_userdat';
 // PENDING_CLOSE_KEY removed — no longer needed (one path to session-end, no fallback markers)
@@ -108,6 +111,7 @@ function ChatScreenInner() {
   const appStateRef = useRef<AppStateStatus>(AppState.currentState);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
   const [showScrollButton, setShowScrollButton] = useState(false);
+  const [pendingProposals, setPendingProposals] = useState<DistillationProposal[]>([]);
 
   const userName = getUserName();
   const { t, locale, language, country } = useTranslation();
@@ -1044,6 +1048,10 @@ function ChatScreenInner() {
       } catch (balkErr) {
         console.warn('[Balkmetafoor] Auto-init/feed error (non-critical):', balkErr);
       }
+      // ── DIST01 Phase 2: Show proposals in chat ──────────────────────────
+      if (result.distillationProposals && result.distillationProposals.length > 0) {
+        setPendingProposals(result.distillationProposals);
+      }
     } catch (error) {
       console.error('Pipeline error:', error);
       // ── CRASH REPORTER: Full stack trace on screen ──
@@ -1079,6 +1087,27 @@ function ChatScreenInner() {
       setIsTyping(false);
     }
   }, [inputText, isTyping, state.backpack, state.userDat, sessionPhase]);
+
+  // ── DIST01 Phase 2: Handle proposal user actions ──────────────────────
+  const handleProposalAction = useCallback(async (proposalId: string, action: ProposalUserAction, editedText?: string) => {
+    try {
+      const persona = (state.userType === 'elias' ? 'elias' : 'kim') as 'elias' | 'kim';
+      const proposalStoreApi = createProposalStore();
+      let proposalData = await proposalStoreApi.load(persona);
+      proposalData = proposalStoreApi.updateProposalStatus(proposalData, proposalId, action, editedText);
+      await proposalStoreApi.save(proposalData);
+      // Remove from pending UI
+      setPendingProposals((prev) => prev.filter((p) => p.id !== proposalId));
+      // If accepted/edited, the actual write to target document happens in Phase 3 (Route B)
+      // For now, log the action
+      logDebugEvent('dist01_proposal_action', { proposalId, action, persona });
+      if (action === 'accept' || action === 'edit') {
+        console.log(`[DIST01] Proposal ${proposalId} ${action}ed — will be written to target in Phase 3`);
+      }
+    } catch (err) {
+      console.warn('[DIST01] Proposal action failed:', err);
+    }
+  }, [state.userType]);
 
   const handleEndConversation = useCallback(async () => {
     if (!state.backpack || !state.userDat || sessionPhase !== 'active') return;
@@ -1636,6 +1665,14 @@ function ChatScreenInner() {
           }
           ListFooterComponent={
             <>
+              {/* DIST01 Phase 2: Proposal cards */}
+              {pendingProposals.length > 0 && !isTyping && pendingProposals.map((proposal) => (
+                <DistillationProposalCard
+                  key={proposal.id}
+                  proposal={proposal}
+                  onAction={handleProposalAction}
+                />
+              ))}
               {showEmergency && (
                 <EmergencyCard
                   visible={showEmergency}

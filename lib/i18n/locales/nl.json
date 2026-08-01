@@ -1094,5 +1094,15 @@
   "kerp.wizard.stop_confirm_title": "Wizard stoppen?",
   "kerp.wizard.stop_confirm_message": "Je voortgang wordt niet opgeslagen. Weet je het zeker?",
   "kerp.wizard.stop_confirm_yes": "Ja, stoppen",
-  "kerp.wizard.stop_confirm_no": "Nee, doorgaan"
+  "kerp.wizard.stop_confirm_no": "Nee, doorgaan",
+  "distillation.proposal.header": "Voorstel",
+  "distillation.proposal.suggestion_available": "Er is een suggestie beschikbaar",
+  "distillation.proposal.source_label": "Wat je zei:",
+  "distillation.proposal.destination_label": "Bestemming:",
+  "distillation.proposal.proposed_text_label": "Voorgestelde tekst:",
+  "distillation.proposal.action_accept": "Toevoegen",
+  "distillation.proposal.action_edit": "Aanpassen",
+  "distillation.proposal.action_save_edit": "Opslaan",
+  "distillation.proposal.action_dismiss": "Niet nu",
+  "distillation.proposal.action_reject": "Niet bewaren"
 }

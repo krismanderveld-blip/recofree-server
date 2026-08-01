@@ -331,6 +331,9 @@ import { createDistillationStore } from '@/lib/engine/shared/dist01-store';
 import { detectDistillation } from '@/lib/engine/shared/dist01-detector';
 import { buildDistillationContext } from '@/lib/engine/shared/dist01-context-injector';
 import type { DistillationContextForChat } from '@/lib/engine/shared/dist01-types';
+import { createProposalStore } from '@/lib/engine/shared/dist01-proposal-store';
+import { generateProposals, evaluateProposalTiming } from '@/lib/engine/shared/dist01-proposal-generator';
+import type { DistillationProposal } from '@/lib/engine/shared/dist01-proposal-types';
 
 // ─── Pattern Marking (post-GPT local state) ─────────────────
 
@@ -463,6 +466,8 @@ export interface PipelineResult {
   /** Self-acceptance cluster activation (BLIK01/ONTK01/IKST01/COEX01) */
   selfAcceptanceActivation?: { moduleId: 'BLIK01' | 'ONTK01' | 'IKST01' | 'COEX01'; confidence: number; matchedMarkers: string[]; interventionType: string; patternType?: string } | null;
   kimPatternSupportActivation?: { moduleId: 'PAAL-K01' | 'BEHE-K01' | 'AANP-K01' | 'CODEP-K01'; confidence: number; matchedMarkers: string[]; interventionType: string } | null;
+  /** DIST01 Phase 2: Pending proposals to show to user (Route A) */
+  distillationProposals?: DistillationProposal[] | null;
 }
 
 /** Consolidated log entry for each message exchange */
@@ -3403,6 +3408,73 @@ export async function processMessage(
     console.warn('[DIST01] POST-GPT detection failed (non-blocking):', e);
   }
 
+  // ── POST-GPT STEP 6.10: DIST01 Phase 2 — Generate proposals (Route A) ──
+  let distillationProposals: DistillationProposal[] | null = null;
+  try {
+    const distPersonaProposal = (backpack.userType || 'elias') as 'elias' | 'kim';
+    const proposalStoreApi = createProposalStore();
+    let proposalData = await proposalStoreApi.load(distPersonaProposal);
+    // Expire old proposals first
+    proposalData = proposalStoreApi.expireOldProposals(proposalData);
+    // Check timing
+    const pendingCount = proposalStoreApi.getPendingProposals(proposalData).length;
+    const timingDecision = evaluateProposalTiming({
+      crisisLevel,
+      safetyLevel: crisisLevel >= 2 ? 'crisis' : crisisLevel >= 1 ? 'elevated' : 'none',
+      pendingProposalCount: pendingCount,
+      lastProposalShownAt: null, // TODO: track in session buffer
+    });
+    if (timingDecision.shouldShow) {
+      // Load distillation store for signals
+      const distStoreApiForProposals = createDistillationStore();
+      const distData = await distStoreApiForProposals.load(distPersonaProposal);
+      // Get high-confidence signals eligible for promotion
+      const eligibleSignals = distData.signals.filter(
+        (s) => (s.confidence === 'medium' || s.confidence === 'high') && s.promotionStatus === 'in_store' && !s.suppressedByUser && !s.contradictionFlag
+      );
+      if (eligibleSignals.length > 0) {
+        const result = generateProposals({
+          persona: distPersonaProposal,
+          source: 'chat',
+          sessionId: `s_${Date.now()}`,
+          localDayKey: new Date().toISOString().slice(0, 10),
+          crisisLevel,
+          safetyLevel: crisisLevel >= 2 ? 'crisis' : crisisLevel >= 1 ? 'elevated' : 'none',
+          signals: eligibleSignals,
+          existingProposals: proposalData.proposals,
+          existingDocumentKeys: [], // TODO: extract from backpack/VSP/eigenRegie
+        });
+        if (result.newProposals.length > 0) {
+          // Add proposals to store
+          for (const proposal of result.newProposals) {
+            proposalData = proposalStoreApi.addProposal(proposalData, proposal);
+          }
+          await proposalStoreApi.save(proposalData);
+          // Update signal promotion status in distillation store
+          if (result.promotedSignalIds.length > 0) {
+            const updatedSignals = distData.signals.map((s) =>
+              result.promotedSignalIds.includes(s.id) ? { ...s, promotionStatus: 'proposed' as const } : s
+            );
+            await distStoreApiForProposals.save({ ...distData, signals: updatedSignals });
+          }
+          // Return only the first new proposal (max 1 per turn)
+          distillationProposals = [result.newProposals[0]];
+          console.log(`[DIST01] Phase 2: Generated ${result.newProposals.length} proposals, showing 1`);
+        }
+      }
+    } else {
+      // Still return pending proposals that haven't been shown yet (max 1)
+      const pending = proposalStoreApi.getPendingProposals(proposalData);
+      if (pending.length > 0 && crisisLevel < 2) {
+        distillationProposals = [pending[0]];
+      }
+    }
+    // Save any expiry changes
+    await proposalStoreApi.save(proposalData);
+  } catch (e) {
+    console.warn('[DIST01] Phase 2 proposal generation failed (non-blocking):', e);
+  }
+
   // ── POST-GPT STEP 7: Update internal stored state ──
   // We do NOT reselect dominantState. The pre-GPT state is the decision variable.
   // We only update the buffer with the assistant response and adjust internal state.
@@ -3990,6 +4062,7 @@ export async function processMessage(
     paal01Activation: paal01Activation ?? null,
     selfAcceptanceActivation: selfAcceptanceActivation ?? null,
     kimPatternSupportActivation: kimPatternSupportActivation ?? null,
+    distillationProposals: distillationProposals ?? null,
   };
 }
 
