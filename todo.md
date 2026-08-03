@@ -2652,3 +2652,19 @@
 - [x] FIX: Greeting now uses actual names from extractedEntities (instruction 4: "Zeg Ellen of Jules, NIET een belangrijk persoon")
 - [x] FIX: Removed redundant generic question — greeting now ends with specific question tied to previous session topic
 - [x] FIX: Greeting now also extracts person names from previousSessionMessages (chat logs) as fallback for names not yet in extractedEntities
+
+## DIST01 Detector Expansion — Addiction Recovery Vocabulary (Elias)
+- [x] Add valkuil/zwakte/risico trigger patterns (natural speech: "X is mijn valkuil", "bij X moet ik oppassen", "X trekt me")
+- [x] Add terugval/relapse patterns ("terugval gehad", "teruggevallen", "weer gedronken/gebruikt/gerookt", "fout gegaan")
+- [x] Add nuchter/clean anchor sentence patterns ("geeft me kracht", "ik doe het voor", "nuchter blijven betekent")
+- [x] Add patroonherkenning patterns ("dat herken ik", "het is altijd hetzelfde", "ik merk dat ik")
+- [x] Add craving/zucht/trek risk patterns ("trek in", "de verleiding wordt")
+- [x] Add protective/recovery patterns ("ik ben al X dagen nuchter", "mijn herstel")
+- [x] Add support source patterns for addiction context ("mijn sponsor", "mijn buddy", "mijn AA/NA")
+- [x] Add treatment/opname context patterns ("ik zit in opname", "ik ben in behandeling", "ik volg een programma", "ik ga naar AA")
+- [x] Add self-care variant ("als ik wandel/sport/mediteer voel ik me beter")
+- [x] Add zone signal variants ("gevarenzone", "code rood", "in het oranje")
+- [x] Add risk pattern variants ("ik sta op het punt", "ik weet niet of ik het volhoud")
+- [x] Expand anchor regex to match "kracht geven/geeft" and "nuchter/clean te blijven"
+- [x] All 42 detector tests passing (including 22 new addiction-recovery tests)
+- [x] Full test suite: 1736 tests passing, 0 failures

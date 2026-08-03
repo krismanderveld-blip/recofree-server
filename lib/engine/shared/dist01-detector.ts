@@ -104,31 +104,72 @@ interface SignalPattern {
 }
 
 const SIGNAL_PATTERNS: SignalPattern[] = [
-  // Trigger patterns (Dutch)
+  // ─── Trigger patterns (structured Dutch) ────────────────────────────────
   { pattern: /\bals\s+(.{5,60})\s+(?:dan|word ik|voel ik|krijg ik|begin ik)/iu, signalType: 'new_trigger_detected', normalizer: (m) => `trigger: ${m[1].trim()}` },
   { pattern: /\b(?:telkens|elke keer|steeds)\s+(?:als|wanneer)\s+(.{5,60})/iu, signalType: 'recurring_trigger_detected', normalizer: (m) => `herhalende trigger: ${m[1].trim()}` },
   { pattern: /\b(?:ik word|ik voel me|ik raak)\s+(.{3,30})\s+(?:als|wanneer|door)\s+(.{5,40})/iu, signalType: 'new_trigger_detected', normalizer: (m) => `trigger: ${m[2].trim()} → ${m[1].trim()}` },
 
-  // Boundary patterns
+  // ─── Valkuil / trigger (natural speech — addiction recovery) ─────────────
+  { pattern: /\b(.{3,50})\s+is\s+(?:mijn|een)?\s*(?:grootste?\s+)?(?:valkuil|zwakte|gevaar|risico)\b/iu, signalType: 'new_trigger_detected', normalizer: (m) => `trigger (valkuil): ${m[1].trim()}` },
+  { pattern: /\b(?:mijn\s+(?:grootste?\s+)?(?:valkuil|zwakte|gevaar|risico)\s+is)\s+(.{3,50})/iu, signalType: 'new_trigger_detected', normalizer: (m) => `trigger (valkuil): ${m[1].trim()}` },
+  { pattern: /\b(?:bij|voor|met|door)\s+(.{3,40})\s+(?:moet ik oppassen|ben ik kwetsbaar|verlies ik mezelf|word ik zwak)/iu, signalType: 'new_trigger_detected', normalizer: (m) => `trigger: ${m[1].trim()}` },
+  { pattern: /\b(.{3,40})\s+(?:trekt me|lokt me|verleidt me|triggert me|maakt me zwak)/iu, signalType: 'new_trigger_detected', normalizer: (m) => `trigger: ${m[1].trim()}` },
+  { pattern: /\b(?:ik kan niet weerstaan|ik kan er niet tegen|ik ben zwak voor)\s+(.{3,40})/iu, signalType: 'new_trigger_detected', normalizer: (m) => `trigger: ${m[1].trim()}` },
+  { pattern: /\b(?:dat is|dat was)\s+(?:een\s+)?(?:trigger|valkuil|risicosituatie|gevaarlijk moment)\b/iu, signalType: 'new_trigger_detected', normalizer: (m) => `trigger: ${m[0].trim()}` },
+
+  // ─── Terugval / relapse patterns ────────────────────────────────────────
+  { pattern: /\b(?:ik heb\s+(?:een\s+)?)?terugval\s+(?:gehad|meegemaakt|gedaan)\b/iu, signalType: 'risk_pattern_detected', normalizer: (m) => `terugval: ${m[0].trim()}` },
+  { pattern: /\b(?:ik ben\s+)?teruggevallen\b/iu, signalType: 'risk_pattern_detected', normalizer: (m) => `terugval: ${m[0].trim()}` },
+  { pattern: /\b(?:ik heb\s+)?(?:weer|opnieuw)\s+(?:gebruikt|gedronken|gerookt|genomen|gesnoven|gespoten|gegokt)/iu, signalType: 'risk_pattern_detected', normalizer: (m) => `terugval: ${m[0].trim()}` },
+  { pattern: /\b(?:het is\s+)?(?:weer\s+)?(?:fout|mis)\s+gegaan/iu, signalType: 'risk_pattern_detected', normalizer: (m) => `terugval: ${m[0].trim()}` },
+  { pattern: /\b(?:ik heb\s+)?(?:hervallen|herval\s+gehad)\b/iu, signalType: 'risk_pattern_detected', normalizer: (m) => `terugval: ${m[0].trim()}` },
+  { pattern: /\b(?:vorig\s+weekend|gisteren|laatst|vorige\s+week)\s+(?:heb ik|ben ik)\s+(.{5,50})/iu, signalType: 'risk_pattern_detected', normalizer: (m) => `terugval: ${m[0].trim()}` },
+
+  // ─── Anchor sentence patterns (addiction recovery — nuchter/kracht) ──────
+  { pattern: /\b(.{5,60})\s+(?:geeft me kracht|kracht geven|kracht geeft|houdt me nuchter|helpt me nuchter|houdt me clean|helpt me clean|nuchter te blijven|clean te blijven)/iu, signalType: 'anchor_sentence_detected', normalizer: (m) => `ankerzin: ${m[0].trim()}` },
+  { pattern: /\b(?:ik doe het voor|ik blijf nuchter voor|ik blijf clean voor|ik stop voor)\s+(.{3,40})/iu, signalType: 'anchor_sentence_detected', normalizer: (m) => `ankerzin: ${m[0].trim()}` },
+  { pattern: /\b(?:nuchter blijven|clean blijven|clean zijn|nuchter zijn)\s+(?:is|betekent|voelt|geeft)\s+(.{3,50})/iu, signalType: 'anchor_sentence_detected', normalizer: (m) => `ankerzin: ${m[0].trim()}` },
+  { pattern: /\b(?:ik wil|ik ga|ik kies voor)\s+(?:nuchter|clean|sober)\s+(?:blijven|leven|zijn)/iu, signalType: 'anchor_sentence_detected', normalizer: (m) => `ankerzin: ${m[0].trim()}` },
+  { pattern: /\b(?:mijn motivatie is|mijn reden is|daarom stop ik|daarom blijf ik nuchter)\b/iu, signalType: 'anchor_sentence_detected', normalizer: (m) => `ankerzin: ${m[0].trim()}` },
+
+  // ─── Patroonherkenning / recurring pattern recognition ──────────────────
+  { pattern: /\b(?:dat herken ik|ik herken dat|dat is een patroon|ik zie het patroon|ik zie een patroon)/iu, signalType: 'recurring_trigger_detected', normalizer: (m) => `patroonherkenning: ${m[0].trim()}` },
+  { pattern: /\b(?:ik doe dat altijd|dat doe ik steeds|ik val altijd terug op|dat overkomt me steeds)/iu, signalType: 'recurring_trigger_detected', normalizer: (m) => `patroonherkenning: ${m[0].trim()}` },
+  { pattern: /\b(?:het is altijd hetzelfde|het herhaalt zich|dit patroon|hetzelfde patroon)/iu, signalType: 'recurring_trigger_detected', normalizer: (m) => `patroonherkenning: ${m[0].trim()}` },
+  { pattern: /\b(?:ik merk|ik zie)\s+(?:dat ik|bij mezelf)\s+(.{5,50})/iu, signalType: 'recurring_trigger_detected', normalizer: (m) => `patroonherkenning: ${m[0].trim()}` },
+
+  // ─── Craving / zucht / trek ─────────────────────────────────────────────
+  { pattern: /\b(?:ik heb\s+)?(?:trek|zin|goesting|craving|zucht)\s+(?:in|naar|om)\s+(.{3,40})/iu, signalType: 'risk_pattern_detected', normalizer: (m) => `craving: ${m[0].trim()}` },
+  { pattern: /\b(?:de trek|de zucht|de craving|de verleiding)\s+(?:is|was|wordt)\s+(.{3,40})/iu, signalType: 'risk_pattern_detected', normalizer: (m) => `craving: ${m[0].trim()}` },
+
+  // ─── Boundary patterns ──────────────────────────────────────────────────
   { pattern: /\b(?:ik wil niet meer|ik accepteer niet|mijn grens is|ik trek een grens)\s*(.{0,60})/iu, signalType: 'boundary_pattern_detected', normalizer: (m) => `grens: ${m[0].trim()}` },
   { pattern: /\b(?:dat pik ik niet|genoeg is genoeg|tot hier en niet verder)\b/iu, signalType: 'boundary_pattern_detected', normalizer: (m) => `grens: ${m[0].trim()}` },
 
-  // Self-care patterns
+  // ─── Self-care / protective patterns ────────────────────────────────────
   { pattern: /\b(?:wat mij helpt is|wat goed werkt is|ik voel me beter als|het helpt als)\s+(.{5,60})/iu, signalType: 'self_care_pattern_detected', normalizer: (m) => `zelfzorg: ${m[1].trim()}` },
   { pattern: /\b(?:wandelen|sporten|mediteren|lezen|muziek|natuur|douchen|slapen)\s+(?:helpt|doet goed|kalmeert|ontspant)/iu, signalType: 'self_care_pattern_detected', normalizer: (m) => `zelfzorg: ${m[0].trim()}` },
+  { pattern: /\b(?:als ik\s+)?(?:wandel|sport|mediteer|lees|slaap|beweeg|hardloop|fiets)\s+(?:voel ik me|gaat het|word ik)\s+(?:beter|rustiger|kalmer)/iu, signalType: 'self_care_pattern_detected', normalizer: (m) => `zelfzorg: ${m[0].trim()}` },
 
-  // Support source patterns
+  // ─── Support source patterns ────────────────────────────────────────────
   { pattern: /\b(?:ik kan terecht bij|ik bel dan|die steunt mij|die helpt mij)\s*(.{0,40})/iu, signalType: 'support_source_detected', normalizer: (m) => `steun: ${m[0].trim()}` },
+  { pattern: /\b(?:mijn sponsor|mijn buddy|mijn groep|mijn AA|mijn NA|mijn therapeut)\s+(.{0,40})/iu, signalType: 'support_source_detected', normalizer: (m) => `steun: ${m[0].trim()}` },
 
-  // Anchor sentence patterns (strong self-statements)
+  // ─── Anchor sentence patterns (strong self-statements) ──────────────────
   { pattern: /\b(?:ik ben|ik verdien|ik mag|ik kies|ik kan)\s+(.{5,50})/iu, signalType: 'anchor_sentence_detected', normalizer: (m) => m[0].trim() },
 
-  // Risk patterns
+  // ─── Risk patterns ──────────────────────────────────────────────────────
   { pattern: /\b(?:ik heb zin om|ik denk aan|ik overweeg|de verleiding is)\s+(.{5,50})/iu, signalType: 'risk_pattern_detected', normalizer: (m) => `risico: ${m[0].trim()}` },
+  { pattern: /\b(?:ik sta op het punt|ik ben bang dat ik|ik weet niet of ik het volhoud)\b/iu, signalType: 'risk_pattern_detected', normalizer: (m) => `risico: ${m[0].trim()}` },
 
-  // Zone signals
+  // ─── Zone signals ───────────────────────────────────────────────────────
   { pattern: /\b(?:ik zit in het rood|alarmsignaal|het gaat niet goed|ik ben in gevaar)\b/iu, signalType: 'zone_signal_detected', normalizer: (m) => `zone-signaal: ${m[0].trim()}` },
   { pattern: /\b(?:ik voel me stabiel|het gaat goed|ik ben rustig|ik ben in balans)\b/iu, signalType: 'zone_signal_detected', normalizer: (m) => `zone-signaal: ${m[0].trim()}` },
+  { pattern: /\b(?:ik zit in de gevarenzone|het is code rood|ik ben in oranje|ik zit in het oranje)\b/iu, signalType: 'zone_signal_detected', normalizer: (m) => `zone-signaal: ${m[0].trim()}` },
+
+  // ─── Protective / recovery patterns ─────────────────────────────────────
+  { pattern: /\b(?:ik ben al|ik ben nu)\s+(.{1,10})\s+(?:dagen|weken|maanden|jaar)\s+(?:nuchter|clean|sober)/iu, signalType: 'protective_pattern_detected', normalizer: (m) => `beschermend: ${m[0].trim()}` },
+  { pattern: /\b(?:mijn herstel|mijn nuchterheid|mijn soberheid)\s+(?:is|betekent|geeft)\s+(.{3,50})/iu, signalType: 'protective_pattern_detected', normalizer: (m) => `beschermend: ${m[0].trim()}` },
 ];
 
 // ─── Context Detection Patterns ────────────────────────────────────────────
@@ -147,6 +188,12 @@ const CONTEXT_PATTERNS: ContextPattern[] = [
   // Current situation
   { pattern: /\b(?:ik werk als|ik ben)\s+([\p{L}\s]{3,30})/iu, contextType: 'current_situation', extractor: (m) => m[0].trim() },
   { pattern: /\b(?:ik woon|we wonen)\s+(.{5,40})/iu, contextType: 'current_situation', extractor: (m) => m[0].trim() },
+
+  // Treatment / opname / therapy (addiction recovery context)
+  { pattern: /\b(?:ik zit in|ik ben in)\s+(?:opname|behandeling|therapie|revalidatie|detox|afkickkliniek|dagbehandeling)/iu, contextType: 'current_situation', extractor: (m) => m[0].trim() },
+  { pattern: /\b(?:ik ben|ik ga|ik word)\s+(?:opgenomen|vrijwillig opgenomen|gedwongen opgenomen)/iu, contextType: 'current_situation', extractor: (m) => m[0].trim() },
+  { pattern: /\b(?:ik volg|ik doe|ik zit in)\s+(?:een programma|een traject|groepstherapie|individuele therapie|ambulante behandeling)/iu, contextType: 'current_situation', extractor: (m) => m[0].trim() },
+  { pattern: /\b(?:ik ga naar|ik kom bij)\s+(?:AA|NA|zelfhulpgroep|lotgenoten|groep)/iu, contextType: 'current_situation', extractor: (m) => m[0].trim() },
 
   // Goals
   { pattern: /\b(?:mijn doel is|ik wil|ik hoop|ik streef naar)\s+(.{5,60})/iu, contextType: 'goal', extractor: (m) => m[0].trim() },
