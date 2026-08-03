@@ -1129,5 +1129,8 @@
   "proposal_history.auto_saved_label": "Automatisch opgeslagen",
   "proposal_history.detected_times": "{{count}}x gedetecteerd",
   "proposal_history.empty.title": "Nog geen voorstellen",
-  "proposal_history.empty.subtitle": "Naarmate je meer gesprekken voert, leert het systeem patronen herkennen en doet het voorstellen voor je persoonlijke documenten."
+  "proposal_history.empty.subtitle": "Naarmate je meer gesprekken voert, leert het systeem patronen herkennen en doet het voorstellen voor je persoonlijke documenten.",
+  "distillation.proposal.detection_context": "Dit heb je nu {{count}}x benoemd",
+  "distillation.auto_save.toast": "Automatisch toegevoegd aan je {{document}}",
+  "distillation.auto_save.toast_detail": "\"{{text}}\""
 }

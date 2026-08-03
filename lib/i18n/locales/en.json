@@ -1129,5 +1129,8 @@
   "proposal_history.auto_saved_label": "Automatically saved",
   "proposal_history.detected_times": "{{count}}x detected",
   "proposal_history.empty.title": "No proposals yet",
-  "proposal_history.empty.subtitle": "As you have more conversations, the system learns to recognize patterns and makes proposals for your personal documents."
+  "proposal_history.empty.subtitle": "As you have more conversations, the system learns to recognize patterns and makes proposals for your personal documents.",
+  "distillation.proposal.detection_context": "You've mentioned this {{count}} times",
+  "distillation.auto_save.toast": "Automatically added to your {{document}}",
+  "distillation.auto_save.toast_detail": "\"{{text}}\""
 }

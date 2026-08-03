@@ -116,6 +116,7 @@ function ChatScreenInner() {
   const [keyboardVisible, setKeyboardVisible] = useState(false);
   const [showScrollButton, setShowScrollButton] = useState(false);
   const [pendingProposals, setPendingProposals] = useState<DistillationProposal[]>([]);
+  const [autoSaveToast, setAutoSaveToast] = useState<{ count: number; texts: string[]; targetDocument: string } | null>(null);
 
   const userName = getUserName();
   const { t, locale, language, country } = useTranslation();
@@ -1096,6 +1097,12 @@ function ChatScreenInner() {
       if (result.distillationProposals && result.distillationProposals.length > 0) {
         setPendingProposals(result.distillationProposals);
       }
+
+      // ── DIST01 Phase 3: Show auto-save toast notification ──────────────
+      if (result.autoSavedInfo && result.autoSavedInfo.count > 0) {
+        setAutoSaveToast(result.autoSavedInfo);
+        setTimeout(() => setAutoSaveToast(null), 4000);
+      }
     } catch (error) {
       console.error('Pipeline error:', error);
       // ── CRASH REPORTER: Full stack trace on screen ──
@@ -1673,6 +1680,36 @@ function ChatScreenInner() {
           <Text style={{ color: '#fff', fontSize: 14, fontWeight: '600', textAlign: 'center' }}>
             Vorige sessie veilig opgeslagen
           </Text>
+        </View>
+      )}
+
+      {/* Auto-save toast notification */}
+      {autoSaveToast && (
+        <View style={{
+          position: 'absolute',
+          top: insets.top + 60,
+          left: 24,
+          right: 24,
+          zIndex: 100,
+          backgroundColor: colors.primary + 'F2',
+          borderRadius: 12,
+          paddingVertical: 10,
+          paddingHorizontal: 16,
+          alignItems: 'center',
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.15,
+          shadowRadius: 4,
+          elevation: 4,
+        }}>
+          <Text style={{ color: '#fff', fontSize: 13, fontWeight: '600', textAlign: 'center' }}>
+            {t('distillation.auto_save.toast', { document: autoSaveToast.targetDocument })}
+          </Text>
+          {autoSaveToast.texts[0] && (
+            <Text style={{ color: 'rgba(255,255,255,0.85)', fontSize: 12, textAlign: 'center', marginTop: 2 }} numberOfLines={1}>
+              {t('distillation.auto_save.toast_detail', { text: autoSaveToast.texts[0].slice(0, 40) })}
+            </Text>
+          )}
         </View>
       )}
 

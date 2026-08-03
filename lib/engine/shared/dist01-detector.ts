@@ -170,6 +170,28 @@ const SIGNAL_PATTERNS: SignalPattern[] = [
   // ─── Protective / recovery patterns ─────────────────────────────────────
   { pattern: /\b(?:ik ben al|ik ben nu)\s+(.{1,10})\s+(?:dagen|weken|maanden|jaar)\s+(?:nuchter|clean|sober)/iu, signalType: 'protective_pattern_detected', normalizer: (m) => `beschermend: ${m[0].trim()}` },
   { pattern: /\b(?:mijn herstel|mijn nuchterheid|mijn soberheid)\s+(?:is|betekent|geeft)\s+(.{3,50})/iu, signalType: 'protective_pattern_detected', normalizer: (m) => `beschermend: ${m[0].trim()}` },
+
+  // ─── Kim: Naaste-perspectief addiction patterns ──────────────────────────
+  // Terugval van de ander (hij/zij/partner/mijn man/mijn vrouw)
+  { pattern: /\b(?:hij|zij|ze|mijn partner|mijn man|mijn vrouw|mijn zoon|mijn dochter)\s+(?:is|heeft)\s+(?:weer\s+)?(?:teruggevallen|hervallen|begonnen met|aan het gebruiken|aan het drinken)/iu, signalType: 'risk_pattern_detected', normalizer: (m) => `terugval naaste: ${m[0].trim()}` },
+  { pattern: /\b(?:hij|zij|ze)\s+(?:heeft|had)\s+(?:weer\s+)?(?:een terugval|een herval|gedronken|gebruikt|gerookt|gegokt)/iu, signalType: 'risk_pattern_detected', normalizer: (m) => `terugval naaste: ${m[0].trim()}` },
+  // Patroonherkenning bij de ander
+  { pattern: /\b(?:ik herken|ik zie)\s+(?:het patroon|dat patroon|hetzelfde)\s+(?:bij hem|bij haar|weer|opnieuw)/iu, signalType: 'recurring_trigger_detected', normalizer: (m) => `patroon naaste: ${m[0].trim()}` },
+  { pattern: /\b(?:het is altijd hetzelfde|het herhaalt zich|weer hetzelfde verhaal|dezelfde cyclus)\s+(?:bij hem|bij haar|met hem|met haar)/iu, signalType: 'recurring_trigger_detected', normalizer: (m) => `patroon naaste: ${m[0].trim()}` },
+  { pattern: /\b(?:hij|zij|ze)\s+(?:doet|zegt|belooft)\s+(?:altijd|steeds|weer)\s+(?:hetzelfde|dat)/iu, signalType: 'recurring_trigger_detected', normalizer: (m) => `patroon naaste: ${m[0].trim()}` },
+  // Opname/behandeling van de ander
+  { pattern: /\b(?:hij|zij|ze)\s+(?:is|wordt|gaat|moet)\s+(?:.{0,20}\s+)?(?:opgenomen|in behandeling|naar een kliniek|naar afkicken|naar detox|in therapie)/iu, signalType: 'life_story_detail_detected', normalizer: (m) => `behandeling naaste: ${m[0].trim()}` },
+  { pattern: /\b(?:zijn|haar)\s+(?:opname|behandeling|therapie|programma|herstel|nuchterheid)/iu, signalType: 'life_story_detail_detected', normalizer: (m) => `behandeling naaste: ${m[0].trim()}` },
+  // Grenzen stellen bij verslaving van de ander
+  { pattern: /\b(?:ik kan niet meer|ik trek het niet meer|ik houd het niet vol|ik ben op)\s*(?:met hem|met haar|zo)?/iu, signalType: 'boundary_pattern_detected', normalizer: (m) => `grens naaste: ${m[0].trim()}` },
+  { pattern: /\b(?:ik wil niet meer|ik weiger|ik ga niet meer)\s+(?:helpen|redden|opvangen|excuses maken|liegen|dekken)/iu, signalType: 'boundary_pattern_detected', normalizer: (m) => `grens naaste: ${m[0].trim()}` },
+  { pattern: /\b(?:ik moet mezelf|mijn eigen leven|mijn eigen gezondheid|mijn eigen grenzen)\s+(?:beschermen|voorop|bewaken|respecteren)/iu, signalType: 'self_care_pattern_detected', normalizer: (m) => `zelfzorg naaste: ${m[0].trim()}` },
+  // Enabling / co-afhankelijkheid herkenning
+  { pattern: /\b(?:ik doe alles voor|ik neem alles over|ik los alles op|ik dek hem|ik dek haar|ik lieg voor)/iu, signalType: 'recurring_trigger_detected', normalizer: (m) => `co-afhankelijkheid: ${m[0].trim()}` },
+  { pattern: /\b(?:ik maak excuses|ik bescherm hem|ik bescherm haar|ik houd het stil|ik verberg het)/iu, signalType: 'recurring_trigger_detected', normalizer: (m) => `co-afhankelijkheid: ${m[0].trim()}` },
+  // Steun zoeken als naaste
+  { pattern: /\b(?:ik heb niemand|niemand begrijpt|ik sta er alleen voor|wie helpt mij|ik heb ook hulp nodig)/iu, signalType: 'support_source_detected', normalizer: (m) => `steunbehoefte naaste: ${m[0].trim()}` },
+  { pattern: /\b(?:de naastengroep|Al-Anon|Nar-Anon|lotgenotengroep|naastencontact|familiegroep)/iu, signalType: 'support_source_detected', normalizer: (m) => `steun naaste: ${m[0].trim()}` },
 ];
 
 // ─── Context Detection Patterns ────────────────────────────────────────────

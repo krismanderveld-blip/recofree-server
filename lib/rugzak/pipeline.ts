@@ -470,6 +470,8 @@ export interface PipelineResult {
   kimPatternSupportActivation?: { moduleId: 'PAAL-K01' | 'BEHE-K01' | 'AANP-K01' | 'CODEP-K01'; confidence: number; matchedMarkers: string[]; interventionType: string } | null;
   /** DIST01 Phase 2: Pending proposals to show to user (Route A) */
   distillationProposals?: DistillationProposal[] | null;
+  /** DIST01 Phase 3: Auto-save notification info (count + texts for toast) */
+  autoSavedInfo?: { count: number; texts: string[]; targetDocument: string } | null;
 }
 
 /** Consolidated log entry for each message exchange */
@@ -3429,6 +3431,7 @@ export async function processMessage(
 
   // ── POST-GPT STEP 6.10: DIST01 Phase 2 — Generate proposals (Route A) ──
   let distillationProposals: DistillationProposal[] | null = null;
+  let autoSavedInfo: { count: number; texts: string[]; targetDocument: string } | null = null;
   try {
     const distPersonaProposal = (backpack.userType || 'elias') as 'elias' | 'kim';
     const proposalStoreApi = createProposalStore();
@@ -3512,6 +3515,14 @@ export async function processMessage(
           await SessionMemoryCache.set('@recofree_backpack', JSON.stringify(autoSaveResult.updatedBackpack));
         }
         console.log(`[DIST01] Phase 3 Auto-save: ${autoSaveResult.autoSavedCount} signals auto-saved (IDs: ${autoSaveResult.autoSavedSignalIds.join(', ')})`);
+        // Capture info for UI toast notification
+        const savedSignals = distDataAutoSave.signals.filter((s) => autoSaveResult.autoSavedSignalIds.includes(s.id));
+        const firstRule = savedSignals.length > 0 ? routingRules.find((r) => r.signalType === savedSignals[0].signalType) : null;
+        autoSavedInfo = {
+          count: autoSaveResult.autoSavedCount,
+          texts: savedSignals.map((s) => s.normalizedText).slice(0, 2),
+          targetDocument: firstRule?.targetDocument ?? 'veiligheidsplan',
+        };
         // Feed user.dat (analysis) from updated backpack after auto-save write
         if (autoSaveResult.updatedBackpack) {
           try {
@@ -4129,6 +4140,7 @@ export async function processMessage(
     selfAcceptanceActivation: selfAcceptanceActivation ?? null,
     kimPatternSupportActivation: kimPatternSupportActivation ?? null,
     distillationProposals: distillationProposals ?? null,
+    autoSavedInfo: autoSavedInfo ?? null,
   };
 }
 

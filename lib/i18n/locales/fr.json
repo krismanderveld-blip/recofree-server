@@ -1129,5 +1129,8 @@
   "proposal_history.auto_saved_label": "Enregistrée automatiquement",
   "proposal_history.detected_times": "{{count}}x détectée",
   "proposal_history.empty.title": "Pas encore de propositions",
-  "proposal_history.empty.subtitle": "Au fur et à mesure de vos conversations, le système apprend à reconnaître des schémas et fait des propositions pour vos documents personnels."
+  "proposal_history.empty.subtitle": "Au fur et à mesure de vos conversations, le système apprend à reconnaître des schémas et fait des propositions pour vos documents personnels.",
+  "distillation.proposal.detection_context": "Tu as mentionné ceci {{count}} fois",
+  "distillation.auto_save.toast": "Automatiquement ajouté à ton {{document}}",
+  "distillation.auto_save.toast_detail": "\"{{text}}\""
 }

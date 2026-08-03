@@ -285,6 +285,82 @@ describe('DIST01 Detector', () => {
     });
   });
 
+  describe('Kim: Naaste-Perspectief Addiction Patterns', () => {
+    it('detects terugval van de ander (hij is teruggevallen)', () => {
+      const result = detectDistillation(makeInput('Hij is weer teruggevallen vorige week, ik zag het al aankomen'));
+      const risk = result.signals.filter(s => s.signalType === 'risk_pattern_detected');
+      expect(risk.length).toBeGreaterThanOrEqual(1);
+      expect(risk.some(s => s.normalizedText.includes('terugval naaste'))).toBe(true);
+    });
+
+    it('detects terugval (zij heeft weer gedronken)', () => {
+      const result = detectDistillation(makeInput('Zij heeft weer gedronken gisteren, de hele fles'));
+      const risk = result.signals.filter(s => s.signalType === 'risk_pattern_detected');
+      expect(risk.length).toBeGreaterThanOrEqual(1);
+      expect(risk.some(s => s.normalizedText.includes('terugval naaste'))).toBe(true);
+    });
+
+    it('detects patroonherkenning bij de ander', () => {
+      const result = detectDistillation(makeInput('Ik herken het patroon bij haar weer, het begint altijd zo'));
+      const patterns = result.signals.filter(s => s.signalType === 'recurring_trigger_detected');
+      expect(patterns.length).toBeGreaterThanOrEqual(1);
+      expect(patterns[0].normalizedText).toContain('patroon naaste');
+    });
+
+    it('detects herhalend patroon (hij doet altijd hetzelfde)', () => {
+      const result = detectDistillation(makeInput('Hij belooft steeds hetzelfde maar verandert nooit'));
+      const patterns = result.signals.filter(s => s.signalType === 'recurring_trigger_detected');
+      expect(patterns.length).toBeGreaterThanOrEqual(1);
+      expect(patterns[0].normalizedText).toContain('patroon naaste');
+    });
+
+    it('detects co-afhankelijkheid/enabling', () => {
+      const result = detectDistillation(makeInput('Ik maak excuses voor hem op het werk als hij weer niet komt opdagen'));
+      const signals = result.signals.filter(s => s.normalizedText.includes('co-afhankelijkheid'));
+      expect(signals.length).toBeGreaterThanOrEqual(1);
+    });
+
+    it('detects grenzen stellen als naaste', () => {
+      const result = detectDistillation(makeInput('Ik wil niet meer liegen voor hem tegen de familie'));
+      const boundaries = result.signals.filter(s => s.signalType === 'boundary_pattern_detected');
+      expect(boundaries.length).toBeGreaterThanOrEqual(1);
+      expect(boundaries.some(s => s.normalizedText.includes('grens naaste'))).toBe(true);
+    });
+
+    it('detects opname/behandeling van de ander', () => {
+      const result = detectDistillation(makeInput('Zij wordt volgende week opgenomen in een kliniek'));
+      const life = result.signals.filter(s => s.signalType === 'life_story_detail_detected');
+      expect(life.length).toBeGreaterThanOrEqual(1);
+      expect(life[0].normalizedText).toContain('behandeling naaste');
+    });
+
+    it('detects steunbehoefte als naaste', () => {
+      const result = detectDistillation(makeInput('Ik sta er alleen voor, niemand begrijpt hoe zwaar dit is'));
+      const support = result.signals.filter(s => s.signalType === 'support_source_detected');
+      expect(support.length).toBeGreaterThanOrEqual(1);
+    });
+
+    it('detects naastengroep/Al-Anon', () => {
+      const result = detectDistillation(makeInput('Ik ben begonnen bij Al-Anon, dat helpt wel'));
+      const support = result.signals.filter(s => s.signalType === 'support_source_detected');
+      expect(support.length).toBeGreaterThanOrEqual(1);
+      expect(support[0].normalizedText).toContain('steun naaste');
+    });
+
+    it('detects zelfzorg als naaste', () => {
+      const result = detectDistillation(makeInput('Ik moet mijn eigen gezondheid beschermen, anders ga ik er zelf aan onderdoor'));
+      const selfCare = result.signals.filter(s => s.signalType === 'self_care_pattern_detected');
+      expect(selfCare.length).toBeGreaterThanOrEqual(1);
+      expect(selfCare[0].normalizedText).toContain('zelfzorg naaste');
+    });
+
+    it('detects "ik kan niet meer met hem"', () => {
+      const result = detectDistillation(makeInput('Ik kan niet meer met hem, het vreet aan mij'));
+      const boundaries = result.signals.filter(s => s.signalType === 'boundary_pattern_detected');
+      expect(boundaries.length).toBeGreaterThanOrEqual(1);
+    });
+  });
+
   describe('Edge Cases', () => {
     it('handles empty string gracefully', () => {
       const result = detectDistillation(makeInput(''));

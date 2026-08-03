@@ -2668,3 +2668,8 @@
 - [x] Expand anchor regex to match "kracht geven/geeft" and "nuchter/clean te blijven"
 - [x] All 42 detector tests passing (including 22 new addiction-recovery tests)
 - [x] Full test suite: 1736 tests passing, 0 failures
+
+## Kim Detector + Proposal Context + Auto-Save Notification
+- [x] Kim detector: add naaste-perspective addiction-recovery patterns (hij/zij teruggevallen, ik herken het patroon bij hem/haar, etc.)
+- [x] Proposal card UI: show detection count context ("Dit heb je nu Xx benoemd")
+- [x] Auto-save notification: subtle toast when signal is auto-saved to VSP/backpack

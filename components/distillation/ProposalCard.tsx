@@ -92,6 +92,13 @@ export function DistillationProposalCard({ proposal, onAction, compact = false }
         </Text>
       </View>
 
+      {/* Detection context — show when detected more than once */}
+      {proposal.repeatedDetection && proposal.repeatedDetection.detectionCount > 1 && (
+        <Text style={[styles.detectionContext, { color: colors.muted }]}>
+          {t('distillation.proposal.detection_context', { count: proposal.repeatedDetection.detectionCount })}
+        </Text>
+      )}
+
       {/* Source excerpt */}
       <View style={[styles.excerptContainer, { backgroundColor: colors.background }]}>
         <Text style={[styles.excerptLabel, { color: colors.muted }]}>
@@ -253,6 +260,11 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
+  },
+  detectionContext: {
+    fontSize: 12,
+    fontStyle: 'italic',
+    marginTop: -4,
   },
   excerptContainer: {
     borderRadius: 10,
