@@ -2673,3 +2673,11 @@
 - [x] Kim detector: add naaste-perspective addiction-recovery patterns (hij/zij teruggevallen, ik herken het patroon bij hem/haar, etc.)
 - [x] Proposal card UI: show detection count context ("Dit heb je nu Xx benoemd")
 - [x] Auto-save notification: subtle toast when signal is auto-saved to VSP/backpack
+
+## Elias Pattern-Acknowledgment + Kim Naaste Documents
+- [x] Elias pattern-acknowledgment: inject repeated-pattern context into GPT payload so Elias references detected patterns in his response
+- [x] Kim-specific routing rules: add dedicated naaste documents (Grenzenplan naaste, Steunplan naaste, Patroonkaart) to proposal generator
+
+## Elias Pattern-Acknowledgment + Kim Naaste Documents
+- [x] Elias pattern-acknowledgment: inject repeated-pattern context into GPT payload so Elias references detected patterns in his response
+- [x] Kim-specific routing rules: add dedicated naaste documents (Grenzenplan naaste, Steunplan naaste, Patroonkaart) to proposal generator

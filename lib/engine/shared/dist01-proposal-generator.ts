@@ -89,6 +89,15 @@ const KIM_ROUTING_RULES: RoutingRule[] = [
   { signalType: 'life_story_detail_detected', targetDocument: 'kimBackpack', targetField: 'my_story', clinicalMeaning: 'loss_of_self_direction', insertMode: 'append', minConfidence: 'medium' },
   // Person patterns → Kim Backpack (the_relationship)
   { signalType: 'person_pattern_detected', targetDocument: 'kimBackpack', targetField: 'the_relationship', clinicalMeaning: 'over_responsibility', insertMode: 'add_note', minConfidence: 'medium' },
+  // ── Kim Naaste-Specific Routes ──
+  // Boundary patterns (naaste) → Grenzenplan
+  { signalType: 'boundary_pattern_detected', targetDocument: 'kim_grenzenplan', targetField: 'my_boundaries', clinicalMeaning: 'healthy_boundary', insertMode: 'append', minConfidence: 'medium' },
+  // Support sources (naaste) → Steunplan
+  { signalType: 'support_source_detected', targetDocument: 'kim_steunplan', targetField: 'my_strength', clinicalMeaning: 'support_source', insertMode: 'append', minConfidence: 'medium' },
+  // Risk patterns observed in the other → Patroonkaart
+  { signalType: 'risk_pattern_detected', targetDocument: 'kim_patroonkaart', targetField: 'the_relationship', clinicalMeaning: 'control_pattern', insertMode: 'append', minConfidence: 'medium' },
+  // Protective patterns (naaste self-care) → Steunplan
+  { signalType: 'self_care_pattern_detected', targetDocument: 'kim_steunplan', targetField: 'my_strength', clinicalMeaning: 'self_care_loss', insertMode: 'append', minConfidence: 'medium' },
 ];
 
 // ─── Confidence Ordering ──────────────────────────────────────────────────
@@ -272,6 +281,9 @@ const TARGET_DOCUMENT_LABELS: Record<TargetDocument, string> = {
   eigen_regie_trigger: 'Eigen Regie Plan — Triggers',
   eigen_regie_boundary_rule: 'Eigen Regie Plan — Grensregels',
   eigen_regie_anchor_sentence: 'Eigen Regie Plan — Ankerzin',
+  kim_grenzenplan: 'Grenzenplan',
+  kim_steunplan: 'Steunplan naaste',
+  kim_patroonkaart: 'Patroonkaart',
 };
 
 export function getTargetDocumentLabel(target: TargetDocument): string {

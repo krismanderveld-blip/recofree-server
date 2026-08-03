@@ -653,6 +653,32 @@ export async function processMessage(
       } catch (e) {
         console.warn('[DIST01] Pre-server detection failed (non-blocking):', e);
       }
+      // DIST01: Build pattern acknowledgment for server path
+      let serverPatternAcknowledgment: string | null = null;
+      try {
+        const distStoreApiAck = createDistillationStore();
+        const distDataAck = await distStoreApiAck.load(backpack.userType as 'elias' | 'kim');
+        const repeatedSignals = distDataAck.signals.filter(
+          (s) => s.detectionCount >= 2 && s.promotionStatus === 'in_store' && !s.suppressedByUser && !s.contradictionFlag
+        );
+        if (repeatedSignals.length > 0) {
+          const top = repeatedSignals.sort((a, b) => b.detectionCount - a.detectionCount).slice(0, 3);
+          const lines = top.map((s) => `  - "${s.normalizedText}" (${s.detectionCount}x benoemd, type: ${s.signalType})`);
+          const persona = backpack.userType === 'elias' ? 'Elias' : 'Kim';
+          serverPatternAcknowledgment = [
+            `PATROONHERKENNING (${persona}):`,
+            `De gebruiker heeft de volgende thema's herhaaldelijk benoemd:`,
+            ...lines,
+            `\u2192 VERPLICHT: Benoem minstens 1 van deze patronen in je antwoord. Gebruik zinnen als:`,
+            `  "Ik merk dat je dit vaker benoemt..."`,
+            `  "Dit thema komt terug in onze gesprekken..."`,
+            `  "Je hebt dit eerder ook aangegeven..."`,
+            `\u2192 Wees subtiel en empathisch. Geen diagnoses. Geen opsomming. Kies het patroon dat het meest relevant is voor het huidige bericht.`,
+          ].join('\n');
+        }
+      } catch (e) {
+        // non-blocking
+      }
       // Build server engine input
       const serverInput: ServerEngineCallInput = {
         persona: backpack.userType as 'elias' | 'kim',
@@ -722,6 +748,7 @@ export async function processMessage(
         diaryEntries: options?.diaryEntries ?? [],
                 dayStructureContext: options?.dayStructureContext ?? null,
         distillationContext: serverDistillationContext,
+        patternAcknowledgment: serverPatternAcknowledgment,
       };
       const serverResult = await callServerEngine(serverInput);
 
@@ -3126,6 +3153,39 @@ export async function processMessage(
     distillationContextStr = undefined;
   }
 
+  // ── DIST01: Build pattern acknowledgment block (repeated signals → GPT instruction) ──
+  let patternAcknowledgmentBlock: string | undefined;
+  try {
+    const distPersonaAck = (backpack.userType || 'elias') as 'elias' | 'kim';
+    const distStoreApiAck = createDistillationStore();
+    const distDataAck = await distStoreApiAck.load(distPersonaAck);
+    // Find signals detected 2+ times that are still in_store (not yet promoted/auto-saved)
+    const repeatedSignals = distDataAck.signals.filter(
+      (s) => s.detectionCount >= 2 && s.promotionStatus === 'in_store' && !s.suppressedByUser && !s.contradictionFlag
+    );
+    if (repeatedSignals.length > 0) {
+      // Take top 3 most-repeated signals
+      const top = repeatedSignals
+        .sort((a, b) => b.detectionCount - a.detectionCount)
+        .slice(0, 3);
+      const lines = top.map((s) => `  - "${s.normalizedText}" (${s.detectionCount}x benoemd, type: ${s.signalType})`);
+      const persona = distPersonaAck === 'elias' ? 'Elias' : 'Kim';
+      patternAcknowledgmentBlock = [
+        `PATROONHERKENNING (${persona}):`,
+        `De gebruiker heeft de volgende thema's herhaaldelijk benoemd:`,
+        ...lines,
+        `→ VERPLICHT: Benoem minstens 1 van deze patronen in je antwoord. Gebruik zinnen als:`,
+        `  "Ik merk dat je dit vaker benoemt..."`,
+        `  "Dit thema komt terug in onze gesprekken..."`,
+        `  "Je hebt dit eerder ook aangegeven..."`,
+        `→ Wees subtiel en empathisch. Geen diagnoses. Geen opsomming. Kies het patroon dat het meest relevant is voor het huidige bericht.`,
+      ].join('\n');
+      console.log(`[DIST01] Pattern acknowledgment: ${top.length} repeated signals injected`);
+    }
+  } catch (e) {
+    console.warn('[DIST01] Pattern acknowledgment failed (non-blocking):', e);
+  }
+
   // ── BUILD PRE-BUILT PROMPT BLOCKS (local intelligence → server as pure proxy) ──
   const prebuiltBlocks = buildPrebuiltPromptBlocks({
     backpack,
@@ -3322,6 +3382,8 @@ export async function processMessage(
     country: options?.country,
     // DIST01: Distillation context (persons, life context, signals from continuous extraction)
     distillationContext: distillationContextStr ?? undefined,
+    // DIST01: Pattern acknowledgment — instruct GPT to reference repeated patterns
+    patternAcknowledgment: patternAcknowledgmentBlock ?? undefined,
     // PRE-BUILT PROMPT BLOCKS (local pipeline → server as pure proxy)
     ...prebuiltBlocks,
   };

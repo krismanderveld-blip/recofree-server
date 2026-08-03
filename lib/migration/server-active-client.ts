@@ -97,6 +97,8 @@ export interface ServerEngineCallInput {
   dayStructureContext?: string | null;
   /** DIST01: Serialized distillation context (persons, life context, signals from continuous extraction) */
   distillationContext?: string | null;
+  /** DIST01: Pattern acknowledgment instruction for GPT to reference repeated patterns */
+  patternAcknowledgment?: string | null;
 }
 
 // ─── Server Engine Call ──────────────────────────────────────────────────
@@ -166,6 +168,7 @@ export async function callServerEngine(input: ServerEngineCallInput): Promise<Se
         diaryEntries: input.diaryEntries ?? null,
         dayStructureContext: input.dayStructureContext ?? null,
         distillationContext: input.distillationContext ?? null,
+        patternAcknowledgment: input.patternAcknowledgment ?? null,
       }),
       signal: controller.signal,
     });

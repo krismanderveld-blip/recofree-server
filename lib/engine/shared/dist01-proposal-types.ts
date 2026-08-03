@@ -24,7 +24,10 @@ export type KimTargetDocument =
   | 'eigen_regie_zone'
   | 'eigen_regie_trigger'
   | 'eigen_regie_boundary_rule'
-  | 'eigen_regie_anchor_sentence';
+  | 'eigen_regie_anchor_sentence'
+  | 'kim_grenzenplan'
+  | 'kim_steunplan'
+  | 'kim_patroonkaart';
 
 export type TargetDocument = EliasTargetDocument | KimTargetDocument;
 

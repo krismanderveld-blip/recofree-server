@@ -252,6 +252,36 @@ export function writeProposalToDocument(
       }
 
       // ── Kim: Kim Backpack ───────────────────────────────────────
+      // ── Kim: Grenzenplan (naaste boundaries) ───────────────────
+      case 'kim_grenzenplan': {
+        const kimBpG = updatedBackpack.kimBackpack ?? {
+          my_story: '', the_relationship: '', the_impact: '', my_boundaries: '', my_strength: '',
+        };
+        kimBpG.my_boundaries = formatAppendText(kimBpG.my_boundaries, textToWrite, proposal.insertMode);
+        updatedBackpack = { ...updatedBackpack, kimBackpack: kimBpG };
+        return { success: true, updatedBackpack, writtenField: 'kimBackpack.my_boundaries', writtenText: textToWrite };
+      }
+
+      // ── Kim: Steunplan naaste (support sources) ────────────────────
+      case 'kim_steunplan': {
+        const kimBpS = updatedBackpack.kimBackpack ?? {
+          my_story: '', the_relationship: '', the_impact: '', my_boundaries: '', my_strength: '',
+        };
+        kimBpS.my_strength = formatAppendText(kimBpS.my_strength, textToWrite, proposal.insertMode);
+        updatedBackpack = { ...updatedBackpack, kimBackpack: kimBpS };
+        return { success: true, updatedBackpack, writtenField: 'kimBackpack.my_strength', writtenText: textToWrite };
+      }
+
+      // ── Kim: Patroonkaart (observed patterns in the other) ─────────
+      case 'kim_patroonkaart': {
+        const kimBpP = updatedBackpack.kimBackpack ?? {
+          my_story: '', the_relationship: '', the_impact: '', my_boundaries: '', my_strength: '',
+        };
+        kimBpP.the_relationship = formatAppendText(kimBpP.the_relationship, textToWrite, proposal.insertMode);
+        updatedBackpack = { ...updatedBackpack, kimBackpack: kimBpP };
+        return { success: true, updatedBackpack, writtenField: 'kimBackpack.the_relationship', writtenText: textToWrite };
+      }
+
       case 'kimBackpack': {
         const kimBp = updatedBackpack.kimBackpack ?? {
           my_story: '', the_relationship: '', the_impact: '', my_boundaries: '', my_strength: '',

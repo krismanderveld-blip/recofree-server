@@ -364,6 +364,8 @@ export interface ChatRequestInput {
   acknowledgedCandidates?: { schemas: Array<{ name: string; confidence: number }>; modes: Array<{ name: string; confidence: number }> } | null;
   /** DIST01: Serialized distillation context (persons, life context, signals from continuous extraction) */
   distillationContext?: string | null;
+  /** DIST01: Pattern acknowledgment instruction for GPT to reference repeated patterns */
+  patternAcknowledgment?: string | null;
 
   // ─── PRE-BUILT PROMPT BLOCKS (from local pipeline) ───
   // These replace server-side extraction. When present, the server uses them directly.
@@ -424,6 +426,8 @@ interface SessionCache {
   sessionAnalysesSummary: string;
   // DIST01: Distillation context (persons, life context, signals — cached at SESSION_INIT)
   distillationContext: string | null;
+  // DIST01: Pattern acknowledgment (cached at SESSION_INIT, refreshed each turn)
+  patternAcknowledgment: string | null;
 }
 
 // Single-user cache: one active session per server instance (not multi-user safe)
@@ -561,6 +565,7 @@ function cacheSessionInit(input: ChatRequestInput): void {
     eigenRegieContext: input.eigenRegieContext ?? null,
     sessionAnalysesSummary: resolvedSessionHistory,
     distillationContext: input.distillationContext ?? null,
+    patternAcknowledgment: input.patternAcknowledgment ?? null,
   };
   console.log("[AI Chat] Session cache created for:", input.userName, hasStructuredEntities ? '(structured entities)' : '(text-based)');
   // Log PERSONEN-LOOKUP for debugging person recognition
@@ -724,6 +729,8 @@ export const chatInputSchema = z.object({
   }).passthrough().nullable().optional(),
   // DIST01: Distillation context (serialized persons, life context, signals)
   distillationContext: z.string().nullable().optional(),
+  // DIST01: Pattern acknowledgment (repeated signal instruction for GPT)
+  patternAcknowledgment: z.string().nullable().optional(),
   relationalPattern: z.object({
     pattern: z.string(),
     schema: z.string(),
@@ -2178,11 +2185,14 @@ This is a HARD SAFETY RULE. Violation = harm. No exceptions.`}
     const sessionHistoryBlock = sessionCache?.sessionAnalysesSummary || '';
     // DIST01: Inject distillation context (persons, life context, signals from continuous extraction)
     const distillationBlock = (input.distillationContext || sessionCache?.distillationContext) ?? '';
+    // DIST01: Inject pattern acknowledgment (repeated signals → GPT references them)
+    const patternAckBlock = (input.patternAcknowledgment || sessionCache?.patternAcknowledgment) ?? '';
     return `${identity}
 ${conditional.relationshipMap}
 ${lifeStoryContext}
 ${sessionHistoryBlock}
 ${distillationBlock}
+${patternAckBlock}
 ${backpackAnalysisContext}
 ${knownPatternsBlock}
 ${acknowledgedCandidatesBlock}

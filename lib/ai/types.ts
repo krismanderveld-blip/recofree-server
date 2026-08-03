@@ -1277,6 +1277,8 @@ export interface ChatContext {
   backpackAnalysis?: { triggers?: string[]; coreBeliefs?: string[]; copingPatterns?: string[]; schemaHypotheses?: string[] };
   /** DIST01: Serialized distillation context for GPT prompt injection (persons, life context, signals) */
   distillationContext?: string | null;
+  /** DIST01 Pattern Acknowledgment: instruction for Elias/Kim to reference repeated patterns in response */
+  patternAcknowledgment?: string | null;
 
   // ─── PRE-BUILT PROMPT BLOCKS (from local pipeline) ───
   /** Ready-to-inject PERSONEN-LOOKUP block (built locally) */
