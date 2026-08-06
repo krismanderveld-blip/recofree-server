@@ -54,6 +54,12 @@ export default function ZoneDetailScreen() {
   const [userMeaning, setUserMeaning] = useState(entry.userMeaning);
   const [contactRule, setContactRule] = useState(entry.contactRule);
   const [anchorSentence, setAnchorSentence] = useState(entry.anchorSentence);
+  // Connection fields (KERP01 relational stance)
+  const [connectionIntent, setConnectionIntent] = useState(entry.connectionIntent);
+  const [bridgeSentence, setBridgeSentence] = useState(entry.bridgeSentence);
+  const [repairCondition, setRepairCondition] = useState(entry.repairCondition);
+  const [safetyException, setSafetyException] = useState(entry.safetyException);
+  const [showConnectionSuggestions, setShowConnectionSuggestions] = useState(false);
   const [lists, setLists] = useState<Record<FieldKey, string[]>>({
     signals: [...entry.signals],
     bodySignals: [...entry.bodySignals],
@@ -86,6 +92,10 @@ export default function ZoneDetailScreen() {
       userMeaning,
       contactRule,
       anchorSentence,
+      connectionIntent,
+      bridgeSentence,
+      repairCondition,
+      safetyException,
       signals: lists.signals,
       bodySignals: lists.bodySignals,
       thoughts: lists.thoughts,
@@ -105,7 +115,7 @@ export default function ZoneDetailScreen() {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     }
     router.back();
-  }, [entry, userMeaning, contactRule, anchorSentence, lists, plan, zoneId, updateEigenRegiePlan, router]);
+  }, [entry, userMeaning, contactRule, anchorSentence, connectionIntent, bridgeSentence, repairCondition, safetyException, lists, plan, zoneId, updateEigenRegiePlan, router]);
 
   const handleBack = useCallback(() => {
     if (dirty) {
@@ -205,6 +215,99 @@ export default function ZoneDetailScreen() {
               returnKeyType="done"
             />
           </View>
+
+          {/* ═══ Verbinding zonder zelfverlies ═══ */}
+          <View style={[styles.section, styles.connectionSection]}>
+            <View style={styles.connectionHeader}>
+              <Text style={[styles.connectionTitle, { color: dc.textPrimary }]}>
+                🤝 Verbinding zonder zelfverlies
+              </Text>
+              <Pressable
+                onPress={() => setShowConnectionSuggestions(!showConnectionSuggestions)}
+                style={({ pressed }) => [styles.suggestionBtn, { opacity: pressed ? 0.7 : 1, borderColor: dc.primary + '40' }]}
+              >
+                <Text style={{ color: dc.primary, fontSize: 13, fontWeight: '500' }}>
+                  {showConnectionSuggestions ? 'Verberg voorbeeld' : 'Voorbeeld tonen'}
+                </Text>
+              </Pressable>
+            </View>
+
+            {/* connectionIntent */}
+            <Text style={[styles.connectionFieldLabel, { color: dc.textSecondary }]}>
+              Wat wil ik beschermen?
+            </Text>
+            {showConnectionSuggestions && (
+              <Text style={[styles.suggestionText, { color: dc.textTertiary }]}>
+                Bijv. "Ik wil betrokken blijven zonder mezelf te verliezen."
+              </Text>
+            )}
+            <TextInput
+              value={connectionIntent}
+              onChangeText={(t) => { setConnectionIntent(t); setDirty(true); }}
+              placeholder="Welke verbinding wil ik beschermen in deze zone?"
+              placeholderTextColor={dc.textTertiary}
+              style={[styles.input, { color: dc.textPrimary, borderColor: dc.primary + '30' }]}
+              multiline
+              returnKeyType="done"
+            />
+
+            {/* bridgeSentence */}
+            <Text style={[styles.connectionFieldLabel, { color: dc.textSecondary, marginTop: 14 }]}>
+              Wat kan ik zeggen?
+            </Text>
+            {showConnectionSuggestions && (
+              <Text style={[styles.suggestionText, { color: dc.textTertiary }]}>
+                Bijv. "Ik wil je begrijpen, maar ik merk dat ik rust nodig heb om dit goed te kunnen bespreken."
+              </Text>
+            )}
+            <TextInput
+              value={bridgeSentence}
+              onChangeText={(t) => { setBridgeSentence(t); setDirty(true); }}
+              placeholder="Een zin om contact open te houden zonder jezelf kwijt te raken"
+              placeholderTextColor={dc.textTertiary}
+              style={[styles.input, { color: dc.textPrimary, borderColor: dc.primary + '30' }]}
+              multiline
+              returnKeyType="done"
+            />
+
+            {/* repairCondition */}
+            <Text style={[styles.connectionFieldLabel, { color: dc.textSecondary, marginTop: 14 }]}>
+              Wanneer is contact weer veilig genoeg?
+            </Text>
+            {showConnectionSuggestions && (
+              <Text style={[styles.suggestionText, { color: dc.textTertiary }]}>
+                Bijv. "Contact lukt beter wanneer er rust, eerlijkheid en geen druk is."
+              </Text>
+            )}
+            <TextInput
+              value={repairCondition}
+              onChangeText={(t) => { setRepairCondition(t); setDirty(true); }}
+              placeholder="Wat moet er aanwezig zijn om contact opnieuw veilig te maken?"
+              placeholderTextColor={dc.textTertiary}
+              style={[styles.input, { color: dc.textPrimary, borderColor: dc.primary + '30' }]}
+              multiline
+              returnKeyType="done"
+            />
+
+            {/* safetyException */}
+            <Text style={[styles.connectionFieldLabel, { color: dc.textSecondary, marginTop: 14 }]}>
+              Wanneer gaat veiligheid voor verbinding?
+            </Text>
+            {showConnectionSuggestions && (
+              <Text style={[styles.suggestionText, { color: dc.textTertiary }]}>
+                Bijv. "Bij dreiging, dwang, gevaar of kindonveiligheid kies ik eerst veiligheid en steun."
+              </Text>
+            )}
+            <TextInput
+              value={safetyException}
+              onChangeText={(t) => { setSafetyException(t); setDirty(true); }}
+              placeholder="Wanneer kies ik eerst veiligheid en geen verbinding?"
+              placeholderTextColor={dc.textTertiary}
+              style={[styles.input, { color: dc.textPrimary, borderColor: dc.primary + '30' }]}
+              multiline
+              returnKeyType="done"
+            />
+          </View>
         </ScrollView>
 
         {/* Save Button */}
@@ -240,4 +343,10 @@ const styles = StyleSheet.create({
   saveBar: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: 16, backgroundColor: '#fff', borderTopWidth: 1, borderTopColor: '#f0f0f0' },
   saveBtn: { paddingVertical: 14, borderRadius: 12, alignItems: 'center' },
   saveBtnText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  connectionSection: { marginTop: 8, paddingTop: 20, borderTopWidth: 1, borderTopColor: '#e5e7eb' },
+  connectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
+  connectionTitle: { fontSize: 16, fontWeight: '700' },
+  suggestionBtn: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, borderWidth: 1 },
+  connectionFieldLabel: { fontSize: 14, fontWeight: '600', marginBottom: 6 },
+  suggestionText: { fontSize: 12, fontStyle: 'italic', marginBottom: 6, lineHeight: 16 },
 });

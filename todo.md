@@ -2733,3 +2733,10 @@
 - [x] PAAL-K01 prompt rewritten (support-broadening stance, 5-step framework)
 - [x] AANP-K01 prompt rewritten (adjustment-as-love stance, 5-step framework)
 - [x] 15 test cases (5 per module) + K05/safety/harm proofs
+
+## KERP01 Wizard Extension (4 Connection Fields)
+- [x] Verify KERP01 types have 4 fields (connectionIntent, bridgeSentence, repairCondition, safetyException)
+- [x] Wizard UI: add "Verbinding zonder zelfverlies" section per zone
+- [x] Migration: existing plans keep data, new fields get empty default
+- [x] Prompt injection: inject new fields with behavioral rules
+- [x] 13 test cases covering all requirements

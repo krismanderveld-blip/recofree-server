@@ -226,7 +226,13 @@ export function buildEigenRegiePromptContext(
   lines.push('');
   lines.push('Kim instruction:');
   lines.push('Gebruik deze informatie als persoonlijke woorden van de gebruiker. Verwijs er alleen naar wanneer het natuurlijk en steunend is. Niet citeren als checklist. Niet beschuldigend gebruiken.');
-  lines.push('RELATIONAL RULE: Use connectionIntent to guide how much connection Kim offers. Use bridgeSentence as the user\'s own words for staying connected. Use repairCondition to set conditions before deepening contact. If safetyException is set, it overrides connectionIntent — safety first.');
+  lines.push('RELATIONAL RULE: Use Eigen Regie Plan boundaries as bridge to safer contact, unless safety-first or RELATIONAL_HARM_PATTERN is active.');
+  lines.push('- Normal friction: bridgeSentence may be actively used by Kim.');
+  lines.push('- RELATIONAL_HARM_PATTERN: repairCondition first, bridgeSentence only after repair conditions are named.');
+  lines.push('- Safety-first: safetyException first, do NOT force connection.');
+  lines.push('- Low emotional load: connectionIntent to keep connection warm.');
+  lines.push('- High emotional load: regulate first, then bridgeSentence.');
+  lines.push('Use connectionIntent to guide how much connection Kim offers. Use bridgeSentence as the user\'s own words for staying connected. Use repairCondition to set conditions before deepening contact. If safetyException is set, it overrides connectionIntent — safety first.');
 
   return lines.join('\n');
 }

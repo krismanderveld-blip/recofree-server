@@ -36,7 +36,8 @@ export async function loadEigenRegiePlan(): Promise<EigenRegiePlan> {
     if (!parsed.version || parsed.version < 1) {
       return { ...DEFAULT_EIGEN_REGIE_PLAN };
     }
-    return parsed;
+    // Migration: ensure all zones have the 4 connection fields (added in v2)
+    return migrateConnectionFields(parsed);
   } catch {
     return { ...DEFAULT_EIGEN_REGIE_PLAN };
   }
@@ -165,4 +166,40 @@ export function isPlanFilled(plan: EigenRegiePlan): boolean {
  */
 export function getZoneEntry(plan: EigenRegiePlan, zoneId: EigenRegieZoneId): EigenRegieZoneEntry {
   return plan.zones[zoneId];
+}
+
+// ─── Migration ──────────────────────────────────────────────
+
+/**
+ * Ensure all zones have the 4 connection fields.
+ * For existing plans created before these fields were added,
+ * missing fields get empty string defaults.
+ * NEVER overwrites existing user data.
+ */
+function migrateConnectionFields(plan: EigenRegiePlan): EigenRegiePlan {
+  let migrated = false;
+  const zones = { ...plan.zones };
+  for (const zoneId of Object.keys(zones) as EigenRegieZoneId[]) {
+    const zone = zones[zoneId];
+    if (zone.connectionIntent === undefined) {
+      zones[zoneId] = { ...zone, connectionIntent: '' };
+      migrated = true;
+    }
+    if (zone.bridgeSentence === undefined) {
+      zones[zoneId] = { ...zones[zoneId], bridgeSentence: '' };
+      migrated = true;
+    }
+    if (zone.repairCondition === undefined) {
+      zones[zoneId] = { ...zones[zoneId], repairCondition: '' };
+      migrated = true;
+    }
+    if (zone.safetyException === undefined) {
+      zones[zoneId] = { ...zones[zoneId], safetyException: '' };
+      migrated = true;
+    }
+  }
+  if (migrated) {
+    console.log('[KERP01] Migrated plan: added missing connection fields with empty defaults');
+  }
+  return { ...plan, zones };
 }
