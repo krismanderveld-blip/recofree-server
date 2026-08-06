@@ -2720,3 +2720,10 @@
 - [x] Build exception handling: safety-first and RELATIONAL_HARM_PATTERN bypass
 - [x] Integrate into server pipeline after GPT response
 - [x] Write 7 proof tests: boundary detected → classified → corrected → safety exception → harm exception
+
+## CDP01 Prompt Rewrite (Relational Stance)
+- [x] CDP01 compactPrompt rewritten with new stance
+- [x] CDP01 fullPrompt rewritten with 6-step response framework
+- [x] CDP01 forbiddenOutput expanded with all forbidden framing
+- [x] 5 test cases: reddersrol, schuld bij zelfzorg, controle uit angst, identiteitsverlies, conflict zonder safety
+- [x] Bewijs K05 override respect + safety/harm exceptions
