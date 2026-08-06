@@ -2727,3 +2727,9 @@
 - [x] CDP01 forbiddenOutput expanded with all forbidden framing
 - [x] 5 test cases: reddersrol, schuld bij zelfzorg, controle uit angst, identiteitsverlies, conflict zonder safety
 - [x] Bewijs K05 override respect + safety/harm exceptions
+
+## BEHE-K01 / PAAL-K01 / AANP-K01 Prompt Rewrite
+- [x] BEHE-K01 prompt rewritten (control-as-fear stance, 5-step framework)
+- [x] PAAL-K01 prompt rewritten (support-broadening stance, 5-step framework)
+- [x] AANP-K01 prompt rewritten (adjustment-as-love stance, 5-step framework)
+- [x] 15 test cases (5 per module) + K05/safety/harm proofs
