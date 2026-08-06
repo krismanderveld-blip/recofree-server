@@ -414,12 +414,12 @@ function buildKO1PromptBlock(
 ): string {
   const lines: string[] = [
     `[KO1_RECOGNITION_VALIDATION]`,
-    `Sequence: recognition → validation → boundary → next safe step`,
+    `Sequence: recognition → validation → system pattern → perspective opening → boundary as bridge → next safe contact step`,
     `Pattern: ${formatPattern(pattern)} | Validation: ${formatValidationLevel(validationLevel)} | Mode: ${formatResponseMode(responseMode)}`,
   ];
 
   if (boundaryOverride) {
-    lines.push(`OVERRIDE: Boundary above relationship preservation. Self-protection priority.`);
+    lines.push(`OVERRIDE: Safety above connection. Self-protection priority. No perspective shift required.`);
   }
 
   if (julesRuleActive) {
@@ -430,6 +430,12 @@ function buildKO1PromptBlock(
   const forbidden = getForbiddenBehavior(pattern);
   if (forbidden) {
     lines.push(`Forbidden: ${forbidden}`);
+  }
+
+  // Relational stance inheritance: perspective shift + connection
+  if (!boundaryOverride && !julesRuleActive) {
+    lines.push(`RELATIONAL STANCE: After validating the caregiver, check whether the response risks increasing distance or resentment. If no safety risk, include one sentence that keeps curiosity about the other person alive. Example: "What do you think the other person might be trying to say underneath that reaction?"`);
+    lines.push(`FORBIDDEN FRAMING: Never frame the other person as attacker, manipulator, or enemy. Name the pattern, not the person.`);
   }
 
   lines.push(`[/KO1_RECOGNITION_VALIDATION]`);

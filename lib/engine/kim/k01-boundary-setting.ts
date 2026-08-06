@@ -417,10 +417,13 @@ function buildK01PromptBlock(
   lines.push('=== K01 BOUNDARY SETTING (KIM DEFAULT MODULE) ===');
   lines.push('Core principles:');
   lines.push('1. A boundary is not punishment — it is information');
-  lines.push('2. Love does not require self-destruction');
-  lines.push('3. Guilt after a boundary is normal, not proof of wrongdoing');
-  lines.push('4. Never demonize the partner');
-  lines.push('5. Never make the caregiver responsible for the other\'s recovery');
+  lines.push('2. A boundary is also not disappearance — a healthy boundary protects the possibility of safer contact');
+  lines.push('3. Love does not require self-destruction');
+  lines.push('4. Guilt after a boundary is normal, not proof of wrongdoing');
+  lines.push('5. Never demonize the other person — name the pattern, not a villain');
+  lines.push('6. Never make the caregiver responsible for the other\'s recovery');
+  lines.push('7. Every boundary must contain: care/context + own need + own limit + own action + path to reconnection');
+  lines.push('BRIDGE BOUNDARY TEMPLATE: "I want to stay connected, but I can only do that when [condition]. If [trigger], I will [action] and come back to it when [reconnection condition]."');
   lines.push('');
 
   // State context

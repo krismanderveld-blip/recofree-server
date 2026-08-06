@@ -1279,6 +1279,8 @@ export interface ChatContext {
   distillationContext?: string | null;
   /** DIST01 Pattern Acknowledgment: instruction for Elias/Kim to reference repeated patterns in response */
   patternAcknowledgment?: string | null;
+  /** KIM RELATIONAL STANCE FILTER: compiled directive block ensuring Kim validates without polarizing */
+  relationalStanceFilter?: string | null;
 
   // ─── PRE-BUILT PROMPT BLOCKS (from local pipeline) ───
   /** Ready-to-inject PERSONEN-LOOKUP block (built locally) */

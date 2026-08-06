@@ -2681,3 +2681,12 @@
 ## Elias Pattern-Acknowledgment + Kim Naaste Documents
 - [x] Elias pattern-acknowledgment: inject repeated-pattern context into GPT payload so Elias references detected patterns in his response
 - [x] Kim-specific routing rules: add dedicated naaste documents (Grenzenplan naaste, Steunplan naaste, Patroonkaart) to proposal generator
+
+## KIM_CORE_IDENTITY_RELATIONAL_STANCE — Checkpoint 1
+- [x] Replace KIM_IDENTITY_PROMPT with new relational stance identity
+- [x] Build RELATIONAL_STANCE_FILTER as separate engine file
+- [x] Integrate filter before every non-crisis Kim response in pipeline
+- [x] Patch KO1 with relational stance inheritance (perspective shift)
+- [x] Patch K01 with relational stance inheritance (bridge boundaries)
+- [x] Patch K02 with relational stance inheritance (connection vs rescue)
+- [x] Write 5 test cases demonstrating old vs new output

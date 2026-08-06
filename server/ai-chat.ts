@@ -206,6 +206,8 @@ export interface ChatRequestInput {
   k03Context?: string | null;
   sw01Context?: string | null;
   sto01Context?: string | null;
+  /** KIM RELATIONAL STANCE FILTER: compiled directive block from relational-stance-filter.ts */
+  relationalStanceFilter?: string | null;
 
   // Signal engine: relevance scores for context gating (LIVE_MESSAGE only)
   relevanceScores?: {
@@ -731,6 +733,8 @@ export const chatInputSchema = z.object({
   distillationContext: z.string().nullable().optional(),
   // DIST01: Pattern acknowledgment (repeated signal instruction for GPT)
   patternAcknowledgment: z.string().nullable().optional(),
+  // KIM RELATIONAL STANCE FILTER
+  relationalStanceFilter: z.string().nullable().optional(),
   relationalPattern: z.object({
     pattern: z.string(),
     schema: z.string(),
@@ -1940,6 +1944,11 @@ These are not suggestions. These are minimum requirements.
     ko1Block = `\n${input.ko1Context}`;
     console.log(`[AI Chat] KO1 Recognition & Validation context injected`);
   }
+  let relationalStanceBlock = '';
+  if (input.relationalStanceFilter) {
+    relationalStanceBlock = `\n${input.relationalStanceFilter}`;
+    console.log(`[AI Chat] Relational Stance Filter injected`);
+  }
 
   let k05Block = '';
   if (input.k05Context) {
@@ -2217,6 +2226,7 @@ ${actBlock}
 ${cgtBlock}
 ${dgtBlock}
 ${mbtBlock}
+${relationalStanceBlock}
 ${ko1Block}
 ${k05Block}
 ${k02Block}
@@ -2733,6 +2743,7 @@ ${actBlock}
 ${cgtBlock}
 ${dgtBlock}
 ${mbtBlock}
+${relationalStanceBlock}
 ${ko1Block}
 ${k05Block}
 ${k02Block}

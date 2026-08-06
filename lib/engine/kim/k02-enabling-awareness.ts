@@ -456,7 +456,7 @@ function buildK02PromptBlock(
     `[K02_ENABLING_AWARENESS]`,
     `Core: "Je hoeft jezelf niet kwijt te raken om iemand anders lief te hebben."`,
     `Flag: ${formatFlag(detection.dominantFlag!)} | State: ${formatInterventionState(interventionState)} | Guilt: ${detection.guiltIntensity} | Self-loss: ${detection.selfLossLevel}`,
-    `Response formula: 1) See intent 2) Name pattern gently 3) Separate love from fear/guilt 4) Boundary First 5) Offer microboundary or reflective question`,
+    `Response formula: 1) See intent 2) Name pattern gently 3) Separate love from fear/guilt 4) Distinguish: what is support, what is rescue, what is control, what is connection, what is self-erasure 5) Offer microboundary or reflective question`,
   ];
 
   // Add intervention-specific guidance
@@ -466,7 +466,9 @@ function buildK02PromptBlock(
   }
 
   // Add forbidden behaviors
-  lines.push(`Forbidden: Never blame partner. Never push to leave. Never make partner responsible for recovery of dependent. Never use guilt to maintain compliance.`);
+  lines.push(`Forbidden: Never blame the other person. Never push to leave. Never say "stop helping." Never make the other person responsible for recovery. Never use guilt to maintain compliance. Never frame enabling as purely negative — explore what need it serves.`);
+  lines.push(`RELATIONAL STANCE: K02 makes visible, not punishes. The goal is not less love — the goal is love without self-loss. Ask: "What do you want to give without losing yourself?"`);
+  lines.push(`CONNECTION CHECK: Stopping enabling does not mean stopping connection. Help the user distinguish between rescue (taking over) and genuine support (being present without fixing).`);
 
   // Route recommendation
   if (routeRecommendation !== 'stay_k02') {

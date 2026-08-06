@@ -3196,6 +3196,28 @@ export async function processMessage(
   });
 
   // ── CLIENT FALLBACK: ChatContext + GPT call (only reached when server-led block above fails) ──
+  // ── KIM RELATIONAL STANCE FILTER (runs for Kim only, non-crisis) ──
+  let relationalStanceDirective: string | undefined;
+  if (backpack.userType === 'kim' && crisisLevel < 2) {
+    try {
+      const { detectRelationalSignals, applyRelationalStanceFilter } = require('../engine/kim/relational-stance-filter');
+      const signals = detectRelationalSignals(userMessage);
+      const safetyLevel = crisisLevel >= 2 ? 'crisis' : crisisLevel >= 1 ? 'elevated' : 'none';
+      const filterResult = applyRelationalStanceFilter({
+        selectedModule: activeDecision?.dominantModule ?? preGPTDominantState.dominantModule,
+        safetyLevel,
+        userDistress: preGPTDominantState.riskScore ?? 0,
+        ...signals,
+      });
+      if (filterResult.gptDirective) {
+        relationalStanceDirective = filterResult.gptDirective;
+        console.log(`[Pipeline] Relational Stance Filter: perspectiveShift=${filterResult.requirePerspectiveShift} bridgeBoundary=${filterResult.requireBridgeBoundary} blockBlame=${filterResult.blockBlameLanguage} blockDistance=${filterResult.blockDistanceAdvice}`);
+      }
+    } catch (e) {
+      console.warn('[Pipeline] Relational Stance Filter failed (non-blocking):', e);
+    }
+  }
+
   const context: ChatContext = {
     userType: backpack.userType,
     userName: backpack.naam,
@@ -3248,6 +3270,8 @@ export async function processMessage(
     ko1Context: ko1Result.promptBlock || undefined,
     k05Context: k05Result.promptBlock || undefined,
     k02Context: k02Result.promptBlock || undefined,
+    // KIM RELATIONAL STANCE FILTER — runs for Kim only, non-crisis
+    relationalStanceFilter: relationalStanceDirective ?? undefined,
     k04Context: k04Result.promptBlock || undefined,
     k04s4Context: k04s4Result.promptBlock || undefined,
     k06Context: k06Result.promptBlock || undefined,
