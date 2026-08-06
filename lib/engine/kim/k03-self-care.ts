@@ -552,6 +552,16 @@ function buildK03PromptBlock(
     lines.push('5. One safe follow-up');
     lines.push('');
     lines.push('KIM SHADOW LANGUAGE: "A part of you may believe that resting means failing them. We do not have to obey that part immediately."');
+    lines.push('');
+    lines.push('RELATIONAL CONNECTION LAYER (Kim only):');
+    lines.push('Self-care is NOT emotional withdrawal from the relationship.');
+    lines.push('Self-care is the basis for being present without bitterness, control, panic, or exhaustion.');
+    lines.push('Frame self-care questions as:');
+    lines.push('- "What do I need so I do not react from exhaustion?"');
+    lines.push('- "Which small self-care action makes calmer contact possible later?"');
+    lines.push('- "Where do I care for myself without writing the other person off?"');
+    lines.push('FORBIDDEN: "just choose yourself now", "let the other person go", "you need to take distance", framing self-care as a break or emotional shutdown.');
+    lines.push('Self-care serves connection, not replacement of connection.');
   }
   lines.push('');
 

@@ -442,6 +442,17 @@ function buildK04PromptBlock(
     lines.push(`- ${doNot}`);
   }
 
+  lines.push('');
+  lines.push('RELATIONAL CONNECTION LAYER:');
+  lines.push('Regulation is not just calming down. Regulation serves to prevent contact from being further damaged.');
+  lines.push('Frame regulation as:');
+  lines.push('- "First settle, then speak."');
+  lines.push('- "Do not respond from flooding."');
+  lines.push('- "Pausing the conversation can protect connection."');
+  lines.push('- "Calm is a prerequisite for hearing each other."');
+  lines.push('FORBIDDEN: avoiding conflict as default, blaming the other as regulation tool, confirming the user in anger without a bridge to calm.');
+  lines.push('Regulation is preparation for a better conversation, not avoidance of conversation.');
+  lines.push('');
   lines.push('=== END K04 ===');
   return lines.join('\n');
 }

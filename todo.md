@@ -2699,3 +2699,16 @@
 - [x] Patch VETR01/VETR02-K with repeated trust damage recognition
 - [x] Patch KBR01 with harm pattern boundary-as-repair-condition
 - [x] Write tests for harm pattern detection and directive generation
+
+## Kim Relational Stance — Remaining Patches
+- [x] K03 patched with relational connection layer
+- [x] K04 patched with relational connection layer
+- [x] K05 patched with relational connection layer
+- [x] K06 patched with relational connection layer (zelfzorg als basis voor contact)
+- [x] KDL01 patched with relational stance (detachment ≠ distance, loslaten van controle)
+- [ ] KERP01 types extended with connectionIntent, bridgeSentence, repairCondition, safetyException
+- [ ] KERP01 prompt injection updated with new fields
+- [ ] CDP01 patched with connection check (controle als angstreductie)
+- [ ] PAAL-K01 patched with connection check
+- [ ] BEHE-K01 patched with connection check
+- [ ] AANP-K01 patched with connection check (aanpassing als zelfverlies)
