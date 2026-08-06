@@ -115,11 +115,13 @@ describe('Kim Relational Stance Filter', () => {
     it('detects conflict, blame risk, and distance risk', () => {
       const signals = detectRelationalSignals(userMessage);
       expect(signals.relationshipConflictSignal).toBe(true);
-      // 'vertrouw' triggers conflict
-      expect(signals.relationshipConflictSignal).toBe(true);
+      // 'weer gelogen' + 'vertrouw niets meer' triggers harm pattern
+      expect(signals.relationalHarmPatternSignal).toBe(true);
+      expect(signals.repeatedBetrayalSignal).toBe(true);
+      expect(signals.chronicTrustDamageSignal).toBe(true);
     });
 
-    it('blocks distance advice and requires perspective shift', () => {
+    it('activates harm layer — blocks early perspective shift, requires repair conditions', () => {
       const signals = detectRelationalSignals(userMessage);
       const result = applyRelationalStanceFilter({
         selectedModule: 'KO1',
@@ -127,11 +129,12 @@ describe('Kim Relational Stance Filter', () => {
         userDistress: 70,
         ...signals,
       });
-      expect(result.requirePerspectiveShift).toBe(true);
-      // Should not automatically push distance
+      expect(result.requireHarmValidationFirst).toBe(true);
+      expect(result.blockEarlyPerspectiveShift).toBe(true);
+      expect(result.requireRepairConditions).toBe(true);
       expect(result.requireSafetyOverride).toBe(false);
-      expect(result.gptDirective).toContain('PERSPECTIVE SHIFT REQUIRED');
-      expect(result.gptDirective).toContain('Kim validates the user without making the other person the enemy');
+      expect(result.gptDirective).toContain('RELATIONAL_HARM_PATTERN');
+      expect(result.gptDirective).toContain('REPAIR CONDITIONS REQUIRED');
     });
   });
 
@@ -197,6 +200,123 @@ describe('Kim Relational Stance Filter', () => {
     it('contains bridge boundary formula', () => {
       expect(KIM_IDENTITY_PROMPT).toContain('Path to reconnection');
       expect(KIM_IDENTITY_PROMPT).toContain('I want to stay connected');
+    });
+  });
+});
+
+// ─── RELATIONAL_HARM_MIDDLE_LAYER Tests ──────────────────────────────────
+
+describe('Kim Relational Harm Middle Layer', () => {
+  // Case 6: Herhaald bedrog
+  describe('Case 6: Herhaald bedrog (repeated betrayal)', () => {
+    const userMessage = 'De ander is opnieuw vreemdgegaan. Het is niet de eerste keer. Ik weet niet meer wat ik nog moet geloven.';
+
+    it('detects relational harm pattern signal', () => {
+      const signals = detectRelationalSignals(userMessage);
+      expect(signals.relationalHarmPatternSignal).toBe(true);
+      expect(signals.repeatedBetrayalSignal).toBe(true);
+    });
+
+    it('blocks early perspective shift and requires harm validation first', () => {
+      const signals = detectRelationalSignals(userMessage);
+      const result = applyRelationalStanceFilter({
+        selectedModule: 'KO1',
+        safetyLevel: 'none',
+        userDistress: 75,
+        ...signals,
+      });
+      expect(result.requireHarmValidationFirst).toBe(true);
+      expect(result.blockEarlyPerspectiveShift).toBe(true);
+      expect(result.requireRepairConditions).toBe(true);
+      expect(result.requirePerspectiveShift).toBe(false); // Blocked at harm level
+      expect(result.requireSafetyOverride).toBe(false);
+    });
+
+    it('directive contains harm pattern response sequence', () => {
+      const signals = detectRelationalSignals(userMessage);
+      const result = applyRelationalStanceFilter({
+        selectedModule: 'KO1',
+        safetyLevel: 'none',
+        userDistress: 75,
+        ...signals,
+      });
+      expect(result.gptDirective).toContain('RELATIONAL_HARM_PATTERN');
+      expect(result.gptDirective).toContain('EARLY PERSPECTIVE SHIFT BLOCKED');
+      expect(result.gptDirective).toContain('REPAIR CONDITIONS REQUIRED');
+      expect(result.gptDirective).not.toContain('PERSPECTIVE SHIFT REQUIRED');
+    });
+  });
+
+  // Case 7: Herhaald liegen
+  describe('Case 7: Herhaald liegen (repeated lying)', () => {
+    const userMessage = 'De ander zegt telkens dat het de laatste keer is, maar ik kom steeds opnieuw leugens tegen.';
+
+    it('detects repeated betrayal and harm pattern', () => {
+      const signals = detectRelationalSignals(userMessage);
+      expect(signals.repeatedBetrayalSignal).toBe(true);
+      expect(signals.relationalHarmPatternSignal).toBe(true);
+    });
+
+    it('blocks perspective shift — does NOT ask what the other person feels', () => {
+      const signals = detectRelationalSignals(userMessage);
+      const result = applyRelationalStanceFilter({
+        selectedModule: 'LEUGEN-K01',
+        safetyLevel: 'none',
+        userDistress: 65,
+        ...signals,
+      });
+      expect(result.blockEarlyPerspectiveShift).toBe(true);
+      expect(result.gptDirective).toContain('Do NOT start with "what might the other person feel?"');
+    });
+  });
+
+  // Case 8: User already over-empathizing
+  describe('Case 8: User already over-empathizing', () => {
+    const userMessage = 'Ik begrijp het wel, ik weet dat het moeilijk is voor de ander, maar de ander liegt telkens opnieuw en ik kan er niet meer tegen.';
+
+    it('detects over-empathizing and harm pattern', () => {
+      const signals = detectRelationalSignals(userMessage);
+      expect(signals.userAlreadyOverEmpathizing).toBe(true);
+      expect(signals.relationalHarmPatternSignal).toBe(true);
+      expect(signals.minimizationRisk).toBe(true);
+    });
+
+    it('blocks perspective shift and warns about minimization', () => {
+      const signals = detectRelationalSignals(userMessage);
+      const result = applyRelationalStanceFilter({
+        selectedModule: 'K01',
+        safetyLevel: 'none',
+        userDistress: 55,
+        ...signals,
+      });
+      expect(result.blockEarlyPerspectiveShift).toBe(true);
+      expect(result.gptDirective).toContain('USER OVER-EMPATHIZING DETECTED');
+      expect(result.gptDirective).toContain('MINIMIZATION RISK');
+    });
+  });
+
+  // Case 9: Normal friction (NOT harm pattern) — perspective shift still works
+  describe('Case 9: Normal friction — perspective shift still allowed', () => {
+    const userMessage = 'We hadden ruzie over iets stoms en nu praat de ander niet meer met mij.';
+
+    it('detects conflict but NOT harm pattern', () => {
+      const signals = detectRelationalSignals(userMessage);
+      expect(signals.relationshipConflictSignal).toBe(true);
+      expect(signals.relationalHarmPatternSignal).toBe(false);
+    });
+
+    it('allows perspective shift for normal friction', () => {
+      const signals = detectRelationalSignals(userMessage);
+      const result = applyRelationalStanceFilter({
+        selectedModule: 'KO1',
+        safetyLevel: 'none',
+        userDistress: 40,
+        ...signals,
+      });
+      expect(result.requirePerspectiveShift).toBe(true);
+      expect(result.requireHarmValidationFirst).toBe(false);
+      expect(result.blockEarlyPerspectiveShift).toBe(false);
+      expect(result.gptDirective).toContain('PERSPECTIVE SHIFT REQUIRED');
     });
   });
 });

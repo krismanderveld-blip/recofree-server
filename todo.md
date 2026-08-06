@@ -2690,3 +2690,12 @@
 - [x] Patch K01 with relational stance inheritance (bridge boundaries)
 - [x] Patch K02 with relational stance inheritance (connection vs rescue)
 - [x] Write 5 test cases demonstrating old vs new output
+
+## RELATIONAL_HARM_MIDDLE_LAYER Addendum
+- [x] Extend RELATIONAL_STANCE_FILTER with harm pattern detection signals and output flags
+- [x] Add harm-pattern keyword detection (herhaald bedrog, liegen, grensoverschrijding, etc.)
+- [x] Build harm-pattern GPT directive with new response sequence (erkenning → ernst → herstelvoorwaarden → beperkte perspectiefruimte)
+- [x] Patch LEUGEN-K01 with lie classification (single_lie_low_harm, shame_avoidance_lie, repeated_trust_damage, coercive_or_dangerous_lie, unknown)
+- [x] Patch VETR01/VETR02-K with repeated trust damage recognition
+- [x] Patch KBR01 with harm pattern boundary-as-repair-condition
+- [x] Write tests for harm pattern detection and directive generation

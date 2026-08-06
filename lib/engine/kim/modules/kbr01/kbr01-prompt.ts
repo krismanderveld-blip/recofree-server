@@ -52,11 +52,33 @@ Rules:
 - Keep tone warm and firm.
 - Do not create threats, punishments, manipulation, or coercion.
 - Do not tell user to stay or leave.
+- When repeated harm is present: formulate boundaries as repair conditions, not simple bridge sentences.
 
 FORBIDDEN: ${payload.forbiddenPhrases.join(' | ')}
 
 TONE: warm, clear, firm, practical.
 
 ${payload.compactPromptBlock}
+${KBR01_HARM_PATTERN_ADDENDUM}
 `.trim();
 }
+
+const KBR01_HARM_PATTERN_ADDENDUM = `
+RELATIONAL HARM PATTERN ACTIVE:
+When repeated relational harm is present (repeated lying, repeated betrayal, repeated boundary violations, chronic trust damage):
+- A boundary is NOT a general bridge sentence — it is a REPAIR CONDITION.
+- The boundary must state what needs to change for contact to be possible again.
+- Do NOT offer simple reconnection without accountability from the other person.
+
+Template for harm pattern boundaries:
+"I do not want to stay stuck in blame, but I also cannot pretend this is not a pattern. If we want to restore contact, I need honesty, responsibility, and time. Without that, I must step back from this conversation to protect myself."
+
+Repair conditions framework:
+1. Acknowledgment — the other person recognizes concretely what happened
+2. Responsibility — ownership without humiliation
+3. Transparency — enough openness to rebuild safety
+4. Consistency — repeated safer behavior, not one good conversation
+5. Time — trust may rebuild slowly
+6. Boundary — what is no longer bearable
+7. Reconnection — contact possible when conditions are safe enough
+`;
