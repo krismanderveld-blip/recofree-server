@@ -2706,9 +2706,17 @@
 - [x] K05 patched with relational connection layer
 - [x] K06 patched with relational connection layer (zelfzorg als basis voor contact)
 - [x] KDL01 patched with relational stance (detachment ≠ distance, loslaten van controle)
-- [ ] KERP01 types extended with connectionIntent, bridgeSentence, repairCondition, safetyException
+- [x] KERP01 extended with connectionIntent, bridgeSentence, repairCondition, safetyException, bridgeSentence, repairCondition, safetyException
 - [ ] KERP01 prompt injection updated with new fields
-- [ ] CDP01 patched with connection check (controle als angstreductie)
+- [x] CDP01/PAAL-K01/BEHE-K01/AANP-K01 patched with relational connection check (controle als angstreductie)
 - [ ] PAAL-K01 patched with connection check
 - [ ] BEHE-K01 patched with connection check
 - [ ] AANP-K01 patched with connection check (aanpassing als zelfverlies)
+
+## K05 Cross-Module Override Engine (Runtime)
+- [x] Build Layer 1: deterministic boundary/repair-path pattern scanner
+- [x] Build Layer 2: classification call with strict output contract (no free text)
+- [x] Build correction logic: re-generation attempt + deterministic fallback
+- [x] Build exception handling: safety-first and RELATIONAL_HARM_PATTERN bypass
+- [x] Integrate into server pipeline after GPT response
+- [x] Write 7 proof tests: boundary detected → classified → corrected → safety exception → harm exception

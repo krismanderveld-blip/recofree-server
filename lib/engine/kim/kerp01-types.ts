@@ -38,6 +38,14 @@ export interface EigenRegieZoneEntry {
   contactRule: string;
   /** Personal anchor sentence for this zone */
   anchorSentence: string;
+  /** CONNECTION INTENT: What kind of connection is possible/desired in this zone */
+  connectionIntent: string;
+  /** BRIDGE SENTENCE: A sentence that keeps the door to the other person open in this zone */
+  bridgeSentence: string;
+  /** REPAIR CONDITION: What needs to happen before connection can deepen in this zone */
+  repairCondition: string;
+  /** SAFETY EXCEPTION: When connection is NOT safe in this zone (overrides connectionIntent) */
+  safetyException: string;
 }
 
 // ─── Trigger ─────────────────────────────────────────────────
@@ -111,17 +119,21 @@ const EMPTY_ZONE: EigenRegieZoneEntry = {
   boundaryActions: [],
   contactRule: '',
   anchorSentence: '',
+  connectionIntent: '',
+  bridgeSentence: '',
+  repairCondition: '',
+  safetyException: '',
 };
 
 export const DEFAULT_EIGEN_REGIE_PLAN: EigenRegiePlan = {
   version: 1,
   persona: 'kim',
   zones: {
-    rood: { ...EMPTY_ZONE, label: 'Rood — Ik verlies mezelf volledig', userMeaning: 'Mijn dag, stemming en keuzes worden bijna volledig bepaald door de ander.' },
-    oranje: { ...EMPTY_ZONE, label: 'Oranje — Ik draai vooral rond de ander', userMeaning: 'Ik functioneer nog, maar mijn aandacht, energie en keuzes gaan vooral naar de ander.' },
-    geel: { ...EMPTY_ZONE, label: 'Geel — Ik wissel tussen mezelf en de ander', userMeaning: 'Ik merk dat ik soms bij mezelf blijf en soms opnieuw word meegezogen.' },
-    lichtgroen: { ...EMPTY_ZONE, label: 'Lichtgroen — Ik kom terug bij mezelf', userMeaning: 'Ik hou rekening met de ander, maar mijn eigen leven blijft bestaan.' },
-    donkergroen: { ...EMPTY_ZONE, label: 'Donkergroen — Ik leef mijn eigen leven', userMeaning: 'Ik voel mij vrij genoeg om mijn eigen keuzes te maken, ongeacht wat de ander doet.' },
+    rood: { ...EMPTY_ZONE, label: 'Rood — Ik verlies mezelf volledig', userMeaning: 'Mijn dag, stemming en keuzes worden bijna volledig bepaald door de ander.', connectionIntent: 'Verbinding is nu niet veilig — eerst stabiliseren.', bridgeSentence: '', repairCondition: 'Ik moet eerst terug bij mezelf komen voordat contact mogelijk is.', safetyException: 'Bij gevaar, geweld of acute crisis: geen contact, alleen veiligheid.' },
+    oranje: { ...EMPTY_ZONE, label: 'Oranje — Ik draai vooral rond de ander', userMeaning: 'Ik functioneer nog, maar mijn aandacht, energie en keuzes gaan vooral naar de ander.', connectionIntent: 'Kort, begrensd contact is mogelijk als ik bij mezelf blijf.', bridgeSentence: 'Ik wil er zijn, maar niet op een manier die mij kapotmaakt.', repairCondition: 'Contact alleen als ik mijn eigen grens kan vasthouden.', safetyException: '' },
+    geel: { ...EMPTY_ZONE, label: 'Geel — Ik wissel tussen mezelf en de ander', userMeaning: 'Ik merk dat ik soms bij mezelf blijf en soms opnieuw word meegezogen.', connectionIntent: 'Verbinding is mogelijk met bewuste grenzen.', bridgeSentence: 'Ik wil verbonden blijven en tegelijk bij mezelf blijven.', repairCondition: '', safetyException: '' },
+    lichtgroen: { ...EMPTY_ZONE, label: 'Lichtgroen — Ik kom terug bij mezelf', userMeaning: 'Ik hou rekening met de ander, maar mijn eigen leven blijft bestaan.', connectionIntent: 'Gezonde verbinding is mogelijk — ik kan aanwezig zijn zonder mezelf te verliezen.', bridgeSentence: 'Ik ben er voor jou en ook voor mezelf.', repairCondition: '', safetyException: '' },
+    donkergroen: { ...EMPTY_ZONE, label: 'Donkergroen — Ik leef mijn eigen leven', userMeaning: 'Ik voel mij vrij genoeg om mijn eigen keuzes te maken, ongeacht wat de ander doet.', connectionIntent: 'Vrije verbinding — ik kies bewust wanneer en hoe ik er ben.', bridgeSentence: 'Ik ben beschikbaar vanuit keuze, niet vanuit angst.', repairCondition: '', safetyException: '' },
   },
   triggers: [],
   boundaryRules: [],
@@ -187,6 +199,20 @@ export function buildEigenRegiePromptContext(
     lines.push(`anchorSentence: ${zone.anchorSentence}`);
   }
 
+  // Connection intent and relational fields
+  if (zone.connectionIntent) {
+    lines.push(`connectionIntent: ${zone.connectionIntent}`);
+  }
+  if (zone.bridgeSentence) {
+    lines.push(`bridgeSentence: ${zone.bridgeSentence}`);
+  }
+  if (zone.repairCondition) {
+    lines.push(`repairCondition: ${zone.repairCondition}`);
+  }
+  if (zone.safetyException) {
+    lines.push(`safetyException: ${zone.safetyException}`);
+  }
+
   if (plan.mainAnchorSentence) {
     lines.push(`mainAnchorSentence: ${plan.mainAnchorSentence}`);
   }
@@ -200,6 +226,7 @@ export function buildEigenRegiePromptContext(
   lines.push('');
   lines.push('Kim instruction:');
   lines.push('Gebruik deze informatie als persoonlijke woorden van de gebruiker. Verwijs er alleen naar wanneer het natuurlijk en steunend is. Niet citeren als checklist. Niet beschuldigend gebruiken.');
+  lines.push('RELATIONAL RULE: Use connectionIntent to guide how much connection Kim offers. Use bridgeSentence as the user\'s own words for staying connected. Use repairCondition to set conditions before deepening contact. If safetyException is set, it overrides connectionIntent — safety first.');
 
   return lines.join('\n');
 }

@@ -22,6 +22,7 @@
  */
 
 import { z } from "zod";
+import { applyK05CrossModuleOverride } from './k05-cross-module-override';
 import { KIM_IDENTITY_PROMPT, kimCrisisInstructions } from "../lib/engine/kim/prompt-block";
 import { KIM_POSITIVE_SLIDERS } from "../lib/engine/kim/slider-interpretation";
 import { ELIAS_POSITIVE_SLIDERS } from "../lib/engine/elias/slider-interpretation";
@@ -3220,6 +3221,31 @@ export async function generateAIResponse(
   // If crisisLevel >= 2 and GPT did NOT include the crisis number in its response,
   // we FORCE-APPEND it. This is a safety-critical fallback — the user MUST see the number.
   let finalResponse = responseText;
+
+  // ─── K05 CROSS-MODULE OVERRIDE (Kim only) ──────────────────
+  // Runtime enforcement: scan Kim's response for boundary statements
+  // without repair paths. Correct if needed, unless safety/harm active.
+  if (input.userType === 'kim') {
+    try {
+      const k05Result = await applyK05CrossModuleOverride({
+        responseText: finalResponse,
+        safetyActive: crisisLevel >= 2,
+        relationalHarmActive: !!(input.relationalStanceFilter && input.relationalStanceFilter.includes('RELATIONAL_HARM_PATTERN')),
+        activeModule: input.activeModules?.join(',') ?? 'unknown',
+      });
+      if (k05Result.overrideApplied) {
+        console.log(`[K05-Override] Correction applied: ${k05Result.correctionMethod}`);
+        k05Result.debugLog.forEach(l => console.log(l));
+        finalResponse = k05Result.correctedText;
+      } else {
+        console.log(`[K05-Override] No correction needed (L1: boundary=${k05Result.layer1.boundaryDetected}, repair=${k05Result.layer1.repairPathDetected})`);
+      }
+    } catch (err) {
+      console.error('[K05-Override] Error during override check:', err);
+      // Non-blocking: if override fails, continue with original response
+    }
+  }
+
   const crisisEnforcementNumber = getCrisisEnforcementNumber(input.country, input.locale);
   if (crisisLevel >= 2 && !finalResponse.includes(crisisEnforcementNumber)) {
     console.warn('[AI Chat] CRISIS ENFORCEMENT: GPT omitted crisis number — force-appending');

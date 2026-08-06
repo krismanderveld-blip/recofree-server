@@ -141,6 +141,10 @@ export function convertProposalToPlan(result: GenerateResult): Partial<EigenRegi
       boundaryActions: proposal.boundaryActions || [],
       contactRule: '',
       anchorSentence: proposal.anchorSentence || '',
+      connectionIntent: '',
+      bridgeSentence: '',
+      repairCondition: '',
+      safetyException: '',
     };
   }
 

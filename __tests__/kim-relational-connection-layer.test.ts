@@ -247,12 +247,12 @@ describe('KDL01 Detachment with Love — Relational Stance', () => {
   const mockPayload = {
     moduleId: 'KDL01' as const,
     active: true,
-    responseMode: 'validation' as const,
+    responseMode: 'LOVE_WITHOUT_SELF_ERASURE' as const,
     triggerSummary: 'test trigger',
     coreFrame: 'love_without_self_erasure' as const,
     forbiddenPhrases: ['let go', 'just detach'],
     tone: 'warm_steady_grounded_gently_firm' as const,
-    routeNext: null,
+    routeNext: 'NO_MODULE' as const,
     compactPromptBlock: 'KDL01 ACTIVE: test',
   };
 
