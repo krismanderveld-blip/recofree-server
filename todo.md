@@ -2775,3 +2775,9 @@
 - [x] Pipeline integration
 - [x] 10 test cases
 - [x] Checkpoint voor review
+
+## PAR01 Light Runtime Filter
+- [x] PAR01 safety filter built
+- [x] Pipeline integration
+- [x] 13 test cases
+- [x] Checkpoint voor review
