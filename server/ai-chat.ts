@@ -24,6 +24,7 @@
 import { z } from "zod";
 import { applyK05CrossModuleOverride } from './k05-cross-module-override';
 import { applyBPGSafetyFilter, type BPGModuleId } from '@/lib/engine/kim/modules/bedr01-par01-gasl01-safety-filter';
+import { applyVETR01SafetyFilter } from '@/lib/engine/kim/modules/vetr01/vetr01-safety-filter';
 import { KIM_IDENTITY_PROMPT, kimCrisisInstructions } from "../lib/engine/kim/prompt-block";
 import { KIM_POSITIVE_SLIDERS } from "../lib/engine/kim/slider-interpretation";
 import { ELIAS_POSITIVE_SLIDERS } from "../lib/engine/elias/slider-interpretation";
@@ -3269,6 +3270,23 @@ export async function generateAIResponse(
         console.warn(`[BPGFilter] VIOLATION in ${bpgModuleId}: categories=${bpgResult.categories.join(',')}, violations=${bpgResult.violations.length}`);
         console.warn(`[BPGFilter] Original (discarded): ${finalResponse.substring(0, 200)}`);
         finalResponse = bpgResult.correctedText ?? 'Ik ben hier voor je. Laten we even stilstaan bij wat je nodig hebt.';
+      }
+    }
+  }
+
+  // ─── KIM MODULE SAFETY FILTER (VETR01) ──────────────
+  if (input.userType === 'kim') {
+    const activeModuleListVETR01 = input.activeModules ?? [];
+    if (activeModuleListVETR01.includes('VETR01')) {
+      const relHarmActiveVETR01 = !!(input.relationalStanceFilter && input.relationalStanceFilter.includes('RELATIONAL_HARM_PATTERN'));
+      const safetyActiveVETR01 = crisisLevel >= 2;
+      const vetr01Result = applyVETR01SafetyFilter(finalResponse, {
+        relationalHarmActive: relHarmActiveVETR01,
+        safetyActive: safetyActiveVETR01,
+      });
+      if (!vetr01Result.safe) {
+        console.warn(`[VETR01Filter] VIOLATION: categories=${vetr01Result.categories.join(',')}, violations=${vetr01Result.violations.length}`);
+        finalResponse = vetr01Result.correctedText ?? 'Vertrouwen hoeft niet beslist te worden. Het kan alleen groeien wanneer woorden en gedrag herhaald overeenkomen.';
       }
     }
   }

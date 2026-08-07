@@ -2746,3 +2746,9 @@
 - [x] PAR01: prompt-patch + RELATIONAL CHECK + runtime filter + tests
 - [x] GASL01: prompt-patch + RELATIONAL CHECK + runtime filter + tests
 - [x] Checkpoint voor review
+
+## VETR01 Runtime Safety Filter
+- [x] Build VETR01 safety filter with trust-specific patterns and 5 fallbacks
+- [x] Integrate into server pipeline
+- [x] 13 test cases
+- [x] Checkpoint voor review
