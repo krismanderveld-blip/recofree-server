@@ -2762,3 +2762,12 @@
 - [x] Audit LEUGEN-K01 against 11 criteria
 - [x] 21 integration tests for Relational Dynamics Cluster
 - [x] Checkpoint voor review
+
+## Cluster 3 Safety Filter (ROL-K01, VETR02-K, LEUGEN-K01)
+- [x] Build kimCluster3SafetyFilter with 9 forbidden categories + module-specific rules
+- [x] Integrate into server pipeline (ai-chat.ts)
+- [x] 5 tests ROL-K01 (redder-label, ouder-label, houdt-in-stand, rolverwarring correctie, safety-case)
+- [x] 5 tests VETR02-K (vergeven, opnieuw vertrouwen, repeated trust, frictie bridge, safety-case)
+- [x] 5 tests LEUGEN-K01 (excuseren, demoniseren, unknown intent, shame impact, coercive safety)
+- [x] 8 general tests (filter runs for each module, K05 active, harm not minimized, safety not overridden, no names, 0 TS errors)
+- [x] Checkpoint voor review

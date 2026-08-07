@@ -17,7 +17,7 @@ function makeResult(moduleId: 'ROL-K01' | 'VETR02-K' | 'LEUGEN-K01'): KimCluster
     crisisNumbersToShow: [],
     routeNext: 'NO_MODULE',
     reason: 'test',
-  } as KimCluster3DetectionResult;
+  } as unknown as KimCluster3DetectionResult;
 }
 
 describe('Test 1: Normal friction with boundary → K05 override', () => {

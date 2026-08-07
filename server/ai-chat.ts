@@ -25,6 +25,8 @@ import { z } from "zod";
 import { applyK05CrossModuleOverride } from './k05-cross-module-override';
 import { applyKimCluster4SafetyFilter } from '@/lib/engine/kim/modules/emotionalLossCluster/kimCluster4SafetyFilter';
 import type { KimCluster4ModuleId } from '@/lib/engine/kim/modules/emotionalLossCluster/kimCluster4.types';
+import { applyKimCluster3RelationalFilter } from '@/lib/engine/kim/modules/relationalDynamicsCluster/kimCluster3SafetyFilter';
+import type { KimCluster3ModuleId } from '@/lib/engine/kim/modules/relationalDynamicsCluster/kimCluster3.types';
 import { KIM_IDENTITY_PROMPT, kimCrisisInstructions } from "../lib/engine/kim/prompt-block";
 import { KIM_POSITIVE_SLIDERS } from "../lib/engine/kim/slider-interpretation";
 import { ELIAS_POSITIVE_SLIDERS } from "../lib/engine/elias/slider-interpretation";
@@ -3284,6 +3286,37 @@ export async function generateAIResponse(
           'Ik luister naar je. Je hoeft dit niet alleen te dragen.',
         ];
         finalResponse = fallbacks[Math.floor(Math.random() * fallbacks.length)];
+      }
+    }
+  }
+
+  // ─── KIM MODULE SAFETY FILTER (Cluster 3: ROL-K01, VETR02-K, LEUGEN-K01) ──
+  if (input.userType === 'kim') {
+    const cluster3Modules: KimCluster3ModuleId[] = ['ROL-K01', 'VETR02-K', 'LEUGEN-K01'];
+    const activeModuleList3 = input.activeModules ?? [];
+    let cluster3ModuleId: KimCluster3ModuleId | null = null;
+    for (const mod of activeModuleList3) {
+      if (cluster3Modules.includes(mod as KimCluster3ModuleId)) {
+        cluster3ModuleId = mod as KimCluster3ModuleId;
+        break;
+      }
+    }
+    if (cluster3ModuleId) {
+      const relHarmActive = !!(input.relationalStanceFilter && input.relationalStanceFilter.includes('RELATIONAL_HARM_PATTERN'));
+      const safetyActive = crisisLevel >= 2;
+      const c3Result = applyKimCluster3RelationalFilter(finalResponse, cluster3ModuleId, {
+        relationalHarmActive: relHarmActive,
+        safetyActive,
+      });
+      if (!c3Result.safe) {
+        console.warn(`[KimCluster3Filter] VIOLATION in ${cluster3ModuleId}: categories=${c3Result.categories.join(',')}, violations=${c3Result.violations.length}`);
+        console.warn(`[KimCluster3Filter] Original (discarded): ${finalResponse.substring(0, 200)}`);
+        const c3Fallbacks: Record<KimCluster3ModuleId, string> = {
+          'ROL-K01': 'Wat nu bovenkomt, mag bestaan zonder dat je er meteen schuld of een beslissing aan moet koppelen. Je hebt lang gedragen; het is logisch dat je eigen gevoel pas ruimte krijgt wanneer de zorgrol even wegvalt.',
+          'VETR02-K': 'De stilte kan onveilig voelen als je lang hebt moeten scannen op gevaar. We hoeven dat niet weg te redeneren; we maken eerst verschil tussen wat er nu concreet is en wat je alarm erbij invult.',
+          'LEUGEN-K01': 'Herhaald liegen doet iets met je vertrouwen en met je zenuwstelsel. Je hoeft geen detective te worden om grenzen te mogen hebben; we kunnen eerst scheiden wat je weet, wat je vermoedt, en wat jij nodig hebt.',
+        };
+        finalResponse = c3Fallbacks[cluster3ModuleId];
       }
     }
   }
