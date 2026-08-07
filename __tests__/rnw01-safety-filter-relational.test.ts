@@ -9,11 +9,12 @@ import type { RNW01DetectionResult } from '@/lib/engine/kim/modules/rnw01/rnw01-
 
 function makeActiveResult(): RNW01DetectionResult {
   return {
+    moduleId: 'RNW01',
     activationStatus: 'ACTIVE',
     confidenceScore: 0.9,
     matchedMarkers: ['grief_for_who_they_were'],
     themes: ['ambiguous_grief'],
-    responseMode: 'AMBIGUOUS_GRIEF_VALIDATION',
+    responseMode: 'AMBIGUOUS_GRIEF_NAMING',
     routeNext: 'NO_MODULE',
     reason: 'test',
   } as RNW01DetectionResult;

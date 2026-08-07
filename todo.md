@@ -2753,4 +2753,12 @@
 - [x] RNW01: rewrite with relational stance (rouw naast liefde, geen demonisering, verbindingsvraag)
 - [x] kimCluster4SafetyFilter.ts: add all new forbidden items from ROUW/SCHAAM/HOOP/ISOL patches
 - [x] Tests for RNW01 and safety filter
-- [ ] Checkpoint voor review
+- [x] Checkpoint voor review
+
+## RNW01 Safety Filter + Relational Dynamics Audit
+- [x] RNW01: integrate into kimCluster4SafetyFilter pipeline
+- [x] Audit ROL-K01 against 11 criteria
+- [x] Audit VETR02-K against 11 criteria
+- [x] Audit LEUGEN-K01 against 11 criteria
+- [x] 21 integration tests for Relational Dynamics Cluster
+- [x] Checkpoint voor review

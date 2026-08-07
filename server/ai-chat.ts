@@ -23,6 +23,8 @@
 
 import { z } from "zod";
 import { applyK05CrossModuleOverride } from './k05-cross-module-override';
+import { applyKimCluster4SafetyFilter } from '@/lib/engine/kim/modules/emotionalLossCluster/kimCluster4SafetyFilter';
+import type { KimCluster4ModuleId } from '@/lib/engine/kim/modules/emotionalLossCluster/kimCluster4.types';
 import { KIM_IDENTITY_PROMPT, kimCrisisInstructions } from "../lib/engine/kim/prompt-block";
 import { KIM_POSITIVE_SLIDERS } from "../lib/engine/kim/slider-interpretation";
 import { ELIAS_POSITIVE_SLIDERS } from "../lib/engine/elias/slider-interpretation";
@@ -3243,6 +3245,46 @@ export async function generateAIResponse(
     } catch (err) {
       console.error('[K05-Override] Error during override check:', err);
       // Non-blocking: if override fails, continue with original response
+    }
+  }
+
+  // ─── KIM MODULE SAFETY FILTER (Cluster 4 + RNW01) ──────────────────
+  // Apply forbidden-output filter to all Kim emotional/grief modules
+  if (input.userType === 'kim') {
+    const kimSafetyModules: Record<string, KimCluster4ModuleId> = {
+      'HOOP-K01': 'HOOP-K01',
+      'SCHAAM-K01': 'SCHAAM-K01',
+      'ROUW-K01': 'ROUW-K01',
+      'ISOL-K01': 'ISOL-K01',
+    };
+    // RNW01 uses ROUW-K01 filter (same risk domain)
+    const activeModuleList = input.activeModules ?? [];
+    let filterModuleId: KimCluster4ModuleId | null = null;
+    for (const mod of activeModuleList) {
+      if (kimSafetyModules[mod]) {
+        filterModuleId = kimSafetyModules[mod];
+        break;
+      }
+      if (mod === 'RNW01') {
+        filterModuleId = 'ROUW-K01'; // RNW01 uses same filter as ROUW-K01
+        break;
+      }
+    }
+    if (filterModuleId) {
+      const safetyResult = applyKimCluster4SafetyFilter(finalResponse, filterModuleId);
+      if (!safetyResult.safe) {
+        console.warn(`[KimSafetyFilter] VIOLATION in ${filterModuleId}: ${safetyResult.violations.join(', ')}`);
+        console.warn(`[KimSafetyFilter] Original (discarded): ${finalResponse.substring(0, 200)}`);
+        // Use Kim fallback response
+        const fallbacks = [
+          'Ik ben hier voor je. Neem even de tijd.',
+          'Ik hoor wat je zegt. Dat is niet niks.',
+          'Het is oké om dit te voelen. Ik ben er.',
+          'Laten we even stilstaan. Wat heb je nu het meest nodig?',
+          'Ik luister naar je. Je hoeft dit niet alleen te dragen.',
+        ];
+        finalResponse = fallbacks[Math.floor(Math.random() * fallbacks.length)];
+      }
     }
   }
 
