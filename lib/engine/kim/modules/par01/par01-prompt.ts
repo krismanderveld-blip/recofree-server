@@ -51,6 +51,12 @@ ${routing.contextNote}
 DOEL: Verbind het huidige patroon met de oorsprong (vaak kindertijd/gezin van herkomst).
 TOON: Warm, nieuwsgierig, niet-oordelend.
 TECHNIEK: "Was er iemand in je gezin voor wie je al jong zorgde?" / "Wanneer begon dit patroon?"
+RELATIONAL CONNECTION CHECK:
+Unless safety-first or RELATIONAL_HARM_PATTERN is active:
+- Every boundary must contain a bridge toward safer contact
+- Connection is not forced but remains possible
+- No demonizing of the person with addiction
+
 VERMIJD: Ouders beschuldigen — de gebruiker beschermt hen vaak nog.
 RICHTING: Laat de gebruiker zelf de verbinding leggen, forceer niet.`;
 }

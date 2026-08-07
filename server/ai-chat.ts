@@ -23,12 +23,7 @@
 
 import { z } from "zod";
 import { applyK05CrossModuleOverride } from './k05-cross-module-override';
-import { applyKimCluster4SafetyFilter } from '@/lib/engine/kim/modules/emotionalLossCluster/kimCluster4SafetyFilter';
-import type { KimCluster4ModuleId } from '@/lib/engine/kim/modules/emotionalLossCluster/kimCluster4.types';
-import { applyKimCluster3RelationalFilter } from '@/lib/engine/kim/modules/relationalDynamicsCluster/kimCluster3SafetyFilter';
-import type { KimCluster3ModuleId } from '@/lib/engine/kim/modules/relationalDynamicsCluster/kimCluster3.types';
-import { applyCDP01SafetyFilter } from '@/lib/engine/kim/modules/CODEP-K01/cdp01SafetyFilter';
-import { applyPBASafetyFilter, type PBAModuleId } from '@/lib/engine/kim/modules/paal-behe-aanp-safety-filter';
+import { applyBPGSafetyFilter, type BPGModuleId } from '@/lib/engine/kim/modules/bedr01-par01-gasl01-safety-filter';
 import { KIM_IDENTITY_PROMPT, kimCrisisInstructions } from "../lib/engine/kim/prompt-block";
 import { KIM_POSITIVE_SLIDERS } from "../lib/engine/kim/slider-interpretation";
 import { ELIAS_POSITIVE_SLIDERS } from "../lib/engine/elias/slider-interpretation";
@@ -3252,117 +3247,28 @@ export async function generateAIResponse(
     }
   }
 
-  // ─── KIM MODULE SAFETY FILTER (Cluster 4 + RNW01) ──────────────────
-  // Apply forbidden-output filter to all Kim emotional/grief modules
+  // ─── KIM MODULE SAFETY FILTER (BEDR01 / PAR01 / GASL01) ──────────────
   if (input.userType === 'kim') {
-    const kimSafetyModules: Record<string, KimCluster4ModuleId> = {
-      'HOOP-K01': 'HOOP-K01',
-      'SCHAAM-K01': 'SCHAAM-K01',
-      'ROUW-K01': 'ROUW-K01',
-      'ISOL-K01': 'ISOL-K01',
-    };
-    // RNW01 uses ROUW-K01 filter (same risk domain)
-    const activeModuleList = input.activeModules ?? [];
-    let filterModuleId: KimCluster4ModuleId | null = null;
-    for (const mod of activeModuleList) {
-      if (kimSafetyModules[mod]) {
-        filterModuleId = kimSafetyModules[mod];
-        break;
-      }
-      if (mod === 'RNW01') {
-        filterModuleId = 'ROUW-K01'; // RNW01 uses same filter as ROUW-K01
+    const bpgModules: BPGModuleId[] = ['BEDR01', 'PAR01', 'GASL01'];
+    const activeModuleListBPG = input.activeModules ?? [];
+    let bpgModuleId: BPGModuleId | null = null;
+    for (const mod of activeModuleListBPG) {
+      if (bpgModules.includes(mod as BPGModuleId)) {
+        bpgModuleId = mod as BPGModuleId;
         break;
       }
     }
-    if (filterModuleId) {
-      const safetyResult = applyKimCluster4SafetyFilter(finalResponse, filterModuleId);
-      if (!safetyResult.safe) {
-        console.warn(`[KimSafetyFilter] VIOLATION in ${filterModuleId}: ${safetyResult.violations.join(', ')}`);
-        console.warn(`[KimSafetyFilter] Original (discarded): ${finalResponse.substring(0, 200)}`);
-        // Use Kim fallback response
-        const fallbacks = [
-          'Ik ben hier voor je. Neem even de tijd.',
-          'Ik hoor wat je zegt. Dat is niet niks.',
-          'Het is oké om dit te voelen. Ik ben er.',
-          'Laten we even stilstaan. Wat heb je nu het meest nodig?',
-          'Ik luister naar je. Je hoeft dit niet alleen te dragen.',
-        ];
-        finalResponse = fallbacks[Math.floor(Math.random() * fallbacks.length)];
-      }
-    }
-  }
-
-  // ─── KIM MODULE SAFETY FILTER (Cluster 3: ROL-K01, VETR02-K, LEUGEN-K01) ──
-  if (input.userType === 'kim') {
-    const cluster3Modules: KimCluster3ModuleId[] = ['ROL-K01', 'VETR02-K', 'LEUGEN-K01'];
-    const activeModuleList3 = input.activeModules ?? [];
-    let cluster3ModuleId: KimCluster3ModuleId | null = null;
-    for (const mod of activeModuleList3) {
-      if (cluster3Modules.includes(mod as KimCluster3ModuleId)) {
-        cluster3ModuleId = mod as KimCluster3ModuleId;
-        break;
-      }
-    }
-    if (cluster3ModuleId) {
-      const relHarmActive = !!(input.relationalStanceFilter && input.relationalStanceFilter.includes('RELATIONAL_HARM_PATTERN'));
-      const safetyActive = crisisLevel >= 2;
-      const c3Result = applyKimCluster3RelationalFilter(finalResponse, cluster3ModuleId, {
-        relationalHarmActive: relHarmActive,
-        safetyActive,
+    if (bpgModuleId) {
+      const relHarmActiveBPG = !!(input.relationalStanceFilter && input.relationalStanceFilter.includes('RELATIONAL_HARM_PATTERN'));
+      const safetyActiveBPG = crisisLevel >= 2;
+      const bpgResult = applyBPGSafetyFilter(finalResponse, bpgModuleId, {
+        relationalHarmActive: relHarmActiveBPG,
+        safetyActive: safetyActiveBPG,
       });
-      if (!c3Result.safe) {
-        console.warn(`[KimCluster3Filter] VIOLATION in ${cluster3ModuleId}: categories=${c3Result.categories.join(',')}, violations=${c3Result.violations.length}`);
-        console.warn(`[KimCluster3Filter] Original (discarded): ${finalResponse.substring(0, 200)}`);
-        const c3Fallbacks: Record<KimCluster3ModuleId, string> = {
-          'ROL-K01': 'Wat nu bovenkomt, mag bestaan zonder dat je er meteen schuld of een beslissing aan moet koppelen. Je hebt lang gedragen; het is logisch dat je eigen gevoel pas ruimte krijgt wanneer de zorgrol even wegvalt.',
-          'VETR02-K': 'De stilte kan onveilig voelen als je lang hebt moeten scannen op gevaar. We hoeven dat niet weg te redeneren; we maken eerst verschil tussen wat er nu concreet is en wat je alarm erbij invult.',
-          'LEUGEN-K01': 'Herhaald liegen doet iets met je vertrouwen en met je zenuwstelsel. Je hoeft geen detective te worden om grenzen te mogen hebben; we kunnen eerst scheiden wat je weet, wat je vermoedt, en wat jij nodig hebt.',
-        };
-        finalResponse = c3Fallbacks[cluster3ModuleId];
-      }
-    }
-  }
-
-  // ─── KIM MODULE SAFETY FILTER (CDP01: Self-loss / Overidentification) ──────
-  if (input.userType === 'kim') {
-    const activeModuleListCDP = input.activeModules ?? [];
-    if (activeModuleListCDP.includes('CODEP-K01') || activeModuleListCDP.includes('CDP01')) {
-      const relHarmActiveCDP = !!(input.relationalStanceFilter && input.relationalStanceFilter.includes('RELATIONAL_HARM_PATTERN'));
-      const safetyActiveCDP = crisisLevel >= 2;
-      const cdpResult = applyCDP01SafetyFilter(finalResponse, {
-        relationalHarmActive: relHarmActiveCDP,
-        safetyActive: safetyActiveCDP,
-      });
-      if (!cdpResult.safe) {
-        console.warn(`[CDP01Filter] VIOLATION: categories=${cdpResult.categories.join(',')}, violations=${cdpResult.violations.length}`);
-        console.warn(`[CDP01Filter] Original (discarded): ${finalResponse.substring(0, 200)}`);
-        finalResponse = cdpResult.correctedText ?? 'Het lijkt erop dat je aandacht zo sterk naar de ander gaat dat jouw eigen ruimte kleiner wordt.';
-      }
-    }
-  }
-
-  // ─── KIM MODULE SAFETY FILTER (PAAL-K01 / BEHE-K01 / AANP-K01) ──────────────
-  if (input.userType === 'kim') {
-    const pbaModules: PBAModuleId[] = ['PAAL-K01', 'BEHE-K01', 'AANP-K01'];
-    const activeModuleListPBA = input.activeModules ?? [];
-    let pbaModuleId: PBAModuleId | null = null;
-    for (const mod of activeModuleListPBA) {
-      if (pbaModules.includes(mod as PBAModuleId)) {
-        pbaModuleId = mod as PBAModuleId;
-        break;
-      }
-    }
-    if (pbaModuleId) {
-      const relHarmActivePBA = !!(input.relationalStanceFilter && input.relationalStanceFilter.includes('RELATIONAL_HARM_PATTERN'));
-      const safetyActivePBA = crisisLevel >= 2;
-      const pbaResult = applyPBASafetyFilter(finalResponse, pbaModuleId, {
-        relationalHarmActive: relHarmActivePBA,
-        safetyActive: safetyActivePBA,
-      });
-      if (!pbaResult.safe) {
-        console.warn(`[PBAFilter] VIOLATION in ${pbaModuleId}: categories=${pbaResult.categories.join(',')}, violations=${pbaResult.violations.length}`);
-        console.warn(`[PBAFilter] Original (discarded): ${finalResponse.substring(0, 200)}`);
-        finalResponse = pbaResult.correctedText ?? 'Ik ben hier voor je. Laten we even stilstaan bij wat je nodig hebt.';
+      if (!bpgResult.safe) {
+        console.warn(`[BPGFilter] VIOLATION in ${bpgModuleId}: categories=${bpgResult.categories.join(',')}, violations=${bpgResult.violations.length}`);
+        console.warn(`[BPGFilter] Original (discarded): ${finalResponse.substring(0, 200)}`);
+        finalResponse = bpgResult.correctedText ?? 'Ik ben hier voor je. Laten we even stilstaan bij wat je nodig hebt.';
       }
     }
   }
