@@ -12,6 +12,11 @@ const KSC01_FORBIDDEN_PHRASES = [
   'they are the problem', 'only think about yourself', 'just be kind to yourself',
   'you deserve better', 'you are amazing', 'it is all their fault',
   'stop feeling guilty', 'you have nothing to be ashamed of',
+  // Relational stance additions:
+  'laat het los', 'je moet loslaten', 'kies nu gewoon voor jezelf',
+  'dit ligt niet bij jou', 'jij hebt niets verkeerd gedaan',
+  'stop met je schuldig voelen', 'de ander is verantwoordelijk, jij niet',
+  'je hoeft hier niet meer over na te denken', 'wees gewoon lief voor jezelf',
 ];
 
 export function buildKSC01PromptPayload(detection: KSC01DetectionResult): KSC01PromptPayload | null {

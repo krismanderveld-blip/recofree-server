@@ -2761,3 +2761,10 @@
 - [x] Pipeline integration
 - [x] Tests (8+8+9 module + 15 general)
 - [x] Checkpoint voor review
+
+## KSC01 Relational Check Upgrade
+- [x] RELATIONAL CONNECTION CHECK added
+- [x] Forbidden patterns expanded
+- [x] Runtime filter or stoaK extension
+- [x] 10 test cases
+- [x] Checkpoint voor review
