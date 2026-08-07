@@ -445,6 +445,8 @@ export interface PipelineResult {
   bufferSnapshot?: BufferSnapshot;
   /** Post-GPT log entry */
   messageLog?: MessageLog;
+  k05OverrideLog?: { fired: boolean; method?: string; layer1?: { boundary: boolean; repair: boolean }; debugLog?: string[] };
+  safetyFilterLog?: Array<{ filter: string; module?: string; categories: string[]; violations: number }>;
   /**
    * Pipeline status. Defaults to 'OK' for normal flow.
    * 'BLOCKED_PRECHAT_REQUIRED' = VSP not submitted, chat cannot start.
@@ -1033,6 +1035,8 @@ export async function processMessage(
           selfAcceptanceActivation: null,
           kimPatternSupportActivation: null,
           messageLog: serverMessageLog,
+        k05OverrideLog: serverResult.k05OverrideLog ?? undefined,
+        safetyFilterLog: serverResult.safetyFilterLog ?? undefined,
         };
       }
 
@@ -3693,6 +3697,8 @@ export async function processMessage(
       projection: projectionResult.hasActiveEntries ? `+${projectionResult.newEntriesCount} active (${projectionResult.injectionBlock?.slice(0, 60) ?? ''})` : undefined,
       intervention: interventionContinuity ? `${interventionContinuity.lastInterventionType} (goal=${interventionContinuity.interventionGoal}, turns=${interventionContinuity.turnsActive}, eff=${interventionContinuity.effectivenessScore})` : undefined,
       buffer: `msg#${sessionBuffer.messageCount} zone=${sessionBuffer.currentZoneColor}(${sessionBuffer.currentZoneScore}) intent=${(sessionBuffer as any).liveIntent ?? 'none'}`,
+      k05Override: undefined as any,
+      safetyFilters: undefined as any,
     },
     schemaModeResult: schemaModeResult.activated ? {
       dominantMode: (schemaModeResult.modeDecision.dominantMode ?? null) as string | null,

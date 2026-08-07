@@ -2781,3 +2781,11 @@
 - [x] Pipeline integration
 - [x] 13 test cases
 - [x] Checkpoint voor review
+
+## K05 Override Monitoring Dashboard
+- [x] Server-side K05 override log in return value
+- [x] Server-side safety filter log in return value
+- [x] Client-side clinicalInfo extension with override data
+- [x] ClinicalTag UI section for K05 override display
+- [x] Tests
+- [x] Checkpoint voor review

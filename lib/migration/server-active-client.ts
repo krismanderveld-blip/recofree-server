@@ -63,8 +63,11 @@ export interface ServerEngineCallResult {
     resolvedModule: string | null;
     matchedTheme: string | null;
   } | null;
+  /** K05 cross-module override log (clinical mode monitoring) */
+  k05OverrideLog?: { fired: boolean; method?: string; layer1?: { boundary: boolean; repair: boolean }; debugLog?: string[] };
+  /** Safety filter violation log (clinical mode monitoring) */
+  safetyFilterLog?: Array<{ filter: string; module?: string; categories: string[]; violations: number }>;
 }
-
 export interface ServerEngineCallInput {
   persona: RecoFreePersona;
   userName: string;
@@ -210,6 +213,8 @@ export async function callServerEngine(input: ServerEngineCallInput): Promise<Se
           }
         : null,
       nanoInterpret: result.nanoInterpret ?? null,
+      k05OverrideLog: result.k05OverrideLog ?? undefined,
+      safetyFilterLog: result.safetyFilterLog ?? undefined,
     };
   } catch (err: any) {
     const latencyMs = Date.now() - startTime;

@@ -814,6 +814,14 @@ function ChatScreenInner() {
       // Current session = messages after the last greeting (first assistant msg in this session)
       // Simpler: just append the AI response to current messages (user msg already added optimistically)
       const aiResponse = fullHistory[fullHistory.length - 1];
+      // Patch k05Override info into clinicalInfo for clinical mode display
+      if (result.k05OverrideLog || result.safetyFilterLog) {
+        aiResponse.clinicalInfo = { ...aiResponse.clinicalInfo!,
+
+          k05Override: result.k05OverrideLog,
+          safetyFilters: result.safetyFilterLog,
+        };
+      }
       setMessages((prev) => [...prev, aiResponse]);
       // Debug logging (only in __DEV__)
       if (result.messageLog) {
@@ -1455,7 +1463,7 @@ function ChatScreenInner() {
     // Build clinical display: prefer GPT annotation (rich), fallback to local engine metadata
     const showClinical = !isUser && state.userDat?.clinicalModeActive;
     const localInfo = item.clinicalInfo
-      ? `\n---\nModule: ${item.clinicalInfo.module} | Zone: ${item.clinicalInfo.zone} | Model: ${item.clinicalInfo.model}${item.clinicalInfo.regulation ? ` | Reg: ${item.clinicalInfo.regulation}` : ''}${item.clinicalInfo.riskScore != null ? ` | Risk: ${item.clinicalInfo.riskScore}` : ''}${item.clinicalInfo.source ? `\nSource: ${item.clinicalInfo.source}` : ''}${item.clinicalInfo.triggers ? `\nTriggers: ${item.clinicalInfo.triggers}` : ''}${item.clinicalInfo.projection ? `\nProjection: ${item.clinicalInfo.projection}` : ''}${item.clinicalInfo.intervention ? `\nIntervention: ${item.clinicalInfo.intervention}` : ''}${item.clinicalInfo.buffer ? `\nBuffer: ${item.clinicalInfo.buffer}` : ''}`
+      ? `\n---\nModule: ${item.clinicalInfo.module} | Zone: ${item.clinicalInfo.zone} | Model: ${item.clinicalInfo.model}${item.clinicalInfo.regulation ? ` | Reg: ${item.clinicalInfo.regulation}` : ''}${item.clinicalInfo.riskScore != null ? ` | Risk: ${item.clinicalInfo.riskScore}` : ''}${item.clinicalInfo.source ? `\nSource: ${item.clinicalInfo.source}` : ''}${item.clinicalInfo.triggers ? `\nTriggers: ${item.clinicalInfo.triggers}` : ''}${item.clinicalInfo.projection ? `\nProjection: ${item.clinicalInfo.projection}` : ''}${item.clinicalInfo.intervention ? `\nIntervention: ${item.clinicalInfo.intervention}` : ''}${item.clinicalInfo.buffer ? `\nBuffer: ${item.clinicalInfo.buffer}` : ''}${item.clinicalInfo.k05Override?.fired ? `\n⚡ K05 Override: ${item.clinicalInfo.k05Override.method} (L1: boundary=${item.clinicalInfo.k05Override.layer1?.boundary}, repair=${item.clinicalInfo.k05Override.layer1?.repair})` : ''}${item.clinicalInfo.safetyFilters?.length ? `\n🛡️ Safety Filters: ${item.clinicalInfo.safetyFilters.map((f: any) => f.filter + (f.module ? '/' + f.module : '') + '(' + f.categories.join(',') + ')').join('; ')}` : ''}`
       : '';
     const clinicalDisplay = clinicalAnnotation
       ? clinicalAnnotation + localInfo

@@ -3030,6 +3030,8 @@ export async function generateAIResponse(
     totalTokens: number;
   };
   selectedModel?: string;
+  k05OverrideLog?: { fired: boolean; method?: string; layer1?: { boundary: boolean; repair: boolean }; debugLog?: string[] };
+  safetyFilterLog?: Array<{ filter: string; module?: string; categories: string[]; violations: number }>;
 }> {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
@@ -3228,6 +3230,10 @@ export async function generateAIResponse(
   // we FORCE-APPEND it. This is a safety-critical fallback — the user MUST see the number.
   let finalResponse = responseText;
 
+  // K05 Override + Safety Filter monitoring (clinical mode)
+  let k05OverrideLog: { fired: boolean; method?: string; layer1?: { boundary: boolean; repair: boolean }; debugLog?: string[] } = { fired: false };
+  let safetyFilterLog: Array<{ filter: string; module?: string; categories: string[]; violations: number }> = [];
+
   // ─── K05 CROSS-MODULE OVERRIDE (Kim only) ──────────────────
   // Runtime enforcement: scan Kim's response for boundary statements
   // without repair paths. Correct if needed, unless safety/harm active.
@@ -3243,6 +3249,7 @@ export async function generateAIResponse(
         console.log(`[K05-Override] Correction applied: ${k05Result.correctionMethod}`);
         k05Result.debugLog.forEach(l => console.log(l));
         finalResponse = k05Result.correctedText;
+        k05OverrideLog = { fired: true, method: k05Result.correctionMethod ?? undefined, layer1: { boundary: k05Result.layer1.boundaryDetected, repair: k05Result.layer1.repairPathDetected }, debugLog: k05Result.debugLog };
       } else {
         console.log(`[K05-Override] No correction needed (L1: boundary=${k05Result.layer1.boundaryDetected}, repair=${k05Result.layer1.repairPathDetected})`);
       }
@@ -3272,6 +3279,7 @@ export async function generateAIResponse(
       });
       if (!bpgResult.safe) {
         console.warn(`[BPGFilter] VIOLATION in ${bpgModuleId}: categories=${bpgResult.categories.join(',')}, violations=${bpgResult.violations.length}`);
+        safetyFilterLog.push({ filter: 'BPG', module: bpgModuleId, categories: bpgResult.categories, violations: bpgResult.violations.length });
         console.warn(`[BPGFilter] Original (discarded): ${finalResponse.substring(0, 200)}`);
         finalResponse = bpgResult.correctedText ?? 'Ik ben hier voor je. Laten we even stilstaan bij wat je nodig hebt.';
       }
@@ -3290,6 +3298,7 @@ export async function generateAIResponse(
       });
       if (!vetr01Result.safe) {
         console.warn(`[VETR01Filter] VIOLATION: categories=${vetr01Result.categories.join(',')}, violations=${vetr01Result.violations.length}`);
+        safetyFilterLog.push({ filter: 'VETR01', categories: vetr01Result.categories, violations: vetr01Result.violations.length });
         finalResponse = vetr01Result.correctedText ?? 'Vertrouwen hoeft niet beslist te worden. Het kan alleen groeien wanneer woorden en gedrag herhaald overeenkomen.';
       }
     }
@@ -3309,6 +3318,7 @@ export async function generateAIResponse(
         });
         if (!kfiResult.safe) {
           console.warn(`[KFIFilter] ${kfiMod} VIOLATION: categories=${kfiResult.categories.join(',')}, violations=${kfiResult.violations.length}`);
+          safetyFilterLog.push({ filter: 'KFI', module: kfiMod, categories: kfiResult.categories, violations: kfiResult.violations.length });
           finalResponse = kfiResult.correctedText ?? finalResponse;
           break;
         }
@@ -3328,6 +3338,7 @@ export async function generateAIResponse(
       });
       if (!ksc01Result.safe) {
         console.warn(`[KSC01Filter] VIOLATION: categories=${ksc01Result.categories.join(',')}, violations=${ksc01Result.violations.length}`);
+        safetyFilterLog.push({ filter: 'KSC01', categories: ksc01Result.categories, violations: ksc01Result.violations.length });
         finalResponse = ksc01Result.correctedText ?? finalResponse;
       }
     }
@@ -3345,6 +3356,7 @@ export async function generateAIResponse(
       });
       if (!slaap01Result.safe) {
         console.warn(`[SLAAP01Filter] VIOLATION: categories=${slaap01Result.categories.join(',')}, violations=${slaap01Result.violations.length}`);
+        safetyFilterLog.push({ filter: 'SLAAP01', categories: slaap01Result.categories, violations: slaap01Result.violations.length });
         finalResponse = slaap01Result.correctedText ?? finalResponse;
       }
     }
@@ -3362,6 +3374,7 @@ export async function generateAIResponse(
       });
       if (!par01Result.safe) {
         console.warn(`[PAR01Filter] VIOLATION: categories=${par01Result.categories.join(',')}, violations=${par01Result.violations.length}`);
+        safetyFilterLog.push({ filter: 'PAR01', categories: par01Result.categories, violations: par01Result.violations.length });
         finalResponse = par01Result.correctedText ?? finalResponse;
       }
     }
@@ -3414,6 +3427,8 @@ export async function generateAIResponse(
     advisoryConfidence: 0.7,
     tokenUsage,
     selectedModel,
+    k05OverrideLog,
+    safetyFilterLog,
   };
 }
 
