@@ -2777,3 +2777,12 @@
 - [x] Integrate into server pipeline (ai-chat.ts)
 - [x] 16 tests (labels, self-loss, rescuer, decision, acquittal, love, control, safety, harm, frictie, K05, names, diagnosis, TS)
 - [x] Checkpoint voor review
+
+## PAAL-K01 / BEHE-K01 / AANP-K01 Safety Filters
+- [x] Build combined safety filter with shared + module-specific patterns
+- [x] Integrate into server pipeline (ai-chat.ts)
+- [x] 7 tests PAAL-K01
+- [x] 7 tests BEHE-K01
+- [x] 7 tests AANP-K01
+- [x] 9 general tests
+- [x] Checkpoint voor review

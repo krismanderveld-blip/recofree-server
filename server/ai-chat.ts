@@ -28,6 +28,7 @@ import type { KimCluster4ModuleId } from '@/lib/engine/kim/modules/emotionalLoss
 import { applyKimCluster3RelationalFilter } from '@/lib/engine/kim/modules/relationalDynamicsCluster/kimCluster3SafetyFilter';
 import type { KimCluster3ModuleId } from '@/lib/engine/kim/modules/relationalDynamicsCluster/kimCluster3.types';
 import { applyCDP01SafetyFilter } from '@/lib/engine/kim/modules/CODEP-K01/cdp01SafetyFilter';
+import { applyPBASafetyFilter, type PBAModuleId } from '@/lib/engine/kim/modules/paal-behe-aanp-safety-filter';
 import { KIM_IDENTITY_PROMPT, kimCrisisInstructions } from "../lib/engine/kim/prompt-block";
 import { KIM_POSITIVE_SLIDERS } from "../lib/engine/kim/slider-interpretation";
 import { ELIAS_POSITIVE_SLIDERS } from "../lib/engine/elias/slider-interpretation";
@@ -3336,6 +3337,32 @@ export async function generateAIResponse(
         console.warn(`[CDP01Filter] VIOLATION: categories=${cdpResult.categories.join(',')}, violations=${cdpResult.violations.length}`);
         console.warn(`[CDP01Filter] Original (discarded): ${finalResponse.substring(0, 200)}`);
         finalResponse = cdpResult.correctedText ?? 'Het lijkt erop dat je aandacht zo sterk naar de ander gaat dat jouw eigen ruimte kleiner wordt.';
+      }
+    }
+  }
+
+  // ─── KIM MODULE SAFETY FILTER (PAAL-K01 / BEHE-K01 / AANP-K01) ──────────────
+  if (input.userType === 'kim') {
+    const pbaModules: PBAModuleId[] = ['PAAL-K01', 'BEHE-K01', 'AANP-K01'];
+    const activeModuleListPBA = input.activeModules ?? [];
+    let pbaModuleId: PBAModuleId | null = null;
+    for (const mod of activeModuleListPBA) {
+      if (pbaModules.includes(mod as PBAModuleId)) {
+        pbaModuleId = mod as PBAModuleId;
+        break;
+      }
+    }
+    if (pbaModuleId) {
+      const relHarmActivePBA = !!(input.relationalStanceFilter && input.relationalStanceFilter.includes('RELATIONAL_HARM_PATTERN'));
+      const safetyActivePBA = crisisLevel >= 2;
+      const pbaResult = applyPBASafetyFilter(finalResponse, pbaModuleId, {
+        relationalHarmActive: relHarmActivePBA,
+        safetyActive: safetyActivePBA,
+      });
+      if (!pbaResult.safe) {
+        console.warn(`[PBAFilter] VIOLATION in ${pbaModuleId}: categories=${pbaResult.categories.join(',')}, violations=${pbaResult.violations.length}`);
+        console.warn(`[PBAFilter] Original (discarded): ${finalResponse.substring(0, 200)}`);
+        finalResponse = pbaResult.correctedText ?? 'Ik ben hier voor je. Laten we even stilstaan bij wat je nodig hebt.';
       }
     }
   }
