@@ -2748,3 +2748,9 @@
 - [x] ISOL-K01: isolatie-differentiatie, herverbinding richting ander, forbidden list
 - [x] 49 tests (8 per module) + general tests
 - [x] Checkpoint voor review
+
+## RNW01 + Safety Filter
+- [x] RNW01: rewrite with relational stance (rouw naast liefde, geen demonisering, verbindingsvraag)
+- [x] kimCluster4SafetyFilter.ts: add all new forbidden items from ROUW/SCHAAM/HOOP/ISOL patches
+- [x] Tests for RNW01 and safety filter
+- [ ] Checkpoint voor review
