@@ -2771,3 +2771,9 @@
 - [x] 5 tests LEUGEN-K01 (excuseren, demoniseren, unknown intent, shame impact, coercive safety)
 - [x] 8 general tests (filter runs for each module, K05 active, harm not minimized, safety not overridden, no names, 0 TS errors)
 - [x] Checkpoint voor review
+
+## CDP01 Safety Filter
+- [x] Build CDP01 safety filter with 9 forbidden categories + smart fallback
+- [x] Integrate into server pipeline (ai-chat.ts)
+- [x] 16 tests (labels, self-loss, rescuer, decision, acquittal, love, control, safety, harm, frictie, K05, names, diagnosis, TS)
+- [x] Checkpoint voor review

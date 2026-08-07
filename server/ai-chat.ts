@@ -27,6 +27,7 @@ import { applyKimCluster4SafetyFilter } from '@/lib/engine/kim/modules/emotional
 import type { KimCluster4ModuleId } from '@/lib/engine/kim/modules/emotionalLossCluster/kimCluster4.types';
 import { applyKimCluster3RelationalFilter } from '@/lib/engine/kim/modules/relationalDynamicsCluster/kimCluster3SafetyFilter';
 import type { KimCluster3ModuleId } from '@/lib/engine/kim/modules/relationalDynamicsCluster/kimCluster3.types';
+import { applyCDP01SafetyFilter } from '@/lib/engine/kim/modules/CODEP-K01/cdp01SafetyFilter';
 import { KIM_IDENTITY_PROMPT, kimCrisisInstructions } from "../lib/engine/kim/prompt-block";
 import { KIM_POSITIVE_SLIDERS } from "../lib/engine/kim/slider-interpretation";
 import { ELIAS_POSITIVE_SLIDERS } from "../lib/engine/elias/slider-interpretation";
@@ -3317,6 +3318,24 @@ export async function generateAIResponse(
           'LEUGEN-K01': 'Herhaald liegen doet iets met je vertrouwen en met je zenuwstelsel. Je hoeft geen detective te worden om grenzen te mogen hebben; we kunnen eerst scheiden wat je weet, wat je vermoedt, en wat jij nodig hebt.',
         };
         finalResponse = c3Fallbacks[cluster3ModuleId];
+      }
+    }
+  }
+
+  // ─── KIM MODULE SAFETY FILTER (CDP01: Self-loss / Overidentification) ──────
+  if (input.userType === 'kim') {
+    const activeModuleListCDP = input.activeModules ?? [];
+    if (activeModuleListCDP.includes('CODEP-K01') || activeModuleListCDP.includes('CDP01')) {
+      const relHarmActiveCDP = !!(input.relationalStanceFilter && input.relationalStanceFilter.includes('RELATIONAL_HARM_PATTERN'));
+      const safetyActiveCDP = crisisLevel >= 2;
+      const cdpResult = applyCDP01SafetyFilter(finalResponse, {
+        relationalHarmActive: relHarmActiveCDP,
+        safetyActive: safetyActiveCDP,
+      });
+      if (!cdpResult.safe) {
+        console.warn(`[CDP01Filter] VIOLATION: categories=${cdpResult.categories.join(',')}, violations=${cdpResult.violations.length}`);
+        console.warn(`[CDP01Filter] Original (discarded): ${finalResponse.substring(0, 200)}`);
+        finalResponse = cdpResult.correctedText ?? 'Het lijkt erop dat je aandacht zo sterk naar de ander gaat dat jouw eigen ruimte kleiner wordt.';
       }
     }
   }
