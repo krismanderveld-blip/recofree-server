@@ -1,20 +1,34 @@
-# Test files - not needed for build
+# EAS Build Ignore - only include what's needed for the mobile app build
+
+# Test files
 __tests__/
+__mocks__/
 **/*.test.ts
 **/*.test.tsx
 **/*.spec.ts
 **/*.spec.tsx
-
-# Documentation
-*.md
-!README.md
-
-# Dev files
-.manus-logs/
 vitest.config.ts
 
-# Server files (not needed for mobile build)
+# Server files (backend deploys separately)
 server/
 
-# Large unnecessary files
+# Documentation and audit files
+*.md
+!README.md
+docs/
+
+# Dev/debug files
+.manus-logs/
+.expo/
+
+# Large analysis/structure files
 recofree-app-structure.txt
+*-audit*.md
+*-analysis*.md
+*-map*.md
+
+# Drizzle migrations (handled by backend)
+drizzle/
+drizzle.config.ts
+scripts/decrypted-payload.json
+ui-strings-collected.json
