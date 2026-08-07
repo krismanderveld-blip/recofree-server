@@ -25,6 +25,7 @@ import { z } from "zod";
 import { applyK05CrossModuleOverride } from './k05-cross-module-override';
 import { applyBPGSafetyFilter, type BPGModuleId } from '@/lib/engine/kim/modules/bedr01-par01-gasl01-safety-filter';
 import { applyVETR01SafetyFilter } from '@/lib/engine/kim/modules/vetr01/vetr01-safety-filter';
+import { applyKFISafetyFilter, type KFIModuleId } from '@/lib/engine/kim/modules/kst-fin-iso-safety-filter';
 import { KIM_IDENTITY_PROMPT, kimCrisisInstructions } from "../lib/engine/kim/prompt-block";
 import { KIM_POSITIVE_SLIDERS } from "../lib/engine/kim/slider-interpretation";
 import { ELIAS_POSITIVE_SLIDERS } from "../lib/engine/elias/slider-interpretation";
@@ -3287,6 +3288,27 @@ export async function generateAIResponse(
       if (!vetr01Result.safe) {
         console.warn(`[VETR01Filter] VIOLATION: categories=${vetr01Result.categories.join(',')}, violations=${vetr01Result.violations.length}`);
         finalResponse = vetr01Result.correctedText ?? 'Vertrouwen hoeft niet beslist te worden. Het kan alleen groeien wanneer woorden en gedrag herhaald overeenkomen.';
+      }
+    }
+  }
+
+  // ─── KIM MODULE SAFETY FILTER (KST01/FIN01/ISO01) ──────────────
+  if (input.userType === 'kim') {
+    const activeModuleListKFI = input.activeModules ?? [];
+    const kfiModules: KFIModuleId[] = ['KST01', 'FIN01', 'ISO01'];
+    for (const kfiMod of kfiModules) {
+      if (activeModuleListKFI.includes(kfiMod)) {
+        const relHarmActiveKFI = !!(input.relationalStanceFilter && input.relationalStanceFilter.includes('RELATIONAL_HARM_PATTERN'));
+        const safetyActiveKFI = crisisLevel >= 2;
+        const kfiResult = applyKFISafetyFilter(finalResponse, kfiMod, {
+          relationalHarmActive: relHarmActiveKFI,
+          safetyActive: safetyActiveKFI,
+        });
+        if (!kfiResult.safe) {
+          console.warn(`[KFIFilter] ${kfiMod} VIOLATION: categories=${kfiResult.categories.join(',')}, violations=${kfiResult.violations.length}`);
+          finalResponse = kfiResult.correctedText ?? finalResponse;
+          break;
+        }
       }
     }
   }

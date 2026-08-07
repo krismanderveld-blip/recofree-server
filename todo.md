@@ -2752,3 +2752,12 @@
 - [x] Integrate into server pipeline
 - [x] 13 test cases
 - [x] Checkpoint voor review
+
+## KST01 / FIN01 / ISO01 Patch
+- [x] KST01 prompt-patch + RELATIONAL CONNECTION CHECK
+- [x] FIN01 prompt-patch + RELATIONAL CONNECTION CHECK
+- [x] ISO01 prompt-patch + RELATIONAL CONNECTION CHECK
+- [x] Combined runtime safety filter
+- [x] Pipeline integration
+- [x] Tests (8+8+9 module + 15 general)
+- [x] Checkpoint voor review
