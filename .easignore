@@ -1,0 +1,20 @@
+# Test files - not needed for build
+__tests__/
+**/*.test.ts
+**/*.test.tsx
+**/*.spec.ts
+**/*.spec.tsx
+
+# Documentation
+*.md
+!README.md
+
+# Dev files
+.manus-logs/
+vitest.config.ts
+
+# Server files (not needed for mobile build)
+server/
+
+# Large unnecessary files
+recofree-app-structure.txt
