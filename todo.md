@@ -2768,3 +2768,10 @@
 - [x] Runtime filter or stoaK extension
 - [x] 10 test cases
 - [x] Checkpoint voor review
+
+## SLAAP01 Minimal Consistency Check
+- [x] RELATIONAL CONNECTION CHECK added
+- [x] Light runtime safety filter
+- [x] Pipeline integration
+- [x] 10 test cases
+- [x] Checkpoint voor review

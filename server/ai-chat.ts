@@ -27,6 +27,7 @@ import { applyBPGSafetyFilter, type BPGModuleId } from '@/lib/engine/kim/modules
 import { applyVETR01SafetyFilter } from '@/lib/engine/kim/modules/vetr01/vetr01-safety-filter';
 import { applyKFISafetyFilter, type KFIModuleId } from '@/lib/engine/kim/modules/kst-fin-iso-safety-filter';
 import { applyKSC01SafetyFilter } from '@/lib/engine/kim/modules/ksc01/ksc01-safety-filter';
+import { applySLAAP01SafetyFilter } from '@/lib/engine/kim/modules/slaap01/slaap01-safety-filter';
 import { KIM_IDENTITY_PROMPT, kimCrisisInstructions } from "../lib/engine/kim/prompt-block";
 import { KIM_POSITIVE_SLIDERS } from "../lib/engine/kim/slider-interpretation";
 import { ELIAS_POSITIVE_SLIDERS } from "../lib/engine/elias/slider-interpretation";
@@ -3327,6 +3328,23 @@ export async function generateAIResponse(
       if (!ksc01Result.safe) {
         console.warn(`[KSC01Filter] VIOLATION: categories=${ksc01Result.categories.join(',')}, violations=${ksc01Result.violations.length}`);
         finalResponse = ksc01Result.correctedText ?? finalResponse;
+      }
+    }
+  }
+
+  // ─── KIM MODULE SAFETY FILTER (SLAAP01) ──────────────
+  if (input.userType === 'kim') {
+    const activeModuleListSLAAP01 = input.activeModules ?? [];
+    if (activeModuleListSLAAP01.includes('SLAAP01')) {
+      const relHarmActiveSLAAP01 = !!(input.relationalStanceFilter && input.relationalStanceFilter.includes('RELATIONAL_HARM_PATTERN'));
+      const safetyActiveSLAAP01 = crisisLevel >= 2;
+      const slaap01Result = applySLAAP01SafetyFilter(finalResponse, {
+        relationalHarmActive: relHarmActiveSLAAP01,
+        safetyActive: safetyActiveSLAAP01,
+      });
+      if (!slaap01Result.safe) {
+        console.warn(`[SLAAP01Filter] VIOLATION: categories=${slaap01Result.categories.join(',')}, violations=${slaap01Result.violations.length}`);
+        finalResponse = slaap01Result.correctedText ?? finalResponse;
       }
     }
   }
