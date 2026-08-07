@@ -2740,3 +2740,11 @@
 - [x] Migration: existing plans keep data, new fields get empty default
 - [x] Prompt injection: inject new fields with behavioral rules
 - [x] 13 test cases covering all requirements
+
+## Cluster 4 Patches (ROUW/SCHAAM/HOOP/ISOL)
+- [x] ROUW-K01: rouw-differentiatie, verbindingsvraag, forbidden list, RELATIONAL CONNECTION CHECK
+- [x] SCHAAM-K01: eigen-aandeel bevraging, differentiatie, forbidden list
+- [x] HOOP-K01: hoop-differentiatie, verbindingsvraag, forbidden list
+- [x] ISOL-K01: isolatie-differentiatie, herverbinding richting ander, forbidden list
+- [x] 49 tests (8 per module) + general tests
+- [x] Checkpoint voor review
