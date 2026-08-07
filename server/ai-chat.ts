@@ -22,13 +22,6 @@
  */
 
 import { z } from "zod";
-import { applyK05CrossModuleOverride } from './k05-cross-module-override';
-import { applyBPGSafetyFilter, type BPGModuleId } from '@/lib/engine/kim/modules/bedr01-par01-gasl01-safety-filter';
-import { applyVETR01SafetyFilter } from '@/lib/engine/kim/modules/vetr01/vetr01-safety-filter';
-import { applyKFISafetyFilter, type KFIModuleId } from '@/lib/engine/kim/modules/kst-fin-iso-safety-filter';
-import { applyKSC01SafetyFilter } from '@/lib/engine/kim/modules/ksc01/ksc01-safety-filter';
-import { applySLAAP01SafetyFilter } from '@/lib/engine/kim/modules/slaap01/slaap01-safety-filter';
-import { applyPAR01SafetyFilter } from '@/lib/engine/kim/modules/par01/par01-safety-filter';
 import { KIM_IDENTITY_PROMPT, kimCrisisInstructions } from "../lib/engine/kim/prompt-block";
 import { KIM_POSITIVE_SLIDERS } from "../lib/engine/kim/slider-interpretation";
 import { ELIAS_POSITIVE_SLIDERS } from "../lib/engine/elias/slider-interpretation";
@@ -3030,8 +3023,6 @@ export async function generateAIResponse(
     totalTokens: number;
   };
   selectedModel?: string;
-  k05OverrideLog?: { fired: boolean; method?: string; layer1?: { boundary: boolean; repair: boolean }; debugLog?: string[] };
-  safetyFilterLog?: Array<{ filter: string; module?: string; categories: string[]; violations: number }>;
 }> {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
@@ -3230,156 +3221,6 @@ export async function generateAIResponse(
   // we FORCE-APPEND it. This is a safety-critical fallback — the user MUST see the number.
   let finalResponse = responseText;
 
-  // K05 Override + Safety Filter monitoring (clinical mode)
-  let k05OverrideLog: { fired: boolean; method?: string; layer1?: { boundary: boolean; repair: boolean }; debugLog?: string[] } = { fired: false };
-  let safetyFilterLog: Array<{ filter: string; module?: string; categories: string[]; violations: number }> = [];
-
-  // ─── K05 CROSS-MODULE OVERRIDE (Kim only) ──────────────────
-  // Runtime enforcement: scan Kim's response for boundary statements
-  // without repair paths. Correct if needed, unless safety/harm active.
-  if (input.userType === 'kim') {
-    try {
-      const k05Result = await applyK05CrossModuleOverride({
-        responseText: finalResponse,
-        safetyActive: crisisLevel >= 2,
-        relationalHarmActive: !!(input.relationalStanceFilter && input.relationalStanceFilter.includes('RELATIONAL_HARM_PATTERN')),
-        activeModule: input.activeModules?.join(',') ?? 'unknown',
-      });
-      if (k05Result.overrideApplied) {
-        console.log(`[K05-Override] Correction applied: ${k05Result.correctionMethod}`);
-        k05Result.debugLog.forEach(l => console.log(l));
-        finalResponse = k05Result.correctedText;
-        k05OverrideLog = { fired: true, method: k05Result.correctionMethod ?? undefined, layer1: { boundary: k05Result.layer1.boundaryDetected, repair: k05Result.layer1.repairPathDetected }, debugLog: k05Result.debugLog };
-      } else {
-        console.log(`[K05-Override] No correction needed (L1: boundary=${k05Result.layer1.boundaryDetected}, repair=${k05Result.layer1.repairPathDetected})`);
-      }
-    } catch (err) {
-      console.error('[K05-Override] Error during override check:', err);
-      // Non-blocking: if override fails, continue with original response
-    }
-  }
-
-  // ─── KIM MODULE SAFETY FILTER (BEDR01 / PAR01 / GASL01) ──────────────
-  if (input.userType === 'kim') {
-    const bpgModules: BPGModuleId[] = ['BEDR01', 'PAR01', 'GASL01'];
-    const activeModuleListBPG = input.activeModules ?? [];
-    let bpgModuleId: BPGModuleId | null = null;
-    for (const mod of activeModuleListBPG) {
-      if (bpgModules.includes(mod as BPGModuleId)) {
-        bpgModuleId = mod as BPGModuleId;
-        break;
-      }
-    }
-    if (bpgModuleId) {
-      const relHarmActiveBPG = !!(input.relationalStanceFilter && input.relationalStanceFilter.includes('RELATIONAL_HARM_PATTERN'));
-      const safetyActiveBPG = crisisLevel >= 2;
-      const bpgResult = applyBPGSafetyFilter(finalResponse, bpgModuleId, {
-        relationalHarmActive: relHarmActiveBPG,
-        safetyActive: safetyActiveBPG,
-      });
-      if (!bpgResult.safe) {
-        console.warn(`[BPGFilter] VIOLATION in ${bpgModuleId}: categories=${bpgResult.categories.join(',')}, violations=${bpgResult.violations.length}`);
-        safetyFilterLog.push({ filter: 'BPG', module: bpgModuleId, categories: bpgResult.categories, violations: bpgResult.violations.length });
-        console.warn(`[BPGFilter] Original (discarded): ${finalResponse.substring(0, 200)}`);
-        finalResponse = bpgResult.correctedText ?? 'Ik ben hier voor je. Laten we even stilstaan bij wat je nodig hebt.';
-      }
-    }
-  }
-
-  // ─── KIM MODULE SAFETY FILTER (VETR01) ──────────────
-  if (input.userType === 'kim') {
-    const activeModuleListVETR01 = input.activeModules ?? [];
-    if (activeModuleListVETR01.includes('VETR01')) {
-      const relHarmActiveVETR01 = !!(input.relationalStanceFilter && input.relationalStanceFilter.includes('RELATIONAL_HARM_PATTERN'));
-      const safetyActiveVETR01 = crisisLevel >= 2;
-      const vetr01Result = applyVETR01SafetyFilter(finalResponse, {
-        relationalHarmActive: relHarmActiveVETR01,
-        safetyActive: safetyActiveVETR01,
-      });
-      if (!vetr01Result.safe) {
-        console.warn(`[VETR01Filter] VIOLATION: categories=${vetr01Result.categories.join(',')}, violations=${vetr01Result.violations.length}`);
-        safetyFilterLog.push({ filter: 'VETR01', categories: vetr01Result.categories, violations: vetr01Result.violations.length });
-        finalResponse = vetr01Result.correctedText ?? 'Vertrouwen hoeft niet beslist te worden. Het kan alleen groeien wanneer woorden en gedrag herhaald overeenkomen.';
-      }
-    }
-  }
-
-  // ─── KIM MODULE SAFETY FILTER (KST01/FIN01/ISO01) ──────────────
-  if (input.userType === 'kim') {
-    const activeModuleListKFI = input.activeModules ?? [];
-    const kfiModules: KFIModuleId[] = ['KST01', 'FIN01', 'ISO01'];
-    for (const kfiMod of kfiModules) {
-      if (activeModuleListKFI.includes(kfiMod)) {
-        const relHarmActiveKFI = !!(input.relationalStanceFilter && input.relationalStanceFilter.includes('RELATIONAL_HARM_PATTERN'));
-        const safetyActiveKFI = crisisLevel >= 2;
-        const kfiResult = applyKFISafetyFilter(finalResponse, kfiMod, {
-          relationalHarmActive: relHarmActiveKFI,
-          safetyActive: safetyActiveKFI,
-        });
-        if (!kfiResult.safe) {
-          console.warn(`[KFIFilter] ${kfiMod} VIOLATION: categories=${kfiResult.categories.join(',')}, violations=${kfiResult.violations.length}`);
-          safetyFilterLog.push({ filter: 'KFI', module: kfiMod, categories: kfiResult.categories, violations: kfiResult.violations.length });
-          finalResponse = kfiResult.correctedText ?? finalResponse;
-          break;
-        }
-      }
-    }
-  }
-
-  // ─── KIM MODULE SAFETY FILTER (KSC01) ──────────────
-  if (input.userType === 'kim') {
-    const activeModuleListKSC01 = input.activeModules ?? [];
-    if (activeModuleListKSC01.includes('KSC01')) {
-      const relHarmActiveKSC01 = !!(input.relationalStanceFilter && input.relationalStanceFilter.includes('RELATIONAL_HARM_PATTERN'));
-      const safetyActiveKSC01 = crisisLevel >= 2;
-      const ksc01Result = applyKSC01SafetyFilter(finalResponse, {
-        relationalHarmActive: relHarmActiveKSC01,
-        safetyActive: safetyActiveKSC01,
-      });
-      if (!ksc01Result.safe) {
-        console.warn(`[KSC01Filter] VIOLATION: categories=${ksc01Result.categories.join(',')}, violations=${ksc01Result.violations.length}`);
-        safetyFilterLog.push({ filter: 'KSC01', categories: ksc01Result.categories, violations: ksc01Result.violations.length });
-        finalResponse = ksc01Result.correctedText ?? finalResponse;
-      }
-    }
-  }
-
-  // ─── KIM MODULE SAFETY FILTER (SLAAP01) ──────────────
-  if (input.userType === 'kim') {
-    const activeModuleListSLAAP01 = input.activeModules ?? [];
-    if (activeModuleListSLAAP01.includes('SLAAP01')) {
-      const relHarmActiveSLAAP01 = !!(input.relationalStanceFilter && input.relationalStanceFilter.includes('RELATIONAL_HARM_PATTERN'));
-      const safetyActiveSLAAP01 = crisisLevel >= 2;
-      const slaap01Result = applySLAAP01SafetyFilter(finalResponse, {
-        relationalHarmActive: relHarmActiveSLAAP01,
-        safetyActive: safetyActiveSLAAP01,
-      });
-      if (!slaap01Result.safe) {
-        console.warn(`[SLAAP01Filter] VIOLATION: categories=${slaap01Result.categories.join(',')}, violations=${slaap01Result.violations.length}`);
-        safetyFilterLog.push({ filter: 'SLAAP01', categories: slaap01Result.categories, violations: slaap01Result.violations.length });
-        finalResponse = slaap01Result.correctedText ?? finalResponse;
-      }
-    }
-  }
-
-  // ─── KIM MODULE SAFETY FILTER (PAR01) ──────────────
-  if (input.userType === 'kim') {
-    const activeModuleListPAR01 = input.activeModules ?? [];
-    if (activeModuleListPAR01.includes('PAR01')) {
-      const relHarmActivePAR01 = !!(input.relationalStanceFilter && input.relationalStanceFilter.includes('RELATIONAL_HARM_PATTERN'));
-      const safetyActivePAR01 = crisisLevel >= 2;
-      const par01Result = applyPAR01SafetyFilter(finalResponse, {
-        relationalHarmActive: relHarmActivePAR01,
-        safetyActive: safetyActivePAR01,
-      });
-      if (!par01Result.safe) {
-        console.warn(`[PAR01Filter] VIOLATION: categories=${par01Result.categories.join(',')}, violations=${par01Result.violations.length}`);
-        safetyFilterLog.push({ filter: 'PAR01', categories: par01Result.categories, violations: par01Result.violations.length });
-        finalResponse = par01Result.correctedText ?? finalResponse;
-      }
-    }
-  }
-
   const crisisEnforcementNumber = getCrisisEnforcementNumber(input.country, input.locale);
   if (crisisLevel >= 2 && !finalResponse.includes(crisisEnforcementNumber)) {
     console.warn('[AI Chat] CRISIS ENFORCEMENT: GPT omitted crisis number — force-appending');
@@ -3427,8 +3268,6 @@ export async function generateAIResponse(
     advisoryConfidence: 0.7,
     tokenUsage,
     selectedModel,
-    k05OverrideLog,
-    safetyFilterLog,
   };
 }
 

@@ -336,6 +336,13 @@ import { createProposalStore } from '@/lib/engine/shared/dist01-proposal-store';
 import { generateProposals, evaluateProposalTiming, getRoutingRulesForPersona } from '@/lib/engine/shared/dist01-proposal-generator';
 import type { DistillationProposal } from '@/lib/engine/shared/dist01-proposal-types';
 import { processAutoSave } from '@/lib/engine/shared/dist01-proposal-writer';
+import { applyBPGSafetyFilter, type BPGModuleId } from '@/lib/engine/kim/modules/bedr01-par01-gasl01-safety-filter';
+import { applyVETR01SafetyFilter } from '@/lib/engine/kim/modules/vetr01/vetr01-safety-filter';
+import { applyKFISafetyFilter, type KFIModuleId } from '@/lib/engine/kim/modules/kst-fin-iso-safety-filter';
+import { applyKSC01SafetyFilter } from '@/lib/engine/kim/modules/ksc01/ksc01-safety-filter';
+import { applySLAAP01SafetyFilter } from '@/lib/engine/kim/modules/slaap01/slaap01-safety-filter';
+import { applyPAR01SafetyFilter } from '@/lib/engine/kim/modules/par01/par01-safety-filter';
+import { applyK05CrossModuleOverride } from '@/server/k05-cross-module-override';
 
 // ─── Pattern Marking (post-GPT local state) ─────────────────
 
@@ -782,7 +789,21 @@ export async function processMessage(
       }
 
       if (serverResult.success && serverResult.responseText) {
-        const finalResponseText = serverResult.responseText;
+        let finalResponseText = serverResult.responseText;
+        // Client-side safety filters (Kim only)
+        if (backpack.userType === 'kim') {
+          const mod = serverResult.nanoInterpret?.resolvedModule ?? 'K01';
+          const isSafety = false; // crisis handled server-side
+          const isHarm = false;
+          const bpgMods = ['BEDR01', 'PAR01', 'GASL01'];
+          if (bpgMods.includes(mod)) { const r = applyBPGSafetyFilter(finalResponseText, mod as BPGModuleId, { safetyActive: isSafety, relationalHarmActive: isHarm }); if (!r.safe && r.correctedText) finalResponseText = r.correctedText; }
+          if (mod === 'VETR01') { const r = applyVETR01SafetyFilter(finalResponseText, { safetyActive: isSafety, relationalHarmActive: isHarm }); if (!r.safe && r.correctedText) finalResponseText = r.correctedText; }
+          const kfiMods = ['KST01', 'FIN01', 'ISO01'];
+          if (kfiMods.includes(mod)) { const r = applyKFISafetyFilter(finalResponseText, mod as KFIModuleId, { safetyActive: isSafety, relationalHarmActive: isHarm }); if (!r.safe && r.correctedText) finalResponseText = r.correctedText; }
+          if (mod === 'KSC01') { const r = applyKSC01SafetyFilter(finalResponseText, { safetyActive: isSafety, relationalHarmActive: isHarm }); if (!r.safe && r.correctedText) finalResponseText = r.correctedText; }
+          if (mod === 'SLAAP01') { const r = applySLAAP01SafetyFilter(finalResponseText, { safetyActive: isSafety, relationalHarmActive: isHarm }); if (!r.safe && r.correctedText) finalResponseText = r.correctedText; }
+          if (mod === 'PAR01') { const r = applyPAR01SafetyFilter(finalResponseText, { safetyActive: isSafety, relationalHarmActive: isHarm }); if (!r.safe && r.correctedText) finalResponseText = r.correctedText; }
+        }
         // Build updated chatHistory with user + AI messages
         const nowIso = LocalDeviceTimeService.now().utcIso;
         const userMsg: ChatMessage = {
@@ -3436,6 +3457,52 @@ export async function processMessage(
     // No provider available and server-led failed — hard fallback
     console.error('[Pipeline] No AI provider available and server-led failed. Returning safe fallback.');
     response = "I'm still here with you. Something went wrong on my end — please try again.";
+  }
+
+
+  // ── POST-GPT STEP 6.0: Kim Safety Filters + K05 Override (client-side) ──
+  // Deterministic scan of GPT response for forbidden patterns and boundary without repair path.
+  if (backpack.userType === 'kim') {
+    const activeModule = activeDecision?.dominantModule ?? preGPTDominantState.dominantModule;
+    const isSafety = crisisLevel >= 2;
+    const isHarm = false; // TODO: wire to relational stance filter harm detection
+
+    // K05 Cross-Module Override (boundary without repair path detection)
+    if (!isSafety && !isHarm) {
+      const k05Result = await applyK05CrossModuleOverride({ responseText: response, safetyActive: isSafety, relationalHarmActive: isHarm, activeModule });
+      if (k05Result.overrideApplied) {
+        response = k05Result.correctedText;
+        console.log('[Pipeline] K05 override fired');
+      }
+    }
+
+    // Safety filters (scan for forbidden patterns, replace with fallbacks)
+    const bpgModules: BPGModuleId[] = ['BEDR01', 'PAR01', 'GASL01'];
+    if (bpgModules.includes(activeModule as BPGModuleId)) {
+      const r = applyBPGSafetyFilter(response, activeModule as BPGModuleId, { safetyActive: isSafety, relationalHarmActive: isHarm });
+      if (!r.safe && r.correctedText) response = r.correctedText;
+    }
+    if (activeModule === 'VETR01') {
+      const r = applyVETR01SafetyFilter(response, { safetyActive: isSafety, relationalHarmActive: isHarm });
+      if (!r.safe && r.correctedText) response = r.correctedText;
+    }
+    const kfiModules: KFIModuleId[] = ['KST01', 'FIN01', 'ISO01'];
+    if (kfiModules.includes(activeModule as KFIModuleId)) {
+      const r = applyKFISafetyFilter(response, activeModule as KFIModuleId, { safetyActive: isSafety, relationalHarmActive: isHarm });
+      if (!r.safe && r.correctedText) response = r.correctedText;
+    }
+    if (activeModule === 'KSC01') {
+      const r = applyKSC01SafetyFilter(response, { safetyActive: isSafety, relationalHarmActive: isHarm });
+      if (!r.safe && r.correctedText) response = r.correctedText;
+    }
+    if (activeModule === 'SLAAP01') {
+      const r = applySLAAP01SafetyFilter(response, { safetyActive: isSafety, relationalHarmActive: isHarm });
+      if (!r.safe && r.correctedText) response = r.correctedText;
+    }
+    if (activeModule === 'PAR01') {
+      const r = applyPAR01SafetyFilter(response, { safetyActive: isSafety, relationalHarmActive: isHarm });
+      if (!r.safe && r.correctedText) response = r.correctedText;
+    }
   }
 
   // ══════════════════════════════════════════════════════════════
