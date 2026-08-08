@@ -653,6 +653,38 @@ export async function processMessage(
         if (detections.entities.length > 0 || detections.signals.length > 0 || detections.contexts.length > 0) {
           distData = distStoreApi.mergeDetections(distData, detections.entities, detections.signals, detections.contexts, 'chat', sessionId, localDayKey);
           await distStoreApi.save(distData);
+          // DIRECT WRITE: Detected persons go to user.dat/extractedEntities immediately (no 3x threshold)
+          if (detections.entities.length > 0) {
+            try {
+              const { SessionMemoryCache } = await import('@/lib/crypto/session-memory-cache');
+              const udJson = await SessionMemoryCache.get('@recofree_userdat');
+              if (udJson) {
+                const ud = JSON.parse(udJson);
+                if (!ud.extractedEntities) {
+                  ud.extractedEntities = { persons: [], events: [], patterns: [], contexts: [], extractedAt: new Date().toISOString(), sourceHash: 'dist01-direct', schemaVersion: 1 };
+                }
+                const existingNames = new Set((ud.extractedEntities.persons || []).map((p: any) => p.name?.toLowerCase()));
+                const newPersons = detections.entities
+                  .filter((e) => e.entityType === 'person' && e.name && !existingNames.has(e.name.toLowerCase()))
+                  .map((e) => ({
+                    name: e.name,
+                    relationship: e.relation || '',
+                    relationshipNL: e.relation || '',
+                    emotionalValence: e.valence || 'neutral',
+                    context: e.contextSnippet || '',
+                    sourceSection: 'chat-dist01',
+                  }));
+                if (newPersons.length > 0) {
+                  ud.extractedEntities.persons = [...(ud.extractedEntities.persons || []), ...newPersons];
+                  ud.extractedEntities.extractedAt = new Date().toISOString();
+                  await SessionMemoryCache.set('@recofree_userdat', JSON.stringify(ud));
+                  console.log(`[DIST01] Direct write: ${newPersons.length} new persons added to user.dat (${newPersons.map((p: any) => p.name).join(', ')})`);
+                }
+              }
+            } catch (directWriteErr) {
+              console.warn('[DIST01] Direct entity write failed (non-blocking):', directWriteErr);
+            }
+          }
         }
         const contextObj = buildDistillationContext(distData, sessionId);
         // Serialize the context object to a string for the server
@@ -3167,6 +3199,38 @@ export async function processMessage(
     if (detections.entities.length > 0 || detections.signals.length > 0 || detections.contexts.length > 0) {
       distData = distStoreApi.mergeDetections(distData, detections.entities, detections.signals, detections.contexts, 'chat', sessionId, localDayKey);
       await distStoreApi.save(distData);
+      // DIRECT WRITE: Detected persons go to user.dat/extractedEntities immediately
+      if (detections.entities.length > 0) {
+        try {
+          const { SessionMemoryCache } = await import('@/lib/crypto/session-memory-cache');
+          const udJson = await SessionMemoryCache.get('@recofree_userdat');
+          if (udJson) {
+            const ud = JSON.parse(udJson);
+            if (!ud.extractedEntities) {
+              ud.extractedEntities = { persons: [], events: [], patterns: [], contexts: [], extractedAt: new Date().toISOString(), sourceHash: 'dist01-direct', schemaVersion: 1 };
+            }
+            const existingNames = new Set((ud.extractedEntities.persons || []).map((p: any) => p.name?.toLowerCase()));
+            const newPersons = detections.entities
+              .filter((e) => e.entityType === 'person' && e.name && !existingNames.has(e.name.toLowerCase()))
+              .map((e) => ({
+                name: e.name,
+                relationship: e.relation || '',
+                relationshipNL: e.relation || '',
+                emotionalValence: e.valence || 'neutral',
+                context: e.contextSnippet || '',
+                sourceSection: 'chat-dist01',
+              }));
+            if (newPersons.length > 0) {
+              ud.extractedEntities.persons = [...(ud.extractedEntities.persons || []), ...newPersons];
+              ud.extractedEntities.extractedAt = new Date().toISOString();
+              await SessionMemoryCache.set('@recofree_userdat', JSON.stringify(ud));
+              console.log(`[DIST01] Direct write (client path): ${newPersons.length} new persons to user.dat`);
+            }
+          }
+        } catch (dw) {
+          console.warn('[DIST01] Direct entity write failed (non-blocking):', dw);
+        }
+      }
     }
     const contextObj = buildDistillationContext(distData, sessionId);
     if (contextObj.knownPersons.length > 0 || contextObj.recentContext.length > 0 || contextObj.activeSignals.length > 0) {
@@ -3715,13 +3779,27 @@ export async function processMessage(
   let updatedUserDat = { ...currentUserDat };
 
   // 7a-pre. Apply feedback loop routing to userDat (persons → extractedEntities, triggers → triggerPatterns)
-  if (feedbackResult.routing.personsToStore.length > 0 && updatedUserDat.extractedEntities) {
-    // Static import used (Metro bundler cannot resolve dynamic require on device)
-    const existingPersons = updatedUserDat.extractedEntities.persons || [];
+  if (feedbackResult.routing.personsToStore.length > 0) {
+    // Initialize extractedEntities if it doesn't exist yet (new user with empty backpack)
+    if (!updatedUserDat.extractedEntities) {
+      updatedUserDat = {
+        ...updatedUserDat,
+        extractedEntities: {
+          persons: [],
+          events: [],
+          patterns: [],
+          contexts: [],
+          extractedAt: new Date().toISOString(),
+          sourceHash: 'chat-feedback-init',
+          schemaVersion: 1,
+        },
+      };
+    }
+    const existingPersons = updatedUserDat.extractedEntities!.persons || [];
     updatedUserDat = {
       ...updatedUserDat,
       extractedEntities: {
-        ...updatedUserDat.extractedEntities,
+        ...updatedUserDat.extractedEntities!,
         persons: mergePersons(existingPersons as any, feedbackResult.routing.personsToStore as any) as any,
       },
     };
