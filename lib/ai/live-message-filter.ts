@@ -116,6 +116,8 @@ const OPTIONAL_CONTEXT_KEYS: readonly string[] = [
   'eigenRegiePlanContext',
   // DIST01: Distillation context (persons, life context, signals from continuous extraction)
   'distillationContext',
+  // Kim Relational Stance Filter / Assessment Mode directive
+  'relationalStanceFilter',
 ] as const;
 
 // ─── Main Filter Function ─────────────────────────────────────

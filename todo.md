@@ -2789,3 +2789,21 @@
 - [x] ClinicalTag UI section for K05 override display
 - [x] Tests
 - [x] Checkpoint voor review
+
+## Future Improvements
+- [ ] Extend DIST01 direct-write to also store triggers and patterns directly to user.dat (currently only persons are written immediately)
+
+## RELATIONAL_PATTERN_ASSESSMENT_MODE (Kim)
+- [x] Build detector: 16 NL + 11 EN + 11 FR regex patterns for explicit assessment questions
+- [x] Build 6-step directive builder (conclusion, evidence, dual perspective, responsibility, repair conditions, test question)
+- [x] Safety override: no full assessment during crisis/elevated
+- [x] Insufficient data: honest limitation response
+- [x] RELATIONAL_HARM_PATTERN integration: blocks early perspective, damage first
+- [x] Signal detection: trust damage, role confusion, boundary fatigue, recovery responsibility
+- [x] Forbidden/required formulation lists
+- [x] K05 override remains active during assessment
+- [x] Pipeline integration (client-side, overrides normal relational stance filter when active)
+- [x] Live-message-filter: relationalStanceFilter added to OPTIONAL_CONTEXT_KEYS
+- [x] 24 tests all passing
+- [x] 0 TypeScript errors
+- [x] Pushed to Railway via GitHub

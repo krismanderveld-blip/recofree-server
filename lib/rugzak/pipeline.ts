@@ -3289,18 +3289,55 @@ export async function processMessage(
   let relationalStanceDirective: string | undefined;
   if (backpack.userType === 'kim' && crisisLevel < 2) {
     try {
-      const { detectRelationalSignals, applyRelationalStanceFilter } = require('../engine/kim/relational-stance-filter');
-      const signals = detectRelationalSignals(userMessage);
-      const safetyLevel = crisisLevel >= 2 ? 'crisis' : crisisLevel >= 1 ? 'elevated' : 'none';
-      const filterResult = applyRelationalStanceFilter({
-        selectedModule: activeDecision?.dominantModule ?? preGPTDominantState.dominantModule,
-        safetyLevel,
-        userDistress: preGPTDominantState.riskScore ?? 0,
-        ...signals,
-      });
-      if (filterResult.gptDirective) {
-        relationalStanceDirective = filterResult.gptDirective;
-        console.log(`[Pipeline] Relational Stance Filter: perspectiveShift=${filterResult.requirePerspectiveShift} bridgeBoundary=${filterResult.requireBridgeBoundary} blockBlame=${filterResult.blockBlameLanguage} blockDistance=${filterResult.blockDistanceAdvice}`);
+      // Check for RELATIONAL_PATTERN_ASSESSMENT_MODE first (explicit assessment question)
+      const { detectAssessmentRequest, detectAssessmentSignals, buildAssessmentDirective } = require('../engine/kim/relational-pattern-assessment');
+      const isAssessmentRequest = detectAssessmentRequest(userMessage);
+
+      if (isAssessmentRequest) {
+        // Assessment mode overrides normal relational stance filter
+        const safetyLevel = crisisLevel >= 2 ? 'crisis' : crisisLevel >= 1 ? 'elevated' : 'none';
+        const recentHistory = (currentUserDat.chatHistory || []).slice(-10).map((m: any) => m.content || m.text || '');
+        const assessmentSignals = detectAssessmentSignals(userMessage, recentHistory);
+        const { detectRelationalSignals } = require('../engine/kim/relational-stance-filter');
+        const stanceSignals = detectRelationalSignals(userMessage);
+        const hasBackpackData = !!(backpack.sections && backpack.sections.length > 0) || !!(backpack.kimBackpack);
+        const hasRelationalHistory = recentHistory.some((m: string) =>
+          /relatie|partner|vertrouw|grens|relationship|trust|boundary/i.test(m)
+        );
+
+        const assessmentResult = buildAssessmentDirective({
+          currentUserMessage: userMessage,
+          safetyLevel,
+          relationalHarmPatternActive: stanceSignals.relationalHarmPatternSignal || false,
+          trustDamageSignals: assessmentSignals.trustDamageSignals,
+          roleConfusionSignals: assessmentSignals.roleConfusionSignals,
+          boundaryFatigueSignals: assessmentSignals.boundaryFatigueSignals,
+          recoveryResponsibilitySignals: assessmentSignals.recoveryResponsibilitySignals,
+          connectionIntent: undefined, // from KERP01 if available
+          repairCondition: undefined,
+          bridgeSentence: undefined,
+          safetyException: undefined,
+          hasBackpackData: !!(backpack.sections && backpack.sections.length > 0) || !!(backpack.kimBackpack),
+          hasRelationalHistory,
+        });
+
+        relationalStanceDirective = assessmentResult.gptDirective;
+        console.log(`[Pipeline] RELATIONAL_PATTERN_ASSESSMENT_MODE active: safety=${safetyLevel} harm=${stanceSignals.relationalHarmPatternSignal} trust=${assessmentSignals.trustDamageSignals} role=${assessmentSignals.roleConfusionSignals}`);
+      } else {
+        // Normal relational stance filter
+        const { detectRelationalSignals, applyRelationalStanceFilter } = require('../engine/kim/relational-stance-filter');
+        const signals = detectRelationalSignals(userMessage);
+        const safetyLevel = crisisLevel >= 2 ? 'crisis' : crisisLevel >= 1 ? 'elevated' : 'none';
+        const filterResult = applyRelationalStanceFilter({
+          selectedModule: activeDecision?.dominantModule ?? preGPTDominantState.dominantModule,
+          safetyLevel,
+          userDistress: preGPTDominantState.riskScore ?? 0,
+          ...signals,
+        });
+        if (filterResult.gptDirective) {
+          relationalStanceDirective = filterResult.gptDirective;
+          console.log(`[Pipeline] Relational Stance Filter: perspectiveShift=${filterResult.requirePerspectiveShift} bridgeBoundary=${filterResult.requireBridgeBoundary} blockBlame=${filterResult.blockBlameLanguage} blockDistance=${filterResult.blockDistanceAdvice}`);
+        }
       }
     } catch (e) {
       console.warn('[Pipeline] Relational Stance Filter failed (non-blocking):', e);
