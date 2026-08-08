@@ -2808,6 +2808,22 @@
 - [x] 0 TypeScript errors
 - [x] Pushed to Railway via GitHub
 
+## DECISION_PRESSURE_RESPONSE_LAYER (Kim)
+- [x] Build detector: 17 NL + 12 EN + 6 FR patterns for stay/leave decision questions
+- [x] Build 6-step directive (no decision, pattern, safety, recoverability, consequence, test question)
+- [x] Context sub-detectors: child, affection/intimacy, shame
+- [x] Child context: partnerherstel != kindherstel, kind mag eigen tempo
+- [x] Affection context: affectie gekoppeld aan veiligheid, niet opgeëist als bewijs
+- [x] Shame context: verzacht schaamte, benoem eigen aandeel zacht, concrete herstelstap
+- [x] Safety override: no assessment during crisis
+- [x] RELATIONAL_HARM_PATTERN integration: damage first, no minimization
+- [x] Forbidden list: je moet weg/blijven, luister naar je gevoel, wat zou je helpen, etc.
+- [x] Required list: no decision takeover, pattern, conditions, responsibility, max 1 question
+- [x] K05 override + safety filters + runtime protection remain active
+- [x] Pipeline integration (priority: assessment > decision pressure > normal stance filter)
+- [x] 20 tests all passing
+- [x] 0 TypeScript errors
+
 ## Server Import Refactor (Railway independence)
 - [ ] Inline KIM_IDENTITY_PROMPT into server-local file (no lib/ import)
 - [ ] Inline ELIAS_IDENTITY_PROMPT into server-local file

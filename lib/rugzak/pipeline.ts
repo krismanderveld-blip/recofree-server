@@ -3333,6 +3333,29 @@ export async function processMessage(
 
         relationalStanceDirective = assessmentResult.gptDirective;
         console.log(`[Pipeline] RELATIONAL_PATTERN_ASSESSMENT_MODE active: safety=${safetyLevel} harm=${stanceSignals.relationalHarmPatternSignal} trust=${assessmentSignals.trustDamageSignals} role=${assessmentSignals.roleConfusionSignals}`);
+      } else if ((() => {
+        // DECISION_PRESSURE_RESPONSE_LAYER — stay/leave questions
+        const { detectDecisionPressure, buildDecisionPressureDirective } = require('../engine/kim/decision-pressure-layer');
+        const recentHist = (currentUserDat.chatHistory || []).slice(-10).map((m: any) => m.content || m.text || '');
+        const dpResult = detectDecisionPressure(userMessage, recentHist);
+        if (dpResult.isActive) {
+          const safetyLvl = crisisLevel >= 2 ? 'crisis' : crisisLevel >= 1 ? 'elevated' : 'none';
+          const { detectRelationalSignals: drs } = require('../engine/kim/relational-stance-filter');
+          const harmSignals = drs(userMessage);
+          const dpDirective = buildDecisionPressureDirective({
+            safetyLevel: safetyLvl,
+            relationalHarmPatternActive: harmSignals.relationalHarmPatternSignal || false,
+            hasChildContext: dpResult.hasChildContext,
+            hasAffectionContext: dpResult.hasAffectionContext,
+            hasShameContext: dpResult.hasShameContext,
+          });
+          relationalStanceDirective = dpDirective;
+          console.log(`[Pipeline] DECISION_PRESSURE_RESPONSE_LAYER active: child=${dpResult.hasChildContext} affection=${dpResult.hasAffectionContext} shame=${dpResult.hasShameContext}`);
+          return true;
+        }
+        return false;
+      })()) {
+        // Decision pressure handled above
       } else {
         // Normal relational stance filter
         const { detectRelationalSignals, applyRelationalStanceFilter } = require('../engine/kim/relational-stance-filter');
