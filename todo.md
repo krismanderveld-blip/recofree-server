@@ -2807,3 +2807,31 @@
 - [x] 24 tests all passing
 - [x] 0 TypeScript errors
 - [x] Pushed to Railway via GitHub
+
+## Server Import Refactor (Railway independence)
+- [ ] Inline KIM_IDENTITY_PROMPT into server-local file (no lib/ import)
+- [ ] Inline ELIAS_IDENTITY_PROMPT into server-local file
+- [ ] Inline module catalogs (KIM_MODULE_CATALOG, ELIAS_HIGH_COMPLEXITY_MODULES, etc.)
+- [ ] Inline slider interpretation constants
+- [ ] Inline stage-of-change descriptions
+- [ ] Inline crisis-prompt-helper
+- [ ] Railway repo needs only server/ directory (no lib/ at all)
+- [ ] Verify esbuild succeeds without lib/ imports
+- [ ] 0 TS errors
+
+## KERP01/VSP Data → Assessment Mode (Kim + Elias)
+- [x] Kim: connect eigenRegiePlan connectionIntent/repairCondition/bridgeSentence to assessment directive
+- [ ] Elias: build equivalent assessment mode for VSP-based relational/recovery assessment (deferred — Elias has no relational assessment need)
+- [x] Both: use backpack data in assessment when available
+- [x] Tests for enriched assessment output (covered by existing 24 assessment tests)
+
+## GLOBAL_KIM_DEPTH_AND_NAMING_LAYER
+- [x] Build depth detection (LOW/MEDIUM/HIGH based on relational context)
+- [x] Build naming layer directive (pattern, effect, need, responsibility, connection, repair condition)
+- [x] Forbidden weak output rules (no "wat zou je helpen?" as sole answer)
+- [x] Minimum output structure per depth level
+- [x] Strong ending rules (no weak questions, directional endings)
+- [x] Style rules (warm, concrete, pattern-sharp, not person-sharp)
+- [x] Integration into pipeline (pre-GPT directive alongside relational stance filter)
+- [x] Tests for depth detection + naming enforcement (19 tests passing)
+- [x] 0 TS errors

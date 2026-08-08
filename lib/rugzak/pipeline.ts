@@ -3287,8 +3287,18 @@ export async function processMessage(
   // ── CLIENT FALLBACK: ChatContext + GPT call (only reached when server-led block above fails) ──
   // ── KIM RELATIONAL STANCE FILTER (runs for Kim only, non-crisis) ──
   let relationalStanceDirective: string | undefined;
+  let depthNamingDirective: string | undefined;
   if (backpack.userType === 'kim' && crisisLevel < 2) {
     try {
+      // GLOBAL_KIM_DEPTH_AND_NAMING_LAYER — always active for Kim (non-crisis)
+      const { detectDepthLevel, buildDepthAndNamingDirective } = require('../engine/kim/depth-and-naming-layer');
+      const safetyLevelForDepth = crisisLevel >= 2 ? 'crisis' : crisisLevel >= 1 ? 'elevated' : 'none';
+      const depthLevel = detectDepthLevel(userMessage, safetyLevelForDepth, crisisLevel >= 2, true);
+      if (depthLevel !== 'SKIP') {
+        depthNamingDirective = buildDepthAndNamingDirective(depthLevel);
+        console.log(`[Pipeline] Kim Depth & Naming Layer: level=${depthLevel}`);
+      }
+
       // Check for RELATIONAL_PATTERN_ASSESSMENT_MODE first (explicit assessment question)
       const { detectAssessmentRequest, detectAssessmentSignals, buildAssessmentDirective } = require('../engine/kim/relational-pattern-assessment');
       const isAssessmentRequest = detectAssessmentRequest(userMessage);
@@ -3313,10 +3323,10 @@ export async function processMessage(
           roleConfusionSignals: assessmentSignals.roleConfusionSignals,
           boundaryFatigueSignals: assessmentSignals.boundaryFatigueSignals,
           recoveryResponsibilitySignals: assessmentSignals.recoveryResponsibilitySignals,
-          connectionIntent: undefined, // from KERP01 if available
-          repairCondition: undefined,
-          bridgeSentence: undefined,
-          safetyException: undefined,
+          connectionIntent: backpack.eigenRegiePlan?.zones ? Object.values(backpack.eigenRegiePlan.zones).find((z: any) => z.connectionIntent)?.connectionIntent : undefined,
+          repairCondition: backpack.eigenRegiePlan?.zones ? Object.values(backpack.eigenRegiePlan.zones).find((z: any) => z.repairCondition)?.repairCondition : undefined,
+          bridgeSentence: backpack.eigenRegiePlan?.zones ? Object.values(backpack.eigenRegiePlan.zones).find((z: any) => z.bridgeSentence)?.bridgeSentence : undefined,
+          safetyException: backpack.eigenRegiePlan?.zones ? Object.values(backpack.eigenRegiePlan.zones).find((z: any) => z.safetyException)?.safetyException : undefined,
           hasBackpackData: !!(backpack.sections && backpack.sections.length > 0) || !!(backpack.kimBackpack),
           hasRelationalHistory,
         });
@@ -3397,7 +3407,7 @@ export async function processMessage(
     k05Context: k05Result.promptBlock || undefined,
     k02Context: k02Result.promptBlock || undefined,
     // KIM RELATIONAL STANCE FILTER — runs for Kim only, non-crisis
-    relationalStanceFilter: relationalStanceDirective ?? undefined,
+    relationalStanceFilter: [depthNamingDirective, relationalStanceDirective].filter(Boolean).join('\n\n') || undefined,
     k04Context: k04Result.promptBlock || undefined,
     k04s4Context: k04s4Result.promptBlock || undefined,
     k06Context: k06Result.promptBlock || undefined,
