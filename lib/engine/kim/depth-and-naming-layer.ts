@@ -148,7 +148,13 @@ ${FORBIDDEN_WEAK_OUTPUTS.map(f => `- "${f}"`).join('\n')}
 
 ENDING RULE:
 If you end with a question, it MUST give direction. Never end with weak questions.
-Strong endings: ${STRONG_ENDINGS.slice(0, 3).join(' | ')}`;
+Strong endings: ${STRONG_ENDINGS.slice(0, 3).join(' | ')}
+
+QUESTION LIMITER (GLOBAL):
+- Maximum ONE question per response. Never two reflexive questions at the end.
+- If you already included a question mid-response, do NOT add another at the end.
+- Prefer a strong closing statement over a question.
+- NEVER end with the pattern: [validation] + [question 1] + [question 2]. This is lazy therapy.`;
 
   if (depth === 'LOW') {
     return base + `

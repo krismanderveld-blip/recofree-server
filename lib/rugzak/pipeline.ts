@@ -3356,6 +3356,23 @@ export async function processMessage(
         return false;
       })()) {
         // Decision pressure handled above
+      } else if ((() => {
+        // INTIMACY_AFFECTION_EXPLANATION_LAYER
+        const { detectIntimacyAffectionQuestion, buildIntimacyAffectionDirective } = require('../engine/kim/intimacy-affection-layer');
+        if (detectIntimacyAffectionQuestion(userMessage)) {
+          const safetyLvl = crisisLevel >= 2 ? 'crisis' : crisisLevel >= 1 ? 'elevated' : 'none';
+          const { detectRelationalSignals: drs2 } = require('../engine/kim/relational-stance-filter');
+          const harmSig = drs2(userMessage);
+          relationalStanceDirective = buildIntimacyAffectionDirective({
+            safetyLevel: safetyLvl,
+            relationalHarmPatternActive: harmSig.relationalHarmPatternSignal || false,
+          });
+          console.log(`[Pipeline] INTIMACY_AFFECTION_EXPLANATION_LAYER active`);
+          return true;
+        }
+        return false;
+      })()) {
+        // Intimacy layer handled above
       } else {
         // Normal relational stance filter
         const { detectRelationalSignals, applyRelationalStanceFilter } = require('../engine/kim/relational-stance-filter');
