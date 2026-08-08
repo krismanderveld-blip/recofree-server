@@ -342,7 +342,7 @@ import { applyKFISafetyFilter, type KFIModuleId } from '@/lib/engine/kim/modules
 import { applyKSC01SafetyFilter } from '@/lib/engine/kim/modules/ksc01/ksc01-safety-filter';
 import { applySLAAP01SafetyFilter } from '@/lib/engine/kim/modules/slaap01/slaap01-safety-filter';
 import { applyPAR01SafetyFilter } from '@/lib/engine/kim/modules/par01/par01-safety-filter';
-import { applyK05CrossModuleOverride } from '@/server/k05-cross-module-override';
+import { applyK05CrossModuleOverride } from '@/lib/engine/kim/k05-cross-module-override-client';
 
 // ─── Pattern Marking (post-GPT local state) ─────────────────
 
