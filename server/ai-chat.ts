@@ -3146,7 +3146,7 @@ export async function generateAIResponse(
         body: JSON.stringify({
           model: selectedModel,
           messages,
-          max_tokens: 500,
+          max_tokens: 900,
           temperature: 0.4,
           presence_penalty: 0.3,
           frequency_penalty: 0.2,
