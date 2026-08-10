@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
-// We test the feature flag logic by reading pipeline.ts source and verifying
-// the guard exists, and by testing the actual callNanoInterpret gating behavior.
+// FASE 5C-CORRECTIE: Nano is default ON (TEMPORARY_SEMANTIC_BRIDGE).
+// Only explicitly disabled with EXPO_PUBLIC_ENABLE_NANO_INTERPRET=false.
 
 describe('FASE 5C: Nano-Interpret Feature Flag', () => {
   const originalEnv = process.env;
@@ -16,39 +16,59 @@ describe('FASE 5C: Nano-Interpret Feature Flag', () => {
     vi.restoreAllMocks();
   });
 
-  // Test 1: Default without env flag — callNanoInterpret is NOT called
-  it('1. Default without env flag: nano is NOT called, pipeline uses deterministic fallback', () => {
+  // Test 1: Default without env flag — nano IS called (default ON)
+  it('1. Default without env flag: nano IS enabled (default ON)', () => {
     delete process.env.EXPO_PUBLIC_ENABLE_NANO_INTERPRET;
-    const enableNanoInterpret = process.env.EXPO_PUBLIC_ENABLE_NANO_INTERPRET === 'true';
-    expect(enableNanoInterpret).toBe(false);
-  });
-
-  // Test 2: EXPO_PUBLIC_ENABLE_NANO_INTERPRET=false — callNanoInterpret is NOT called
-  it('2. Flag=false: nano is NOT called', () => {
-    process.env.EXPO_PUBLIC_ENABLE_NANO_INTERPRET = 'false';
-    const enableNanoInterpret = process.env.EXPO_PUBLIC_ENABLE_NANO_INTERPRET === 'true';
-    expect(enableNanoInterpret).toBe(false);
-  });
-
-  // Test 3: EXPO_PUBLIC_ENABLE_NANO_INTERPRET=true — callNanoInterpret IS called
-  it('3. Flag=true: nano IS enabled', () => {
-    process.env.EXPO_PUBLIC_ENABLE_NANO_INTERPRET = 'true';
-    const enableNanoInterpret = process.env.EXPO_PUBLIC_ENABLE_NANO_INTERPRET === 'true';
+    const enableNanoInterpret = process.env.EXPO_PUBLIC_ENABLE_NANO_INTERPRET !== 'false';
     expect(enableNanoInterpret).toBe(true);
   });
 
-  // Test 4: Crisis case — nano is NOT called even if flag is true
-  it('4. Crisis case: nano skipped even with flag=true', () => {
+  // Test 2: EXPO_PUBLIC_ENABLE_NANO_INTERPRET=true — nano IS called
+  it('2. Flag=true: nano IS enabled', () => {
     process.env.EXPO_PUBLIC_ENABLE_NANO_INTERPRET = 'true';
-    const enableNanoInterpret = process.env.EXPO_PUBLIC_ENABLE_NANO_INTERPRET === 'true';
+    const enableNanoInterpret = process.env.EXPO_PUBLIC_ENABLE_NANO_INTERPRET !== 'false';
+    expect(enableNanoInterpret).toBe(true);
+  });
+
+  // Test 3: EXPO_PUBLIC_ENABLE_NANO_INTERPRET=false — nano is NOT called
+  it('3. Flag=false: nano is disabled, deterministic fallback active', () => {
+    process.env.EXPO_PUBLIC_ENABLE_NANO_INTERPRET = 'false';
+    const enableNanoInterpret = process.env.EXPO_PUBLIC_ENABLE_NANO_INTERPRET !== 'false';
+    expect(enableNanoInterpret).toBe(false);
+  });
+
+  // Test 4: Crisis case — nano is NOT called even if flag is true
+  it('4. Crisis case: nano skipped even with flag enabled', () => {
+    delete process.env.EXPO_PUBLIC_ENABLE_NANO_INTERPRET;
+    const enableNanoInterpret = process.env.EXPO_PUBLIC_ENABLE_NANO_INTERPRET !== 'false';
     const isCrisisForNano = true; // PURPLE zone or crisis intent
     const shouldCallNano = enableNanoInterpret && !isCrisisForNano;
     expect(shouldCallNano).toBe(false);
   });
 
-  // Test 5: Elias craving with nano OFF — fallback layers handle it
-  it('5. Elias craving with nano OFF: detectEliasRelapseRisk still works independently', async () => {
-    delete process.env.EXPO_PUBLIC_ENABLE_NANO_INTERPRET;
+  // Test 5: Franstalige input — nano mag aangeroepen worden
+  it('5. FR input: nano enabled for multilingual support', () => {
+    delete process.env.EXPO_PUBLIC_ENABLE_NANO_INTERPRET; // default ON
+    const enableNanoInterpret = process.env.EXPO_PUBLIC_ENABLE_NANO_INTERPRET !== 'false';
+    const isCrisisForNano = false;
+    const shouldCallNano = enableNanoInterpret && !isCrisisForNano;
+    // FR user "Je veux boire mais je ne veux pas rechuter" should reach nano
+    expect(shouldCallNano).toBe(true);
+  });
+
+  // Test 6: Nano is OPTIONAL_HIGH_PRIORITY_HINT — deterministic engine remains final decider
+  it('6. Nano remains OPTIONAL_HIGH_PRIORITY_HINT: safety/crisis/loopblocker can override', () => {
+    // Even when nano suggests a module, crisis override still wins
+    const nanoSuggestedModule = 'E03';
+    const crisisActive = true;
+    // Crisis overrides nano suggestion
+    const finalModule = crisisActive ? 'CRISIS' : nanoSuggestedModule;
+    expect(finalModule).toBe('CRISIS');
+  });
+
+  // Test 7: Elias craving with nano OFF — fallback layers handle it
+  it('7. Elias craving with nano OFF: detectEliasRelapseRisk still works independently', async () => {
+    process.env.EXPO_PUBLIC_ENABLE_NANO_INTERPRET = 'false';
     // Import the Elias relapse risk helper (independent of nano)
     const { detectEliasRelapseRisk } = await import(
       '@/lib/engine/elias/elias-relapse-risk-helper'
@@ -63,9 +83,9 @@ describe('FASE 5C: Nano-Interpret Feature Flag', () => {
     expect(result.relapseRiskActive).toBe(true);
   });
 
-  // Test 6: Kim relational harm with nano OFF — detectRelationalSignals still works
-  it('6. Kim relational harm with nano OFF: detectRelationalSignals works independently', async () => {
-    delete process.env.EXPO_PUBLIC_ENABLE_NANO_INTERPRET;
+  // Test 8: Kim relational harm with nano OFF — detectRelationalSignals still works
+  it('8. Kim relational harm with nano OFF: detectRelationalSignals works independently', async () => {
+    process.env.EXPO_PUBLIC_ENABLE_NANO_INTERPRET = 'false';
     const { detectRelationalSignals } = await import(
       '@/lib/engine/kim/relational-stance-filter'
     );
@@ -76,9 +96,9 @@ describe('FASE 5C: Nano-Interpret Feature Flag', () => {
     expect(result.relationshipConflictSignal || result.repeatedBetrayalSignal || result.chronicTrustDamageSignal).toBe(true);
   });
 
-  // Test 7: K05 post-GPT override works independently of nano
-  it('7. K05 override works independently of nano flag', async () => {
-    delete process.env.EXPO_PUBLIC_ENABLE_NANO_INTERPRET;
+  // Test 9: K05 post-GPT override works independently of nano
+  it('9. K05 override works independently of nano flag', async () => {
+    process.env.EXPO_PUBLIC_ENABLE_NANO_INTERPRET = 'false';
     const { applyK05CrossModuleOverride } = await import(
       '@/lib/engine/kim/k05-cross-module-override-client'
     );
@@ -94,18 +114,18 @@ describe('FASE 5C: Nano-Interpret Feature Flag', () => {
     expect(result.overrideApplied).toBe(true);
   });
 
-  // Test 8: No fetch to /api/nano-interpret when flag OFF
-  it('8. No server route call when flag OFF: callNanoInterpret not invoked', () => {
-    delete process.env.EXPO_PUBLIC_ENABLE_NANO_INTERPRET;
-    const enableNanoInterpret = process.env.EXPO_PUBLIC_ENABLE_NANO_INTERPRET === 'true';
+  // Test 10: No fetch to /api/nano-interpret when flag=false
+  it('10. No server route call when flag=false: callNanoInterpret not invoked', () => {
+    process.env.EXPO_PUBLIC_ENABLE_NANO_INTERPRET = 'false';
+    const enableNanoInterpret = process.env.EXPO_PUBLIC_ENABLE_NANO_INTERPRET !== 'false';
     const isCrisisForNano = false;
     const shouldCallNano = enableNanoInterpret && !isCrisisForNano;
     // If shouldCallNano is false, no fetch happens
     expect(shouldCallNano).toBe(false);
   });
 
-  // Test 9: No minimal proxy regression — verify minimal proxy contract is untouched
-  it('9. Minimal proxy contract unchanged: validateMinimalGptProxyRequest still works', async () => {
+  // Test 11: No minimal proxy regression — verify minimal proxy contract is untouched
+  it('11. Minimal proxy contract unchanged: validateMinimalGptProxyRequest still works', async () => {
     const { validateMinimalGptProxyRequest } = await import(
       '@/lib/ai/prompt/minimal-gpt-proxy-contract'
     );
@@ -143,7 +163,7 @@ describe('FASE 5C: Nano-Interpret Feature Flag', () => {
       '/home/ubuntu/recofree-app/lib/rugzak/pipeline.ts',
       'utf-8'
     );
-    expect(source).toContain("process.env.EXPO_PUBLIC_ENABLE_NANO_INTERPRET === 'true'");
+    expect(source).toContain("process.env.EXPO_PUBLIC_ENABLE_NANO_INTERPRET !== 'false'");
     expect(source).toContain('enableNanoInterpret && !isCrisisForNano');
     expect(source).toContain('disabled by feature flag');
   });

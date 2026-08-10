@@ -1189,7 +1189,7 @@ export async function processMessage(
   // On failure: falls back to keyword-based detection (existing behavior).
   let clientNanoResult: ClientNanoInterpretResult | null = null;
   const isCrisisForNano = sessionBuffer?.currentZoneColor === 'PURPLE' || sessionBuffer?.currentIntent === 'crisis';
-  const enableNanoInterpret = process.env.EXPO_PUBLIC_ENABLE_NANO_INTERPRET === 'true';
+  const enableNanoInterpret = process.env.EXPO_PUBLIC_ENABLE_NANO_INTERPRET !== 'false';
   if (enableNanoInterpret && !isCrisisForNano) {
     clientNanoResult = await callNanoInterpret(userMessage, backpack.userType as 'elias' | 'kim');
     if (clientNanoResult) {
