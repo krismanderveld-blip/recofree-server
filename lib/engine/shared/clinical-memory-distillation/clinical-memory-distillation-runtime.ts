@@ -11,11 +11,13 @@ import type {
   KimMemoryBridge,
   EliasMemoryBridge,
 } from './clinical-memory-distillation-types';
+import type { ClinicalMemoryBudgetSelectorOutput } from './clinical-memory-budget-selector';
 import {
   validateClinicalDistillationContext,
   getKimFormulationMemoryBridge,
   getEliasFormulationMemoryBridge,
 } from './clinical-memory-distillation-contract';
+import { selectClinicalMemoryForPrompt } from './clinical-memory-budget-selector';
 import {
   buildProjectionMarkersFromProjectionsDat,
   buildBackpackAnchorsFromBackpack,
@@ -79,6 +81,7 @@ export interface CMDRuntimeInput {
 export interface CMDRuntimeOutput {
   enabled: boolean;
   context: ClinicalDistillationContext | null;
+  selectorOutput: ClinicalMemoryBudgetSelectorOutput | null;
   validation: { ok: boolean; errors: string[] };
   skippedLayers: { layer: ClinicalMemorySourceLayer; reason: string }[];
   warnings: string[];
@@ -262,8 +265,22 @@ export function buildClinicalMemoryDistillationRuntimeContext(input: CMDRuntimeI
   const validation = validateClinicalDistillationContext(context);
   if (!validation.ok) {
     warnings.push(`CMD validation failed: ${validation.errors.length} errors`);
-    return { enabled: true, context: null, validation, skippedLayers, warnings };
+    return { enabled: true, context: null, selectorOutput: null, validation, skippedLayers, warnings };
   }
 
-  return { enabled: true, context, validation, skippedLayers, warnings };
+  // Run budget selector
+  let selectorOutput: ClinicalMemoryBudgetSelectorOutput | null = null;
+  try {
+    selectorOutput = selectClinicalMemoryForPrompt({
+      persona,
+      formulationInput: context.formulationInput,
+      maxPromptTokens: input.maxPromptTokens,
+      currentZone: input.currentZone,
+      nowLocal,
+    });
+  } catch (e) {
+    warnings.push('CMD selector failed — formulation continues without budget selection');
+  }
+
+  return { enabled: true, context, selectorOutput, validation, skippedLayers, warnings };
 }
