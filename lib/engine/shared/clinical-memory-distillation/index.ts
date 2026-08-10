@@ -84,3 +84,25 @@ export type {
   DayStructureCompletionInput,
   RelapsePlanInput,
 } from './clinical-memory-distillation-builders';
+
+export {
+  buildCMDFromDist01,
+  mapDist01EntityToMemory,
+  mapDist01SignalToCMD,
+  mapDist01ContextToCMD,
+  createDist01EvidenceItem,
+  classifyDist01Domain,
+  inferDist01UsePermissions,
+  shouldSkipDist01Item,
+  buildRecoveryChainCandidatesFromDist01,
+  buildRelationalPatternCandidatesFromDist01,
+  buildDist01CMDContextParts,
+} from './dist01-cmd-bridge';
+
+export type {
+  Dist01BridgeEntityInput,
+  Dist01BridgeSignalInput,
+  Dist01BridgeContextInput,
+  Dist01CmdBridgeInput,
+  Dist01CmdBridgeOutput,
+} from './dist01-cmd-bridge';
