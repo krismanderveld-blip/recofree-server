@@ -17,6 +17,7 @@ import { registerDebugPromptRoute, setSessionCacheGetter } from "../debug-prompt
 import { registerGptProxyRoute } from "../gpt-proxy";
 import { registerNanoInterpretRoute } from "../nano-interpret-proxy";
 import { getSessionCache } from "../ai-chat";
+import { registerMinimalGptProxyRoute } from "../minimal-gpt-proxy";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 
@@ -80,6 +81,7 @@ async function startServer() {
   registerGptProxyRoute(app);
   registerNanoInterpretRoute(app);
   registerDebugPromptRoute(app);
+  registerMinimalGptProxyRoute(app);
   setSessionCacheGetter(getSessionCache);
 
   app.get("/api/health", (_req, res) => {
