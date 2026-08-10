@@ -46,3 +46,41 @@ export {
   classifyMemoryLayerForCMD,
   getAllowedUsePermissionsForSource,
 } from './clinical-memory-distillation-contract';
+
+export {
+  mapConfidenceToClinicalMemoryCertainty,
+  mapTimestampToFreshness,
+  mapZoneToVSPZone,
+  mapTrend,
+  truncateAnchorText,
+} from './clinical-memory-distillation-mappers';
+
+export {
+  buildProjectionMarkersFromProjectionsDat,
+  buildBackpackAnchorsFromBackpack,
+  buildVSPAnchorsFromVspProfile,
+  buildERPAnchorsFromEigenRegiePlan,
+  buildProgressTrendSignalsFromStateDat,
+  buildDayStructureSignals,
+  buildSobrietySignals,
+  buildRelapsePlanSignals,
+  buildModuleUsageSignalsFromUserDat,
+  buildRecurrentPatternsFromUserDat,
+  buildRiskAndProtectiveMarkersFromDistillationInput,
+  buildClinicalDistillationContextFromParts,
+} from './clinical-memory-distillation-builders';
+
+export type {
+  ProjectionInput,
+  BackpackSectionInput,
+  VSPSignalInput,
+  ERPFieldInput,
+  MoodHistoryInput,
+  ModuleUsageInput,
+  TriggerPatternInput,
+  SchemaTendencyInput,
+  ModeTendencyInput,
+  DistillationSignalInput,
+  DayStructureCompletionInput,
+  RelapsePlanInput,
+} from './clinical-memory-distillation-builders';
