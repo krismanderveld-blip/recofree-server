@@ -3292,10 +3292,15 @@ export async function processMessage(
     try {
       // GUIDANCE DEPTH RESOLVER — determines effective depth from user setting + context
       const { resolveGuidanceDepth } = require('../engine/shared/guidance-depth-resolver');
+      const { detectRelationalSignals } = require('../engine/kim/relational-stance-filter');
+
+      // Detect relational harm pattern from user message BEFORE resolver call
+      const harmSignalsForResolver = detectRelationalSignals(userMessage);
+      const isRelationalHarm = harmSignalsForResolver.relationalHarmPatternSignal;
+
       const userGuidanceDepthSetting = currentUserDat.guidanceDepth ?? 'normal';
       const zoneForResolver = (sessionBuffer?.currentZoneColor ?? 'green').toLowerCase();
       const isSafetyFirst = crisisLevel >= 2;
-      const isRelationalHarm = false; // Will be set below if stance filter detects it
       const isRelapseRisk = false; // Not applicable for Kim
       const hasBackpackContent = !!(backpack.sections && Object.values(backpack.sections).some((s: any) => s?.content));
       const hasUserDatContent = !!(currentUserDat.extractedEntities?.persons?.length);
@@ -3314,7 +3319,7 @@ export async function processMessage(
         contextQuality: contextQualityForResolver,
       });
 
-      console.log(`[Pipeline] GuidanceDepthResolver: user=${guidanceDepthResult.userDepth} effective=${guidanceDepthResult.effectiveDepth} mode=${guidanceDepthResult.maxFormulationMode} reason=${guidanceDepthResult.reason} overridden=${guidanceDepthResult.wasUserDepthOverridden}`);
+      console.log(`[Pipeline] GuidanceDepthResolver: user=${guidanceDepthResult.userDepth} effective=${guidanceDepthResult.effectiveDepth} mode=${guidanceDepthResult.maxFormulationMode} reason=${guidanceDepthResult.reason} overridden=${guidanceDepthResult.wasUserDepthOverridden} harmActive=${isRelationalHarm}`);
 
       // GLOBAL_KIM_DEPTH_AND_NAMING_LAYER — always active for Kim (non-crisis)
       const { detectDepthLevel, buildDepthAndNamingDirective } = require('../engine/kim/depth-and-naming-layer');
