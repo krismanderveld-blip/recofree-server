@@ -3290,13 +3290,39 @@ export async function processMessage(
   let depthNamingDirective: string | undefined;
   if (backpack.userType === 'kim' && crisisLevel < 2) {
     try {
+      // GUIDANCE DEPTH RESOLVER — determines effective depth from user setting + context
+      const { resolveGuidanceDepth } = require('../engine/shared/guidance-depth-resolver');
+      const userGuidanceDepthSetting = currentUserDat.guidanceDepth ?? 'normal';
+      const zoneForResolver = (sessionBuffer?.currentZoneColor ?? 'green').toLowerCase();
+      const isSafetyFirst = crisisLevel >= 2;
+      const isRelationalHarm = false; // Will be set below if stance filter detects it
+      const isRelapseRisk = false; // Not applicable for Kim
+      const hasBackpackContent = !!(backpack.sections && Object.values(backpack.sections).some((s: any) => s?.content));
+      const hasUserDatContent = !!(currentUserDat.extractedEntities?.persons?.length);
+      const contextQualityForResolver = hasBackpackContent && hasUserDatContent ? 'rich' : hasBackpackContent || hasUserDatContent ? 'sufficient' : userMessage.length > 100 ? 'partial' : 'insufficient';
+      const isExplicitDeep = /ga dieper|meer detail|vertel meer|leg uit|explain more|go deeper/i.test(userMessage);
+
+      const guidanceDepthResult = resolveGuidanceDepth({
+        persona: 'kim',
+        userGuidanceDepth: typeof userGuidanceDepthSetting === 'string' ? userGuidanceDepthSetting : 'normal',
+        zone: zoneForResolver,
+        crisisLevel,
+        safetyFirstActive: isSafetyFirst,
+        relationalHarmPatternActive: isRelationalHarm,
+        relapseRiskActive: isRelapseRisk,
+        explicitDeepRequest: isExplicitDeep,
+        contextQuality: contextQualityForResolver,
+      });
+
+      console.log(`[Pipeline] GuidanceDepthResolver: user=${guidanceDepthResult.userDepth} effective=${guidanceDepthResult.effectiveDepth} mode=${guidanceDepthResult.maxFormulationMode} reason=${guidanceDepthResult.reason} overridden=${guidanceDepthResult.wasUserDepthOverridden}`);
+
       // GLOBAL_KIM_DEPTH_AND_NAMING_LAYER — always active for Kim (non-crisis)
       const { detectDepthLevel, buildDepthAndNamingDirective } = require('../engine/kim/depth-and-naming-layer');
       const safetyLevelForDepth = crisisLevel >= 2 ? 'crisis' : crisisLevel >= 1 ? 'elevated' : 'none';
-      const depthLevel = detectDepthLevel(userMessage, safetyLevelForDepth, crisisLevel >= 2, true);
+      const depthLevel = detectDepthLevel(userMessage, safetyLevelForDepth, crisisLevel >= 2, true, guidanceDepthResult.effectiveDepth);
       if (depthLevel !== 'SKIP') {
         depthNamingDirective = buildDepthAndNamingDirective(depthLevel);
-        console.log(`[Pipeline] Kim Depth & Naming Layer: level=${depthLevel}`);
+        console.log(`[Pipeline] Kim Depth & Naming Layer: level=${depthLevel} (capped by effectiveDepth=${guidanceDepthResult.effectiveDepth})`);
       }
 
       // Check for RELATIONAL_PATTERN_ASSESSMENT_MODE first (explicit assessment question)

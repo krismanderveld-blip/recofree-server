@@ -15,6 +15,8 @@
  * THREE DEPTH PROFILES: LOW, MEDIUM, HIGH
  */
 
+import type { EffectiveDepth } from '../shared/guidance-depth-resolver';
+
 // ─── Depth Detection ─────────────────────────────────────────────────────────
 
 export type DepthLevel = 'LOW' | 'MEDIUM' | 'HIGH' | 'SKIP';
@@ -59,27 +61,53 @@ const SKIP_INDICATORS = [
 
 /**
  * Detect the appropriate depth level for Kim's response.
+ * If effectiveDepth is provided (from guidance-depth-resolver), it constrains the result.
  */
 export function detectDepthLevel(
   userMessage: string,
   safetyLevel: string,
   isCrisis: boolean,
   isKim: boolean,
+  effectiveDepth?: EffectiveDepth,
 ): DepthLevel {
   if (!isKim) return 'SKIP';
-  if (isCrisis || safetyLevel === 'crisis' || safetyLevel === 'elevated') return 'SKIP';
+  if (isCrisis || safetyLevel === 'crisis' || safetyLevel === 'elevated' || effectiveDepth === 'safety') return 'SKIP';
   if (userMessage.length < 15) return 'SKIP';
   if (SKIP_INDICATORS.some(p => p.test(userMessage))) return 'SKIP';
 
   const lower = userMessage.toLowerCase();
 
-  if (HIGH_DEPTH_KEYWORDS.some(k => lower.includes(k))) return 'HIGH';
-  if (MEDIUM_DEPTH_KEYWORDS.some(k => lower.includes(k))) return 'MEDIUM';
+  // Detect context-based depth
+  let contextDepth: DepthLevel = 'LOW';
+  if (HIGH_DEPTH_KEYWORDS.some(k => lower.includes(k))) contextDepth = 'HIGH';
+  else if (MEDIUM_DEPTH_KEYWORDS.some(k => lower.includes(k))) contextDepth = 'MEDIUM';
+  else if (/hij|zij|partner|de ander|mijn man|mijn vrouw|he |she |my partner/i.test(userMessage)) contextDepth = 'MEDIUM';
 
-  // If message is relational (mentions people, feelings about others)
-  if (/hij|zij|partner|de ander|mijn man|mijn vrouw|he |she |my partner/i.test(userMessage)) return 'MEDIUM';
+  // If no effectiveDepth constraint, return context-based depth
+  if (!effectiveDepth) return contextDepth;
 
-  return 'LOW';
+  // Apply effectiveDepth constraint (cap the depth)
+  return capDepthByEffective(contextDepth, effectiveDepth);
+}
+
+/**
+ * Cap the context-detected depth by the guidance-depth-resolver's effectiveDepth.
+ * effectiveDepth 'low' → max LOW
+ * effectiveDepth 'medium' → max MEDIUM
+ * effectiveDepth 'high' → no cap
+ * effectiveDepth 'safety' → SKIP (handled above)
+ */
+function capDepthByEffective(contextDepth: DepthLevel, effectiveDepth: EffectiveDepth): DepthLevel {
+  const depthOrder: Record<DepthLevel, number> = { SKIP: 0, LOW: 1, MEDIUM: 2, HIGH: 3 };
+  const effectiveMax: Record<EffectiveDepth, DepthLevel> = {
+    safety: 'SKIP',
+    low: 'LOW',
+    medium: 'MEDIUM',
+    high: 'HIGH',
+  };
+  const maxAllowed = effectiveMax[effectiveDepth];
+  if (depthOrder[contextDepth] > depthOrder[maxAllowed]) return maxAllowed;
+  return contextDepth;
 }
 
 // ─── Naming Layer Directive Builder ──────────────────────────────────────────
