@@ -3143,14 +3143,15 @@ export async function generateAIResponse(
           "Content-Type": "application/json",
           Authorization: `Bearer ${apiKey}`,
         },
-        body: JSON.stringify({
-          model: selectedModel,
-          messages,
-          max_tokens: 900,
-          temperature: 0.4,
-          presence_penalty: 0.3,
-          frequency_penalty: 0.2,
-        }),
+       body: JSON.stringify({
+         model: selectedModel,
+         messages,
+         max_tokens: 900,
+         temperature: 0.4,
+         presence_penalty: 0.3,
+         frequency_penalty: 0.2,
+         store: false,
+       }),
       }
     );
   } catch (error) {
