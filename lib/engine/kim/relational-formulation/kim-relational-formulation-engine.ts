@@ -62,7 +62,7 @@ interface DetectedPattern {
 
 // ── Repetition markers ──
 
-const REPETITION_MARKERS = /meerdere keren|telkens|opnieuw|altijd|al vaak|again|repeatedly|every time/i;
+const REPETITION_MARKERS = /weer|alweer|nog eens|meerdere keren|telkens|opnieuw|altijd|al vaak|again|repeatedly|every time/i;
 
 // ── Pattern 1: Trust / lying / betrayal ──
 
@@ -95,6 +95,7 @@ const SEX_PRESSURE_TRIGGERS = /druk|verplicht|tegen mijn zin|hij duwt|pressure|m
 function detectAffection(text: string): DetectedPattern | null {
   if (!AFFECTION_TRIGGERS.test(text)) return null;
   const hasSexPressure = SEX_PRESSURE_TRIGGERS.test(text);
+  const hasNuchterheid = /nuchter|sober|gestopt met drinken|clean/i.test(text) && /geen affectie|vertrouwen|relatie|afstand|koud|intimiteit/i.test(text);
   return {
     domains: hasSexPressure ? ['affection', 'intimacy', 'sexual_pressure', 'trust'] : ['affection', 'intimacy', 'trust'],
     severity: REPETITION_MARKERS.test(text) ? 'repeated_pattern' : 'single_event',
@@ -102,11 +103,16 @@ function detectAffection(text: string): DetectedPattern | null {
       'affectie kan verdwijnen wanneer veiligheid of vrijheid ontbreekt',
       'seks of nabijheid mag nooit als herstelbewijs worden opgeëist',
       'verlangen en druk moeten uit elkaar gehouden worden',
+      ...(hasSexPressure ? ['seksuele nabijheid is pas veilig wanneer nee zeggen veilig voelt', 'vrij voelen betekent dat stoppen, vertragen of weigeren geen straf, druk of verwijt oproept'] : []),
+      ...(hasNuchterheid ? ['nuchter worden is niet hetzelfde als relationeel herstellen'] : []),
     ],
     mustAvoid: ['seks hoort erbij', 'je moet seks hebben', 'als je van hem houdt dan'],
     facts: [{ id: 'f-aff-1', text: 'affectie/intimiteit thema gedetecteerd', source: 'user_message', confidence: 'medium' }],
     caregiverImpacts: [{ id: 'ci-aff-1', domain: hasSexPressure ? 'sexual_pressure' : 'affection', text: 'affectie of nabijheid voelt niet veilig of vrij', confidence: 'medium' }],
-    domainSeparations: [{ id: 'ds-aff-1', domainA: 'intimacy', domainB: 'sexual_pressure', distinction: 'Intimiteit vraagt vrije veiligheid; druk maakt nabijheid minder veilig.', mustMention: hasSexPressure }],
+    domainSeparations: [
+      { id: 'ds-aff-1', domainA: 'intimacy', domainB: 'sexual_pressure', distinction: 'Intimiteit vraagt vrije veiligheid; druk maakt nabijheid minder veilig.', mustMention: hasSexPressure },
+      ...(hasNuchterheid ? [{ id: 'ds-aff-nuchter', domainA: 'addiction_recovery' as KimRelationalDomain, domainB: 'relationship_repair' as KimRelationalDomain, distinction: 'Nuchter worden is niet hetzelfde als relationeel herstellen. Verslaving stoppen herstelt niet automatisch vertrouwen of affectie.', mustMention: true }] : []),
+    ],
     repairConditions: [{ id: 'rc-aff-1', condition: 'nabijheid zonder druk of verwachting', owner: 'both', nonNegotiable: true, confidence: 'medium' }],
     behaviorFunctions: [],
   };
@@ -171,12 +177,16 @@ function detectControl(text: string): DetectedPattern | null {
       'controle kan een poging zijn om veiligheid te voelen',
       'ontwijken kan spanning tijdelijk verlagen maar vertrouwen verder beschadigen',
       'het patroon is vaak controleur versus ontwijker, niet simpel dader versus slachtoffer',
+      'een eerste reparatiestap is een afgesproken eerlijkheidsmoment zonder ondervraging en zonder ontwijken',
     ],
     mustAvoid: [],
     facts: [{ id: 'f-ctrl-1', text: 'controle-ontwijking patroon gedetecteerd', source: 'user_message', confidence: 'medium' }],
     caregiverImpacts: [{ id: 'ci-ctrl-1', domain: 'control', text: 'controlegedrag als poging tot veiligheid', confidence: 'medium' }],
     domainSeparations: [],
-    repairConditions: [{ id: 'rc-ctrl-1', condition: 'open communicatie zonder controle of ontwijking', owner: 'both', nonNegotiable: false, confidence: 'medium' }],
+    repairConditions: [
+      { id: 'rc-ctrl-1', condition: 'open communicatie zonder controle of ontwijking', owner: 'both', nonNegotiable: false, confidence: 'medium' },
+      { id: 'rc-ctrl-2', condition: 'het patroon kan pas zakken als eerlijkheid voorspelbaar wordt en controle niet de enige veiligheidsstrategie blijft', owner: 'both', nonNegotiable: false, confidence: 'medium' },
+    ],
     behaviorFunctions: [{ id: 'bf-ctrl-1', behavior: 'controleren of checken', possibleFunction: 'veiligheid zoeken na vertrouwensbreuk', explanationNotExcuse: true, owner: 'caregiver', confidence: 'medium' }],
   };
 }

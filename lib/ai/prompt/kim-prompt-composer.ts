@@ -140,6 +140,7 @@ export function buildKimRelationalFormulationBlock(
   // Ending style and max questions
   lines.push(`Ending style: ${context.endingStyle}`);
   lines.push(`Max questions: ${context.maxQuestions}`);
+  lines.push('Ending rule: Vermijd generieke eindvragen zoals "wat heb jij nodig?" of "hoe voelt dat?". Eindig liever met één concrete richting, grenszin of herstelvoorwaarde. Maximaal één vraag, en alleen als die richting geeft.');
 
   return lines.join('\n');
 }
