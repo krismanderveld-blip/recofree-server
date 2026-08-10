@@ -47,6 +47,9 @@ export interface KimRelationalFormulationInput {
   cmdMemory?: import('@/lib/engine/shared/clinical-memory-distillation/clinical-memory-distillation-types').KimMemoryBridge | null;
 }
 
+import { evaluateKimCMDTriggerEligibility } from './kim-cmd-trigger-eligibility';
+import type { KimCMDTriggerResult } from './kim-cmd-trigger-eligibility';
+
 // ── Pattern Detection Types ──
 
 interface DetectedPattern {
@@ -380,10 +383,40 @@ export function buildKimRelationalFormulationContext(
 
   // If no patterns detected
   if (detectedPatterns.length === 0) {
-    const ctx = createEmptyKimRelationalFormulationContext();
-    ctx.mode = 'insufficient_context';
-    ctx.createdAtLocal = input.localTimestamp;
-    return ctx;
+    // FASE 8I: CMD-aware trigger path — if regex found nothing, check CMD memory
+    const cmdTrigger = evaluateKimCMDTriggerEligibility({
+      persona: input.persona,
+      cmdMemory: input.cmdMemory ?? null,
+    });
+    if (!cmdTrigger.shouldTrigger) {
+      const ctx = createEmptyKimRelationalFormulationContext();
+      ctx.mode = 'insufficient_context';
+      ctx.createdAtLocal = input.localTimestamp;
+      return ctx;
+    }
+    // CMD trigger active — build formulation from CMD memory
+    const cmdDomains = cmdTrigger.triggerDomains as KimRelationalDomain[];
+    const cmdSeverity: KimRelationalSeverity = cmdTrigger.triggerStrength === 'strong' ? 'repeated_pattern' : 'single_event';
+    const cmdCtx = createEmptyKimRelationalFormulationContext();
+    cmdCtx.mode = mode;
+    cmdCtx.severity = cmdSeverity;
+    cmdCtx.activeDomains = cmdDomains.length > 0 ? cmdDomains : ['self_loss'];
+    cmdCtx.activeLayers = ['facts', 'caregiver_impact', 'domain_separation'];
+    cmdCtx.mustMention = cmdTrigger.mustMention;
+    cmdCtx.mustAvoid = [...cmdTrigger.mustAvoid, 'geen diagnose', 'geen demonisering', 'geen relatiebreukdruk'];
+    cmdCtx.endingStyle = 'reflective';
+    cmdCtx.maxQuestions = 1;
+    cmdCtx.createdAtLocal = input.localTimestamp;
+    // Add CMD-derived facts/hypotheses as relational facts
+    if (input.cmdMemory) {
+      for (const h of input.cmdMemory.formulationReadyHypotheses.slice(0, 3)) {
+        cmdCtx.facts.push({ id: `cmd_h_${h.id}`, text: h.hypothesis, source: 'memory_context', confidence: 'medium' });
+      }
+      for (const rp of input.cmdMemory.relationalPatterns.slice(0, 2)) {
+        cmdCtx.repairConditions.push({ id: `cmd_rp_${rp.id}`, condition: rp.repairPossibleConditions[0] ?? 'eerlijkheid en veiligheid over tijd', owner: 'both', nonNegotiable: false, confidence: 'medium' });
+      }
+    }
+    return cmdCtx;
   }
 
   // Merge detected patterns
