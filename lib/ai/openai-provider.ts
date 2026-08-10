@@ -9,6 +9,7 @@ import { analyzeRelationalPatterns } from '@/lib/rugzak/relational-pattern-analy
 import { buildSlimLivePayload } from '@/lib/ai/live-message-filter';
 import { ELIAS_DEFAULT_MODULE } from '@/lib/engine/elias/module-catalog';
 import { LocalDeviceTimeService } from "@/lib/core/time";
+import type { MinimalGptProxyRequest, MinimalGptProxyResponse } from '@/lib/ai/prompt/minimal-gpt-proxy-contract';
 
 /**
  * OpenAIProvider — Routes through backend tRPC to OpenAI.
@@ -839,6 +840,143 @@ export class OpenAIProvider implements AIProvider {
       }
 
       // Primary: /api/gpt-proxy (plain JSON, works on Railway)
+      // ── STEP 4: ROUTE SELECTION ──
+      // Feature flag: EXPO_PUBLIC_ENABLE_MINIMAL_GPT_PROXY=true → use client-built prompt + minimal proxy
+      const minimalProxyEnabled = process.env.EXPO_PUBLIC_ENABLE_MINIMAL_GPT_PROXY === 'true';
+
+      if (minimalProxyEnabled) {
+        // ═══════════════════════════════════════════════════════════════════
+        // MINIMAL GPT PROXY ROUTE (client-built prompt, store:false, no legacy)
+        // ═══════════════════════════════════════════════════════════════════
+        const minimalProxyUrl = `${apiBaseUrl}/api/minimal-gpt-proxy`;
+
+        // Build client system prompt
+        const { buildClientSystemPrompt } = require('./prompt/client-system-prompt-builder');
+        const promptInput = {
+          persona: context.userType as 'kim' | 'elias',
+          userName: context.userName,
+          selectedModule: dominantModule,
+          crisisLevel: context.crisisLevel ?? 0,
+          safetyLevel: (context.crisisLevel ?? 0) >= 2 ? 'crisis' : 'none',
+          relationalStanceDirective: context.relationalStanceFilter ?? undefined,
+          effectiveDepth: (context as any).effectiveDepth ?? undefined,
+          maxFormulationMode: (context as any).maxFormulationMode ?? undefined,
+          userGuidanceDepth: context.guidanceDepth ?? 'normal',
+          regulationInstruction: context.regulationResult?.gptInstruction ?? undefined,
+          interventionContinuityBlock: context.interventionContinuity ?? undefined,
+          engineDirective: context.engineDirective ?? undefined,
+          contextSummary: context.contextSummary ?? undefined,
+          contextDatSerialized: context.contextDatSerialized ?? undefined,
+          deepeningBlock: context.deepeningBlock ?? undefined,
+          projectionContext: context.projectionContext ?? undefined,
+          moodSliders: context.moodSliders,
+          vspLevel: context.vspLevel ?? undefined,
+          relapseIntentDetected: context.relapseIntent?.detected ?? false,
+          sessionDurationMinutes: context.sessionDurationMinutes ?? 0,
+          recentHistory: gptPayload.conversationWindow?.map((m: any) => ({
+            role: m.role === 'user' ? 'user' : 'assistant',
+            content: m.content ?? '',
+          })) ?? [],
+        };
+
+        const clientPromptResult = buildClientSystemPrompt(promptInput);
+
+        // Select model (same logic as existing: default gpt-4o-mini, upgrade for crisis/clinical)
+        let selectedModel = 'gpt-4o-mini';
+        if ((context.crisisLevel ?? 0) >= 2 || context.userDat?.clinicalModeActive) {
+          selectedModel = 'gpt-4o';
+        }
+
+        // Build messages array from conversation window
+        const messages: Array<{ role: 'user' | 'assistant'; content: string }> = 
+          gptPayload.conversationWindow?.map((m: any) => ({
+            role: m.role === 'user' ? 'user' as const : 'assistant' as const,
+            content: m.content ?? '',
+          })) ?? [];
+
+        // Add current user message if not already in window
+        if (gptPayload.message && (messages.length === 0 || messages[messages.length - 1].content !== gptPayload.message)) {
+          messages.push({ role: 'user', content: gptPayload.message });
+        }
+
+        // Build minimal proxy request
+        const requestId = `mp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+        const minimalRequest: MinimalGptProxyRequest = {
+          contractVersion: 'minimal_gpt_proxy_v1',
+          requestId,
+          persona: (context.userType as 'kim' | 'elias') ?? 'elias',
+          model: selectedModel,
+          systemPrompt: clientPromptResult.systemPrompt,
+          messages,
+          maxTokens: 900,
+          temperature: 0.4,
+          topP: 1,
+          store: false,
+          metadata: {
+            clientBuildVersion: '1.2.63',
+            promptBuildVersion: clientPromptResult.promptBuildVersion,
+          },
+        };
+
+        // Logging (no content)
+        console.log(`[OpenAIProvider] MINIMAL PROXY: route=/api/minimal-gpt-proxy requestId=${requestId} model=${selectedModel} persona=${minimalRequest.persona}`);
+
+        const token = await Auth.getSessionToken();
+        const minimalHeaders: Record<string, string> = { 'Content-Type': 'application/json' };
+        if (token) minimalHeaders['Authorization'] = `Bearer ${token}`;
+
+        // Send to minimal proxy — NO fallback to legacy on failure
+        const minimalResponse = await fetchWithRetry(minimalProxyUrl, {
+          method: 'POST',
+          headers: minimalHeaders,
+          body: JSON.stringify(minimalRequest),
+        });
+
+        console.log(`[OpenAIProvider] MINIMAL PROXY response: status=${minimalResponse.status} requestId=${requestId}`);
+
+        if (!minimalResponse.ok) {
+          const errorText = await minimalResponse.text();
+          const shortError = errorText.length > 200 ? errorText.substring(0, 200) + '...' : errorText;
+          return {
+            response: `[DEBUG] Minimal proxy returned ${minimalResponse.status}.\n\nURL: ${minimalProxyUrl}\nDetails: ${shortError}\n\nPlease screenshot this and report it.`,
+            advisoryEmotion: undefined,
+            advisoryConfidence: undefined,
+            tokenUsage: undefined,
+          };
+        }
+
+        const minimalData: MinimalGptProxyResponse = await minimalResponse.json();
+
+        if (!minimalData.ok) {
+          return {
+            response: `[DEBUG] Minimal proxy error: ${minimalData.errorCode}\n\n${minimalData.errorMessage}\n\nPlease screenshot this and report it.`,
+            advisoryEmotion: undefined,
+            advisoryConfidence: undefined,
+            tokenUsage: undefined,
+          };
+        }
+
+        // Log token usage (no content)
+        if (minimalData.usage) {
+          console.log(`[CostControl] Minimal proxy tokens: ${minimalData.usage.inputTokens ?? 0} prompt + ${minimalData.usage.outputTokens ?? 0} completion = ${minimalData.usage.totalTokens ?? 0} total`);
+        }
+
+        return {
+          response: minimalData.text,
+          advisoryEmotion: undefined,
+          advisoryConfidence: undefined,
+          tokenUsage: minimalData.usage ? {
+            promptTokens: minimalData.usage.inputTokens ?? 0,
+            completionTokens: minimalData.usage.outputTokens ?? 0,
+            totalTokens: minimalData.usage.totalTokens ?? 0,
+          } : undefined,
+          selectedModel: minimalData.modelUsed,
+        };
+      }
+
+      // ═══════════════════════════════════════════════════════════════════
+      // LEGACY ROUTE (default — flag OFF or absent)
+      // ═══════════════════════════════════════════════════════════════════
       const proxyUrl = `${apiBaseUrl}/api/gpt-proxy`;
 
       // Logging
