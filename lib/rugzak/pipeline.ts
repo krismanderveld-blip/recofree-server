@@ -3185,6 +3185,9 @@ export async function processMessage(
 
   // ── DIST01: Build distillation context (continuous entity/signal extraction) ──
   let distillationContextStr: string | undefined;
+  let dist01LoadedEntities: any[] | undefined;
+  let dist01LoadedSignals: any[] | undefined;
+  let dist01LoadedContexts: any[] | undefined;
   try {
     const distPersona = (backpack.userType || 'elias') as 'elias' | 'kim';
     const distStoreApi = createDistillationStore();
@@ -3202,6 +3205,12 @@ export async function processMessage(
     if (detections.entities.length > 0 || detections.signals.length > 0 || detections.contexts.length > 0) {
       distData = distStoreApi.mergeDetections(distData, detections.entities, detections.signals, detections.contexts, 'chat', sessionId, localDayKey);
       await distStoreApi.save(distData);
+    }
+    // Hoist DIST01 data for CMD runtime (no extra storage read)
+    dist01LoadedEntities = distData.entities;
+    dist01LoadedSignals = distData.signals;
+    dist01LoadedContexts = distData.contexts;
+    if (detections.entities.length > 0 || detections.signals.length > 0 || detections.contexts.length > 0) {
       // DIRECT WRITE: Detected persons go to user.dat/extractedEntities immediately
       if (detections.entities.length > 0) {
         try {
@@ -3308,9 +3317,23 @@ export async function processMessage(
         relapseEvents: (currentUserDat as any).sobriety?.relapseCount ?? undefined,
         recentRelapse: (currentUserDat as any).sobriety?.recentRelapse ?? false,
         relapsePlanAvailable: !!(currentUserDat as any).relapsePlan,
-        dist01Entities: undefined,
-        dist01Signals: undefined,
-        dist01Contexts: undefined,
+        dist01Entities: dist01LoadedEntities?.map((e: any) => ({
+          id: e.id, type: e.entityType, label: e.name, text: e.name,
+          relation: e.relation, confidence: e.confidence ?? 'medium',
+          firstMentionedAt: e.firstMentionedAt, lastMentionedAt: e.lastMentionedAt,
+        })) ?? undefined,
+        dist01Signals: dist01LoadedSignals?.map((s: any) => ({
+          id: s.id, type: s.signalType, label: s.normalizedText, text: s.normalizedText,
+          category: s.signalType === 'protective_factor' ? 'protective' : s.signalType === 'risk_factor' ? 'risk' : s.signalType,
+          confidence: s.confidence ?? 'medium', valence: s.valence ?? 'neutral',
+          mentionCount: s.detectionCount,
+        })) ?? undefined,
+        dist01Contexts: dist01LoadedContexts?.map((c: any) => ({
+          id: c.id, type: c.contextType, label: c.summary, text: c.summary,
+          confidence: 'medium',
+          firstMentionedAt: c.firstMentionedAt, lastMentionedAt: c.lastMentionedAt,
+          sourceText: c.summary,
+        })) ?? undefined,
         nowLocal: new Date().toISOString(),
       });
       if (cmdResult.enabled && cmdResult.context && cmdResult.validation.ok) {

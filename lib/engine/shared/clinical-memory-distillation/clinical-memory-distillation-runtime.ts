@@ -195,11 +195,15 @@ export function buildClinicalMemoryDistillationRuntimeContext(input: CMDRuntimeI
   let relationalPatterns = [] as any[];
 
   if (input.dist01Entities || input.dist01Signals || input.dist01Contexts) {
+    // Filter null/undefined/invalid items from DIST01 arrays (defensive)
+    const safeEntities = (input.dist01Entities ?? []).filter((e): e is Dist01BridgeEntityInput => e != null && typeof e === 'object');
+    const safeSignals = (input.dist01Signals ?? []).filter((s): s is Dist01BridgeSignalInput => s != null && typeof s === 'object');
+    const safeContexts = (input.dist01Contexts ?? []).filter((c): c is Dist01BridgeContextInput => c != null && typeof c === 'object');
     const dist01Output = buildCMDFromDist01({
       persona,
-      entities: input.dist01Entities ?? [],
-      signals: input.dist01Signals ?? [],
-      contexts: input.dist01Contexts ?? [],
+      entities: safeEntities,
+      signals: safeSignals,
+      contexts: safeContexts,
       nowLocal,
     });
     dist01RiskMarkers = dist01Output.riskMarkers;
@@ -211,14 +215,14 @@ export function buildClinicalMemoryDistillationRuntimeContext(input: CMDRuntimeI
     // Recovery chains (Elias only)
     recoveryChains = buildRecoveryChainCandidatesFromDist01({
       persona,
-      signals: input.dist01Signals ?? [],
+      signals: safeSignals,
       nowLocal,
     });
 
     // Relational patterns (Kim only)
     relationalPatterns = buildRelationalPatternCandidatesFromDist01({
       persona,
-      signals: input.dist01Signals ?? [],
+      signals: safeSignals,
       nowLocal,
     });
   } else {
