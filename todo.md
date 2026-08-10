@@ -2856,3 +2856,5 @@
 - [x] FASE 7B: Engine V1 built — 10 pattern detectors, input type, 52 tests, no pipeline activation
 - [x] FASE 7C: Pipeline integration for Elias (inject formulation context in GPT system prompt)
 - [ ] FASE 7D: Output quality test via Railway minimal proxy
+- [x] FASE 7D: Output quality test via Railway minimal proxy (9.54/10 average, all pass)
+- [x] FASE 7E: Tuning patch — shame cycle, overload support, ambivalence stage-of-change

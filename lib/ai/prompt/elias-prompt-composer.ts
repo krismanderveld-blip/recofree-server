@@ -162,6 +162,21 @@ export function buildEliasRecoveryFormulationBlock(
     }
   }
 
+  // Shame loop instruction (when shame detected)
+  if (context.shameLoops.length > 0) {
+    lines.push('Shame loop: benoem de schaamtecyclus concreet, zonder zelfhaat te versterken.');
+  }
+
+  // Support as recovery action (when support plan present)
+  if (context.supportPlan.length > 0) {
+    lines.push('Support rule: benoem steun als herstelactie, niet als zwakte.');
+  }
+
+  // Stage of change (when present, human framing only)
+  if (context.stageOfChange) {
+    lines.push(`Stage: ${context.stageOfChange.stage} — gebruik alleen als menselijke duiding, geen theoretische uitleg.`);
+  }
+
   // Ending style and max questions
   lines.push(`Ending style: ${context.endingStyle}`);
   lines.push(`Max questions: ${context.maxQuestions}`);

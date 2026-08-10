@@ -194,7 +194,7 @@ export function buildEliasRecoveryFormulationContext(input: EliasRecoveryFormula
     detected.push({
       id: 'shame',
       domains: ['shame', 'self_hatred', 'self_compassion', 'responsibility', 'agency'],
-      mustMention: ['schaamte mag richting geven zonder jezelf te vernietigen', 'verantwoordelijkheid nemen is niet hetzelfde als jezelf haten', 'herstel vraagt eerlijkheid zonder zelfvernietiging'],
+      mustMention: ['zelfveroordeling versterkt vaak de cyclus van schaamte, vermijden en craving', 'schaamte mag richting geven zonder jezelf te vernietigen', 'verantwoordelijkheid nemen is niet hetzelfde als jezelf haten'],
       mustAvoid: ['je bent zwak', 'je bent hopeloos', 'je verdient dit'],
     });
   }
@@ -211,12 +211,33 @@ export function buildEliasRecoveryFormulationContext(input: EliasRecoveryFormula
 
   // 6. Emotional overload / control loss
   if (EMOTIONAL_OVERLOAD_PATTERNS.test(text) || themes.includes('emotional_overload') || themes.includes('stress') || themes.includes('panic') || themes.includes('control_loss')) {
+    // Determine if support activation is needed alongside regulation
+    const needsSupportActivation = (
+      (input.stressLevel != null && input.stressLevel >= 7) ||
+      input.currentZone === 'orange' ||
+      input.currentZone === 'red' ||
+      input.currentZone === 'purple' ||
+      /ik trek het niet|controle kwijt|paniek|overspoeld|ik kan niet meer|overwhelmed|losing control|panic|i cannot handle this/i.test(text)
+    );
+    const overloadMustMention = ['eerst reguleren, dan begrijpen', 'het lichaam moet zakken voordat denken weer betrouwbaar wordt', 'één kleine fysieke stap is genoeg om de keten te onderbreken'];
+    if (needsSupportActivation) {
+      overloadMustMention.push('als je systeem zo hoog zit, is steun inschakelen geen overdrijven maar herstelgedrag');
+    }
+    const overloadDomains: EliasRecoveryDomain[] = ['emotional_overload', 'control_loss', 'body_state', 'relapse_prevention', 'agency'];
+    if (needsSupportActivation) overloadDomains.push('support_activation');
+    const overloadSupportPlan: EliasSupportPlanItem[] = needsSupportActivation
+      ? [
+          { id: 'sp-overload-1', action: 'contacteer veilige steunpersoon', target: 'trusted_person', urgency: 'high', confidence: 'medium' },
+          { id: 'sp-overload-2', action: 'bel behandelaar bij aanhoudende ontregeling', target: 'clinician', urgency: 'medium', confidence: 'medium' },
+        ]
+      : [];
     detected.push({
       id: 'emotional_overload',
-      domains: ['emotional_overload', 'control_loss', 'body_state', 'relapse_prevention', 'agency'],
-      mustMention: ['eerst reguleren, dan begrijpen', 'het lichaam moet zakken voordat denken weer betrouwbaar wordt', 'één kleine fysieke stap is genoeg om de keten te onderbreken'],
+      domains: overloadDomains,
+      mustMention: overloadMustMention,
       mustAvoid: [],
       agencyMap: [{ id: 'ag-overload-1', possibleAction: 'ga naar een zichtbare ruimte en adem', timeWindow: 'now', effortLevel: 'low', confidence: 'high' }],
+      supportPlan: overloadSupportPlan,
     });
   }
 
@@ -235,7 +256,7 @@ export function buildEliasRecoveryFormulationContext(input: EliasRecoveryFormula
     detected.push({
       id: 'motivation',
       domains: ['motivation', 'stage_of_change', 'agency', 'relapse_prevention'],
-      mustMention: ['ambivalentie is geen falen maar informatie', 'herstel begint vaak met één eerlijk deel dat nog wil leven of herstellen', 'je hoeft niet je hele toekomst te beslissen, alleen de volgende stap'],
+      mustMention: ['ambivalentie is geen bewijs dat je niet wil herstellen; het is informatie over twee krachten die tegelijk actief zijn', 'een deel wil verdoving, een ander deel wil herstel — beide zijn echt', 'je hoeft niet je hele toekomst te beslissen, alleen de volgende stap'],
       mustAvoid: [],
     });
   }
