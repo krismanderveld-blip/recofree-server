@@ -53,6 +53,12 @@ export function buildClientSystemPrompt(input: ClientPromptBuildInput): ClientBu
     } else {
       omittedSections.push('depthNaming');
     }
+    if (kimSections.formulationBlock) {
+      promptParts.push(kimSections.formulationBlock);
+      includedSections.push('formulationBlock');
+    } else {
+      omittedSections.push('formulationBlock');
+    }
   }
 
   // Elias-specific sections
@@ -122,4 +128,3 @@ export function buildClientSystemPrompt(input: ClientPromptBuildInput): ClientBu
     },
   };
 }
-

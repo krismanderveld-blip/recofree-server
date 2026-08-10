@@ -10,11 +10,13 @@ import type { ClientPromptBuildInput } from './client-prompt-types';
 
 // Kim identity is available client-side
 import { KIM_IDENTITY_PROMPT } from '../../engine/kim/prompt-block';
+import type { KimRelationalFormulationContext } from '../../engine/kim/relational-formulation/kim-relational-formulation-types';
 
 export interface KimPromptSections {
   identity: string;
   relationalStance?: string;
   depthNaming?: string;
+  formulationBlock?: string;
   regulation?: string;
   context?: string;
   deepening?: string;
@@ -40,6 +42,11 @@ export function composeKimPrompt(input: ClientPromptBuildInput): KimPromptSectio
     sections.depthNaming = input.depthNamingDirective;
   }
 
+  // Kim formulation block (already built by pipeline)
+  if (input.kimFormulationBlock) {
+    sections.formulationBlock = input.kimFormulationBlock;
+  }
+
   // Regulation instruction (already built by regulation engine)
   if (input.regulationInstruction) {
     sections.regulation = input.regulationInstruction;
@@ -61,4 +68,78 @@ export function composeKimPrompt(input: ClientPromptBuildInput): KimPromptSectio
   }
 
   return sections;
+}
+
+/**
+ * Build a compact Kim Relational Formulation prompt block from a validated context.
+ * Token budget: ~200-300 tokens. No raw JSON. Compact structured text.
+ * 
+ * Returns undefined if context mode is not injectable (off, insufficient_context, safety_blocked).
+ */
+export function buildKimRelationalFormulationBlock(
+  context: KimRelationalFormulationContext
+): string | undefined {
+  // Only inject for active modes
+  if (context.mode !== 'low' && context.mode !== 'medium' && context.mode !== 'high') {
+    return undefined;
+  }
+
+  const lines: string[] = [];
+  lines.push(`[KIM RELATIONAL FORMULATION — mode: ${context.mode}, severity: ${context.severity}]`);
+
+  // Priority 1: mode, severity, domains
+  if (context.activeDomains.length > 0) {
+    lines.push(`Domains: ${context.activeDomains.join(', ')}`);
+  }
+
+  // Priority 2: mustMention
+  if (context.mustMention.length > 0) {
+    lines.push('Must mention:');
+    for (const item of context.mustMention.slice(0, 4)) {
+      lines.push(`- ${item}`);
+    }
+  }
+
+  // Priority 3: mustAvoid
+  if (context.mustAvoid.length > 0) {
+    lines.push('Must avoid:');
+    for (const item of context.mustAvoid.slice(0, 4)) {
+      lines.push(`- ${item}`);
+    }
+  }
+
+  // Priority 4: responsibilityMap
+  if (context.responsibilityMap.length > 0) {
+    lines.push('Responsibility:');
+    for (const item of context.responsibilityMap.slice(0, 3)) {
+      lines.push(`- ${item.owner}: ${item.responsibility}`);
+    }
+  }
+
+  // Priority 5: domainSeparations
+  if (context.domainSeparations.length > 0) {
+    lines.push('Domain separations:');
+    for (const sep of context.domainSeparations.slice(0, 2)) {
+      lines.push(`- ${sep.domainA} ≠ ${sep.domainB}: ${sep.distinction}`);
+    }
+  }
+
+  // Priority 6: repairConditions
+  if (context.repairConditions.length > 0) {
+    lines.push('Repair conditions:');
+    for (const cond of context.repairConditions.slice(0, 3)) {
+      lines.push(`- ${cond.condition} (${cond.owner}${cond.nonNegotiable ? ', non-negotiable' : ''})`);
+    }
+  }
+
+  // Priority 7: coreHypothesis only at high
+  if (context.mode === 'high' && context.coreHypothesis) {
+    lines.push(`Core hypothesis: ${context.coreHypothesis}`);
+  }
+
+  // Ending style and max questions
+  lines.push(`Ending style: ${context.endingStyle}`);
+  lines.push(`Max questions: ${context.maxQuestions}`);
+
+  return lines.join('\n');
 }

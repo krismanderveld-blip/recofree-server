@@ -293,7 +293,10 @@ describe('FASE 6B: Kim Relational Formulation Engine V1', () => {
       '/home/ubuntu/recofree-app/lib/engine/kim/relational-formulation/kim-relational-formulation-engine.ts',
       'utf-8'
     );
-    expect(source).not.toMatch(/nano/i);
+    // 'nano' may appear as a type literal in semanticSource, but must NOT appear as an import
+    const importLines = source.split('\n').filter((l: string) => /^import\s|require\(/.test(l));
+    const nanoImports = importLines.filter((l: string) => /nano/i.test(l));
+    expect(nanoImports).toHaveLength(0);
   });
 
   // 36. no AsyncStorage imports

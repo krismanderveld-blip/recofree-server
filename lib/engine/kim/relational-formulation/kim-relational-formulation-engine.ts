@@ -39,6 +39,11 @@ export interface KimRelationalFormulationInput {
   memoryFacts?: string[];
   engineSignals?: string[];
   localTimestamp: string;
+  normalizedMessage?: string;
+  semanticThemes?: string[];
+  semanticResolvedModule?: string | null;
+  semanticMatchedTheme?: string | null;
+  semanticSource?: 'nano' | 'local_llm' | 'deterministic' | 'none';
 }
 
 // ── Pattern Detection Types ──
@@ -329,7 +334,8 @@ export function buildKimRelationalFormulationContext(
   }
 
   // Empty message
-  if (!input.userMessage || input.userMessage.trim().length === 0) {
+  const primaryText = input.normalizedMessage ?? input.userMessage;
+  if (!primaryText || primaryText.trim().length === 0) {
     const ctx = createEmptyKimRelationalFormulationContext();
     ctx.mode = 'insufficient_context';
     ctx.createdAtLocal = input.localTimestamp;
@@ -346,9 +352,11 @@ export function buildKimRelationalFormulationContext(
 
   // Combine text sources for detection
   const combinedText = [
-    input.userMessage,
+    primaryText,
+    ...(primaryText !== input.userMessage ? [input.userMessage] : []),
     ...(input.memoryFacts || []),
     ...(input.engineSignals || []),
+    ...(input.semanticThemes || []),
   ].join(' ');
 
   // Run all pattern detectors

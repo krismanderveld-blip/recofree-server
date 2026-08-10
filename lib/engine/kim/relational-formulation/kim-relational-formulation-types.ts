@@ -156,3 +156,6 @@ export interface KimRelationalFormulationContext {
   confidence: 'low' | 'medium' | 'high';
   createdAtLocal: string;
 }
+
+// ── Semantic source classification ──
+export type KimSemanticSource = 'nano' | 'local_llm' | 'deterministic' | 'none';

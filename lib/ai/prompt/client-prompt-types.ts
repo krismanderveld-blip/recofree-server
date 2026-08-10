@@ -56,6 +56,8 @@ export interface ClientPromptBuildInput {
   sessionDurationMinutes?: number;
   /** Conversation history (last N messages) */
   recentHistory?: Array<{ role: string; content: string }>;
+  /** Kim formulation block (already built by pipeline formulation engine) */
+  kimFormulationBlock?: string;
 }
 
 export interface ClientBuiltPromptResult {

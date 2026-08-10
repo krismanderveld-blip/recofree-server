@@ -3291,6 +3291,7 @@ export async function processMessage(
   // ── KIM RELATIONAL STANCE FILTER (runs for Kim only, non-crisis) ──
   let relationalStanceDirective: string | undefined;
   let depthNamingDirective: string | undefined;
+  let kimFormulationBlock: string | undefined;
   if (backpack.userType === 'kim' && crisisLevel < 2) {
     try {
       // GUIDANCE DEPTH RESOLVER — determines effective depth from user setting + context
@@ -3331,6 +3332,39 @@ export async function processMessage(
       if (depthLevel !== 'SKIP') {
         depthNamingDirective = buildDepthAndNamingDirective(depthLevel);
         console.log(`[Pipeline] Kim Depth & Naming Layer: level=${depthLevel} (capped by effectiveDepth=${guidanceDepthResult.effectiveDepth})`);
+      }
+
+      // ── KIM RELATIONAL FORMULATION ENGINE V1 ──
+      try {
+        const { buildKimRelationalFormulationContext } = require('../engine/kim/relational-formulation');
+        const { buildKimRelationalFormulationBlock } = require('../ai/prompt/kim-prompt-composer');
+        const formulationContext = buildKimRelationalFormulationContext({
+          userMessage,
+          persona: 'kim',
+          effectiveDepth: guidanceDepthResult.effectiveDepth as 'none' | 'low' | 'medium' | 'high',
+          safetyActive: crisisLevel >= 2,
+          crisisActive: crisisLevel >= 2,
+          relationalHarmPatternActive: isRelationalHarm,
+          guidanceDepth: (currentUserDat.guidanceDepth ?? 'normal') as 'light' | 'normal' | 'deep',
+          currentZone: (sessionBuffer?.currentZoneColor ?? 'unknown').toLowerCase() as any,
+          moduleId: preGPTDominantState.dominantModule,
+          memoryFacts: currentUserDat.extractedEntities?.persons?.map((p: any) => `${p.name}: ${p.relationshipNL || p.relationship || ''}`).filter(Boolean) ?? [],
+          engineSignals: candidateSignals ? Object.entries(candidateSignals).flatMap(([key, arr]: [string, any]) => Array.isArray(arr) ? arr.filter((s: any) => s.confidence > 0.5).map((s: any) => `${key}:${s.keyword}`) : []) : [],
+          localTimestamp: new Date().toISOString(),
+          normalizedMessage: clientNanoResult?.translatedNL ?? userMessage,
+          semanticThemes: clientNanoResult?.themes ?? [],
+          semanticResolvedModule: clientNanoResult?.resolvedModule ?? null,
+          semanticMatchedTheme: clientNanoResult?.matchedTheme ?? null,
+          semanticSource: clientNanoResult ? 'nano' : 'deterministic',
+        });
+        if (formulationContext.mode === 'low' || formulationContext.mode === 'medium' || formulationContext.mode === 'high') {
+          kimFormulationBlock = buildKimRelationalFormulationBlock(formulationContext);
+          console.log(`[Pipeline] Kim Formulation Engine: mode=${formulationContext.mode} severity=${formulationContext.severity} domains=[${formulationContext.activeDomains.join(',')}] confidence=${formulationContext.confidence}`);
+        } else {
+          console.log(`[Pipeline] Kim Formulation Engine: mode=${formulationContext.mode} (not injected)`);
+        }
+      } catch (e) {
+        console.warn('[Pipeline] Kim Formulation Engine failed (non-blocking):', e);
       }
 
       // Check for RELATIONAL_PATTERN_ASSESSMENT_MODE first (explicit assessment question)
@@ -3529,7 +3563,7 @@ export async function processMessage(
     k05Context: k05Result.promptBlock || undefined,
     k02Context: k02Result.promptBlock || undefined,
     // KIM RELATIONAL STANCE FILTER — runs for Kim only, non-crisis
-    relationalStanceFilter: [depthNamingDirective, relationalStanceDirective].filter(Boolean).join('\n\n') || undefined,
+    relationalStanceFilter: [kimFormulationBlock, depthNamingDirective, relationalStanceDirective].filter(Boolean).join('\n\n') || undefined,
     k04Context: k04Result.promptBlock || undefined,
     k04s4Context: k04s4Result.promptBlock || undefined,
     k06Context: k06Result.promptBlock || undefined,
