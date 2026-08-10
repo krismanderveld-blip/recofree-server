@@ -3287,6 +3287,47 @@ export async function processMessage(
     sessionAnalyses: currentUserDat.sessionAnalyses ?? [],
   });
 
+  // ── CLINICAL MEMORY DISTILLATION (behind feature flag) ──
+  let cmdKimMemory: import('@/lib/engine/shared/clinical-memory-distillation/clinical-memory-distillation-types').KimMemoryBridge | null = null;
+  let cmdEliasMemory: import('@/lib/engine/shared/clinical-memory-distillation/clinical-memory-distillation-types').EliasMemoryBridge | null = null;
+  const enableCMD = process.env.EXPO_PUBLIC_ENABLE_CLINICAL_MEMORY_DISTILLATION === 'true';
+  if (enableCMD) {
+    try {
+      const { buildClinicalMemoryDistillationRuntimeContext } = require('../engine/shared/clinical-memory-distillation/clinical-memory-distillation-runtime');
+      const { getCMDMemoryForKimFormulation, getCMDMemoryForEliasFormulation } = require('../engine/shared/clinical-memory-distillation/formulation-memory-adapter');
+      const cmdPersona = (backpack.userType || 'elias') as 'elias' | 'kim';
+      const cmdResult = buildClinicalMemoryDistillationRuntimeContext({
+        persona: cmdPersona,
+        backpackSections: backpack.sections ? Object.entries(backpack.sections).map(([key, val]: [string, any]) => ({ id: key, title: key, text: val?.content || '' })) : undefined,
+        projectionFears: (currentUserDat as any).projections?.fears?.map((f: any) => ({ text: f.text || f, confidence: f.confidence || 'medium' })) ?? undefined,
+        projectionHopes: (currentUserDat as any).projections?.hopes?.map((h: any) => ({ text: h.text || h, confidence: h.confidence || 'medium' })) ?? undefined,
+        moodHistory: (currentUserDat as any).moodHistory?.slice(-14) ?? undefined,
+        currentZone: (sessionBuffer?.currentZoneColor ?? 'unknown').toLowerCase(),
+        dayStructureCompletion: (currentUserDat as any).dayStructure ?? undefined,
+        soberDays: (currentUserDat as any).sobriety?.soberDays ?? undefined,
+        relapseEvents: (currentUserDat as any).sobriety?.relapseCount ?? undefined,
+        recentRelapse: (currentUserDat as any).sobriety?.recentRelapse ?? false,
+        relapsePlanAvailable: !!(currentUserDat as any).relapsePlan,
+        dist01Entities: undefined,
+        dist01Signals: undefined,
+        dist01Contexts: undefined,
+        nowLocal: new Date().toISOString(),
+      });
+      if (cmdResult.enabled && cmdResult.context && cmdResult.validation.ok) {
+        if (cmdPersona === 'kim') {
+          cmdKimMemory = getCMDMemoryForKimFormulation(cmdResult.context);
+        } else {
+          cmdEliasMemory = getCMDMemoryForEliasFormulation(cmdResult.context);
+        }
+        console.log(`[Pipeline] CMD active: persona=${cmdPersona} skipped=${cmdResult.skippedLayers.length} warnings=${cmdResult.warnings.length}`);
+      } else if (cmdResult.enabled && !cmdResult.validation.ok) {
+        console.warn(`[Pipeline] CMD validation failed (non-blocking): ${cmdResult.validation.errors.length} errors`);
+      }
+    } catch (e) {
+      console.warn('[Pipeline] CMD runtime failed (non-blocking):', e);
+    }
+  }
+
   // ── CLIENT FALLBACK: ChatContext + GPT call (only reached when server-led block above fails) ──
   // ── KIM RELATIONAL STANCE FILTER (runs for Kim only, non-crisis) ──
   let relationalStanceDirective: string | undefined;
@@ -3356,6 +3397,7 @@ export async function processMessage(
           semanticResolvedModule: clientNanoResult?.resolvedModule ?? null,
           semanticMatchedTheme: clientNanoResult?.matchedTheme ?? null,
           semanticSource: clientNanoResult ? 'nano' : 'deterministic',
+          cmdMemory: cmdKimMemory ?? undefined,
         });
         if (formulationContext.mode === 'low' || formulationContext.mode === 'medium' || formulationContext.mode === 'high') {
           kimFormulationBlock = buildKimRelationalFormulationBlock(formulationContext);
@@ -3533,6 +3575,7 @@ export async function processMessage(
           semanticResolvedModule: clientNanoResult?.resolvedModule ?? null,
           semanticMatchedTheme: clientNanoResult?.matchedTheme ?? null,
           semanticSource: clientNanoResult ? 'nano' as const : 'deterministic' as const,
+          cmdMemory: cmdEliasMemory ?? undefined,
         };
         const eliasFormulationContext = buildEliasRecoveryFormulationContext(eliasFormulationInput);
         if (eliasFormulationContext.mode === 'low' || eliasFormulationContext.mode === 'medium' || eliasFormulationContext.mode === 'high' || eliasFormulationContext.mode === 'acute_recovery_risk') {

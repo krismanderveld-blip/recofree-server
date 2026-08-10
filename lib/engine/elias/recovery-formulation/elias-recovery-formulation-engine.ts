@@ -51,6 +51,7 @@ export interface EliasRecoveryFormulationInput {
   semanticMatchedTheme?: string | null;
   semanticSource?: 'nano' | 'local_llm' | 'deterministic' | 'none';
   localTimestamp: string;
+  cmdMemory?: import('@/lib/engine/shared/clinical-memory-distillation/clinical-memory-distillation-types').EliasMemoryBridge | null;
 }
 
 // ── Pattern detection results ──

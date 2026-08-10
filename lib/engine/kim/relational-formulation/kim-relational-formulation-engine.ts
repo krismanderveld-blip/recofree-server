@@ -44,6 +44,7 @@ export interface KimRelationalFormulationInput {
   semanticResolvedModule?: string | null;
   semanticMatchedTheme?: string | null;
   semanticSource?: 'nano' | 'local_llm' | 'deterministic' | 'none';
+  cmdMemory?: import('@/lib/engine/shared/clinical-memory-distillation/clinical-memory-distillation-types').KimMemoryBridge | null;
 }
 
 // ── Pattern Detection Types ──

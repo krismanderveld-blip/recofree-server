@@ -106,3 +106,17 @@ export type {
   Dist01CmdBridgeInput,
   Dist01CmdBridgeOutput,
 } from './dist01-cmd-bridge';
+
+export {
+  buildClinicalMemoryDistillationRuntimeContext,
+} from './clinical-memory-distillation-runtime';
+
+export type {
+  CMDRuntimeInput,
+  CMDRuntimeOutput,
+} from './clinical-memory-distillation-runtime';
+
+export {
+  getCMDMemoryForKimFormulation,
+  getCMDMemoryForEliasFormulation,
+} from './formulation-memory-adapter';
