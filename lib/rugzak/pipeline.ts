@@ -1189,7 +1189,8 @@ export async function processMessage(
   // On failure: falls back to keyword-based detection (existing behavior).
   let clientNanoResult: ClientNanoInterpretResult | null = null;
   const isCrisisForNano = sessionBuffer?.currentZoneColor === 'PURPLE' || sessionBuffer?.currentIntent === 'crisis';
-  if (!isCrisisForNano) {
+  const enableNanoInterpret = process.env.EXPO_PUBLIC_ENABLE_NANO_INTERPRET === 'true';
+  if (enableNanoInterpret && !isCrisisForNano) {
     clientNanoResult = await callNanoInterpret(userMessage, backpack.userType as 'elias' | 'kim');
     if (clientNanoResult) {
       console.log(`[Pipeline] NANO-INTERPRET: resolvedModule=${clientNanoResult.resolvedModule}, matchedTheme=${clientNanoResult.matchedTheme}, intent=${clientNanoResult.intent}, themes=[${clientNanoResult.themes.join(', ')}]`);
@@ -1198,6 +1199,8 @@ export async function processMessage(
     } else {
       console.warn('[Pipeline] NANO-INTERPRET: unavailable, falling back to keyword matching');
     }
+  } else if (!enableNanoInterpret) {
+    console.log('[Pipeline] NANO-INTERPRET: disabled by feature flag (EXPO_PUBLIC_ENABLE_NANO_INTERPRET)');
   } else {
     console.log('[Pipeline] NANO-INTERPRET: skipped (crisis mode)');
   }
