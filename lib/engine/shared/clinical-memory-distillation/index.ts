@@ -120,3 +120,21 @@ export {
   getCMDMemoryForKimFormulation,
   getCMDMemoryForEliasFormulation,
 } from './formulation-memory-adapter';
+
+export {
+  selectClinicalMemoryForPrompt,
+  scoreClinicalMemoryItem,
+  estimateClinicalMemoryTokens,
+  compressClinicalMemoryText,
+  isClinicalMemoryItemAllowedForPersona,
+  isClinicalMemoryItemPromptEligible,
+  normalizeFormulationInputToCandidates,
+  buildSelectedCMDMemorySummary,
+} from './clinical-memory-budget-selector';
+
+export type {
+  ClinicalMemoryBudgetSelectorInput,
+  ClinicalMemorySelectedItem,
+  ClinicalMemoryBudgetSelectorOutput,
+  ClinicalMemoryItemKind,
+} from './clinical-memory-budget-selector';
