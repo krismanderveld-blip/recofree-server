@@ -794,6 +794,7 @@ export class OpenAIProvider implements AIProvider {
             vspLevel: context.vspLevel ?? undefined,
             relapseIntentDetected: context.relapseIntent?.detected ?? false,
             sessionDurationMinutes: context.sessionDurationMinutes ?? 0,
+            eliasFormulationBlock: context.eliasFormulationBlock ?? undefined,
           };
 
           const mirrorResult = buildClientSystemPrompt(mirrorInput);
@@ -877,6 +878,7 @@ export class OpenAIProvider implements AIProvider {
             role: m.role === 'user' ? 'user' : 'assistant',
             content: m.content ?? '',
           })) ?? [],
+          eliasFormulationBlock: context.eliasFormulationBlock ?? undefined,
         };
 
         const clientPromptResult = buildClientSystemPrompt(promptInput);

@@ -70,6 +70,12 @@ export function buildClientSystemPrompt(input: ClientPromptBuildInput): ClientBu
     } else {
       omittedSections.push('module');
     }
+    if (eliasSections.formulationBlock) {
+      promptParts.push(eliasSections.formulationBlock);
+      includedSections.push('eliasFormulationBlock');
+    } else {
+      omittedSections.push('eliasFormulationBlock');
+    }
     if (eliasSections.interventionContinuity) {
       promptParts.push(eliasSections.interventionContinuity);
       includedSections.push('interventionContinuity');

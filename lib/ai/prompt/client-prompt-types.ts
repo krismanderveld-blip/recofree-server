@@ -58,6 +58,8 @@ export interface ClientPromptBuildInput {
   recentHistory?: Array<{ role: string; content: string }>;
   /** Kim formulation block (already built by pipeline formulation engine) */
   kimFormulationBlock?: string;
+  /** Elias recovery formulation block (already built by pipeline formulation engine) */
+  eliasFormulationBlock?: string;
 }
 
 export interface ClientBuiltPromptResult {

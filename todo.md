@@ -2854,5 +2854,5 @@
 ## Elias Recovery Formulation Engine
 - [x] FASE 7A: Contract, types, 6 helpers, 37 tests
 - [x] FASE 7B: Engine V1 built — 10 pattern detectors, input type, 52 tests, no pipeline activation
-- [ ] FASE 7C: Pipeline integration for Elias (inject formulation context in GPT system prompt)
+- [x] FASE 7C: Pipeline integration for Elias (inject formulation context in GPT system prompt)
 - [ ] FASE 7D: Output quality test via Railway minimal proxy

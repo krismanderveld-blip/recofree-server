@@ -3464,6 +3464,7 @@ export async function processMessage(
 
   // ── ELIAS GUIDANCE DEPTH RESOLVER (runs for Elias only, non-crisis) ──
   let eliasGuidanceDepthDebug: { relapseRiskActive: boolean; relapseReason: string; effectiveDepth: string; reason: string } | undefined;
+  let eliasFormulationBlock: string | undefined;
   if (backpack.userType === 'elias' && crisisLevel < 2) {
     try {
       const { resolveGuidanceDepth } = require('../engine/shared/guidance-depth-resolver');
@@ -3498,17 +3499,56 @@ export async function processMessage(
       });
 
       eliasGuidanceDepthDebug = {
-        relapseRiskActive: relapseRiskResult.relapseRiskActive,
-        relapseReason: relapseRiskResult.reason,
-        effectiveDepth: guidanceResult.effectiveDepth,
-        reason: guidanceResult.reason,
-      };
+      relapseRiskActive: relapseRiskResult.relapseRiskActive,
+      relapseReason: relapseRiskResult.reason,
+      effectiveDepth: guidanceResult.effectiveDepth,
+      reason: guidanceResult.reason,
+    };
 
-      console.log(`[Pipeline] Elias GuidanceDepthResolver: relapseRisk=${relapseRiskResult.relapseRiskActive} (${relapseRiskResult.reason}) effective=${guidanceResult.effectiveDepth} reason=${guidanceResult.reason}`);
-    } catch (e) {
-      console.warn('[Pipeline] Elias GuidanceDepthResolver failed (non-blocking):', e);
-    }
+    console.log(`[Pipeline] Elias GuidanceDepthResolver: relapseRisk=${relapseRiskResult.relapseRiskActive} (${relapseRiskResult.reason}) effective=${guidanceResult.effectiveDepth} reason=${guidanceResult.reason}`);
+
+      // ── ELIAS RECOVERY FORMULATION ENGINE V1 ──
+      try {
+        const { buildEliasRecoveryFormulationContext } = require('../engine/elias/recovery-formulation');
+        const { buildEliasRecoveryFormulationBlock } = require('../ai/prompt/elias-prompt-composer');
+        const eliasFormulationInput = {
+          userMessage,
+          persona: 'elias' as const,
+          effectiveDepth: guidanceResult.effectiveDepth as 'none' | 'low' | 'medium' | 'high',
+          safetyActive: crisisLevel >= 2,
+          crisisActive: crisisLevel >= 2,
+          relapseRiskActive: relapseRiskResult.relapseRiskActive,
+          cravingLevel: cravingSlider,
+          stressLevel: (currentUserDat.currentMood as any)?.stress ?? null,
+          moodLevel: (currentUserDat.currentMood as any)?.despondency ?? (currentUserDat.currentMood as any)?.mood ?? null,
+          guidanceDepth: (currentUserDat.guidanceDepth ?? 'normal') as 'light' | 'normal' | 'deep',
+          currentZone: (sessionBuffer?.currentZoneColor ?? 'unknown').toLowerCase() as any,
+          moduleId: preGPTDominantState.dominantModule,
+          stageOfChange: (currentUserDat as any).stageOfChange ?? undefined,
+          memoryFacts: currentUserDat.extractedEntities?.persons?.map((p: any) => `${p.name}: ${p.relationshipNL || p.relationship || ''}`).filter(Boolean) ?? [],
+          engineSignals: candidateSignals ? Object.entries(candidateSignals).flatMap(([key, arr]: [string, any]) => Array.isArray(arr) ? arr.filter((s: any) => s.confidence > 0.5).map((s: any) => `${key}:${s.keyword}`) : []) : [],
+          localTimestamp: new Date().toISOString(),
+          normalizedMessage: clientNanoResult?.translatedNL ?? userMessage,
+          semanticThemes: clientNanoResult?.themes ?? [],
+          semanticResolvedModule: clientNanoResult?.resolvedModule ?? null,
+          semanticMatchedTheme: clientNanoResult?.matchedTheme ?? null,
+          semanticSource: clientNanoResult ? 'nano' as const : 'deterministic' as const,
+        };
+        const eliasFormulationContext = buildEliasRecoveryFormulationContext(eliasFormulationInput);
+        if (eliasFormulationContext.mode === 'low' || eliasFormulationContext.mode === 'medium' || eliasFormulationContext.mode === 'high' || eliasFormulationContext.mode === 'acute_recovery_risk') {
+          eliasFormulationBlock = buildEliasRecoveryFormulationBlock(eliasFormulationContext);
+          console.log(`[Pipeline] Elias Formulation Engine: mode=${eliasFormulationContext.mode} severity=${eliasFormulationContext.severity} domains=[${eliasFormulationContext.activeDomains.join(',')}] confidence=${eliasFormulationContext.confidence}`);
+        } else {
+          console.log(`[Pipeline] Elias Formulation Engine: mode=${eliasFormulationContext.mode} (not injected)`);
+        }
+      } catch (e) {
+        console.warn('[Pipeline] Elias Formulation Engine failed (non-blocking):', e);
+      }
+
+  } catch (e) {
+    console.warn('[Pipeline] Elias GuidanceDepthResolver failed (non-blocking):', e);
   }
+}
 
   const context: ChatContext = {
     userType: backpack.userType,
@@ -3700,6 +3740,8 @@ export async function processMessage(
     distillationContext: distillationContextStr ?? undefined,
     // DIST01: Pattern acknowledgment — instruct GPT to reference repeated patterns
     patternAcknowledgment: patternAcknowledgmentBlock ?? undefined,
+    // ELIAS RECOVERY FORMULATION — compact formulation block for Elias recovery-focused GPT guidance
+    eliasFormulationBlock: eliasFormulationBlock ?? undefined,
     // PRE-BUILT PROMPT BLOCKS (local pipeline → server as pure proxy)
     ...prebuiltBlocks,
   };
