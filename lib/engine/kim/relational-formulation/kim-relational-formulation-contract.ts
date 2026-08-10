@@ -175,16 +175,8 @@ export function validateKimRelationalFormulationContext(
     }
   }
 
-  // Forbidden language in mustAvoid
-  if (Array.isArray(ctx.mustAvoid)) {
-    for (const item of ctx.mustAvoid as string[]) {
-      for (const pattern of FORBIDDEN_DECISION_PATTERNS) {
-        if (pattern.test(item)) {
-          errors.push(`mustAvoid contains forbidden language: "${item}"`);
-        }
-      }
-    }
-  }
+  // mustAvoid is intentionally the forbidden list — do NOT validate its contents
+  // against FORBIDDEN_DECISION_PATTERNS (those items belong there as blockers)
 
   // Forbidden language in coreHypothesis
   if (typeof ctx.coreHypothesis === 'string') {
