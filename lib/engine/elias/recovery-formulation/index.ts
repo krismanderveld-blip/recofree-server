@@ -24,3 +24,5 @@ export {
   getAllowedEliasFormulationLayers,
 } from './elias-recovery-formulation-contract';
 
+export type { EliasRecoveryFormulationInput } from './elias-recovery-formulation-engine';
+export { buildEliasRecoveryFormulationContext } from './elias-recovery-formulation-engine';
