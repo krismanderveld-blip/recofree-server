@@ -3425,6 +3425,54 @@ export async function processMessage(
     }
   }
 
+  // ── ELIAS GUIDANCE DEPTH RESOLVER (runs for Elias only, non-crisis) ──
+  let eliasGuidanceDepthDebug: { relapseRiskActive: boolean; relapseReason: string; effectiveDepth: string; reason: string } | undefined;
+  if (backpack.userType === 'elias' && crisisLevel < 2) {
+    try {
+      const { resolveGuidanceDepth } = require('../engine/shared/guidance-depth-resolver');
+      const { detectEliasRelapseRisk } = require('../engine/elias/elias-relapse-risk-helper');
+
+      const cravingSlider = (currentUserDat.currentMood as any)?.craving ?? null;
+      const relapseRiskResult = detectEliasRelapseRisk({
+        userMessage,
+        persona: 'elias',
+        cravingSliderValue: cravingSlider,
+        relapseActive: (currentUserDat as any).relapseActive === true,
+        relapseIntentDetected: relapseIntentResult?.detected === true,
+      });
+
+      const userGuidanceDepthSetting = currentUserDat.guidanceDepth ?? 'normal';
+      const zoneForResolver = (sessionBuffer?.currentZoneColor ?? 'green').toLowerCase();
+      const hasBackpackContent = !!(backpack.sections && Object.values(backpack.sections).some((s: any) => s?.content));
+      const hasUserDatContent = !!(currentUserDat.extractedEntities?.persons?.length);
+      const contextQualityForResolver = hasBackpackContent && hasUserDatContent ? 'rich' : hasBackpackContent || hasUserDatContent ? 'sufficient' : userMessage.length > 100 ? 'partial' : 'insufficient';
+      const isExplicitDeep = /ga dieper|meer detail|vertel meer|leg uit|explain more|go deeper/i.test(userMessage);
+
+      const guidanceResult = resolveGuidanceDepth({
+        persona: 'elias',
+        userGuidanceDepth: typeof userGuidanceDepthSetting === 'string' ? userGuidanceDepthSetting : 'normal',
+        zone: zoneForResolver,
+        crisisLevel,
+        safetyFirstActive: crisisLevel >= 2,
+        relationalHarmPatternActive: false,
+        relapseRiskActive: relapseRiskResult.relapseRiskActive,
+        explicitDeepRequest: isExplicitDeep,
+        contextQuality: contextQualityForResolver,
+      });
+
+      eliasGuidanceDepthDebug = {
+        relapseRiskActive: relapseRiskResult.relapseRiskActive,
+        relapseReason: relapseRiskResult.reason,
+        effectiveDepth: guidanceResult.effectiveDepth,
+        reason: guidanceResult.reason,
+      };
+
+      console.log(`[Pipeline] Elias GuidanceDepthResolver: relapseRisk=${relapseRiskResult.relapseRiskActive} (${relapseRiskResult.reason}) effective=${guidanceResult.effectiveDepth} reason=${guidanceResult.reason}`);
+    } catch (e) {
+      console.warn('[Pipeline] Elias GuidanceDepthResolver failed (non-blocking):', e);
+    }
+  }
+
   const context: ChatContext = {
     userType: backpack.userType,
     userName: backpack.naam,
