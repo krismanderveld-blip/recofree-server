@@ -60,6 +60,8 @@ export interface ClientPromptBuildInput {
   kimFormulationBlock?: string;
   /** Elias recovery formulation block (already built by pipeline formulation engine) */
   eliasFormulationBlock?: string;
+  /** CMD selected memory summary — compact budget-selected clinical memory for GPT context */
+  cmdMemorySummary?: string;
 }
 
 export interface ClientBuiltPromptResult {

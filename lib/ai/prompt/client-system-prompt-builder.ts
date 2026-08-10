@@ -113,6 +113,26 @@ export function buildClientSystemPrompt(input: ClientPromptBuildInput): ClientBu
     omittedSections.push('projection');
   }
 
+  // CMD Selected Memory Summary (behind feature flag, only when non-empty)
+  if (input.cmdMemorySummary) {
+    const cmdBlock = [
+      '[SELECTED CLINICAL MEMORY]',
+      input.cmdMemorySummary,
+      '',
+      'Rules:',
+      '- Treat hypotheses as hypotheses, not facts.',
+      '- Do not mention memory, CMD, selector, DIST01 or internal systems to the user.',
+      '- Use this only to improve timing, tone, relevance and formulation.',
+      '- Do not overrule safety instructions.',
+      '- Do not diagnose.',
+      '- Do not add treatment claims.',
+    ].join('\n');
+    promptParts.push(cmdBlock);
+    includedSections.push('cmdMemorySummary');
+  } else {
+    omittedSections.push('cmdMemorySummary');
+  }
+
   // Join and redact debug metadata
   const rawPrompt = promptParts.join('\n\n');
   const { cleanedPrompt } = redactDebugMetadata(rawPrompt);

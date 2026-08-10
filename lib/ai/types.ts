@@ -1286,6 +1286,8 @@ export interface ChatContext {
 
   /** ELIAS RECOVERY FORMULATION: compact formulation block for Elias recovery-focused GPT guidance */
   eliasFormulationBlock?: string | null;
+  /** CMD SELECTED MEMORY SUMMARY: compact budget-selected clinical memory block for GPT context */
+  cmdMemorySummary?: string | null;
 
   // ─── PRE-BUILT PROMPT BLOCKS (from local pipeline) ───
   /** Ready-to-inject PERSONEN-LOOKUP block (built locally) */

@@ -795,6 +795,7 @@ export class OpenAIProvider implements AIProvider {
             relapseIntentDetected: context.relapseIntent?.detected ?? false,
             sessionDurationMinutes: context.sessionDurationMinutes ?? 0,
             eliasFormulationBlock: context.eliasFormulationBlock ?? undefined,
+            cmdMemorySummary: context.cmdMemorySummary ?? undefined,
           };
 
           const mirrorResult = buildClientSystemPrompt(mirrorInput);
@@ -879,6 +880,7 @@ export class OpenAIProvider implements AIProvider {
             content: m.content ?? '',
           })) ?? [],
           eliasFormulationBlock: context.eliasFormulationBlock ?? undefined,
+          cmdMemorySummary: context.cmdMemorySummary ?? undefined,
         };
 
         const clientPromptResult = buildClientSystemPrompt(promptInput);

@@ -3299,6 +3299,7 @@ export async function processMessage(
   // ── CLINICAL MEMORY DISTILLATION (behind feature flag) ──
   let cmdKimMemory: import('@/lib/engine/shared/clinical-memory-distillation/clinical-memory-distillation-types').KimMemoryBridge | null = null;
   let cmdEliasMemory: import('@/lib/engine/shared/clinical-memory-distillation/clinical-memory-distillation-types').EliasMemoryBridge | null = null;
+  let cmdMemorySummary: string | undefined;
   const enableCMD = process.env.EXPO_PUBLIC_ENABLE_CLINICAL_MEMORY_DISTILLATION === 'true';
   if (enableCMD) {
     try {
@@ -3338,9 +3339,16 @@ export async function processMessage(
       });
       if (cmdResult.enabled && cmdResult.context && cmdResult.validation.ok) {
         if (cmdPersona === 'kim') {
-          cmdKimMemory = getCMDMemoryForKimFormulation(cmdResult.context);
+          cmdKimMemory = getCMDMemoryForKimFormulation(cmdResult.context, cmdResult.selectorOutput);
         } else {
-          cmdEliasMemory = getCMDMemoryForEliasFormulation(cmdResult.context);
+          cmdEliasMemory = getCMDMemoryForEliasFormulation(cmdResult.context, cmdResult.selectorOutput);
+        }
+        // Build CMD memory summary for prompt injection
+        if (cmdResult.selectorOutput && cmdResult.selectorOutput.selectedItems.length > 0) {
+          try {
+            const { buildSelectedCMDMemorySummary } = require('../engine/shared/clinical-memory-distillation/clinical-memory-budget-selector');
+            cmdMemorySummary = buildSelectedCMDMemorySummary(cmdResult.selectorOutput) || undefined;
+          } catch { /* non-blocking */ }
         }
         console.log(`[Pipeline] CMD active: persona=${cmdPersona} skipped=${cmdResult.skippedLayers.length} warnings=${cmdResult.warnings.length}`);
       } else if (cmdResult.enabled && !cmdResult.validation.ok) {
@@ -3808,6 +3816,8 @@ export async function processMessage(
     patternAcknowledgment: patternAcknowledgmentBlock ?? undefined,
     // ELIAS RECOVERY FORMULATION — compact formulation block for Elias recovery-focused GPT guidance
     eliasFormulationBlock: eliasFormulationBlock ?? undefined,
+    // CMD SELECTED MEMORY SUMMARY — compact budget-selected clinical memory block
+    cmdMemorySummary: cmdMemorySummary ?? undefined,
     // PRE-BUILT PROMPT BLOCKS (local pipeline → server as pure proxy)
     ...prebuiltBlocks,
   };
