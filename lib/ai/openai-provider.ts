@@ -753,6 +753,71 @@ export class OpenAIProvider implements AIProvider {
       }
 
       // ── STEP 4: Send to server via /api/gpt-proxy (plain JSON, no tRPC envelope) ──
+      // ── STEP 3.5: CLIENT PROMPT MIRROR (debug only, behind feature flag) ──
+      // Builds a client-side mirror prompt for debug comparison.
+      // Does NOT replace the active GPT route. Does NOT send to OpenAI.
+      let clientPromptMirrorDebug: {
+        enabled: boolean;
+        promptBuildVersion?: string;
+        estimatedPromptSize?: number;
+        budgetWarnings?: string[];
+        includedSections?: string[];
+        omittedSections?: string[];
+        effectiveDepth?: string;
+        maxFormulationMode?: string;
+        mirrorBuildError?: string;
+      } = { enabled: false };
+
+      try {
+        const mirrorEnabled = process.env.EXPO_PUBLIC_ENABLE_CLIENT_PROMPT_MIRROR === 'true';
+        if (mirrorEnabled) {
+          const { buildClientSystemPrompt } = require('./prompt/client-system-prompt-builder');
+          const mirrorInput = {
+            persona: context.userType as 'kim' | 'elias',
+            userName: context.userName,
+            selectedModule: dominantModule,
+            crisisLevel: context.crisisLevel ?? 0,
+            safetyLevel: (context.crisisLevel ?? 0) >= 2 ? 'crisis' : 'none',
+            relationalStanceDirective: context.relationalStanceFilter ?? undefined,
+            effectiveDepth: (context as any).effectiveDepth ?? undefined,
+            maxFormulationMode: (context as any).maxFormulationMode ?? undefined,
+            userGuidanceDepth: context.guidanceDepth ?? 'normal',
+            regulationInstruction: context.regulationResult?.gptInstruction ?? undefined,
+            interventionContinuityBlock: context.interventionContinuity ?? undefined,
+            engineDirective: context.engineDirective ?? undefined,
+            contextSummary: context.contextSummary ?? undefined,
+            contextDatSerialized: context.contextDatSerialized ?? undefined,
+            deepeningBlock: context.deepeningBlock ?? undefined,
+            projectionContext: context.projectionContext ?? undefined,
+            moodSliders: context.moodSliders,
+            vspLevel: context.vspLevel ?? undefined,
+            relapseIntentDetected: context.relapseIntent?.detected ?? false,
+            sessionDurationMinutes: context.sessionDurationMinutes ?? 0,
+          };
+
+          const mirrorResult = buildClientSystemPrompt(mirrorInput);
+          clientPromptMirrorDebug = {
+            enabled: true,
+            promptBuildVersion: mirrorResult.promptBuildVersion,
+            estimatedPromptSize: mirrorResult.estimatedPromptSize,
+            budgetWarnings: mirrorResult.budgetWarnings,
+            includedSections: mirrorResult.debug?.includedSections,
+            omittedSections: mirrorResult.debug?.omittedSections,
+            effectiveDepth: mirrorResult.debug?.effectiveDepth,
+            maxFormulationMode: mirrorResult.debug?.maxFormulationMode,
+          };
+
+          console.log(`[OpenAIProvider] CLIENT PROMPT MIRROR: version=${mirrorResult.promptBuildVersion} size=${mirrorResult.estimatedPromptSize} sections=${mirrorResult.debug?.includedSections?.join(',')}`);
+        }
+      } catch (mirrorError) {
+        // Mirror failure is non-blocking — legacy route continues
+        clientPromptMirrorDebug = {
+          enabled: true,
+          mirrorBuildError: (mirrorError as Error)?.message ?? 'Unknown mirror build error',
+        };
+        console.warn('[OpenAIProvider] CLIENT PROMPT MIRROR failed (non-blocking):', (mirrorError as Error)?.message);
+      }
+
       // Final sanitization: ensure all triggers arrays are clean before Zod validation
       const sanitizedPayload = sanitizeChatPayload(inputPayload as Record<string, unknown>);
 
