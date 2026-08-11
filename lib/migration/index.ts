@@ -42,14 +42,8 @@ export {
   type ShadowMismatchSeverity,
   type ShadowFieldComparison,
   type ShadowLogEntry,
-  type ShadowLogStore,
   compareEngineOutputs,
 } from './shadow-log';
-
-export { createShadowLogStore } from './shadow-log-store';
-
-// Shadow engine client (fire-and-forget server call + comparison)
-export { fireShadowEngineCall } from './shadow-engine-client';
 
 // Input builder
 export { buildCanonicalEngineInput } from './build-engine-input';
@@ -69,16 +63,3 @@ export type {
   ServerEngineCallInput,
   EngineDispatchResult,
 } from './server-active-client';
-
-// Golden testset
-export {
-  type GoldenTestCategory,
-  type GoldenTestCase,
-  appendGoldenTestCase,
-  readGoldenTestCases,
-  getGoldenTestsByCategory,
-  clearGoldenTestCases,
-  detectGoldenCategory,
-  DETERMINISTIC_FIELDS,
-  SEMANTIC_FIELDS,
-} from './golden-testset';
