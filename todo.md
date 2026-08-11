@@ -2858,3 +2858,21 @@
 - [ ] FASE 7D: Output quality test via Railway minimal proxy
 - [x] FASE 7D: Output quality test via Railway minimal proxy (9.54/10 average, all pass)
 - [x] FASE 7E: Tuning patch — shame cycle, overload support, ambivalence stage-of-change
+## FASE 9J-R2: Kim Formulation Trigger Coverage
+- [x] 4 new detectors: detectRescue, detectMindreading, detectMedical, detectRepeatedHarm
+- [x] TRUST_TRIGGERS fixed to include 'liegt'
+- [x] RESCUE_CONTROL endpoint words extended with 'drinken|gebruiken'
+- [x] 24/24 new tests pass, 173/173 Kim tests pass
+- [x] Live batch: S8A/S9A/S10A/S12A FormBlock=medium, S8B/S9B/S10B/S12B FormBlock=NONE
+- [x] 0 TS errors, 3094 total tests pass
+## FASE 9K: Broader Adversarial Regression
+- [x] 28 scenarios (10 Elias, 10 Kim, 4 cross-persona, 4 multi-detector overlap)
+- [x] Detector-layer PASS: avg 9.59, min 8.5, 0 hard failures
+- [x] 0 persona leakage, 0 safety priority failure, 0 rescue role failure
+- [x] 5 DETECTOR_FALSE_NEGATIVE classified (E4, K3, K7, K8, M1) — all SAFE, regex gaps only
+- [x] 0 false positives, 0 overrouting, 0 formulation conflicts
+- [x] 3122 total tests pass, 0 TS errors
+- [ ] Future: Expand medical regex for 'ontwenningsverschijnselen', 'lever kapot'
+- [ ] Future: Add self-loss detector for Kim (pure dependency without control language)
+- [ ] Future: Refine mindreading negative filter for mixed observable+intent inputs
+- [ ] Refactor: consolidate duplicate Kim/Elias test helpers
