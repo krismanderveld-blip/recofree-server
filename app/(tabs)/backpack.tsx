@@ -21,6 +21,7 @@ import { VspSectionEditor } from '@/components/vsp-section-editor';
 import { VspWizardScreen } from '@/lib/features/vspWizard/VspWizardScreen';
 import { BackpackWizardScreen } from '@/lib/features/backpackWizard/BackpackWizardScreen';
 import { colors as dc, spacing, radius, typography, shadows, cardStyles, buttonStyles } from '@/constants/design';
+import { ManualDataRefreshButton } from '@/components/profile/ManualDataRefreshButton';
 import { HomeButton } from '@/components/home-button';
 import { useTranslation } from '@/lib/i18n';
 
@@ -587,6 +588,8 @@ export default function BackpackScreen() {
           </View>
         )}
 
+        {/* Manual Data Refresh */}
+        <ManualDataRefreshButton />
         {/* Tip */}
         <View style={{ ...cardStyles.default, marginTop: spacing.sm }}>
           <Text style={{ ...typography.bodySmall, color: dc.textTertiary, lineHeight: 20 }}>

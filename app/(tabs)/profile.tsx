@@ -18,6 +18,7 @@ import { useExportImportStores } from '@/lib/features/exportImport/hooks/useExpo
 import { loadVspInsightProfile, buildPdfPlainText, saveVspInsightProfile } from '@/lib/features/vspInsight';
 import { BalkmetafoorCard } from '@/components/profile/BalkmetafoorCard';
 import { NotificationPermissionCard } from '@/components/profile/NotificationPermissionCard';
+import { ManualDataRefreshButton } from '@/components/profile/ManualDataRefreshButton';
 import { createEmptyBalkmetafoor } from '@/lib/types/balkmetafoor.types';
 import type { BalkmetafoorData, BalkmetafoorEntry } from '@/lib/types/balkmetafoor.types';
 import { useTranslation } from '@/lib/i18n';
@@ -531,6 +532,7 @@ export default function ProfileScreen() {
         )}
 
         {/* Data & Privacy — Export / Import */}
+          <ManualDataRefreshButton />
         <View style={{ marginBottom: spacing.xl }}>
           <DataPrivacySection stores={exportImportStores} appVersion={APP_VERSION} onImportSuccess={reloadFromStorage} />
         </View>
