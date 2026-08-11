@@ -97,6 +97,7 @@ import { analyzeBackpackRelevance, resetTriggerDecay, parseVspProfileFromBackpac
 import { evaluatePromotions, applyPromotions, type PromotionCandidate, type PromotionResult } from './userdat-promotion';
 import { recordCallCost, resetSessionCost, estimateTokens, type TokenUsage } from './cost-control';
 import { applyRegulation, type RegulationResult, type ZoneColor } from './regulation-layer';
+import { recordTokenCostEstimate, buildPersistentTokenCostDebugLine } from "@/lib/ai/debug/token-cost-persistence";
 import { createEliasDecision, type EliasDecision } from '../engine/elias/decision-layer';
 import { createKimDecision, type KimDecision } from '../engine/kim/decision-layer';
 import { routeEngineDirective, type EngineDirective } from '../engine/orchestration';
@@ -4436,6 +4437,9 @@ export async function processMessage(
   // Record cost
   if (tokenUsage) {
     recordCallCost(tokenUsage, isSessionStart, preGPTDominantState.dominantModule);
+    // FASE 9H: Persist token cost locally
+    const _costEst = estimateTokenCost({ model: selectedModel ?? "unknown", tier: getModelTierFromModel(selectedModel ?? "unknown"), usage: tokenUsage! });
+    recordTokenCostEstimate({ sessionId: sessionBuffer.sessionId ?? "unknown", localDayKey: new Date().toISOString().slice(0, 10), estimate: _costEst, reasonCodes: epistemicRoutingDebug.reasons?.split(",") ?? [], nowLocal: new Date().toISOString() }).catch(() => {});
   }
 
     // Compose the final rugzak view (backpack unchanged)
