@@ -555,9 +555,9 @@ describe('FASE 9A: Epistemic Reasoning Engine Contract', () => {
       expect(engineFile).not.toMatch(/distStore|dist01.*save|dist01.*merge/i);
     });
 
-    it('89. no pipeline integration', () => {
+    it('89. pipeline integration exists behind feature flag', () => {
       const pipelineFile = fs.readFileSync(path.resolve(__dirname, '../../../lib/rugzak/pipeline.ts'), 'utf-8');
-      expect(pipelineFile).not.toMatch(/epistemic-reasoning/);
+      expect(pipelineFile).toMatch(/epistemic-reasoning|epistemicGuidanceSummary/);
     });
 
     it('90. TypeScript 0 errors (verified by tsc --noEmit)', () => {

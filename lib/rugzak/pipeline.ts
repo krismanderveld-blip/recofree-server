@@ -1468,6 +1468,7 @@ export async function processMessage(
       messageCount: sessionBuffer.messageCount,
     });
 
+
     if (schemaModeResult.activated) {
       console.log(`[Pipeline] SchemaMode: dominant_mode=${schemaModeResult.modeDecision.dominantMode} | dominant_schema=${schemaModeResult.schemaDecision.dominantSchema} | safe=${schemaModeResult.schemaDecision.safeToExplore}`);
     }
@@ -3389,6 +3390,48 @@ export async function processMessage(
       console.warn('[Pipeline] CMD runtime failed (non-blocking):', e);
     }
   }
+  // ── CORE EPISTEMIC REASONING ENGINE (runs after CMD, before formulation) ──
+  let epistemicGuidanceSummary: string | null = null;
+  let epistemicModelRoutingHints: any = null;
+  let epistemicDebug = { flag: false, run: false, claims: 0, hyp: 0, unc: 0, mindread: false, rescue: false, medUnc: false, tier: 'mini' as 'mini' | 'full' };
+  const enableEpistemic = process.env.EXPO_PUBLIC_ENABLE_CORE_EPISTEMIC_ENGINE === 'true';
+  epistemicDebug.flag = enableEpistemic;
+  if (enableEpistemic && crisisLevel < 2) {
+    try {
+      const { buildCoreEpistemicReasoning, validateEpistemicOutput, buildEpistemicGuidanceSummary } = require('../engine/shared/epistemic-reasoning');
+      const epistemicInput = {
+        persona: (backpack.userType || 'elias') as 'elias' | 'kim',
+        userMessage,
+        normalizedMessage: clientNanoResult?.translatedNL ?? null,
+        currentZone: sessionBuffer?.currentZoneColor || null,
+        cravingLevel: (backpack.userType === 'elias' && currentUserDat?.currentMood) ? (currentUserDat.currentMood as any).craving ?? null : null,
+        stressLevel: (backpack.userType === 'kim' && currentUserDat?.currentMood) ? (currentUserDat.currentMood as any).stress ?? null : null,
+        cmdSelectedDomains: undefined,
+        cmdSelectedItemsCount: undefined,
+        cmdEstimatedTokens: undefined,
+        nowLocal: new Date().toISOString(),
+      };
+      const epistemicOutput = buildCoreEpistemicReasoning(epistemicInput);
+      const validation = validateEpistemicOutput(epistemicOutput);
+      if (validation.ok && epistemicOutput.active) {
+        epistemicGuidanceSummary = buildEpistemicGuidanceSummary(epistemicOutput);
+        epistemicModelRoutingHints = epistemicOutput.modelRoutingHints;
+        epistemicDebug.run = true;
+        epistemicDebug.claims = epistemicOutput.claims.length;
+        epistemicDebug.hyp = epistemicOutput.claims.filter((c: any) => c.shouldTreatAsHypothesis).length;
+        epistemicDebug.unc = epistemicOutput.claims.filter((c: any) => c.certainty === 'uncertain' || c.certainty === 'unsupported').length;
+        epistemicDebug.mindread = epistemicOutput.modelRoutingHints.mindReadingRisk;
+        epistemicDebug.rescue = epistemicOutput.modelRoutingHints.rescueRoleRisk;
+        epistemicDebug.medUnc = epistemicOutput.modelRoutingHints.medicalUncertainty;
+        epistemicDebug.tier = epistemicOutput.modelRoutingHints.recommendedModelTier;
+      } else {
+        epistemicDebug.run = true;
+      }
+    } catch (e) {
+      epistemicDebug.run = false;
+      console.warn('[Pipeline] Epistemic engine failed (non-blocking):', e);
+    }
+  }
 
   // ── CLIENT FALLBACK: ChatContext + GPT call (only reached when server-led block above fails) ──
   // ── KIM RELATIONAL STANCE FILTER (runs for Kim only, non-crisis) ──
@@ -3847,6 +3890,8 @@ export async function processMessage(
     patternAcknowledgment: patternAcknowledgmentBlock ?? undefined,
     // ELIAS RECOVERY FORMULATION — compact formulation block for Elias recovery-focused GPT guidance
     eliasFormulationBlock: eliasFormulationBlock ?? undefined,
+    epistemicGuidanceSummary: epistemicGuidanceSummary ?? undefined,
+    epistemicModelRoutingHints: epistemicModelRoutingHints ?? undefined,
     // CMD SELECTED MEMORY SUMMARY — compact budget-selected clinical memory block
     cmdMemorySummary: cmdMemorySummary ?? undefined,
     // PRE-BUILT PROMPT BLOCKS (local pipeline → server as pure proxy)
@@ -4199,6 +4244,7 @@ export async function processMessage(
       cmd: cmdDebug.featureFlag ? `flag=${cmdDebug.featureFlag} run=${cmdDebug.runtimeExecuted} ctx=${cmdDebug.contextBuilt} valid=${cmdDebug.validationOk} sel=${cmdDebug.selectedItemsCount} tok=${cmdDebug.selectedEstimatedTokens} sum=${cmdDebug.memorySummaryPresent}(${cmdDebug.memorySummaryChars}ch)` : undefined,
       formulation: (eliasFormulationBlock || kimFormulationBlock) ? `${eliasFormulationBlock ? 'elias' : 'kim'}(${(eliasFormulationBlock || kimFormulationBlock || '').length}ch)` : undefined,
       route: process.env.EXPO_PUBLIC_ENABLE_MINIMAL_GPT_PROXY === 'true' ? 'minimal-proxy | store:false' : 'legacy-gpt-proxy',
+      epistemic: `flag=${epistemicDebug.flag} run=${epistemicDebug.run} claims=${epistemicDebug.claims} hyp=${epistemicDebug.hyp} unc=${epistemicDebug.unc} mindread=${epistemicDebug.mindread} rescue=${epistemicDebug.rescue} medUnc=${epistemicDebug.medUnc} tier=${epistemicDebug.tier}`,
     },
     schemaModeResult: schemaModeResult.activated ? {
       dominantMode: (schemaModeResult.modeDecision.dominantMode ?? null) as string | null,
