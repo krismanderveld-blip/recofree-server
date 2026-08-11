@@ -279,6 +279,7 @@ export interface ChatMessage {
     route?: string;
     epistemic?: string;
     modelRoute?: string;
+    cost?: string;
   };
   /** Schema/Mode detection result for clinical confirmation UI */
   schemaModeResult?: {

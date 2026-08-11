@@ -4286,6 +4286,7 @@ export async function processMessage(
       route: process.env.EXPO_PUBLIC_ENABLE_MINIMAL_GPT_PROXY === 'true' ? 'minimal-proxy | store:false' : 'legacy-gpt-proxy',
       epistemic: `flag=${epistemicDebug.flag} run=${epistemicDebug.run} claims=${epistemicDebug.claims} hyp=${epistemicDebug.hyp} unc=${epistemicDebug.unc} mindread=${epistemicDebug.mindread} rescue=${epistemicDebug.rescue} medUnc=${epistemicDebug.medUnc} tier=${epistemicDebug.tier}`,
       modelRoute: `flag=${epistemicRoutingDebug.flag} tier=${epistemicRoutingDebug.tier} model=${epistemicRoutingDebug.model} score=${epistemicRoutingDebug.score} reason=${epistemicRoutingDebug.reasons || 'light_context'}`,
+      cost: tokenUsage ? (() => { const tier = getModelTierFromModel(selectedModel ?? "unknown"); const est = estimateTokenCost({ model: selectedModel ?? "unknown", tier, usage: tokenUsage! }); return `msg=$${est.totalCostUsd.toFixed(6)} | tokens=${est.promptTokens}/${est.completionTokens}/${est.totalTokens} | tier=${tier} | pricing=${est.pricingVerified ? "ok" : "verify"}`; })() : "Cost: tokens=unknown",
     },
     schemaModeResult: schemaModeResult.activated ? {
       dominantMode: (schemaModeResult.modeDecision.dominantMode ?? null) as string | null,
@@ -6422,3 +6423,4 @@ export function runDeferredSessionAnalysis(
 
   return updatedUserDat;
 }
+import { estimateTokenCost, updateSessionTokenCostState, updateDailyTokenCostState, buildTokenCostDebugLine, getModelTierFromModel, createInitialSessionState, createInitialDailyState } from '@/lib/ai/debug/token-cost-tracker';
