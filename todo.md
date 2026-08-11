@@ -2872,7 +2872,19 @@
 - [x] 5 DETECTOR_FALSE_NEGATIVE classified (E4, K3, K7, K8, M1) — all SAFE, regex gaps only
 - [x] 0 false positives, 0 overrouting, 0 formulation conflicts
 - [x] 3122 total tests pass, 0 TS errors
-- [ ] Future: Expand medical regex for 'ontwenningsverschijnselen', 'lever kapot'
-- [ ] Future: Add self-loss detector for Kim (pure dependency without control language)
-- [ ] Future: Refine mindreading negative filter for mixed observable+intent inputs
+- [x] Future: Expand medical regex for 'ontwenningsverschijnselen', 'lever kapot' — RESOLVED via nano semantic supplement (FASE 9L)
+- [x] Future: Add self-loss detector for Kim (pure dependency without control language) — RESOLVED (FASE 9L detectSelfLoss)
+- [ ] Future: Refine mindreading negative filter for mixed observable+intent inputs — partially resolved via nano
 - [ ] Refactor: consolidate duplicate Kim/Elias test helpers
+## FASE 9L: Kim Nano Semantic Detector Integration
+- [x] 12 new Kim theme labels added (medical: 3, rescue: 3, mindreading: 3, self-loss: 3)
+- [x] No module mapping for formulation-only labels (resolvedModule unaffected)
+- [x] detectMedical: nano themes supplement regex (withdrawal_symptoms, organ_damage_concern, medical_concern_partner)
+- [x] detectRescue: nano themes supplement regex (rescue_role, controlling_other_recovery, managing_other_sobriety)
+- [x] detectMindreading: nano themes supplement regex (intent_attribution, motive_assumption, deliberate_harm_belief)
+- [x] detectRepeatedHarm: nano themes supplement regex (broken_trust, betrayal)
+- [x] detectSelfLoss: new detector (emotional_dependency, self_loss_through_other, day_depends_on_other)
+- [x] RESCUE_NEGATIVE extended for healthy support (steunen nu hij zelf hulp heeft gezocht)
+- [x] 36/36 new tests pass, 209/209 Kim tests pass, 3158 total tests pass
+- [x] 0 TS errors, 0 false positives, 0 persona leakage
+- [x] No DIST01/CMD/memory/safety/model routing/Elias/lockfile changes

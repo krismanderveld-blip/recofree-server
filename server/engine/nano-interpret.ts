@@ -134,6 +134,11 @@ export const KIM_THEME_LABELS = [
   'no_childhood', 'forced_adult_role', 'child_as_caregiver', 'financial_dependency', 'money_as_control', 'no_financial_autonomy',
   'economic_abuse', 'financial_control', 'ambiguous_loss', 'living_grief', 'missing_who_they_were', 'social_isolation_caregiver',
   'lost_own_contacts', 'caregiving_isolation',
+  // FASE 9L: Formulation-only labels (no module mapping — used by Kim detectors only)
+  'medical_concern_partner', 'withdrawal_symptoms', 'organ_damage_concern',
+  'rescue_role', 'controlling_other_recovery', 'managing_other_sobriety',
+  'intent_attribution', 'motive_assumption', 'deliberate_harm_belief',
+  'emotional_dependency', 'self_loss_through_other', 'day_depends_on_other',
 ] as const;
 
 export type EliasThemeLabel = typeof ELIAS_THEME_LABELS[number];

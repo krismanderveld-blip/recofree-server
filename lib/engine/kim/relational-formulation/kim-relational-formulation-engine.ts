@@ -272,10 +272,14 @@ function detectGrief(text: string): DetectedPattern | null {
 // ── Pattern 9: Rescue / Recovery Ownership ──
 
 const RESCUE_CONTROL = /(?:(?:ik\s+(?:moet|ga|wil|probeer)).*?(?:zorgen|ervoor\s+zorgen|hem|haar|zover\s+krijgen).*?(?:therapie|hulp|stoppen|nuchter|behandeling|afspraken|herstel|drinken|gebruiken))|(?:(?:hoe\s+(?:zorg|krijg|maak)\s+ik).*?(?:hij|zij|haar|hem).*?(?:therapie|hulp|stoppen|nuchter|gemotiveerd|behandeling))|(?:(?:ik\s+(?:herinner|controleer|stuur|dwing|push)).*?(?:zijn|haar|hem).*?(?:herstel|afspraken|therapie|nuchter))|(?:(?:als\s+ik.*?niet\s+(?:controleer|help|stuur)).*?(?:mis|fout|weer))|(?:(?:we\s+moeten\s+(?:samen\s+)?zorgen).*?(?:nuchter|stoppen|therapie|herstel))/i;
-const RESCUE_NEGATIVE = /(?:we\s+plannen\s+samen\s+(?:het\s+huishouden|de\s+vakantie|onze))|(?:we\s+(?:hebben\s+)?afgesproken\s+wie)|(?:we\s+willen\s+samen\s+(?:beter\s+communiceren|plannen))/i;
+const RESCUE_NEGATIVE = /(?:we\s+plannen\s+samen\s+(?:het\s+huishouden|de\s+vakantie|onze))|(?:we\s+(?:hebben\s+)?afgesproken\s+wie)|(?:we\s+willen\s+samen\s+(?:beter\s+communiceren|plannen))|(?:(?:steunen|ondersteunen).*?(?:hij|zij|ze)\s+zelf\s+(?:hulp|behandeling|therapie)\s+(?:heeft\s+)?(?:gezocht|gekozen|gestart))/i;
 
-function detectRescue(text: string): DetectedPattern | null {
-  if (!RESCUE_CONTROL.test(text)) return null;
+function detectRescue(text: string, themes?: string[]): DetectedPattern | null {
+  const regexMatch = RESCUE_CONTROL.test(text);
+  const nanoMatch = themes?.some(t =>
+    t === 'rescue_role' || t === 'controlling_other_recovery' || t === 'managing_other_sobriety'
+  ) ?? false;
+  if (!regexMatch && !nanoMatch) return null;
   if (RESCUE_NEGATIVE.test(text)) return null;
   return {
     domains: ['boundary_pressure', 'relationship_repair'],
@@ -303,8 +307,12 @@ function detectRescue(text: string): DetectedPattern | null {
 const MINDREADING_INTENT = /(?:(?:hij|zij|ze)\s+(?:doet|zegt|liegt|drinkt|gebruikt).*?(?:expres|opzettelijk|bewust|om\s+(?:mij|me)\s+(?:te\s+)?(?:kwetsen|manipuleren|bang|pijn|straffen|controleren)))|(?:(?:hij|zij|ze)\s+(?:wil|wilt|denkt|vindt)\s+(?:gewoon|duidelijk|alleen\s+maar).*?(?:dat\s+ik|mij|me))|(?:(?:hij|zij|ze)\s+(?:doet|zegt)\s+dit\s+(?:alleen|enkel)\s+(?:maar\s+)?(?:om|zodat))/i;
 const MINDREADING_NEGATIVE = /(?:(?:hij|zij|ze)\s+(?:zei|vertelde|heeft\s+gezegd)\s+(?:letterlijk|expliciet|tegen\s+(?:mij|me)))|(?:(?:hij|zij|ze)\s+(?:kwam\s+niet|verbrak|heeft\s+(?:niet|afspraak)))/i;
 
-function detectMindreading(text: string): DetectedPattern | null {
-  if (!MINDREADING_INTENT.test(text)) return null;
+function detectMindreading(text: string, themes?: string[]): DetectedPattern | null {
+  const regexMatch = MINDREADING_INTENT.test(text);
+  const nanoMatch = themes?.some(t =>
+    t === 'intent_attribution' || t === 'motive_assumption' || t === 'deliberate_harm_belief'
+  ) ?? false;
+  if (!regexMatch && !nanoMatch) return null;
   if (MINDREADING_NEGATIVE.test(text)) return null;
   return {
     domains: ['trust', 'relationship_repair'],
@@ -332,9 +340,13 @@ function detectMindreading(text: string): DetectedPattern | null {
 const MEDICAL_BOUNDARY = /(?:(?:is\s+(?:zijn|haar|dit|dat|die)).*?(?:door|van|vanwege).*?(?:alcohol|drinken|gebruik|medicatie|ontwenning|drugs|pillen))|(?:(?:kan\s+(?:die|dat|deze|zijn|haar)).*?(?:medicatie|alcohol|drugs|gebruik|ontwenning).*?(?:maken|veroorzaken|zorgen))|(?:(?:is\s+dit|is\s+dat).*?(?:delirium|ontwenning|onttrekking|vergiftiging|overdosis))|(?:(?:komt|door)\s+(?:zijn|haar).*?(?:geheugenverlies|agressie|blackout|uitval|paranoia).*?(?:door|van).*?(?:drinken|alcohol|gebruik))|(?:(?:kan\s+(?:hij|zij|ze)).*?(?:hierdoor|daardoor|erdoor).*?(?:lichamelijke?\s+schade|hersenschade|leverschade))/i;
 const MEDICAL_NEGATIVE = /(?:ik\s+voel\s+(?:me|mij)\s+(?:uitgeput|moe|verdrietig|boos))|(?:ik\s+weet\s+niet\s+meer\s+hoe\s+ik)|(?:waarom\s+raakt\s+(?:dit|mij|me)\s+zo)/i;
 
-function detectMedical(text: string): DetectedPattern | null {
-  if (!MEDICAL_BOUNDARY.test(text)) return null;
-  if (MEDICAL_NEGATIVE.test(text) && !MEDICAL_BOUNDARY.test(text.replace(MEDICAL_NEGATIVE, ''))) return null;
+function detectMedical(text: string, themes?: string[]): DetectedPattern | null {
+  const regexMatch = MEDICAL_BOUNDARY.test(text);
+  const nanoMatch = themes?.some(t =>
+    t === 'medical_concern_partner' || t === 'withdrawal_symptoms' || t === 'organ_damage_concern'
+  ) ?? false;
+  if (!regexMatch && !nanoMatch) return null;
+  if (MEDICAL_NEGATIVE.test(text) && !regexMatch) return null;
   return {
     domains: ['boundary_pressure', 'relationship_repair'],
     severity: 'unknown',
@@ -362,8 +374,12 @@ function detectMedical(text: string): DetectedPattern | null {
 const REPEATED_HARM_PATTERN = /(?:(?:telkens|steeds|opnieuw|weer|elke\s+keer|al\s+de\s+\w+\s+keer|herhaaldelijk|keer\s+op\s+keer).*?(?:liegt|liegen|gelogen|bedrogen|belooft|breekt|overschrijdt|manipuleert|verdwijnt|drinkt))|(?:(?:liegt|liegen|bedrogen|belooft|breekt|overschrijdt).*?(?:telkens|steeds|opnieuw|weer|elke\s+keer|al\s+de\s+\w+\s+keer|herhaaldelijk))/i;
 const REPEATED_HARM_NEGATIVE = /(?:we\s+(?:zijn|hadden)\s+(?:het\s+)?(?:niet\s+eens|oneens|ruzie).*?(?:school|geld|vakantie|boodschappen))|(?:(?:hij|zij)\s+vergat\s+(?:boodschappen|afwas|vuilnis))/i;
 
-function detectRepeatedHarm(text: string): DetectedPattern | null {
-  if (!REPEATED_HARM_PATTERN.test(text)) return null;
+function detectRepeatedHarm(text: string, themes?: string[]): DetectedPattern | null {
+  const regexMatch = REPEATED_HARM_PATTERN.test(text);
+  const nanoMatch = themes?.some(t =>
+    t === 'broken_trust' || t === 'betrayal'
+  ) ?? false;
+  if (!regexMatch && !nanoMatch) return null;
   if (REPEATED_HARM_NEGATIVE.test(text)) return null;
   return {
     domains: ['trust', 'boundary_pressure', 'relationship_repair'],
@@ -387,6 +403,40 @@ function detectRepeatedHarm(text: string): DetectedPattern | null {
   };
 }
 
+
+// ── Pattern 13: Self-Loss (FASE 9L) ──
+
+const SELF_LOSS_PATTERN = /(?:(?:mijn\s+(?:hele\s+)?(?:dag|leven|wereld|bestaan)).*?(?:hangt\s+af|draait\s+(?:om|rond)|afhangt).*?(?:hij|zij|hem|haar|hoe))|(?:(?:als\s+(?:het|hij|zij)\s+(?:slecht|niet\s+goed|fout)).*?(?:kan\s+ik\s+(?:niets|zelf\s+niets|ook\s+niet)))|(?:(?:ik\s+plan\s+niets).*?(?:weet\s+(?:nooit|niet)\s+hoe))|(?:(?:alles\s+(?:in\s+mijn\s+leven)?).*?(?:draait\s+(?:om|rond)).*?(?:zijn|haar)\s+(?:gebruik|drinken|verslaving|gedrag))/i;
+const SELF_LOSS_NEGATIVE = /(?:ik\s+mis\s+(?:hem|haar)\s+(?:als|wanneer))|(?:we\s+brengen\s+(?:veel\s+)?tijd\s+samen)|(?:ik\s+(?:hou|houd)\s+rekening\s+met)|(?:ik\s+was\s+(?:vandaag\s+)?bezorgd\s+(?:omdat|want).*?(?:ziek|griep|verkouden))/i;
+
+function detectSelfLoss(text: string, themes?: string[]): DetectedPattern | null {
+  const regexMatch = SELF_LOSS_PATTERN.test(text);
+  const nanoMatch = themes?.some(t =>
+    t === 'emotional_dependency' || t === 'self_loss_through_other' || t === 'day_depends_on_other'
+  ) ?? false;
+  if (!regexMatch && !nanoMatch) return null;
+  if (SELF_LOSS_NEGATIVE.test(text)) return null;
+  return {
+    domains: ['self_loss', 'boundary_pressure'],
+    severity: 'unknown',
+    mustMention: [
+      'impact op eigen ruimte en keuzes erkennen',
+      'eigen regie: wat ligt binnen jouw controle',
+      'minimaal één element dat onder controle van de gebruiker ligt',
+    ],
+    mustAvoid: [
+      'partner controleren als oplossing',
+      'gebruiker verantwoordelijk maken voor herstel van de ander',
+      'automatisch adviseren om relatie te beëindigen',
+      'pathologiserende labels',
+    ],
+    facts: [{ id: 'f-sl-1', text: 'verlies van eigen regie/ruimte gedetecteerd', source: 'user_message', confidence: 'high' }],
+    caregiverImpacts: [{ id: 'ci-sl-1', domain: 'self_loss', text: 'gebruiker verliest eigen ruimte/keuzes door afhankelijkheid van de ander', confidence: 'high' }],
+    domainSeparations: [{ id: 'ds-sl-1', domainA: 'self_loss', domainB: 'communication', distinction: 'Betrokken zijn is niet hetzelfde als jezelf verliezen.', mustMention: true }],
+    repairConditions: [],
+    behaviorFunctions: [{ id: 'bf-sl-1', behavior: 'eigen leven organiseren rond de ander', possibleFunction: 'angst voor verlies of onvoorspelbaarheid', explanationNotExcuse: true, owner: 'caregiver', confidence: 'high' }],
+  };
+}
 
 // ── Default responsibility map ──
 
@@ -500,10 +550,17 @@ export function buildKimRelationalFormulationContext(
   ].join(' ');
 
   // Run all pattern detectors
-  const detectors = [detectTrust, detectAffection, detectDecision, detectCaregiving, detectControl, detectChildTrust, detectShame, detectGrief, detectRescue, detectMindreading, detectMedical, detectRepeatedHarm];
+  // FASE 9L: Pass semanticThemes to nano-enhanced detectors
+  const themes = input.semanticThemes ?? [];
+  const basicDetectors = [detectTrust, detectAffection, detectDecision, detectCaregiving, detectControl, detectChildTrust, detectShame, detectGrief];
+  const nanoDetectors: Array<(text: string, themes?: string[]) => DetectedPattern | null> = [detectRescue, detectMindreading, detectMedical, detectRepeatedHarm, detectSelfLoss];
   const detectedPatterns: DetectedPattern[] = [];
-  for (const detector of detectors) {
+  for (const detector of basicDetectors) {
     const result = detector(combinedText);
+    if (result) detectedPatterns.push(result);
+  }
+  for (const detector of nanoDetectors) {
+    const result = detector(combinedText, themes);
     if (result) detectedPatterns.push(result);
   }
 
