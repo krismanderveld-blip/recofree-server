@@ -3300,7 +3300,22 @@ export async function processMessage(
   let cmdKimMemory: import('@/lib/engine/shared/clinical-memory-distillation/clinical-memory-distillation-types').KimMemoryBridge | null = null;
   let cmdEliasMemory: import('@/lib/engine/shared/clinical-memory-distillation/clinical-memory-distillation-types').EliasMemoryBridge | null = null;
   let cmdMemorySummary: string | undefined;
+  // CMD debug status (hoisted for clinicalInfo visibility)
+  let cmdDebug = {
+    featureFlag: false,
+    runtimeExecuted: false,
+    contextBuilt: false,
+    validationOk: false,
+    validationErrorsCount: 0,
+    selectorOutputPresent: false,
+    selectedItemsCount: 0,
+    selectedEstimatedTokens: 0,
+    memorySummaryPresent: false,
+    memorySummaryChars: 0,
+    warningsCount: 0,
+  };
   const enableCMD = process.env.EXPO_PUBLIC_ENABLE_CLINICAL_MEMORY_DISTILLATION === 'true';
+  cmdDebug.featureFlag = enableCMD;
   if (enableCMD) {
     try {
       const { buildClinicalMemoryDistillationRuntimeContext } = require('../engine/shared/clinical-memory-distillation/clinical-memory-distillation-runtime');
@@ -3351,10 +3366,26 @@ export async function processMessage(
           } catch { /* non-blocking */ }
         }
         console.log(`[Pipeline] CMD active: persona=${cmdPersona} skipped=${cmdResult.skippedLayers.length} warnings=${cmdResult.warnings.length}`);
+        cmdDebug.runtimeExecuted = true;
+        cmdDebug.contextBuilt = true;
+        cmdDebug.validationOk = true;
+        cmdDebug.selectorOutputPresent = !!(cmdResult.selectorOutput && cmdResult.selectorOutput.selectedItems.length > 0);
+        cmdDebug.selectedItemsCount = cmdResult.selectorOutput?.selectedItems?.length ?? 0;
+        cmdDebug.selectedEstimatedTokens = cmdResult.selectorOutput?.totalEstimatedTokens ?? 0;
+        cmdDebug.memorySummaryPresent = !!cmdMemorySummary;
+        cmdDebug.memorySummaryChars = cmdMemorySummary?.length ?? 0;
+        cmdDebug.warningsCount = cmdResult.warnings.length;
       } else if (cmdResult.enabled && !cmdResult.validation.ok) {
+        cmdDebug.runtimeExecuted = true;
+        cmdDebug.contextBuilt = !!cmdResult.context;
+        cmdDebug.validationOk = false;
+        cmdDebug.validationErrorsCount = cmdResult.validation.errors.length;
         console.warn(`[Pipeline] CMD validation failed (non-blocking): ${cmdResult.validation.errors.length} errors`);
+      } else {
+        cmdDebug.runtimeExecuted = true;
       }
     } catch (e) {
+      cmdDebug.runtimeExecuted = true;
       console.warn('[Pipeline] CMD runtime failed (non-blocking):', e);
     }
   }
@@ -4165,6 +4196,9 @@ export async function processMessage(
       buffer: `msg#${sessionBuffer.messageCount} zone=${sessionBuffer.currentZoneColor}(${sessionBuffer.currentZoneScore}) intent=${(sessionBuffer as any).liveIntent ?? 'none'}`,
       k05Override: undefined as any,
       safetyFilters: undefined as any,
+      cmd: cmdDebug.featureFlag ? `flag=${cmdDebug.featureFlag} run=${cmdDebug.runtimeExecuted} ctx=${cmdDebug.contextBuilt} valid=${cmdDebug.validationOk} sel=${cmdDebug.selectedItemsCount} tok=${cmdDebug.selectedEstimatedTokens} sum=${cmdDebug.memorySummaryPresent}(${cmdDebug.memorySummaryChars}ch)` : undefined,
+      formulation: (eliasFormulationBlock || kimFormulationBlock) ? `${eliasFormulationBlock ? 'elias' : 'kim'}(${(eliasFormulationBlock || kimFormulationBlock || '').length}ch)` : undefined,
+      route: process.env.EXPO_PUBLIC_ENABLE_MINIMAL_GPT_PROXY === 'true' ? 'minimal-proxy | store:false' : 'legacy-gpt-proxy',
     },
     schemaModeResult: schemaModeResult.activated ? {
       dominantMode: (schemaModeResult.modeDecision.dominantMode ?? null) as string | null,

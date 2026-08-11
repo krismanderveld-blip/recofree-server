@@ -274,6 +274,9 @@ export interface ChatMessage {
     buffer?: string;
     k05Override?: { fired: boolean; method?: string; layer1?: { boundary: boolean; repair: boolean }; debugLog?: string[] };
     safetyFilters?: Array<{ filter: string; module?: string; categories: string[]; violations: number }>;
+    cmd?: string;
+    formulation?: string;
+    route?: string;
   };
   /** Schema/Mode detection result for clinical confirmation UI */
   schemaModeResult?: {
