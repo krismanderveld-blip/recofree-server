@@ -211,7 +211,52 @@ describe('FASE 9G: Token / Cost Clinical Debug Tracker', () => {
     });
     it('56. all existing tests still pass (no import conflicts)', () => {
       const configCode = fs.readFileSync(path.resolve(__dirname, '../../../lib/ai/debug/model-price-config.ts'), 'utf-8');
-      expect(configCode).toContain('VERIFY_OPENAI_PRICING_BEFORE_PRODUCTION');
+      expect(configCode).toContain('verified 2026-08-11');
     });
+  });
+});
+
+describe('FASE 9G-B: Pricing Verification', () => {
+  it('V1. gpt-4o-mini input price = 0.15', () => { expect(getModelPricing('gpt-4o-mini')!.inputCostPer1MTokensUsd).toBe(0.15); });
+  it('V2. gpt-4o-mini output price = 0.60', () => { expect(getModelPricing('gpt-4o-mini')!.outputCostPer1MTokensUsd).toBe(0.60); });
+  it('V3. gpt-4o input price = 2.50', () => { expect(getModelPricing('gpt-4o')!.inputCostPer1MTokensUsd).toBe(2.50); });
+  it('V4. gpt-4o output price = 10.00', () => { expect(getModelPricing('gpt-4o')!.outputCostPer1MTokensUsd).toBe(10.00); });
+  it('V5. gpt-4o-2024-08-06 input price = 2.50', () => { expect(getModelPricing('gpt-4o-2024-08-06')!.inputCostPer1MTokensUsd).toBe(2.50); });
+  it('V6. gpt-4o-2024-08-06 output price = 10.00', () => { expect(getModelPricing('gpt-4o-2024-08-06')!.outputCostPer1MTokensUsd).toBe(10.00); });
+  it('V7. verified models have requiresVerificationBeforeProduction=false', () => {
+    for (const p of MODEL_PRICING_CONFIG) { expect(p.requiresVerificationBeforeProduction).toBe(false); }
+  });
+  it('V8. debug line shows pricing=verified for verified models', () => {
+    const est = estimateTokenCost({ model: 'gpt-4o-mini', tier: 'mini', usage: { promptTokens: 100, completionTokens: 10, totalTokens: 110 } });
+    expect(est.pricingVerified).toBe(true);
+    const line = buildTokenCostDebugLine({ estimate: est, sessionState: createInitialSessionState('s'), dailyState: createInitialDailyState('d') });
+    expect(line).toContain('pricing=verified');
+  });
+  it('V9. unknown model shows pricing=verify/warning', () => {
+    const est = estimateTokenCost({ model: 'gpt-unknown', tier: 'unknown', usage: { promptTokens: 100, completionTokens: 10, totalTokens: 110 } });
+    expect(est.pricingVerified).toBe(false);
+    expect(est.warning).toBeTruthy();
+    const line = buildTokenCostDebugLine({ estimate: est, sessionState: createInitialSessionState('s'), dailyState: createInitialDailyState('d') });
+    expect(line).toContain('pricing=verify');
+  });
+  it('V10. cost calculation correct for gpt-4o-mini', () => {
+    const est = estimateTokenCost({ model: 'gpt-4o-mini', tier: 'mini', usage: { promptTokens: 1000000, completionTokens: 1000000, totalTokens: 2000000 } });
+    expect(est.inputCostUsd).toBe(0.15);
+    expect(est.outputCostUsd).toBe(0.60);
+    expect(est.totalCostUsd).toBe(0.75);
+  });
+  it('V11. no routing logic in price config', () => {
+    const configCode = require('fs').readFileSync(require('path').resolve(__dirname, '../../../lib/ai/debug/model-price-config.ts'), 'utf-8');
+    expect(configCode).not.toContain('resolveEpistemicModelRouting');
+  });
+  it('V12. no provider/server imports in price config', () => {
+    const configCode = require('fs').readFileSync(require('path').resolve(__dirname, '../../../lib/ai/debug/model-price-config.ts'), 'utf-8');
+    expect(configCode).not.toMatch(/from ['"].*server|from ['"].*openai-provider/);
+  });
+  it('V13. sourceLabel contains verified date', () => {
+    for (const p of MODEL_PRICING_CONFIG) { expect(p.sourceLabel).toContain('verified 2026-08-11'); }
+  });
+  it('V14. all models have currency USD', () => {
+    for (const p of MODEL_PRICING_CONFIG) { expect(p.currency).toBe('USD'); }
   });
 });

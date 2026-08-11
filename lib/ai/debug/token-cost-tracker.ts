@@ -128,7 +128,7 @@ export function buildTokenCostDebugLine(input: {
 
   const tokens = `${input.estimate.promptTokens}/${input.estimate.completionTokens}/${input.estimate.totalTokens}`;
 
-  const pricingNote = input.estimate.pricingVerified ? '' : ' | pricing=verify';
+  const pricingNote = input.estimate.pricingVerified ? ' | pricing=verified' : ' | pricing=verify';
 
   return `Cost: msg=${msgCost} | session=${sessionCost} | day=${dayCost} | tokens=${tokens}${pricingNote}`;
 }

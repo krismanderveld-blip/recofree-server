@@ -2,9 +2,8 @@
  * Model Price Configuration
  * FASE 9G: Central pricing constants
  * 
- * VERIFY_OPENAI_PRICING_BEFORE_PRODUCTION
- * These prices are estimates based on publicly available OpenAI pricing.
- * Verify before production deployment.
+ * Pricing verified against OpenAI API model pricing docs, 2026-08-11.
+ * All listed models have requiresVerificationBeforeProduction=false.
  */
 
 import type { ModelPricing } from './token-cost-types';
@@ -16,8 +15,8 @@ export const MODEL_PRICING_CONFIG: ModelPricing[] = [
     inputCostPer1MTokensUsd: 0.15,
     outputCostPer1MTokensUsd: 0.60,
     currency: 'USD',
-    sourceLabel: 'VERIFY_OPENAI_PRICING_BEFORE_PRODUCTION',
-    requiresVerificationBeforeProduction: true,
+    sourceLabel: 'OpenAI API model pricing docs, verified 2026-08-11',
+    requiresVerificationBeforeProduction: false,
   },
   {
     model: 'gpt-4o-2024-08-06',
@@ -25,8 +24,8 @@ export const MODEL_PRICING_CONFIG: ModelPricing[] = [
     inputCostPer1MTokensUsd: 2.50,
     outputCostPer1MTokensUsd: 10.00,
     currency: 'USD',
-    sourceLabel: 'VERIFY_OPENAI_PRICING_BEFORE_PRODUCTION',
-    requiresVerificationBeforeProduction: true,
+    sourceLabel: 'OpenAI API model pricing docs, verified 2026-08-11',
+    requiresVerificationBeforeProduction: false,
   },
   {
     model: 'gpt-4o',
@@ -34,8 +33,8 @@ export const MODEL_PRICING_CONFIG: ModelPricing[] = [
     inputCostPer1MTokensUsd: 2.50,
     outputCostPer1MTokensUsd: 10.00,
     currency: 'USD',
-    sourceLabel: 'VERIFY_OPENAI_PRICING_BEFORE_PRODUCTION',
-    requiresVerificationBeforeProduction: true,
+    sourceLabel: 'OpenAI API model pricing docs, verified 2026-08-11',
+    requiresVerificationBeforeProduction: false,
   },
 ];
 
