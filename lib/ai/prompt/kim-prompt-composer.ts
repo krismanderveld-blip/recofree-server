@@ -95,7 +95,7 @@ export function buildKimRelationalFormulationBlock(
   // Priority 2: mustMention
   if (context.mustMention.length > 0) {
     lines.push('Must mention:');
-    for (const item of context.mustMention.slice(0, 4)) {
+    for (const item of context.mustMention.slice(0, 6)) {
       lines.push(`- ${item}`);
     }
   }
@@ -103,7 +103,7 @@ export function buildKimRelationalFormulationBlock(
   // Priority 3: mustAvoid
   if (context.mustAvoid.length > 0) {
     lines.push('Must avoid:');
-    for (const item of context.mustAvoid.slice(0, 4)) {
+    for (const item of context.mustAvoid.slice(0, 6)) {
       lines.push(`- ${item}`);
     }
   }

@@ -197,10 +197,17 @@ function detectControl(text: string): DetectedPattern | null {
 
 // ── Pattern 6: Child trust ──
 
-const CHILD_TRIGGERS = /kind|kinderen|zoon|dochter|stiefkind|vertrouwt hem niet|wil hem niet zien|child|children|son|daughter/i;
+// FASE 9J-R1: Conjunctive child-trust detection
+// Requires ALL THREE: child reference + trust/harm context + dependency/relational context
+const CHILD_REFERENCE = /kind|kinderen|zoon|dochter|stiefkind|child|children|son|daughter/i;
+const CHILD_TRUST_OR_HARM = /vertrouwt.*niet|gelooft.*niet|bang voor|bang geworden|teleurgesteld|gebroken vertrouwen|liegt tegen|afspraken.*brek|onveilig|wil geen contact|wil.*niet.*zien|trust.*broken|afraid|disappointed|doesn't believe/i;
+const CHILD_DEPENDENCY_CONTEXT = /drinken|drinkt|gedronken|gebruik|verslav|afhankelijk|terugkerend lieg|verdwijn|onbetrouwbaar|herhaalde beloftes|herhaald.*breek|afspraken.*breek|nuchter|relapse|addiction|drinking|substance|disappear|unreliable/i;
 
 function detectChildTrust(text: string): DetectedPattern | null {
-  if (!CHILD_TRIGGERS.test(text)) return null;
+  // Must have child reference
+  if (!CHILD_REFERENCE.test(text)) return null;
+  // Must have trust/harm context AND dependency/relational context
+  if (!CHILD_TRUST_OR_HARM.test(text) || !CHILD_DEPENDENCY_CONTEXT.test(text)) return null;
   return {
     domains: ['child_trust', 'relationship_repair', 'trust'],
     severity: 'unknown',

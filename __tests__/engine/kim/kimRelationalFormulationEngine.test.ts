@@ -132,7 +132,7 @@ describe('FASE 6B: Kim Relational Formulation Engine V1', () => {
 
   // 16. child trust detecteert child_trust en domain separation
   it('16. child trust detects child_trust and domain separation', () => {
-    const ctx = buildKimRelationalFormulationContext(makeInput({ userMessage: 'mijn zoon vertrouwt hem niet meer' }));
+    const ctx = buildKimRelationalFormulationContext(makeInput({ userMessage: 'mijn zoon vertrouwt hem niet meer omdat hij telkens drinkt en verdwijnt' }));
     expect(ctx.activeDomains).toContain('child_trust');
     expect(ctx.domainSeparations.some(d => d.domainB === 'child_trust')).toBe(true);
   });
