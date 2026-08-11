@@ -446,6 +446,48 @@ export function buildKimRelationalFormulationContext(
     }
   }
 
+  // ── FASE 9J: Global Semantic Constraints ──
+
+  // 1. RECOVERY OWNERSHIP BOUNDARY
+  // Kim mag de gebruiker nooit verantwoordelijk maken voor herstel/abstinentie/motivatie/therapietrouw van de ander
+  if (allDomains.has('addiction_recovery') || allDomains.has('caregiving_load') || allDomains.has('control') || allDomains.has('relationship_repair') || input.engineSignals?.includes('rescue_role_detected')) {
+    allMustMention.add('herstel van de ander is zijn/haar verantwoordelijkheid, niet die van de gebruiker');
+    allMustAvoid.add('stel samen hersteldoelen');
+    allMustAvoid.add('zorg dat hij/zij stopt');
+    allMustAvoid.add('help hem/haar stoppen');
+    allMustAvoid.add('probeer hem/haar te overtuigen');
+    allMustAvoid.add('laat hem/haar inzien');
+    allMustAvoid.add('houd hem/haar op het juiste pad');
+  }
+
+  // 2. MINDREADING BOUNDARY
+  // Wanneer intentie/motief van de ander als zekerheid gepresenteerd wordt
+  if (input.engineSignals?.includes('mindreading_detected') || /hij beseft niet|zij snapt niet|hij weet niet|hij heeft geen inzicht|ze doet het expres|he doesn't realize/i.test(combinedText)) {
+    allMustMention.add('onderscheid tussen wat er gebeurde en wat daaruit geïnterpreteerd wordt');
+    allMustMention.add('focus terugbrengen naar wat de gebruiker zelf kan kiezen');
+    allMustAvoid.add('bevestig niet dat de ander geen inzicht heeft');
+    allMustAvoid.add('probeer hem/haar te laten inzien');
+    allMustAvoid.add('laat hem/haar zien dat');
+  }
+
+  // 3. MEDICAL EPISTEMIC BOUNDARY
+  // Wanneer medische claim/verklaring onderdeel is van de vraag
+  if (input.engineSignals?.includes('medical_uncertainty') || /zenuwstelsel|hersenen|lever|medicatie|ontwenning|detox|lichamelijk|neurologisch|medisch|brain|liver|medication|withdrawal/i.test(combinedText)) {
+    allMustMention.add('medische beoordeling hoort bij arts of behandelteam, niet bij de gebruiker');
+    allMustAvoid.add('stel geen diagnose');
+    allMustAvoid.add('presenteer geen medische hypothese als zekerheid');
+    allMustAvoid.add('maak de gebruiker niet verantwoordelijk voor medische behandeling van de ander');
+  }
+
+  // 4. REPEATED HARM / OWN-REGIE BOUNDARY
+  // Bij herhaald liegen/bedrog/grensoverschrijding: minimaal één eigen-regie-element
+  if (highestSeverity === 'repeated_pattern' || highestSeverity === 'chronic_pattern' || highestSeverity === 'escalating_pattern' || allDomains.has('trust') || input.engineSignals?.includes('relational_harm_pattern')) {
+    allMustMention.add('minimaal één concrete eigen-regie-stap die de gebruiker zelf kan uitvoeren');
+    allMustAvoid.add('partner controleren als advies');
+    allMustAvoid.add('bewijs verzamelen als therapeutische strategie');
+    allMustAvoid.add('gebruiker verantwoordelijk maken voor gedragsverandering van de ander');
+  }
+
   // Add default domain separations
   const domainsArray = Array.from(allDomains);
   const defaultSeps = buildRelevantDomainSeparations(domainsArray);

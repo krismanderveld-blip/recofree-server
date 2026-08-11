@@ -97,7 +97,6 @@ import { analyzeBackpackRelevance, resetTriggerDecay, parseVspProfileFromBackpac
 import { evaluatePromotions, applyPromotions, type PromotionCandidate, type PromotionResult } from './userdat-promotion';
 import { recordCallCost, resetSessionCost, estimateTokens, type TokenUsage } from './cost-control';
 import { applyRegulation, type RegulationResult, type ZoneColor } from './regulation-layer';
-import { recordTokenCostEstimate, buildPersistentTokenCostDebugLine } from "@/lib/ai/debug/token-cost-persistence";
 import { createEliasDecision, type EliasDecision } from '../engine/elias/decision-layer';
 import { createKimDecision, type KimDecision } from '../engine/kim/decision-layer';
 import { routeEngineDirective, type EngineDirective } from '../engine/orchestration';
@@ -1468,7 +1467,6 @@ export async function processMessage(
       isCrisis: analysis.riskLevel === 'critical' || analysis.riskLevel === 'high',
       messageCount: sessionBuffer.messageCount,
     });
-
 
     if (schemaModeResult.activated) {
       console.log(`[Pipeline] SchemaMode: dominant_mode=${schemaModeResult.modeDecision.dominantMode} | dominant_schema=${schemaModeResult.schemaDecision.dominantSchema} | safe=${schemaModeResult.schemaDecision.safeToExplore}`);
@@ -3391,88 +3389,6 @@ export async function processMessage(
       console.warn('[Pipeline] CMD runtime failed (non-blocking):', e);
     }
   }
-  // ── CORE EPISTEMIC REASONING ENGINE (runs after CMD, before formulation) ──
-  let epistemicGuidanceSummary: string | null = null;
-  let epistemicModelRoutingHints: any = null;
-  let epistemicDebug = { flag: false, run: false, claims: 0, hyp: 0, unc: 0, mindread: false, rescue: false, medUnc: false, tier: 'mini' as 'mini' | 'full' };
-  let epistemicRoutedModel: string | null = null;
-  let epistemicRoutingScore: number = 0;
-  let epistemicRoutingReasonCodes: string[] = [];
-  let epistemicRoutingDebug = { flag: false, tier: 'mini' as string, model: 'gpt-4o-mini' as string, score: 0, reasons: '' };
-  const enableEpistemic = process.env.EXPO_PUBLIC_ENABLE_CORE_EPISTEMIC_ENGINE === 'true';
-  epistemicDebug.flag = enableEpistemic;
-  if (enableEpistemic && crisisLevel < 2) {
-    try {
-      const { buildCoreEpistemicReasoning, validateEpistemicOutput, buildEpistemicGuidanceSummary } = require('../engine/shared/epistemic-reasoning');
-      const epistemicInput = {
-        persona: (backpack.userType || 'elias') as 'elias' | 'kim',
-        userMessage,
-        normalizedMessage: clientNanoResult?.translatedNL ?? null,
-        currentZone: sessionBuffer?.currentZoneColor || null,
-        cravingLevel: (backpack.userType === 'elias' && currentUserDat?.currentMood) ? (currentUserDat.currentMood as any).craving ?? null : null,
-        stressLevel: (backpack.userType === 'kim' && currentUserDat?.currentMood) ? (currentUserDat.currentMood as any).stress ?? null : null,
-        cmdSelectedDomains: undefined,
-        cmdSelectedItemsCount: undefined,
-        cmdEstimatedTokens: undefined,
-        nowLocal: new Date().toISOString(),
-      };
-      const epistemicOutput = buildCoreEpistemicReasoning(epistemicInput);
-      const validation = validateEpistemicOutput(epistemicOutput);
-      if (validation.ok && epistemicOutput.active) {
-        epistemicGuidanceSummary = buildEpistemicGuidanceSummary(epistemicOutput);
-        epistemicModelRoutingHints = epistemicOutput.modelRoutingHints;
-        epistemicDebug.run = true;
-        epistemicDebug.claims = epistemicOutput.claims.length;
-        epistemicDebug.hyp = epistemicOutput.claims.filter((c: any) => c.shouldTreatAsHypothesis).length;
-        epistemicDebug.unc = epistemicOutput.claims.filter((c: any) => c.certainty === 'uncertain' || c.certainty === 'unsupported').length;
-        epistemicDebug.mindread = epistemicOutput.modelRoutingHints.mindReadingRisk;
-        epistemicDebug.rescue = epistemicOutput.modelRoutingHints.rescueRoleRisk;
-        epistemicDebug.medUnc = epistemicOutput.modelRoutingHints.medicalUncertainty;
-        epistemicDebug.tier = epistemicOutput.modelRoutingHints.recommendedModelTier;
-      } else {
-        epistemicDebug.run = true;
-      }
-    } catch (e) {
-      epistemicDebug.run = false;
-      console.warn('[Pipeline] Epistemic engine failed (non-blocking):', e);
-    }
-  }
-  // ── DETERMINISTIC MODEL ROUTING (FASE 9C) ──
-  const enableModelRouting = process.env.EXPO_PUBLIC_ENABLE_EPISTEMIC_MODEL_ROUTING === 'true';
-  epistemicRoutingDebug.flag = enableModelRouting;
-  if (enableModelRouting && enableEpistemic && epistemicModelRoutingHints) {
-    try {
-      const { resolveEpistemicModelRouting } = require('../engine/shared/epistemic-reasoning/epistemic-model-routing');
-      const routingInput = {
-        persona: (backpack.userType || 'elias') as 'elias' | 'kim',
-        currentZone: sessionBuffer?.currentZoneColor || null,
-        riskScore: sessionBuffer?.currentZoneScore ?? null,
-        crisisLevel: crisisLevel ?? null,
-        cravingLevel: (backpack.userType === 'elias' && currentUserDat?.currentMood) ? (currentUserDat.currentMood as any).craving ?? null : null,
-        stressLevel: (backpack.userType === 'kim' && currentUserDat?.currentMood) ? (currentUserDat.currentMood as any).stress ?? null : null,
-        cmdSelectedItemsCount: cmdDebug.selectedItemsCount ?? undefined,
-        cmdEstimatedTokens: cmdDebug.selectedEstimatedTokens ?? undefined,
-        epistemicComplexityScore: epistemicModelRoutingHints.epistemicComplexityScore ?? 0,
-        responsibilityComplexityScore: epistemicModelRoutingHints.responsibilityComplexityScore ?? 0,
-        medicalUncertainty: epistemicModelRoutingHints.medicalUncertainty ?? false,
-        contradictionDetected: epistemicModelRoutingHints.contradictionDetected ?? false,
-        mindReadingRisk: epistemicModelRoutingHints.mindReadingRisk ?? false,
-        rescueRoleRisk: epistemicModelRoutingHints.rescueRoleRisk ?? false,
-        relapseRisk: epistemicModelRoutingHints.relapseRisk ?? false,
-        relationalHarmRisk: epistemicModelRoutingHints.relationalHarmRisk ?? false,
-      };
-      const routingResult = resolveEpistemicModelRouting(routingInput);
-      epistemicRoutedModel = routingResult.selectedModel;
-      epistemicRoutingScore = routingResult.score;
-      epistemicRoutingReasonCodes = routingResult.reasonCodes;
-      epistemicRoutingDebug.tier = routingResult.modelTier;
-      epistemicRoutingDebug.model = routingResult.selectedModel;
-      epistemicRoutingDebug.score = routingResult.score;
-      epistemicRoutingDebug.reasons = routingResult.reasonCodes.join(',') || 'light_context';
-    } catch (e) {
-      console.warn('[Pipeline] Epistemic model routing failed (non-blocking):', e);
-    }
-  }
 
   // ── CLIENT FALLBACK: ChatContext + GPT call (only reached when server-led block above fails) ──
   // ── KIM RELATIONAL STANCE FILTER (runs for Kim only, non-crisis) ──
@@ -3931,8 +3847,6 @@ export async function processMessage(
     patternAcknowledgment: patternAcknowledgmentBlock ?? undefined,
     // ELIAS RECOVERY FORMULATION — compact formulation block for Elias recovery-focused GPT guidance
     eliasFormulationBlock: eliasFormulationBlock ?? undefined,
-    epistemicGuidanceSummary: epistemicGuidanceSummary ?? undefined,
-    epistemicModelRoutingHints: epistemicModelRoutingHints ?? undefined,
     // CMD SELECTED MEMORY SUMMARY — compact budget-selected clinical memory block
     cmdMemorySummary: cmdMemorySummary ?? undefined,
     // PRE-BUILT PROMPT BLOCKS (local pipeline → server as pure proxy)
@@ -4285,9 +4199,6 @@ export async function processMessage(
       cmd: cmdDebug.featureFlag ? `flag=${cmdDebug.featureFlag} run=${cmdDebug.runtimeExecuted} ctx=${cmdDebug.contextBuilt} valid=${cmdDebug.validationOk} sel=${cmdDebug.selectedItemsCount} tok=${cmdDebug.selectedEstimatedTokens} sum=${cmdDebug.memorySummaryPresent}(${cmdDebug.memorySummaryChars}ch)` : undefined,
       formulation: (eliasFormulationBlock || kimFormulationBlock) ? `${eliasFormulationBlock ? 'elias' : 'kim'}(${(eliasFormulationBlock || kimFormulationBlock || '').length}ch)` : undefined,
       route: process.env.EXPO_PUBLIC_ENABLE_MINIMAL_GPT_PROXY === 'true' ? 'minimal-proxy | store:false' : 'legacy-gpt-proxy',
-      epistemic: `flag=${epistemicDebug.flag} run=${epistemicDebug.run} claims=${epistemicDebug.claims} hyp=${epistemicDebug.hyp} unc=${epistemicDebug.unc} mindread=${epistemicDebug.mindread} rescue=${epistemicDebug.rescue} medUnc=${epistemicDebug.medUnc} tier=${epistemicDebug.tier}`,
-      modelRoute: `flag=${epistemicRoutingDebug.flag} tier=${epistemicRoutingDebug.tier} model=${epistemicRoutingDebug.model} score=${epistemicRoutingDebug.score} reason=${epistemicRoutingDebug.reasons || 'light_context'}`,
-      cost: tokenUsage ? (() => { const tier = getModelTierFromModel(selectedModel ?? "unknown"); const est = estimateTokenCost({ model: selectedModel ?? "unknown", tier, usage: tokenUsage! }); return `msg=$${est.totalCostUsd.toFixed(6)} | tokens=${est.promptTokens}/${est.completionTokens}/${est.totalTokens} | tier=${tier} | pricing=${est.pricingVerified ? "verified" : "verify"}`; })() : "Cost: tokens=unknown",
     },
     schemaModeResult: schemaModeResult.activated ? {
       dominantMode: (schemaModeResult.modeDecision.dominantMode ?? null) as string | null,
@@ -4437,9 +4348,6 @@ export async function processMessage(
   // Record cost
   if (tokenUsage) {
     recordCallCost(tokenUsage, isSessionStart, preGPTDominantState.dominantModule);
-    // FASE 9H: Persist token cost locally
-    const _costEst = estimateTokenCost({ model: selectedModel ?? "unknown", tier: getModelTierFromModel(selectedModel ?? "unknown"), usage: tokenUsage! });
-    recordTokenCostEstimate({ sessionId: sessionBuffer.sessionId ?? "unknown", localDayKey: new Date().toISOString().slice(0, 10), estimate: _costEst, reasonCodes: epistemicRoutingDebug.reasons?.split(",") ?? [], nowLocal: new Date().toISOString() }).catch(() => {});
   }
 
     // Compose the final rugzak view (backpack unchanged)
@@ -6427,4 +6335,3 @@ export function runDeferredSessionAnalysis(
 
   return updatedUserDat;
 }
-import { estimateTokenCost, updateSessionTokenCostState, updateDailyTokenCostState, buildTokenCostDebugLine, getModelTierFromModel, createInitialSessionState, createInitialDailyState } from '@/lib/ai/debug/token-cost-tracker';

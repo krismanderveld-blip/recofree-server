@@ -277,9 +277,6 @@ export interface ChatMessage {
     cmd?: string;
     formulation?: string;
     route?: string;
-    epistemic?: string;
-    modelRoute?: string;
-    cost?: string;
   };
   /** Schema/Mode detection result for clinical confirmation UI */
   schemaModeResult?: {
@@ -1294,10 +1291,6 @@ export interface ChatContext {
   eliasFormulationBlock?: string | null;
   /** CMD SELECTED MEMORY SUMMARY: compact budget-selected clinical memory block for GPT context */
   cmdMemorySummary?: string | null;
-  /** EPISTEMIC: compact guidance summary from Core Epistemic Reasoning Engine */
-  epistemicGuidanceSummary?: string | null;
-  /** EPISTEMIC: model routing hints from Core Epistemic Reasoning Engine */
-  epistemicModelRoutingHints?: { recommendedModelTier: 'mini' | 'full'; epistemicComplexityScore: number; responsibilityComplexityScore: number; medicalUncertainty: boolean; mindReadingRisk: boolean; contradictionDetected: boolean; rescueRoleRisk: boolean; relapseRisk: boolean; relationalHarmRisk: boolean; safetyRelevant: boolean; reasonCodes: string[]; } | null;
 
   // ─── PRE-BUILT PROMPT BLOCKS (from local pipeline) ───
   /** Ready-to-inject PERSONEN-LOOKUP block (built locally) */
