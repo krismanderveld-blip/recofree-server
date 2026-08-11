@@ -1469,8 +1469,9 @@ function ChatScreenInner() {
     const formulationLine = item.clinicalInfo?.formulation ? `\nFormulation: ${item.clinicalInfo.formulation}` : '';
     const routeLine = item.clinicalInfo?.route ? `\nRoute: ${item.clinicalInfo.route}` : '';
     const epistemicLine = item.clinicalInfo?.epistemic ? `\nEpistemic: ${item.clinicalInfo.epistemic}` : '';
+    const modelRouteLine = item.clinicalInfo?.modelRoute ? `\nModelRoute: ${item.clinicalInfo.modelRoute}` : '';
     const clinicalDisplay = clinicalAnnotation
-      ? clinicalAnnotation + localInfo + cmdLine + formulationLine + routeLine + epistemicLine + epistemicLine
+      ? clinicalAnnotation + localInfo + cmdLine + formulationLine + routeLine + epistemicLine + modelRouteLine
       : (localInfo || cmdLine || formulationLine || routeLine || epistemicLine) ? (localInfo + cmdLine + formulationLine + routeLine + epistemicLine) : null;
 
     const bubbleStyle = isUser

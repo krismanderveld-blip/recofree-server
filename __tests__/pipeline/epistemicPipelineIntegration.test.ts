@@ -343,9 +343,9 @@ describe('FASE 9B: Core Epistemic Engine Pipeline Integration', () => {
       expect(engineFile).not.toMatch(/from ['"].*server\//);
     });
 
-    it('57. no provider behavior change (no epistemic in openai-provider)', () => {
+    it('57. provider uses epistemic routing hints from context (FASE 9C)', () => {
       const providerFile = fs.readFileSync(path.resolve(__dirname, '../../lib/ai/openai-provider.ts'), 'utf-8');
-      expect(providerFile).not.toContain('epistemic');
+      expect(providerFile).toContain('epistemicModelRoutingHints');
     });
 
     it('58. no prompt content change (epistemic not in prompt builder)', () => {

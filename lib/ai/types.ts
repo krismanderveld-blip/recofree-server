@@ -278,6 +278,7 @@ export interface ChatMessage {
     formulation?: string;
     route?: string;
     epistemic?: string;
+    modelRoute?: string;
   };
   /** Schema/Mode detection result for clinical confirmation UI */
   schemaModeResult?: {

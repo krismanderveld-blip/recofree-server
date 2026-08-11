@@ -3394,6 +3394,10 @@ export async function processMessage(
   let epistemicGuidanceSummary: string | null = null;
   let epistemicModelRoutingHints: any = null;
   let epistemicDebug = { flag: false, run: false, claims: 0, hyp: 0, unc: 0, mindread: false, rescue: false, medUnc: false, tier: 'mini' as 'mini' | 'full' };
+  let epistemicRoutedModel: string | null = null;
+  let epistemicRoutingScore: number = 0;
+  let epistemicRoutingReasonCodes: string[] = [];
+  let epistemicRoutingDebug = { flag: false, tier: 'mini' as string, model: 'gpt-4o-mini' as string, score: 0, reasons: '' };
   const enableEpistemic = process.env.EXPO_PUBLIC_ENABLE_CORE_EPISTEMIC_ENGINE === 'true';
   epistemicDebug.flag = enableEpistemic;
   if (enableEpistemic && crisisLevel < 2) {
@@ -3430,6 +3434,42 @@ export async function processMessage(
     } catch (e) {
       epistemicDebug.run = false;
       console.warn('[Pipeline] Epistemic engine failed (non-blocking):', e);
+    }
+  }
+  // ── DETERMINISTIC MODEL ROUTING (FASE 9C) ──
+  const enableModelRouting = process.env.EXPO_PUBLIC_ENABLE_EPISTEMIC_MODEL_ROUTING === 'true';
+  epistemicRoutingDebug.flag = enableModelRouting;
+  if (enableModelRouting && enableEpistemic && epistemicModelRoutingHints) {
+    try {
+      const { resolveEpistemicModelRouting } = require('../engine/shared/epistemic-reasoning/epistemic-model-routing');
+      const routingInput = {
+        persona: (backpack.userType || 'elias') as 'elias' | 'kim',
+        currentZone: sessionBuffer?.currentZoneColor || null,
+        riskScore: sessionBuffer?.currentZoneScore ?? null,
+        crisisLevel: crisisLevel ?? null,
+        cravingLevel: (backpack.userType === 'elias' && currentUserDat?.currentMood) ? (currentUserDat.currentMood as any).craving ?? null : null,
+        stressLevel: (backpack.userType === 'kim' && currentUserDat?.currentMood) ? (currentUserDat.currentMood as any).stress ?? null : null,
+        cmdSelectedItemsCount: cmdDebug.selectedItemsCount ?? undefined,
+        cmdEstimatedTokens: cmdDebug.selectedEstimatedTokens ?? undefined,
+        epistemicComplexityScore: epistemicModelRoutingHints.epistemicComplexityScore ?? 0,
+        responsibilityComplexityScore: epistemicModelRoutingHints.responsibilityComplexityScore ?? 0,
+        medicalUncertainty: epistemicModelRoutingHints.medicalUncertainty ?? false,
+        contradictionDetected: epistemicModelRoutingHints.contradictionDetected ?? false,
+        mindReadingRisk: epistemicModelRoutingHints.mindReadingRisk ?? false,
+        rescueRoleRisk: epistemicModelRoutingHints.rescueRoleRisk ?? false,
+        relapseRisk: epistemicModelRoutingHints.relapseRisk ?? false,
+        relationalHarmRisk: epistemicModelRoutingHints.relationalHarmRisk ?? false,
+      };
+      const routingResult = resolveEpistemicModelRouting(routingInput);
+      epistemicRoutedModel = routingResult.selectedModel;
+      epistemicRoutingScore = routingResult.score;
+      epistemicRoutingReasonCodes = routingResult.reasonCodes;
+      epistemicRoutingDebug.tier = routingResult.modelTier;
+      epistemicRoutingDebug.model = routingResult.selectedModel;
+      epistemicRoutingDebug.score = routingResult.score;
+      epistemicRoutingDebug.reasons = routingResult.reasonCodes.join(',') || 'light_context';
+    } catch (e) {
+      console.warn('[Pipeline] Epistemic model routing failed (non-blocking):', e);
     }
   }
 
@@ -4245,6 +4285,7 @@ export async function processMessage(
       formulation: (eliasFormulationBlock || kimFormulationBlock) ? `${eliasFormulationBlock ? 'elias' : 'kim'}(${(eliasFormulationBlock || kimFormulationBlock || '').length}ch)` : undefined,
       route: process.env.EXPO_PUBLIC_ENABLE_MINIMAL_GPT_PROXY === 'true' ? 'minimal-proxy | store:false' : 'legacy-gpt-proxy',
       epistemic: `flag=${epistemicDebug.flag} run=${epistemicDebug.run} claims=${epistemicDebug.claims} hyp=${epistemicDebug.hyp} unc=${epistemicDebug.unc} mindread=${epistemicDebug.mindread} rescue=${epistemicDebug.rescue} medUnc=${epistemicDebug.medUnc} tier=${epistemicDebug.tier}`,
+      modelRoute: `flag=${epistemicRoutingDebug.flag} tier=${epistemicRoutingDebug.tier} model=${epistemicRoutingDebug.model} score=${epistemicRoutingDebug.score} reason=${epistemicRoutingDebug.reasons || 'light_context'}`,
     },
     schemaModeResult: schemaModeResult.activated ? {
       dominantMode: (schemaModeResult.modeDecision.dominantMode ?? null) as string | null,

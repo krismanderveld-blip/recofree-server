@@ -885,10 +885,15 @@ export class OpenAIProvider implements AIProvider {
 
         const clientPromptResult = buildClientSystemPrompt(promptInput);
 
-        // Select model (same logic as existing: default gpt-4o-mini, upgrade for crisis/clinical)
+        // Select model — FASE 9C: Use pipeline-determined model when available (engine decides, provider executes)
         let selectedModel = 'gpt-4o-mini';
-        if ((context.crisisLevel ?? 0) >= 2 || context.userDat?.clinicalModeActive) {
-          selectedModel = 'gpt-4o';
+        if (context.epistemicModelRoutingHints?.recommendedModelTier === 'full' && 
+            process.env.EXPO_PUBLIC_ENABLE_EPISTEMIC_MODEL_ROUTING === 'true') {
+          // Pipeline epistemic routing determined full model is needed
+          selectedModel = 'gpt-4o-2024-08-06';
+        } else if ((context.crisisLevel ?? 0) >= 2 || context.userDat?.clinicalModeActive) {
+          // Legacy fallback: crisis or clinical mode
+          selectedModel = 'gpt-4o-2024-08-06';
         }
 
         // Build messages array from conversation window
