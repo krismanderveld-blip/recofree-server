@@ -70,7 +70,7 @@ const REPETITION_MARKERS = /weer|alweer|nog eens|meerdere keren|telkens|opnieuw|
 
 // ── Pattern 1: Trust / lying / betrayal ──
 
-const TRUST_TRIGGERS = /liegen|gelogen|bedrogen|vreemdgegaan|vertrouwen kapot|verraad|geheim|niet eerlijk|broken trust|cheated|lied|betrayal/i;
+const TRUST_TRIGGERS = /liegen|liegt|gelogen|bedrogen|vreemdgegaan|vertrouwen kapot|verraad|geheim|niet eerlijk|broken trust|cheated|lied|betrayal/i;
 
 function detectTrust(text: string): DetectedPattern | null {
   if (!TRUST_TRIGGERS.test(text)) return null;
@@ -269,6 +269,125 @@ function detectGrief(text: string): DetectedPattern | null {
   };
 }
 
+// ── Pattern 9: Rescue / Recovery Ownership ──
+
+const RESCUE_CONTROL = /(?:(?:ik\s+(?:moet|ga|wil|probeer)).*?(?:zorgen|ervoor\s+zorgen|hem|haar|zover\s+krijgen).*?(?:therapie|hulp|stoppen|nuchter|behandeling|afspraken|herstel|drinken|gebruiken))|(?:(?:hoe\s+(?:zorg|krijg|maak)\s+ik).*?(?:hij|zij|haar|hem).*?(?:therapie|hulp|stoppen|nuchter|gemotiveerd|behandeling))|(?:(?:ik\s+(?:herinner|controleer|stuur|dwing|push)).*?(?:zijn|haar|hem).*?(?:herstel|afspraken|therapie|nuchter))|(?:(?:als\s+ik.*?niet\s+(?:controleer|help|stuur)).*?(?:mis|fout|weer))|(?:(?:we\s+moeten\s+(?:samen\s+)?zorgen).*?(?:nuchter|stoppen|therapie|herstel))/i;
+const RESCUE_NEGATIVE = /(?:we\s+plannen\s+samen\s+(?:het\s+huishouden|de\s+vakantie|onze))|(?:we\s+(?:hebben\s+)?afgesproken\s+wie)|(?:we\s+willen\s+samen\s+(?:beter\s+communiceren|plannen))/i;
+
+function detectRescue(text: string): DetectedPattern | null {
+  if (!RESCUE_CONTROL.test(text)) return null;
+  if (RESCUE_NEGATIVE.test(text)) return null;
+  return {
+    domains: ['boundary_pressure', 'relationship_repair'],
+    severity: 'unknown',
+    mustMention: [
+      'herstel/verandering van de ander blijft diens verantwoordelijkheid',
+      'gebruiker mag eigen steun en grenzen kiezen',
+      'jouw rol is aanwezig zijn, niet sturen',
+    ],
+    mustAvoid: [
+      'aansporen om therapietrouw van partner te managen',
+      'hersteldoelen voor partner organiseren',
+      'controle als standaardstrategie',
+    ],
+    facts: [{ id: 'f-rescue-1', text: 'rescue/ownership patroon gedetecteerd', source: 'user_message', confidence: 'high' }],
+    caregiverImpacts: [{ id: 'ci-rescue-1', domain: 'boundary_pressure', text: 'gebruiker neemt herstelverantwoordelijkheid over', confidence: 'high' }],
+    domainSeparations: [{ id: 'ds-rescue-1', domainA: 'communication', domainB: 'control', distinction: 'Steunen is niet hetzelfde als sturen of controleren.', mustMention: true }],
+    repairConditions: [],
+    behaviorFunctions: [{ id: 'bf-rescue-1', behavior: 'herstelverantwoordelijkheid overnemen', possibleFunction: 'angst voor terugval of verlies van controle', explanationNotExcuse: true, owner: 'caregiver', confidence: 'high' }],
+  };
+}
+
+// ── Pattern 10: Mindreading ──
+
+const MINDREADING_INTENT = /(?:(?:hij|zij|ze)\s+(?:doet|zegt|liegt|drinkt|gebruikt).*?(?:expres|opzettelijk|bewust|om\s+(?:mij|me)\s+(?:te\s+)?(?:kwetsen|manipuleren|bang|pijn|straffen|controleren)))|(?:(?:hij|zij|ze)\s+(?:wil|wilt|denkt|vindt)\s+(?:gewoon|duidelijk|alleen\s+maar).*?(?:dat\s+ik|mij|me))|(?:(?:hij|zij|ze)\s+(?:doet|zegt)\s+dit\s+(?:alleen|enkel)\s+(?:maar\s+)?(?:om|zodat))/i;
+const MINDREADING_NEGATIVE = /(?:(?:hij|zij|ze)\s+(?:zei|vertelde|heeft\s+gezegd)\s+(?:letterlijk|expliciet|tegen\s+(?:mij|me)))|(?:(?:hij|zij|ze)\s+(?:kwam\s+niet|verbrak|heeft\s+(?:niet|afspraak)))/i;
+
+function detectMindreading(text: string): DetectedPattern | null {
+  if (!MINDREADING_INTENT.test(text)) return null;
+  if (MINDREADING_NEGATIVE.test(text)) return null;
+  return {
+    domains: ['trust', 'relationship_repair'],
+    severity: 'unknown',
+    mustMention: [
+      'onderscheid tussen observeerbaar gedrag en interpretatie van intentie',
+      'impact op gebruiker mag als reëel erkend worden',
+      'je pijn is echt, ook als de intentie onzeker is',
+    ],
+    mustAvoid: [
+      'onbewezen intentie bevestigen',
+      'causale verklaring verzinnen',
+      'de ander demoniseren op basis van interpretatie',
+    ],
+    facts: [{ id: 'f-mind-1', text: 'mindreading/intentie-attributie gedetecteerd', source: 'user_message', confidence: 'high' }],
+    caregiverImpacts: [{ id: 'ci-mind-1', domain: 'trust', text: 'gebruiker schrijft niet-observeerbare intentie toe aan de ander', confidence: 'high' }],
+    domainSeparations: [{ id: 'ds-mind-1', domainA: 'trust', domainB: 'communication', distinction: 'Wat je ziet is niet altijd wat de ander bedoelt.', mustMention: true }],
+    repairConditions: [],
+    behaviorFunctions: [{ id: 'bf-mind-1', behavior: 'intentie-attributie als zekerheid', possibleFunction: 'pijn begrijpelijk maken door verklaring', explanationNotExcuse: true, owner: 'caregiver', confidence: 'high' }],
+  };
+}
+
+// ── Pattern 11: Medical Boundary ──
+
+const MEDICAL_BOUNDARY = /(?:(?:is\s+(?:zijn|haar|dit|dat|die)).*?(?:door|van|vanwege).*?(?:alcohol|drinken|gebruik|medicatie|ontwenning|drugs|pillen))|(?:(?:kan\s+(?:die|dat|deze|zijn|haar)).*?(?:medicatie|alcohol|drugs|gebruik|ontwenning).*?(?:maken|veroorzaken|zorgen))|(?:(?:is\s+dit|is\s+dat).*?(?:delirium|ontwenning|onttrekking|vergiftiging|overdosis))|(?:(?:komt|door)\s+(?:zijn|haar).*?(?:geheugenverlies|agressie|blackout|uitval|paranoia).*?(?:door|van).*?(?:drinken|alcohol|gebruik))|(?:(?:kan\s+(?:hij|zij|ze)).*?(?:hierdoor|daardoor|erdoor).*?(?:lichamelijke?\s+schade|hersenschade|leverschade))/i;
+const MEDICAL_NEGATIVE = /(?:ik\s+voel\s+(?:me|mij)\s+(?:uitgeput|moe|verdrietig|boos))|(?:ik\s+weet\s+niet\s+meer\s+hoe\s+ik)|(?:waarom\s+raakt\s+(?:dit|mij|me)\s+zo)/i;
+
+function detectMedical(text: string): DetectedPattern | null {
+  if (!MEDICAL_BOUNDARY.test(text)) return null;
+  if (MEDICAL_NEGATIVE.test(text) && !MEDICAL_BOUNDARY.test(text.replace(MEDICAL_NEGATIVE, ''))) return null;
+  return {
+    domains: ['boundary_pressure', 'relationship_repair'],
+    severity: 'unknown',
+    mustMention: [
+      'medische beoordeling hoort bij arts/behandelteam',
+      'gebruiker hoeft die medische verantwoordelijkheid niet over te nemen',
+      'je bezorgdheid is begrijpelijk en mag er zijn',
+    ],
+    mustAvoid: [
+      'diagnose stellen',
+      'medische zekerheid zonder basis',
+      'behandeling voorschrijven',
+      'medische verklaring bevestigen',
+    ],
+    facts: [{ id: 'f-med-1', text: 'medische grens/beoordeling gevraagd', source: 'user_message', confidence: 'high' }],
+    caregiverImpacts: [{ id: 'ci-med-1', domain: 'boundary_pressure', text: 'gebruiker zoekt medische verklaring bij Kim', confidence: 'high' }],
+    domainSeparations: [{ id: 'ds-med-1', domainA: 'communication', domainB: 'boundary_pressure', distinction: 'Emotionele steun is niet hetzelfde als medische beoordeling.', mustMention: true }],
+    repairConditions: [],
+    behaviorFunctions: [],
+  };
+}
+
+// ── Pattern 12: Repeated Relational Harm ──
+
+const REPEATED_HARM_PATTERN = /(?:(?:telkens|steeds|opnieuw|weer|elke\s+keer|al\s+de\s+\w+\s+keer|herhaaldelijk|keer\s+op\s+keer).*?(?:liegt|liegen|gelogen|bedrogen|belooft|breekt|overschrijdt|manipuleert|verdwijnt|drinkt))|(?:(?:liegt|liegen|bedrogen|belooft|breekt|overschrijdt).*?(?:telkens|steeds|opnieuw|weer|elke\s+keer|al\s+de\s+\w+\s+keer|herhaaldelijk))/i;
+const REPEATED_HARM_NEGATIVE = /(?:we\s+(?:zijn|hadden)\s+(?:het\s+)?(?:niet\s+eens|oneens|ruzie).*?(?:school|geld|vakantie|boodschappen))|(?:(?:hij|zij)\s+vergat\s+(?:boodschappen|afwas|vuilnis))/i;
+
+function detectRepeatedHarm(text: string): DetectedPattern | null {
+  if (!REPEATED_HARM_PATTERN.test(text)) return null;
+  if (REPEATED_HARM_NEGATIVE.test(text)) return null;
+  return {
+    domains: ['trust', 'boundary_pressure', 'relationship_repair'],
+    severity: 'repeated_pattern',
+    mustMention: [
+      'impact van herhaald patroon erkennen',
+      'eigen regie: welke grens of keuze controleert de gebruiker zelf',
+      'concrete stap die bij de gebruiker ligt',
+    ],
+    mustAvoid: [
+      'demonisering van de ander',
+      'diagnose',
+      'partner controleren als standaardoplossing',
+      'relatie beëindigen als standaardadvies',
+    ],
+    facts: [{ id: 'f-rh-1', text: 'herhaald relationeel letsel gedetecteerd', source: 'user_message', confidence: 'high' }],
+    caregiverImpacts: [{ id: 'ci-rh-1', domain: 'trust', text: 'herhaald patroon van schade/leugens/gebroken beloftes', confidence: 'high' }],
+    domainSeparations: [],
+    repairConditions: [{ id: 'rc-rh-1', condition: 'consistent eerlijk gedrag over langere periode', owner: 'dependent_person', nonNegotiable: true, confidence: 'high' }],
+    behaviorFunctions: [{ id: 'bf-rh-1', behavior: 'herhaald liegen/breken', possibleFunction: 'vermijding van consequenties of schaamte', explanationNotExcuse: true, owner: 'dependent_person', confidence: 'high' }],
+  };
+}
+
+
 // ── Default responsibility map ──
 
 function buildDefaultResponsibilityMap(): KimResponsibilityMapItem[] {
@@ -381,7 +500,7 @@ export function buildKimRelationalFormulationContext(
   ].join(' ');
 
   // Run all pattern detectors
-  const detectors = [detectTrust, detectAffection, detectDecision, detectCaregiving, detectControl, detectChildTrust, detectShame, detectGrief];
+  const detectors = [detectTrust, detectAffection, detectDecision, detectCaregiving, detectControl, detectChildTrust, detectShame, detectGrief, detectRescue, detectMindreading, detectMedical, detectRepeatedHarm];
   const detectedPatterns: DetectedPattern[] = [];
   for (const detector of detectors) {
     const result = detector(combinedText);
