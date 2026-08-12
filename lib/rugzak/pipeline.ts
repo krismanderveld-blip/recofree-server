@@ -426,8 +426,12 @@ export function resetSessionState(): void {
   resetEliasModuleMemorySessionState();
   resetKimModuleMemorySessionState();
   // Reset rejected suggestions guard
-  const { resetRejectedSuggestions } = require('./rejected-suggestion-guard');
-  resetRejectedSuggestions();
+  try {
+    const { resetRejectedSuggestions } = require('./rejected-suggestion-guard');
+    resetRejectedSuggestions();
+  } catch (e) {
+    // Non-critical: rejected suggestions guard may not resolve in all environments
+  }
 }
 
 // ─── Pipeline Result ────────────────────────────────────────────
