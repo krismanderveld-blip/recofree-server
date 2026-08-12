@@ -13,6 +13,8 @@
  * - No provider changes
  */
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { callExtractionEndpoint } from '@/lib/backpack-extractor/client';
+import { forceExtract } from '@/lib/backpack-extractor/extractor';
 import { distillContextDat, serializeContextDatForGPT } from '@/lib/pipeline/context-dat-distiller';
 import { createDistillationStore } from '@/lib/engine/shared/dist01-store';
 import { SessionMemoryCache } from '@/lib/crypto/session-memory-cache';
@@ -129,9 +131,30 @@ export async function runManualDataRefresh(input: ManualDataRefreshInput): Promi
     // 1. Backpack analysis refresh
     if (input.refreshBackpack) {
       if (backpack && backpack.sections && backpack.sections.length > 0) {
-        // Mark backpack as needing re-analysis by clearing the hash
-        // The pipeline will re-analyze on next chat start
         try {
+          // BLOCKING: Send raw backpack to GPT for full entity extraction
+          // This feeds user.dat with persons, events, patterns, contexts
+          console.log('[ManualRefresh] Sending backpack to GPT for full analysis...');
+          const entities = await forceExtract(backpack, callExtractionEndpoint);
+          if (entities) {
+            // Update user.dat with extracted entities
+            if (userDat) {
+              userDat.extractedEntities = entities;
+              // Also populate relationalAnchors from persons for personalAnchors block
+              if (entities.persons && entities.persons.length > 0) {
+                userDat.relationalAnchors = entities.persons.map((p: any) => ({
+                  name: p.name,
+                  role: p.relationshipNL || p.relationship || 'onbekend',
+                  roleEN: p.relationship || 'unknown',
+                  emotionalWeight: p.emotionalValence === 'positive' ? 0.8 : p.emotionalValence === 'negative' ? 0.4 : 0.6,
+                }));
+              }
+              await SessionMemoryCache.set(USERDAT_KEY, JSON.stringify(userDat));
+              await AsyncStorage.setItem(USERDAT_KEY, JSON.stringify(userDat));
+              console.log('[ManualRefresh] Extraction complete:', entities.persons.length, 'persons,', entities.events.length, 'events,', entities.patterns.length, 'patterns');
+            }
+          }
+          // Also clear hash so pipeline knows to re-check
           await AsyncStorage.removeItem('@recofree_backpack_hash');
           output.refreshed.backpackAnalysis = true;
         } catch (e) {
