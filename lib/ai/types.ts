@@ -277,6 +277,9 @@ export interface ChatMessage {
     cmd?: string;
     formulation?: string;
     route?: string;
+    epistemic?: string;
+    modelRoute?: string;
+    cost?: string;
   };
   /** Schema/Mode detection result for clinical confirmation UI */
   schemaModeResult?: {
@@ -1289,6 +1292,8 @@ export interface ChatContext {
 
   /** ELIAS RECOVERY FORMULATION: compact formulation block for Elias recovery-focused GPT guidance */
   eliasFormulationBlock?: string | null;
+  epistemicGuidanceSummary?: string | null;
+  epistemicModelRoutingHints?: any;
   /** CMD SELECTED MEMORY SUMMARY: compact budget-selected clinical memory block for GPT context */
   cmdMemorySummary?: string | null;
   /** PERSONAL ANCHORS: confirmed key figure facts (always sent, never hedged) */

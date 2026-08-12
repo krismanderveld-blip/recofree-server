@@ -892,9 +892,11 @@ export class OpenAIProvider implements AIProvider {
 
         const clientPromptResult = buildClientSystemPrompt(promptInput);
 
-        // Select model (same logic as existing: default gpt-4o-mini, upgrade for crisis/clinical)
+        // Select model: epistemic routing > crisis fallback > default mini
         let selectedModel = 'gpt-4o-mini';
-        if ((context.crisisLevel ?? 0) >= 2 || context.userDat?.clinicalModeActive) {
+        if (context.epistemicModelRoutingHints?.recommendedModelTier === 'full') {
+          selectedModel = 'gpt-4o-2024-08-06';
+        } else if ((context.crisisLevel ?? 0) >= 2 || context.userDat?.clinicalModeActive) {
           selectedModel = 'gpt-4o';
         }
 

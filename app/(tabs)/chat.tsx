@@ -1468,9 +1468,12 @@ function ChatScreenInner() {
     const cmdLine = item.clinicalInfo?.cmd ? `\nCMD: ${item.clinicalInfo.cmd}` : '';
     const formulationLine = item.clinicalInfo?.formulation ? `\nFormulation: ${item.clinicalInfo.formulation}` : '';
     const routeLine = item.clinicalInfo?.route ? `\nRoute: ${item.clinicalInfo.route}` : '';
+    const epistemicLine = item.clinicalInfo?.epistemic ? `\nEpistemic: ${item.clinicalInfo.epistemic}` : '';
+    const modelRouteLine = item.clinicalInfo?.modelRoute ? `\nModelRoute: ${item.clinicalInfo.modelRoute}` : '';
+    const costLine = item.clinicalInfo?.cost ? `\nCost: ${item.clinicalInfo.cost}` : '';
     const clinicalDisplay = clinicalAnnotation
-      ? clinicalAnnotation + localInfo + cmdLine + formulationLine + routeLine
-      : (localInfo || cmdLine || formulationLine || routeLine) ? (localInfo + cmdLine + formulationLine + routeLine) : null;
+      ? clinicalAnnotation + localInfo + cmdLine + formulationLine + routeLine + epistemicLine + modelRouteLine + costLine
+      : (localInfo || cmdLine || formulationLine || routeLine || epistemicLine || modelRouteLine || costLine) ? (localInfo + cmdLine + formulationLine + routeLine + epistemicLine + modelRouteLine + costLine) : null;
 
     const bubbleStyle = isUser
       ? {
