@@ -332,6 +332,8 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
     payload.store = false;
     // Remove forge-specific fields that OpenAI doesn't support
     delete payload.thinking;
+    // gpt-4o-mini max completion tokens = 16384
+    payload.max_tokens = 16384;
   }
 
   console.log(`[LLM] provider=${provider} model=${payload.model} store=${(payload as any).store ?? 'default'}`);
