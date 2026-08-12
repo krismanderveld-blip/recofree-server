@@ -113,6 +113,29 @@ export function buildClientSystemPrompt(input: ClientPromptBuildInput): ClientBu
     omittedSections.push('projection');
   }
 
+  // Personal Anchors (confirmed key figures — always included when available)
+  if (input.personalAnchors) {
+    const anchorBlock = [
+      '[PERSONAL ANCHORS — confirmed facts]',
+      input.personalAnchors,
+      '',
+      'These are confirmed relationships. Use them as facts, not hypotheses.',
+      'Do not hedge or ask for confirmation when the user asks about these people.',
+    ].join('\n');
+    promptParts.push(anchorBlock);
+    includedSections.push('personalAnchors');
+  } else {
+    omittedSections.push('personalAnchors');
+  }
+
+  // Rejected Suggestions (session-only, prevents repetition)
+  if (input.rejectedSuggestionsBlock) {
+    promptParts.push(input.rejectedSuggestionsBlock);
+    includedSections.push('rejectedSuggestions');
+  } else {
+    omittedSections.push('rejectedSuggestions');
+  }
+
   // CMD Selected Memory Summary (behind feature flag, only when non-empty)
   if (input.cmdMemorySummary) {
     const cmdBlock = [

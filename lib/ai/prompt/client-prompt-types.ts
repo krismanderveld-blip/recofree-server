@@ -62,6 +62,10 @@ export interface ClientPromptBuildInput {
   eliasFormulationBlock?: string;
   /** CMD selected memory summary — compact budget-selected clinical memory for GPT context */
   cmdMemorySummary?: string;
+  /** Confirmed personal anchors — compact key figure facts that must always reach GPT */
+  personalAnchors?: string;
+  /** Rejected suggestions block — topics user explicitly rejected this session */
+  rejectedSuggestionsBlock?: string;
 }
 
 export interface ClientBuiltPromptResult {

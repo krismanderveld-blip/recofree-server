@@ -1291,6 +1291,8 @@ export interface ChatContext {
   eliasFormulationBlock?: string | null;
   /** CMD SELECTED MEMORY SUMMARY: compact budget-selected clinical memory block for GPT context */
   cmdMemorySummary?: string | null;
+  /** PERSONAL ANCHORS: confirmed key figure facts (always sent, never hedged) */
+  personalAnchors?: string | null;
 
   // ─── PRE-BUILT PROMPT BLOCKS (from local pipeline) ───
   /** Ready-to-inject PERSONEN-LOOKUP block (built locally) */

@@ -796,6 +796,7 @@ export class OpenAIProvider implements AIProvider {
             sessionDurationMinutes: context.sessionDurationMinutes ?? 0,
             eliasFormulationBlock: context.eliasFormulationBlock ?? undefined,
             cmdMemorySummary: context.cmdMemorySummary ?? undefined,
+            personalAnchors: context.personalAnchors ?? undefined,
           };
 
           const mirrorResult = buildClientSystemPrompt(mirrorInput);
@@ -854,6 +855,10 @@ export class OpenAIProvider implements AIProvider {
 
         // Build client system prompt
         const { buildClientSystemPrompt } = require('./prompt/client-system-prompt-builder');
+        const { detectRejectedSuggestions, recordRejectedSuggestions, buildRejectedSuggestionsBlock } = require('../rugzak/rejected-suggestion-guard');
+        const _rejections = detectRejectedSuggestions(context.currentMessage || '');
+        if (_rejections.length > 0) recordRejectedSuggestions(_rejections);
+        const rejectedBlock = buildRejectedSuggestionsBlock();
         const promptInput = {
           persona: context.userType as 'kim' | 'elias',
           userName: context.userName,
@@ -881,6 +886,8 @@ export class OpenAIProvider implements AIProvider {
           })) ?? [],
           eliasFormulationBlock: context.eliasFormulationBlock ?? undefined,
           cmdMemorySummary: context.cmdMemorySummary ?? undefined,
+          personalAnchors: context.personalAnchors ?? undefined,
+          rejectedSuggestionsBlock: rejectedBlock ?? undefined,
         };
 
         const clientPromptResult = buildClientSystemPrompt(promptInput);

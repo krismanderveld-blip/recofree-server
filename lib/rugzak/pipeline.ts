@@ -423,6 +423,9 @@ export function resetSessionState(): void {
   resetSTO01SessionState();
   resetEliasModuleMemorySessionState();
   resetKimModuleMemorySessionState();
+  // Reset rejected suggestions guard
+  const { resetRejectedSuggestions } = require('./rejected-suggestion-guard');
+  resetRejectedSuggestions();
 }
 
 // ─── Pipeline Result ────────────────────────────────────────────
@@ -3849,6 +3852,8 @@ export async function processMessage(
     eliasFormulationBlock: eliasFormulationBlock ?? undefined,
     // CMD SELECTED MEMORY SUMMARY — compact budget-selected clinical memory block
     cmdMemorySummary: cmdMemorySummary ?? undefined,
+    // PERSONAL ANCHORS — confirmed key figure facts (always sent to GPT, never hedged)
+    personalAnchors: buildPersonalAnchorsBlock(currentUserDat),
     // PRE-BUILT PROMPT BLOCKS (local pipeline → server as pure proxy)
     ...prebuiltBlocks,
   };
@@ -5895,9 +5900,30 @@ export async function endSession(
 }
 
 /**
+ * Build compact personal anchors block from confirmed extractedEntities.
+ * Returns a short string like "- Jules: zoon\n- Melissa: partner" or undefined if empty.
+ * Max 7 entries. Only confirmed relationships with a name and role.
+ */
+function buildPersonalAnchorsBlock(userDat: any): string | undefined {
+  const persons = userDat?.extractedEntities?.persons;
+  if (!persons || !Array.isArray(persons) || persons.length === 0) return undefined;
+  const lines: string[] = [];
+  for (const p of persons.slice(0, 7)) {
+    if (!p.name) continue;
+    const role = p.relationshipNL || p.relationship || p.role || '';
+    if (role) {
+      lines.push(`- ${p.name}: ${role}`);
+    } else {
+      lines.push(`- ${p.name}: belangrijk persoon`);
+    }
+  }
+  return lines.length > 0 ? lines.join('\n') : undefined;
+}
+/**
  * Extract conversation themes from input signals and text.
  */
 function extractThemes(signals: InputSignals, text: string): string[] {
+
   const themes: string[] = [];
   if (signals.cravingMention) themes.push('craving');
   if (signals.isolationSignal) themes.push('isolation');
