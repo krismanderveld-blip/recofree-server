@@ -201,14 +201,38 @@ const normalizeToolChoice = (
   return toolChoice;
 };
 
-const resolveApiUrl = () =>
-  ENV.forgeApiUrl && ENV.forgeApiUrl.trim().length > 0
-    ? `${ENV.forgeApiUrl.replace(/\/$/, "")}/v1/chat/completions`
-    : "https://forge.manus.im/v1/chat/completions";
+// ── Provider Resolution ────────────────────────────────────────────────────
+// Priority: 1. Forge (BUILT_IN_FORGE_API_KEY) → 2. OpenAI (OPENAI_API_KEY)
+// If neither is available, throw structured error (no silent null).
+
+export type ExtractionProvider = 'forge' | 'openai' | 'none';
+
+export interface ExtractionDebugStatus {
+  extractionProvider: ExtractionProvider;
+  extractionSuccess: boolean;
+  reason?: 'missing_provider' | 'provider_error' | 'invalid_response' | 'success';
+}
+
+export function resolveProvider(): { provider: ExtractionProvider; apiUrl: string; apiKey: string } {
+  // Priority 1: Forge
+  if (ENV.forgeApiKey && ENV.forgeApiKey.trim().length > 0) {
+    const url = ENV.forgeApiUrl && ENV.forgeApiUrl.trim().length > 0
+      ? `${ENV.forgeApiUrl.replace(/\/$/, "")}/v1/chat/completions`
+      : "https://forge.manus.im/v1/chat/completions";
+    return { provider: 'forge', apiUrl: url, apiKey: ENV.forgeApiKey };
+  }
+  // Priority 2: OpenAI direct
+  if (ENV.openaiApiKey && ENV.openaiApiKey.trim().length > 0) {
+    return { provider: 'openai', apiUrl: "https://api.openai.com/v1/chat/completions", apiKey: ENV.openaiApiKey };
+  }
+  // No provider available
+  return { provider: 'none', apiUrl: '', apiKey: '' };
+}
 
 const assertApiKey = () => {
-  if (!ENV.forgeApiKey) {
-    throw new Error("OPENAI_API_KEY is not configured");
+  const { provider } = resolveProvider();
+  if (provider === 'none') {
+    throw new Error("LLM_PROVIDER_MISSING: Neither BUILT_IN_FORGE_API_KEY nor OPENAI_API_KEY is configured");
   }
 };
 
@@ -296,18 +320,34 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
     payload.response_format = normalizedResponseFormat;
   }
 
-  const response = await fetch(resolveApiUrl(), {
+  // Resolve provider (forge → openai fallback)
+  const { provider, apiUrl, apiKey } = resolveProvider();
+  if (provider === 'none') {
+    throw new Error("LLM_PROVIDER_MISSING: Neither BUILT_IN_FORGE_API_KEY nor OPENAI_API_KEY is configured");
+  }
+
+  // OpenAI requires store:false (privacy) and uses gpt-4o-mini for extraction
+  if (provider === 'openai') {
+    payload.model = "gpt-4o-mini";
+    payload.store = false;
+    // Remove forge-specific fields that OpenAI doesn't support
+    delete payload.thinking;
+  }
+
+  console.log(`[LLM] provider=${provider} model=${payload.model} store=${(payload as any).store ?? 'default'}`);
+
+  const response = await fetch(apiUrl, {
     method: "POST",
     headers: {
       "content-type": "application/json",
-      authorization: `Bearer ${ENV.forgeApiKey}`,
+      authorization: `Bearer ${apiKey}`,
     },
     body: JSON.stringify(payload),
   });
 
   if (!response.ok) {
     const errorText = await response.text();
-    throw new Error(`LLM invoke failed: ${response.status} ${response.statusText} – ${errorText}`);
+    throw new Error(`LLM invoke failed [${provider}]: ${response.status} ${response.statusText} – ${errorText}`);
   }
 
   return (await response.json()) as InvokeResult;

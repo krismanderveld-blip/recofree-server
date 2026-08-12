@@ -5,6 +5,7 @@ import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router } from "./_core/trpc";
 import { chatInputSchema, generateAIResponse, type ChatRequestInput } from "./ai-chat";
 import { extractionInputSchema, extractEntitiesFromBackpack } from "./backpack-extractor";
+import { resolveProvider } from "./_core/llm";
 import { analyzeBackpackInputSchema, analyzeBackpackForSchemas } from "./backpack-analyzer";
 import { engineProcessInputSchema, processEngineRequest } from "./engine-process";
 import { kerp01GenerateInputSchema, generateEigenRegiePlan } from "./kerp01-generate";
@@ -48,7 +49,12 @@ export const appRouter = router({
     extractEntities: publicProcedure
       .input(extractionInputSchema)
       .mutation(async ({ input }) => {
-        console.log('[ROUTER] extractEntities for:', input.userName, input.userType);
+        const { provider } = resolveProvider();
+        console.log(`[ROUTER] extractEntities for: ${input.userName} ${input.userType} provider=${provider}`);
+        if (provider === 'none') {
+          console.error('[ROUTER] extractEntities FAILED: no LLM provider (neither BUILT_IN_FORGE_API_KEY nor OPENAI_API_KEY)');
+          return { success: false, entities: null, debug: { extractionProvider: 'none' as const, extractionSuccess: false, reason: 'missing_provider' as const } };
+        }
         try {
           const entities = await extractEntitiesFromBackpack(
             {
@@ -60,14 +66,12 @@ export const appRouter = router({
             },
             input.sourceHash,
           );
-          return { success: true, entities };
+          console.log(`[ROUTER] extractEntities SUCCESS: provider=${provider} persons=${entities?.persons?.length ?? 0}`);
+          return { success: true, entities, debug: { extractionProvider: provider, extractionSuccess: true, reason: 'success' as const } };
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : String(error);
-          console.error(`[ROUTER ERROR] extractEntities:`, errorMessage);
-          throw new TRPCError({
-            code: 'INTERNAL_SERVER_ERROR',
-            message: errorMessage,
-          });
+          console.error(`[ROUTER ERROR] extractEntities: provider=${provider} error=${errorMessage}`);
+          return { success: false, entities: null, debug: { extractionProvider: provider, extractionSuccess: false, reason: 'provider_error' as const } };
         }
       }),
 
