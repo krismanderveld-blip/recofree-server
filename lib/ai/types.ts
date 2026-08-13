@@ -1289,6 +1289,8 @@ export interface ChatContext {
   patternAcknowledgment?: string | null;
   /** KIM RELATIONAL STANCE FILTER: compiled directive block ensuring Kim validates without polarizing */
   relationalStanceFilter?: string | null;
+  /** KIM FORMULATION BLOCK: prominent concrete relational formulation (mustMention/mustAvoid/responsibility) */
+  kimFormulationBlock?: string | null;
 
   /** ELIAS RECOVERY FORMULATION: compact formulation block for Elias recovery-focused GPT guidance */
   eliasFormulationBlock?: string | null;

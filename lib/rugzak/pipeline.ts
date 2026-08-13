@@ -3936,6 +3936,7 @@ export async function processMessage(
     patternAcknowledgment: patternAcknowledgmentBlock ?? undefined,
     // ELIAS RECOVERY FORMULATION — compact formulation block for Elias recovery-focused GPT guidance
     eliasFormulationBlock: eliasFormulationBlock ?? undefined,
+    kimFormulationBlock: kimFormulationBlock ?? undefined,
     epistemicGuidanceSummary: epistemicGuidanceSummary ?? undefined,
     epistemicModelRoutingHints: epistemicModelRoutingHints ?? undefined,
     // CMD SELECTED MEMORY SUMMARY — compact budget-selected clinical memory block

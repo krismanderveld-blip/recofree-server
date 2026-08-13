@@ -795,6 +795,7 @@ export class OpenAIProvider implements AIProvider {
             relapseIntentDetected: context.relapseIntent?.detected ?? false,
             sessionDurationMinutes: context.sessionDurationMinutes ?? 0,
             eliasFormulationBlock: context.eliasFormulationBlock ?? undefined,
+            kimFormulationBlock: context.kimFormulationBlock ?? undefined,
             cmdMemorySummary: context.cmdMemorySummary ?? undefined,
             personalAnchors: context.personalAnchors ?? undefined,
           };
@@ -885,6 +886,7 @@ export class OpenAIProvider implements AIProvider {
             content: m.content ?? '',
           })) ?? [],
           eliasFormulationBlock: context.eliasFormulationBlock ?? undefined,
+          kimFormulationBlock: context.kimFormulationBlock ?? undefined,
           cmdMemorySummary: context.cmdMemorySummary ?? undefined,
           personalAnchors: context.personalAnchors ?? undefined,
           rejectedSuggestionsBlock: rejectedBlock ?? undefined,
