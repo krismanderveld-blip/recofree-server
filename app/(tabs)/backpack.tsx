@@ -94,6 +94,7 @@ export default function BackpackScreen() {
   }, [kimData]);
 
   const handleSave = useCallback(async (sectionId: LifePhaseId | KimBackpackSectionId) => {
+    const sectionContent = editText;
     if (isKim) {
       await updateKimBackpackSection(sectionId as KimBackpackSectionId, editText);
     } else {
@@ -103,7 +104,22 @@ export default function BackpackScreen() {
     if (Platform.OS !== 'web') {
       Alert.alert(t('backpack.alert.saved.title'), t('backpack.alert.saved.message'));
     }
-  }, [editText, updateBackpackSection, updateKimBackpackSection, isKim]);
+    // Async section analysis — non-blocking, runs after save confirmation
+    if (sectionContent && sectionContent.trim().length > 10) {
+      const persona = isKim ? 'kim' : 'elias';
+      import('@/lib/backpack-extractor/section-analysis-service').then(({ analyzeSectionIfChanged }) => {
+        analyzeSectionIfChanged(String(sectionId), String(sectionId), sectionContent, persona)
+          .then((status) => {
+            if (status.status === 'success' && status.provider !== 'none') {
+              console.log(`[Backpack] Section ${sectionId} analyzed: anchors=${status.anchorsExtracted || 0}`);
+            } else if (status.status === 'failed') {
+              console.warn(`[Backpack] Section ${sectionId} analysis failed:`, status.error);
+            }
+          })
+          .catch((err: any) => console.warn('[Backpack] Section analysis error:', err));
+      });
+    }
+  }, [editText, updateBackpackSection, updateKimBackpackSection, isKim, t]);
 
   const handleCancel = useCallback(() => {
     setEditingSection(null);

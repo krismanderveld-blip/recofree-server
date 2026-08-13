@@ -15,6 +15,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { callExtractionEndpoint } from '@/lib/backpack-extractor/client';
 import { forceExtract } from '@/lib/backpack-extractor/extractor';
+import { analyzeAllSections } from '@/lib/backpack-extractor/section-analysis-service';
 import { distillContextDat, serializeContextDatForGPT } from '@/lib/pipeline/context-dat-distiller';
 import { createDistillationStore } from '@/lib/engine/shared/dist01-store';
 import { SessionMemoryCache } from '@/lib/crypto/session-memory-cache';
@@ -157,6 +158,18 @@ export async function runManualDataRefresh(input: ManualDataRefreshInput): Promi
           // Also clear hash so pipeline knows to re-check
           await AsyncStorage.removeItem('@recofree_backpack_hash');
           output.refreshed.backpackAnalysis = true;
+          // Deep section analysis — extracts relation graph, schemas, modes, life status
+          try {
+            const sectionsForAnalysis = backpack.sections
+              .filter((s: any) => s.content && s.content.trim().length > 10)
+              .map((s: any) => ({ id: s.id, label: s.label || s.id, content: s.content }));
+            if (sectionsForAnalysis.length > 0) {
+              const analysisReport = await analyzeAllSections(sectionsForAnalysis, input.persona);
+              console.log(`[ManualRefresh] Deep analysis: ${analysisReport.sectionsAnalyzed} sections, ${analysisReport.anchorsBuilt} anchors, ${analysisReport.relationEdgesBuilt} edges, ${analysisReport.schemasDetected} schemas`);
+            }
+          } catch (analysisErr) {
+            console.warn('[ManualRefresh] Deep section analysis failed (non-blocking):', analysisErr);
+          }
         } catch (e) {
           output.errors.push({ key: 'backpackAnalysis', message: (e as Error).message });
         }

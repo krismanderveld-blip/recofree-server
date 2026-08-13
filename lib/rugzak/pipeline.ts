@@ -5999,17 +5999,47 @@ export async function endSession(
  * Max 7 entries. Only confirmed relationships with a name and role.
  */
 function buildPersonalAnchorsBlock(userDat: any): string | undefined {
-  const persons = userDat?.extractedEntities?.persons;
-  if (!persons || !Array.isArray(persons) || persons.length === 0) return undefined;
-  const lines: string[] = [];
+  const persons = userDat?.extractedEntities?.persons || [];
+  const relationGraph: any[] = userDat?.relationGraph || [];
+  const lifeStatusFacts: any[] = userDat?.lifeStatusFacts || [];
+  if ((!Array.isArray(persons) || persons.length === 0) && relationGraph.length === 0 && lifeStatusFacts.length === 0) {
+    return undefined;
+  }
+  // Build person map with enrichment from relation graph + life status
+  const personMap = new Map<string, string[]>();
   for (const p of persons.slice(0, 7)) {
     if (!p.name) continue;
     const role = p.relationshipNL || p.relationship || p.role || '';
-    if (role) {
-      lines.push(`- ${p.name}: ${role}`);
-    } else {
-      lines.push(`- ${p.name}: belangrijk persoon`);
+    personMap.set(p.name.toLowerCase(), role ? [role] : []);
+  }
+  // Enrich with relation graph edges (e.g. "moeder van Jules")
+  for (const edge of relationGraph) {
+    if (!edge.subjectPerson || !edge.relation || !edge.objectPerson) continue;
+    const key = edge.subjectPerson.toLowerCase();
+    const edgeStr = `${edge.relation} ${edge.objectPerson}`;
+    if (personMap.has(key)) {
+      const parts = personMap.get(key)!;
+      if (!parts.some((p: string) => p.includes(edge.objectPerson))) parts.push(edgeStr);
+    } else if (personMap.size < 7) {
+      personMap.set(key, [edgeStr]);
     }
+  }
+  // Enrich with life status (e.g. "overleden")
+  for (const fact of lifeStatusFacts) {
+    if (!fact.person || fact.status === 'unknown' || fact.status === 'alive') continue;
+    const key = fact.person.toLowerCase();
+    if (personMap.has(key)) {
+      const parts = personMap.get(key)!;
+      if (!parts.includes('overleden')) parts.push('overleden');
+    } else if (personMap.size < 7) {
+      personMap.set(key, ['overleden']);
+    }
+  }
+  if (personMap.size === 0) return undefined;
+  const lines: string[] = [];
+  for (const [name, parts] of personMap) {
+    const displayName = name.charAt(0).toUpperCase() + name.slice(1);
+    lines.push(parts.length > 0 ? `- ${displayName}: ${parts.join('; ')}` : `- ${displayName}: belangrijk persoon`);
   }
   return lines.length > 0 ? lines.join('\n') : undefined;
 }
