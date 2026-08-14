@@ -9,7 +9,7 @@
 import type { ClientPromptBuildInput } from './client-prompt-types';
 
 // Kim identity is available client-side
-import { KIM_IDENTITY_PROMPT, KIM_OUTPUT_STRUCTURE_CONTRACT } from '../../engine/kim/prompt-block';
+import { KIM_IDENTITY_PROMPT, KIM_FUNCTIONAL_CONTEXT_USE_CONTRACT } from '../../engine/kim/prompt-block';
 import type { KimRelationalFormulationContext } from '../../engine/kim/relational-formulation/kim-relational-formulation-types';
 
 export interface KimPromptSections {
@@ -29,7 +29,7 @@ export interface KimPromptSections {
  */
 export function composeKimPrompt(input: ClientPromptBuildInput): KimPromptSections {
   const sections: KimPromptSections = {
-    identity: KIM_IDENTITY_PROMPT + "\n\n" + KIM_OUTPUT_STRUCTURE_CONTRACT,
+    identity: KIM_IDENTITY_PROMPT + "\n\n" + KIM_FUNCTIONAL_CONTEXT_USE_CONTRACT,
   };
 
   // Relational stance directive (already built by pipeline)
