@@ -111,6 +111,12 @@ export function buildClientSystemPrompt(input: ClientPromptBuildInput): ClientBu
     includedSections.push('projection');
   } else {
     omittedSections.push('projection');
+  if (sections.contextApplicationContract) {
+    promptParts.push(sections.contextApplicationContract);
+    includedSections.push('contextApplicationContract');
+  } else {
+    omittedSections.push('contextApplicationContract');
+  }
   }
 
   // Personal Anchors (confirmed key figures — always included when available)
@@ -134,6 +140,28 @@ export function buildClientSystemPrompt(input: ClientPromptBuildInput): ClientBu
     includedSections.push('rejectedSuggestions');
   } else {
     omittedSections.push('rejectedSuggestions');
+  }
+
+  // CMD Selected Memory Summary (behind feature flag, only when non-empty)
+  // Personal Clinical Context (deep analysis: schemas, modes, triggers, values, goals)
+  if (input.personalClinicalContext) {
+    const clinicalCtxBlock = [
+      '[PERSONAL CLINICAL CONTEXT — use as working hypotheses, never diagnose]',
+      input.personalClinicalContext,
+      '',
+      'Rules:',
+      '- These are clinical working hypotheses, NOT diagnoses.',
+      '- Use them to improve timing, depth, and relevance of your response.',
+      '- Never label the user with schema/mode names.',
+      '- Never say "your schema" or "your mode" — describe the pattern in plain language.',
+      '- Protective factors and values are strengths to build on.',
+      '- Goals guide the direction of therapeutic work.',
+      '- Risks require careful, non-alarmist attention.',
+    ].join('\n');
+    promptParts.push(clinicalCtxBlock);
+    includedSections.push('personalClinicalContext');
+  } else {
+    omittedSections.push('personalClinicalContext');
   }
 
   // CMD Selected Memory Summary (behind feature flag, only when non-empty)

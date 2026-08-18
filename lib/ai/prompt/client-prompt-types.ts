@@ -66,6 +66,8 @@ export interface ClientPromptBuildInput {
   personalAnchors?: string;
   /** Rejected suggestions block — topics user explicitly rejected this session */
   rejectedSuggestionsBlock?: string;
+  /** Deep analysis context — schemas, modes, triggers, protective factors, values, goals, risks from section analysis */
+  personalClinicalContext?: string;
 }
 
 export interface ClientBuiltPromptResult {

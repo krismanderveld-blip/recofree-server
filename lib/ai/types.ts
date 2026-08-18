@@ -280,6 +280,7 @@ export interface ChatMessage {
     epistemic?: string;
     modelRoute?: string;
     cost?: string;
+    contextDat?: string;
   };
   /** Schema/Mode detection result for clinical confirmation UI */
   schemaModeResult?: {
@@ -1300,6 +1301,7 @@ export interface ChatContext {
   cmdMemorySummary?: string | null;
   /** PERSONAL ANCHORS: confirmed key figure facts (always sent, never hedged) */
   personalAnchors?: string | null;
+  personalClinicalContext?: string | null;
 
   // ─── PRE-BUILT PROMPT BLOCKS (from local pipeline) ───
   /** Ready-to-inject PERSONEN-LOOKUP block (built locally) */

@@ -3140,6 +3140,8 @@ export async function processMessage(
   let deepeningBlock: string | undefined;
   let contextDatObject: import('../pipeline/context-dat-distiller').ContextDat | undefined;
   const { isBackpackDirty, clearBackpackDirty } = await import('../engine/shared/backpack-dirty-flag');
+  const { cacheContextDat, getCachedContextDat } = await import('../pipeline/context-dat-session-cache');
+  const currentPersona = (backpack.userType || 'elias') as 'elias' | 'kim';
   const shouldBuildContextDat = isSessionStart || isBackpackDirty();
   if (shouldBuildContextDat) {
     if (!isSessionStart) {
@@ -3169,6 +3171,7 @@ export async function processMessage(
       });
       contextDatObject = contextDat;
       contextDatSerialized = serializeContextDatForGPT(contextDat);
+      cacheContextDat(contextDatSerialized, isSessionStart ? 'session_init' : 'backpack_dirty_rebuild', currentPersona);
 
       // Deepening: targeted fragment retrieval if nano detected gaps
       if (clientNanoResult) {
@@ -3190,6 +3193,9 @@ export async function processMessage(
       contextDatSerialized = undefined;
       deepeningBlock = undefined;
     }
+  } else {
+    // Follow-up: reuse cached contextDatSerialized from session init
+    contextDatSerialized = getCachedContextDat(currentPersona);
   }
 
   // ── DIST01: Build distillation context (continuous entity/signal extraction) ──
@@ -3943,6 +3949,7 @@ export async function processMessage(
     cmdMemorySummary: cmdMemorySummary ?? undefined,
     // PERSONAL ANCHORS — confirmed key figure facts (always sent to GPT, never hedged)
     personalAnchors: buildPersonalAnchorsBlock(currentUserDat),
+    personalClinicalContext: buildPersonalClinicalContext(currentUserDat),
     // PRE-BUILT PROMPT BLOCKS (local pipeline → server as pure proxy)
     ...prebuiltBlocks,
   };
@@ -4292,6 +4299,7 @@ export async function processMessage(
       safetyFilters: undefined as any,
       cmd: cmdDebug.featureFlag ? `flag=${cmdDebug.featureFlag} run=${cmdDebug.runtimeExecuted} ctx=${cmdDebug.contextBuilt} valid=${cmdDebug.validationOk} sel=${cmdDebug.selectedItemsCount} tok=${cmdDebug.selectedEstimatedTokens} sum=${cmdDebug.memorySummaryPresent}(${cmdDebug.memorySummaryChars}ch)` : undefined,
       formulation: (eliasFormulationBlock || kimFormulationBlock) ? `${eliasFormulationBlock ? 'elias' : 'kim'}(${(eliasFormulationBlock || kimFormulationBlock || '').length}ch)` : undefined,
+      contextDat: contextDatSerialized ? `present=true src=${shouldBuildContextDat ? "rebuilt" : "cache"} chars=${contextDatSerialized.length}` : "present=false",
       route: process.env.EXPO_PUBLIC_ENABLE_MINIMAL_GPT_PROXY === 'true' ? 'minimal-proxy | store:false' : 'legacy-gpt-proxy',
       epistemic: `flag=${epistemicDebug.flag} run=${epistemicDebug.run} claims=${epistemicDebug.claims} hyp=${epistemicDebug.hyp} unc=${epistemicDebug.unc} mindread=${epistemicDebug.mindread} rescue=${epistemicDebug.rescue} medUnc=${epistemicDebug.medUnc} tier=${epistemicDebug.tier}`,
       modelRoute: `flag=${epistemicRoutingDebug.flag} tier=${epistemicRoutingDebug.tier} model=${epistemicRoutingDebug.model} score=${epistemicRoutingDebug.score} reason=${epistemicRoutingDebug.reasons || 'light_context'}`,
@@ -6485,4 +6493,83 @@ export function runDeferredSessionAnalysis(
   console.log(`[Pipeline] DEFERRED ANALYSIS complete: themes=${themes.length}, triggers=${newTriggers.length}, modules=${modulesUsed.length}, archived=${archived.archivedSessions.length} sessions`);
 
   return updatedUserDat;
+}
+
+/**
+ * Build [PERSONAL CLINICAL CONTEXT] block from deep analysis results in user.dat.
+ * Contains schemas, modes, triggers, protective factors, values, goals, risks.
+ * All presented as working hypotheses, never diagnoses.
+ * Max 800 chars to stay within token budget.
+ */
+function buildPersonalClinicalContext(userDat: any): string | undefined {
+  if (!userDat) return undefined;
+  const parts: string[] = [];
+  const MAX_CHARS = 800;
+
+  // Schemas (working hypotheses)
+  if (Array.isArray(userDat.schemas) && userDat.schemas.length > 0) {
+    const schemaNames = userDat.schemas
+      .filter((s: any) => s && s.schemaName)
+      .slice(0, 4)
+      .map((s: any) => `${s.schemaName}${s.confidence ? ` (${s.confidence})` : ''}`);
+    if (schemaNames.length > 0) parts.push(`Schemas (hypotheses): ${schemaNames.join(', ')}`);
+  }
+
+  // Modes
+  if (Array.isArray(userDat.modes) && userDat.modes.length > 0) {
+    const modeNames = userDat.modes
+      .filter((m: any) => m && m.modeName)
+      .slice(0, 4)
+      .map((m: any) => m.modeName);
+    if (modeNames.length > 0) parts.push(`Modes (observed): ${modeNames.join(', ')}`);
+  }
+
+  // Triggers
+  if (Array.isArray(userDat.triggers) && userDat.triggers.length > 0) {
+    const triggerNames = userDat.triggers
+      .filter((t: any) => t && t.triggerDescription)
+      .slice(0, 5)
+      .map((t: any) => t.triggerDescription);
+    if (triggerNames.length > 0) parts.push(`Triggers: ${triggerNames.join('; ')}`);
+  }
+
+  // Protective factors
+  if (Array.isArray(userDat.protectiveFactors) && userDat.protectiveFactors.length > 0) {
+    const factors = userDat.protectiveFactors
+      .filter((f: any) => f && f.description)
+      .slice(0, 4)
+      .map((f: any) => f.description);
+    if (factors.length > 0) parts.push(`Strengths: ${factors.join('; ')}`);
+  }
+
+  // Values
+  if (Array.isArray(userDat.values) && userDat.values.length > 0) {
+    const valueNames = userDat.values
+      .filter((v: any) => v && v.valueName)
+      .slice(0, 4)
+      .map((v: any) => v.valueName);
+    if (valueNames.length > 0) parts.push(`Values: ${valueNames.join(', ')}`);
+  }
+
+  // Goals
+  if (Array.isArray(userDat.goals) && userDat.goals.length > 0) {
+    const goalNames = userDat.goals
+      .filter((g: any) => g && g.goalDescription)
+      .slice(0, 3)
+      .map((g: any) => g.goalDescription);
+    if (goalNames.length > 0) parts.push(`Goals: ${goalNames.join('; ')}`);
+  }
+
+  // Risks
+  if (Array.isArray(userDat.risks) && userDat.risks.length > 0) {
+    const riskNames = userDat.risks
+      .filter((r: any) => r && r.riskDescription)
+      .slice(0, 3)
+      .map((r: any) => r.riskDescription);
+    if (riskNames.length > 0) parts.push(`Risks: ${riskNames.join('; ')}`);
+  }
+
+  if (parts.length === 0) return undefined;
+  const result = parts.join('\n');
+  return result.length > MAX_CHARS ? result.slice(0, MAX_CHARS) + '...' : result;
 }

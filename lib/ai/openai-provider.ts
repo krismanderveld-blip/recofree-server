@@ -798,6 +798,7 @@ export class OpenAIProvider implements AIProvider {
             kimFormulationBlock: context.kimFormulationBlock ?? undefined,
             cmdMemorySummary: context.cmdMemorySummary ?? undefined,
             personalAnchors: context.personalAnchors ?? undefined,
+            personalClinicalContext: context.personalClinicalContext ?? undefined,
           };
 
           const mirrorResult = buildClientSystemPrompt(mirrorInput);
@@ -890,6 +891,7 @@ export class OpenAIProvider implements AIProvider {
           cmdMemorySummary: context.cmdMemorySummary ?? undefined,
           personalAnchors: context.personalAnchors ?? undefined,
           rejectedSuggestionsBlock: rejectedBlock ?? undefined,
+          personalClinicalContext: context.personalClinicalContext ?? undefined,
         };
 
         const clientPromptResult = buildClientSystemPrompt(promptInput);

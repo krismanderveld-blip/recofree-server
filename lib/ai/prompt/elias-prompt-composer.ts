@@ -10,6 +10,7 @@ import type { ClientPromptBuildInput } from './client-prompt-types';
 
 // Elias identity is available client-side
 import { ELIAS_IDENTITY_PROMPT } from '../../engine/elias/prompt-block';
+import { CONTEXT_AWARE_APPLICATION_CONTRACT } from '../../engine/shared/context-application-contract';
 import type { EliasRecoveryFormulationContext } from '../../engine/elias/recovery-formulation';
 
 export interface EliasPromptSections {
@@ -21,6 +22,7 @@ export interface EliasPromptSections {
   context?: string;
   deepening?: string;
   projection?: string;
+  contextApplicationContract?: string;
 }
 
 /**
@@ -65,6 +67,7 @@ export function composeEliasPrompt(input: ClientPromptBuildInput): EliasPromptSe
   // Projection context
   if (input.projectionContext) {
     sections.projection = input.projectionContext;
+    sections.contextApplicationContract = CONTEXT_AWARE_APPLICATION_CONTRACT;
   }
 
   return sections;
