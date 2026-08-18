@@ -67,9 +67,9 @@ export function composeEliasPrompt(input: ClientPromptBuildInput): EliasPromptSe
   // Projection context
   if (input.projectionContext) {
     sections.projection = input.projectionContext;
-    sections.contextApplicationContract = CONTEXT_AWARE_APPLICATION_CONTRACT;
   }
-
+  // Context application contract — always active
+  sections.contextApplicationContract = CONTEXT_AWARE_APPLICATION_CONTRACT;
   return sections;
 }
 
