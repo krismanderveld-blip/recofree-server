@@ -84,6 +84,11 @@ async function startServer() {
   registerMinimalGptProxyRoute(app);
   setSessionCacheGetter(getSessionCache);
 
+  // Root health check for Railway deploy verification
+  app.get("/", (_req, res) => {
+    res.json({ ok: true, service: "recofree-server" });
+  });
+
   app.get("/api/health", (_req, res) => {
     res.json({ ok: true, timestamp: Date.now() });
   });
