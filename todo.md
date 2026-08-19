@@ -2894,7 +2894,7 @@
 - [x] FASE 2: recoveryPatterns / caregiverPatterns consumer in personalClinicalContext
 - [x] FASE 3: ageCategory prompt injection
 - [x] FASE 4: Backpack clinical formulation output schema extension
-- [ ] FASE 5: Deep section analysis prompt sharpening
+- [x] FASE 5: Deep section analysis prompt sharpening
 - [ ] FASE 6: Merge and nuance preservation
 - [ ] FASE 7: Personal clinical context extension with new fields
 - [ ] FASE 8: Context application contract update

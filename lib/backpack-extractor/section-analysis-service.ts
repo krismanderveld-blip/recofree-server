@@ -71,6 +71,13 @@ RULES:
 - Do NOT diagnose. All schemas and modes are signals, not diagnoses.
 - Respond ONLY with valid JSON matching the schema below.
 - Use Dutch for relationship labels (zoon, dochter, partner, vriendin, ex-partner, moeder, vader, etc.)
+- All formulations are WORKING HYPOTHESES, never diagnoses or predictions.
+- sourceEvidence must be a short quote or paraphrase from the text (max 150 chars), not a raw dump.
+- For triggerChains: map the FULL pathway: event → meaning → emotion → mode → coping → risk.
+- For developmentalFormulation: identify HOW early experiences shaped current patterns.
+- For contraindications: identify topics/suggestions that would be harmful for THIS person.
+- For safeFormulationHints: identify HOW to safely discuss sensitive topics with THIS person.
+- Persona-specific fields: only extract relapsePathways/functionOfAddiction for Elias, only caregiverBurdenPathways/functionOfCaregivingPattern for Kim.
 
 PERSONA CONTEXT: {{persona}}
 SECTION ID: {{sectionId}}
@@ -90,7 +97,15 @@ OUTPUT JSON SCHEMA:
   "goals": [{ "goal": string, "timeframe": "short_term"|"medium_term"|"long_term"|"undefined", "confidence": 0-1 }],
   "risks": [{ "risk": string, "severity": "high"|"medium"|"low", "isActive": boolean, "confidence": 0-1 }],
   "recoveryPatterns": [{ "type": string, "description": string, "confidence": 0-1 }],
-  "caregiverPatterns": [{ "type": string, "description": string, "confidence": 0-1 }]
+  "caregiverPatterns": [{ "type": string, "description": string, "confidence": 0-1 }],
+  "developmentalFormulation": [{ "originPhase": "childhood"|"adolescence"|"early_adulthood"|"adulthood"|"unknown", "originContext": string, "learnedPattern": string, "currentManifestation": string, "sourceEvidence": string (max 150 chars quote from text), "confidence": 0-1 }],
+  "triggerChains": [{ "triggerEvent": string, "assignedMeaning": string, "emotionalResponse": string, "activatedMode": string, "copingBehavior": string, "riskOutcome": string, "sourceEvidence": string (max 150 chars), "confidence": 0-1 }],
+  "relapsePathways": [{ "destabilizer": string, "earlyWarnings": string[], "escalationPattern": string, "relapseEndpoint": string, "protectiveInterrupts": string[], "sourceEvidence": string (max 150 chars), "confidence": 0-1 }],
+  "caregiverBurdenPathways": [{ "destabilizer": string, "earlyWarnings": string[], "escalationPattern": string, "burdenEndpoint": string, "protectiveInterrupts": string[], "sourceEvidence": string (max 150 chars), "confidence": 0-1 }],
+  "functionOfAddiction": [{ "functionType": "numbing"|"control"|"escape"|"connection"|"identity"|"reward"|"regulation"|"other", "description": string, "underlyingNeed": string, "sourceEvidence": string (max 150 chars), "confidence": 0-1 }],
+  "functionOfCaregivingPattern": [{ "functionType": "control"|"safety"|"identity"|"guilt_avoidance"|"love_proof"|"self_worth"|"other", "description": string, "underlyingNeed": string, "sourceEvidence": string (max 150 chars), "confidence": 0-1 }],
+  "contraindications": [{ "avoidTopic": string, "reason": string, "appliesTo": string, "severity": "hard"|"soft", "sourceEvidence": string (max 150 chars), "confidence": 0-1 }],
+  "safeFormulationHints": [{ "topic": string, "safeFraming": string, "avoidFraming": string, "sourceEvidence": string (max 150 chars), "confidence": 0-1 }]
 }
 
 TEXT TO ANALYZE:
