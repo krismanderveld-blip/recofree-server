@@ -165,6 +165,15 @@ export function buildClientSystemPrompt(input: ClientPromptBuildInput): ClientBu
   }
 
   // CMD Selected Memory Summary (behind feature flag, only when non-empty)
+  // Age / Communication Context (never raw birthDate)
+  if (input.ageCategory) {
+    promptParts.push(buildAgeCategoryPromptBlock(input.ageCategory as import('../../engine/shared/age-category-foundation').AgeCategory));
+    includedSections.push('ageCategory');
+  } else {
+    omittedSections.push('ageCategory');
+  }
+
+  // CMD Selected Memory Summary (behind feature flag, only when non-empty)
   if (input.cmdMemorySummary) {
     const cmdBlock = [
       '[SELECTED CLINICAL MEMORY]',
@@ -205,3 +214,4 @@ export function buildClientSystemPrompt(input: ClientPromptBuildInput): ClientBu
     },
   };
 }
+import { buildAgeCategoryPromptBlock } from '../../engine/shared/age-category-foundation';

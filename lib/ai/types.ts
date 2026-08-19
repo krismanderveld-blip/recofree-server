@@ -1328,6 +1328,8 @@ export interface ChatContext {
   personalClinicalContext?: string | null;
 
   // ─── PRE-BUILT PROMPT BLOCKS (from local pipeline) ───
+  /** Age category for communication depth — never raw birthDate */
+  ageCategory?: string | null;
   /** Ready-to-inject PERSONEN-LOOKUP block (built locally) */
   personLookupBlock?: string | null;
   /** Ready-to-inject PERSONAL MEMORY block (built locally) */

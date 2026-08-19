@@ -892,6 +892,7 @@ export class OpenAIProvider implements AIProvider {
           personalAnchors: context.personalAnchors ?? undefined,
           rejectedSuggestionsBlock: rejectedBlock ?? undefined,
           personalClinicalContext: context.personalClinicalContext ?? undefined,
+          ageCategory: context.ageCategory ?? undefined,
         };
 
         const clientPromptResult = buildClientSystemPrompt(promptInput);

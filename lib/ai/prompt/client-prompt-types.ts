@@ -68,6 +68,8 @@ export interface ClientPromptBuildInput {
   rejectedSuggestionsBlock?: string;
   /** Deep analysis context — schemas, modes, triggers, protective factors, values, goals, risks from section analysis */
   personalClinicalContext?: string;
+  /** Age category for communication depth — never raw birthDate */
+  ageCategory?: string;
 }
 
 export interface ClientBuiltPromptResult {

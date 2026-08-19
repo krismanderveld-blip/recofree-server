@@ -15,8 +15,45 @@
  * - Boundary-setting assumes adult autonomy
  */
 
-export const AGE_CATEGORY = 'adult_18_plus' as const;
-export type AgeCategory = typeof AGE_CATEGORY;
+export type AgeCategory = 'adult_18_24' | 'adult_25_39' | 'adult_40_plus' | 'unknown_adult';
+
+/**
+ * Resolve age category from extracted persons' ages or backpack context.
+ * Never returns raw birthDate — only a category.
+ * Returns 'unknown_adult' when age cannot be determined.
+ */
+export function resolveAgeCategory(extractedPersons?: Array<{ name?: string; age?: string | null }>, userName?: string): AgeCategory {
+  if (!extractedPersons || !userName) return 'unknown_adult';
+  // Find the user's own age from extracted persons (if extraction found it)
+  const userPerson = extractedPersons.find(
+    (p) => p.name && userName && p.name.toLowerCase() === userName.toLowerCase() && p.age
+  );
+  if (!userPerson?.age) return 'unknown_adult';
+  const ageNum = parseInt(userPerson.age, 10);
+  if (isNaN(ageNum) || ageNum < 18) return 'unknown_adult';
+  if (ageNum <= 24) return 'adult_18_24';
+  if (ageNum <= 39) return 'adult_25_39';
+  return 'adult_40_plus';
+}
+
+/**
+ * Build the [AGE / COMMUNICATION CONTEXT] prompt block.
+ * Never includes raw birthDate. Only the category + communication hints.
+ */
+export function buildAgeCategoryPromptBlock(ageCategory: AgeCategory): string {
+  const hints: Record<AgeCategory, string> = {
+    adult_18_24: 'More explanation, less abstraction. Do not assume high recovery/therapeutic vocabulary.',
+    adult_25_39: 'Normal adult recovery/relationship formulation.',
+    adult_40_plus: 'More space for life timeline, grief, parenthood, long-term patterns — only when context supports it.',
+    unknown_adult: 'Safe adult default. Not too abstract.',
+  };
+  return [
+    '[AGE / COMMUNICATION CONTEXT]',
+    `ageCategory: ${ageCategory}`,
+    `Hint: ${hints[ageCategory]}`,
+    'Use age only as a communication-depth signal. Do not stereotype. Adjust abstraction level to the user\'s language, emotional load, recovery phase, and safety context.',
+  ].join('\n');
+}
 
 /**
  * Communication depth baseline for adult users.

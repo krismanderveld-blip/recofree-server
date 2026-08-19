@@ -3950,6 +3950,15 @@ export async function processMessage(
     // PERSONAL ANCHORS — confirmed key figure facts (always sent to GPT, never hedged)
     personalAnchors: buildPersonalAnchorsBlock(currentUserDat),
     personalClinicalContext: buildPersonalClinicalContext(currentUserDat, backpack.userType as 'elias' | 'kim'),
+    ageCategory: (() => {
+      try {
+        const { resolveAgeCategory } = require('../engine/shared/age-category-foundation');
+        const persons = currentUserDat?.extractedEntities?.persons;
+        return resolveAgeCategory(persons, backpack.naam);
+      } catch {
+        return 'unknown_adult';
+      }
+    })(),
     // PRE-BUILT PROMPT BLOCKS (local pipeline → server as pure proxy)
     ...prebuiltBlocks,
   };
