@@ -23,6 +23,24 @@ import * as Haptics from 'expo-haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SessionMemoryCache } from '@/lib/crypto/session-memory-cache';
 import { useRouter, useFocusEffect, useNavigation, type Href } from 'expo-router';
+
+/**
+ * Safe merge-and-write: reads LATEST userDat from SessionMemoryCache,
+ * then spreads partial update on top. Preserves deep analysis fields
+ * (schemas, modes, triggers, etc.) that may exist in storage but not
+ * in the local variable being written.
+ */
+async function mergeToUserDatStorage(partial: Record<string, any>): Promise<void> {
+  const UDKEY = '@recofree_userdat';
+  let base: any = {};
+  try {
+    const raw = await SessionMemoryCache.get(UDKEY);
+    if (raw) base = JSON.parse(raw);
+  } catch { /* fallback to empty */ }
+  const merged = { ...base, ...partial };
+  await SessionMemoryCache.set(UDKEY, JSON.stringify(merged));
+}
+
 import { useUser } from '@/lib/user-context';
 import { fixUnicode } from '@/lib/utils';
 import { getAIProvider } from '@/lib/ai';
@@ -228,7 +246,7 @@ function ChatScreenInner() {
     setFirstChatSeen(true);
     const ud = await getUserDat();
     const updated = { ...ud, firstChatSeen: true } as UserDat;
-    await SessionMemoryCache.set(USERDAT_KEY, JSON.stringify(updated));
+    await mergeToUserDatStorage({ firstChatSeen: true });
   }, [getUserDat]);
 
   // ── Pre-chat gate: VSP/Self-Direction ALWAYS shown at every chat start ──
@@ -435,7 +453,7 @@ function ChatScreenInner() {
             triggerBackpackAnalysisIfNeeded(state.backpack, state.userDat)
               .then(async (result) => {
                 if (result) {
-                  await SessionMemoryCache.set(USERDAT_KEY, JSON.stringify(result.updatedUserDat));
+                  await mergeToUserDatStorage(result.updatedUserDat);
                   console.log('[Chat] Backpack schema/mode analysis completed for sections:', result.analyzedSectionIds);
                 }
               })
@@ -484,7 +502,7 @@ function ChatScreenInner() {
         const entities = await forceExtract(backpack, callExtractionEndpoint);
         if (entities) {
           userDat = { ...userDat, extractedEntities: entities };
-          await SessionMemoryCache.set(USERDAT_KEY, JSON.stringify(userDat));
+          await mergeToUserDatStorage({ extractedEntities: entities, relationalAnchors: userDat.relationalAnchors });
           console.log('[Chat] Session-start: extraction complete, user.dat fed with', entities.persons.length, 'persons');
         }
       } else if (backpackHasContent) {
@@ -498,7 +516,7 @@ function ChatScreenInner() {
               if (udJson) {
                 const ud = JSON.parse(udJson);
                 ud.extractedEntities = entities;
-                await SessionMemoryCache.set(USERDAT_KEY, JSON.stringify(ud));
+                await mergeToUserDatStorage({ extractedEntities: entities });
                 console.log('[Chat] Background re-extraction complete:', entities.persons.length, 'persons');
               }
             }
@@ -685,7 +703,7 @@ function ChatScreenInner() {
         userDat.chatHistory = [...(userDat.chatHistory || []), greetingMsg];
         userDat.totalSessions = (userDat.totalSessions ?? 0) + 1;
         userDat.lastSessionDate = LocalDeviceTimeService.now().utcIso.slice(0, 10);
-        await SessionMemoryCache.set(USERDAT_KEY, JSON.stringify(userDat));
+        await mergeToUserDatStorage({ chatHistory: userDat.chatHistory, totalSessions: userDat.totalSessions, lastSessionDate: userDat.lastSessionDate });
         setMessages([greetingMsg]);
         logDebugEvent('session_start', {
           userType: state.userType ?? 'unknown',
@@ -696,7 +714,7 @@ function ChatScreenInner() {
         // Fallback: use existing pipeline greeting
         const result = await generateGreeting(backpack, provider, userDat, diaryEntries, { locale: locale as 'nl' | 'en' | 'fr', country: (country || 'BE') as 'NL' | 'BE' | 'FR' | 'UK' | 'US' });
         // Only persist userDat (backpack is NEVER modified by the system)
-        await SessionMemoryCache.set(USERDAT_KEY, JSON.stringify(result.updatedUserDat));
+        await mergeToUserDatStorage(result.updatedUserDat);
         // Only show the greeting message (last item in chatHistory), not old session messages
         const greeting = result.updatedUserDat.chatHistory.slice(-1);
         setMessages(greeting);
@@ -819,7 +837,7 @@ function ChatScreenInner() {
         throw new Error(`processMessage returned invalid result: ${JSON.stringify(result?.response ?? 'undefined')}`);
       }
       // Only persist userDat (backpack is NEVER modified)
-      await SessionMemoryCache.set(USERDAT_KEY, JSON.stringify(result.updatedUserDat));
+      await mergeToUserDatStorage(result.updatedUserDat);
       if (result.crisisLevel > 0) setCrisisLevel(result.crisisLevel);
       if (result.showEmergency) setShowEmergency(true);
       // Show only current session messages: append the new user+assistant pair to existing messages
@@ -1193,7 +1211,7 @@ function ChatScreenInner() {
                   if (udJson) {
                     const ud = JSON.parse(udJson);
                     ud.extractedEntities = entities;
-                    await SessionMemoryCache.set(USERDAT_KEY, JSON.stringify(ud));
+                    await mergeToUserDatStorage(ud);
                     console.log(`[DIST01] Route B: user.dat fed with ${entities.persons.length} persons after proposal write`);
                   }
                 }
@@ -1256,7 +1274,7 @@ function ChatScreenInner() {
       const userDatWithDiary = { ...currentUserDat, _sessionDiaryEntries: diaryForSession } as any;
       const result = await endSession(backpack, provider, userDatWithDiary);
       // Only persist userDat (backpack is NEVER modified)
-      await SessionMemoryCache.set(USERDAT_KEY, JSON.stringify(result.updatedUserDat));
+      await mergeToUserDatStorage(result.updatedUserDat);
       await endSessionWithUserDat(result.updatedUserDat);
       const confirmationMsg: ChatMessage = {
         id: `msg_confirm_${LocalDeviceTimeService.now().epochMs}`,
@@ -1463,7 +1481,7 @@ function ChatScreenInner() {
         );
         userDat.schemaTendencies = tendencies;
       }
-      await SessionMemoryCache.set(USERDAT_KEY, JSON.stringify(userDat));
+      await mergeToUserDatStorage(userDat);
       console.log(`[Clinical] Acknowledged ${type}: ${id}`);
     } catch (e) {
       console.warn('[Clinical] Failed to confirm tendency:', e);

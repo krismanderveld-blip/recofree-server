@@ -2903,3 +2903,4 @@
 - [x] P0 FIX: startSession() stale overwrite — reads latest userDat from SessionMemoryCache before spread
 - [x] P0 FIX: runManualDataRefresh() contextDat stale — re-reads fresh userDat after analyzeAllSections
 - [x] P0 FIX: 10+ stale overwrite paths in user-context.tsx — mergeAndPersistUserDat helper + 4 runtime debug checkpoints
+- [x] P0 FIX: 10 stale overwrite paths in chat.tsx — mergeToUserDatStorage helper replaces ALL direct SessionMemoryCache.set(USERDAT_KEY) calls
