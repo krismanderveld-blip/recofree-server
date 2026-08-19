@@ -4,18 +4,25 @@ import { composeEliasPrompt } from '@/lib/ai/prompt/elias-prompt-composer';
 
 describe('CONTEXT_AWARE_APPLICATION_CONTRACT always active', () => {
   const baseKimInput = {
+    persona: 'kim' as const,
+    crisisLevel: 0,
+    safetyLevel: 'none',
     identity: 'Kim identity',
     module: 'K01',
     moduleDescription: 'Test module',
     regulationInstruction: 'reflect',
     relationalStanceDirective: 'stance=empathic_witness',
     depthAndNamingDirective: 'depth=medium',
+    depthNamingDirective: 'depth=medium',
     kimFormulationBlock: undefined,
     deepeningBlock: undefined,
     projectionContext: undefined,
   };
 
   const baseEliasInput = {
+    persona: 'elias' as const,
+    crisisLevel: 0,
+    safetyLevel: 'none',
     identity: 'Elias identity',
     module: 'PAAL01',
     moduleDescription: 'Test module',

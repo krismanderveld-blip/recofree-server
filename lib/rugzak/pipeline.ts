@@ -6509,63 +6509,63 @@ function buildPersonalClinicalContext(userDat: any): string | undefined {
   // Schemas (working hypotheses)
   if (Array.isArray(userDat.schemas) && userDat.schemas.length > 0) {
     const schemaNames = userDat.schemas
-      .filter((s: any) => s && s.schemaName)
+      .filter((s: any) => s && (s.schema || s.schemaName))
       .slice(0, 4)
-      .map((s: any) => `${s.schemaName}${s.confidence ? ` (${s.confidence})` : ''}`);
+      .map((s: any) => `${s.schema || s.schemaName}${s.confidence ? ` (${s.confidence})` : ''}`);
     if (schemaNames.length > 0) parts.push(`Schemas (hypotheses): ${schemaNames.join(', ')}`);
   }
 
   // Modes
   if (Array.isArray(userDat.modes) && userDat.modes.length > 0) {
     const modeNames = userDat.modes
-      .filter((m: any) => m && m.modeName)
+      .filter((m: any) => m && (m.mode || m.modeName))
       .slice(0, 4)
-      .map((m: any) => m.modeName);
+      .map((m: any) => m.mode || m.modeName);
     if (modeNames.length > 0) parts.push(`Modes (observed): ${modeNames.join(', ')}`);
   }
 
   // Triggers
   if (Array.isArray(userDat.triggers) && userDat.triggers.length > 0) {
     const triggerNames = userDat.triggers
-      .filter((t: any) => t && t.triggerDescription)
+      .filter((t: any) => t && (t.trigger || t.triggerDescription))
       .slice(0, 5)
-      .map((t: any) => t.triggerDescription);
+      .map((t: any) => t.trigger || t.triggerDescription);
     if (triggerNames.length > 0) parts.push(`Triggers: ${triggerNames.join('; ')}`);
   }
 
   // Protective factors
   if (Array.isArray(userDat.protectiveFactors) && userDat.protectiveFactors.length > 0) {
     const factors = userDat.protectiveFactors
-      .filter((f: any) => f && f.description)
+      .filter((f: any) => f && (f.factor || f.description))
       .slice(0, 4)
-      .map((f: any) => f.description);
+      .map((f: any) => f.factor || f.description);
     if (factors.length > 0) parts.push(`Strengths: ${factors.join('; ')}`);
   }
 
   // Values
   if (Array.isArray(userDat.values) && userDat.values.length > 0) {
     const valueNames = userDat.values
-      .filter((v: any) => v && v.valueName)
+      .filter((v: any) => v && (v.value || v.valueName))
       .slice(0, 4)
-      .map((v: any) => v.valueName);
+      .map((v: any) => v.value || v.valueName);
     if (valueNames.length > 0) parts.push(`Values: ${valueNames.join(', ')}`);
   }
 
   // Goals
   if (Array.isArray(userDat.goals) && userDat.goals.length > 0) {
     const goalNames = userDat.goals
-      .filter((g: any) => g && g.goalDescription)
+      .filter((g: any) => g && (g.goal || g.goalDescription))
       .slice(0, 3)
-      .map((g: any) => g.goalDescription);
+      .map((g: any) => g.goal || g.goalDescription);
     if (goalNames.length > 0) parts.push(`Goals: ${goalNames.join('; ')}`);
   }
 
   // Risks
   if (Array.isArray(userDat.risks) && userDat.risks.length > 0) {
     const riskNames = userDat.risks
-      .filter((r: any) => r && r.riskDescription)
+      .filter((r: any) => r && (r.risk || r.riskDescription))
       .slice(0, 3)
-      .map((r: any) => r.riskDescription);
+      .map((r: any) => r.risk || r.riskDescription);
     if (riskNames.length > 0) parts.push(`Risks: ${riskNames.join('; ')}`);
   }
 
