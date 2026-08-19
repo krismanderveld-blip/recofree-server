@@ -543,6 +543,102 @@ export async function mergeAnalysisToUserDat(
     userDat.lastSectionAnalysis = analysisResult.analyzedAt;
     userDat.sectionAnalysisPersona = analysisResult.persona;
 
+    // ── FASE 6: Merge 8 new clinical formulation fields ──────────────
+
+    // Helper: deduplicate by primary key, higher confidence wins for exact duplicates
+    function mergeHypothesisArray(
+      existing: any[],
+      incoming: any[],
+      primaryKey: string,
+      secondaryKey?: string,
+    ): any[] {
+      const result = [...existing];
+      for (const item of incoming) {
+        if (!item || !item[primaryKey]) continue;
+        const matchIdx = result.findIndex((e: any) => {
+          if (secondaryKey) {
+            return e[primaryKey] === item[primaryKey] && e[secondaryKey] === item[secondaryKey];
+          }
+          return e[primaryKey] === item[primaryKey];
+        });
+        if (matchIdx >= 0) {
+          // Exact duplicate: higher confidence wins, sourceEvidence preserved
+          if (item.confidence > (result[matchIdx].confidence || 0)) {
+            result[matchIdx] = item;
+          }
+          // Otherwise: keep existing (richer info not overwritten by poorer)
+        } else {
+          // Different claim: keep both (conflicting hypotheses coexist)
+          result.push(item);
+        }
+      }
+      return result;
+    }
+
+    // developmentalFormulation (shared, deduplicate by originContext)
+    if (Array.isArray(analysisResult.developmentalFormulation) && analysisResult.developmentalFormulation.length > 0) {
+      if (!userDat.developmentalFormulation) userDat.developmentalFormulation = [];
+      userDat.developmentalFormulation = mergeHypothesisArray(
+        userDat.developmentalFormulation, analysisResult.developmentalFormulation, 'originContext'
+      );
+    }
+
+    // triggerChains (shared, deduplicate by triggerEvent + copingBehavior)
+    if (Array.isArray(analysisResult.triggerChains) && analysisResult.triggerChains.length > 0) {
+      if (!userDat.triggerChains) userDat.triggerChains = [];
+      userDat.triggerChains = mergeHypothesisArray(
+        userDat.triggerChains, analysisResult.triggerChains, 'triggerEvent', 'copingBehavior'
+      );
+    }
+
+    // relapsePathways (Elias only, deduplicate by destabilizer)
+    if (analysisResult.persona === 'elias' && Array.isArray(analysisResult.relapsePathways) && analysisResult.relapsePathways.length > 0) {
+      if (!userDat.relapsePathways) userDat.relapsePathways = [];
+      userDat.relapsePathways = mergeHypothesisArray(
+        userDat.relapsePathways, analysisResult.relapsePathways, 'destabilizer'
+      );
+    }
+
+    // caregiverBurdenPathways (Kim only, deduplicate by destabilizer)
+    if (analysisResult.persona === 'kim' && Array.isArray(analysisResult.caregiverBurdenPathways) && analysisResult.caregiverBurdenPathways.length > 0) {
+      if (!userDat.caregiverBurdenPathways) userDat.caregiverBurdenPathways = [];
+      userDat.caregiverBurdenPathways = mergeHypothesisArray(
+        userDat.caregiverBurdenPathways, analysisResult.caregiverBurdenPathways, 'destabilizer'
+      );
+    }
+
+    // functionOfAddiction (Elias only, deduplicate by functionType)
+    if (analysisResult.persona === 'elias' && Array.isArray(analysisResult.functionOfAddiction) && analysisResult.functionOfAddiction.length > 0) {
+      if (!userDat.functionOfAddiction) userDat.functionOfAddiction = [];
+      userDat.functionOfAddiction = mergeHypothesisArray(
+        userDat.functionOfAddiction, analysisResult.functionOfAddiction, 'functionType'
+      );
+    }
+
+    // functionOfCaregivingPattern (Kim only, deduplicate by functionType)
+    if (analysisResult.persona === 'kim' && Array.isArray(analysisResult.functionOfCaregivingPattern) && analysisResult.functionOfCaregivingPattern.length > 0) {
+      if (!userDat.functionOfCaregivingPattern) userDat.functionOfCaregivingPattern = [];
+      userDat.functionOfCaregivingPattern = mergeHypothesisArray(
+        userDat.functionOfCaregivingPattern, analysisResult.functionOfCaregivingPattern, 'functionType'
+      );
+    }
+
+    // contraindications (shared, deduplicate by avoidTopic + appliesTo)
+    if (Array.isArray(analysisResult.contraindications) && analysisResult.contraindications.length > 0) {
+      if (!userDat.contraindications) userDat.contraindications = [];
+      userDat.contraindications = mergeHypothesisArray(
+        userDat.contraindications, analysisResult.contraindications, 'avoidTopic', 'appliesTo'
+      );
+    }
+
+    // safeFormulationHints (shared, deduplicate by topic)
+    if (Array.isArray(analysisResult.safeFormulationHints) && analysisResult.safeFormulationHints.length > 0) {
+      if (!userDat.safeFormulationHints) userDat.safeFormulationHints = [];
+      userDat.safeFormulationHints = mergeHypothesisArray(
+        userDat.safeFormulationHints, analysisResult.safeFormulationHints, 'topic'
+      );
+    }
+
     await AsyncStorage.setItem(USERDAT_KEY, JSON.stringify(userDat));
   } catch (error) {
     console.error('[SectionAnalysis] Merge to user.dat failed:', error);
