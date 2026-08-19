@@ -28,6 +28,16 @@ export interface BackpackSectionAnalysisResult {
   recoveryPatterns: RecoveryPattern[]; // Elias only
   caregiverPatterns: CaregiverPattern[]; // Kim only
 
+  // FASE 4: Extended clinical formulation (all optional for backwards compatibility)
+  developmentalFormulation?: DevelopmentalFormulation[]; // Both personas
+  triggerChains?: TriggerChain[]; // Both personas
+  relapsePathways?: RelapsePathway[]; // Elias only
+  caregiverBurdenPathways?: CaregiverBurdenPathway[]; // Kim only
+  functionOfAddiction?: FunctionOfAddiction[]; // Elias only
+  functionOfCaregivingPattern?: FunctionOfCaregivingPattern[]; // Kim only
+  contraindications?: Contraindication[]; // Both personas
+  safeFormulationHints?: SafeFormulationHint[]; // Both personas
+
   confidenceSummary: ConfidenceSummary;
   warnings: string[];
 }
@@ -171,6 +181,168 @@ export interface RecoveryPattern {
 export interface CaregiverPattern {
   type: 'self_loss' | 'boundary_fatigue' | 'rescue_role' | 'relational_harm' | 'child_trust_concern' | 'emotional_burden' | 'self_care_anchor' | 'responsibility_confusion';
   description: string;
+  confidence: number;
+  sourceSectionId: string;
+}
+
+// ── FASE 4: Extended Clinical Formulation Types ──────────────────────
+
+/**
+ * DevelopmentalFormulation — how early life experiences shaped current patterns.
+ * Always a hypothesis, never a diagnosis.
+ */
+export interface DevelopmentalFormulation {
+  /** Life phase where pattern likely originated */
+  originPhase: 'childhood' | 'adolescence' | 'early_adulthood' | 'adulthood' | 'unknown';
+  /** What happened (event/context) */
+  originContext: string;
+  /** What was learned/internalized (belief/schema formed) */
+  learnedPattern: string;
+  /** How it manifests now */
+  currentManifestation: string;
+  /** Source evidence from backpack text */
+  sourceEvidence: string;
+  confidence: number;
+  sourceSectionId: string;
+  isHypothesis: true; // Always true
+}
+
+/**
+ * TriggerChain — event → meaning → emotion → mode → coping → risk.
+ * Maps the full activation pathway from trigger to behavioral outcome.
+ */
+export interface TriggerChain {
+  /** The triggering event/stimulus */
+  triggerEvent: string;
+  /** The meaning assigned (cognitive appraisal) */
+  assignedMeaning: string;
+  /** The resulting emotion */
+  emotionalResponse: string;
+  /** The mode activated */
+  activatedMode: string;
+  /** The coping behavior chosen */
+  copingBehavior: string;
+  /** The risk outcome if unchecked */
+  riskOutcome: string;
+  /** Source evidence from backpack text */
+  sourceEvidence: string;
+  confidence: number;
+  sourceSectionId: string;
+  isHypothesis: true; // Always true
+}
+
+/**
+ * RelapsePathway — specific route from stability to relapse (Elias only).
+ * Maps known or hypothesized relapse sequences.
+ */
+export interface RelapsePathway {
+  /** What destabilizes (trigger/context) */
+  destabilizer: string;
+  /** Early warning signs */
+  earlyWarnings: string[];
+  /** Escalation pattern */
+  escalationPattern: string;
+  /** Substance/behavior endpoint */
+  relapseEndpoint: string;
+  /** Known protective interrupts */
+  protectiveInterrupts: string[];
+  /** Source evidence from backpack text */
+  sourceEvidence: string;
+  confidence: number;
+  sourceSectionId: string;
+  isHypothesis: true; // Always true
+}
+
+/**
+ * CaregiverBurdenPathway — specific route from stability to burnout/breakdown (Kim only).
+ * Maps known or hypothesized caregiver exhaustion sequences.
+ */
+export interface CaregiverBurdenPathway {
+  /** What destabilizes (trigger/context) */
+  destabilizer: string;
+  /** Early warning signs */
+  earlyWarnings: string[];
+  /** Escalation pattern */
+  escalationPattern: string;
+  /** Burnout/breakdown endpoint */
+  burdenEndpoint: string;
+  /** Known protective interrupts */
+  protectiveInterrupts: string[];
+  /** Source evidence from backpack text */
+  sourceEvidence: string;
+  confidence: number;
+  sourceSectionId: string;
+  isHypothesis: true; // Always true
+}
+
+/**
+ * FunctionOfAddiction — what the substance/behavior provides (Elias only).
+ * Maps the psychological function that addiction serves.
+ */
+export interface FunctionOfAddiction {
+  /** The function served: numbing, control, escape, connection, identity, reward, regulation */
+  functionType: 'numbing' | 'control' | 'escape' | 'connection' | 'identity' | 'reward' | 'regulation' | 'other';
+  /** Description of how this function manifests */
+  description: string;
+  /** What need it attempts to meet */
+  underlyingNeed: string;
+  /** Source evidence from backpack text */
+  sourceEvidence: string;
+  confidence: number;
+  sourceSectionId: string;
+  isHypothesis: true; // Always true
+}
+
+/**
+ * FunctionOfCaregivingPattern — what the caregiving pattern provides (Kim only).
+ * Maps the psychological function that over-caregiving serves.
+ */
+export interface FunctionOfCaregivingPattern {
+  /** The function served: control, safety, identity, guilt_avoidance, love_proof, self_worth */
+  functionType: 'control' | 'safety' | 'identity' | 'guilt_avoidance' | 'love_proof' | 'self_worth' | 'other';
+  /** Description of how this function manifests */
+  description: string;
+  /** What need it attempts to meet */
+  underlyingNeed: string;
+  /** Source evidence from backpack text */
+  sourceEvidence: string;
+  confidence: number;
+  sourceSectionId: string;
+  isHypothesis: true; // Always true
+}
+
+/**
+ * Contraindication — what NOT to say/do/suggest for this person.
+ * Per-person or per-situation "do not" rules.
+ */
+export interface Contraindication {
+  /** What is contraindicated */
+  avoidTopic: string;
+  /** Why it's contraindicated */
+  reason: string;
+  /** For which person/context this applies */
+  appliesTo: string;
+  /** Severity: hard = never say, soft = be careful */
+  severity: 'hard' | 'soft';
+  /** Source evidence from backpack text */
+  sourceEvidence: string;
+  confidence: number;
+  sourceSectionId: string;
+}
+
+/**
+ * SafeFormulationHint — how to safely frame clinical content for this person.
+ * Guides GPT formulation without being a prompt instruction.
+ */
+export interface SafeFormulationHint {
+  /** The clinical topic this hint applies to */
+  topic: string;
+  /** How to frame it safely */
+  safeFraming: string;
+  /** What to avoid when discussing this topic */
+  avoidFraming: string;
+  /** Source evidence from backpack text */
+  sourceEvidence: string;
   confidence: number;
   sourceSectionId: string;
 }

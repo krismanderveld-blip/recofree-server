@@ -715,6 +715,22 @@ export interface UserDat {
   relationGraph?: Array<{ subjectPerson: string; relation: string; objectPerson: string; explicitInSource?: boolean; confidence: number; sourceSectionId?: string }>;
   /** Deep analysis: life status facts (stored by section-analysis-service) */
   lifeStatusFacts?: Array<{ person: string; status: 'alive' | 'deceased' | 'unknown'; explicitInSource?: boolean; confidence: number; sourceSectionId?: string }>;
+  /** FASE 4: Developmental formulation hypotheses */
+  developmentalFormulation?: Array<{ originPhase: string; originContext: string; learnedPattern: string; currentManifestation: string; sourceEvidence: string; confidence: number; sourceSectionId?: string; isHypothesis: true }>;
+  /** FASE 4: Trigger chains (event→meaning→emotion→mode→coping→risk) */
+  triggerChains?: Array<{ triggerEvent: string; assignedMeaning: string; emotionalResponse: string; activatedMode: string; copingBehavior: string; riskOutcome: string; sourceEvidence: string; confidence: number; sourceSectionId?: string; isHypothesis: true }>;
+  /** FASE 4: Relapse pathways (Elias only) */
+  relapsePathways?: Array<{ destabilizer: string; earlyWarnings: string[]; escalationPattern: string; relapseEndpoint: string; protectiveInterrupts: string[]; sourceEvidence: string; confidence: number; sourceSectionId?: string; isHypothesis: true }>;
+  /** FASE 4: Caregiver burden pathways (Kim only) */
+  caregiverBurdenPathways?: Array<{ destabilizer: string; earlyWarnings: string[]; escalationPattern: string; burdenEndpoint: string; protectiveInterrupts: string[]; sourceEvidence: string; confidence: number; sourceSectionId?: string; isHypothesis: true }>;
+  /** FASE 4: Function of addiction (Elias only) */
+  functionOfAddiction?: Array<{ functionType: string; description: string; underlyingNeed: string; sourceEvidence: string; confidence: number; sourceSectionId?: string; isHypothesis: true }>;
+  /** FASE 4: Function of caregiving pattern (Kim only) */
+  functionOfCaregivingPattern?: Array<{ functionType: string; description: string; underlyingNeed: string; sourceEvidence: string; confidence: number; sourceSectionId?: string; isHypothesis: true }>;
+  /** FASE 4: Contraindications — what NOT to say/do for this person */
+  contraindications?: Array<{ avoidTopic: string; reason: string; appliesTo: string; severity: 'hard' | 'soft'; sourceEvidence: string; confidence: number; sourceSectionId?: string }>;
+  /** FASE 4: Safe formulation hints — how to frame clinical content safely */
+  safeFormulationHints?: Array<{ topic: string; safeFraming: string; avoidFraming: string; sourceEvidence: string; confidence: number; sourceSectionId?: string }>;
 }
 
 /** A record of a completed session's analysis */
