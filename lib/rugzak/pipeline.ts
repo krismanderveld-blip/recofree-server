@@ -3949,7 +3949,7 @@ export async function processMessage(
     cmdMemorySummary: cmdMemorySummary ?? undefined,
     // PERSONAL ANCHORS — confirmed key figure facts (always sent to GPT, never hedged)
     personalAnchors: buildPersonalAnchorsBlock(currentUserDat),
-    personalClinicalContext: buildPersonalClinicalContext(currentUserDat),
+    personalClinicalContext: buildPersonalClinicalContext(currentUserDat, backpack.userType as 'elias' | 'kim'),
     // PRE-BUILT PROMPT BLOCKS (local pipeline → server as pure proxy)
     ...prebuiltBlocks,
   };
@@ -4310,7 +4310,7 @@ export async function processMessage(
         return `present=true count=${lineCount} chars=${anchorsBlock.length}`;
       })(),
       clinicalCtx: (() => {
-        const ctx = buildPersonalClinicalContext(currentUserDat);
+        const ctx = buildPersonalClinicalContext(currentUserDat, backpack.userType as 'elias' | 'kim');
         if (!ctx) return 'present=false';
         const schemas = (ctx.match(/Schemas \(hypotheses\): (.+)/)?.[1] || '').split(', ').filter(Boolean).length;
         const modes = (ctx.match(/Modes \(observed\): (.+)/)?.[1] || '').split(', ').filter(Boolean).length;
@@ -6523,10 +6523,10 @@ export function runDeferredSessionAnalysis(
  * All presented as working hypotheses, never diagnoses.
  * Max 800 chars to stay within token budget.
  */
-function buildPersonalClinicalContext(userDat: any): string | undefined {
+function buildPersonalClinicalContext(userDat: any, persona?: 'elias' | 'kim'): string | undefined {
   if (!userDat) return undefined;
   const parts: string[] = [];
-  const MAX_CHARS = 800;
+  const MAX_CHARS = 1000;
 
   // Schemas (working hypotheses)
   if (Array.isArray(userDat.schemas) && userDat.schemas.length > 0) {
@@ -6589,6 +6589,24 @@ function buildPersonalClinicalContext(userDat: any): string | undefined {
       .slice(0, 3)
       .map((r: any) => r.risk || r.riskDescription);
     if (riskNames.length > 0) parts.push(`Risks: ${riskNames.join('; ')}`);
+  }
+
+  // Recovery patterns (Elias only — working hypotheses)
+  if (persona !== 'kim' && Array.isArray(userDat.recoveryPatterns) && userDat.recoveryPatterns.length > 0) {
+    const patterns = userDat.recoveryPatterns
+      .filter((p: any) => p && p.type && p.description)
+      .slice(0, 3)
+      .map((p: any) => `${p.type}: ${p.description}${p.confidence ? ` (${p.confidence})` : ''}`);
+    if (patterns.length > 0) parts.push(`Recovery patterns (hypotheses): ${patterns.join('; ')}`);
+  }
+
+  // Caregiver patterns (Kim only — working hypotheses)
+  if (persona !== 'elias' && Array.isArray(userDat.caregiverPatterns) && userDat.caregiverPatterns.length > 0) {
+    const patterns = userDat.caregiverPatterns
+      .filter((p: any) => p && p.type && p.description)
+      .slice(0, 3)
+      .map((p: any) => `${p.type}: ${p.description}${p.confidence ? ` (${p.confidence})` : ''}`);
+    if (patterns.length > 0) parts.push(`Caregiver patterns (hypotheses): ${patterns.join('; ')}`);
   }
 
   if (parts.length === 0) return undefined;

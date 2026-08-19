@@ -2890,7 +2890,7 @@
 - [x] No DIST01/CMD/memory/safety/model routing/Elias/lockfile changes
 
 ## Backpack Clinical Formulation Upgrade
-- [ ] FASE 1: Debug visibility for backpack context in clinical dropdown
+- [x] FASE 1: Debug visibility for backpack context in clinical dropdown
 - [ ] FASE 2: recoveryPatterns / caregiverPatterns consumer in personalClinicalContext
 - [ ] FASE 3: ageCategory prompt injection
 - [ ] FASE 4: Backpack clinical formulation output schema extension
