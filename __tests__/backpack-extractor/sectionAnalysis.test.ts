@@ -19,6 +19,13 @@ vi.mock('@/lib/_core/auth', () => ({
 vi.mock('@/constants/oauth', () => ({
   getApiBaseUrl: vi.fn(() => 'https://test-railway.up.railway.app'),
 }));
+// Mock SessionMemoryCache — no-op in tests (avoids encrypted writes to mockStorage)
+vi.mock('@/lib/crypto/session-memory-cache', () => ({
+  SessionMemoryCache: {
+    get: vi.fn(() => Promise.resolve(null)),
+    set: vi.fn(() => Promise.resolve()),
+  },
+}));
 
 // Mock fetch
 const mockFetch = vi.fn();

@@ -13,6 +13,7 @@
 import { getApiBaseUrl } from '@/constants/oauth';
 import * as Auth from '@/lib/_core/auth';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { SessionMemoryCache } from '@/lib/crypto/session-memory-cache';
 import type {
   BackpackSectionAnalysisResult,
   PersonAnchor,
@@ -640,6 +641,14 @@ export async function mergeAnalysisToUserDat(
     }
 
     await AsyncStorage.setItem(USERDAT_KEY, JSON.stringify(userDat));
+    // CRITICAL: Also update SessionMemoryCache so the chat pipeline reads fresh data.
+    // Without this, handleSend() reads stale userDat from SessionMemoryCache
+    // and buildPersonalClinicalContext() returns undefined (ClinicalCtx=false).
+    try {
+      await SessionMemoryCache.set(USERDAT_KEY, JSON.stringify(userDat));
+    } catch (cacheErr) {
+      console.warn('[SectionAnalysis] SessionMemoryCache sync failed (non-blocking):', cacheErr);
+    }
   } catch (error) {
     console.error('[SectionAnalysis] Merge to user.dat failed:', error);
   }

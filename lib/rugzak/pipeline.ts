@@ -4320,7 +4320,21 @@ export async function processMessage(
       })(),
       clinicalCtx: (() => {
         const ctx = buildPersonalClinicalContext(currentUserDat, backpack.userType as 'elias' | 'kim');
-        if (!ctx) return 'present=false';
+        if (!ctx) {
+          // Debug: explain WHY clinicalCtx is empty
+          const hasUserDat = !!currentUserDat;
+          const hasSchemas = Array.isArray(currentUserDat?.schemas) && currentUserDat.schemas.length > 0;
+          const hasModes = Array.isArray(currentUserDat?.modes) && currentUserDat.modes.length > 0;
+          const hasTriggers = Array.isArray(currentUserDat?.triggers) && currentUserDat.triggers.length > 0;
+          const hasDevForm = Array.isArray(currentUserDat?.developmentalFormulation) && currentUserDat.developmentalFormulation.length > 0;
+          const hasChains = Array.isArray(currentUserDat?.triggerChains) && currentUserDat.triggerChains.length > 0;
+          const hasRecovery = Array.isArray(currentUserDat?.recoveryPatterns) && currentUserDat.recoveryPatterns.length > 0;
+          const hasCaregiver = Array.isArray(currentUserDat?.caregiverPatterns) && currentUserDat.caregiverPatterns.length > 0;
+          const reason = !hasUserDat ? 'no_userdat'
+            : (!hasSchemas && !hasModes && !hasTriggers && !hasDevForm && !hasChains && !hasRecovery && !hasCaregiver) ? 'no_deep_analysis_fields'
+            : 'filtered_empty';
+          return `present=false reason=${reason} udKeys=${hasUserDat ? Object.keys(currentUserDat).length : 0}`;
+        }
         const schemas = (ctx.match(/Schemas \(hypotheses\): (.+)/)?.[1] || '').split(', ').filter(Boolean).length;
         const modes = (ctx.match(/Modes \(observed\): (.+)/)?.[1] || '').split(', ').filter(Boolean).length;
         const triggers = (ctx.match(/Triggers: (.+)/)?.[1] || '').split('; ').filter(Boolean).length;

@@ -2899,3 +2899,4 @@
 - [x] FASE 7: Personal clinical context extension with new fields
 - [x] FASE 8: Context application contract update
 - [x] FASE 9: Full validation and audit report
+- [x] P0 FIX: ClinicalCtx=false after Gegevens bijwerken — SessionMemoryCache sync added to mergeAnalysisToUserDat
