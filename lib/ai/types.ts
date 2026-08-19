@@ -281,6 +281,8 @@ export interface ChatMessage {
     modelRoute?: string;
     cost?: string;
     contextDat?: string;
+    anchors?: string;
+    clinicalCtx?: string;
   };
   /** Schema/Mode detection result for clinical confirmation UI */
   schemaModeResult?: {
@@ -691,6 +693,28 @@ export interface UserDat {
     /** Last updated timestamp */
     updatedAt: string;
   };
+  /** Deep analysis: Elias-specific recovery patterns (stored by section-analysis-service) */
+  recoveryPatterns?: Array<{ type: string; description: string; confidence: number; sourceSectionId?: string }>;
+  /** Deep analysis: Kim-specific caregiver patterns (stored by section-analysis-service) */
+  caregiverPatterns?: Array<{ type: string; description: string; confidence: number; sourceSectionId?: string }>;
+  /** Deep analysis: schemas detected from backpack (stored by section-analysis-service) */
+  schemas?: Array<{ schema: string; evidenceType: string; confidence: number; sourceSectionId?: string; doNotDiagnose?: boolean }>;
+  /** Deep analysis: modes detected from backpack (stored by section-analysis-service) */
+  modes?: Array<{ mode: string; evidenceType: string; confidence: number; sourceSectionId?: string; doNotDiagnose?: boolean }>;
+  /** Deep analysis: triggers detected from backpack (stored by section-analysis-service) */
+  triggers?: Array<{ trigger: string; context?: string; severity?: string; confidence: number; sourceSectionId?: string }>;
+  /** Deep analysis: protective factors detected from backpack (stored by section-analysis-service) */
+  protectiveFactors?: Array<{ factor: string; domain?: string; strength?: string; confidence: number; sourceSectionId?: string }>;
+  /** Deep analysis: values detected from backpack (stored by section-analysis-service) */
+  values?: Array<{ value: string; importance?: string; confidence: number; sourceSectionId?: string }>;
+  /** Deep analysis: goals detected from backpack (stored by section-analysis-service) */
+  goals?: Array<{ goal: string; timeframe?: string; confidence: number; sourceSectionId?: string }>;
+  /** Deep analysis: risks detected from backpack (stored by section-analysis-service) */
+  risks?: Array<{ risk: string; severity?: string; isActive?: boolean; confidence: number; sourceSectionId?: string }>;
+  /** Deep analysis: relation graph edges (stored by section-analysis-service) */
+  relationGraph?: Array<{ subjectPerson: string; relation: string; objectPerson: string; explicitInSource?: boolean; confidence: number; sourceSectionId?: string }>;
+  /** Deep analysis: life status facts (stored by section-analysis-service) */
+  lifeStatusFacts?: Array<{ person: string; status: 'alive' | 'deceased' | 'unknown'; explicitInSource?: boolean; confidence: number; sourceSectionId?: string }>;
 }
 
 /** A record of a completed session's analysis */

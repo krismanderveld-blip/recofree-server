@@ -2888,3 +2888,14 @@
 - [x] 36/36 new tests pass, 209/209 Kim tests pass, 3158 total tests pass
 - [x] 0 TS errors, 0 false positives, 0 persona leakage
 - [x] No DIST01/CMD/memory/safety/model routing/Elias/lockfile changes
+
+## Backpack Clinical Formulation Upgrade
+- [ ] FASE 1: Debug visibility for backpack context in clinical dropdown
+- [ ] FASE 2: recoveryPatterns / caregiverPatterns consumer in personalClinicalContext
+- [ ] FASE 3: ageCategory prompt injection
+- [ ] FASE 4: Backpack clinical formulation output schema extension
+- [ ] FASE 5: Deep section analysis prompt sharpening
+- [ ] FASE 6: Merge and nuance preservation
+- [ ] FASE 7: Personal clinical context extension with new fields
+- [ ] FASE 8: Context application contract update
+- [ ] FASE 9: Full validation and audit report

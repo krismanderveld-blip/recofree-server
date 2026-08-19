@@ -1471,9 +1471,12 @@ function ChatScreenInner() {
     const epistemicLine = item.clinicalInfo?.epistemic ? `\nEpistemic: ${item.clinicalInfo.epistemic}` : '';
     const modelRouteLine = item.clinicalInfo?.modelRoute ? `\nModelRoute: ${item.clinicalInfo.modelRoute}` : '';
     const costLine = item.clinicalInfo?.cost ? `\nCost: ${item.clinicalInfo.cost}` : '';
+    const anchorsLine = item.clinicalInfo?.anchors ? `\nAnchors: ${item.clinicalInfo.anchors}` : '';
+    const clinicalCtxLine = item.clinicalInfo?.clinicalCtx ? `\nClinicalCtx: ${item.clinicalInfo.clinicalCtx}` : '';
+    const contextDatLine = item.clinicalInfo?.contextDat ? `\nContextDat: ${item.clinicalInfo.contextDat}` : '';
     const clinicalDisplay = clinicalAnnotation
-      ? clinicalAnnotation + localInfo + cmdLine + formulationLine + routeLine + epistemicLine + modelRouteLine + costLine
-      : (localInfo || cmdLine || formulationLine || routeLine || epistemicLine || modelRouteLine || costLine) ? (localInfo + cmdLine + formulationLine + routeLine + epistemicLine + modelRouteLine + costLine) : null;
+      ? clinicalAnnotation + localInfo + cmdLine + formulationLine + routeLine + epistemicLine + modelRouteLine + costLine + anchorsLine + clinicalCtxLine + contextDatLine
+      : (localInfo || cmdLine || formulationLine || routeLine || epistemicLine || modelRouteLine || costLine || anchorsLine || clinicalCtxLine || contextDatLine) ? (localInfo + cmdLine + formulationLine + routeLine + epistemicLine + modelRouteLine + costLine + anchorsLine + clinicalCtxLine + contextDatLine) : null;
 
     const bubbleStyle = isUser
       ? {

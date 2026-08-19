@@ -4299,8 +4299,30 @@ export async function processMessage(
       safetyFilters: undefined as any,
       cmd: cmdDebug.featureFlag ? `flag=${cmdDebug.featureFlag} run=${cmdDebug.runtimeExecuted} ctx=${cmdDebug.contextBuilt} valid=${cmdDebug.validationOk} sel=${cmdDebug.selectedItemsCount} tok=${cmdDebug.selectedEstimatedTokens} sum=${cmdDebug.memorySummaryPresent}(${cmdDebug.memorySummaryChars}ch)` : undefined,
       formulation: (eliasFormulationBlock || kimFormulationBlock) ? `${eliasFormulationBlock ? 'elias' : 'kim'}(${(eliasFormulationBlock || kimFormulationBlock || '').length}ch)` : undefined,
-      contextDat: contextDatSerialized ? `present=true src=${shouldBuildContextDat ? "rebuilt" : "cache"} chars=${contextDatSerialized.length}` : "present=false",
+      contextDat: contextDatSerialized
+        ? `present=true src=${shouldBuildContextDat ? "rebuilt" : "cache"} chars=${contextDatSerialized.length}`
+        : `present=false reason=${shouldBuildContextDat ? "build_failed" : (isSessionStart ? "never_built" : "cache_miss")}`,
       route: process.env.EXPO_PUBLIC_ENABLE_MINIMAL_GPT_PROXY === 'true' ? 'minimal-proxy | store:false' : 'legacy-gpt-proxy',
+      anchors: (() => {
+        const anchorsBlock = buildPersonalAnchorsBlock(currentUserDat);
+        if (!anchorsBlock) return 'present=false';
+        const lineCount = anchorsBlock.split('\n').filter(l => l.startsWith('- ')).length;
+        return `present=true count=${lineCount} chars=${anchorsBlock.length}`;
+      })(),
+      clinicalCtx: (() => {
+        const ctx = buildPersonalClinicalContext(currentUserDat);
+        if (!ctx) return 'present=false';
+        const schemas = (ctx.match(/Schemas \(hypotheses\): (.+)/)?.[1] || '').split(', ').filter(Boolean).length;
+        const modes = (ctx.match(/Modes \(observed\): (.+)/)?.[1] || '').split(', ').filter(Boolean).length;
+        const triggers = (ctx.match(/Triggers: (.+)/)?.[1] || '').split('; ').filter(Boolean).length;
+        const protective = (ctx.match(/Strengths: (.+)/)?.[1] || '').split('; ').filter(Boolean).length;
+        const values = (ctx.match(/Values: (.+)/)?.[1] || '').split(', ').filter(Boolean).length;
+        const goals = (ctx.match(/Goals: (.+)/)?.[1] || '').split('; ').filter(Boolean).length;
+        const risks = (ctx.match(/Risks: (.+)/)?.[1] || '').split('; ').filter(Boolean).length;
+        const recoveryP = Array.isArray(currentUserDat?.recoveryPatterns) ? currentUserDat.recoveryPatterns.length : 0;
+        const caregiverP = Array.isArray(currentUserDat?.caregiverPatterns) ? currentUserDat.caregiverPatterns.length : 0;
+        return `present=true chars=${ctx.length} schemas=${schemas} modes=${modes} triggers=${triggers} protective=${protective} values=${values} goals=${goals} risks=${risks} recoveryP=${recoveryP} caregiverP=${caregiverP}`;
+      })(),
       epistemic: `flag=${epistemicDebug.flag} run=${epistemicDebug.run} claims=${epistemicDebug.claims} hyp=${epistemicDebug.hyp} unc=${epistemicDebug.unc} mindread=${epistemicDebug.mindread} rescue=${epistemicDebug.rescue} medUnc=${epistemicDebug.medUnc} tier=${epistemicDebug.tier}`,
       modelRoute: `flag=${epistemicRoutingDebug.flag} tier=${epistemicRoutingDebug.tier} model=${epistemicRoutingDebug.model} score=${epistemicRoutingDebug.score} reason=${epistemicRoutingDebug.reasons || 'light_context'}`,
       cost: tokenUsage ? (() => { const tier = getModelTierFromModel(selectedModel ?? "unknown"); const est = estimateTokenCost({ model: selectedModel ?? "unknown", tier, usage: tokenUsage! }); return `msg=$${est.totalCostUsd.toFixed(6)} | tokens=${est.promptTokens}/${est.completionTokens}/${est.totalTokens} | tier=${tier} | pricing=${est.pricingVerified ? "verified" : "verify"}`; })() : "Cost: tokens=unknown",
