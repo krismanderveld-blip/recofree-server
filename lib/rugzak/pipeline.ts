@@ -912,7 +912,7 @@ export async function processMessage(
             candidateSignals: serverResult.signalDetections
               ? {
                   fears: serverResult.signalDetections.fears.map(f => ({ label: f.keyword, confidence: f.confidence })),
-                  hopes: serverResult.signalDetections.hopes.map(h => ({ label: h.keyword, confidence: h.confidence })),
+                  hopes: serverResult.signalDetections.hopes.map((h: any) => ({ label: h.keyword, confidence: h.confidence })),
                   goals: [],
                   triggers: serverResult.signalDetections.triggers.map(t => ({ label: t.keyword, confidence: t.confidence, triggerType: 'craving' })),
                 }
@@ -4330,7 +4330,15 @@ export async function processMessage(
         const risks = (ctx.match(/Risks: (.+)/)?.[1] || '').split('; ').filter(Boolean).length;
         const recoveryP = Array.isArray(currentUserDat?.recoveryPatterns) ? currentUserDat.recoveryPatterns.length : 0;
         const caregiverP = Array.isArray(currentUserDat?.caregiverPatterns) ? currentUserDat.caregiverPatterns.length : 0;
-        return `present=true chars=${ctx.length} schemas=${schemas} modes=${modes} triggers=${triggers} protective=${protective} values=${values} goals=${goals} risks=${risks} recoveryP=${recoveryP} caregiverP=${caregiverP}`;
+        const devForm = Array.isArray(currentUserDat?.developmentalFormulation) ? currentUserDat.developmentalFormulation.length : 0;
+        const trigChains = Array.isArray(currentUserDat?.triggerChains) ? currentUserDat.triggerChains.length : 0;
+        const relapsePaths = Array.isArray(currentUserDat?.relapsePathways) ? currentUserDat.relapsePathways.length : 0;
+        const burdenPaths = Array.isArray(currentUserDat?.caregiverBurdenPathways) ? currentUserDat.caregiverBurdenPathways.length : 0;
+        const funcAddict = Array.isArray(currentUserDat?.functionOfAddiction) ? currentUserDat.functionOfAddiction.length : 0;
+        const funcCare = Array.isArray(currentUserDat?.functionOfCaregivingPattern) ? currentUserDat.functionOfCaregivingPattern.length : 0;
+        const contras = Array.isArray(currentUserDat?.contraindications) ? currentUserDat.contraindications.length : 0;
+        const hints = Array.isArray(currentUserDat?.safeFormulationHints) ? currentUserDat.safeFormulationHints.length : 0;
+        return `present=true chars=${ctx.length} schemas=${schemas} modes=${modes} triggers=${triggers} protective=${protective} values=${values} goals=${goals} risks=${risks} recoveryP=${recoveryP} caregiverP=${caregiverP} devForm=${devForm} chains=${trigChains} relapse=${relapsePaths} burden=${burdenPaths} funcAdd=${funcAddict} funcCare=${funcCare} contras=${contras} hints=${hints}`;
       })(),
       epistemic: `flag=${epistemicDebug.flag} run=${epistemicDebug.run} claims=${epistemicDebug.claims} hyp=${epistemicDebug.hyp} unc=${epistemicDebug.unc} mindread=${epistemicDebug.mindread} rescue=${epistemicDebug.rescue} medUnc=${epistemicDebug.medUnc} tier=${epistemicDebug.tier}`,
       modelRoute: `flag=${epistemicRoutingDebug.flag} tier=${epistemicRoutingDebug.tier} model=${epistemicRoutingDebug.model} score=${epistemicRoutingDebug.score} reason=${epistemicRoutingDebug.reasons || 'light_context'}`,
@@ -4514,7 +4522,7 @@ export async function processMessage(
       candidateSignals: candidateSignals
         ? {
             fears: candidateSignals.fears.map(f => ({ label: f.keyword, confidence: f.confidence })),
-            hopes: candidateSignals.hopes.map(h => ({ label: h.keyword, confidence: h.confidence })),
+            hopes: candidateSignals.hopes.map((h: any) => ({ label: h.keyword, confidence: h.confidence })),
             goals: candidateSignals.goals.map(g => ({ label: g.keyword, confidence: g.confidence })),
             triggers: candidateSignals.triggers.map(t => ({ label: t.keyword, confidence: t.confidence, triggerType: 'craving' })),
           }
@@ -5985,7 +5993,7 @@ export async function endSession(
 
     // Decay: themes NOT seen this session lose 0.5 count (min 0, prune at 0)
     updatedPatterns = updatedPatterns
-      .map((p) => {
+      .map((p: any) => {
         if (!sessionThemes.includes(p.theme)) {
           return { ...p, sessionCount: p.sessionCount - 0.5 };
         }
@@ -6528,14 +6536,16 @@ export function runDeferredSessionAnalysis(
 
 /**
  * Build [PERSONAL CLINICAL CONTEXT] block from deep analysis results in user.dat.
- * Contains schemas, modes, triggers, protective factors, values, goals, risks.
+ * Contains schemas, modes, triggers, protective factors, values, goals, risks,
+ * developmental formulation, trigger chains, relapse/caregiver pathways,
+ * function of addiction/caregiving, contraindications, safe formulation hints.
  * All presented as working hypotheses, never diagnoses.
- * Max 800 chars to stay within token budget.
+ * Max 2000 chars to stay within token budget.
  */
 function buildPersonalClinicalContext(userDat: any, persona?: 'elias' | 'kim'): string | undefined {
   if (!userDat) return undefined;
   const parts: string[] = [];
-  const MAX_CHARS = 1000;
+  const MAX_CHARS = 2000;
 
   // Schemas (working hypotheses)
   if (Array.isArray(userDat.schemas) && userDat.schemas.length > 0) {
@@ -6616,6 +6626,93 @@ function buildPersonalClinicalContext(userDat: any, persona?: 'elias' | 'kim'): 
       .slice(0, 3)
       .map((p: any) => `${p.type}: ${p.description}${p.confidence ? ` (${p.confidence})` : ''}`);
     if (patterns.length > 0) parts.push(`Caregiver patterns (hypotheses): ${patterns.join('; ')}`);
+  }
+
+  // ── FASE 7: Extended clinical formulation sections ──
+
+  // Developmental formulation (shared — working hypotheses)
+  if (Array.isArray(userDat.developmentalFormulation) && userDat.developmentalFormulation.length > 0) {
+    const items = userDat.developmentalFormulation
+      .filter((d: any) => d && d.originContext && d.learnedPattern)
+      .sort((a: any, b: any) => (b.confidence || 0) - (a.confidence || 0))
+      .slice(0, 2)
+      .map((d: any) => `${d.originPhase || 'unknown'}: ${d.originContext} → learned: ${d.learnedPattern} → now: ${d.currentManifestation || '?'}`);
+    if (items.length > 0) parts.push(`Developmental formulation (hypotheses):\n${items.map((i: any) => `- ${i}`).join('\n')}`);
+  }
+
+  // Trigger chains (shared — working hypotheses)
+  if (Array.isArray(userDat.triggerChains) && userDat.triggerChains.length > 0) {
+    const chains = userDat.triggerChains
+      .filter((c: any) => c && c.triggerEvent && c.riskOutcome)
+      .sort((a: any, b: any) => (b.confidence || 0) - (a.confidence || 0))
+      .slice(0, 2)
+      .map((c: any) => `${c.triggerEvent} → ${c.assignedMeaning || '?'} → ${c.emotionalResponse || '?'} → ${c.activatedMode || '?'} → ${c.copingBehavior || '?'} → risk: ${c.riskOutcome}`);
+    if (chains.length > 0) parts.push(`Trigger chains (hypotheses):\n${chains.map((c: any) => `- ${c}`).join('\n')}`);
+  }
+
+  // Relapse pathways (Elias only — working hypotheses)
+  if (persona !== 'kim' && Array.isArray(userDat.relapsePathways) && userDat.relapsePathways.length > 0) {
+    const paths = userDat.relapsePathways
+      .filter((p: any) => p && p.destabilizer && p.relapseEndpoint)
+      .sort((a: any, b: any) => (b.confidence || 0) - (a.confidence || 0))
+      .slice(0, 2)
+      .map((p: any) => `${p.destabilizer} → ${p.escalationPattern || '?'} → ${p.relapseEndpoint}${p.protectiveInterrupts?.length ? ` [interrupts: ${p.protectiveInterrupts.join(', ')}]` : ''}`);
+    if (paths.length > 0) parts.push(`Relapse pathways (hypotheses):\n${paths.map((p: any) => `- ${p}`).join('\n')}`);
+  }
+
+  // Caregiver burden pathways (Kim only — working hypotheses)
+  if (persona !== 'elias' && Array.isArray(userDat.caregiverBurdenPathways) && userDat.caregiverBurdenPathways.length > 0) {
+    const paths = userDat.caregiverBurdenPathways
+      .filter((p: any) => p && p.destabilizer && p.burdenEndpoint)
+      .sort((a: any, b: any) => (b.confidence || 0) - (a.confidence || 0))
+      .slice(0, 2)
+      .map((p: any) => `${p.destabilizer} → ${p.escalationPattern || '?'} → ${p.burdenEndpoint}${p.protectiveInterrupts?.length ? ` [interrupts: ${p.protectiveInterrupts.join(', ')}]` : ''}`);
+    if (paths.length > 0) parts.push(`Caregiver burden pathways (hypotheses):\n${paths.map((p: any) => `- ${p}`).join('\n')}`);
+  }
+
+  // Function of addiction (Elias only — working hypothesis)
+  if (persona !== 'kim' && Array.isArray(userDat.functionOfAddiction) && userDat.functionOfAddiction.length > 0) {
+    const funcs = userDat.functionOfAddiction
+      .filter((f: any) => f && f.functionType && f.description)
+      .sort((a: any, b: any) => (b.confidence || 0) - (a.confidence || 0))
+      .slice(0, 2)
+      .map((f: any) => `${f.functionType}: ${f.description} (need: ${f.underlyingNeed || '?'})`);
+    if (funcs.length > 0) parts.push(`Function of addiction (hypotheses): ${funcs.join('; ')}`);
+  }
+
+  // Function of caregiving pattern (Kim only — working hypothesis)
+  if (persona !== 'elias' && Array.isArray(userDat.functionOfCaregivingPattern) && userDat.functionOfCaregivingPattern.length > 0) {
+    const funcs = userDat.functionOfCaregivingPattern
+      .filter((f: any) => f && f.functionType && f.description)
+      .sort((a: any, b: any) => (b.confidence || 0) - (a.confidence || 0))
+      .slice(0, 2)
+      .map((f: any) => `${f.functionType}: ${f.description} (need: ${f.underlyingNeed || '?'})`);
+    if (funcs.length > 0) parts.push(`Function of caregiving pattern (hypotheses): ${funcs.join('; ')}`);
+  }
+
+  // Contraindications (shared — BEFORE safeFormulationHints)
+  if (Array.isArray(userDat.contraindications) && userDat.contraindications.length > 0) {
+    const contras = userDat.contraindications
+      .filter((c: any) => c && c.avoidTopic && c.reason)
+      .sort((a: any, b: any) => {
+        // Hard before soft, then by confidence
+        if (a.severity === 'hard' && b.severity !== 'hard') return -1;
+        if (b.severity === 'hard' && a.severity !== 'hard') return 1;
+        return (b.confidence || 0) - (a.confidence || 0);
+      })
+      .slice(0, 3)
+      .map((c: any) => `[${c.severity}] Do not: ${c.avoidTopic} (reason: ${c.reason}${c.appliesTo ? `, applies to: ${c.appliesTo}` : ''})`);
+    if (contras.length > 0) parts.push(`Contraindications:\n${contras.map((c: any) => `- ${c}`).join('\n')}`);
+  }
+
+  // Safe formulation hints (shared — AFTER contraindications)
+  if (Array.isArray(userDat.safeFormulationHints) && userDat.safeFormulationHints.length > 0) {
+    const hints = userDat.safeFormulationHints
+      .filter((h: any) => h && h.topic && h.safeFraming)
+      .sort((a: any, b: any) => (b.confidence || 0) - (a.confidence || 0))
+      .slice(0, 3)
+      .map((h: any) => `${h.topic}: prefer "${h.safeFraming}"${h.avoidFraming ? ` | avoid "${h.avoidFraming}"` : ''}`);
+    if (hints.length > 0) parts.push(`Safe formulation hints:\n${hints.map((h: any) => `- ${h}`).join('\n')}`);
   }
 
   if (parts.length === 0) return undefined;
