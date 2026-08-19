@@ -182,6 +182,25 @@ async function persistUserDat(userDat: UserDat) {
   await SessionMemoryCache.set(USERDAT_KEY, JSON.stringify(userDat));
 }
 
+/**
+ * Safe merge-and-persist: reads the LATEST userDat from SessionMemoryCache,
+ * then spreads the partial update on top. This preserves deep analysis fields
+ * (schemas, modes, triggers, etc.) that may have been written by
+ * mergeAnalysisToUserDat / Gegevens bijwerken but are NOT in React state.
+ *
+ * Use this instead of persistUserDat({ ...state.userDat, ... }) everywhere
+ * that updates only a few fields from React state.
+ */
+async function mergeAndPersistUserDat(partialUpdate: Partial<UserDat>): Promise<void> {
+  let base: any = {};
+  try {
+    const raw = await SessionMemoryCache.get(USERDAT_KEY);
+    if (raw) base = JSON.parse(raw);
+  } catch { /* fallback to empty */ }
+  const merged = { ...base, ...partialUpdate };
+  await SessionMemoryCache.set(USERDAT_KEY, JSON.stringify(merged));
+}
+
 // ─── Compose helper ─────────────────────────────────────────────
 
 function composeState(backpack: Backpack, userDat: UserDat): { rugzak: Rugzak; influence: RugzakInfluence } {
@@ -443,9 +462,9 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     // Non-blocking: run extraction in background, persist result to userDat
     checkAndExtract(updatedBackpack, callExtractionEndpoint).then((entities) => {
       if (entities && state.userDat) {
-        const updatedUserDat = { ...state.userDat, extractedEntities: entities };
-        dispatch({ type: 'UPDATE_USERDAT', payload: updatedUserDat });
-        persistUserDat(updatedUserDat);
+        const partial = { extractedEntities: entities };
+        dispatch({ type: 'UPDATE_USERDAT', payload: { ...state.userDat, ...partial } });
+        mergeAndPersistUserDat(partial);
       }
     }).catch((err) => {
       console.warn('[UserContext] Extraction failed (non-blocking):', err);
@@ -460,11 +479,17 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     const userId = state.userDat?.naam || 'anonymous';
 
     callBackpackAnalysis(userId, fullText).then((analysis) => {
-      if (analysis && state.userDat) {
-        const previousAnalyzedAt = state.userDat.backpackAnalysis?.analyzedAt ?? null;
+      if (analysis && state.userDat) {(async () => {
+        // Read LATEST userDat from storage to preserve deep analysis fields
+        let baseUserDat = state.userDat!;
+        try {
+          const latestRaw = await SessionMemoryCache.get(USERDAT_KEY);
+          if (latestRaw) baseUserDat = JSON.parse(latestRaw);
+        } catch { /* fallback to state */ }
+        const previousAnalyzedAt = baseUserDat.backpackAnalysis?.analyzedAt ?? null;
         const now = LocalDeviceTimeService.now().utcIso;
         let updatedUserDat = {
-          ...state.userDat,
+          ...baseUserDat,
           backpackAnalysis: { ...analysis, previousAnalyzedAt },
         };
 
@@ -569,7 +594,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         console.log(`[BackpackAnalysis] Routed to user.dat: ${schemas.length} schemas → schemaTendencies, ${modi.length} modi → modeTendencies, ${triggers.length} triggers → triggerPatterns`);
         dispatch({ type: 'UPDATE_USERDAT', payload: updatedUserDat });
         persistUserDat(updatedUserDat);
-      }
+      })().catch(err => console.warn('[BackpackAnalysis] async merge failed:', err)); }
     }).catch((err) => {
       console.warn('[UserContext] BackpackAnalysis failed (non-blocking):', err);
     });
@@ -762,9 +787,9 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     await persistBackpack(updatedBackpack);
     // Also update userDat so the payload builder picks it up
     if (state.userDat) {
-      const updatedUserDat = { ...state.userDat, stageOfChange: stage };
+      const updatedUserDat = { ...state.userDat, stageOfChange: stage } as UserDat;
       dispatch({ type: 'END_SESSION', payload: updatedUserDat });
-      await persistUserDat(updatedUserDat);
+      await mergeAndPersistUserDat({ stageOfChange: stage });
     }
   }, [state.backpack, state.userDat]);
 
@@ -781,7 +806,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     const updatedMood = { ...state.userDat.currentMood, eigenRegie: userInput };
     const updatedUserDat: UserDat = { ...state.userDat, eigenRegieHistory: history, currentMood: updatedMood };
     dispatch({ type: 'UPDATE_USERDAT', payload: updatedUserDat });
-    await persistUserDat(updatedUserDat);
+    await mergeAndPersistUserDat({ eigenRegieHistory: history, currentMood: updatedMood });
   }, [state.userDat]);
 
   const getEigenRegieHistory = useCallback(() => {
@@ -799,7 +824,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     const updatedMood = { ...state.userDat.currentMood, vsp: level, vspScore };
     const updatedUserDat: UserDat = { ...state.userDat, currentMood: updatedMood };
     dispatch({ type: 'UPDATE_USERDAT', payload: updatedUserDat });
-    await persistUserDat(updatedUserDat);
+    await mergeAndPersistUserDat({ currentMood: updatedMood });
   }, [state.userDat]);
 
   const getVsp = useCallback((): import('./engine/elias/vsp').VspLevel | null => {
@@ -817,7 +842,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     if (!state.userDat) return;
     const updatedUserDat: UserDat = { ...state.userDat, guidanceDepth: depth };
     dispatch({ type: 'UPDATE_USERDAT', payload: updatedUserDat });
-    await persistUserDat(updatedUserDat);
+    await mergeAndPersistUserDat({ guidanceDepth: depth });
   }, [state.userDat]);
 
   const recordRelapseEvent = useCallback(async (type: 'herval' | 'terugval', context?: string) => {
@@ -836,7 +861,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       ...(type === 'herval' ? { sobrietyDate: new Date(LocalDeviceTimeService.now().epochMs).toISOString().slice(0, 10) } : {}),
     };
     dispatch({ type: 'UPDATE_USERDAT', payload: updatedUserDat });
-    await persistUserDat(updatedUserDat);
+    await mergeAndPersistUserDat({ relapseEvents: updatedUserDat.relapseEvents, ...(type === 'herval' ? { sobrietyDate: updatedUserDat.sobrietyDate } : {}) });
   }, [state.userDat]);
 
   const updatePreventionPlan = useCallback(async (plan: { warningSigns: string; copingStrategies: string; supportContacts: string; safeActivities: string; motivation: string }) => {
@@ -846,28 +871,28 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       preventionPlan: { ...plan, updatedAt: LocalDeviceTimeService.now().utcIso },
     };
     dispatch({ type: 'UPDATE_USERDAT', payload: updatedUserDat });
-    await persistUserDat(updatedUserDat);
+    await mergeAndPersistUserDat({ preventionPlan: updatedUserDat.preventionPlan });
   }, [state.userDat]);
 
   const updateSobrietyDate = useCallback(async (date: string | null) => {
     if (!state.userDat) return;
     const updatedUserDat: UserDat = { ...state.userDat, sobrietyDate: date };
     dispatch({ type: 'UPDATE_USERDAT', payload: updatedUserDat });
-    await persistUserDat(updatedUserDat);
+    await mergeAndPersistUserDat({ sobrietyDate: date });
   }, [state.userDat]);
 
   const updateMilestoneShown = useCallback(async (date: string) => {
     if (!state.userDat) return;
     const updatedUserDat: UserDat = { ...state.userDat, lastMilestoneShown: date };
     dispatch({ type: 'UPDATE_USERDAT', payload: updatedUserDat });
-    await persistUserDat(updatedUserDat);
+    await mergeAndPersistUserDat({ lastMilestoneShown: date });
   }, [state.userDat]);
 
   const toggleClinicalMode = useCallback(async (active: boolean) => {
     if (!state.userDat) return;
     const updatedUserDat: UserDat = { ...state.userDat, clinicalModeActive: active };
     dispatch({ type: 'UPDATE_USERDAT', payload: updatedUserDat });
-    await persistUserDat(updatedUserDat);
+    await mergeAndPersistUserDat({ clinicalModeActive: active });
   }, [state.userDat]);
 
   const acceptGdpr = useCallback(async () => {
@@ -879,7 +904,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       gdprVersion: '1.0',
     };
     dispatch({ type: 'UPDATE_USERDAT', payload: updatedUserDat });
-    await persistUserDat(updatedUserDat);
+    await mergeAndPersistUserDat({ gdprAccepted: true, gdprAcceptedAt: updatedUserDat.gdprAcceptedAt, gdprVersion: '1.0' });
   }, [state.userDat]);
 
   const getGuidanceDepth = useCallback((): GuidanceDepth => {
@@ -925,6 +950,21 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       lastSessionDate: updated.lastSessionDate,
     };
       await persistUserDat(updatedUserDat);
+      // ── CHECKPOINT 3: Verify deep analysis fields survive startSession ──
+      try {
+        const cp3Raw = await SessionMemoryCache.get(USERDAT_KEY);
+        const cp3Ud = cp3Raw ? JSON.parse(cp3Raw) : {};
+        const cp3 = {
+          schemas: Array.isArray(cp3Ud.schemas) ? cp3Ud.schemas.length : 0,
+          modes: Array.isArray(cp3Ud.modes) ? cp3Ud.modes.length : 0,
+          triggers: Array.isArray(cp3Ud.triggers) ? cp3Ud.triggers.length : 0,
+          totalKeys: Object.keys(cp3Ud).length,
+          latestSource: latestUserDat === state.userDat ? 'react_state' : 'session_memory_cache',
+        };
+        console.log('[CHECKPOINT-3] After startSession persistUserDat:', JSON.stringify(cp3));
+      } catch (cp3Err) {
+        console.warn('[CHECKPOINT-3] Failed:', cp3Err);
+      }
     }
   }, [state.backpack, state.userDat]);
 

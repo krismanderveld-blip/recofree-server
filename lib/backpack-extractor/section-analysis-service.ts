@@ -640,6 +640,24 @@ export async function mergeAnalysisToUserDat(
       );
     }
 
+    // ── CHECKPOINT 1: Deep analysis field counts BEFORE write ──
+    const cp1 = {
+      schemas: Array.isArray(userDat.schemas) ? userDat.schemas.length : 0,
+      modes: Array.isArray(userDat.modes) ? userDat.modes.length : 0,
+      triggers: Array.isArray(userDat.triggers) ? userDat.triggers.length : 0,
+      protectiveFactors: Array.isArray(userDat.protectiveFactors) ? userDat.protectiveFactors.length : 0,
+      values: Array.isArray(userDat.values) ? userDat.values.length : 0,
+      goals: Array.isArray(userDat.goals) ? userDat.goals.length : 0,
+      risks: Array.isArray(userDat.risks) ? userDat.risks.length : 0,
+      recoveryPatterns: Array.isArray(userDat.recoveryPatterns) ? userDat.recoveryPatterns.length : 0,
+      developmentalFormulation: Array.isArray(userDat.developmentalFormulation) ? userDat.developmentalFormulation.length : 0,
+      triggerChains: Array.isArray(userDat.triggerChains) ? userDat.triggerChains.length : 0,
+      contraindications: Array.isArray(userDat.contraindications) ? userDat.contraindications.length : 0,
+      safeFormulationHints: Array.isArray(userDat.safeFormulationHints) ? userDat.safeFormulationHints.length : 0,
+      totalKeys: Object.keys(userDat).length,
+    };
+    console.log('[CHECKPOINT-1] mergeAnalysisToUserDat BEFORE write:', JSON.stringify(cp1));
+
     await AsyncStorage.setItem(USERDAT_KEY, JSON.stringify(userDat));
     // CRITICAL: Also update SessionMemoryCache so the chat pipeline reads fresh data.
     // Without this, handleSend() reads stale userDat from SessionMemoryCache
@@ -648,6 +666,30 @@ export async function mergeAnalysisToUserDat(
       await SessionMemoryCache.set(USERDAT_KEY, JSON.stringify(userDat));
     } catch (cacheErr) {
       console.warn('[SectionAnalysis] SessionMemoryCache sync failed (non-blocking):', cacheErr);
+    }
+
+    // ── CHECKPOINT 2: Read back from BOTH stores to verify write ──
+    try {
+      const asyncRaw = await AsyncStorage.getItem(USERDAT_KEY);
+      const cacheRaw = await SessionMemoryCache.get(USERDAT_KEY);
+      const asyncUd = asyncRaw ? JSON.parse(asyncRaw) : {};
+      const cacheUd = cacheRaw ? JSON.parse(cacheRaw) : {};
+      const cp2async = {
+        schemas: Array.isArray(asyncUd.schemas) ? asyncUd.schemas.length : 0,
+        modes: Array.isArray(asyncUd.modes) ? asyncUd.modes.length : 0,
+        triggers: Array.isArray(asyncUd.triggers) ? asyncUd.triggers.length : 0,
+        totalKeys: Object.keys(asyncUd).length,
+      };
+      const cp2cache = {
+        schemas: Array.isArray(cacheUd.schemas) ? cacheUd.schemas.length : 0,
+        modes: Array.isArray(cacheUd.modes) ? cacheUd.modes.length : 0,
+        triggers: Array.isArray(cacheUd.triggers) ? cacheUd.triggers.length : 0,
+        totalKeys: Object.keys(cacheUd).length,
+      };
+      console.log('[CHECKPOINT-2] AsyncStorage readback:', JSON.stringify(cp2async));
+      console.log('[CHECKPOINT-2] SessionMemoryCache readback:', JSON.stringify(cp2cache));
+    } catch (cp2Err) {
+      console.warn('[CHECKPOINT-2] Readback failed:', cp2Err);
     }
   } catch (error) {
     console.error('[SectionAnalysis] Merge to user.dat failed:', error);

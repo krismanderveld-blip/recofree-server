@@ -766,6 +766,20 @@ function ChatScreenInner() {
       // Load latest userDat from storage (may have been updated by greeting)
       const userDatJson = await SessionMemoryCache.get(USERDAT_KEY);
       const currentUserDat: UserDat = userDatJson ? JSON.parse(userDatJson) : state.userDat!;
+      // ── CHECKPOINT 4: Deep analysis fields in userDat passed to pipeline ──
+      const cp4 = {
+        schemas: Array.isArray((currentUserDat as any).schemas) ? (currentUserDat as any).schemas.length : 0,
+        modes: Array.isArray((currentUserDat as any).modes) ? (currentUserDat as any).modes.length : 0,
+        triggers: Array.isArray((currentUserDat as any).triggers) ? (currentUserDat as any).triggers.length : 0,
+        protectiveFactors: Array.isArray((currentUserDat as any).protectiveFactors) ? (currentUserDat as any).protectiveFactors.length : 0,
+        values: Array.isArray((currentUserDat as any).values) ? (currentUserDat as any).values.length : 0,
+        goals: Array.isArray((currentUserDat as any).goals) ? (currentUserDat as any).goals.length : 0,
+        risks: Array.isArray((currentUserDat as any).risks) ? (currentUserDat as any).risks.length : 0,
+        recoveryPatterns: Array.isArray((currentUserDat as any).recoveryPatterns) ? (currentUserDat as any).recoveryPatterns.length : 0,
+        totalKeys: Object.keys(currentUserDat).length,
+        source: userDatJson ? 'session_memory_cache' : 'react_state',
+      };
+      console.log('[CHECKPOINT-4] handleSend currentUserDat:', JSON.stringify(cp4));
       // Read backpack from AsyncStorage to ensure latest version (avoids stale closure)
       let backpack: Backpack = state.backpack!;
       try {
