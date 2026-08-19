@@ -223,11 +223,23 @@ export async function runManualDataRefresh(input: ManualDataRefreshInput): Promi
 
     // 5. Context.dat refresh (rebuild from current layers)
     if (input.refreshContextDat) {
-      if (backpack && userDat) {
+      // Re-read userDat from storage to include deep analysis fields
+      // written by analyzeAllSections/mergeAnalysisToUserDat above
+      let freshUserDat = userDat;
+      try {
+        const udJson = await SessionMemoryCache.get(USERDAT_KEY);
+        if (udJson) freshUserDat = JSON.parse(udJson);
+      } catch {
+        try {
+          const raw = await AsyncStorage.getItem(USERDAT_KEY);
+          if (raw) freshUserDat = JSON.parse(raw);
+        } catch { /* keep stale as fallback */ }
+      }
+      if (backpack && freshUserDat) {
         try {
           const contextDat = distillContextDat({
             backpack,
-            userDat,
+            userDat: freshUserDat,
             logsDat: null,
             stateDat: null,
             projectionsDat: null,

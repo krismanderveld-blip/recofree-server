@@ -2900,3 +2900,5 @@
 - [x] FASE 8: Context application contract update
 - [x] FASE 9: Full validation and audit report
 - [x] P0 FIX: ClinicalCtx=false after Gegevens bijwerken — SessionMemoryCache sync added to mergeAnalysisToUserDat
+- [x] P0 FIX: startSession() stale overwrite — reads latest userDat from SessionMemoryCache before spread
+- [x] P0 FIX: runManualDataRefresh() contextDat stale — re-reads fresh userDat after analyzeAllSections

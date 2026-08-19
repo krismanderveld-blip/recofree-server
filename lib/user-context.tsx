@@ -907,15 +907,23 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   // ── Session ──
 
   const startSession = useCallback(async () => {
-    dispatch({ type: 'START_SESSION' });
-    if (state.backpack && state.userDat) {
-      const rugzak = composeRugzak(state.backpack, state.userDat);
-      const updated = startNewSession(rugzak);
-      const updatedUserDat: UserDat = {
-        ...state.userDat,
-        totalSessions: updated.totalSessions,
-        lastSessionDate: updated.lastSessionDate,
-      };
+  dispatch({ type: 'START_SESSION' });
+  if (state.backpack && state.userDat) {
+    const rugzak = composeRugzak(state.backpack, state.userDat);
+    const updated = startNewSession(rugzak);
+    // Read LATEST userDat from storage to preserve deep analysis fields
+    // (schemas, modes, triggers, etc.) that may have been written by
+    // Gegevens bijwerken / mergeAnalysisToUserDat after React state was set.
+    let latestUserDat = state.userDat;
+    try {
+      const udJson = await SessionMemoryCache.get(USERDAT_KEY);
+      if (udJson) latestUserDat = JSON.parse(udJson);
+    } catch { /* fallback to React state */ }
+    const updatedUserDat: UserDat = {
+      ...latestUserDat,
+      totalSessions: updated.totalSessions,
+      lastSessionDate: updated.lastSessionDate,
+    };
       await persistUserDat(updatedUserDat);
     }
   }, [state.backpack, state.userDat]);
