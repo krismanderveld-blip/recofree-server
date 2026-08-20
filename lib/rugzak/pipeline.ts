@@ -3991,7 +3991,15 @@ export async function processMessage(
   if (backpack.userType === 'kim') {
     const activeModule = activeDecision?.dominantModule ?? preGPTDominantState.dominantModule;
     const isSafety = crisisLevel >= 2;
-    const isHarm = false; // TODO: wire to relational stance filter harm detection
+    // Wire to relational stance filter harm detection
+    let isHarm = false;
+    try {
+      const { detectRelationalSignals } = require('../engine/kim/relational-stance-filter');
+      const harmSignals = detectRelationalSignals(userMessage);
+      isHarm = harmSignals?.relationalHarmPatternSignal === true;
+    } catch (e) {
+      // Non-critical: if relational stance filter fails, default to false (no harm override)
+    }
 
     // K05 Cross-Module Override (boundary without repair path detection)
     if (!isSafety && !isHarm) {
