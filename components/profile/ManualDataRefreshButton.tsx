@@ -18,7 +18,7 @@ import { useTranslation } from '@/lib/i18n';
 import { useEffect } from 'react';
 
 export function ManualDataRefreshButton() {
-  const { state } = useUser();
+  const { state, reloadFromStorage } = useUser();
   const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<ManualDataRefreshOutput | null>(null);
@@ -39,7 +39,7 @@ export function ManualDataRefreshButton() {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
 
-    try {
+    try { // P2-1: Sync React state
       const output = await runManualDataRefresh({
         persona,
         refreshBackpack: true,
@@ -53,6 +53,11 @@ export function ManualDataRefreshButton() {
       });
 
       setResult(output);
+      // P2-1: Sync React state with fresh userDat after deep analysis
+      try {
+        await reloadFromStorage();
+      } catch { /* Non-critical: storage is correct */ }
+
       setLastRefresh({
         lastUpdatedAtLocal: output.updatedAtLocal,
         persona,

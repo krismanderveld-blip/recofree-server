@@ -3196,6 +3196,30 @@ export async function processMessage(
   } else {
     // Follow-up: reuse cached contextDatSerialized from session init
     contextDatSerialized = getCachedContextDat(currentPersona);
+    // P2-2: Cold start rebuild — if cache is empty (app restart), rebuild from userDat
+    if (!contextDatSerialized && currentUserDat) {
+      try {
+        const coldStartParts: string[] = [];
+        // Use schemaTendencies/modeTendencies as compact context source
+        const st = (currentUserDat as any).schemaTendencies;
+        const mt = (currentUserDat as any).modeTendencies;
+        if (st && Array.isArray(st) && st.length > 0) {
+          coldStartParts.push(`Schema tendencies: ${st.map((s: any) => s.schema || s.name).filter(Boolean).join(', ')}`);
+        }
+        if (mt && Array.isArray(mt) && mt.length > 0) {
+          coldStartParts.push(`Mode tendencies: ${mt.map((m: any) => m.mode || m.name).filter(Boolean).join(', ')}`);
+        }
+        // Add extractedEntities summary
+        const ee = (currentUserDat as any).extractedEntities;
+        if (ee?.persons && Array.isArray(ee.persons) && ee.persons.length > 0) {
+          coldStartParts.push(`Key persons: ${ee.persons.slice(0, 5).map((p: any) => `${p.name} (${p.relation || 'unknown'})`).join(', ')}`);
+        }
+        if (coldStartParts.length > 0) {
+          contextDatSerialized = coldStartParts.join('\n');
+          cacheContextDat(contextDatSerialized, 'backpack_dirty_rebuild', currentPersona);
+        }
+      } catch { /* Non-critical: first message after cold start has no contextDat */ }
+    }
   }
 
   // ── DIST01: Build distillation context (continuous entity/signal extraction) ──
@@ -4378,6 +4402,8 @@ export async function processMessage(
       modelRoute: `flag=${epistemicRoutingDebug.flag} tier=${epistemicRoutingDebug.tier} model=${epistemicRoutingDebug.model} score=${epistemicRoutingDebug.score} reason=${epistemicRoutingDebug.reasons || 'light_context'}`,
       cost: tokenUsage ? (() => { const tier = getModelTierFromModel(selectedModel ?? "unknown"); const est = estimateTokenCost({ model: selectedModel ?? "unknown", tier, usage: tokenUsage! }); return `msg=$${est.totalCostUsd.toFixed(6)} | tokens=${est.promptTokens}/${est.completionTokens}/${est.totalTokens} | tier=${tier} | pricing=${est.pricingVerified ? "verified" : "verify"}`; })() : "Cost: tokens=unknown",
       deepAnalysis: await (async () => { try { const AsyncStorageModule = await import("@react-native-async-storage/async-storage"); const AS = AsyncStorageModule.default; const reportJson = await AS.getItem("@recofree_last_deep_analysis_report"); if (!reportJson) return "never_run"; const r = JSON.parse(reportJson); if (!r.ok) return `FAILED at=${r.timestamp?.slice(0,16)} err=${(r.error || "unknown").slice(0,80)}`; return `ok at=${r.timestamp?.slice(0,16)} analyzed=${r.sectionsAnalyzed} skipped=${r.sectionsSkipped} schemas=${r.schemasDetected} modes=${r.modesDetected} triggers=${r.triggersDetected} lifeStatus=${r.lifeStatusDetected} failures=${r.failures}${r.failureDetails?.length ? " errors=[" + r.failureDetails.map((d: any) => d.sectionId + ":" + d.error).join(", ") + "]" : ""}`; } catch { return "read_error"; } })(),
+      projectionsDat: await (async () => { try { const { createProjectionsDatStore } = await import("../storage/memory/projectionsDatStore"); const store = createProjectionsDatStore(); const pd = await store.load(currentPersona); if (!pd) return "empty"; return `fears=${pd.fears?.length ?? 0} hopes=${pd.hopes?.length ?? 0}`; } catch { return "read_error"; } })(),
+      moduleMemory: (() => { try { const dominant = schemaModeResult?.modeDecision?.dominantMode || "none"; const accepted = (schemaModeResult?.modeDecision?.acceptedModes || []).length; return `dominant=${dominant} accepted=${accepted}`; } catch { return "read_error"; } })(),
     },
     schemaModeResult: schemaModeResult.activated ? {
       dominantMode: (schemaModeResult.modeDecision.dominantMode ?? null) as string | null,

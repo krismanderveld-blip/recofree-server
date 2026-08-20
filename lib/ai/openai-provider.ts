@@ -185,6 +185,11 @@ function buildActiveSignals(context: ChatContext): Array<{ label: string; score:
     if (kim.emotionalBurden >= 4) {
       signals.push({ label: 'emotional-burden', score: Math.min(3, Math.ceil(kim.emotionalBurden / 3)), memory: 'state.dat' });
     }
+    // P2-5: selfCare slider — low selfCare signals need for K03/self-care routing
+    const selfCare = (sliders as any)?.selfCare;
+    if (typeof selfCare === 'number' && selfCare <= 3) {
+      signals.push({ label: 'low-self-care', score: Math.min(3, 4 - selfCare), memory: 'state.dat' });
+    }
   }
 
   // ═══ buffer — volatile per-message signals (not persisted) ═══
