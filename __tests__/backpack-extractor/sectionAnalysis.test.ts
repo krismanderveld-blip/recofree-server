@@ -51,7 +51,7 @@ function mockGptResponse(content: object) {
   mockFetch.mockResolvedValueOnce({
     ok: true,
     json: () => Promise.resolve({
-      choices: [{ message: { content: JSON.stringify(content) } }],
+      ok: true, text: JSON.stringify(content), contractVersion: "minimal_gpt_proxy_v1",
     }),
   });
 }
@@ -145,7 +145,7 @@ describe('Section Analysis Service', () => {
   it('4. JSON schema validation rejects invalid response', async () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
-      json: () => Promise.resolve({ choices: [{ message: { content: 'not json' } }] }),
+      json: () => Promise.resolve({ ok: true, text: 'not json', contractVersion: 'minimal_gpt_proxy_v1' }),
     });
     const { result, status } = await analyzeSection('test', 'Test', 'Some content here for analysis.', 'elias');
     expect(result).toBeNull();

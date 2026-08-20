@@ -173,7 +173,8 @@ export async function analyzeSection(
     }
 
     const data = await response.json();
-    const content = data?.choices?.[0]?.message?.content;
+    // Server returns contract format: { ok, text, ... } not raw OpenAI format
+    const content = data?.text || data?.choices?.[0]?.message?.content;
     if (!content) {
       return {
         result: null,

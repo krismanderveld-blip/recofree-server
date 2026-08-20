@@ -95,7 +95,7 @@ function mockGptResponse(content: object) {
   mockFetch.mockResolvedValueOnce({
     ok: true,
     json: () => Promise.resolve({
-      choices: [{ message: { content: JSON.stringify(content) } }],
+      ok: true, text: JSON.stringify(content), contractVersion: "minimal_gpt_proxy_v1",
     }),
   });
 }
