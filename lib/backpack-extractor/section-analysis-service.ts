@@ -161,6 +161,11 @@ export async function analyzeSection(
         maxTokens: 4000,
         topP: 1,
         responseFormat: { type: 'json_object' },
+        store: false,
+        metadata: {
+          clientBuildVersion: 'section_analysis_v1',
+          promptBuildVersion: 'client_mirror_v1',
+        },
       }),
     });
 
