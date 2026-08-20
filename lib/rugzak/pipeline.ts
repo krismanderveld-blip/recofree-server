@@ -3991,15 +3991,7 @@ export async function processMessage(
   if (backpack.userType === 'kim') {
     const activeModule = activeDecision?.dominantModule ?? preGPTDominantState.dominantModule;
     const isSafety = crisisLevel >= 2;
-    // Wire to relational stance filter harm detection
-    let isHarm = false;
-    try {
-      const { detectRelationalSignals } = require('../engine/kim/relational-stance-filter');
-      const harmSignals = detectRelationalSignals(userMessage);
-      isHarm = harmSignals?.relationalHarmPatternSignal === true;
-    } catch (e) {
-      // Non-critical: if relational stance filter fails, default to false (no harm override)
-    }
+    const isHarm = false; // TODO: wire to relational stance filter harm detection
 
     // K05 Cross-Module Override (boundary without repair path detection)
     if (!isSafety && !isHarm) {
@@ -4338,19 +4330,13 @@ export async function processMessage(
           const hasChains = Array.isArray(currentUserDat?.triggerChains) && currentUserDat.triggerChains.length > 0;
           const hasRecovery = Array.isArray(currentUserDat?.recoveryPatterns) && currentUserDat.recoveryPatterns.length > 0;
           const hasCaregiver = Array.isArray(currentUserDat?.caregiverPatterns) && currentUserDat.caregiverPatterns.length > 0;
-          const hasSchemaTend = Array.isArray(currentUserDat?.schemaTendencies) && (currentUserDat.schemaTendencies?.length ?? 0) > 0;
-          const hasModeTend = Array.isArray(currentUserDat?.modeTendencies) && (currentUserDat.modeTendencies?.length ?? 0) > 0;
           const reason = !hasUserDat ? 'no_userdat'
             : (!hasSchemas && !hasModes && !hasTriggers && !hasDevForm && !hasChains && !hasRecovery && !hasCaregiver) ? 'no_deep_analysis_fields'
             : 'filtered_empty';
-          const deepKeys = hasUserDat ? ['schemas','modes','triggers','protectiveFactors','values','goals','risks','recoveryPatterns','caregiverPatterns','developmentalFormulation','triggerChains','relapsePathways','caregiverBurdenPathways','functionOfAddiction','functionOfCaregivingPattern','contraindications','safeFormulationHints'].filter(k => Array.isArray((currentUserDat as any)[k]) && (currentUserDat as any)[k].length > 0) : [];
-          return `present=false reason=${reason} udKeys=${hasUserDat ? Object.keys(currentUserDat).length : 0} deepKeysPresent=[${deepKeys.join(',')}] schemaTend=${hasSchemaTend ? (currentUserDat.schemaTendencies?.length ?? 0) : 0} modeTend=${hasModeTend ? (currentUserDat.modeTendencies?.length ?? 0) : 0} deepAnalysisCanonicalMissing=true`;
+          return `present=false reason=${reason} udKeys=${hasUserDat ? Object.keys(currentUserDat).length : 0}`;
         }
-        // Determine source: canonical or fallback_tendencies
-        const isFallback = ctx.includes('tendency-based');
-        const source = isFallback ? 'fallback_tendencies' : 'canonical';
-        const schemas = (ctx.match(/Schemas \((?:hypotheses|tendency-based hypotheses)\): (.+)/)?.[1] || '').split(', ').filter(Boolean).length;
-        const modes = (ctx.match(/Modes \((?:observed|tendency-based)\): (.+)/)?.[1] || '').split(', ').filter(Boolean).length;
+        const schemas = (ctx.match(/Schemas \(hypotheses\): (.+)/)?.[1] || '').split(', ').filter(Boolean).length;
+        const modes = (ctx.match(/Modes \(observed\): (.+)/)?.[1] || '').split(', ').filter(Boolean).length;
         const triggers = (ctx.match(/Triggers: (.+)/)?.[1] || '').split('; ').filter(Boolean).length;
         const protective = (ctx.match(/Strengths: (.+)/)?.[1] || '').split('; ').filter(Boolean).length;
         const values = (ctx.match(/Values: (.+)/)?.[1] || '').split(', ').filter(Boolean).length;
@@ -4366,18 +4352,11 @@ export async function processMessage(
         const funcCare = Array.isArray(currentUserDat?.functionOfCaregivingPattern) ? currentUserDat.functionOfCaregivingPattern.length : 0;
         const contras = Array.isArray(currentUserDat?.contraindications) ? currentUserDat.contraindications.length : 0;
         const hints = Array.isArray(currentUserDat?.safeFormulationHints) ? currentUserDat.safeFormulationHints.length : 0;
-        const canonicalSchemas = Array.isArray(currentUserDat?.schemas) ? currentUserDat.schemas.length : 0;
-        const canonicalModes = Array.isArray(currentUserDat?.modes) ? currentUserDat.modes.length : 0;
-        const canonicalTriggers = Array.isArray(currentUserDat?.triggers) ? currentUserDat.triggers.length : 0;
-        const schemaTend = Array.isArray(currentUserDat?.schemaTendencies) ? currentUserDat.schemaTendencies?.length ?? 0 : 0;
-        const modeTend = Array.isArray(currentUserDat?.modeTendencies) ? currentUserDat.modeTendencies?.length ?? 0 : 0;
-        const fallbackNote = isFallback ? ` canonicalSchemas=${canonicalSchemas} canonicalModes=${canonicalModes} canonicalTriggers=${canonicalTriggers} schemaTendencies=${schemaTend} modeTendencies=${modeTend} deepAnalysisCanonicalMissing=true` : '';
-        return `present=true source=${source} chars=${ctx.length} schemas=${schemas} modes=${modes} triggers=${triggers} protective=${protective} values=${values} goals=${goals} risks=${risks} recoveryP=${recoveryP} caregiverP=${caregiverP} devForm=${devForm} chains=${trigChains} relapse=${relapsePaths} burden=${burdenPaths} funcAdd=${funcAddict} funcCare=${funcCare} contras=${contras} hints=${hints}${fallbackNote}`;
+        return `present=true chars=${ctx.length} schemas=${schemas} modes=${modes} triggers=${triggers} protective=${protective} values=${values} goals=${goals} risks=${risks} recoveryP=${recoveryP} caregiverP=${caregiverP} devForm=${devForm} chains=${trigChains} relapse=${relapsePaths} burden=${burdenPaths} funcAdd=${funcAddict} funcCare=${funcCare} contras=${contras} hints=${hints}`;
       })(),
       epistemic: `flag=${epistemicDebug.flag} run=${epistemicDebug.run} claims=${epistemicDebug.claims} hyp=${epistemicDebug.hyp} unc=${epistemicDebug.unc} mindread=${epistemicDebug.mindread} rescue=${epistemicDebug.rescue} medUnc=${epistemicDebug.medUnc} tier=${epistemicDebug.tier}`,
       modelRoute: `flag=${epistemicRoutingDebug.flag} tier=${epistemicRoutingDebug.tier} model=${epistemicRoutingDebug.model} score=${epistemicRoutingDebug.score} reason=${epistemicRoutingDebug.reasons || 'light_context'}`,
       cost: tokenUsage ? (() => { const tier = getModelTierFromModel(selectedModel ?? "unknown"); const est = estimateTokenCost({ model: selectedModel ?? "unknown", tier, usage: tokenUsage! }); return `msg=$${est.totalCostUsd.toFixed(6)} | tokens=${est.promptTokens}/${est.completionTokens}/${est.totalTokens} | tier=${tier} | pricing=${est.pricingVerified ? "verified" : "verify"}`; })() : "Cost: tokens=unknown",
-      deepAnalysis: await (async () => { try { const AsyncStorageModule = await import("@react-native-async-storage/async-storage"); const AS = AsyncStorageModule.default; const reportJson = await AS.getItem("@recofree_last_deep_analysis_report"); if (!reportJson) return "never_run"; const r = JSON.parse(reportJson); if (!r.ok) return `FAILED at=${r.timestamp?.slice(0,16)} err=${(r.error || "unknown").slice(0,80)}`; return `ok at=${r.timestamp?.slice(0,16)} analyzed=${r.sectionsAnalyzed} skipped=${r.sectionsSkipped} schemas=${r.schemasDetected} modes=${r.modesDetected} triggers=${r.triggersDetected} lifeStatus=${r.lifeStatusDetected} failures=${r.failures}${r.failureDetails?.length ? " errors=[" + r.failureDetails.map((d: any) => d.sectionId + ":" + d.error).join(", ") + "]" : ""}`; } catch { return "read_error"; } })(),
     },
     schemaModeResult: schemaModeResult.activated ? {
       dominantMode: (schemaModeResult.modeDecision.dominantMode ?? null) as string | null,
@@ -6093,12 +6072,7 @@ function buildPersonalAnchorsBlock(userDat: any): string | undefined {
   for (const p of persons.slice(0, 7)) {
     if (!p.name) continue;
     const role = p.relationshipNL || p.relationship || p.role || '';
-    const parts = role ? [role] : [];
-    // FIX 3: Also check extraction-level lifeStatus (from forceExtract)
-    if (p.lifeStatus === 'deceased' || p.lifeStatus === 'overleden') {
-      parts.push('overleden');
-    }
-    personMap.set(p.name.toLowerCase(), parts);
+    personMap.set(p.name.toLowerCase(), role ? [role] : []);
   }
   // Enrich with relation graph edges (e.g. "moeder van Jules")
   for (const edge of relationGraph) {
@@ -6587,58 +6561,22 @@ function buildPersonalClinicalContext(userDat: any, persona?: 'elias' | 'kim'): 
   const parts: string[] = [];
   const MAX_CHARS = 2000;
 
-  // ── FALLBACK DETECTION ──────────────────────────────────────────────────
-  // If canonical schemas/modes/triggers are empty but schemaTendencies/modeTendencies
-  // exist (populated by backpack-analysis, a different path than analyzeAllSections),
-  // use those as fallback. This ensures ClinicalCtx=true even when the deep analysis
-  // GPT call fails silently on device.
-  const hasCanonicalSchemas = Array.isArray(userDat.schemas) && userDat.schemas.length > 0;
-  const hasCanonicalModes = Array.isArray(userDat.modes) && userDat.modes.length > 0;
-  const hasCanonicalTriggers = Array.isArray(userDat.triggers) && userDat.triggers.length > 0;
-  const canonicalEmpty = !hasCanonicalSchemas && !hasCanonicalModes && !hasCanonicalTriggers;
-
-  const hasSchemaTendencies = Array.isArray(userDat.schemaTendencies) && userDat.schemaTendencies.length > 0;
-  const hasModeTendencies = Array.isArray(userDat.modeTendencies) && userDat.modeTendencies.length > 0;
-  const useFallback = canonicalEmpty && (hasSchemaTendencies || hasModeTendencies);
-
   // Schemas (working hypotheses)
-  if (hasCanonicalSchemas) {
+  if (Array.isArray(userDat.schemas) && userDat.schemas.length > 0) {
     const schemaNames = userDat.schemas
       .filter((s: any) => s && (s.schema || s.schemaName))
       .slice(0, 4)
       .map((s: any) => `${s.schema || s.schemaName}${s.confidence ? ` (${s.confidence})` : ''}`);
     if (schemaNames.length > 0) parts.push(`Schemas (hypotheses): ${schemaNames.join(', ')}`);
-  } else if (useFallback && hasSchemaTendencies) {
-    // FALLBACK: use schemaTendencies from backpack-analysis
-    const tendencyNames = userDat.schemaTendencies
-      .filter((s: any) => s && (s.schemaId || s.schema))
-      .slice(0, 4)
-      .map((s: any) => {
-        const name = s.schemaId || s.schema;
-        const freq = s.frequency ? ` (freq:${s.frequency})` : '';
-        return `${name}${freq}`;
-      });
-    if (tendencyNames.length > 0) parts.push(`Schemas (tendency-based hypotheses): ${tendencyNames.join(', ')}`);
   }
 
   // Modes
-  if (hasCanonicalModes) {
+  if (Array.isArray(userDat.modes) && userDat.modes.length > 0) {
     const modeNames = userDat.modes
       .filter((m: any) => m && (m.mode || m.modeName))
       .slice(0, 4)
       .map((m: any) => m.mode || m.modeName);
     if (modeNames.length > 0) parts.push(`Modes (observed): ${modeNames.join(', ')}`);
-  } else if (useFallback && hasModeTendencies) {
-    // FALLBACK: use modeTendencies from backpack-analysis
-    const tendencyNames = userDat.modeTendencies
-      .filter((m: any) => m && (m.modeId || m.mode))
-      .slice(0, 4)
-      .map((m: any) => {
-        const name = m.modeId || m.mode;
-        const freq = m.frequency ? ` (freq:${m.frequency})` : '';
-        return `${name}${freq}`;
-      });
-    if (tendencyNames.length > 0) parts.push(`Modes (tendency-based): ${tendencyNames.join(', ')}`);
   }
 
   // Triggers

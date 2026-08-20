@@ -51,7 +51,7 @@ function mockGptResponse(content: object) {
   mockFetch.mockResolvedValueOnce({
     ok: true,
     json: () => Promise.resolve({
-      ok: true, text: JSON.stringify(content), contractVersion: "minimal_gpt_proxy_v1",
+      choices: [{ message: { content: JSON.stringify(content) } }],
     }),
   });
 }
@@ -138,14 +138,14 @@ describe('Section Analysis Service', () => {
     const body = JSON.parse(mockFetch.mock.calls[0][1].body);
     // minimal-gpt-proxy enforces store:false server-side
     expect(body.model).toBe('gpt-4o-mini');
-    expect(body.responseFormat).toEqual({ type: 'json_object' });
+    expect(body.response_format).toEqual({ type: 'json_object' });
   });
 
   // ── TEST 4: JSON schema validation rejects invalid response ────────────
   it('4. JSON schema validation rejects invalid response', async () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
-      json: () => Promise.resolve({ ok: true, text: 'not json', contractVersion: 'minimal_gpt_proxy_v1' }),
+      json: () => Promise.resolve({ choices: [{ message: { content: 'not json' } }] }),
     });
     const { result, status } = await analyzeSection('test', 'Test', 'Some content here for analysis.', 'elias');
     expect(result).toBeNull();
@@ -275,7 +275,7 @@ describe('Section Analysis Service', () => {
     await analyzeSection('my_story', 'Mijn verhaal', 'Mijn privé tekst hier.', 'elias');
     const body = JSON.parse(mockFetch.mock.calls[0][1].body);
     // The user message contains the section text (for analysis), but the RESULT stored in user.dat does not
-    expect(body.messages[0].content).toBe('Mijn privé tekst hier.');
+    expect(body.messages[1].content).toBe('Mijn privé tekst hier.');
   });
 
   // ── TEST 15: Elias schemas stored only in Elias user.dat ──────────────

@@ -283,7 +283,6 @@ export interface ChatMessage {
     contextDat?: string;
     anchors?: string;
     clinicalCtx?: string;
-    deepAnalysis?: string;
   };
   /** Schema/Mode detection result for clinical confirmation UI */
   schemaModeResult?: {

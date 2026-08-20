@@ -90,7 +90,6 @@ export function registerMinimalGptProxyRoute(app: Express): void {
       maxTokens: number;
       temperature: number;
       topP: number;
-      responseFormat?: { type: string };
     };
 
     const openAiPayload = {
@@ -103,7 +102,6 @@ export function registerMinimalGptProxyRoute(app: Express): void {
       temperature: request.temperature,
       top_p: request.topP,
       store: false,
-      ...(request.responseFormat?.type === 'json_object' ? { response_format: { type: 'json_object' } } : {}),
     };
 
     // ─── Execute OpenAI Call ──────────────────────────────────────────────────

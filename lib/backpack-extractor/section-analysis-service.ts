@@ -29,7 +29,6 @@ import type {
 
 const SECTION_HASHES_KEY = '@recofree_section_analysis_hashes';
 const ANALYSIS_RESULTS_KEY = '@recofree_section_analysis_results';
-const USERDAT_KEY = '@recofree_userdat';
 
 // ── Hash Management ──────────────────────────────────────────────────
 
@@ -149,23 +148,14 @@ export async function analyzeSection(
       method: 'POST',
       headers,
       body: JSON.stringify({
-        contractVersion: 'minimal_gpt_proxy_v1',
-        requestId: `section_analysis_${sectionId}_${Date.now()}`,
-        persona: persona,
-        systemPrompt: prompt,
         messages: [
+          { role: 'system', content: prompt },
           { role: 'user', content: sectionContent },
         ],
         model: 'gpt-4o-mini',
         temperature: 0.1,
-        maxTokens: 4000,
-        topP: 1,
-        responseFormat: { type: 'json_object' },
-        store: false,
-        metadata: {
-          clientBuildVersion: 'section_analysis_v1',
-          promptBuildVersion: 'client_mirror_v1',
-        },
+        max_tokens: 4096,
+        response_format: { type: 'json_object' },
       }),
     });
 
@@ -178,8 +168,7 @@ export async function analyzeSection(
     }
 
     const data = await response.json();
-    // Server returns contract format: { ok, text, ... } not raw OpenAI format
-    const content = data?.text || data?.choices?.[0]?.message?.content;
+    const content = data?.choices?.[0]?.message?.content;
     if (!content) {
       return {
         result: null,
@@ -369,88 +358,6 @@ function validateAndBuildResult(
       confidence: Math.max(0, Math.min(1, Number(p.confidence || 0.5))),
       sourceSectionId: sectionId,
     })) : [],
-    // ── FASE 4-5: 8 new clinical formulation fields ──
-    developmentalFormulation: (raw.developmentalFormulation || []).filter((d: any) => d?.originContext && d?.learnedPattern).map((d: any) => ({
-      originPhase: ['childhood', 'adolescence', 'early_adulthood', 'adulthood', 'unknown'].includes(d.originPhase) ? d.originPhase : 'unknown',
-      originContext: String(d.originContext),
-      learnedPattern: String(d.learnedPattern),
-      currentManifestation: String(d.currentManifestation || ''),
-      sourceEvidence: String(d.sourceEvidence || '').slice(0, 150),
-      confidence: Math.max(0, Math.min(1, Number(d.confidence || 0.5))),
-      isHypothesis: true as const,
-      sourceSectionId: sectionId,
-    })),
-    triggerChains: (raw.triggerChains || []).filter((t: any) => t?.triggerEvent && t?.copingBehavior).map((t: any) => ({
-      triggerEvent: String(t.triggerEvent),
-      assignedMeaning: String(t.assignedMeaning || ''),
-      emotionalResponse: String(t.emotionalResponse || ''),
-      activatedMode: String(t.activatedMode || ''),
-      copingBehavior: String(t.copingBehavior),
-      riskOutcome: String(t.riskOutcome || ''),
-      sourceEvidence: String(t.sourceEvidence || '').slice(0, 150),
-      confidence: Math.max(0, Math.min(1, Number(t.confidence || 0.5))),
-      isHypothesis: true as const,
-      sourceSectionId: sectionId,
-    })),
-    relapsePathways: persona === 'elias' ? (raw.relapsePathways || []).filter((r: any) => r?.destabilizer).map((r: any) => ({
-      destabilizer: String(r.destabilizer),
-      earlyWarnings: Array.isArray(r.earlyWarnings) ? r.earlyWarnings.map(String) : [],
-      escalationPattern: String(r.escalationPattern || ''),
-      relapseEndpoint: String(r.relapseEndpoint || ''),
-      protectiveInterrupts: Array.isArray(r.protectiveInterrupts) ? r.protectiveInterrupts.map(String) : [],
-      sourceEvidence: String(r.sourceEvidence || '').slice(0, 150),
-      confidence: Math.max(0, Math.min(1, Number(r.confidence || 0.5))),
-      isHypothesis: true as const,
-      sourceSectionId: sectionId,
-    })) : [],
-    caregiverBurdenPathways: persona === 'kim' ? (raw.caregiverBurdenPathways || []).filter((c: any) => c?.destabilizer).map((c: any) => ({
-      destabilizer: String(c.destabilizer),
-      earlyWarnings: Array.isArray(c.earlyWarnings) ? c.earlyWarnings.map(String) : [],
-      escalationPattern: String(c.escalationPattern || ''),
-      burdenEndpoint: String(c.burdenEndpoint || ''),
-      protectiveInterrupts: Array.isArray(c.protectiveInterrupts) ? c.protectiveInterrupts.map(String) : [],
-      sourceEvidence: String(c.sourceEvidence || '').slice(0, 150),
-      confidence: Math.max(0, Math.min(1, Number(c.confidence || 0.5))),
-      isHypothesis: true as const,
-      sourceSectionId: sectionId,
-    })) : [],
-    functionOfAddiction: persona === 'elias' ? (raw.functionOfAddiction || []).filter((f: any) => f?.functionType).map((f: any) => ({
-      functionType: ['numbing', 'control', 'escape', 'connection', 'identity', 'reward', 'regulation', 'other'].includes(f.functionType) ? f.functionType : 'other',
-      description: String(f.description || ''),
-      underlyingNeed: String(f.underlyingNeed || ''),
-      sourceEvidence: String(f.sourceEvidence || '').slice(0, 150),
-      confidence: Math.max(0, Math.min(1, Number(f.confidence || 0.5))),
-      isHypothesis: true as const,
-      sourceSectionId: sectionId,
-    })) : [],
-    functionOfCaregivingPattern: persona === 'kim' ? (raw.functionOfCaregivingPattern || []).filter((f: any) => f?.functionType).map((f: any) => ({
-      functionType: ['control', 'safety', 'identity', 'guilt_avoidance', 'love_proof', 'self_worth', 'other'].includes(f.functionType) ? f.functionType : 'other',
-      description: String(f.description || ''),
-      underlyingNeed: String(f.underlyingNeed || ''),
-      sourceEvidence: String(f.sourceEvidence || '').slice(0, 150),
-      confidence: Math.max(0, Math.min(1, Number(f.confidence || 0.5))),
-      isHypothesis: true as const,
-      sourceSectionId: sectionId,
-    })) : [],
-    contraindications: (raw.contraindications || []).filter((c: any) => c?.avoidTopic).map((c: any) => ({
-      avoidTopic: String(c.avoidTopic),
-      reason: String(c.reason || ''),
-      appliesTo: String(c.appliesTo || ''),
-      severity: c.severity === 'hard' ? 'hard' : 'soft',
-      sourceEvidence: String(c.sourceEvidence || '').slice(0, 150),
-      confidence: Math.max(0, Math.min(1, Number(c.confidence || 0.5))),
-      isHypothesis: true as const,
-      sourceSectionId: sectionId,
-    })),
-    safeFormulationHints: (raw.safeFormulationHints || []).filter((h: any) => h?.topic).map((h: any) => ({
-      topic: String(h.topic),
-      safeFraming: String(h.safeFraming || ''),
-      avoidFraming: String(h.avoidFraming || ''),
-      sourceEvidence: String(h.sourceEvidence || '').slice(0, 150),
-      confidence: Math.max(0, Math.min(1, Number(h.confidence || 0.5))),
-      isHypothesis: true as const,
-      sourceSectionId: sectionId,
-    })),
     confidenceSummary: {
       overallConfidence: personalAnchors.length > 0
         ? personalAnchors.reduce((sum, a) => sum + a.confidence, 0) / personalAnchors.length
@@ -468,6 +375,7 @@ function validateAndBuildResult(
 export async function mergeAnalysisToUserDat(
   analysisResult: BackpackSectionAnalysisResult,
 ): Promise<void> {
+  const USERDAT_KEY = '@recofree_userdat';
   try {
     const raw = await AsyncStorage.getItem(USERDAT_KEY);
     const userDat = raw ? JSON.parse(raw) : {};
@@ -754,31 +662,6 @@ export async function analyzeAllSections(
 ): Promise<ManualRefreshReport> {
   const startTime = Date.now();
   const hashes = await getSectionHashes();
-
-  // ── FORCE RE-ANALYZE CHECK ──────────────────────────────────────────────
-  // If user.dat has NO deep analysis fields (schemas, modes, triggers),
-  // skip the hash check entirely and force re-analyze ALL sections.
-  // This handles: clean install, stale overwrite recovery, first-time analysis.
-  let forceReanalyze = false;
-  try {
-    const udRaw = await AsyncStorage.getItem(USERDAT_KEY);
-    if (udRaw) {
-      const ud = JSON.parse(udRaw);
-      const hasSchemas = Array.isArray(ud.schemas) && ud.schemas.length > 0;
-      const hasModes = Array.isArray(ud.modes) && ud.modes.length > 0;
-      const hasTriggers = Array.isArray(ud.triggers) && ud.triggers.length > 0;
-      if (!hasSchemas && !hasModes && !hasTriggers) {
-        forceReanalyze = true;
-        console.log('[SectionAnalysis] No deep analysis fields in user.dat — forcing re-analyze of all sections');
-      }
-    } else {
-      forceReanalyze = true;
-      console.log('[SectionAnalysis] No user.dat found — forcing re-analyze');
-    }
-  } catch {
-    forceReanalyze = true;
-  }
-
   const report: ManualRefreshReport = {
     sectionsAnalyzed: 0,
     sectionsSkipped: 0,
@@ -786,14 +669,11 @@ export async function analyzeAllSections(
     relationEdgesBuilt: 0,
     schemasDetected: 0,
     modesDetected: 0,
-    triggersDetected: 0,
-    lifeStatusDetected: 0,
-  failures: 0,
-  provider: 'openai',
-  storeFalse: true,
-  totalDurationMs: 0,
-  failureDetails: [],
-};
+    failures: 0,
+    provider: 'openai',
+    storeFalse: true,
+    totalDurationMs: 0,
+  };
 
   for (const section of sections) {
     if (!section.content || section.content.trim().length < 10) {
@@ -802,7 +682,7 @@ export async function analyzeAllSections(
     }
 
     const currentHash = computeSectionHash(section.content);
-    if (!forceReanalyze && hashes[section.id] === currentHash) {
+    if (hashes[section.id] === currentHash) {
       report.sectionsSkipped++;
       continue;
     }
@@ -816,16 +696,9 @@ export async function analyzeAllSections(
       report.anchorsBuilt += result.personalAnchors.length;
       report.relationEdgesBuilt += result.relationGraph.length;
       report.schemasDetected += result.schemas.length;
-      report.triggersDetected += result.triggers.length;
-      report.lifeStatusDetected += result.lifeStatusFacts.length;
       report.modesDetected += result.modes.length;
     } else {
       report.failures++;
-      report.failureDetails!.push({
-        sectionId: section.id,
-        error: status.error || 'unknown',
-        provider: status.provider || 'unknown',
-      });
     }
   }
 
