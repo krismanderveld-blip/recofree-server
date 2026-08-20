@@ -1492,10 +1492,11 @@ function ChatScreenInner() {
     const costLine = item.clinicalInfo?.cost ? `\nCost: ${item.clinicalInfo.cost}` : '';
     const anchorsLine = item.clinicalInfo?.anchors ? `\nAnchors: ${item.clinicalInfo.anchors}` : '';
     const clinicalCtxLine = item.clinicalInfo?.clinicalCtx ? `\nClinicalCtx: ${item.clinicalInfo.clinicalCtx}` : '';
+    const deepAnalysisLine = item.clinicalInfo?.deepAnalysis ? `\nDeepAnalysis: ${item.clinicalInfo.deepAnalysis}` : '';
     const contextDatLine = item.clinicalInfo?.contextDat ? `\nContextDat: ${item.clinicalInfo.contextDat}` : '';
     const clinicalDisplay = clinicalAnnotation
-      ? clinicalAnnotation + localInfo + cmdLine + formulationLine + routeLine + epistemicLine + modelRouteLine + costLine + anchorsLine + clinicalCtxLine + contextDatLine
-      : (localInfo || cmdLine || formulationLine || routeLine || epistemicLine || modelRouteLine || costLine || anchorsLine || clinicalCtxLine || contextDatLine) ? (localInfo + cmdLine + formulationLine + routeLine + epistemicLine + modelRouteLine + costLine + anchorsLine + clinicalCtxLine + contextDatLine) : null;
+      ? clinicalAnnotation + localInfo + cmdLine + formulationLine + routeLine + epistemicLine + modelRouteLine + costLine + anchorsLine + clinicalCtxLine + deepAnalysisLine + contextDatLine
+      : (localInfo || cmdLine || formulationLine || routeLine || epistemicLine || modelRouteLine || costLine || anchorsLine || clinicalCtxLine || contextDatLine) ? (localInfo + cmdLine + formulationLine + routeLine + epistemicLine + modelRouteLine + costLine + anchorsLine + clinicalCtxLine + deepAnalysisLine + contextDatLine) : null;
 
     const bubbleStyle = isUser
       ? {

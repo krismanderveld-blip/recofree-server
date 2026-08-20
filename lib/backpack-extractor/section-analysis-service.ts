@@ -694,6 +694,8 @@ export async function analyzeAllSections(
     relationEdgesBuilt: 0,
     schemasDetected: 0,
     modesDetected: 0,
+    triggersDetected: 0,
+    lifeStatusDetected: 0,
     failures: 0,
     provider: 'openai',
     storeFalse: true,
@@ -721,6 +723,8 @@ export async function analyzeAllSections(
       report.anchorsBuilt += result.personalAnchors.length;
       report.relationEdgesBuilt += result.relationGraph.length;
       report.schemasDetected += result.schemas.length;
+      report.triggersDetected += result.triggers.length;
+      report.lifeStatusDetected += result.lifeStatusFacts.length;
       report.modesDetected += result.modes.length;
     } else {
       report.failures++;

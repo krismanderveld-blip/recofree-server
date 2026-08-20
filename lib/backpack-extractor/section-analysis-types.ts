@@ -407,6 +407,8 @@ export interface ManualRefreshReport {
   relationEdgesBuilt: number;
   schemasDetected: number;
   modesDetected: number;
+  triggersDetected: number;
+  lifeStatusDetected: number;
   failures: number;
   provider: 'openai' | 'forge' | 'none';
   storeFalse: boolean;

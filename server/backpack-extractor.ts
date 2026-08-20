@@ -73,6 +73,7 @@ IMPORTANT RULES:
 - Extract contextual information (work, living situation, health, finances)
 - Use the EXACT names and relationships as the user wrote them
 - Do NOT invent or assume information not stated
+- For each person: determine lifeStatus (alive, deceased, unknown). Look for keywords: overleden, gestorven, dood, verloren, died, passed away, RIP, helaas niet meer, is er niet meer. If a date of death is mentioned, include it.
 - Emotional valence should reflect how the user FEELS about this person (not objective judgment)
 - For Dutch text: keep names in original language, translate relationship types to English for the 'relationship' field but also provide Dutch in 'relationshipNL'
 - Source section should reference which section the information came from
@@ -82,7 +83,7 @@ ${allText}
 
 Respond with a JSON object matching this exact structure:
 {
-  "persons": [{ "name": string, "relationship": string, "relationshipNL": string, "age": string|null, "livingSituation": string|null, "emotionalValence": "positive"|"negative"|"ambivalent"|"neutral", "context": string, "sourceSection": string }],
+  "persons": [{ "name": string, "relationship": string, "relationshipNL": string, "age": string|null, "livingSituation": string|null, "lifeStatus": "alive"|"deceased"|"unknown", "deceasedDate": string|null, "emotionalValence": "positive"|"negative"|"ambivalent"|"neutral", "context": string, "sourceSection": string }],
   "events": [{ "description": string, "type": "trauma"|"loss"|"turning_point"|"relapse"|"achievement"|"conflict"|"abuse"|"neglect"|"other", "timePeriod": string|null, "peopleInvolved": string[], "emotionalImpact": string, "isTriggerSource": boolean, "sourceSection": string }],
   "patterns": [{ "description": string, "type": "relational"|"behavioral"|"emotional"|"coping"|"avoidance"|"schema"|"cycle", "schemaHypothesis": string|null, "frequency": "once"|"recurring"|"chronic", "peopleInvolved": string[], "sourceSection": string }],
   "contexts": [{ "description": string, "type": "work"|"living"|"social"|"health"|"financial"|"legal"|"other", "relevance": string, "sourceSection": string }]

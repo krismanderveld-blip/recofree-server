@@ -4369,6 +4369,7 @@ export async function processMessage(
       epistemic: `flag=${epistemicDebug.flag} run=${epistemicDebug.run} claims=${epistemicDebug.claims} hyp=${epistemicDebug.hyp} unc=${epistemicDebug.unc} mindread=${epistemicDebug.mindread} rescue=${epistemicDebug.rescue} medUnc=${epistemicDebug.medUnc} tier=${epistemicDebug.tier}`,
       modelRoute: `flag=${epistemicRoutingDebug.flag} tier=${epistemicRoutingDebug.tier} model=${epistemicRoutingDebug.model} score=${epistemicRoutingDebug.score} reason=${epistemicRoutingDebug.reasons || 'light_context'}`,
       cost: tokenUsage ? (() => { const tier = getModelTierFromModel(selectedModel ?? "unknown"); const est = estimateTokenCost({ model: selectedModel ?? "unknown", tier, usage: tokenUsage! }); return `msg=$${est.totalCostUsd.toFixed(6)} | tokens=${est.promptTokens}/${est.completionTokens}/${est.totalTokens} | tier=${tier} | pricing=${est.pricingVerified ? "verified" : "verify"}`; })() : "Cost: tokens=unknown",
+      deepAnalysis: await (async () => { try { const AsyncStorageModule = await import("@react-native-async-storage/async-storage"); const AS = AsyncStorageModule.default; const reportJson = await AS.getItem("@recofree_last_deep_analysis_report"); if (!reportJson) return "never_run"; const r = JSON.parse(reportJson); if (!r.ok) return `FAILED at=${r.timestamp?.slice(0,16)} err=${(r.error || "unknown").slice(0,80)}`; return `ok at=${r.timestamp?.slice(0,16)} analyzed=${r.sectionsAnalyzed} skipped=${r.sectionsSkipped} schemas=${r.schemasDetected} modes=${r.modesDetected} triggers=${r.triggersDetected} lifeStatus=${r.lifeStatusDetected} failures=${r.failures}`; } catch { return "read_error"; } })(),
     },
     schemaModeResult: schemaModeResult.activated ? {
       dominantMode: (schemaModeResult.modeDecision.dominantMode ?? null) as string | null,
@@ -6084,7 +6085,12 @@ function buildPersonalAnchorsBlock(userDat: any): string | undefined {
   for (const p of persons.slice(0, 7)) {
     if (!p.name) continue;
     const role = p.relationshipNL || p.relationship || p.role || '';
-    personMap.set(p.name.toLowerCase(), role ? [role] : []);
+    const parts = role ? [role] : [];
+    // FIX 3: Also check extraction-level lifeStatus (from forceExtract)
+    if (p.lifeStatus === 'deceased' || p.lifeStatus === 'overleden') {
+      parts.push('overleden');
+    }
+    personMap.set(p.name.toLowerCase(), parts);
   }
   // Enrich with relation graph edges (e.g. "moeder van Jules")
   for (const edge of relationGraph) {
