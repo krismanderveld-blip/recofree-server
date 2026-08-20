@@ -283,6 +283,7 @@ export interface ChatMessage {
     contextDat?: string;
     anchors?: string;
     clinicalCtx?: string;
+    deepAnalysis?: string;
   };
   /** Schema/Mode detection result for clinical confirmation UI */
   schemaModeResult?: {
@@ -1346,6 +1347,7 @@ export interface ChatContext {
   // ─── PRE-BUILT PROMPT BLOCKS (from local pipeline) ───
   /** Age category for communication depth — never raw birthDate */
   ageCategory?: string | null;
+  diarySummary?: string;
   /** Ready-to-inject PERSONEN-LOOKUP block (built locally) */
   personLookupBlock?: string | null;
   /** Ready-to-inject PERSONAL MEMORY block (built locally) */

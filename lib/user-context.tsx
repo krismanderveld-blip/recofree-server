@@ -179,6 +179,18 @@ async function persistBackpack(backpack: Backpack) {
 }
 
 async function persistUserDat(userDat: UserDat) {
+  // FIX 4: Read latest from storage first to preserve deep analysis fields
+  // (schemas, modes, triggers, etc.) that may have been written by Gegevens bijwerken
+  try {
+    const latestJson = await SessionMemoryCache.get(USERDAT_KEY);
+    if (latestJson) {
+      const latest = JSON.parse(latestJson);
+      // Merge: caller's fields override, but preserve any deep analysis fields not in caller's object
+      const merged = { ...latest, ...userDat };
+      await SessionMemoryCache.set(USERDAT_KEY, JSON.stringify(merged));
+      return;
+    }
+  } catch { /* fallback to direct write */ }
   await SessionMemoryCache.set(USERDAT_KEY, JSON.stringify(userDat));
 }
 

@@ -11,8 +11,8 @@
  * 7. Boundary with repair path detected by Layer 1 → Layer 2 not called
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { scanLayer1, applyK05CrossModuleOverride } from '../server/k05-cross-module-override';
-import type { K05OverrideInput } from '../server/k05-cross-module-override';
+import { scanLayer1, applyK05CrossModuleOverride } from '@/lib/engine/kim/k05-cross-module-override-client';
+import type { K05OverrideInput } from '@/lib/engine/kim/k05-cross-module-override-client';
 
 // Mock invokeLLM to avoid real API calls in tests
 vi.mock('../server/_core/llm', () => ({

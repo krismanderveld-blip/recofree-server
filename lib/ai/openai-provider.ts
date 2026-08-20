@@ -893,6 +893,7 @@ export class OpenAIProvider implements AIProvider {
           rejectedSuggestionsBlock: rejectedBlock ?? undefined,
           personalClinicalContext: context.personalClinicalContext ?? undefined,
           ageCategory: context.ageCategory ?? undefined,
+          diarySummary: context.diarySummary ?? undefined,
         };
 
         const clientPromptResult = buildClientSystemPrompt(promptInput);

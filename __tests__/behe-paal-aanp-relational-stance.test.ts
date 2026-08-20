@@ -8,7 +8,7 @@ import { describe, it, expect } from 'vitest';
 import { buildBeheK01PromptPayload } from '@/lib/engine/kim/modules/BEHE-K01/beheK01.promptBuilder';
 import { buildPaalK01PromptPayload } from '@/lib/engine/kim/modules/PAAL-K01/paalK01.promptBuilder';
 import { buildAanpK01PromptPayload } from '@/lib/engine/kim/modules/AANP-K01/aanpK01.promptBuilder';
-import { scanLayer1 } from '../server/k05-cross-module-override';
+import { scanLayer1 } from '@/lib/engine/kim/k05-cross-module-override-client';
 
 const mockDetection = {
   activated: true,

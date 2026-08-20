@@ -407,7 +407,14 @@ export interface ManualRefreshReport {
   relationEdgesBuilt: number;
   schemasDetected: number;
   modesDetected: number;
+  triggersDetected: number;
+  lifeStatusDetected: number;
   failures: number;
+  failureDetails?: Array<{
+    sectionId: string;
+    error: string;
+    provider?: string;
+  }>;
   provider: 'openai' | 'forge' | 'none';
   storeFalse: boolean;
   totalDurationMs: number;

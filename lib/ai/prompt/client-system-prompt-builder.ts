@@ -170,6 +170,10 @@ export function buildClientSystemPrompt(input: ClientPromptBuildInput): ClientBu
     promptParts.push(buildAgeCategoryPromptBlock(input.ageCategory as import('../../engine/shared/age-category-foundation').AgeCategory));
     includedSections.push('ageCategory');
   } else {
+  if (input.diarySummary && input.diarySummary.length > 0) {
+    promptParts.push(`[RECENT DIARY CONTEXT]\n${input.diarySummary}`);
+    includedSections.push('diary');
+  }
     omittedSections.push('ageCategory');
   }
 

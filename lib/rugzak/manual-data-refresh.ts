@@ -166,9 +166,34 @@ export async function runManualDataRefresh(input: ManualDataRefreshInput): Promi
             if (sectionsForAnalysis.length > 0) {
               const analysisReport = await analyzeAllSections(sectionsForAnalysis, input.persona);
               console.log(`[ManualRefresh] Deep analysis: ${analysisReport.sectionsAnalyzed} sections, ${analysisReport.anchorsBuilt} anchors, ${analysisReport.relationEdgesBuilt} edges, ${analysisReport.schemasDetected} schemas`);
+              // FIX 2: Store report in AsyncStorage so clinical dropdown can display it
+              try {
+                await AsyncStorage.setItem('@recofree_last_deep_analysis_report', JSON.stringify({
+                  timestamp: new Date().toISOString(),
+                  sectionsAnalyzed: analysisReport.sectionsAnalyzed,
+                  sectionsSkipped: analysisReport.sectionsSkipped,
+                  anchorsBuilt: analysisReport.anchorsBuilt,
+                  relationEdgesBuilt: analysisReport.relationEdgesBuilt,
+                  schemasDetected: analysisReport.schemasDetected,
+                  modesDetected: analysisReport.modesDetected ?? 0,
+                  triggersDetected: analysisReport.triggersDetected ?? 0,
+                  lifeStatusDetected: analysisReport.lifeStatusDetected ?? 0,
+                  failures: analysisReport.failures ?? 0,
+                  failureDetails: analysisReport.failureDetails || [],
+                  ok: true,
+                }));
+              } catch { /* non-blocking */ }
             }
           } catch (analysisErr) {
             console.warn('[ManualRefresh] Deep section analysis failed (non-blocking):', analysisErr);
+            // FIX 2: Store failure report
+            try {
+              await AsyncStorage.setItem('@recofree_last_deep_analysis_report', JSON.stringify({
+                timestamp: new Date().toISOString(),
+                ok: false,
+                error: (analysisErr as Error).message?.slice(0, 200) || 'unknown',
+              }));
+            } catch { /* non-blocking */ }
           }
         } catch (e) {
           output.errors.push({ key: 'backpackAnalysis', message: (e as Error).message });

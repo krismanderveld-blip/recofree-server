@@ -11,7 +11,7 @@
  */
 import { describe, it, expect, vi } from 'vitest';
 import { buildCodepK01PromptPayload } from '@/lib/engine/kim/modules/CODEP-K01/codepK01.promptBuilder';
-import { scanLayer1 } from '../server/k05-cross-module-override';
+import { scanLayer1 } from '@/lib/engine/kim/k05-cross-module-override-client';
 
 // Mock detection result for building prompt
 const mockDetection = {

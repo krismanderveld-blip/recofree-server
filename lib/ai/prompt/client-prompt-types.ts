@@ -70,6 +70,7 @@ export interface ClientPromptBuildInput {
   personalClinicalContext?: string;
   /** Age category for communication depth — never raw birthDate */
   ageCategory?: string;
+  diarySummary?: string;
 }
 
 export interface ClientBuiltPromptResult {
