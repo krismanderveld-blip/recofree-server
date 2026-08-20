@@ -19,6 +19,8 @@ import type { ClientPromptBuildInput, ClientBuiltPromptResult } from './client-p
 import { composePersonaPrompt } from './persona-prompt-composer';
 import { estimateTokenBudget } from './prompt-token-budget';
 import { redactDebugMetadata, isDebugOnlySection } from './prompt-redaction-guards';
+import { eliasCrisisInstructions } from '../../engine/elias/prompt-block';
+import { kimCrisisInstructions } from '../../engine/kim/prompt-block';
 
 /**
  * Build a client-side system prompt from pre-determined pipeline output.
@@ -111,12 +113,26 @@ export function buildClientSystemPrompt(input: ClientPromptBuildInput): ClientBu
     includedSections.push('projection');
   } else {
     omittedSections.push('projection');
+  }
+
+  // Context Application Contract — always active (unconditional)
   if (sections.contextApplicationContract) {
     promptParts.push(sections.contextApplicationContract);
     includedSections.push('contextApplicationContract');
   } else {
     omittedSections.push('contextApplicationContract');
   }
+
+  // Crisis instructions — safety-critical, must be injected when crisisLevel >= 1
+  if (input.crisisLevel >= 2) {
+    const crisisBlock = input.persona === 'kim'
+      ? kimCrisisInstructions(input.crisisLevel)
+      : eliasCrisisInstructions(input.crisisLevel);
+    promptParts.push(crisisBlock);
+    includedSections.push('crisisInstructions');
+  } else if (input.crisisLevel >= 1) {
+    promptParts.push('\nHEIGHTENED VIGILANCE. Be extra attentive to signs of distress.');
+    includedSections.push('crisisVigilance');
   }
 
   // Personal Anchors (confirmed key figures — always included when available)
@@ -170,11 +186,13 @@ export function buildClientSystemPrompt(input: ClientPromptBuildInput): ClientBu
     promptParts.push(buildAgeCategoryPromptBlock(input.ageCategory as import('../../engine/shared/age-category-foundation').AgeCategory));
     includedSections.push('ageCategory');
   } else {
+    omittedSections.push('ageCategory');
+  }
+
+  // Diary summary (always when available, not nested inside ageCategory)
   if (input.diarySummary && input.diarySummary.length > 0) {
     promptParts.push(`[RECENT DIARY CONTEXT]\n${input.diarySummary}`);
     includedSections.push('diary');
-  }
-    omittedSections.push('ageCategory');
   }
 
   // CMD Selected Memory Summary (behind feature flag, only when non-empty)

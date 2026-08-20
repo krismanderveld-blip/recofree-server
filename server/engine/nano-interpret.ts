@@ -443,6 +443,7 @@ export async function runNanoInterpret(
         },
         body: JSON.stringify({
           model: 'gpt-4.1-nano',
+          store: false,
           messages: [
             { role: 'system', content: systemPrompt },
             { role: 'user', content: userPrompt },

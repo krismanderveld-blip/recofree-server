@@ -2902,3 +2902,26 @@
 - [x] P0 FIX: ClinicalCtx=false after Gegevens bijwerken — SessionMemoryCache sync added to mergeAnalysisToUserDat
 - [x] P0 FIX: startSession() stale overwrite — reads latest userDat from SessionMemoryCache before spread
 - [x] P0 FIX: runManualDataRefresh() contextDat stale — re-reads fresh userDat after analyzeAllSections
+## P0/P1/P2 Gap Fixes (2026-08-20)
+- [x] P0: nano-interpret.ts store:false added — all OpenAI calls now privacy-protected
+- [x] P0: Crisis instructions injection added to client-system-prompt-builder (minimal-proxy path was missing crisis protocol)
+- [x] P0: contextApplicationContract nesting bug fixed (was inside projection else block)
+- [x] P0: diary summary nesting bug fixed (was inside ageCategory else block)
+- [x] P1: CRISIS_NUMBERS_PROMPT tested — Belgian/NL/EN/FR numbers verified
+- [x] P1: SUICIDE_RISK_BRIDGE_PROMPT tested — presence-first protocol verified
+- [x] P1: ELIAS_IDENTITY_PROMPT tested — no diagnostic labels, no fixed names, warmth rule present
+- [x] P1: KIM_CORE_IDENTITY tested — relational therapist, not grenzenvriendin, no diagnostic labels
+- [x] P1: CONTEXT_AWARE_APPLICATION_CONTRACT tested — MANDATORY header, deceased safety rule
+- [x] P1: Crisis injection at crisisLevel 2 tested for both Elias and Kim
+- [x] P1: Vigilance at crisisLevel 1 tested
+- [x] P1: contextApplicationContract always present regardless of projectionContext
+- [x] P1: Diary read/write serialization tested
+- [x] P1: Diary summary reaches prompt builder (both personas)
+- [x] P1: selfCare slider signal wiring tested (low/0/5/10/undefined)
+- [x] P2: Projection persistence schema tested (fears/hopes, persona separation)
+- [x] P2: Day structure types tested (WEEKDAYS, WEEKDAY_FROM_NUMBER, STORAGE_KEYS)
+- [x] P2: Day structure document/completion serialization tested
+- [x] P2: Cross-persona separation tested (Elias no Kim fields, Kim no Elias fields)
+- [x] P2: personalClinicalContext reaches both personas tested
+- [x] P2: personalAnchors reach both personas tested
+- [x] P2: Feature flags audited (CLIENT_PROMPT_MIRROR=debug mirror, CORE_EPISTEMIC_ENGINE=pipeline, EPISTEMIC_MODEL_ROUTING=pipeline)
