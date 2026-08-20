@@ -29,6 +29,7 @@ import type {
 
 const SECTION_HASHES_KEY = '@recofree_section_analysis_hashes';
 const ANALYSIS_RESULTS_KEY = '@recofree_section_analysis_results';
+const USERDAT_KEY = '@recofree_userdat';
 
 // ── Hash Management ──────────────────────────────────────────────────
 
@@ -375,7 +376,6 @@ function validateAndBuildResult(
 export async function mergeAnalysisToUserDat(
   analysisResult: BackpackSectionAnalysisResult,
 ): Promise<void> {
-  const USERDAT_KEY = '@recofree_userdat';
   try {
     const raw = await AsyncStorage.getItem(USERDAT_KEY);
     const userDat = raw ? JSON.parse(raw) : {};
@@ -640,24 +640,6 @@ export async function mergeAnalysisToUserDat(
       );
     }
 
-    // ── CHECKPOINT 1: Deep analysis field counts BEFORE write ──
-    const cp1 = {
-      schemas: Array.isArray(userDat.schemas) ? userDat.schemas.length : 0,
-      modes: Array.isArray(userDat.modes) ? userDat.modes.length : 0,
-      triggers: Array.isArray(userDat.triggers) ? userDat.triggers.length : 0,
-      protectiveFactors: Array.isArray(userDat.protectiveFactors) ? userDat.protectiveFactors.length : 0,
-      values: Array.isArray(userDat.values) ? userDat.values.length : 0,
-      goals: Array.isArray(userDat.goals) ? userDat.goals.length : 0,
-      risks: Array.isArray(userDat.risks) ? userDat.risks.length : 0,
-      recoveryPatterns: Array.isArray(userDat.recoveryPatterns) ? userDat.recoveryPatterns.length : 0,
-      developmentalFormulation: Array.isArray(userDat.developmentalFormulation) ? userDat.developmentalFormulation.length : 0,
-      triggerChains: Array.isArray(userDat.triggerChains) ? userDat.triggerChains.length : 0,
-      contraindications: Array.isArray(userDat.contraindications) ? userDat.contraindications.length : 0,
-      safeFormulationHints: Array.isArray(userDat.safeFormulationHints) ? userDat.safeFormulationHints.length : 0,
-      totalKeys: Object.keys(userDat).length,
-    };
-    console.log('[CHECKPOINT-1] mergeAnalysisToUserDat BEFORE write:', JSON.stringify(cp1));
-
     await AsyncStorage.setItem(USERDAT_KEY, JSON.stringify(userDat));
     // CRITICAL: Also update SessionMemoryCache so the chat pipeline reads fresh data.
     // Without this, handleSend() reads stale userDat from SessionMemoryCache
@@ -666,30 +648,6 @@ export async function mergeAnalysisToUserDat(
       await SessionMemoryCache.set(USERDAT_KEY, JSON.stringify(userDat));
     } catch (cacheErr) {
       console.warn('[SectionAnalysis] SessionMemoryCache sync failed (non-blocking):', cacheErr);
-    }
-
-    // ── CHECKPOINT 2: Read back from BOTH stores to verify write ──
-    try {
-      const asyncRaw = await AsyncStorage.getItem(USERDAT_KEY);
-      const cacheRaw = await SessionMemoryCache.get(USERDAT_KEY);
-      const asyncUd = asyncRaw ? JSON.parse(asyncRaw) : {};
-      const cacheUd = cacheRaw ? JSON.parse(cacheRaw) : {};
-      const cp2async = {
-        schemas: Array.isArray(asyncUd.schemas) ? asyncUd.schemas.length : 0,
-        modes: Array.isArray(asyncUd.modes) ? asyncUd.modes.length : 0,
-        triggers: Array.isArray(asyncUd.triggers) ? asyncUd.triggers.length : 0,
-        totalKeys: Object.keys(asyncUd).length,
-      };
-      const cp2cache = {
-        schemas: Array.isArray(cacheUd.schemas) ? cacheUd.schemas.length : 0,
-        modes: Array.isArray(cacheUd.modes) ? cacheUd.modes.length : 0,
-        triggers: Array.isArray(cacheUd.triggers) ? cacheUd.triggers.length : 0,
-        totalKeys: Object.keys(cacheUd).length,
-      };
-      console.log('[CHECKPOINT-2] AsyncStorage readback:', JSON.stringify(cp2async));
-      console.log('[CHECKPOINT-2] SessionMemoryCache readback:', JSON.stringify(cp2cache));
-    } catch (cp2Err) {
-      console.warn('[CHECKPOINT-2] Readback failed:', cp2Err);
     }
   } catch (error) {
     console.error('[SectionAnalysis] Merge to user.dat failed:', error);
@@ -704,6 +662,31 @@ export async function analyzeAllSections(
 ): Promise<ManualRefreshReport> {
   const startTime = Date.now();
   const hashes = await getSectionHashes();
+
+  // ── FORCE RE-ANALYZE CHECK ──────────────────────────────────────────────
+  // If user.dat has NO deep analysis fields (schemas, modes, triggers),
+  // skip the hash check entirely and force re-analyze ALL sections.
+  // This handles: clean install, stale overwrite recovery, first-time analysis.
+  let forceReanalyze = false;
+  try {
+    const udRaw = await AsyncStorage.getItem(USERDAT_KEY);
+    if (udRaw) {
+      const ud = JSON.parse(udRaw);
+      const hasSchemas = Array.isArray(ud.schemas) && ud.schemas.length > 0;
+      const hasModes = Array.isArray(ud.modes) && ud.modes.length > 0;
+      const hasTriggers = Array.isArray(ud.triggers) && ud.triggers.length > 0;
+      if (!hasSchemas && !hasModes && !hasTriggers) {
+        forceReanalyze = true;
+        console.log('[SectionAnalysis] No deep analysis fields in user.dat — forcing re-analyze of all sections');
+      }
+    } else {
+      forceReanalyze = true;
+      console.log('[SectionAnalysis] No user.dat found — forcing re-analyze');
+    }
+  } catch {
+    forceReanalyze = true;
+  }
+
   const report: ManualRefreshReport = {
     sectionsAnalyzed: 0,
     sectionsSkipped: 0,
@@ -724,7 +707,7 @@ export async function analyzeAllSections(
     }
 
     const currentHash = computeSectionHash(section.content);
-    if (hashes[section.id] === currentHash) {
+    if (!forceReanalyze && hashes[section.id] === currentHash) {
       report.sectionsSkipped++;
       continue;
     }

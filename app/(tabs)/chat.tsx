@@ -24,21 +24,23 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SessionMemoryCache } from '@/lib/crypto/session-memory-cache';
 import { useRouter, useFocusEffect, useNavigation, type Href } from 'expo-router';
 
-/**
- * Safe merge-and-write: reads LATEST userDat from SessionMemoryCache,
- * then spreads partial update on top. Preserves deep analysis fields
- * (schemas, modes, triggers, etc.) that may exist in storage but not
- * in the local variable being written.
- */
+// ── DEEP ANALYSIS PRESERVATION HELPER ──────────────────────────────────────
+// Every write to @recofree_userdat MUST go through this helper.
+// It reads the LATEST version from SessionMemoryCache first, then merges
+// the partial update on top. This prevents stale local variables from
+// destroying deep analysis fields (schemas, modes, triggers, etc.)
+// that were written by Gegevens bijwerken / analyzeAllSections.
+const USERDAT_KEY = '@recofree_userdat';
 async function mergeToUserDatStorage(partial: Record<string, any>): Promise<void> {
-  const UDKEY = '@recofree_userdat';
   let base: any = {};
   try {
-    const raw = await SessionMemoryCache.get(UDKEY);
+    const raw = await SessionMemoryCache.get(USERDAT_KEY);
     if (raw) base = JSON.parse(raw);
   } catch { /* fallback to empty */ }
   const merged = { ...base, ...partial };
-  await SessionMemoryCache.set(UDKEY, JSON.stringify(merged));
+  await SessionMemoryCache.set(USERDAT_KEY, JSON.stringify(merged));
+  // Also sync to AsyncStorage for persistence across app restarts
+  try { await AsyncStorage.setItem(USERDAT_KEY, JSON.stringify(merged)); } catch { /* non-blocking */ }
 }
 
 import { useUser } from '@/lib/user-context';
@@ -84,7 +86,6 @@ import type { DistillationProposal, ProposalUserAction } from '@/lib/engine/shar
 import { writeProposalToDocument, processAutoSave, updateSignalPromotionStatus } from '@/lib/engine/shared/dist01-proposal-writer';
 import { createDistillationStore } from '@/lib/engine/shared/dist01-store';
 const BACKPACK_KEY = '@recofree_backpack';
-const USERDAT_KEY = '@recofree_userdat';
 // PENDING_CLOSE_KEY removed — no longer needed (one path to session-end, no fallback markers)
 const DIARY_KEY = '@recofree_diary';
 
@@ -784,20 +785,6 @@ function ChatScreenInner() {
       // Load latest userDat from storage (may have been updated by greeting)
       const userDatJson = await SessionMemoryCache.get(USERDAT_KEY);
       const currentUserDat: UserDat = userDatJson ? JSON.parse(userDatJson) : state.userDat!;
-      // ── CHECKPOINT 4: Deep analysis fields in userDat passed to pipeline ──
-      const cp4 = {
-        schemas: Array.isArray((currentUserDat as any).schemas) ? (currentUserDat as any).schemas.length : 0,
-        modes: Array.isArray((currentUserDat as any).modes) ? (currentUserDat as any).modes.length : 0,
-        triggers: Array.isArray((currentUserDat as any).triggers) ? (currentUserDat as any).triggers.length : 0,
-        protectiveFactors: Array.isArray((currentUserDat as any).protectiveFactors) ? (currentUserDat as any).protectiveFactors.length : 0,
-        values: Array.isArray((currentUserDat as any).values) ? (currentUserDat as any).values.length : 0,
-        goals: Array.isArray((currentUserDat as any).goals) ? (currentUserDat as any).goals.length : 0,
-        risks: Array.isArray((currentUserDat as any).risks) ? (currentUserDat as any).risks.length : 0,
-        recoveryPatterns: Array.isArray((currentUserDat as any).recoveryPatterns) ? (currentUserDat as any).recoveryPatterns.length : 0,
-        totalKeys: Object.keys(currentUserDat).length,
-        source: userDatJson ? 'session_memory_cache' : 'react_state',
-      };
-      console.log('[CHECKPOINT-4] handleSend currentUserDat:', JSON.stringify(cp4));
       // Read backpack from AsyncStorage to ensure latest version (avoids stale closure)
       let backpack: Backpack = state.backpack!;
       try {

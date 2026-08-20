@@ -4333,7 +4333,8 @@ export async function processMessage(
           const reason = !hasUserDat ? 'no_userdat'
             : (!hasSchemas && !hasModes && !hasTriggers && !hasDevForm && !hasChains && !hasRecovery && !hasCaregiver) ? 'no_deep_analysis_fields'
             : 'filtered_empty';
-          return `present=false reason=${reason} udKeys=${hasUserDat ? Object.keys(currentUserDat).length : 0}`;
+          const deepKeys = hasUserDat ? ['schemas','modes','triggers','protectiveFactors','values','goals','risks','recoveryPatterns','caregiverPatterns','developmentalFormulation','triggerChains','relapsePathways','caregiverBurdenPathways','functionOfAddiction','functionOfCaregivingPattern','contraindications','safeFormulationHints'].filter(k => Array.isArray((currentUserDat as any)[k]) && (currentUserDat as any)[k].length > 0) : [];
+          return `present=false reason=${reason} udKeys=${hasUserDat ? Object.keys(currentUserDat).length : 0} deepKeysPresent=[${deepKeys.join(',')}]`;
         }
         const schemas = (ctx.match(/Schemas \(hypotheses\): (.+)/)?.[1] || '').split(', ').filter(Boolean).length;
         const modes = (ctx.match(/Modes \(observed\): (.+)/)?.[1] || '').split(', ').filter(Boolean).length;
