@@ -149,14 +149,18 @@ export async function analyzeSection(
       method: 'POST',
       headers,
       body: JSON.stringify({
+        contractVersion: 'minimal_gpt_proxy_v1',
+        requestId: `section_analysis_${sectionId}_${Date.now()}`,
+        persona: persona,
+        systemPrompt: prompt,
         messages: [
-          { role: 'system', content: prompt },
           { role: 'user', content: sectionContent },
         ],
         model: 'gpt-4o-mini',
         temperature: 0.1,
-        max_tokens: 4096,
-        response_format: { type: 'json_object' },
+        maxTokens: 4000,
+        topP: 1,
+        responseFormat: { type: 'json_object' },
       }),
     });
 
@@ -778,11 +782,12 @@ export async function analyzeAllSections(
     modesDetected: 0,
     triggersDetected: 0,
     lifeStatusDetected: 0,
-    failures: 0,
-    provider: 'openai',
-    storeFalse: true,
-    totalDurationMs: 0,
-  };
+  failures: 0,
+  provider: 'openai',
+  storeFalse: true,
+  totalDurationMs: 0,
+  failureDetails: [],
+};
 
   for (const section of sections) {
     if (!section.content || section.content.trim().length < 10) {
@@ -810,6 +815,11 @@ export async function analyzeAllSections(
       report.modesDetected += result.modes.length;
     } else {
       report.failures++;
+      report.failureDetails!.push({
+        sectionId: section.id,
+        error: status.error || 'unknown',
+        provider: status.provider || 'unknown',
+      });
     }
   }
 

@@ -179,6 +179,7 @@ export async function runManualDataRefresh(input: ManualDataRefreshInput): Promi
                   triggersDetected: analysisReport.triggersDetected ?? 0,
                   lifeStatusDetected: analysisReport.lifeStatusDetected ?? 0,
                   failures: analysisReport.failures ?? 0,
+                  failureDetails: analysisReport.failureDetails || [],
                   ok: true,
                 }));
               } catch { /* non-blocking */ }
