@@ -764,14 +764,25 @@ export async function analyzeAllSections(
     const udRaw = await AsyncStorage.getItem(USERDAT_KEY);
     if (udRaw) {
       const ud = JSON.parse(udRaw);
-      const hasSchemas = Array.isArray(ud.schemas) && ud.schemas.length > 0;
-      const hasModes = Array.isArray(ud.modes) && ud.modes.length > 0;
+      // Valid enum values — schemas/modes must contain at least one VALID entry
+      const validSchemaIds = new Set([
+        'abandonment', 'mistrust_abuse', 'emotional_deprivation', 'defectiveness_shame',
+        'dependence_incompetence', 'vulnerability', 'enmeshment', 'subjugation',
+        'self_sacrifice', 'unrelenting_standards', 'entitlement', 'insufficient_self_control',
+        'approval_seeking', 'negativity_pessimism', 'emotional_inhibition', 'punitiveness',
+      ]);
+      const validModeIds = new Set([
+        'vulnerable_child', 'angry_child', 'impulsive_child', 'compliant_surrender',
+        'detached_protector', 'overcontroller', 'punitive_parent', 'demanding_parent', 'healthy_adult',
+      ]);
+      const hasSchemas = Array.isArray(ud.schemas) && ud.schemas.some((s: any) => validSchemaIds.has(s?.schema));
+      const hasModes = Array.isArray(ud.modes) && ud.modes.some((m: any) => validModeIds.has(m?.mode));
       const hasTriggers = Array.isArray(ud.triggers) && ud.triggers.length > 0;
       // Force re-analyze if schemas OR modes are missing (not just all three)
       // This handles: prompt fix deployed but old hash prevents re-analysis
       if (!hasSchemas || !hasModes) {
         forceReanalyze = true;
-        console.log(`[SectionAnalysis] Deep analysis incomplete (schemas=${hasSchemas}, modes=${hasModes}, triggers=${hasTriggers}) — forcing re-analyze`);
+        console.log(`[SectionAnalysis] Deep analysis incomplete or invalid (validSchemas=${hasSchemas}, validModes=${hasModes}, triggers=${hasTriggers}) — forcing re-analyze`);
       }
     } else {
       forceReanalyze = true;

@@ -4373,8 +4373,8 @@ export async function processMessage(
         // Determine source: canonical or fallback_tendencies
         const isFallback = ctx.includes('tendency-based');
         const source = isFallback ? 'fallback_tendencies' : 'canonical';
-        const schemas = (ctx.match(/Schemas \((?:hypotheses|tendency-based hypotheses)\): (.+)/)?.[1] || '').split(', ').filter(Boolean).length;
-        const modes = (ctx.match(/Modes \((?:observed|tendency-based)\): (.+)/)?.[1] || '').split(', ').filter(Boolean).length;
+        const schemas = (ctx.match(/Schemas \((?:hypotheses|tendency-based hypotheses)\)[^:]*: (.+)/)?.[1] || '').split(', ').filter(Boolean).length;
+        const modes = (ctx.match(/Modes \((?:observed|tendency-based)\)[^:]*: (.+)/)?.[1] || '').split(', ').filter(Boolean).length;
         const triggers = (ctx.match(/Triggers: (.+)/)?.[1] || '').split('; ').filter(Boolean).length;
         const protective = (ctx.match(/Strengths: (.+)/)?.[1] || '').split('; ').filter(Boolean).length;
         const values = (ctx.match(/Values: (.+)/)?.[1] || '').split(', ').filter(Boolean).length;
