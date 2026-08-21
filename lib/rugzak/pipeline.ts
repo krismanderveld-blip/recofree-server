@@ -4401,7 +4401,6 @@ export async function processMessage(
       nanoSelector: (() => {
         try {
           if (!clientNanoResult?.themes?.length) return 'no_nano_themes';
-          const { selectRelevantClinicalContext } = require('../engine/shared/clinical-context-relevance-selector');
           const sel = selectRelevantClinicalContext(clientNanoResult.themes, clientNanoResult.intent, userMessage);
           const schemasStr = sel.relevantSchemas === 'all' ? 'ALL' : (sel.relevantSchemas as string[]).join(',');
           const modesStr = sel.relevantModes === 'all' ? 'ALL' : (sel.relevantModes as string[]).join(',');
@@ -4411,7 +4410,7 @@ export async function processMessage(
       epistemic: `flag=${epistemicDebug.flag} run=${epistemicDebug.run} claims=${epistemicDebug.claims} hyp=${epistemicDebug.hyp} unc=${epistemicDebug.unc} mindread=${epistemicDebug.mindread} rescue=${epistemicDebug.rescue} medUnc=${epistemicDebug.medUnc} tier=${epistemicDebug.tier}`,
       modelRoute: `flag=${epistemicRoutingDebug.flag} tier=${epistemicRoutingDebug.tier} model=${epistemicRoutingDebug.model} score=${epistemicRoutingDebug.score} reason=${epistemicRoutingDebug.reasons || 'light_context'}`,
       cost: tokenUsage ? (() => { const tier = getModelTierFromModel(selectedModel ?? "unknown"); const est = estimateTokenCost({ model: selectedModel ?? "unknown", tier, usage: tokenUsage! }); return `msg=$${est.totalCostUsd.toFixed(6)} | tokens=${est.promptTokens}/${est.completionTokens}/${est.totalTokens} | tier=${tier} | pricing=${est.pricingVerified ? "verified" : "verify"}`; })() : "Cost: tokens=unknown",
-      deepAnalysis: await (async () => { try { const AsyncStorageModule = await import("@react-native-async-storage/async-storage"); const AS = AsyncStorageModule.default; const reportJson = await AS.getItem("@recofree_last_deep_analysis_report"); if (!reportJson) return "never_run"; const r = JSON.parse(reportJson); if (!r.ok) return `FAILED at=${r.timestamp?.slice(0,16)} err=${(r.error || "unknown").slice(0,80)}`; return `ok at=${r.timestamp?.slice(0,16)} analyzed=${r.sectionsAnalyzed} skipped=${r.sectionsSkipped} schemas=${r.schemasDetected} modes=${r.modesDetected} triggers=${r.triggersDetected} lifeStatus=${r.lifeStatusDetected} failures=${r.failures}${r.failureDetails?.length ? " errors=[" + r.failureDetails.map((d: any) => d.sectionId + ":" + d.error).join(", ") + "]" : ""}`; } catch { return "read_error"; } })(),
+      deepAnalysis: await (async () => { try { const AsyncStorageModule = await import("@react-native-async-storage/async-storage"); const AS = AsyncStorageModule.default; const reportJson = await AS.getItem("@recofree_last_deep_analysis_report"); if (!reportJson) return "never_run"; const r = JSON.parse(reportJson); if (!r.ok) return `FAILED at=${r.timestamp?.slice(0,16)} err=${(r.error || "unknown").slice(0,80)}`; const totalNote = (r.totalSchemas != null || r.totalModes != null) ? ` total=[s=${r.totalSchemas ?? '?'} m=${r.totalModes ?? '?'} t=${r.totalTriggers ?? '?'}]` : ''; return `ok at=${r.timestamp?.slice(0,16)} analyzed=${r.sectionsAnalyzed} skipped=${r.sectionsSkipped} schemas=${r.schemasDetected} modes=${r.modesDetected} triggers=${r.triggersDetected} lifeStatus=${r.lifeStatusDetected} failures=${r.failures}${totalNote}${r.failureDetails?.length ? " errors=[" + r.failureDetails.map((d: any) => d.sectionId + ":" + d.error).join(", ") + "]" : ""}`; } catch { return "read_error"; } })(),
       projectionsDat: await (async () => { try { const { createProjectionsDatStore } = await import("../storage/memory/projectionsDatStore"); const store = createProjectionsDatStore(); const pd = await store.load(currentPersona); if (!pd) return "empty"; return `fears=${pd.fears?.length ?? 0} hopes=${pd.hopes?.length ?? 0}`; } catch { return "read_error"; } })(),
       moduleMemory: (() => { try { const dominant = schemaModeResult?.modeDecision?.dominantMode || "none"; const accepted = (schemaModeResult?.modeDecision?.acceptedModes || []).length; return `dominant=${dominant} accepted=${accepted}`; } catch { return "read_error"; } })(),
     },
@@ -6618,7 +6617,7 @@ export function runDeferredSessionAnalysis(
  * All presented as working hypotheses, never diagnoses.
  * Max 2000 chars to stay within token budget.
  */
-function buildPersonalClinicalContext(userDat: any, persona?: 'elias' | 'kim', nanoThemes?: string[], nanoIntent?: string, userMessage?: string): string | undefined {
+export function buildPersonalClinicalContext(userDat: any, persona?: 'elias' | 'kim', nanoThemes?: string[], nanoIntent?: string, userMessage?: string): string | undefined {
   if (!userDat) return undefined;
   const parts: string[] = [];
   const MAX_CHARS = 4000;
@@ -6629,10 +6628,11 @@ function buildPersonalClinicalContext(userDat: any, persona?: 'elias' | 'kim', n
     { relevantSchemas: 'all', relevantModes: 'all', reason: 'no_nano_data', matchedThemes: [] };
   try {
     if (nanoThemes && nanoThemes.length > 0 && userMessage) {
-      const { selectRelevantClinicalContext } = require('../engine/shared/clinical-context-relevance-selector');
       relevanceSelection = selectRelevantClinicalContext(nanoThemes, nanoIntent, userMessage);
     }
-  } catch { /* selector not available, send all */ }
+  } catch (e) {
+    console.warn('[ClinicalCtx] Relevance selector failed, sending all:', (e as Error)?.message?.slice(0, 100));
+  }
 
   const sendAllSchemas = relevanceSelection.relevantSchemas === 'all';
   const sendAllModes = relevanceSelection.relevantModes === 'all';
@@ -6850,3 +6850,4 @@ function buildPersonalClinicalContext(userDat: any, persona?: 'elias' | 'kim', n
   const result = parts.join('\n');
   return result.length > MAX_CHARS ? result.slice(0, MAX_CHARS) + '...' : result;
 }
+import { selectRelevantClinicalContext } from '../engine/shared/clinical-context-relevance-selector';

@@ -181,6 +181,10 @@ export async function runManualDataRefresh(input: ManualDataRefreshInput): Promi
                   failures: analysisReport.failures ?? 0,
                   failureDetails: analysisReport.failureDetails || [],
                   ok: true,
+                  // Cumulative totals from user.dat (not just this run)
+                  totalSchemas: await (async () => { try { const raw = await AsyncStorage.getItem('@recofree_userdat'); const ud = JSON.parse(raw || '{}'); return Array.isArray(ud.schemas) ? ud.schemas.length : 0; } catch { return 0; } })(),
+                  totalModes: await (async () => { try { const raw = await AsyncStorage.getItem('@recofree_userdat'); const ud = JSON.parse(raw || '{}'); return Array.isArray(ud.modes) ? ud.modes.length : 0; } catch { return 0; } })(),
+                  totalTriggers: await (async () => { try { const raw = await AsyncStorage.getItem('@recofree_userdat'); const ud = JSON.parse(raw || '{}'); return Array.isArray(ud.triggers) ? ud.triggers.length : 0; } catch { return 0; } })(),
                 }));
               } catch { /* non-blocking */ }
             }
