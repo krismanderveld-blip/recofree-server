@@ -6611,7 +6611,17 @@ export function runDeferredSessionAnalysis(
 function buildPersonalClinicalContext(userDat: any, persona?: 'elias' | 'kim'): string | undefined {
   if (!userDat) return undefined;
   const parts: string[] = [];
-  const MAX_CHARS = 2000;
+  const MAX_CHARS = 4000;
+
+  // ── PRESENCE LABEL HELPER ──────────────────────────────────────────────
+  // Converts numeric confidence (0-1) to clinical presence labels
+  function presenceLabel(confidence: number | undefined, mode?: string): string {
+    if (mode === 'healthy_adult') return 'aanwezig maar mag sterker worden';
+    const c = confidence ?? 0.5;
+    if (c >= 0.8) return 'zeer sterk aanwezig';
+    if (c >= 0.5) return 'aanwezig';
+    return 'minder dominant';
+  }
 
   // ── FALLBACK DETECTION ──────────────────────────────────────────────────
   // If canonical schemas/modes/triggers are empty but schemaTendencies/modeTendencies
@@ -6631,18 +6641,15 @@ function buildPersonalClinicalContext(userDat: any, persona?: 'elias' | 'kim'): 
   if (hasCanonicalSchemas) {
     const schemaNames = userDat.schemas
       .filter((s: any) => s && (s.schema || s.schemaName))
-      .slice(0, 4)
-      .map((s: any) => `${s.schema || s.schemaName}${s.confidence ? ` (${s.confidence})` : ''}`);
+      .map((s: any) => `${s.schema || s.schemaName} (${presenceLabel(s.confidence)})`);
     if (schemaNames.length > 0) parts.push(`Schemas (hypotheses): ${schemaNames.join(', ')}`);
   } else if (useFallback && hasSchemaTendencies) {
     // FALLBACK: use schemaTendencies from backpack-analysis
     const tendencyNames = userDat.schemaTendencies
       .filter((s: any) => s && (s.schemaId || s.schema))
-      .slice(0, 4)
       .map((s: any) => {
         const name = s.schemaId || s.schema;
-        const freq = s.frequency ? ` (freq:${s.frequency})` : '';
-        return `${name}${freq}`;
+        return `${name} (${presenceLabel(s.confidence)})`;
       });
     if (tendencyNames.length > 0) parts.push(`Schemas (tendency-based hypotheses): ${tendencyNames.join(', ')}`);
   }
@@ -6651,18 +6658,15 @@ function buildPersonalClinicalContext(userDat: any, persona?: 'elias' | 'kim'): 
   if (hasCanonicalModes) {
     const modeNames = userDat.modes
       .filter((m: any) => m && (m.mode || m.modeName))
-      .slice(0, 4)
-      .map((m: any) => m.mode || m.modeName);
+      .map((m: any) => `${m.mode || m.modeName} (${presenceLabel(m.confidence, m.mode || m.modeName)})`);
     if (modeNames.length > 0) parts.push(`Modes (observed): ${modeNames.join(', ')}`);
   } else if (useFallback && hasModeTendencies) {
     // FALLBACK: use modeTendencies from backpack-analysis
     const tendencyNames = userDat.modeTendencies
       .filter((m: any) => m && (m.modeId || m.mode))
-      .slice(0, 4)
       .map((m: any) => {
         const name = m.modeId || m.mode;
-        const freq = m.frequency ? ` (freq:${m.frequency})` : '';
-        return `${name}${freq}`;
+        return `${name} (${presenceLabel(m.confidence, name)})`;
       });
     if (tendencyNames.length > 0) parts.push(`Modes (tendency-based): ${tendencyNames.join(', ')}`);
   }
@@ -6671,7 +6675,6 @@ function buildPersonalClinicalContext(userDat: any, persona?: 'elias' | 'kim'): 
   if (Array.isArray(userDat.triggers) && userDat.triggers.length > 0) {
     const triggerNames = userDat.triggers
       .filter((t: any) => t && (t.trigger || t.triggerDescription))
-      .slice(0, 5)
       .map((t: any) => t.trigger || t.triggerDescription);
     if (triggerNames.length > 0) parts.push(`Triggers: ${triggerNames.join('; ')}`);
   }
@@ -6680,7 +6683,6 @@ function buildPersonalClinicalContext(userDat: any, persona?: 'elias' | 'kim'): 
   if (Array.isArray(userDat.protectiveFactors) && userDat.protectiveFactors.length > 0) {
     const factors = userDat.protectiveFactors
       .filter((f: any) => f && (f.factor || f.description))
-      .slice(0, 4)
       .map((f: any) => f.factor || f.description);
     if (factors.length > 0) parts.push(`Strengths: ${factors.join('; ')}`);
   }
@@ -6689,7 +6691,6 @@ function buildPersonalClinicalContext(userDat: any, persona?: 'elias' | 'kim'): 
   if (Array.isArray(userDat.values) && userDat.values.length > 0) {
     const valueNames = userDat.values
       .filter((v: any) => v && (v.value || v.valueName))
-      .slice(0, 4)
       .map((v: any) => v.value || v.valueName);
     if (valueNames.length > 0) parts.push(`Values: ${valueNames.join(', ')}`);
   }
@@ -6698,7 +6699,6 @@ function buildPersonalClinicalContext(userDat: any, persona?: 'elias' | 'kim'): 
   if (Array.isArray(userDat.goals) && userDat.goals.length > 0) {
     const goalNames = userDat.goals
       .filter((g: any) => g && (g.goal || g.goalDescription))
-      .slice(0, 3)
       .map((g: any) => g.goal || g.goalDescription);
     if (goalNames.length > 0) parts.push(`Goals: ${goalNames.join('; ')}`);
   }
@@ -6707,7 +6707,6 @@ function buildPersonalClinicalContext(userDat: any, persona?: 'elias' | 'kim'): 
   if (Array.isArray(userDat.risks) && userDat.risks.length > 0) {
     const riskNames = userDat.risks
       .filter((r: any) => r && (r.risk || r.riskDescription))
-      .slice(0, 3)
       .map((r: any) => r.risk || r.riskDescription);
     if (riskNames.length > 0) parts.push(`Risks: ${riskNames.join('; ')}`);
   }
@@ -6716,7 +6715,6 @@ function buildPersonalClinicalContext(userDat: any, persona?: 'elias' | 'kim'): 
   if (persona !== 'kim' && Array.isArray(userDat.recoveryPatterns) && userDat.recoveryPatterns.length > 0) {
     const patterns = userDat.recoveryPatterns
       .filter((p: any) => p && p.type && p.description)
-      .slice(0, 3)
       .map((p: any) => `${p.type}: ${p.description}${p.confidence ? ` (${p.confidence})` : ''}`);
     if (patterns.length > 0) parts.push(`Recovery patterns (hypotheses): ${patterns.join('; ')}`);
   }
@@ -6725,7 +6723,6 @@ function buildPersonalClinicalContext(userDat: any, persona?: 'elias' | 'kim'): 
   if (persona !== 'elias' && Array.isArray(userDat.caregiverPatterns) && userDat.caregiverPatterns.length > 0) {
     const patterns = userDat.caregiverPatterns
       .filter((p: any) => p && p.type && p.description)
-      .slice(0, 3)
       .map((p: any) => `${p.type}: ${p.description}${p.confidence ? ` (${p.confidence})` : ''}`);
     if (patterns.length > 0) parts.push(`Caregiver patterns (hypotheses): ${patterns.join('; ')}`);
   }
@@ -6737,7 +6734,6 @@ function buildPersonalClinicalContext(userDat: any, persona?: 'elias' | 'kim'): 
     const items = userDat.developmentalFormulation
       .filter((d: any) => d && d.originContext && d.learnedPattern)
       .sort((a: any, b: any) => (b.confidence || 0) - (a.confidence || 0))
-      .slice(0, 2)
       .map((d: any) => `${d.originPhase || 'unknown'}: ${d.originContext} → learned: ${d.learnedPattern} → now: ${d.currentManifestation || '?'}`);
     if (items.length > 0) parts.push(`Developmental formulation (hypotheses):\n${items.map((i: any) => `- ${i}`).join('\n')}`);
   }
@@ -6747,7 +6743,6 @@ function buildPersonalClinicalContext(userDat: any, persona?: 'elias' | 'kim'): 
     const chains = userDat.triggerChains
       .filter((c: any) => c && c.triggerEvent && c.riskOutcome)
       .sort((a: any, b: any) => (b.confidence || 0) - (a.confidence || 0))
-      .slice(0, 2)
       .map((c: any) => `${c.triggerEvent} → ${c.assignedMeaning || '?'} → ${c.emotionalResponse || '?'} → ${c.activatedMode || '?'} → ${c.copingBehavior || '?'} → risk: ${c.riskOutcome}`);
     if (chains.length > 0) parts.push(`Trigger chains (hypotheses):\n${chains.map((c: any) => `- ${c}`).join('\n')}`);
   }
@@ -6757,7 +6752,6 @@ function buildPersonalClinicalContext(userDat: any, persona?: 'elias' | 'kim'): 
     const paths = userDat.relapsePathways
       .filter((p: any) => p && p.destabilizer && p.relapseEndpoint)
       .sort((a: any, b: any) => (b.confidence || 0) - (a.confidence || 0))
-      .slice(0, 2)
       .map((p: any) => `${p.destabilizer} → ${p.escalationPattern || '?'} → ${p.relapseEndpoint}${p.protectiveInterrupts?.length ? ` [interrupts: ${p.protectiveInterrupts.join(', ')}]` : ''}`);
     if (paths.length > 0) parts.push(`Relapse pathways (hypotheses):\n${paths.map((p: any) => `- ${p}`).join('\n')}`);
   }
@@ -6767,7 +6761,6 @@ function buildPersonalClinicalContext(userDat: any, persona?: 'elias' | 'kim'): 
     const paths = userDat.caregiverBurdenPathways
       .filter((p: any) => p && p.destabilizer && p.burdenEndpoint)
       .sort((a: any, b: any) => (b.confidence || 0) - (a.confidence || 0))
-      .slice(0, 2)
       .map((p: any) => `${p.destabilizer} → ${p.escalationPattern || '?'} → ${p.burdenEndpoint}${p.protectiveInterrupts?.length ? ` [interrupts: ${p.protectiveInterrupts.join(', ')}]` : ''}`);
     if (paths.length > 0) parts.push(`Caregiver burden pathways (hypotheses):\n${paths.map((p: any) => `- ${p}`).join('\n')}`);
   }
@@ -6777,7 +6770,6 @@ function buildPersonalClinicalContext(userDat: any, persona?: 'elias' | 'kim'): 
     const funcs = userDat.functionOfAddiction
       .filter((f: any) => f && f.functionType && f.description)
       .sort((a: any, b: any) => (b.confidence || 0) - (a.confidence || 0))
-      .slice(0, 2)
       .map((f: any) => `${f.functionType}: ${f.description} (need: ${f.underlyingNeed || '?'})`);
     if (funcs.length > 0) parts.push(`Function of addiction (hypotheses): ${funcs.join('; ')}`);
   }
@@ -6787,7 +6779,6 @@ function buildPersonalClinicalContext(userDat: any, persona?: 'elias' | 'kim'): 
     const funcs = userDat.functionOfCaregivingPattern
       .filter((f: any) => f && f.functionType && f.description)
       .sort((a: any, b: any) => (b.confidence || 0) - (a.confidence || 0))
-      .slice(0, 2)
       .map((f: any) => `${f.functionType}: ${f.description} (need: ${f.underlyingNeed || '?'})`);
     if (funcs.length > 0) parts.push(`Function of caregiving pattern (hypotheses): ${funcs.join('; ')}`);
   }
@@ -6797,22 +6788,18 @@ function buildPersonalClinicalContext(userDat: any, persona?: 'elias' | 'kim'): 
     const contras = userDat.contraindications
       .filter((c: any) => c && c.avoidTopic && c.reason)
       .sort((a: any, b: any) => {
-        // Hard before soft, then by confidence
         if (a.severity === 'hard' && b.severity !== 'hard') return -1;
         if (b.severity === 'hard' && a.severity !== 'hard') return 1;
         return (b.confidence || 0) - (a.confidence || 0);
       })
-      .slice(0, 3)
       .map((c: any) => `[${c.severity}] Do not: ${c.avoidTopic} (reason: ${c.reason}${c.appliesTo ? `, applies to: ${c.appliesTo}` : ''})`);
     if (contras.length > 0) parts.push(`Contraindications:\n${contras.map((c: any) => `- ${c}`).join('\n')}`);
   }
 
-  // Safe formulation hints (shared — AFTER contraindications)
   if (Array.isArray(userDat.safeFormulationHints) && userDat.safeFormulationHints.length > 0) {
     const hints = userDat.safeFormulationHints
       .filter((h: any) => h && h.topic && h.safeFraming)
       .sort((a: any, b: any) => (b.confidence || 0) - (a.confidence || 0))
-      .slice(0, 3)
       .map((h: any) => `${h.topic}: prefer "${h.safeFraming}"${h.avoidFraming ? ` | avoid "${h.avoidFraming}"` : ''}`);
     if (hints.length > 0) parts.push(`Safe formulation hints:\n${hints.map((h: any) => `- ${h}`).join('\n')}`);
   }
