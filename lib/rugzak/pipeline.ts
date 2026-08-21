@@ -4327,6 +4327,37 @@ export async function processMessage(
     };
   }
 
+  // 7a-cf. Detect user-reported clinical factors from chat message
+  // Only triggers on explicit self-reports (never infers from symptoms)
+  {
+    const existingFactors = updatedUserDat.userReportedClinicalFactors || [];
+    const newFactors = detectClinicalFactorsFromChat(userMessage, existingFactors);
+    if (newFactors.length > 0) {
+      // Merge new factors: dedup by factorId, preserve firstSeenAt, update lastSeenAt
+      const merged = [...existingFactors];
+      for (const newFactor of newFactors) {
+        const existingIdx = merged.findIndex(f => f.factorId === newFactor.factorId);
+        if (existingIdx >= 0) {
+          // Already exists — update lastSeenAt and upgrade status/confidence if higher
+          const existing = merged[existingIdx];
+          merged[existingIdx] = {
+            ...existing,
+            lastSeenAt: new Date().toISOString(),
+            ...(newFactor.confidence > existing.confidence ? {
+              status: newFactor.status,
+              confidence: newFactor.confidence,
+              evidenceSnippet: newFactor.evidenceSnippet,
+            } : {}),
+          };
+        } else {
+          merged.push(newFactor);
+        }
+      }
+      updatedUserDat = { ...updatedUserDat, userReportedClinicalFactors: merged };
+      console.log(`[Pipeline] ClinicalFactors: detected=${newFactors.length} total=${merged.length} ids=${newFactors.map(f => f.factorId).join(',')}`);
+    }
+  }
+
   // 7a. Add user message to history
   const userMsg: ChatMessage = {
     id: `msg_${LocalDeviceTimeService.now().epochMs}`,
@@ -6904,3 +6935,4 @@ export function buildPersonalClinicalContext(userDat: any, persona?: 'elias' | '
   return result.length > MAX_CHARS ? result.slice(0, MAX_CHARS) + '...' : result;
 }
 import { selectRelevantClinicalContext } from '../engine/shared/clinical-context-relevance-selector';
+import { detectClinicalFactorsFromChat } from '../engine/shared/clinical-factor-chat-detector';
