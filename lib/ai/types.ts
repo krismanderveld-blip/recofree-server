@@ -284,6 +284,7 @@ export interface ChatMessage {
     anchors?: string;
     clinicalCtx?: string;
     deepAnalysis?: string;
+    nanoSelector?: string;
     moduleMemory?: string;
     projectionsDat?: string;
   };

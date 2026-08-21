@@ -4398,6 +4398,16 @@ export async function processMessage(
         const fallbackNote = isFallback ? ` canonicalSchemas=${canonicalSchemas} canonicalModes=${canonicalModes} canonicalTriggers=${canonicalTriggers} schemaTendencies=${schemaTend} modeTendencies=${modeTend} deepAnalysisCanonicalMissing=true` : '';
         return `present=true source=${source} chars=${ctx.length} schemas=${schemas} modes=${modes} triggers=${triggers} protective=${protective} values=${values} goals=${goals} risks=${risks} recoveryP=${recoveryP} caregiverP=${caregiverP} devForm=${devForm} chains=${trigChains} relapse=${relapsePaths} burden=${burdenPaths} funcAdd=${funcAddict} funcCare=${funcCare} contras=${contras} hints=${hints}${fallbackNote}`;
       })(),
+      nanoSelector: (() => {
+        try {
+          if (!clientNanoResult?.themes?.length) return 'no_nano_themes';
+          const { selectRelevantClinicalContext } = require('../engine/shared/clinical-context-relevance-selector');
+          const sel = selectRelevantClinicalContext(clientNanoResult.themes, clientNanoResult.intent, userMessage);
+          const schemasStr = sel.relevantSchemas === 'all' ? 'ALL' : (sel.relevantSchemas as string[]).join(',');
+          const modesStr = sel.relevantModes === 'all' ? 'ALL' : (sel.relevantModes as string[]).join(',');
+          return `reason=${sel.reason} themes=[${sel.matchedThemes.slice(0, 3).join(',')}] schemas=${schemasStr} modes=${modesStr}`;
+        } catch { return 'selector_error'; }
+      })(),
       epistemic: `flag=${epistemicDebug.flag} run=${epistemicDebug.run} claims=${epistemicDebug.claims} hyp=${epistemicDebug.hyp} unc=${epistemicDebug.unc} mindread=${epistemicDebug.mindread} rescue=${epistemicDebug.rescue} medUnc=${epistemicDebug.medUnc} tier=${epistemicDebug.tier}`,
       modelRoute: `flag=${epistemicRoutingDebug.flag} tier=${epistemicRoutingDebug.tier} model=${epistemicRoutingDebug.model} score=${epistemicRoutingDebug.score} reason=${epistemicRoutingDebug.reasons || 'light_context'}`,
       cost: tokenUsage ? (() => { const tier = getModelTierFromModel(selectedModel ?? "unknown"); const est = estimateTokenCost({ model: selectedModel ?? "unknown", tier, usage: tokenUsage! }); return `msg=$${est.totalCostUsd.toFixed(6)} | tokens=${est.promptTokens}/${est.completionTokens}/${est.totalTokens} | tier=${tier} | pricing=${est.pricingVerified ? "verified" : "verify"}`; })() : "Cost: tokens=unknown",
