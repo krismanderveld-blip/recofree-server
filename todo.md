@@ -2925,3 +2925,11 @@
 - [x] P2: personalClinicalContext reaches both personas tested
 - [x] P2: personalAnchors reach both personas tested
 - [x] P2: Feature flags audited (CLIENT_PROMPT_MIRROR=debug mirror, CORE_EPISTEMIC_ENGINE=pipeline, EPISTEMIC_MODEL_ROUTING=pipeline)
+
+## Relevance Selector & Clinical Context (2026-08-21)
+- [x] DeepAnalysis skipped=5 fix: forceReanalyze triggers when schemas=0 OR modes=0
+- [x] Presence labels: zeer sterk aanwezig / aanwezig / minder dominant / aanwezig maar mag sterker worden
+- [x] Slice limits removed: all schemas/modes/triggers/etc reach GPT (MAX_CHARS 4000)
+- [x] Engine-side relevance selector: nano themes determine which schemas/modes reach GPT
+- [x] Direct question detection: "wat zijn mijn schemas/modi" sends ALL with list instruction
+- [ ] Theme mapping uitbreiden: controleer of bepaalde thema's de verkeerde schemas activeren en pas aan indien nodig
