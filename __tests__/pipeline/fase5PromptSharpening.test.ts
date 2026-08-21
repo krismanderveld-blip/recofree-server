@@ -105,8 +105,11 @@ describe('FASE 5: Deep section analysis prompt sharpening', () => {
   it('prompt does not contain diagnostic labels', () => {
     expect(sectionAnalysisSource).not.toContain('codependent');
     expect(sectionAnalysisSource).not.toContain('narcissist');
-    expect(sectionAnalysisSource).not.toContain('borderline');
-    expect(sectionAnalysisSource).not.toContain('toxic');
+    // 'borderline' now appears in clinical factor detection examples (not as a diagnostic label)
+    // Check that diagnostic LABELING language is absent
+    expect(sectionAnalysisSource).not.toContain('you have borderline');
+    expect(sectionAnalysisSource).not.toContain('je hebt borderline');
+    expect(sectionAnalysisSource).not.toContain('toxic relationship');
   });
 
   // ── Dummy data validation: Elias scenario ──

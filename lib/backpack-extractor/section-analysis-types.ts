@@ -37,6 +37,7 @@ export interface BackpackSectionAnalysisResult {
   functionOfCaregivingPattern?: FunctionOfCaregivingPattern[]; // Kim only
   contraindications?: Contraindication[]; // Both personas
   safeFormulationHints?: SafeFormulationHint[]; // Both personas
+  userReportedClinicalFactors?: import('../ai/types').UserReportedClinicalFactor[]; // Both personas — NEVER diagnose
 
   confidenceSummary: ConfidenceSummary;
   warnings: string[];

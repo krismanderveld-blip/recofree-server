@@ -285,6 +285,7 @@ export interface ChatMessage {
     clinicalCtx?: string;
     deepAnalysis?: string;
     nanoSelector?: string;
+  clinicalFactors?: string;
     moduleMemory?: string;
     projectionsDat?: string;
   };
@@ -435,6 +436,66 @@ export interface Backpack {
  * - System-managed, not user-edited
  * - Always sent in full to GPT at session start
  */
+// ─── USER-REPORTED CLINICAL FACTORS ─────────────────────────────
+
+export type ClinicalFactorCategory =
+  | 'neurodevelopmental'
+  | 'personality_traits'
+  | 'mood_disorder'
+  | 'anxiety_disorder'
+  | 'trauma_related'
+  | 'substance_related'
+  | 'psychotic_spectrum'
+  | 'eating_disorder'
+  | 'neurocognitive'
+  | 'medication'
+  | 'other';
+
+export type ClinicalFactorStatus =
+  | 'user_reported_diagnosed'
+  | 'clinician_reported_by_user'
+  | 'user_suspected'
+  | 'screening_indicated'
+  | 'unclear';
+
+export type ClinicalFactorPromptUse =
+  | 'adapt_pacing'
+  | 'adapt_tone'
+  | 'adapt_structure'
+  | 'increase_risk_awareness'
+  | 'avoid_triggers'
+  | 'context_only'
+  | 'medication_awareness';
+
+export type ClinicalFactorImpactArea =
+  | 'impulse_control'
+  | 'emotional_regulation'
+  | 'attention_focus'
+  | 'social_interaction'
+  | 'sleep'
+  | 'medication_adherence'
+  | 'relapse_risk'
+  | 'relationship_patterns'
+  | 'self_image'
+  | 'communication_style'
+  | 'pacing_needs'
+  | 'crisis_vulnerability';
+
+export interface UserReportedClinicalFactor {
+  factorId: string;
+  label: string;
+  category: ClinicalFactorCategory;
+  status: ClinicalFactorStatus;
+  source: 'backpack' | 'chat' | 'intake' | 'manual';
+  evidenceSnippet: string;
+  firstSeenAt: string;
+  lastSeenAt: string;
+  activeImpactAreas: ClinicalFactorImpactArea[];
+  promptUse: ClinicalFactorPromptUse;
+  safetyNotes?: string;
+  confidence: number;
+}
+
 export interface UserDat {
   /** User's name — backup copy from Backpack (redundant, for import resilience) */
   naam?: string;
@@ -735,6 +796,8 @@ export interface UserDat {
   contraindications?: Array<{ avoidTopic: string; reason: string; appliesTo: string; severity: 'hard' | 'soft'; sourceEvidence: string; confidence: number; sourceSectionId?: string }>;
   /** FASE 4: Safe formulation hints — how to frame clinical content safely */
   safeFormulationHints?: Array<{ topic: string; safeFraming: string; avoidFraming: string; sourceEvidence: string; confidence: number; sourceSectionId?: string }>;
+  /** V1: User-reported clinical factors — NEVER diagnose, only adapt approach */
+  userReportedClinicalFactors?: UserReportedClinicalFactor[];
 }
 
 /** A record of a completed session's analysis */

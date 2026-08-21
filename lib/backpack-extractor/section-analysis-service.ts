@@ -80,6 +80,7 @@ RULES:
 - For contraindications: identify topics/suggestions that would be harmful for THIS person.
 - For safeFormulationHints: identify HOW to safely discuss sensitive topics with THIS person.
 - Persona-specific fields: only extract relapsePathways/functionOfAddiction for Elias, only caregiverBurdenPathways/functionOfCaregivingPattern for Kim.
+- For userReportedClinicalFactors: ONLY extract factors the user EXPLICITLY mentions as diagnosed, suspected, or reported by a clinician. Do NOT infer diagnoses from symptoms. Examples: "ik heb ADHD", "mijn psychiater zegt borderline", "ik vermoed autisme", "ik zit in dubbeldiagnose", "ik slik antidepressiva".
 
 PERSONA CONTEXT: {{persona}}
 SECTION ID: {{sectionId}}
@@ -107,7 +108,8 @@ OUTPUT JSON SCHEMA:
   "functionOfAddiction": [{ "functionType": "numbing"|"control"|"escape"|"connection"|"identity"|"reward"|"regulation"|"other", "description": string, "underlyingNeed": string, "sourceEvidence": string (max 150 chars), "confidence": 0-1 }],
   "functionOfCaregivingPattern": [{ "functionType": "control"|"safety"|"identity"|"guilt_avoidance"|"love_proof"|"self_worth"|"other", "description": string, "underlyingNeed": string, "sourceEvidence": string (max 150 chars), "confidence": 0-1 }],
   "contraindications": [{ "avoidTopic": string, "reason": string, "appliesTo": string, "severity": "hard"|"soft", "sourceEvidence": string (max 150 chars), "confidence": 0-1 }],
-  "safeFormulationHints": [{ "topic": string, "safeFraming": string, "avoidFraming": string, "sourceEvidence": string (max 150 chars), "confidence": 0-1 }]
+  "safeFormulationHints": [{ "topic": string, "safeFraming": string, "avoidFraming": string, "sourceEvidence": string (max 150 chars), "confidence": 0-1 }],
+  "userReportedClinicalFactors": [{ "factorId": string (lowercase_snake e.g. "adhd", "borderline_traits"), "label": string (human-readable e.g. "ADHD", "Borderline trekken"), "category": "neurodevelopmental"|"personality_traits"|"mood_disorder"|"anxiety_disorder"|"trauma_related"|"substance_related"|"psychotic_spectrum"|"eating_disorder"|"neurocognitive"|"medication"|"other", "status": "user_reported_diagnosed"|"clinician_reported_by_user"|"user_suspected"|"unclear", "evidenceSnippet": string (max 200 chars, direct quote from text), "activeImpactAreas": ("impulse_control"|"emotional_regulation"|"attention_focus"|"social_interaction"|"sleep"|"medication_adherence"|"relapse_risk"|"relationship_patterns"|"self_image"|"communication_style"|"pacing_needs"|"crisis_vulnerability")[], "promptUse": "adapt_pacing"|"adapt_tone"|"adapt_structure"|"increase_risk_awareness"|"avoid_triggers"|"context_only"|"medication_awareness", "safetyNotes": string|null, "confidence": 0-1 }]
 }
 
 TEXT TO ANALYZE:
@@ -451,6 +453,20 @@ function validateAndBuildResult(
       isHypothesis: true as const,
       sourceSectionId: sectionId,
     })),
+    userReportedClinicalFactors: (raw.userReportedClinicalFactors || []).filter((f: any) => f?.factorId && f?.label && f?.category && f?.status).map((f: any) => ({
+      factorId: String(f.factorId),
+      label: String(f.label),
+      category: String(f.category),
+      status: String(f.status),
+      source: 'backpack' as const,
+      evidenceSnippet: String(f.evidenceSnippet || '').slice(0, 200),
+      firstSeenAt: new Date().toISOString(),
+      lastSeenAt: new Date().toISOString(),
+      activeImpactAreas: Array.isArray(f.activeImpactAreas) ? f.activeImpactAreas : [],
+      promptUse: f.promptUse || 'context_only',
+      safetyNotes: f.safetyNotes || undefined,
+      confidence: Math.max(0, Math.min(1, Number(f.confidence || 0.5))),
+    })),
     confidenceSummary: {
       overallConfidence: personalAnchors.length > 0
         ? personalAnchors.reduce((sum, a) => sum + a.confidence, 0) / personalAnchors.length
@@ -730,6 +746,24 @@ export async function mergeAnalysisToUserDat(
       userDat.safeFormulationHints = mergeHypothesisArray(
         userDat.safeFormulationHints, analysisResult.safeFormulationHints, 'topic'
       );
+    }
+
+    // Merge userReportedClinicalFactors (deduplicate by factorId, higher confidence wins)
+    if (Array.isArray(analysisResult.userReportedClinicalFactors) && analysisResult.userReportedClinicalFactors.length > 0) {
+      if (!userDat.userReportedClinicalFactors) userDat.userReportedClinicalFactors = [];
+      for (const newFactor of analysisResult.userReportedClinicalFactors) {
+        const existingIdx = userDat.userReportedClinicalFactors.findIndex((e: any) => e.factorId === newFactor.factorId);
+        if (existingIdx >= 0) {
+          const existing = userDat.userReportedClinicalFactors[existingIdx];
+          if (newFactor.confidence >= (existing as any).confidence) {
+            userDat.userReportedClinicalFactors[existingIdx] = { ...existing, ...newFactor, firstSeenAt: (existing as any).firstSeenAt, lastSeenAt: new Date().toISOString() };
+          } else {
+            (userDat.userReportedClinicalFactors[existingIdx] as any).lastSeenAt = new Date().toISOString();
+          }
+        } else {
+          userDat.userReportedClinicalFactors.push(newFactor as any);
+        }
+      }
     }
 
     await AsyncStorage.setItem(USERDAT_KEY, JSON.stringify(userDat));

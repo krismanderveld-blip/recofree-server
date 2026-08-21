@@ -4419,6 +4419,14 @@ export async function processMessage(
         const fallbackNote = isFallback ? ` canonicalSchemas=${canonicalSchemas} canonicalModes=${canonicalModes} canonicalTriggers=${canonicalTriggers} schemaTendencies=${schemaTend} modeTendencies=${modeTend} deepAnalysisCanonicalMissing=true` : '';
         return `present=true source=${source} | included: schemas=${schemas} modes=${modes} triggers=${triggers} prot=${protective} val=${values} goals=${goals} risks=${risks} recP=${recoveryP} careP=${caregiverP} devF=${devForm} chains=${trigChains} relapse=${relapsePaths} burden=${burdenPaths} funcAdd=${funcAddict} funcCare=${funcCare} contras=${contras} hints=${hints} | chars=${ctx.length}${fallbackNote}`;
       })(),
+      clinicalFactors: (() => {
+        const factors = currentUserDat?.userReportedClinicalFactors;
+        if (!Array.isArray(factors) || factors.length === 0) return 'none';
+        const diagnosed = factors.filter((f: any) => f.status === 'user_reported_diagnosed').length;
+        const suspected = factors.filter((f: any) => f.status === 'user_suspected').length;
+        const medication = factors.filter((f: any) => f.category === 'medication').length;
+        return `count=${factors.length} diagnosed=${diagnosed} suspected=${suspected} medication=${medication} persona=${currentPersona}`;
+      })(),
       nanoSelector: (() => {
         try {
           if (!clientNanoResult?.themes?.length) return 'no_nano_themes';
@@ -6865,6 +6873,30 @@ export function buildPersonalClinicalContext(userDat: any, persona?: 'elias' | '
       .sort((a: any, b: any) => (b.confidence || 0) - (a.confidence || 0))
       .map((h: any) => `${h.topic}: prefer "${h.safeFraming}"${h.avoidFraming ? ` | avoid "${h.avoidFraming}"` : ''}`);
     if (hints.length > 0) parts.push(`Safe formulation hints:\n${hints.map((h: any) => `- ${h}`).join('\n')}`);
+  }
+
+  // User-reported clinical factors (NEVER diagnose, only adapt approach)
+  if (Array.isArray(userDat.userReportedClinicalFactors) && userDat.userReportedClinicalFactors.length > 0) {
+    const factors = userDat.userReportedClinicalFactors
+      .filter((f: any) => f && f.factorId && f.label && f.status !== 'screening_indicated')
+      .sort((a: any, b: any) => (b.confidence || 0) - (a.confidence || 0))
+      .map((f: any) => {
+        const statusLabel = f.status === 'user_reported_diagnosed' ? 'diagnosed'
+          : f.status === 'clinician_reported_by_user' ? 'clinician-reported'
+          : f.status === 'user_suspected' ? 'user-suspected'
+          : 'unclear';
+        const useLabel = f.promptUse === 'adapt_pacing' ? 'use shorter structure, reduce cognitive load'
+          : f.promptUse === 'adapt_tone' ? 'use gentler tone, more validation'
+          : f.promptUse === 'adapt_structure' ? 'use predictable structure, clear steps'
+          : f.promptUse === 'increase_risk_awareness' ? 'increase crisis awareness'
+          : f.promptUse === 'avoid_triggers' ? 'avoid triggering topics unless user initiates'
+          : f.promptUse === 'medication_awareness' ? 'no medical advice, awareness only'
+          : 'context only';
+        return `${f.label}, ${statusLabel}: ${useLabel}${f.safetyNotes ? ` | safety: ${f.safetyNotes}` : ''}`;
+      });
+    if (factors.length > 0) {
+      parts.push(`[USER-REPORTED CLINICAL FACTORS — adapt approach, never diagnose]\n${factors.map((f: any) => `- ${f}`).join('\n')}`);
+    }
   }
 
   if (parts.length === 0) return undefined;
