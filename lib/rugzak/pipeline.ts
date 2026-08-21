@@ -3973,7 +3973,7 @@ export async function processMessage(
     cmdMemorySummary: cmdMemorySummary ?? undefined,
     // PERSONAL ANCHORS — confirmed key figure facts (always sent to GPT, never hedged)
     personalAnchors: buildPersonalAnchorsBlock(currentUserDat),
-    personalClinicalContext: buildPersonalClinicalContext(currentUserDat, backpack.userType as 'elias' | 'kim'),
+    personalClinicalContext: buildPersonalClinicalContext(currentUserDat, backpack.userType as 'elias' | 'kim', clientNanoResult?.themes, clientNanoResult?.intent, userMessage),
     ageCategory: (() => {
       try {
         const { resolveAgeCategory } = require('../engine/shared/age-category-foundation');
@@ -4351,7 +4351,7 @@ export async function processMessage(
         return `present=true count=${lineCount} chars=${anchorsBlock.length}`;
       })(),
       clinicalCtx: (() => {
-        const ctx = buildPersonalClinicalContext(currentUserDat, backpack.userType as 'elias' | 'kim');
+        const ctx = buildPersonalClinicalContext(currentUserDat, backpack.userType as 'elias' | 'kim', clientNanoResult?.themes, clientNanoResult?.intent, userMessage);
         if (!ctx) {
           // Debug: explain WHY clinicalCtx is empty
           const hasUserDat = !!currentUserDat;
@@ -6608,10 +6608,26 @@ export function runDeferredSessionAnalysis(
  * All presented as working hypotheses, never diagnoses.
  * Max 2000 chars to stay within token budget.
  */
-function buildPersonalClinicalContext(userDat: any, persona?: 'elias' | 'kim'): string | undefined {
+function buildPersonalClinicalContext(userDat: any, persona?: 'elias' | 'kim', nanoThemes?: string[], nanoIntent?: string, userMessage?: string): string | undefined {
   if (!userDat) return undefined;
   const parts: string[] = [];
   const MAX_CHARS = 4000;
+
+  // ── RELEVANCE SELECTION ──────────────────────────────────────────────────
+  // Engine decides which schemas/modes are relevant. GPT only formulates.
+  let relevanceSelection: { relevantSchemas: string[] | 'all'; relevantModes: string[] | 'all'; reason: string; matchedThemes: string[] } = 
+    { relevantSchemas: 'all', relevantModes: 'all', reason: 'no_nano_data', matchedThemes: [] };
+  try {
+    if (nanoThemes && nanoThemes.length > 0 && userMessage) {
+      const { selectRelevantClinicalContext } = require('../engine/shared/clinical-context-relevance-selector');
+      relevanceSelection = selectRelevantClinicalContext(nanoThemes, nanoIntent, userMessage);
+    }
+  } catch { /* selector not available, send all */ }
+
+  const sendAllSchemas = relevanceSelection.relevantSchemas === 'all';
+  const sendAllModes = relevanceSelection.relevantModes === 'all';
+  const relevantSchemaSet = sendAllSchemas ? null : new Set(relevanceSelection.relevantSchemas as string[]);
+  const relevantModeSet = sendAllModes ? null : new Set(relevanceSelection.relevantModes as string[]);
 
   // ── PRESENCE LABEL HELPER ──────────────────────────────────────────────
   // Converts numeric confidence (0-1) to clinical presence labels
@@ -6641,34 +6657,50 @@ function buildPersonalClinicalContext(userDat: any, persona?: 'elias' | 'kim'): 
   if (hasCanonicalSchemas) {
     const schemaNames = userDat.schemas
       .filter((s: any) => s && (s.schema || s.schemaName))
+      .filter((s: any) => sendAllSchemas || relevantSchemaSet!.has(s.schema || s.schemaName))
       .map((s: any) => `${s.schema || s.schemaName} (${presenceLabel(s.confidence)})`);
-    if (schemaNames.length > 0) parts.push(`Schemas (hypotheses): ${schemaNames.join(', ')}`);
+    if (schemaNames.length > 0) {
+      const instruction = sendAllSchemas ? 'list ALL to user with presence labels' : '';
+      parts.push(`Schemas (hypotheses)${instruction ? ' — ' + instruction : ''}: ${schemaNames.join(', ')}`);
+    }
   } else if (useFallback && hasSchemaTendencies) {
     // FALLBACK: use schemaTendencies from backpack-analysis
     const tendencyNames = userDat.schemaTendencies
       .filter((s: any) => s && (s.schemaId || s.schema))
+      .filter((s: any) => sendAllSchemas || relevantSchemaSet!.has(s.schemaId || s.schema))
       .map((s: any) => {
         const name = s.schemaId || s.schema;
         return `${name} (${presenceLabel(s.confidence)})`;
       });
-    if (tendencyNames.length > 0) parts.push(`Schemas (tendency-based hypotheses): ${tendencyNames.join(', ')}`);
+    if (tendencyNames.length > 0) {
+      const instruction = sendAllSchemas ? 'list ALL to user with presence labels' : '';
+      parts.push(`Schemas (tendency-based hypotheses)${instruction ? ' — ' + instruction : ''}: ${tendencyNames.join(', ')}`);
+    }
   }
 
   // Modes
   if (hasCanonicalModes) {
     const modeNames = userDat.modes
       .filter((m: any) => m && (m.mode || m.modeName))
+      .filter((m: any) => sendAllModes || relevantModeSet!.has(m.mode || m.modeName))
       .map((m: any) => `${m.mode || m.modeName} (${presenceLabel(m.confidence, m.mode || m.modeName)})`);
-    if (modeNames.length > 0) parts.push(`Modes (observed): ${modeNames.join(', ')}`);
+    if (modeNames.length > 0) {
+      const instruction = sendAllModes ? 'list ALL to user with presence labels' : '';
+      parts.push(`Modes (observed)${instruction ? ' — ' + instruction : ''}: ${modeNames.join(', ')}`);
+    }
   } else if (useFallback && hasModeTendencies) {
     // FALLBACK: use modeTendencies from backpack-analysis
     const tendencyNames = userDat.modeTendencies
       .filter((m: any) => m && (m.modeId || m.mode))
+      .filter((m: any) => sendAllModes || relevantModeSet!.has(m.modeId || m.mode))
       .map((m: any) => {
         const name = m.modeId || m.mode;
         return `${name} (${presenceLabel(m.confidence, name)})`;
       });
-    if (tendencyNames.length > 0) parts.push(`Modes (tendency-based): ${tendencyNames.join(', ')}`);
+    if (tendencyNames.length > 0) {
+      const instruction = sendAllModes ? 'list ALL to user with presence labels' : '';
+      parts.push(`Modes (tendency-based)${instruction ? ' — ' + instruction : ''}: ${tendencyNames.join(', ')}`);
+    }
   }
 
   // Triggers
