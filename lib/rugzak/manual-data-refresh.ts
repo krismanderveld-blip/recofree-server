@@ -21,6 +21,8 @@ import { createDistillationStore } from '@/lib/engine/shared/dist01-store';
 import { SessionMemoryCache } from '@/lib/crypto/session-memory-cache';
 import { LocalDeviceTimeService } from '@/lib/core/time';
 import type { Backpack } from '@/lib/ai/types';
+import { fillBalkmetafoorFromDeepAnalysis } from '@/lib/features/balkmetafoor/balkmetafoorFromDeepAnalysis';
+import { createEmptyBalkmetafoor } from '@/lib/types/balkmetafoor.types';
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 
@@ -131,7 +133,12 @@ export async function runManualDataRefresh(input: ManualDataRefreshInput): Promi
 
     // 1. Backpack analysis refresh
     if (input.refreshBackpack) {
-      if (backpack && backpack.sections && backpack.sections.length > 0) {
+      // Build persona-aware sections for analysis
+      const sectionsExist = input.persona === 'kim'
+        ? !!(backpack?.kimBackpack && Object.values(backpack.kimBackpack).some(v => v && v.trim().length > 10))
+        : !!(backpack?.sections && backpack.sections.length > 0);
+
+      if (backpack && sectionsExist) {
         try {
           // BLOCKING: Send raw backpack to GPT for full entity extraction
           // This feeds user.dat with persons, events, patterns, contexts
@@ -160,9 +167,46 @@ export async function runManualDataRefresh(input: ManualDataRefreshInput): Promi
           output.refreshed.backpackAnalysis = true;
           // Deep section analysis — extracts relation graph, schemas, modes, life status
           try {
-            const sectionsForAnalysis = backpack.sections
-              .filter((s: any) => s.content && s.content.trim().length > 10)
-              .map((s: any) => ({ id: s.id, label: s.label || s.id, content: s.content }));
+            let sectionsForAnalysis: Array<{ id: string; label: string; content: string }> = [];
+
+            if (input.persona === 'kim' && backpack.kimBackpack) {
+              // Kim: use Kim-specific backpack sections
+              const kimLabels: Record<string, string> = {
+                my_story: 'Mijn verhaal',
+                the_relationship: 'De relatie',
+                the_impact: 'De impact',
+                my_boundaries: 'Mijn grenzen',
+                my_strength: 'Mijn kracht',
+              };
+              sectionsForAnalysis = Object.entries(backpack.kimBackpack)
+                .filter(([_, content]) => content && content.trim().length > 10)
+                .map(([id, content]) => ({ id, label: kimLabels[id] || id, content }));
+
+              // Also include Eigen Regie Plan zones if filled
+              if (backpack.eigenRegiePlan) {
+                const erp = backpack.eigenRegiePlan;
+                const filledZones = Object.entries(erp.zones || {})
+                  .filter(([_, zone]: [string, any]) => zone?.userMeaning && zone.userMeaning.trim().length > 10)
+                  .map(([zoneId, zone]: [string, any]) => ({
+                    id: `erp_${zoneId}`,
+                    label: `Eigen Regie Plan — ${zone.label || zoneId}`,
+                    content: [zone.userMeaning, zone.connectionIntent, zone.bridgeSentence, zone.repairCondition, zone.safetyException].filter(Boolean).join('\n'),
+                  }));
+                sectionsForAnalysis = [...sectionsForAnalysis, ...filledZones];
+              }
+            } else {
+              // Elias: use life-phase sections
+              sectionsForAnalysis = backpack.sections
+                .filter((s: any) => s.content && s.content.trim().length > 10)
+                .map((s: any) => ({ id: s.id, label: s.label || s.id, content: s.content }));
+
+              // Also include VSP if filled
+              const vspSection = backpack.sections?.find((s: any) => s.id === 'vsp');
+              if (vspSection && vspSection.content && vspSection.content.trim().length > 10) {
+                // VSP is already in sections, no need to add separately
+              }
+            }
+
             if (sectionsForAnalysis.length > 0) {
               const analysisReport = await analyzeAllSections(sectionsForAnalysis, input.persona);
               console.log(`[ManualRefresh] Deep analysis: ${analysisReport.sectionsAnalyzed} sections, ${analysisReport.anchorsBuilt} anchors, ${analysisReport.relationEdgesBuilt} edges, ${analysisReport.schemasDetected} schemas`);
@@ -289,6 +333,39 @@ export async function runManualDataRefresh(input: ManualDataRefreshInput): Promi
         }
       } else {
         output.skipped.push({ key: 'contextDat', reason: 'backpack_or_userdat_missing' });
+      }
+    }
+
+    // 5b. Balkmetafoor auto-fill from deep analysis (risks → draaglast, protectiveFactors → draagkracht)
+    if (backpack && userDat) {
+      try {
+        let freshUd = userDat;
+        try {
+          const udJson = await SessionMemoryCache.get(USERDAT_KEY);
+          if (udJson) freshUd = JSON.parse(udJson);
+        } catch { /* use existing userDat */ }
+        const risks = freshUd?.risks ?? [];
+        const protectiveFactors = freshUd?.protectiveFactors ?? [];
+        if (risks.length > 0 || protectiveFactors.length > 0) {
+          const now = LocalDeviceTimeService.now();
+          const existingBalk = backpack.balkmetafoor ?? createEmptyBalkmetafoor();
+          const fillResult = fillBalkmetafoorFromDeepAnalysis({
+            risks,
+            protectiveFactors,
+            existingBalkmetafoor: existingBalk,
+            nowIso: now.utcIso,
+            nowEpochMs: now.epochMs,
+          });
+          if (fillResult.updated) {
+            const updatedBackpack = { ...backpack, balkmetafoor: fillResult.balkmetafoor };
+            const BACKPACK_KEY = '@recofree_backpack';
+            await AsyncStorage.setItem(BACKPACK_KEY, JSON.stringify(updatedBackpack));
+            await SessionMemoryCache.set(BACKPACK_KEY, JSON.stringify(updatedBackpack));
+            console.log(`[ManualRefresh] Balkmetafoor auto-fill: +${fillResult.addedDraaglast} draaglast, +${fillResult.addedDraagkracht} draagkracht`);
+          }
+        }
+      } catch (balkErr) {
+        console.warn('[ManualRefresh] Balkmetafoor auto-fill failed:', balkErr);
       }
     }
 

@@ -12,6 +12,7 @@ import { Platform } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
 import { getApiBaseUrl } from '@/constants/oauth';
 import * as Auth from '@/lib/_core/auth';
+import { getCurrentLanguage } from '@/lib/i18n';
 
 export interface BackpackExtractedData {
   naam: string;
@@ -191,7 +192,7 @@ async function sendForParsing(documentText: string): Promise<BackpackExtractedDa
     const response = await fetch(`${apiBaseUrl}/api/backpack/parse-document`, {
       method: 'POST',
       headers,
-      body: JSON.stringify({ documentText }),
+      body: JSON.stringify({ documentText, language: getCurrentLanguage() }),
     });
 
     if (!response.ok) {

@@ -130,6 +130,10 @@ export function setGlobalLanguage(lang: SupportedLanguage) {
   _currentLanguage = lang;
 }
 
+export function getCurrentLanguage(): SupportedLanguage {
+  return _currentLanguage;
+}
+
 export function tStatic(key: string, params?: Record<string, string | number>): string {
   const strings = LANGUAGE_MAP[_currentLanguage];
   let value = strings[key] ?? LANGUAGE_MAP.nl[key] ?? key;

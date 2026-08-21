@@ -3,6 +3,7 @@ export {
   useTranslation,
   tStatic,
   setGlobalLanguage,
+  getCurrentLanguage,
 } from './i18n-provider';
 
 export type {

@@ -116,7 +116,7 @@ If elias sections are not applicable (kim user), still include them with empty s
 export function registerBackpackDocumentParseRoute(app: Express): void {
   app.post('/api/backpack/parse-document', async (req: Request, res: Response) => {
     try {
-      const { documentText } = req.body;
+      const { documentText, language } = req.body;
       if (!documentText || typeof documentText !== 'string') {
         res.status(400).json({ error: 'documentText is required and must be a string' });
         return;
@@ -135,6 +135,10 @@ export function registerBackpackDocumentParseRoute(app: Express): void {
 
       console.log(`[BackpackDocumentParse] Starting parse, textLength=${documentText.length}`);
 
+      // Determine output language based on user's chosen language
+      const langMap: Record<string, string> = { nl: 'Dutch', en: 'English', fr: 'French' };
+      const outputLanguage = langMap[language] || 'Dutch';
+
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -147,8 +151,8 @@ export function registerBackpackDocumentParseRoute(app: Express): void {
           temperature: 0,
           max_tokens: 8000,
           messages: [
-            { role: 'system', content: BACKPACK_PARSE_SYSTEM_PROMPT },
-            { role: 'user', content: `Extract the life story / bilan into structured backpack format:\n\n${documentText}` },
+            { role: 'system', content: BACKPACK_PARSE_SYSTEM_PROMPT + `\n\nIMPORTANT: All extracted text content MUST be preserved in its original language. The user's app language is ${outputLanguage}. If you need to add any labels or context, use ${outputLanguage}.` },
+            { role: 'user', content: `Extract the life story / bilan into structured backpack format. Preserve the user's original language. Any added context must be in ${outputLanguage}.\n\n${documentText}` },
           ],
         }),
       });
