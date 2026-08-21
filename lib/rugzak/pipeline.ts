@@ -79,6 +79,7 @@ import {
 } from './state-analyzer';
 import { updateTriggerPatterns, recordModuleUsage } from './engine';
 import { processFeedbackLoop } from '../engine/feedback-loop';
+import { promoteTendenciesToCanonical } from '../engine/shared/tendency-canonical-bridge';
 import { mergePersons } from '../engine/signal-router';
 import { loadCachedVspProfile } from '../backpack-extractor/vsp-backpack-analyzer';
 import { parseEngineResponse } from '../engine/signal-parser';
@@ -1550,6 +1551,26 @@ export async function processMessage(
       lastPresentedMode: schemaModeResult.modeDecision.dominantMode ?? null,
       lastPresentedSchema: schemaModeResult.schemaDecision.dominantSchema ?? null,
     };
+  // ── PRE-GPT STEP 5f.3: Tendency-to-Canonical Promotion Bridge ──
+  // Promotes confirmed schemaTendencies/modeTendencies (chat-detected) to
+  // canonical schemas/modes so buildPersonalClinicalContext can use them.
+  {
+    const promotionResult = promoteTendenciesToCanonical({
+      schemaTendencies: currentUserDat.schemaTendencies || [],
+      modeTendencies: currentUserDat.modeTendencies || [],
+      existingSchemas: currentUserDat.schemas || [],
+      existingModes: currentUserDat.modes || [],
+    });
+    if (promotionResult.report.schemasPromoted > 0 || promotionResult.report.modesPromoted > 0) {
+      currentUserDat = {
+        ...currentUserDat,
+        schemas: promotionResult.mergedSchemas,
+        modes: promotionResult.mergedModes,
+      };
+      console.log(`[Pipeline] TendencyPromotion: schemas=${promotionResult.report.schemasPromoted} modes=${promotionResult.report.modesPromoted} total=[s=${promotionResult.report.totalCanonicalSchemas} m=${promotionResult.report.totalCanonicalModes}]`);
+    }
+  }
+
   }
   // ── PRE-GPT STEP 5g: ACT Engine (deterministic, both user types) ──
   let actResult: ACTEngineResult = {
