@@ -767,9 +767,11 @@ export async function analyzeAllSections(
       const hasSchemas = Array.isArray(ud.schemas) && ud.schemas.length > 0;
       const hasModes = Array.isArray(ud.modes) && ud.modes.length > 0;
       const hasTriggers = Array.isArray(ud.triggers) && ud.triggers.length > 0;
-      if (!hasSchemas && !hasModes && !hasTriggers) {
+      // Force re-analyze if schemas OR modes are missing (not just all three)
+      // This handles: prompt fix deployed but old hash prevents re-analysis
+      if (!hasSchemas || !hasModes) {
         forceReanalyze = true;
-        console.log('[SectionAnalysis] No deep analysis fields in user.dat — forcing re-analyze of all sections');
+        console.log(`[SectionAnalysis] Deep analysis incomplete (schemas=${hasSchemas}, modes=${hasModes}, triggers=${hasTriggers}) — forcing re-analyze`);
       }
     } else {
       forceReanalyze = true;
