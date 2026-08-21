@@ -2933,3 +2933,4 @@
 - [x] Engine-side relevance selector: nano themes determine which schemas/modes reach GPT
 - [x] Direct question detection: "wat zijn mijn schemas/modi" sends ALL with list instruction
 - [ ] Theme mapping uitbreiden: controleer of bepaalde thema's de verkeerde schemas activeren en pas aan indien nodig
+- [x] Theme mapping uitgebreid: 369/397 Elias themes gedekt, alle 16 schemas en 9 modes bereikbaar via nano themes
