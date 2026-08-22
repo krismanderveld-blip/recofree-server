@@ -16,6 +16,15 @@ import { HomeButton } from '@/components/home-button';
 import { DataPrivacySection } from '@/lib/features/exportImport/ui/DataPrivacySection';
 import { useExportImportStores } from '@/lib/features/exportImport/hooks/useExportImportStores';
 import { loadVspInsightProfile, buildPdfPlainText, saveVspInsightProfile } from '@/lib/features/vspInsight';
+import {
+  createVspExportDocument,
+  saveVspExportLocally,
+  shareVspExport,
+} from '@/lib/features/vspInsight/vspInsightFileExport';
+import {
+  nativeVspLocalSaveAdapter,
+  nativeVspShareAdapter,
+} from '@/lib/features/vspInsight/vspInsightNativeExport';
 import { BalkmetafoorCard } from '@/components/profile/BalkmetafoorCard';
 import { NotificationPermissionCard } from '@/components/profile/NotificationPermissionCard';
 import { ManualDataRefreshButton } from '@/components/profile/ManualDataRefreshButton';
@@ -31,13 +40,14 @@ const APP_VERSION = Constants.expoConfig?.version ?? '1.0.0';
 export default function ProfileScreen() {
   const { state, getUserName, getBackpack, getUserDat, updateGuidanceDepth, getGuidanceDepth, resetUser, updateBalkmetafoor, reloadFromStorage } = useUser();
   const router = useRouter();
+  const { t } = useTranslation();
   const userName = getUserName();
   const backpack = getBackpack();
   const userDat = getUserDat();
   const currentDepth = getGuidanceDepth();
 
   const exportImportStores = useExportImportStores();
-  const [vspExporting, setVspExporting] = useState(false);
+  const [vspExportingAction, setVspExportingAction] = useState<'save' | 'share' | null>(null);
 
   // Balkmetafoor state (Elias only)
   const balkmetafoorData: BalkmetafoorData = backpack?.balkmetafoor ?? createEmptyBalkmetafoor();
@@ -98,61 +108,79 @@ export default function ProfileScreen() {
     if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   }, [balkmetafoorData, updateBalkmetafoor]);
 
-  const handleVspExport = useCallback(async () => {
-    setVspExporting(true);
-    try {
-      const persona = (state.userType === 'elias' ? 'elias' : 'kim') as 'elias' | 'kim';
-      let profile = await loadVspInsightProfile('local_user', persona);
-      if (!profile) {
-        // Create an empty profile so the user can still export (shows minimal data)
-        const now = LocalDeviceTimeService.now().utcIso;
-        profile = {
-          profileVersion: 'vsp_insight_profile.v1',
-          persona,
-          userId: 'local_user',
-          createdAt: now,
-          updatedAt: now,
-          selfReportedEarlySigns: [],
-          observedEarlySigns: [],
-          rationalGreenPattern: { patternId: `${persona}_rational_green`, label: 'Rational Green Pattern', confidence: 0, markers: [], examples: [], firstDetectedAt: null, lastUpdatedAt: null },
-          overwhelmPattern: { patternId: `${persona}_overwhelm`, label: 'Overwhelm Pattern', confidence: 0, markers: [], examples: [], firstDetectedAt: null, lastUpdatedAt: null },
-          realGreenPattern: { patternId: `${persona}_real_green`, label: 'Real Green Pattern', confidence: 0, markers: [], examples: [], firstDetectedAt: null, lastUpdatedAt: null },
-          soothingProfile: { genericOptionsUsed: [], personalizedEffectiveOptions: [], excludedOptions: [] },
-          phaseTransitionExamples: [],
-          wheelOfChangeHistory: [],
-          discrepancyHistory: [],
-          lastInsightState: null,
-          lastUserReportedZone: null,
-          lastMoodSnapshot: null,
-          lastSoothingChoiceEvent: null,
-        };
-        await saveVspInsightProfile('local_user', persona, profile);
-      }
-      const plainText = buildPdfPlainText({
+  const prepareVspExportDocument = useCallback(async () => {
+    const persona = (state.userType === 'elias' ? 'elias' : 'kim') as 'elias' | 'kim';
+    let profile = await loadVspInsightProfile('local_user', persona);
+    if (!profile) {
+      const now = LocalDeviceTimeService.now().utcIso;
+      profile = {
+        profileVersion: 'vsp_insight_profile.v1',
         persona,
-        profile,
-        includeRawUserSelectedExamples: false,
-        selectedExampleIds: [],
-        exportedAt: LocalDeviceTimeService.now().utcIso,
-        vspSection: backpack?.vspSection ?? undefined,
-      });
-      // Write to temp file and share
-      const FileSystem = await import('expo-file-system/legacy');
-      const Sharing = await import('expo-sharing');
-      const fileUri = FileSystem.documentDirectory + 'veiligheidsplan-overzicht.txt';
-      await FileSystem.writeAsStringAsync(fileUri, plainText, { encoding: FileSystem.EncodingType.UTF8 });
-      await Sharing.shareAsync(fileUri, { mimeType: 'text/plain', dialogTitle: t('profile.vsp_insight.share_title') });
-      if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    } catch (e) {
-      console.error('[Profile] VSP export failed:', e);
+        userId: 'local_user',
+        createdAt: now,
+        updatedAt: now,
+        selfReportedEarlySigns: [],
+        observedEarlySigns: [],
+        rationalGreenPattern: { patternId: `${persona}_rational_green`, label: 'Rational Green Pattern', confidence: 0, markers: [], examples: [], firstDetectedAt: null, lastUpdatedAt: null },
+        overwhelmPattern: { patternId: `${persona}_overwhelm`, label: 'Overwhelm Pattern', confidence: 0, markers: [], examples: [], firstDetectedAt: null, lastUpdatedAt: null },
+        realGreenPattern: { patternId: `${persona}_real_green`, label: 'Real Green Pattern', confidence: 0, markers: [], examples: [], firstDetectedAt: null, lastUpdatedAt: null },
+        soothingProfile: { genericOptionsUsed: [], personalizedEffectiveOptions: [], excludedOptions: [] },
+        phaseTransitionExamples: [],
+        wheelOfChangeHistory: [],
+        discrepancyHistory: [],
+        lastInsightState: null,
+        lastUserReportedZone: null,
+        lastMoodSnapshot: null,
+        lastSoothingChoiceEvent: null,
+      };
+      await saveVspInsightProfile('local_user', persona, profile);
+    }
+    const exportedAt = LocalDeviceTimeService.now().utcIso;
+    const plainText = buildPdfPlainText({
+      persona,
+      profile,
+      includeRawUserSelectedExamples: false,
+      selectedExampleIds: [],
+      exportedAt,
+      vspSection: backpack?.vspSection ?? undefined,
+    });
+    return createVspExportDocument(plainText, persona, exportedAt);
+  }, [backpack?.vspSection, state.userType]);
+
+  const handleVspSave = useCallback(async () => {
+    setVspExportingAction('save');
+    try {
+      const document = await prepareVspExportDocument();
+      const result = await saveVspExportLocally(document, nativeVspLocalSaveAdapter);
+      if (result.status === 'saved') {
+        if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        Alert.alert(t('profile.vsp_insight.saved.title'), t('profile.vsp_insight.saved.message', { fileName: result.fileName }));
+      }
+    } catch (error) {
+      console.error('[Profile] VSP local export failed:', error);
       Alert.alert(t('profile.alert.export_failed.title'), t('profile.alert.export_failed.message'));
     } finally {
-      setVspExporting(false);
+      setVspExportingAction(null);
     }
-  }, [state.userType]);
+  }, [prepareVspExportDocument, t]);
+
+  const handleVspShare = useCallback(async () => {
+    setVspExportingAction('share');
+    try {
+      const document = await prepareVspExportDocument();
+      const result = await shareVspExport(document, nativeVspShareAdapter, t('profile.vsp_insight.share_title'));
+      if (result.status === 'unavailable') {
+        Alert.alert(t('profile.vsp_insight.share_unavailable.title'), t('profile.vsp_insight.share_unavailable.message'));
+      }
+    } catch (error) {
+      console.error('[Profile] VSP share failed:', error);
+      Alert.alert(t('profile.alert.export_failed.title'), t('profile.alert.export_failed.message'));
+    } finally {
+      setVspExportingAction(null);
+    }
+  }, [prepareVspExportDocument, t]);
   const isElias = state.userType === 'elias';
   const companionName = isElias ? 'Elias' : 'Kim';
-  const { t } = useTranslation();
   const userTypeLabel = isElias ? t('profile.user_type.elias') : t('profile.user_type.kim');
   const stageOfChange = userDat?.stageOfChange ?? 'contemplation';
   const totalSessions = userDat?.totalSessions ?? 0;
@@ -469,8 +497,8 @@ export default function ProfileScreen() {
             {t('profile.vsp_insight.description')}
           </Text>
           <Pressable
-            onPress={handleVspExport}
-            disabled={vspExporting}
+            onPress={handleVspSave}
+            disabled={vspExportingAction !== null}
             style={({ pressed }) => [{ opacity: pressed ? 0.85 : 1, transform: [{ scale: pressed ? 0.97 : 1 }] }]}
           >
             <View style={{
@@ -478,16 +506,40 @@ export default function ProfileScreen() {
               flexDirection: 'row',
               alignItems: 'center',
               gap: 12,
-              opacity: vspExporting ? 0.6 : 1,
+              opacity: vspExportingAction !== null ? 0.6 : 1,
             }}>
               <View style={{ width: 32, height: 32, borderRadius: 8, backgroundColor: dc.primarySoft, alignItems: 'center', justifyContent: 'center' }}>
-                <Text style={{ fontSize: 16 }}>{vspExporting ? '⏳' : '📄'}</Text>
+                <Text style={{ fontSize: 16 }}>{vspExportingAction === 'save' ? '⏳' : '💾'}</Text>
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={{ ...typography.bodyMedium, fontWeight: '600', color: dc.primary }}>
-                  {vspExporting ? t('profile.vsp_insight.button.generating') : t('profile.vsp_insight.button.export')}
+                  {vspExportingAction === 'save' ? t('profile.vsp_insight.button.saving') : t('profile.vsp_insight.button.save')}
                 </Text>
-                <Text style={{ ...typography.caption, color: dc.textSecondary, marginTop: 2 }}>{t('profile.vsp_insight.button.description')}</Text>
+                <Text style={{ ...typography.caption, color: dc.textSecondary, marginTop: 2 }}>{t('profile.vsp_insight.button.save_description')}</Text>
+              </View>
+              <IconSymbol name="chevron.right" size={16} color={dc.textTertiary} />
+            </View>
+          </Pressable>
+          <Pressable
+            onPress={handleVspShare}
+            disabled={vspExportingAction !== null}
+            style={({ pressed }) => [{ opacity: pressed ? 0.85 : 1, marginTop: spacing.sm }]}
+          >
+            <View style={{
+              ...cardStyles.default,
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 12,
+              opacity: vspExportingAction !== null ? 0.6 : 1,
+            }}>
+              <View style={{ width: 32, height: 32, borderRadius: 8, backgroundColor: dc.primarySoft, alignItems: 'center', justifyContent: 'center' }}>
+                <Text style={{ fontSize: 16 }}>{vspExportingAction === 'share' ? '⏳' : '📤'}</Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ ...typography.bodyMedium, fontWeight: '600', color: dc.primary }}>
+                  {vspExportingAction === 'share' ? t('profile.vsp_insight.button.generating') : t('profile.vsp_insight.button.share')}
+                </Text>
+                <Text style={{ ...typography.caption, color: dc.textSecondary, marginTop: 2 }}>{t('profile.vsp_insight.button.share_description')}</Text>
               </View>
               <IconSymbol name="chevron.right" size={16} color={dc.textTertiary} />
             </View>

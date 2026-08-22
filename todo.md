@@ -2943,3 +2943,17 @@
 - [x] Draai TypeScript, volledige Vitest-suite en RecoFree release gate
 - [x] Vergelijk open TODO-items en auditrapporten met de huidige code
 - [x] Rapporteer of door het verwijderen van eerdere chats iets ontbreekt of verloren is gegaan
+
+## Urgente backup-readiness vóór Manus-serverwissel (2026-08-22)
+- [x] Herstel `scripts/release-gate.sh` uit de laatste bewezen checkpoint
+- [x] Herstel `npm run recofree:release-gate` zonder andere packagewijzigingen
+- [x] Herstel de zes historische release-gate rapporten
+- [x] Herstel de twee historische forensische scanrapporten
+- [x] Herstel en valideer `clinicalCtxFallbackTendencies.test.ts`
+- [x] Audit behandelaar/VSP-export end-to-end en bewijs de exacte fout
+- [x] Bied lokale opslag als primaire exportoptie en delen als secundaire optie
+- [x] Voeg regressietests toe voor exportgeneratie, lokale opslag, delen en foutafhandeling
+- [x] Draai TypeScript, volledige Vitest-suite en herstelde release gate
+- [ ] Maak een volledige lokale broncode-, Git-history- en documentbackupset
+- [ ] Verifieer GitHub main, Railway health en checkpoint vóór de backupdeadline
+- [x] Lever officiële Task Data Backup-checklist voor de Manus-serverwissel
