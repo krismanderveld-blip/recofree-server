@@ -2934,3 +2934,12 @@
 - [x] Direct question detection: "wat zijn mijn schemas/modi" sends ALL with list instruction
 - [ ] Theme mapping uitbreiden: controleer of bepaalde thema's de verkeerde schemas activeren en pas aan indien nodig
 - [x] Theme mapping uitgebreid: 369/397 Elias themes gedekt, alle 16 schemas en 9 modes bereikbaar via nano themes
+
+## Volledige projectintegriteitsscan na verwijderen oude Manus-chats (2026-08-22)
+- [x] Verifieer huidige repository, branch, HEAD, remote en werkboomstatus
+- [x] Verifieer kritieke RecoFree-bestanden, auditdocumenten en configuratiebestanden
+- [x] Verifieer Railway-only backendbasis-URL en minimal-proxy/store:false architectuur
+- [x] Verifieer client-side geheugenlagen, persona-scheiding en recente wiring
+- [x] Draai TypeScript, volledige Vitest-suite en RecoFree release gate
+- [x] Vergelijk open TODO-items en auditrapporten met de huidige code
+- [x] Rapporteer of door het verwijderen van eerdere chats iets ontbreekt of verloren is gegaan
