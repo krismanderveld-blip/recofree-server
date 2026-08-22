@@ -2954,6 +2954,6 @@
 - [x] Bied lokale opslag als primaire exportoptie en delen als secundaire optie
 - [x] Voeg regressietests toe voor exportgeneratie, lokale opslag, delen en foutafhandeling
 - [x] Draai TypeScript, volledige Vitest-suite en herstelde release gate
-- [ ] Maak een volledige lokale broncode-, Git-history- en documentbackupset
-- [ ] Verifieer GitHub main, Railway health en checkpoint vóór de backupdeadline
+- [x] Maak een volledige lokale broncode-, Git-history- en documentbackupset
+- [x] Verifieer GitHub main, Railway health en checkpoint vóór de backupdeadline
 - [x] Lever officiële Task Data Backup-checklist voor de Manus-serverwissel
