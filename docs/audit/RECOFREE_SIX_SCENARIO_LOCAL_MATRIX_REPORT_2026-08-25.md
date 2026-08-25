@@ -1,7 +1,8 @@
 # RecoFree — lokale zes-scenariomatrix vóór APK
 
 **Datum:** 25 augustus 2026  
-**Status:** lokale matrix **PASS 6/6**; fysieke APK-acceptatie blijft **DEVICE_REQUIRED**  
+**Codecheckpoint onder test:** `c96b64a920d3a0c10acc0181a6dde92cd33df5b5`  
+**Status:** lokale matrix **PASS 6/6** en release-gate **PASS**; fysieke APK-acceptatie blijft **DEVICE_REQUIRED**  
 **Architectuur:** client-engine beslist; Railway formuleert uitsluitend via de minimal GPT proxy
 
 ## Conclusie
@@ -53,10 +54,13 @@ De cold-turkeyroute bewijst bovendien dat nano niet de safetybeslissing bezit: h
 | Greeting V4-suite na outputguard | **19/19 pass** |
 | K05 + epistemic + matrix gerichte gate | **81/81 pass** |
 | Volledige Vitest-suite | **4.187 pass, 0 fail, 1 skip** |
+| Release-gate integratiesuites | **120/120 pass** |
+| Release-gate | **PASS** |
+| Wide-range pre-APK-lagen | **7/7 pass** |
 | Serverbestanden gewijzigd | **Nee** |
 | `pnpm-lock.yaml` gewijzigd | **Nee** |
 
-De pre-checkpoint release-gate voerde alle functionele lagen groen uit, maar rapporteerde terecht **FAIL** op reproducibility omdat de nieuwe fixes nog niet gecommit waren. De wide-range lagen zelf waren groen: native/build 27, engine/routing 172, memory 79, prompts/safety 166, Railway/provider 35, UI/i18n/export 44 en release-infrastructuur 106 tests. Na checkpoint moet deze gate opnieuw op een schone werkboom worden uitgevoerd.
+De release-gate is na checkpoint opnieuw vanaf een schone werkboom uitgevoerd op `c96b64a`. De eerste post-checkpointrun kende één tijdelijke live-integrationuitval; dezelfde integration-directory slaagde direct daarna **120/120**. De daaropvolgende volledige schone herhaalrun was volledig groen: TypeScript 0 fouten, volledige suite 4.187 pass, release-gate 54 pass, auto-debug 43 pass, integration 120 pass en alle zeven wide-range fault-boundarylagen pass. De wide-range aantallen zijn: native/build 27, engine/routing 172, memory 79, prompts/safety 166, Railway/provider 35, UI/i18n/export 44 en release-infrastructuur 106 tests.
 
 ## Gewijzigde gebieden
 

@@ -1,7 +1,7 @@
 # RECOFREE RELEASE GATE REPORT
 
-**Generated:** 2026-08-25 07:28 UTC
-**Commit:** c8e47f6
+**Generated:** 2026-08-25 11:46 UTC
+**Commit:** c96b64a
 
 ---
 
@@ -10,10 +10,10 @@
 | Gate | Result |
 |------|--------|
 | TypeScript | 0 errors |
-| Full Test Suite | 4163 passed |
+| Full Test Suite | 4187 passed |
 | Release Gate Tests | 54 passed |
 | Auto-Debug Tests | 43 passed |
-| Integration Tests | 114 passed |
+| Integration Tests | 120 passed |
 | store:false (minimal) | 2 |
 | store:false (llm/nano/legacy frozen) | 1 / 1 / 8 |
 | Git working tree | clean |
