@@ -3006,7 +3006,7 @@
 - [x] Zorg dat medical/cold-turkey altijd full/safety routing gebruikt volgens bestaande regels
 - [x] Voeg een statische veilige medische fallback toe wanneer de GPT-call faalt; nooit alleen `[DEBUG]` aan de gebruiker tonen
 - [x] Voeg end-to-end regressietests toe voor Nederlandse cold-turkeyvraag, Railway-contract, modelroute en fallback
-- [ ] Draai TypeScript, volledige Vitest-suite, release gate en wide-range gate
+- [x] Draai TypeScript, volledige Vitest-suite, release gate en wide-range gate
 - [ ] Hervat de fysieke APK-matrix pas nadat scenario 3 op device een veilig antwoord geeft
 
 ## P1 — Devicebevindingen scenario 1 en 2
