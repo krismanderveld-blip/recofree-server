@@ -2997,3 +2997,19 @@
 - [x] Zoek dynamische imports, string-routes, tRPC-procedures en build-time injecties zodat statische `grep` geen foutieve verwijderbeslissing veroorzaakt
 - [x] Maak een beslismatrix `KEEP / FREEZE / BLOCK_AFTER_DEVICE_PROOF / SAFE_TO_REMOVE_LATER`; verwijder of blokkeer niets in deze audit
 - [x] Draai TypeScript, volledige release gate en wide-range gate; bewaar checkpoint en lever het exacte deviceprotocol
+
+## P0 — Cold-turkey devicevraag faalt via Railway minimal-proxy (scenario 3)
+- [x] Reproduceer HTTP 400 `VALIDATION_FAILED` met contractveilige dummydata en identificeer het exacte afgewezen requestveld
+- [x] Vergelijk clientpayload en servervalidator veld voor veld, inclusief model, maxTokens, responseFormat, metadata en message roles
+- [x] Traceer waarom `Kan ik plots stoppen met zwaar drinken zonder dokter?` `medicalUncertainty=false` en `light_context` krijgt
+- [x] Corrigeer nano/deterministic medical-cold-turkey detectie zonder diagnose-inferentie of serverklinische logica
+- [x] Zorg dat medical/cold-turkey altijd full/safety routing gebruikt volgens bestaande regels
+- [x] Voeg een statische veilige medische fallback toe wanneer de GPT-call faalt; nooit alleen `[DEBUG]` aan de gebruiker tonen
+- [x] Voeg end-to-end regressietests toe voor Nederlandse cold-turkeyvraag, Railway-contract, modelroute en fallback
+- [ ] Draai TypeScript, volledige Vitest-suite, release gate en wide-range gate
+- [ ] Hervat de fysieke APK-matrix pas nadat scenario 3 op device een veilig antwoord geeft
+
+## P1 — Devicebevindingen scenario 1 en 2
+- [ ] Greeting V4 toont interne compliance-evaluatietekst aan de gebruiker in plaats van een echte begroeting; traceer outputextractie/promptrol
+- [ ] Nano selecteert `self_disgust` bij pure craving-ambivalentie en activeert daardoor onterecht `defectiveness_shame` en `punitive_parent`
+- [ ] Intervention debug zegt `reflection` terwijl de uiteindelijke cravingresponse directieve copingstappen gebruikt; traceer intervention-outputconsistentie

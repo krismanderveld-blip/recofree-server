@@ -3510,6 +3510,7 @@ export async function processMessage(
         epistemicComplexityScore: epistemicModelRoutingHints.epistemicComplexityScore ?? 0,
         responsibilityComplexityScore: epistemicModelRoutingHints.responsibilityComplexityScore ?? 0,
         medicalUncertainty: epistemicModelRoutingHints.medicalUncertainty ?? false,
+        safetyRelevant: epistemicModelRoutingHints.safetyRelevant ?? false,
         contradictionDetected: epistemicModelRoutingHints.contradictionDetected ?? false,
         mindReadingRisk: epistemicModelRoutingHints.mindReadingRisk ?? false,
         rescueRoleRisk: epistemicModelRoutingHints.rescueRoleRisk ?? false,

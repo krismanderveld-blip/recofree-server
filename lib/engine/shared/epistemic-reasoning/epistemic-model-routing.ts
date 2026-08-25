@@ -21,6 +21,7 @@ export interface EpistemicModelRoutingInput {
   epistemicComplexityScore?: number;
   responsibilityComplexityScore?: number;
   medicalUncertainty?: boolean;
+  safetyRelevant?: boolean;
   contradictionDetected?: boolean;
   mindReadingRisk?: boolean;
   rescueRoleRisk?: boolean;
@@ -55,6 +56,7 @@ export function resolveEpistemicModelRouting(input: EpistemicModelRoutingInput):
 
   // ── Safety scoring ──
   if ((input.crisisLevel ?? 0) >= 1) { score += 100; reasonCodes.push('crisis_active'); }
+  if (input.safetyRelevant) { score += 100; reasonCodes.push('safety_relevant'); }
   if (input.medicalUncertainty) { score += 25; reasonCodes.push('medical_uncertainty'); }
   if (input.contradictionDetected) { score += 40; reasonCodes.push('contradiction_detected'); }
 
@@ -81,6 +83,7 @@ export function resolveEpistemicModelRouting(input: EpistemicModelRoutingInput):
   let mustUseFullModel = false;
 
   if ((input.crisisLevel ?? 0) >= 1) mustUseFullModel = true;
+  if (input.safetyRelevant) mustUseFullModel = true;
   if (zone === 'red' || zone === 'purple') mustUseFullModel = true;
   if (input.medicalUncertainty && (input.responsibilityComplexityScore ?? 0) >= 40) mustUseFullModel = true;
   if (input.relapseRisk && (input.cravingLevel ?? 0) >= 7) mustUseFullModel = true;

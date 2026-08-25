@@ -12,6 +12,14 @@
 
 export type MinimalGptProxyContractVersion = 'minimal_gpt_proxy_v1';
 
+export const MINIMAL_GPT_PROXY_ALLOWED_MODELS = [
+  'gpt-4o',
+  'gpt-4o-mini',
+  'gpt-4o-2024-08-06',
+  'gpt-4.1',
+  'gpt-4.1-mini',
+] as const;
+
 export type MinimalGptPersona = 'kim' | 'elias';
 
 export type MinimalGptRole = 'user' | 'assistant';

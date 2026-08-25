@@ -10,6 +10,7 @@ import { buildSlimLivePayload } from '@/lib/ai/live-message-filter';
 import { ELIAS_DEFAULT_MODULE } from '@/lib/engine/elias/module-catalog';
 import { LocalDeviceTimeService } from "@/lib/core/time";
 import type { MinimalGptProxyRequest, MinimalGptProxyResponse } from '@/lib/ai/prompt/minimal-gpt-proxy-contract';
+import { buildMedicalSafetyFailureResponse } from '@/lib/ai/medical-safety-fallback';
 
 /**
  * OpenAIProvider — Routes through backend tRPC to OpenAI.
@@ -961,8 +962,14 @@ export class OpenAIProvider implements AIProvider {
         if (!minimalResponse.ok) {
           const errorText = await minimalResponse.text();
           const shortError = errorText.length > 200 ? errorText.substring(0, 200) + '...' : errorText;
+          const medicalSafetyFallback = buildMedicalSafetyFailureResponse({
+            message: gptPayload.message,
+            locale: context.locale,
+            medicalUncertainty: context.epistemicModelRoutingHints?.medicalUncertainty ?? false,
+            safetyRelevant: context.epistemicModelRoutingHints?.safetyRelevant ?? false,
+          });
           return {
-            response: `[DEBUG] Minimal proxy returned ${minimalResponse.status}.\n\nURL: ${minimalProxyUrl}\nDetails: ${shortError}\n\nPlease screenshot this and report it.`,
+            response: medicalSafetyFallback ?? `[DEBUG] Minimal proxy returned ${minimalResponse.status}.\n\nURL: ${minimalProxyUrl}\nDetails: ${shortError}\n\nPlease screenshot this and report it.`,
             advisoryEmotion: undefined,
             advisoryConfidence: undefined,
             tokenUsage: undefined,
@@ -972,8 +979,14 @@ export class OpenAIProvider implements AIProvider {
         const minimalData: MinimalGptProxyResponse = await minimalResponse.json();
 
         if (!minimalData.ok) {
+          const medicalSafetyFallback = buildMedicalSafetyFailureResponse({
+            message: gptPayload.message,
+            locale: context.locale,
+            medicalUncertainty: context.epistemicModelRoutingHints?.medicalUncertainty ?? false,
+            safetyRelevant: context.epistemicModelRoutingHints?.safetyRelevant ?? false,
+          });
           return {
-            response: `[DEBUG] Minimal proxy error: ${minimalData.errorCode}\n\n${minimalData.errorMessage}\n\nPlease screenshot this and report it.`,
+            response: medicalSafetyFallback ?? `[DEBUG] Minimal proxy error: ${minimalData.errorCode}\n\n${minimalData.errorMessage}\n\nPlease screenshot this and report it.`,
             advisoryEmotion: undefined,
             advisoryConfidence: undefined,
             tokenUsage: undefined,
@@ -1097,9 +1110,15 @@ export class OpenAIProvider implements AIProvider {
       // Show the actual error + URL so we can debug on device
       const errorMessage = (error as Error)?.message ?? 'Unknown error';
       const apiUrl = getApiBaseUrl();
+      const medicalSafetyFallback = buildMedicalSafetyFailureResponse({
+        message: context.currentMessage,
+        locale: context.locale,
+        medicalUncertainty: context.epistemicModelRoutingHints?.medicalUncertainty ?? false,
+        safetyRelevant: context.epistemicModelRoutingHints?.safetyRelevant ?? false,
+      });
 
       return {
-        response: `[DEBUG] Connection failed.\n\nURL: ${apiUrl}/api/gpt-proxy\nError: ${errorMessage}\n\nPlease screenshot this and report it.`,
+        response: medicalSafetyFallback ?? `[DEBUG] Connection failed.\n\nURL: ${apiUrl}/api/gpt-proxy\nError: ${errorMessage}\n\nPlease screenshot this and report it.`,
         advisoryEmotion: undefined,
         advisoryConfidence: undefined,
         tokenUsage: undefined,
