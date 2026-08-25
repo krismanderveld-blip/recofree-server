@@ -3033,3 +3033,8 @@
 - [x] Simuleer Kim K05/post-processing: `Ik wil gewoon zeggen dat hij zijn plan moet trekken en dat ik er klaar mee ben.`
 - [x] Controleer per scenario: persona, module/zone/risk, nano themes, geselecteerde schemas/modes, safety/epistemic flags, modeltier/model/reason, minimal-proxycontract, Railway-response/fallback, store:false, outputtekst en persona-separatie
 - [x] Rapporteer per scenario `PASS / FAIL / BLOCKED` met exacte eerste falende grens; geen APK aanvragen vóór alle lokale P0/P1’s zijn opgelost
+
+## Actief — Post-push Railway-verificatie vóór finale APK
+- [x] Verifieer of Railway deployment voor GitHub commit `16c7bd9` succesvol is en welke commit productie werkelijk draait
+- [x] Controleer productie `/api/health`, nano en minimal-proxy zonder raw memory en met `store:false`
+- [x] Rapporteer `APK BUILD ELIGIBLE` versus blocker en geef het exacte finale deviceprotocol
