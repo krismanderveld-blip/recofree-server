@@ -2965,3 +2965,26 @@
 - [x] Voeg regressietests en release-gate guards toe die Manus-domeinen in productie-API-routing blokkeren
 - [x] Verifieer minimal-proxy endpoint, `store:false`, GitHub main, Railway health en APK-ready debugoutput
 - [x] Rapporteer de exacte root cause en waarom de eerdere Railway-only scan deze build/runtimeconfig miste
+
+## P0/P1 — Herstel verloren afspraken en brede pre-APK fault-boundary audit
+- [x] Reconstrueer uit overgebleven chatcontext en Git-history vanaf wanneer TODO- en auditafspraken verdwenen
+- [x] Vergelijk beloofde taken, historische TODO-versies, checkpoints en huidige `todo.md`; classificeer ieder verschil als verloren, uitgevoerd, achterhaald of nog open
+- [x] Herstel de brede parallelle fault-boundary matrix met zeven onafhankelijke lagen: native client/Android, deterministic engine/routing, geheugen/opslag, prompts/contracts, Railway/minimal-proxy, UI/screens/i18n/exports en release-gate/testinfrastructuur
+- [x] Laat elke laag onafhankelijk rapporteren: bestaande tests, ontbrekende tests, wiring ja/nee, silent-failure-risico's, build-time versus runtime-risico's, device-only risico's en P0/P1/P2
+- [x] Voeg een verplichte pre-APK build-configlaag toe die buildsecrets, Expo-public variabelen, gegenereerde config, URL-resolvers, feature flags, ABI-profiel en commit/buildnummer simuleert
+- [x] Voeg een verplichte negative-route matrix toe: Manus-domain injectie, verkeerde backend, legacy fallback, ontbrekende secret, stale config, malformed response en Railway-unavailable
+- [x] Consolideer alle zeven laagrapporten in één truth table: code aanwezig, test aanwezig, build gesimuleerd, runtime bewezen, Railway live, device bewezen en resterende actie
+- [x] Blokkeer `APK READY: YES` wanneer één P0/P1-laag niet bewezen is; unit-tests alleen mogen nooit meer voldoende zijn
+- [x] Maak backups semantisch: naast Git/files ook expliciete eisen, beslissingen, verboden architectuurpaden, open TODO’s en device-only observaties opnemen
+- [x] Rapporteer exact welke eerdere “volledige scan”, “backup” en “APK ready” claims onvolledig waren en waarom
+
+## P1/P2 — Acties uit de wide-range foutgrensmatrix
+- [ ] Bouw en voer één gecorrigeerde APK-deviceacceptatiematrix uit op exact dezelfde commit: Railway-host, Elias, Kim, refresh, ClinicalCtx, opslag en export
+- [ ] Voeg een embedded buildattest toe: commit hash, buildnummer, API-host en actieve feature flags zichtbaar in technische debug
+- [ ] Audit en sluit legacy Railway-routes af na bewezen minimale APK-flow; geen verwijdering vóór dependencybewijs
+- [ ] Voeg degradatiecounters/debugredenen toe voor nano-timeout, sessiesamenvattingfallback, memory write failure en corrupte storage recovery
+- [ ] Voeg gerichte tests toe voor Day Planning, GDPR Consent en Proposal History
+- [ ] Voeg native opslag-race/corruptie deviceprotocol toe voor AsyncStorage en SessionMemoryCache
+- [ ] Audit en verwijder na bewijs ongebruikte template OAuth/Data API/image/voice/notification helpers met Manus-domeinen
+- [ ] Herstel productbeslissing over de altijd terugkerende twee reflectievragen; bepaal enginevoorwaarde en regressietest
+- [ ] Herstel iOS- en testgroepvoorbereidingschecklist na de serverwissel

@@ -121,16 +121,36 @@ UNCOMMITTED=$(git status --porcelain 2>/dev/null | wc -l || echo "0")
 COMMIT=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
 echo "  Commit: $COMMIT"
 echo "  Uncommitted files: $UNCOMMITTED"
+if [ "${ALLOW_DIRTY:-0}" != "1" ] && [ "$UNCOMMITTED" -ne 0 ]; then
+  echo "  FAIL: working tree is not clean"
+  PASS=false
+  BLOCKERS="$BLOCKERS\n- Git working tree has $UNCOMMITTED uncommitted files"
+fi
+
+# 9. Seven-layer wide-range pre-APK gate
+echo ">>> GATE 9: Wide-range pre-APK fault-boundary matrix..."
+WR_OUTPUT=$(ALLOW_DIRTY="${ALLOW_DIRTY:-0}" bash scripts/wide-range-pre-apk-gate.sh 2>&1)
+WR_STATUS=$?
+if [ "$WR_STATUS" -ne 0 ]; then
+  echo "  FAIL: wide-range gate exited with status $WR_STATUS"
+  echo "$WR_OUTPUT" | strip_ansi | tail -60
+  PASS=false
+  BLOCKERS="$BLOCKERS\n- Wide-range pre-APK gate failed (exit $WR_STATUS)"
+else
+  echo "  PASS: seven fault-boundary layers"
+fi
 
 # Summary
 echo ""
 echo "=========================================="
 if [ "$PASS" = true ]; then
   echo "  RELEASE GATE: PASS"
-  echo "  APK READY: YES"
+  echo "  APK BUILD ELIGIBLE: YES"
+  echo "  DEVICE VERIFIED: NO"
 else
   echo "  RELEASE GATE: FAIL"
-  echo "  APK READY: NO"
+  echo "  APK BUILD ELIGIBLE: NO"
+  echo "  DEVICE VERIFIED: NO"
 fi
 echo "=========================================="
 echo ""
@@ -175,11 +195,14 @@ cat > "$REPORT" << EOF
 | Integration Tests | $INT_PASS |
 | store:false (minimal) | $MINIMAL_STORE |
 | store:false (llm/nano/legacy frozen) | $LLM_STORE / $NANO_STORE / $AI_CHAT_STORE |
-| Lockfile | $([ "$UNCOMMITTED" -eq 0 ] && echo "clean" || echo "$UNCOMMITTED uncommitted") |
+| Git working tree | $([ "$UNCOMMITTED" -eq 0 ] && echo "clean" || echo "$UNCOMMITTED uncommitted") |
+| Wide-range fault-boundary gate | $([ "$WR_STATUS" -eq 0 ] && echo "PASS" || echo "FAIL") |
 
 ## VERDICT
 
-$([ "$PASS" = true ] && echo "**PASS — APK READY: YES**" || echo "**FAIL — APK READY: NO**")
+$([ "$PASS" = true ] && echo "**PASS — APK BUILD ELIGIBLE: YES**" || echo "**FAIL — APK BUILD ELIGIBLE: NO**")
+
+> Device verification remains a separate post-build gate. Local tests do not prove APK readiness.
 
 $([ -n "$BLOCKERS" ] && echo -e "## BLOCKERS\n$BLOCKERS" || echo "No blockers.")
 
@@ -188,3 +211,8 @@ EOF
 
 echo ""
 echo "Report written to: $REPORT"
+
+if [ "$PASS" = true ]; then
+  exit 0
+fi
+exit 1
