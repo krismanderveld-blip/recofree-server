@@ -2988,3 +2988,12 @@
 - [ ] Audit en verwijder na bewijs ongebruikte template OAuth/Data API/image/voice/notification helpers met Manus-domeinen
 - [ ] Herstel productbeslissing over de altijd terugkerende twee reflectievragen; bepaal enginevoorwaarde en regressietest
 - [ ] Herstel iOS- en testgroepvoorbereidingschecklist na de serverwissel
+
+## Actief — Deviceacceptatie en legacy/Manus-helperaudit
+- [x] Maak een commitgebonden deviceacceptatieformulier voor Railway-host, Elias, Kim, Gegevens verversen, ClinicalCtx, lokale opslag en behandelaar-export
+- [x] Voer alle lokaal bewijsbare acceptatiechecks uit en markeer fysieke APK-observaties expliciet als `DEVICE_REQUIRED`
+- [x] Inventariseer iedere geregistreerde legacy Railway-route met handler, importketen, clientconsument, externe bereikbaarheid en klinische verantwoordelijkheid
+- [x] Inventariseer template OAuth/Data API/image/voice/notification helpers met Manus-domeinen en classificeer per helper: actief, development-only, indirect, of bewezen ongebruikt
+- [x] Zoek dynamische imports, string-routes, tRPC-procedures en build-time injecties zodat statische `grep` geen foutieve verwijderbeslissing veroorzaakt
+- [x] Maak een beslismatrix `KEEP / FREEZE / BLOCK_AFTER_DEVICE_PROOF / SAFE_TO_REMOVE_LATER`; verwijder of blokkeer niets in deze audit
+- [ ] Draai TypeScript, volledige release gate en wide-range gate; bewaar checkpoint en lever het exacte deviceprotocol

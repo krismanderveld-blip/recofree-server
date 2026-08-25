@@ -1,0 +1,109 @@
+{
+  "results": [
+    {
+      "input": "1 — Legacy Railway chat-, engine-, extraction-, backpack-, greeting-, VSP/KERP- en tRPC-routes",
+      "output": {
+        "category": "Category 1 — Legacy Railway chat-, engine-, extraction-, backpack-, greeting-, VSP/KERP- en tRPC-routes",
+        "classification": "KEEP, SAFE_TO_REMOVE_LATER (for shadow engine code)",
+        "clinical_or_memory_responsibility": "De AI-chat en session-greeting modules bevatten logica voor het verwerken van gebruikersinput op basis van eerdere chatgeschiedenis, wat duidt op geheugenverantwoordelijkheid. Backpack-extractor verwerkt expliciet thema's en rugzakinhoud die de klinische toestand van de gebruiker representeren.",
+        "confidence": "high",
+        "evidence_summary": "De tRPC routes (`ai.chat`, `ai.extractEntities`, `ai.engineProcess`, `ai.generateEigenRegiePlan`, `ai.analyzeBackpack`) zijn geregistreerd in `server/routers.ts` en worden via `server/_core/index.ts` als Express middleware blootgesteld. Expliciete express routes zoals `/api/backpack/analyze`, `/api/backpack/vsp-analyze`, `/api/vsp/parse-document`, `/api/session-greeting` worden direct aangeroepen via `fetch` vanuit de client-side libs.",
+        "inventory": "- server/routers.ts: ai.chat, ai.extractEntities, ai.engineProcess, ai.generateEigenRegiePlan, ai.analyzeBackpack\n- server/_core/index.ts: registerBackpackAnalysisRoute, registerVspBackpackAnalysisRoute, registerSessionGreetingRoute, registerEngineProcessRoute, etc.\n- lib/backpack-analysis/client.ts: call to /api/backpack/analyze\n- lib/backpack-extractor/vsp-backpack-client.ts: call to /api/backpack/vsp-analyze\n- lib/features/greetingV4/greetingV4.ts: call to /api/session-greeting\n- lib/features/backpackWizard/backpack-document-upload-client.ts: calls to /api/vsp/extract-text and /api/backpack/parse-document",
+        "manus_dependencies": "None",
+        "runtime_wiring": "Alle tRPC procedures in `server/routers.ts` zijn gekoppeld via `appRouter` en blootgesteld via `createExpressMiddleware` in `server/_core/index.ts`. Directe API calls via `fetch` worden gemaakt vanuit client-modules zoals `lib/backpack-analysis/client.ts` naar `/api/backpack/analyze` en `lib/features/sessionGreeting/sessionGreetingEngine.ts` naar `/api/session-greeting`.",
+        "tests": "- tests/ai-chat.test.ts\n- tests/crisis-fallback-on-network-failure.test.ts"
+      },
+      "error": ""
+    },
+    {
+      "input": "2 — OAuth/auth/session templatehelpers en Manus OAuth endpoints",
+      "output": {
+        "category": "2 — OAuth/auth/session templatehelpers and Manus OAuth endpoints",
+        "classification": "KEEP",
+        "clinical_or_memory_responsibility": "No clinical logic or memory responsibility found. The code handles standard OAuth flows, session management, and user authentication using Manus SDK and JWT tokens.",
+        "confidence": "high",
+        "evidence_summary": "The OAuth and auth endpoints (`/api/oauth/callback`, `/api/oauth/mobile`, `/api/auth/logout`, `/api/auth/me`, `/api/auth/session`) are registered in `server/_core/oauth.ts` and actively imported in `server/_core/index.ts`. They are consumed by the frontend app via hooks and API calls (e.g., `lib/_core/api.ts`, `app/_layout.tsx`). The Manus SDK is used for authentication (`server/_core/sdk.ts`).",
+        "inventory": "- server/_core/oauth.ts: registerOAuthRoutes, /api/oauth/callback, /api/oauth/mobile, /api/auth/logout, /api/auth/me, /api/auth/session\n- server/_core/index.ts: registerOAuthRoutes (import and usage)\n- server/_core/sdk.ts: OAuthService, SDKServer, exchangeCodeForToken, getUserInfo, createSessionToken, verifySession, authenticateRequest\n- lib/_core/api.ts: /api/oauth/mobile (fetch call)\n- lib/_core/auth.ts: SESSION_TOKEN_KEY, USER_INFO_KEY\n- constants/oauth.ts: getApiBaseUrl, /oauth/callback\n- app/_layout.tsx: oauth/callback route\n- app/(tabs)/chat.tsx: getApiBaseUrl\n- lib/ai/openai-provider.ts: getApiBaseUrl\n- lib/ai/preprocessor.ts: getApiBaseUrl\n- lib/backpack-analysis/client.ts: getApiBaseUrl\n- lib/backpack-analysis/schema-mode-trigger.ts: getApiBaseUrl\n- lib/backpack-extractor/client.ts: getApiBaseUrl\n- lib/backpack-extractor/section-analysis-service.ts: getApiBaseUrl\n- lib/backpack-extractor/vsp-backpack-client.ts: getApiBaseUrl",
+        "manus_dependencies": "- Manus SDK (`OAuthService`, `SDKServer`) for authentication and token exchange (Active)\n- Manus OAuth API endpoints (Active)",
+        "runtime_wiring": "- **Registered and externally reachable**: Yes, endpoints like `/api/oauth/callback`, `/api/oauth/mobile`, `/api/auth/logout`, `/api/auth/me`, and `/api/auth/session` are registered via `registerOAuthRoutes` in `server/_core/oauth.ts` and called in `server/_core/index.ts`.\n- **Direct client consumer**: Yes, the mobile app consumes `/api/oauth/mobile` in `lib/_core/api.ts` and handles redirects to `/oauth/callback` in `constants/oauth.ts` and `app/_layout.tsx`.\n- **Indirect runtime consumer**: Yes, `authenticateRequest` in `server/_core/sdk.ts` is used by `/api/auth/me` and `/api/auth/session`.\n- **Development-only**: No, these are core authentication features used in production.",
+        "tests": "- tests/auth.logout.test.ts"
+      },
+      "error": ""
+    },
+    {
+      "input": "3 — Data API, owner notification en algemene externe-service templatehelpers",
+      "output": {
+        "category": "categorie 3 — Data API, owner notification en algemene externe-service templatehelpers",
+        "classification": "SAFE_TO_REMOVE_LATER",
+        "clinical_or_memory_responsibility": "Er is geen sprake van klinische logica of geheugenverantwoordelijkheid. Deze bestanden bevatten uitsluitend generieke templatehelpers voor externe services, zonder enige domeinspecifieke logica of statusbeheer voor de RecoFree-applicatie.",
+        "confidence": "high",
+        "evidence_summary": "De bestanden `server/_core/dataApi.ts`, `server/_core/imageGeneration.ts` en `server/_core/voiceTranscription.ts` worden nergens in de codebase aangeroepen, behalve in commentaar en documentatie (`server/README.md`). `server/_core/notification.ts` wordt geëxporteerd via `server/_core/systemRouter.ts` (de `trpc.system.notifyOwner` route), maar een globale zoekopdracht toont aan dat er geen enkele client-aanroep is naar deze route binnen de RecoFree frontend. Alle helpers vereisen `BUILT_IN_FORGE_API_URL` en `BUILT_IN_FORGE_API_KEY` (Manus Forge afhankelijkheid). Aangezien er geen directe of indirecte consumers zijn en het slechts template boilerplate betreft, zijn ze veilig te verwijderen.",
+        "inventory": "- `server/_core/dataApi.ts` (export `callDataApi`)\n- `server/_core/imageGeneration.ts` (export `generateImage`)\n- `server/_core/voiceTranscription.ts` (export `transcribeAudio`)\n- `server/_core/notification.ts` (export `notifyOwner`)\n- `server/_core/systemRouter.ts` (export `systemRouter` met `notifyOwner` route)",
+        "manus_dependencies": "- `BUILT_IN_FORGE_API_URL` (Actief vereist voor dataApi, notification, imageGeneration, voiceTranscription)\n- `BUILT_IN_FORGE_API_KEY` (Actief vereist voor dataApi, notification, imageGeneration, voiceTranscription)\n- Manus Notification Service (voor notifyOwner)\n- Manus Forge / WebDevService (voor dataApi, imageGeneration, voiceTranscription)",
+        "runtime_wiring": "| Bestand | Symbool | Registratie / Route | Directe Client Consumer | Indirecte Consumer | Bereikbaarheid |\n| :--- | :--- | :--- | :--- | :--- | :--- |\n| `server/_core/dataApi.ts` | `callDataApi` | Geen (losse helper) | Nee | Nee | Niet bereikbaar |\n| `server/_core/imageGeneration.ts` | `generateImage` | Geen (losse helper) | Nee | Nee | Niet bereikbaar |\n| `server/_core/voiceTranscription.ts` | `transcribeAudio` | Geen (losse helper) | Nee | Nee | Niet bereikbaar |\n| `server/_core/notification.ts` | `notifyOwner` | `trpc.system.notifyOwner` via `server/_core/systemRouter.ts` -\u003e `server/routers.ts` | Nee | Nee | Bereikbaar via tRPC (`adminProcedure`), maar ongebruikt in codebase |",
+        "tests": "- Geen testdekking gevonden voor deze templatehelpers.\n- Ontbrekende tests: Unit tests voor API calls en error handling in `dataApi`, `imageGeneration`, `voiceTranscription`, en `notification`."
+      },
+      "error": ""
+    },
+    {
+      "input": "4 — Image generation, upload/file-storage en media templatehelpers",
+      "output": {
+        "category": "Category 4 — Image generation, upload/file-storage en media templatehelpers",
+        "classification": "SAFE_TO_REMOVE_LATER",
+        "clinical_or_memory_responsibility": "Deze bestanden bevatten geen klinische logica of geheugenverantwoordelijkheid. Ze zijn generieke wrappers voor externe API-diensten (zoals OpenAI's Whisper of de interne Forge API voor image generation en storage). Ze hebben geen interactie met patiëntendata-opslag of regulatie-engines binnen de applicatie.",
+        "confidence": "high",
+        "evidence_summary": "De bestanden in deze categorie zijn puur development templates/helpers. `generateImage`, `transcribeAudio`, `storagePut` en `storageGet` worden nergens in de daadwerkelijke broncode aangeroepen, behalve in `README.md` documentatie of als voorbeeld in de comments van de bestanden zelf. Er zijn geen exports die ergens anders worden geïmporteerd of gebruikt.",
+        "inventory": "- `server/_core/imageGeneration.ts`: `generateImage`\n- `server/_core/voiceTranscription.ts`: `transcribeAudio`\n- `server/storage.ts`: `storagePut`, `storageGet`",
+        "manus_dependencies": "- `BUILT_IN_FORGE_API_URL` (Forge API) - inactief\n- `BUILT_IN_FORGE_API_KEY` (Forge API) - inactief\n- `v1/storage/upload` (Forge API Storage Proxy) - inactief\n- `v1/audio/transcriptions` (Forge API Whisper proxy) - inactief\n- `images.v1.ImageService/GenerateImage` (Forge API Image Generation) - inactief",
+        "runtime_wiring": "| File | Symbol | Registration | Consumers | Reachability |\n| :--- | :--- | :--- | :--- | :--- |\n| `server/_core/imageGeneration.ts` | `generateImage` | None | None | Not reachable |\n| `server/_core/voiceTranscription.ts` | `transcribeAudio` | None | None | Not reachable |\n| `server/storage.ts` | `storagePut` | None | `generateImage` | Not reachable |\n| `server/storage.ts` | `storageGet` | None | None | Not reachable |",
+        "tests": "- Geen tests gevonden voor deze bestanden. Ontbrekende tests voor: `imageGeneration.ts`, `voiceTranscription.ts`, `storage.ts`."
+      },
+      "error": ""
+    },
+    {
+      "input": "5 — Voice, speech-to-text, text-to-speech en audio templatehelpers",
+      "output": {
+        "category": "Categorie 5 — Voice, speech-to-text, text-to-speech en audio templatehelpers",
+        "classification": "SAFE_TO_REMOVE_LATER",
+        "clinical_or_memory_responsibility": "Er is geen klinische logica of geheugenverantwoordelijkheid. Het bestand `server/_core/voiceTranscription.ts` is puur een wrapper om een audiobestand op te halen, om te zetten en naar een externe Whisper API (Forge) te sturen voor transcriptie. Er zijn geen modules of klinische flows die afhankelijk zijn van deze functie.",
+        "confidence": "high",
+        "evidence_summary": "`server/_core/voiceTranscription.ts` bevat een export `transcribeAudio` maar wordt nergens in de codebase geïmporteerd of gebruikt behalve in commentaar en de `server/README.md`. De `ROADMAP_COVERAGE_REPORT.md` bevestigt dit: \"Server heeft voiceTranscription.ts maar niet geïntegreerd in app flow\". Er is geen sprake van directe of indirecte clientconsumptie, en het is niet geregistreerd in een tRPC router of andere serverroute.",
+        "inventory": "- `server/_core/voiceTranscription.ts:transcribeAudio`\n- `server/_core/voiceTranscription.ts:getFileExtension`\n- `server/_core/voiceTranscription.ts:getLanguageName`",
+        "manus_dependencies": "- Forge API (via `ENV.forgeApiUrl` en `ENV.forgeApiKey`) voor `v1/audio/transcriptions` met model `whisper-1`. Deze is momenteel niet actief of in gebruik omdat de functie niet wordt aangeroepen.",
+        "runtime_wiring": "- **Geregistreerd en extern bereikbaar**: Nee. Het bestand staat in de map `_core` maar is niet gekoppeld aan `server/routers.ts` of andere routes (enkel als commentaar-voorbeeld in de code).\n- **Directe clientconsument**: Nee.\n- **Indirecte runtimeconsument**: Nee.\n- **Development-only**: Nee, het is bedoeld voor productie, maar simpelweg ongebruikt (dead code).",
+        "tests": "- Geen tests gevonden voor `voiceTranscription.ts`."
+      },
+      "error": ""
+    },
+    {
+      "input": "6 — Push notification, notification scheduler en device-token templatehelpers",
+      "output": {
+        "category": "Push notification, notification scheduler en device-token templatehelpers",
+        "classification": "KEEP (Local notifications), SAFE_TO_REMOVE_LATER (Remote push/device tokens)",
+        "clinical_or_memory_responsibility": "De lokale notificaties in `dayStructure` en `eigenRegie` hebben klinische verantwoordelijkheid om de gebruiker te herinneren aan zijn dagstructuur en eigen regie, wat essentieel is voor de werking van de app als ondersteunend middel. De `notifyOwner` server helper heeft geen directe klinische verantwoordelijkheid, maar dient voor operationele alerts naar de beheerder. Er is geen geheugenverantwoordelijkheid.",
+        "confidence": "high",
+        "evidence_summary": "- **Local Notifications**: `expo-notifications` wordt intensief gebruikt voor lokale schema's in `lib/features/dayStructure/notification-service.ts` (weekly triggers) en `lib/features/eigenRegie/notification-service.ts` (daily triggers). Deze zijn actief en bereikbaar via UI componenten.\n- **Push Notifications/Device Tokens**: Er is geen enkele referentie gevonden naar `getExpoPushTokenAsync`, `getDevicePushTokenAsync`, of `deviceToken` in de codebase. Er worden geen remote push tokens opgevraagd of opgeslagen.\n- **Server Notifications**: `server/_core/notification.ts` implementeert `notifyOwner` via een externe API (`webdevtoken.v1.WebDevService/SendNotification`), wat via `trpc.system.notifyOwner` beschikbaar is, maar niet actief wordt aangeroepen vanuit de client codebase (behalve in documentatie).",
+        "inventory": "- `lib/features/dayStructure/notification-service.ts`: `scheduleAllNotifications`, `cancelAllNotifications`, `scheduleBlockNotification`\n- `lib/features/eigenRegie/notification-service.ts`: `scheduleReminder`, `cancelReminder`\n- `server/_core/notification.ts`: `notifyOwner`\n- `server/_core/systemRouter.ts`: `systemRouter.notifyOwner`\n- `components/profile/NotificationPermissionCard.tsx`: UI component voor permissies",
+        "manus_dependencies": "- `webdevtoken.v1.WebDevService/SendNotification`: Actief, aangeroepen via `ENV.forgeApiUrl` in `server/_core/notification.ts` voor de `notifyOwner` functie.\n- `ENV.forgeApiKey`: Actief, gebruikt voor authenticatie bij de notificatie service.",
+        "runtime_wiring": "| File | Symbol | Wiring Evidence |\n|---|---|---|\n| `lib/features/dayStructure/notification-service.ts` | `scheduleAllNotifications` | Aangeroepen in `lib/features/dayStructure/day-structure-service.ts` |\n| `lib/features/eigenRegie/notification-service.ts` | `scheduleReminder` | Aangeroepen in eigen bestand en via `enableReminder` |\n| `server/_core/notification.ts` | `notifyOwner` | Geregistreerd in `server/_core/systemRouter.ts` onder `notifyOwner` |\n| `server/_core/systemRouter.ts` | `systemRouter` | Geregistreerd in `server/routers.ts` onder `system` |",
+        "tests": "- `__tests__/daystructure-persistence.test.ts`\n- `__tests__/eigenRegie/eigenRegieInjection.test.ts`\n(Geen specifieke notificatie tests gevonden)"
+      },
+      "error": ""
+    },
+    {
+      "input": "7 — Globale cross-check van dynamische imports, route strings, package scripts, env/build injecties en indirecte consumenten over alle categorieën",
+      "output": {
+        "category": "Categorie 7",
+        "classification": "KEEP",
+        "clinical_or_memory_responsibility": "Categorie 7 beheert de vitale proxy-routing (`minimal-gpt-proxy`) die `store:false` afdwingt bij OpenAI, wat cruciaal is voor medische gegevensbescherming. Het controleert feature flags (`EXPO_PUBLIC_ENABLE_NANO_INTERPRET`, `EXPO_PUBLIC_ENABLE_CLINICAL_MEMORY_DISTILLATION`) die bepalen of klinische logica (Nano Interpret, CMD) actief is op het device. De routing strings zorgen dat de client (vooral de APK) correct communiceert met de veilige backend.",
+        "confidence": "high",
+        "evidence_summary": "1. `server/routers.ts` en `server/_core/trpc.ts` bevatten de TRPC registraties.\n2. `constants/oauth.ts` forceert `PRODUCTION_API_URL` voor non-web clients.\n3. `server/minimal-gpt-proxy.ts` en `server/ai-chat.ts` dwingen `store: false` af in de OpenAI payloads.\n4. `scripts/release-gate.sh` valideert `store:false` pre-build.\n5. Feature flags zoals `EXPO_PUBLIC_ENABLE_MINIMAL_GPT_PROXY` sturen de client-side pipeline aan in `lib/rugzak/pipeline.ts`.",
+        "inventory": "- /home/ubuntu/recofree/server/routers.ts:appRouter\n- /home/ubuntu/recofree/server/minimal-gpt-proxy.ts:minimalGptProxy\n- /home/ubuntu/recofree/server/ai-chat.ts:generateAIResponse\n- /home/ubuntu/recofree/lib/ai/openai-provider.ts:mirrorEnabled\n- /home/ubuntu/recofree/lib/rugzak/pipeline.ts:enableNanoInterpret\n- /home/ubuntu/recofree/scripts/release-gate.sh:store_false_check\n- /home/ubuntu/recofree/constants/oauth.ts:apiBaseUrl",
+        "manus_dependencies": "- Railway productie backend (PRODUCTION_API_URL): Actief\n- OpenAI API (`OPENAI_API_KEY`): Actief (store:false geforceerd)\n- Geen directe Manus/Forge API dependency (Forge apiKey wordt geladen maar in de proxy wordt OpenAI direct aangeroepen).",
+        "runtime_wiring": "De backend routes (appRouter) in `routers.ts` en `systemRouter.ts` zijn geregistreerd via TRPC (`publicProcedure`, `protectedProcedure`). De `minimal-gpt-proxy` wordt runtime aangeroepen via HTTP fetch. De client routeert via `constants/oauth.ts` dynamisch naar de Railway productie-URL voor native/device clients. Build/env variabelen (`EXPO_PUBLIC_ENABLE_MINIMAL_GPT_PROXY`, `EXPO_PUBLIC_ENABLE_NANO_INTERPRET`) bepalen dynamisch de pipeline op runtime. Dynamische imports in tests (zoals `require('fs')`) draaien alleen lokaal. Geen kwetsbare dynamische imports op device, afgezien van statische expo-modules. Indirecte consumenten via TRPC clients en proxy consumers.",
+        "tests": "- `tests/wide-range-pre-apk-gate.test.ts`\n- `tests/ai-chat.test.ts`\n- `tests/openai-key.test.ts`\n- `tests/pipeline/nanoInterpretFeatureFlag.test.ts`\n- `tests/prompt/minimalProxyBothPersonasClientFlow.test.ts`\n- `tests/prompt/minimalProxyClientSwitch.test.ts`"
+      },
+      "error": ""
+    }
+  ]
+}
