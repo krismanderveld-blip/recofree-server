@@ -2,7 +2,7 @@
 # RECOFREE RELEASE GATE — Automated pre-publish validation
 # Run: npm run recofree:release-gate
 
-REPORT="docs/release-gate/RECOFREE_RELEASE_GATE_REPORT.md"
+REPORT="${RECOFREE_RELEASE_GATE_REPORT:-docs/release-gate/RECOFREE_RELEASE_GATE_REPORT.md}"
 PASS=true
 BLOCKERS=""
 WARNINGS=""

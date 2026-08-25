@@ -2,7 +2,7 @@
 
 set -uo pipefail
 
-REPORT="docs/release-gate/RECOFREE_WIDE_RANGE_PRE_APK_REPORT.md"
+REPORT="${RECOFREE_WIDE_RANGE_REPORT:-docs/release-gate/RECOFREE_WIDE_RANGE_PRE_APK_REPORT.md}"
 EXPECTED_RAILWAY_URL="https://railwayappdashboard-production.up.railway.app"
 PASS=true
 BLOCKERS=""
