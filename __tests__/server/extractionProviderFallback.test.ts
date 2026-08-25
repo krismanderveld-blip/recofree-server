@@ -17,24 +17,24 @@ vi.mock('@/server/_core/env', () => ({
   ENV: mockEnv,
 }));
 
-describe('Extraction Provider Fallback', () => {
+describe('Extraction Provider — Railway direct OpenAI only', () => {
   beforeEach(() => {
     mockEnv.forgeApiKey = '';
     mockEnv.forgeApiUrl = '';
     mockEnv.openaiApiKey = '';
   });
 
-  it('1. Forge key present → uses Forge', async () => {
+  it('1. Forge key without OpenAI key is ignored', async () => {
     mockEnv.forgeApiKey = 'forge-test-key-123';
     mockEnv.forgeApiUrl = 'https://forge.example.com';
     const { resolveProvider } = await import('@/server/_core/llm');
     const result = resolveProvider();
-    expect(result.provider).toBe('forge');
-    expect(result.apiUrl).toContain('forge.example.com');
-    expect(result.apiKey).toBe('forge-test-key-123');
+    expect(result.provider).toBe('none');
+    expect(result.apiUrl).toBe('');
+    expect(result.apiKey).toBe('');
   });
 
-  it('2. Forge missing + OPENAI_API_KEY present → uses OpenAI', async () => {
+  it('2. OPENAI_API_KEY present → uses direct OpenAI', async () => {
     mockEnv.forgeApiKey = '';
     mockEnv.openaiApiKey = 'sk-test-openai-key';
     const { resolveProvider } = await import('@/server/_core/llm');
@@ -44,7 +44,7 @@ describe('Extraction Provider Fallback', () => {
     expect(result.apiKey).toBe('sk-test-openai-key');
   });
 
-  it('3. Forge missing + OpenAI missing → structured failure, provider=none', async () => {
+  it('3. OpenAI missing → structured failure, provider=none', async () => {
     mockEnv.forgeApiKey = '';
     mockEnv.openaiApiKey = '';
     const { resolveProvider } = await import('@/server/_core/llm');
@@ -59,10 +59,10 @@ describe('Extraction Provider Fallback', () => {
     mockEnv.openaiApiKey = '';
     // Re-import to get fresh module
     const llm = await import('@/server/_core/llm');
-    expect(() => llm.invokeLLM({ messages: [] })).rejects.toThrow('LLM_PROVIDER_MISSING');
+    await expect(llm.invokeLLM({ messages: [] })).rejects.toThrow('LLM_PROVIDER_MISSING');
   });
 
-  it('5. Forge key with whitespace only → falls through to OpenAI', async () => {
+  it('5. Forge key with whitespace does not affect OpenAI', async () => {
     mockEnv.forgeApiKey = '   ';
     mockEnv.openaiApiKey = 'sk-real-key';
     const { resolveProvider } = await import('@/server/_core/llm');
@@ -70,13 +70,15 @@ describe('Extraction Provider Fallback', () => {
     expect(result.provider).toBe('openai');
   });
 
-  it('6. Forge priority: both present → uses Forge', async () => {
+  it('6. Both keys present → still uses OpenAI', async () => {
     mockEnv.forgeApiKey = 'forge-key';
     mockEnv.forgeApiUrl = 'https://forge.test.com';
     mockEnv.openaiApiKey = 'sk-openai-key';
     const { resolveProvider } = await import('@/server/_core/llm');
     const result = resolveProvider();
-    expect(result.provider).toBe('forge');
+    expect(result.provider).toBe('openai');
+    expect(result.apiUrl).toBe('https://api.openai.com/v1/chat/completions');
+    expect(result.apiKey).toBe('sk-openai-key');
   });
 
   it('7. OpenAI fallback URL is always api.openai.com', async () => {
@@ -91,7 +93,7 @@ describe('Extraction Provider Fallback', () => {
     const { resolveProvider } = await import('@/server/_core/llm');
     const result = resolveProvider();
     // Type check: provider is one of the expected values
-    expect(['forge', 'openai', 'none']).toContain(result.provider);
+    expect(['openai', 'none']).toContain(result.provider);
     expect(typeof result.apiUrl).toBe('string');
     expect(typeof result.apiKey).toBe('string');
   });

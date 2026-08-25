@@ -202,10 +202,10 @@ const normalizeToolChoice = (
 };
 
 // ── Provider Resolution ────────────────────────────────────────────────────
-// Priority: 1. Forge (BUILT_IN_FORGE_API_KEY) → 2. OpenAI (OPENAI_API_KEY)
-// If neither is available, throw structured error (no silent null).
+// Railway is the only production backend and uses OPENAI_API_KEY directly.
+// Forge/Manus credentials must never influence extraction provider selection.
 
-export type ExtractionProvider = 'forge' | 'openai' | 'none';
+export type ExtractionProvider = 'openai' | 'none';
 
 export interface ExtractionDebugStatus {
   extractionProvider: ExtractionProvider;
@@ -214,14 +214,6 @@ export interface ExtractionDebugStatus {
 }
 
 export function resolveProvider(): { provider: ExtractionProvider; apiUrl: string; apiKey: string } {
-  // Priority 1: Forge
-  if (ENV.forgeApiKey && ENV.forgeApiKey.trim().length > 0) {
-    const url = ENV.forgeApiUrl && ENV.forgeApiUrl.trim().length > 0
-      ? `${ENV.forgeApiUrl.replace(/\/$/, "")}/v1/chat/completions`
-      : "https://forge.manus.im/v1/chat/completions";
-    return { provider: 'forge', apiUrl: url, apiKey: ENV.forgeApiKey };
-  }
-  // Priority 2: OpenAI direct
   if (ENV.openaiApiKey && ENV.openaiApiKey.trim().length > 0) {
     return { provider: 'openai', apiUrl: "https://api.openai.com/v1/chat/completions", apiKey: ENV.openaiApiKey };
   }
@@ -232,7 +224,7 @@ export function resolveProvider(): { provider: ExtractionProvider; apiUrl: strin
 const assertApiKey = () => {
   const { provider } = resolveProvider();
   if (provider === 'none') {
-    throw new Error("LLM_PROVIDER_MISSING: Neither BUILT_IN_FORGE_API_KEY nor OPENAI_API_KEY is configured");
+    throw new Error("LLM_PROVIDER_MISSING: OPENAI_API_KEY is not configured");
   }
 };
 
@@ -291,8 +283,10 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
   } = params;
 
   const payload: Record<string, unknown> = {
-    model: "gemini-2.5-flash",
+    model: "gpt-4o-mini",
     messages: messages.map(normalizeMessage),
+    max_tokens: 16384,
+    store: false,
   };
 
   if (tools && tools.length > 0) {
@@ -303,11 +297,6 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
   if (normalizedToolChoice) {
     payload.tool_choice = normalizedToolChoice;
   }
-
-  payload.max_tokens = 32768;
-  payload.thinking = {
-    budget_tokens: 128,
-  };
 
   const normalizedResponseFormat = normalizeResponseFormat({
     responseFormat,
@@ -320,20 +309,10 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
     payload.response_format = normalizedResponseFormat;
   }
 
-  // Resolve provider (forge → openai fallback)
+  // Resolve direct OpenAI provider from Railway environment.
   const { provider, apiUrl, apiKey } = resolveProvider();
   if (provider === 'none') {
-    throw new Error("LLM_PROVIDER_MISSING: Neither BUILT_IN_FORGE_API_KEY nor OPENAI_API_KEY is configured");
-  }
-
-  // OpenAI requires store:false (privacy) and uses gpt-4o-mini for extraction
-  if (provider === 'openai') {
-    payload.model = "gpt-4o-mini";
-    payload.store = false;
-    // Remove forge-specific fields that OpenAI doesn't support
-    delete payload.thinking;
-    // gpt-4o-mini max completion tokens = 16384
-    payload.max_tokens = 16384;
+    throw new Error("LLM_PROVIDER_MISSING: OPENAI_API_KEY is not configured");
   }
 
   console.log(`[LLM] provider=${provider} model=${payload.model} store=${(payload as any).store ?? 'default'}`);

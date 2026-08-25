@@ -293,7 +293,7 @@ describe('WIRING: store:false in all server OpenAI calls', () => {
   it('llm.ts extraction has store:false', async () => {
     const fs = await import('fs');
     const content = fs.readFileSync('/home/ubuntu/recofree-app/server/_core/llm.ts', 'utf-8');
-    expect(content).toContain('store = false');
+    expect(content).toContain('store: false');
   });
 });
 
@@ -494,13 +494,15 @@ describe('WIRING: forceReanalyze validates enum values', () => {
   });
 });
 
-// ── 13. EXTRACTION PROVIDER FALLBACK ──────────────────────────────────
-describe('WIRING: Extraction provider fallback', () => {
-  it('llm.ts has forge → openai fallback', async () => {
+// ── 13. EXTRACTION PROVIDER ───────────────────────────────────────────
+describe('WIRING: Extraction provider', () => {
+  it('llm.ts is Railway direct-OpenAI-only', async () => {
     const fs = await import('fs');
     const content = fs.readFileSync('/home/ubuntu/recofree-app/server/_core/llm.ts', 'utf-8');
     expect(content).toContain('OPENAI_API_KEY');
-    expect(content).toContain('forgeApiKey');
+    expect(content).toContain('https://api.openai.com/v1/chat/completions');
+    expect(content).not.toContain('forge.manus');
+    expect(content).not.toContain('forgeApiKey');
     expect(content).toContain('LLM_PROVIDER_MISSING');
   });
 });

@@ -10,7 +10,7 @@ const schemeFromBundleId = `manus${timestamp}`;
 // HARDCODED PRODUCTION URL — This is the deployed Railway server.
 // This ensures the app ALWAYS reaches the correct server,
 // even if EXPO_PUBLIC_API_BASE_URL is not properly baked into the APK.
-const PRODUCTION_API_URL = "https://railwayappdashboard-production.up.railway.app";
+export const PRODUCTION_API_URL = "https://railwayappdashboard-production.up.railway.app";
 
 const env = {
   portal: process.env.EXPO_PUBLIC_OAUTH_PORTAL_URL ?? "",
@@ -29,33 +29,72 @@ export const OWNER_OPEN_ID = env.ownerId;
 export const OWNER_NAME = env.ownerName;
 export const API_BASE_URL = env.apiBaseUrl;
 
-/**
- * Get the API base URL.
- * 
- * Priority:
- * 1. EXPO_PUBLIC_API_BASE_URL env var (if set and not empty)
- * 2. On web: derive from current hostname (dev mode)
- * 3. HARDCODED PRODUCTION URL (fallback — ensures device always works)
- */
-export function getApiBaseUrl(): string {
-  // If API_BASE_URL is set and looks like a real URL, use it
-  if (API_BASE_URL && API_BASE_URL.startsWith("http")) {
-    return API_BASE_URL.replace(/\/$/, "");
+type ApiPlatform = "web" | "android" | "ios" | string;
+type WebLocationLike = { protocol: string; hostname: string };
+
+export function resolveApiBaseUrl({
+  platform,
+  apiBaseUrl,
+  webLocation,
+}: {
+  platform: ApiPlatform;
+  apiBaseUrl?: string;
+  webLocation?: WebLocationLike;
+}): string {
+  if (platform !== "web") {
+    return PRODUCTION_API_URL;
   }
 
-  // On web, derive from current hostname by replacing port 8081 with 3000
-  if (ReactNative.Platform.OS === "web" && typeof window !== "undefined" && window.location) {
-    const { protocol, hostname } = window.location;
-    // Pattern: 8081-sandboxid.region.domain -> 3000-sandboxid.region.domain
-    const apiHostname = hostname.replace(/^8081-/, "3000-");
-    if (apiHostname !== hostname) {
-      return `${protocol}//${apiHostname}`;
+  if (webLocation) {
+    const apiHostname = webLocation.hostname.replace(/^8081-/, "3000-");
+    const isLocalWebHost =
+      webLocation.hostname === "localhost" ||
+      webLocation.hostname === "127.0.0.1";
+    if (isLocalWebHost && apiHostname !== webLocation.hostname) {
+      return `${webLocation.protocol}//${apiHostname}`;
     }
   }
 
-  // FALLBACK: Always use the hardcoded production URL on native devices
-  // This guarantees the app works even if env vars are not baked in correctly
+  if (apiBaseUrl && apiBaseUrl.startsWith("http")) {
+    try {
+      const parsed = new URL(apiBaseUrl);
+      const isWebDevelopmentHost =
+        parsed.hostname === "localhost" ||
+        parsed.hostname === "127.0.0.1";
+      if (isWebDevelopmentHost) {
+        return apiBaseUrl.replace(/\/$/, "");
+      }
+    } catch {
+      // Invalid injected URL: fall through to Railway.
+    }
+  }
+
   return PRODUCTION_API_URL;
+}
+
+/**
+ * Get the API base URL.
+ *
+ * Native production rule:
+ * - Android/iOS ALWAYS use Railway. Build-time EXPO_PUBLIC_API_BASE_URL values
+ *   are deliberately ignored because the WebDev build environment injects its
+ *   own sandbox/deployment URL, which must never become the APK backend.
+ *
+ * Web development rule:
+ * - Only localhost/127.0.0.1 may use a local development API.
+ * - Every hosted web deployment also falls back to Railway.
+ */
+export function getApiBaseUrl(): string {
+  const webLocation =
+    ReactNative.Platform.OS === "web" && typeof window !== "undefined" && window.location
+      ? { protocol: window.location.protocol, hostname: window.location.hostname }
+      : undefined;
+
+  return resolveApiBaseUrl({
+    platform: ReactNative.Platform.OS,
+    apiBaseUrl: API_BASE_URL,
+    webLocation,
+  });
 }
 
 export const SESSION_TOKEN_KEY = "app_session_token";

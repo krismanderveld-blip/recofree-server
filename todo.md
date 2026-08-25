@@ -2957,3 +2957,11 @@
 - [x] Maak een volledige lokale broncode-, Git-history- en documentbackupset
 - [x] Verifieer GitHub main, Railway health en checkpoint vóór de backupdeadline
 - [x] Lever officiële Task Data Backup-checklist voor de Manus-serverwissel
+
+## P0 — APK routeert minimal proxy naar Manus-domein (2026-08-25)
+- [x] Herleid exact waarom de APK `https://recobase-vhsxu5ua.manus.space/api/minimal-gpt-proxy` gebruikt in plaats van Railway
+- [x] Scan alle build secrets, Expo-config, runtimeconfig, URL-helpers, providerfallbacks en gegenereerde buildmetadata op Manus-domeinen
+- [x] Herstel Railway-only routing naar `https://railwayappdashboard-production.up.railway.app` zonder klinische of serverarchitectuurwijzigingen
+- [x] Voeg regressietests en release-gate guards toe die Manus-domeinen in productie-API-routing blokkeren
+- [x] Verifieer minimal-proxy endpoint, `store:false`, GitHub main, Railway health en APK-ready debugoutput
+- [x] Rapporteer de exacte root cause en waarom de eerdere Railway-only scan deze build/runtimeconfig miste
