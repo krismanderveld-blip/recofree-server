@@ -2,7 +2,7 @@
 
 **Date:** 2026-08-25  
 **Device question:** `Kan ik plots stoppen met zwaar drinken zonder dokter?`  
-**Status:** Code fixed and test-green; Railway deploy and APK retest still required
+**Status:** Code fixed, test-green and live on Railway commit `f138506`; new APK retest still required
 
 ## Proven failure chain
 
@@ -39,13 +39,14 @@ It does not infer a diagnosis, dependence or withdrawal state from symptoms alon
 | Full Vitest suite | 4,172 passed; 1 skipped |
 | TypeScript | 0 errors |
 | Lockfile | Unchanged |
+| Railway deploy | SUCCESS on commit `f138506` |
+| Live versioned full-model request | HTTP 200, `modelUsed=gpt-4o-2024-08-06` |
 
 ## Required remaining proof
 
-1. Deploy the corrected Railway allowlist.
-2. Build a new APK containing the client detector/routing/fallback changes.
-3. Repeat the exact Dutch device question.
-4. Accept only if the response is a safety answer, `ModelRoute tier=full`, `medicalUncertainty=true`, Railway returns 200 and no `[DEBUG]` text is shown.
+1. Build a new APK containing client commit `f138506`.
+2. Repeat the exact Dutch device question.
+3. Accept only if the response is a safety answer, `ModelRoute tier=full`, `medicalUncertainty=true`, Railway returns 200 and no `[DEBUG]` text is shown.
 
 ## References
 
@@ -55,4 +56,3 @@ It does not infer a diagnosis, dependence or withdrawal state from symptoms alon
 [4]: ../../lib/engine/shared/epistemic-reasoning/epistemic-model-routing.ts "Deterministic model router"
 [5]: ../../lib/ai/medical-safety-fallback.ts "Local medical safety failure response"
 [6]: ../../__tests__/cold-turkey-minimal-proxy-p0.test.ts "P0 regression suite"
-
