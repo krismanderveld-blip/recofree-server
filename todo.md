@@ -2996,4 +2996,4 @@
 - [x] Inventariseer template OAuth/Data API/image/voice/notification helpers met Manus-domeinen en classificeer per helper: actief, development-only, indirect, of bewezen ongebruikt
 - [x] Zoek dynamische imports, string-routes, tRPC-procedures en build-time injecties zodat statische `grep` geen foutieve verwijderbeslissing veroorzaakt
 - [x] Maak een beslismatrix `KEEP / FREEZE / BLOCK_AFTER_DEVICE_PROOF / SAFE_TO_REMOVE_LATER`; verwijder of blokkeer niets in deze audit
-- [ ] Draai TypeScript, volledige release gate en wide-range gate; bewaar checkpoint en lever het exacte deviceprotocol
+- [x] Draai TypeScript, volledige release gate en wide-range gate; bewaar checkpoint en lever het exacte deviceprotocol

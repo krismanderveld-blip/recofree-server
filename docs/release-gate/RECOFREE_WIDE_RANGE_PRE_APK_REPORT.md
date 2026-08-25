@@ -1,8 +1,8 @@
 # RECOFREE WIDE-RANGE PRE-APK GATE REPORT
 
-**Generated:** 2026-08-25 06:01 UTC  
-**Commit:** 570d97d  
-**Working tree files:** 9
+**Generated:** 2026-08-25 07:28 UTC
+**Commit:** c8e47f6
+**Working tree files:** 0
 
 ## Verdict
 

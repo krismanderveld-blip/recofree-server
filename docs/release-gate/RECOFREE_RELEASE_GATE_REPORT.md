@@ -1,7 +1,7 @@
 # RECOFREE RELEASE GATE REPORT
 
-**Generated:** 2026-08-25 06:01 UTC
-**Commit:** 570d97d
+**Generated:** 2026-08-25 07:28 UTC
+**Commit:** c8e47f6
 
 ---
 
@@ -16,7 +16,7 @@
 | Integration Tests | 114 passed |
 | store:false (minimal) | 2 |
 | store:false (llm/nano/legacy frozen) | 1 / 1 / 8 |
-| Git working tree | 9 uncommitted |
+| Git working tree | clean |
 | Wide-range fault-boundary gate | PASS |
 
 ## VERDICT
