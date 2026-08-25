@@ -72,7 +72,7 @@ describe('FASE 9B: Core Epistemic Engine Pipeline Integration', () => {
 
     it('10. engine runs before Elias formulation', () => {
       const epistemicIdx = pipelineCode.indexOf('CORE EPISTEMIC REASONING ENGINE');
-      const eliasIdx = pipelineCode.indexOf('buildEliasRecoveryFormulationContext');
+      const eliasIdx = pipelineCode.indexOf('const eliasFormulationContext = buildEliasRecoveryFormulationContext');
       expect(epistemicIdx).toBeLessThan(eliasIdx);
     });
 

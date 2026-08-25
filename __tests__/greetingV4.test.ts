@@ -106,6 +106,27 @@ describe('Greeting V4', () => {
       );
     });
 
+    it('rejects internal greeting evaluation text and uses the safe deterministic fallback', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          success: true,
+          greeting: 'The greeting strategy used previous session data. The tone is warm and supportive. There are no risk flags. The greeting complies with the engine instructions.',
+        }),
+      });
+
+      const input = makeBaseInput({
+        previousSessionMessages: [
+          { role: 'user', content: 'Vorige keer was ik gespannen.' },
+        ],
+      });
+
+      const result = await greetingV4(input);
+      expect(result.usedFallback).toBe(true);
+      expect(result.greeting).toContain('Kris');
+      expect(result.greeting).not.toMatch(/greeting strategy|risk flags|engine instructions/i);
+    });
+
     it('sends systemPrompt containing sources and zone-arc', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,

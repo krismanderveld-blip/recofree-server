@@ -114,6 +114,11 @@ function getDefaultModule(userType: UserType): string {
   return userType === 'elias' ? ELIAS_DEFAULT_MODULE : KIM_DEFAULT_MODULE;
 }
 
+function hasExplicitEliasCraving(message: string | undefined): boolean {
+  if (!message) return false;
+  return /\b(?:craving|zucht|trek\s+in\s+(?:drank|alcohol)|drang\s+om\s+te\s+drinken|wil\s+drinken|want\s+to\s+drink|urge\s+to\s+drink|envie\s+de\s+boire)\b/i.test(message);
+}
+
 // ─── Tone from Zone + Intent ─────────────────────────────────
 
 function determineTone(
@@ -294,6 +299,20 @@ export function selectDominantState(
       }
       // Don't override for ORANGE if no whatHelps match — let normal priority flow handle it
     }
+  }
+
+  // Explicit craving is a deterministic recovery signal. Nano may enrich it,
+  // but a timeout or semantic miss may never route it away from E01.
+  if (userType === 'elias' && hasExplicitEliasCraving(vspContext?.userMessage)) {
+    return {
+      dominantModule: 'E01',
+      dominantTrigger: 'craving',
+      dominantDirection: buffer.responseDirection,
+      dominantTone: determineTone(buffer.currentZoneColor, buffer.currentIntent, buffer.responseDirection),
+      selectionReason: 'Explicit craving detected from raw user message',
+      sourceLayer: 'live_trigger',
+      riskScore: buffer.currentZoneScore,
+    };
   }
 
   // ── PRIORITY 2: NANO-INTERPRET (primary semantic detection) ──

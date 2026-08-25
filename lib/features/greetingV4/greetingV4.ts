@@ -378,7 +378,14 @@ async function callGreetingProxy(
       throw new Error('Invalid response from greeting proxy');
     }
 
-    return data.greeting;
+    const greeting = data.greeting.trim();
+    const visibleGreeting = greeting.replace(/<clinical>[\s\S]*?<\/clinical>/gi, '').trim();
+    const isInternalEvaluation = /\b(?:the greeting strategy|greeting strategy used|tone assessment|risk flags?|complies? with the engine instructions|clinical annotation|generated greeting)\b/i.test(visibleGreeting);
+    if (!visibleGreeting || isInternalEvaluation) {
+      throw new Error('Greeting proxy returned internal evaluation instead of user-facing greeting');
+    }
+
+    return greeting;
   } finally {
     clearTimeout(timeoutId);
   }

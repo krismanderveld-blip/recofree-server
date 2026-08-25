@@ -434,6 +434,7 @@ export function computeEffectiveness(evolution: ZoneEvolutionEntry[]): number {
 export function evaluateInterventionContinuity(
   currentResolvedZone: ResolvedEliasZone,
   userMessage: string,
+  currentRegulationAction?: RegulationAction,
 ): InterventionState | null {
   // If blocked or no zone label, cannot evaluate
   if (currentResolvedZone.isBlocked || !currentResolvedZone.finalZoneLabel) {
@@ -482,21 +483,26 @@ export function evaluateInterventionContinuity(
   if (needsReevaluation) {
     // Re-evaluate intervention — either zone shifted or intervention has been effective long enough
     // to warrant progression to a deeper therapeutic phase
-    // Determine upgraded intervention goal based on current zone + turns active
-    const upgradedGoal = selectUpgradedGoal(
-      currentZoneLabel,
-      currentInterventionState.lastInterventionType,
-      currentInterventionState.turnsActive,
-    );
+    const zoneShifted = zoneShift.direction !== 'stable';
+    const reevaluatedInterventionType = zoneShifted && currentRegulationAction
+      ? regulationToInterventionType(currentRegulationAction)
+      : currentInterventionState.lastInterventionType;
+    const upgradedGoal = zoneShifted
+      ? INTERVENTION_GOALS[reevaluatedInterventionType]
+      : selectUpgradedGoal(
+          currentZoneLabel,
+          currentInterventionState.lastInterventionType,
+          currentInterventionState.turnsActive,
+        );
 
     currentInterventionState = Object.freeze({
-      lastInterventionType: currentInterventionState.lastInterventionType,
+      lastInterventionType: reevaluatedInterventionType,
       interventionGoal: upgradedGoal,
       linkedZone: currentZoneLabel,
       linkedSeverity: currentSeverity,
       expectedShift: {
         from: currentZoneLabel,
-        to: getExpectedTargetZone(currentZoneLabel, currentInterventionState.lastInterventionType),
+        to: getExpectedTargetZone(currentZoneLabel, reevaluatedInterventionType),
       },
       effectivenessScore,
       turnsActive: zoneShift.direction !== 'stable'

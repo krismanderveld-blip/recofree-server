@@ -61,6 +61,12 @@ export function buildClientSystemPrompt(input: ClientPromptBuildInput): ClientBu
     } else {
       omittedSections.push('formulationBlock');
     }
+    if (kimSections.communicationBlock) {
+      promptParts.push(kimSections.communicationBlock);
+      includedSections.push('k05Context');
+    } else {
+      omittedSections.push('k05Context');
+    }
   }
 
   // Elias-specific sections

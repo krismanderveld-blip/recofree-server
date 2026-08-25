@@ -18,6 +18,7 @@ export interface KimPromptSections {
   relationalStance?: string;
   depthNaming?: string;
   formulationBlock?: string;
+  communicationBlock?: string;
   regulation?: string;
   context?: string;
   deepening?: string;
@@ -47,6 +48,11 @@ export function composeKimPrompt(input: ClientPromptBuildInput): KimPromptSectio
   // Kim formulation block (already built by pipeline)
   if (input.kimFormulationBlock) {
     sections.formulationBlock = input.kimFormulationBlock;
+  }
+
+  // K05 communication directive (already selected and built by deterministic engine)
+  if (input.k05Context) {
+    sections.communicationBlock = input.k05Context;
   }
 
   // Regulation instruction (already built by regulation engine)

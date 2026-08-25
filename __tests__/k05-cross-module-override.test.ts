@@ -236,4 +236,17 @@ describe('K05 Cross-Module Override — Full Pipeline', () => {
     // invokeLLM should NOT have been called because Layer 1 found repair path
     expect(mockInvoke).not.toHaveBeenCalled();
   });
+
+  it('TEST 8: deterministic K05 BOUNDARY_LANGUAGE requires a repair path even when GPT only discusses boundaries abstractly', async () => {
+    const result = await applyK05CrossModuleOverride({
+      responseText: 'Het is belangrijk om je eigen grenzen te beschermen. Wat heb je nodig om duidelijk te zijn?',
+      safetyActive: false,
+      relationalHarmActive: false,
+      activeModule: 'K05',
+      boundaryLanguageRequired: true,
+    });
+
+    expect(result.overrideApplied).toBe(true);
+    expect(result.correctedText).toMatch(/contact|bespreken|rust|veiligheid/i);
+  });
 });

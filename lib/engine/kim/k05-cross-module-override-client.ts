@@ -38,6 +38,8 @@ export interface K05OverrideInput {
   relationalHarmActive: boolean;
   /** The active Kim module that generated the response */
   activeModule: string;
+  /** Deterministic K05 engine selected BOUNDARY_LANGUAGE for this turn */
+  boundaryLanguageRequired?: boolean;
 }
 
 export interface ClassificationResult {
@@ -178,9 +180,10 @@ export async function applyK05CrossModuleOverride(input: K05OverrideInput): Prom
 
   // Layer 1: Deterministic pattern scan
   const layer1 = scanLayer1(input.responseText);
-  debugLog.push(`[K05-Override] Layer 1: boundary=${layer1.boundaryDetected}, repairPath=${layer1.repairPathDetected}, needsLayer2=${layer1.needsLayer2}`);
+  const boundaryContextNeedsRepair = input.boundaryLanguageRequired === true && !layer1.repairPathDetected;
+  debugLog.push(`[K05-Override] Layer 1: boundary=${layer1.boundaryDetected}, repairPath=${layer1.repairPathDetected}, needsLayer2=${layer1.needsLayer2}, boundaryLanguageRequired=${input.boundaryLanguageRequired === true}`);
 
-  if (!layer1.needsLayer2) {
+  if (!layer1.needsLayer2 && !boundaryContextNeedsRepair) {
     // No boundary detected, or boundary + repair path both present → no correction needed
     return {
       overrideApplied: false,
@@ -196,7 +199,7 @@ export async function applyK05CrossModuleOverride(input: K05OverrideInput): Prom
   // (Layer 2 LLM classification skipped in client version — deterministic is sufficient)
   debugLog.push('[K05-Override] Layer 1 triggered → applying deterministic correction');
   const layer2: ClassificationResult = {
-    containsBoundaryStatement: true,
+    containsBoundaryStatement: layer1.boundaryDetected,
     containsRepairPath: false,
     requiresCorrection: true,
     reason: 'boundary_without_repair_path',

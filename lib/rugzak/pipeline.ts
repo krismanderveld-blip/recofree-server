@@ -68,6 +68,45 @@ import type {
   AIResult,
   AIProvider,
 } from '../ai/types';
+import {
+  buildCoreEpistemicReasoning,
+  buildEpistemicGuidanceSummary,
+  validateEpistemicOutput,
+} from '../engine/shared/epistemic-reasoning';
+import { buildClinicalMemoryDistillationRuntimeContext } from '../engine/shared/clinical-memory-distillation/clinical-memory-distillation-runtime';
+import {
+  getCMDMemoryForEliasFormulation,
+  getCMDMemoryForKimFormulation,
+} from '../engine/shared/clinical-memory-distillation/formulation-memory-adapter';
+import { buildSelectedCMDMemorySummary } from '../engine/shared/clinical-memory-distillation/clinical-memory-budget-selector';
+import { resolveEpistemicModelRouting } from '../engine/shared/epistemic-reasoning/epistemic-model-routing';
+import { resolveGuidanceDepth } from '../engine/shared/guidance-depth-resolver';
+import {
+  applyRelationalStanceFilter,
+  detectRelationalSignals,
+} from '../engine/kim/relational-stance-filter';
+import {
+  buildDepthAndNamingDirective,
+  detectDepthLevel,
+} from '../engine/kim/depth-and-naming-layer';
+import { buildKimRelationalFormulationContext } from '../engine/kim/relational-formulation/kim-relational-formulation-engine';
+import { buildKimRelationalFormulationBlock } from '../ai/prompt/kim-prompt-composer';
+import {
+  buildAssessmentDirective,
+  detectAssessmentRequest,
+  detectAssessmentSignals,
+} from '../engine/kim/relational-pattern-assessment';
+import {
+  buildDecisionPressureDirective,
+  detectDecisionPressure,
+} from '../engine/kim/decision-pressure-layer';
+import {
+  buildIntimacyAffectionDirective,
+  detectIntimacyAffectionQuestion,
+} from '../engine/kim/intimacy-affection-layer';
+import { detectEliasRelapseRisk } from '../engine/elias/elias-relapse-risk-helper';
+import { buildEliasRecoveryFormulationContext } from '../engine/elias/recovery-formulation';
+import { buildEliasRecoveryFormulationBlock } from '../ai/prompt/elias-prompt-composer';
 import { archiveSessionHistory, type ArchivedSession } from './chat-history-manager';
 import { composeRugzak } from '../ai/types';
 import {
@@ -190,6 +229,7 @@ import {
 import type { KO1EngineResult, KO1Progress } from '../engine/kim/ko1-recognition';
 import {
   routeK05Engine,
+  detectK05CommunicationContext,
   resetK05SessionState,
   getSessionK05ModesUsed,
   createDefaultK05Progress,
@@ -1246,6 +1286,24 @@ export async function processMessage(
     backpack.userType === 'elias' ? { vspLevel: earlyVspLevel, whatHelps: vspWhatHelps, userMessage } : undefined,
     clientNanoResult ?? undefined,
   );
+
+  // A Kim communication/boundary statement is decided by the deterministic
+  // K05 detector, never by a cross-persona nano module suggestion.
+  if (backpack.userType === 'kim') {
+    const k05Preselection = detectK05CommunicationContext(userMessage);
+    const shouldSelectK05 = k05Preselection.signals.some((signal) =>
+      signal.context === 'BOUNDARY_SETTING' || signal.context === 'REPAIR_NEEDED'
+    );
+    if (shouldSelectK05) {
+      preGPTDominantState = {
+        ...preGPTDominantState,
+        dominantModule: 'K05',
+        dominantTrigger: k05Preselection.dominantContext?.toLowerCase() ?? 'communication',
+        selectionReason: `Deterministic K05 communication context: ${k05Preselection.dominantContext}`,
+        sourceLayer: 'live_trigger',
+      };
+    }
+  }
 
 
   // ── LOOPBLOCKER: Per-session module repetition detection ──
@@ -2962,6 +3020,7 @@ export async function processMessage(
     interventionContinuity = evaluateInterventionContinuity(
       elisDecision.zone.resolved,
       userMessage,
+      regulationResult.action,
     );
   }
 
@@ -3378,12 +3437,13 @@ export async function processMessage(
   cmdDebug.featureFlag = enableCMD;
   if (enableCMD) {
     try {
-      const { buildClinicalMemoryDistillationRuntimeContext } = require('../engine/shared/clinical-memory-distillation/clinical-memory-distillation-runtime');
-      const { getCMDMemoryForKimFormulation, getCMDMemoryForEliasFormulation } = require('../engine/shared/clinical-memory-distillation/formulation-memory-adapter');
       const cmdPersona = (backpack.userType || 'elias') as 'elias' | 'kim';
       const cmdResult = buildClinicalMemoryDistillationRuntimeContext({
         persona: cmdPersona,
-        backpackSections: backpack.sections ? Object.entries(backpack.sections).map(([key, val]: [string, any]) => ({ id: key, title: key, text: val?.content || '' })) : undefined,
+        backpackSections: backpack.sections?.map((section) => ({
+          title: section.label,
+          content: section.content || '',
+        })),
         projectionFears: (currentUserDat as any).projections?.fears?.map((f: any) => ({ text: f.text || f, confidence: f.confidence || 'medium' })) ?? undefined,
         projectionHopes: (currentUserDat as any).projections?.hopes?.map((h: any) => ({ text: h.text || h, confidence: h.confidence || 'medium' })) ?? undefined,
         moodHistory: (currentUserDat as any).moodHistory?.slice(-14) ?? undefined,
@@ -3421,7 +3481,6 @@ export async function processMessage(
         // Build CMD memory summary for prompt injection
         if (cmdResult.selectorOutput && cmdResult.selectorOutput.selectedItems.length > 0) {
           try {
-            const { buildSelectedCMDMemorySummary } = require('../engine/shared/clinical-memory-distillation/clinical-memory-budget-selector');
             cmdMemorySummary = buildSelectedCMDMemorySummary(cmdResult.selectorOutput) || undefined;
           } catch { /* non-blocking */ }
         }
@@ -3431,7 +3490,7 @@ export async function processMessage(
         cmdDebug.validationOk = true;
         cmdDebug.selectorOutputPresent = !!(cmdResult.selectorOutput && cmdResult.selectorOutput.selectedItems.length > 0);
         cmdDebug.selectedItemsCount = cmdResult.selectorOutput?.selectedItems?.length ?? 0;
-        cmdDebug.selectedEstimatedTokens = cmdResult.selectorOutput?.totalEstimatedTokens ?? 0;
+        cmdDebug.selectedEstimatedTokens = cmdResult.selectorOutput?.estimatedTokens ?? 0;
         cmdDebug.memorySummaryPresent = !!cmdMemorySummary;
         cmdDebug.memorySummaryChars = cmdMemorySummary?.length ?? 0;
         cmdDebug.warningsCount = cmdResult.warnings.length;
@@ -3461,10 +3520,10 @@ export async function processMessage(
   epistemicDebug.flag = enableEpistemic;
   if (enableEpistemic && crisisLevel < 2) {
     try {
-      const { buildCoreEpistemicReasoning, validateEpistemicOutput, buildEpistemicGuidanceSummary } = require('../engine/shared/epistemic-reasoning');
       const epistemicInput = {
         persona: (backpack.userType || 'elias') as 'elias' | 'kim',
         userMessage: userMessage,
+        nowLocal: LocalDeviceTimeService.now().utcIso,
         recentMessages: sessionBuffer.recentMessages ?? [],
         dominantModule: preGPTDominantState.dominantModule ?? null,
         currentZone: sessionBuffer?.currentZoneColor || null,
@@ -3497,7 +3556,6 @@ export async function processMessage(
   epistemicRoutingDebug.flag = enableModelRouting;
   if (enableModelRouting && enableEpistemic && epistemicModelRoutingHints) {
     try {
-      const { resolveEpistemicModelRouting } = require('../engine/shared/epistemic-reasoning/epistemic-model-routing');
       const routingInput = {
         persona: (backpack.userType || 'elias') as 'elias' | 'kim',
         currentZone: sessionBuffer?.currentZoneColor || null,
@@ -3539,9 +3597,6 @@ export async function processMessage(
   if (backpack.userType === 'kim' && crisisLevel < 2) {
     try {
       // GUIDANCE DEPTH RESOLVER — determines effective depth from user setting + context
-      const { resolveGuidanceDepth } = require('../engine/shared/guidance-depth-resolver');
-      const { detectRelationalSignals } = require('../engine/kim/relational-stance-filter');
-
       // Detect relational harm pattern from user message BEFORE resolver call
       const harmSignalsForResolver = detectRelationalSignals(userMessage);
       const isRelationalHarm = harmSignalsForResolver.relationalHarmPatternSignal;
@@ -3570,7 +3625,6 @@ export async function processMessage(
       console.log(`[Pipeline] GuidanceDepthResolver: user=${guidanceDepthResult.userDepth} effective=${guidanceDepthResult.effectiveDepth} mode=${guidanceDepthResult.maxFormulationMode} reason=${guidanceDepthResult.reason} overridden=${guidanceDepthResult.wasUserDepthOverridden} harmActive=${isRelationalHarm}`);
 
       // GLOBAL_KIM_DEPTH_AND_NAMING_LAYER — always active for Kim (non-crisis)
-      const { detectDepthLevel, buildDepthAndNamingDirective } = require('../engine/kim/depth-and-naming-layer');
       const safetyLevelForDepth = crisisLevel >= 2 ? 'crisis' : crisisLevel >= 1 ? 'elevated' : 'none';
       const depthLevel = detectDepthLevel(userMessage, safetyLevelForDepth, crisisLevel >= 2, true, guidanceDepthResult.effectiveDepth);
       if (depthLevel !== 'SKIP') {
@@ -3580,8 +3634,6 @@ export async function processMessage(
 
       // ── KIM RELATIONAL FORMULATION ENGINE V1 ──
       try {
-        const { buildKimRelationalFormulationContext } = require('../engine/kim/relational-formulation');
-        const { buildKimRelationalFormulationBlock } = require('../ai/prompt/kim-prompt-composer');
         const formulationContext = buildKimRelationalFormulationContext({
           userMessage,
           persona: 'kim',
@@ -3613,7 +3665,6 @@ export async function processMessage(
       }
 
       // Check for RELATIONAL_PATTERN_ASSESSMENT_MODE first (explicit assessment question)
-      const { detectAssessmentRequest, detectAssessmentSignals, buildAssessmentDirective } = require('../engine/kim/relational-pattern-assessment');
       const isAssessmentRequest = detectAssessmentRequest(userMessage);
 
       if (isAssessmentRequest) {
@@ -3621,7 +3672,6 @@ export async function processMessage(
         const safetyLevel = crisisLevel >= 2 ? 'crisis' : crisisLevel >= 1 ? 'elevated' : 'none';
         const recentHistory = (currentUserDat.chatHistory || []).slice(-10).map((m: any) => m.content || m.text || '');
         const assessmentSignals = detectAssessmentSignals(userMessage, recentHistory);
-        const { detectRelationalSignals } = require('../engine/kim/relational-stance-filter');
         const stanceSignals = detectRelationalSignals(userMessage);
         const hasBackpackData = !!(backpack.sections && backpack.sections.length > 0) || !!(backpack.kimBackpack);
         const hasRelationalHistory = recentHistory.some((m: string) =>
@@ -3648,13 +3698,11 @@ export async function processMessage(
         console.log(`[Pipeline] RELATIONAL_PATTERN_ASSESSMENT_MODE active: safety=${safetyLevel} harm=${stanceSignals.relationalHarmPatternSignal} trust=${assessmentSignals.trustDamageSignals} role=${assessmentSignals.roleConfusionSignals}`);
       } else if ((() => {
         // DECISION_PRESSURE_RESPONSE_LAYER — stay/leave questions
-        const { detectDecisionPressure, buildDecisionPressureDirective } = require('../engine/kim/decision-pressure-layer');
         const recentHist = (currentUserDat.chatHistory || []).slice(-10).map((m: any) => m.content || m.text || '');
         const dpResult = detectDecisionPressure(userMessage, recentHist);
         if (dpResult.isActive) {
           const safetyLvl = crisisLevel >= 2 ? 'crisis' : crisisLevel >= 1 ? 'elevated' : 'none';
-          const { detectRelationalSignals: drs } = require('../engine/kim/relational-stance-filter');
-          const harmSignals = drs(userMessage);
+          const harmSignals = detectRelationalSignals(userMessage);
           const dpDirective = buildDecisionPressureDirective({
             safetyLevel: safetyLvl,
             relationalHarmPatternActive: harmSignals.relationalHarmPatternSignal || false,
@@ -3671,11 +3719,9 @@ export async function processMessage(
         // Decision pressure handled above
       } else if ((() => {
         // INTIMACY_AFFECTION_EXPLANATION_LAYER
-        const { detectIntimacyAffectionQuestion, buildIntimacyAffectionDirective } = require('../engine/kim/intimacy-affection-layer');
         if (detectIntimacyAffectionQuestion(userMessage)) {
           const safetyLvl = crisisLevel >= 2 ? 'crisis' : crisisLevel >= 1 ? 'elevated' : 'none';
-          const { detectRelationalSignals: drs2 } = require('../engine/kim/relational-stance-filter');
-          const harmSig = drs2(userMessage);
+          const harmSig = detectRelationalSignals(userMessage);
           relationalStanceDirective = buildIntimacyAffectionDirective({
             safetyLevel: safetyLvl,
             relationalHarmPatternActive: harmSig.relationalHarmPatternSignal || false,
@@ -3688,7 +3734,6 @@ export async function processMessage(
         // Intimacy layer handled above
       } else {
         // Normal relational stance filter
-        const { detectRelationalSignals, applyRelationalStanceFilter } = require('../engine/kim/relational-stance-filter');
         const signals = detectRelationalSignals(userMessage);
         const safetyLevel = crisisLevel >= 2 ? 'crisis' : crisisLevel >= 1 ? 'elevated' : 'none';
         const filterResult = applyRelationalStanceFilter({
@@ -3712,9 +3757,6 @@ export async function processMessage(
   let eliasFormulationBlock: string | undefined;
   if (backpack.userType === 'elias' && crisisLevel < 2) {
     try {
-      const { resolveGuidanceDepth } = require('../engine/shared/guidance-depth-resolver');
-      const { detectEliasRelapseRisk } = require('../engine/elias/elias-relapse-risk-helper');
-
       const cravingSlider = (currentUserDat.currentMood as any)?.craving ?? null;
       const relapseRiskResult = detectEliasRelapseRisk({
         userMessage,
@@ -3754,8 +3796,6 @@ export async function processMessage(
 
       // ── ELIAS RECOVERY FORMULATION ENGINE V1 ──
       try {
-        const { buildEliasRecoveryFormulationContext } = require('../engine/elias/recovery-formulation');
-        const { buildEliasRecoveryFormulationBlock } = require('../ai/prompt/elias-prompt-composer');
         const eliasFormulationInput = {
           userMessage,
           persona: 'elias' as const,
@@ -4040,7 +4080,6 @@ export async function processMessage(
     // Wire to relational stance filter harm detection
     let isHarm = false;
     try {
-      const { detectRelationalSignals } = require('../engine/kim/relational-stance-filter');
       const harmSignals = detectRelationalSignals(userMessage);
       isHarm = harmSignals?.relationalHarmPatternSignal === true;
     } catch (e) {
@@ -4049,9 +4088,15 @@ export async function processMessage(
 
     // K05 Cross-Module Override (boundary without repair path detection)
     if (!isSafety && !isHarm) {
-      const k05Result = await applyK05CrossModuleOverride({ responseText: response, safetyActive: isSafety, relationalHarmActive: isHarm, activeModule });
-      if (k05Result.overrideApplied) {
-        response = k05Result.correctedText;
+      const k05OverrideResult = await applyK05CrossModuleOverride({
+        responseText: response,
+        safetyActive: isSafety,
+        relationalHarmActive: isHarm,
+        activeModule,
+        boundaryLanguageRequired: k05Result.decision.communicationMode === 'BOUNDARY_LANGUAGE',
+      });
+      if (k05OverrideResult.overrideApplied) {
+        response = k05OverrideResult.correctedText;
         console.log('[Pipeline] K05 override fired');
       }
     }
@@ -4387,7 +4432,9 @@ export async function processMessage(
       source: preGPTDominantState.sourceLayer,
       triggers: relevance.triggers.length > 0 ? relevance.triggers.map(t => `${t.trigger}(${t.score})`).join(', ') : undefined,
       projection: projectionResult.hasActiveEntries ? `+${projectionResult.newEntriesCount} active (${projectionResult.injectionBlock?.slice(0, 60) ?? ''})` : undefined,
-      intervention: interventionContinuity ? `${interventionContinuity.lastInterventionType} (goal=${interventionContinuity.interventionGoal}, turns=${interventionContinuity.turnsActive}, eff=${interventionContinuity.effectivenessScore})` : undefined,
+      intervention: interventionContinuity
+        ? `continuity=${interventionContinuity.lastInterventionType} (goal=${interventionContinuity.interventionGoal}, turns=${interventionContinuity.turnsActive}, eff=${interventionContinuity.effectivenessScore}) | responseDriver=module:${activeDecision ? activeDecision.dominantModule : preGPTDominantState.dominantModule}+reg:${regulationResult.action}`
+        : undefined,
       buffer: `msg#${sessionBuffer.messageCount} zone=${sessionBuffer.currentZoneColor}(${sessionBuffer.currentZoneScore}) intent=${(sessionBuffer as any).liveIntent ?? 'none'}`,
       k05Override: undefined as any,
       safetyFilters: undefined as any,

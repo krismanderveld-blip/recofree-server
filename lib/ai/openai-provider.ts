@@ -11,6 +11,41 @@ import { ELIAS_DEFAULT_MODULE } from '@/lib/engine/elias/module-catalog';
 import { LocalDeviceTimeService } from "@/lib/core/time";
 import type { MinimalGptProxyRequest, MinimalGptProxyResponse } from '@/lib/ai/prompt/minimal-gpt-proxy-contract';
 import { buildMedicalSafetyFailureResponse } from '@/lib/ai/medical-safety-fallback';
+import { buildClientSystemPrompt } from '@/lib/ai/prompt/client-system-prompt-builder';
+import {
+  buildRejectedSuggestionsBlock,
+  detectRejectedSuggestions,
+  recordRejectedSuggestions,
+} from '@/lib/rugzak/rejected-suggestion-guard';
+
+function buildProviderFailureResponse(locale?: string): string {
+  return locale?.toLowerCase().startsWith('nl')
+    ? 'Ik kan nu even geen antwoord formuleren. Probeer het zo meteen opnieuw.'
+    : "I can't formulate a response right now. Please try again shortly.";
+}
+
+function buildEngineDirectivePromptBlock(
+  directive: ChatContext['engineDirective'],
+): string | undefined {
+  if (!directive) return undefined;
+
+  return [
+    '[ENGINE DIRECTIVE — deterministic, already selected]',
+    `Engine: ${directive.engine}`,
+    `Zone: ${directive.zoneLabel} (${directive.zoneLevel})`,
+    `Impact: ${JSON.stringify(directive.impact)}`,
+  ].join('\n');
+}
+
+function buildNumericMoodSliders(
+  moodSliders: ChatContext['moodSliders'],
+): Record<string, number> | undefined {
+  if (!moodSliders) return undefined;
+
+  return Object.fromEntries(
+    Object.entries(moodSliders).filter((entry): entry is [string, number] => typeof entry[1] === 'number'),
+  );
+}
 
 /**
  * OpenAIProvider — Routes through backend tRPC to OpenAI.
@@ -778,7 +813,6 @@ export class OpenAIProvider implements AIProvider {
       try {
         const mirrorEnabled = process.env.EXPO_PUBLIC_ENABLE_CLIENT_PROMPT_MIRROR === 'true';
         if (mirrorEnabled) {
-          const { buildClientSystemPrompt } = require('./prompt/client-system-prompt-builder');
           const mirrorInput = {
             persona: context.userType as 'kim' | 'elias',
             userName: context.userName,
@@ -791,17 +825,18 @@ export class OpenAIProvider implements AIProvider {
             userGuidanceDepth: context.guidanceDepth ?? 'normal',
             regulationInstruction: context.regulationResult?.gptInstruction ?? undefined,
             interventionContinuityBlock: context.interventionContinuity ?? undefined,
-            engineDirective: context.engineDirective ?? undefined,
+            engineDirective: buildEngineDirectivePromptBlock(context.engineDirective),
             contextSummary: context.contextSummary ?? undefined,
             contextDatSerialized: context.contextDatSerialized ?? undefined,
             deepeningBlock: context.deepeningBlock ?? undefined,
             projectionContext: context.projectionContext ?? undefined,
-            moodSliders: context.moodSliders,
+            moodSliders: buildNumericMoodSliders(context.moodSliders),
             vspLevel: context.vspLevel ?? undefined,
             relapseIntentDetected: context.relapseIntent?.detected ?? false,
             sessionDurationMinutes: context.sessionDurationMinutes ?? 0,
             eliasFormulationBlock: context.eliasFormulationBlock ?? undefined,
             kimFormulationBlock: context.kimFormulationBlock ?? undefined,
+            k05Context: context.k05Context ?? undefined,
             cmdMemorySummary: context.cmdMemorySummary ?? undefined,
             personalAnchors: context.personalAnchors ?? undefined,
             personalClinicalContext: context.personalClinicalContext ?? undefined,
@@ -862,8 +897,6 @@ export class OpenAIProvider implements AIProvider {
         const minimalProxyUrl = `${apiBaseUrl}/api/minimal-gpt-proxy`;
 
         // Build client system prompt
-        const { buildClientSystemPrompt } = require('./prompt/client-system-prompt-builder');
-        const { detectRejectedSuggestions, recordRejectedSuggestions, buildRejectedSuggestionsBlock } = require('../rugzak/rejected-suggestion-guard');
         const _rejections = detectRejectedSuggestions(context.currentMessage || '');
         if (_rejections.length > 0) recordRejectedSuggestions(_rejections);
         const rejectedBlock = buildRejectedSuggestionsBlock();
@@ -879,12 +912,12 @@ export class OpenAIProvider implements AIProvider {
           userGuidanceDepth: context.guidanceDepth ?? 'normal',
           regulationInstruction: context.regulationResult?.gptInstruction ?? undefined,
           interventionContinuityBlock: context.interventionContinuity ?? undefined,
-          engineDirective: context.engineDirective ?? undefined,
+          engineDirective: buildEngineDirectivePromptBlock(context.engineDirective),
           contextSummary: context.contextSummary ?? undefined,
           contextDatSerialized: context.contextDatSerialized ?? undefined,
           deepeningBlock: context.deepeningBlock ?? undefined,
           projectionContext: context.projectionContext ?? undefined,
-          moodSliders: context.moodSliders,
+          moodSliders: buildNumericMoodSliders(context.moodSliders),
           vspLevel: context.vspLevel ?? undefined,
           relapseIntentDetected: context.relapseIntent?.detected ?? false,
           sessionDurationMinutes: context.sessionDurationMinutes ?? 0,
@@ -894,6 +927,7 @@ export class OpenAIProvider implements AIProvider {
           })) ?? [],
           eliasFormulationBlock: context.eliasFormulationBlock ?? undefined,
           kimFormulationBlock: context.kimFormulationBlock ?? undefined,
+          k05Context: context.k05Context ?? undefined,
           cmdMemorySummary: context.cmdMemorySummary ?? undefined,
           personalAnchors: context.personalAnchors ?? undefined,
           rejectedSuggestionsBlock: rejectedBlock ?? undefined,
@@ -962,6 +996,7 @@ export class OpenAIProvider implements AIProvider {
         if (!minimalResponse.ok) {
           const errorText = await minimalResponse.text();
           const shortError = errorText.length > 200 ? errorText.substring(0, 200) + '...' : errorText;
+          console.error(`[OpenAIProvider] Minimal proxy HTTP ${minimalResponse.status}: ${shortError}`);
           const medicalSafetyFallback = buildMedicalSafetyFailureResponse({
             message: gptPayload.message,
             locale: context.locale,
@@ -969,7 +1004,7 @@ export class OpenAIProvider implements AIProvider {
             safetyRelevant: context.epistemicModelRoutingHints?.safetyRelevant ?? false,
           });
           return {
-            response: medicalSafetyFallback ?? `[DEBUG] Minimal proxy returned ${minimalResponse.status}.\n\nURL: ${minimalProxyUrl}\nDetails: ${shortError}\n\nPlease screenshot this and report it.`,
+            response: medicalSafetyFallback ?? buildProviderFailureResponse(context.locale),
             advisoryEmotion: undefined,
             advisoryConfidence: undefined,
             tokenUsage: undefined,
@@ -979,6 +1014,7 @@ export class OpenAIProvider implements AIProvider {
         const minimalData: MinimalGptProxyResponse = await minimalResponse.json();
 
         if (!minimalData.ok) {
+          console.error(`[OpenAIProvider] Minimal proxy contract error ${minimalData.errorCode}: ${minimalData.errorMessage}`);
           const medicalSafetyFallback = buildMedicalSafetyFailureResponse({
             message: gptPayload.message,
             locale: context.locale,
@@ -986,7 +1022,7 @@ export class OpenAIProvider implements AIProvider {
             safetyRelevant: context.epistemicModelRoutingHints?.safetyRelevant ?? false,
           });
           return {
-            response: medicalSafetyFallback ?? `[DEBUG] Minimal proxy error: ${minimalData.errorCode}\n\n${minimalData.errorMessage}\n\nPlease screenshot this and report it.`,
+            response: medicalSafetyFallback ?? buildProviderFailureResponse(context.locale),
             advisoryEmotion: undefined,
             advisoryConfidence: undefined,
             tokenUsage: undefined,
@@ -1058,10 +1094,8 @@ export class OpenAIProvider implements AIProvider {
       if (!response.ok) {
         const errorText = await response.text();
         console.error('[OpenAIProvider] Backend error:', response.status, errorText);
-        const shortError = errorText.length > 200 ? errorText.substring(0, 200) + '...' : errorText;
-        const usedUrl = usedProxy ? proxyUrl : `${apiBaseUrl}/api/trpc/ai.chat`;
         return {
-          response: `[DEBUG] Server returned ${response.status}.\n\nURL: ${usedUrl}\nDetails: ${shortError}\n\nPlease screenshot this and report it.`,
+          response: buildProviderFailureResponse(context.locale),
           advisoryEmotion: undefined,
           advisoryConfidence: undefined,
           tokenUsage: undefined,
@@ -1107,9 +1141,6 @@ export class OpenAIProvider implements AIProvider {
     } catch (error) {
       console.error('[OpenAIProvider] Error after retries:', error);
 
-      // Show the actual error + URL so we can debug on device
-      const errorMessage = (error as Error)?.message ?? 'Unknown error';
-      const apiUrl = getApiBaseUrl();
       const medicalSafetyFallback = buildMedicalSafetyFailureResponse({
         message: context.currentMessage,
         locale: context.locale,
@@ -1118,7 +1149,7 @@ export class OpenAIProvider implements AIProvider {
       });
 
       return {
-        response: medicalSafetyFallback ?? `[DEBUG] Connection failed.\n\nURL: ${apiUrl}/api/gpt-proxy\nError: ${errorMessage}\n\nPlease screenshot this and report it.`,
+        response: medicalSafetyFallback ?? buildProviderFailureResponse(context.locale),
         advisoryEmotion: undefined,
         advisoryConfidence: undefined,
         tokenUsage: undefined,

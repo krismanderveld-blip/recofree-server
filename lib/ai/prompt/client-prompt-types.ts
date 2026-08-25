@@ -58,6 +58,8 @@ export interface ClientPromptBuildInput {
   recentHistory?: Array<{ role: string; content: string }>;
   /** Kim formulation block (already built by pipeline formulation engine) */
   kimFormulationBlock?: string;
+  /** Kim K05 communication block (already built by deterministic K05 engine) */
+  k05Context?: string;
   /** Elias recovery formulation block (already built by pipeline formulation engine) */
   eliasFormulationBlock?: string;
   /** CMD selected memory summary — compact budget-selected clinical memory for GPT context */

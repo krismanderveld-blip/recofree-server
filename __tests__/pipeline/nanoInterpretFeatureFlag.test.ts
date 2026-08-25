@@ -156,6 +156,104 @@ describe('FASE 5C: Nano-Interpret Feature Flag', () => {
     expect(result.valid).toBeTruthy();
   });
 
+  it('12. Pure craving does not retain unsupported self_disgust', async () => {
+    const { normalizeClientNanoInterpretResult } = await import(
+      '@/lib/pipeline/nano-interpret-client'
+    );
+    const result = normalizeClientNanoInterpretResult({
+      translatedNL: 'Ik heb craving en ik wil drinken, maar ik wil het eigenlijk niet doen.',
+      intent: 'seeking_action',
+      themes: ['craving', 'self_disgust'],
+      resolvedModule: 'E01',
+      matchedTheme: 'craving',
+    }, 'Ik heb craving en ik wil drinken, maar ik wil het eigenlijk niet doen.', 'elias');
+
+    expect(result.themes).toEqual(['craving']);
+    expect(result.resolvedModule).toBe('E01');
+  });
+
+  it('13. Explicit self-disgust evidence is preserved', async () => {
+    const { normalizeClientNanoInterpretResult } = await import(
+      '@/lib/pipeline/nano-interpret-client'
+    );
+    const result = normalizeClientNanoInterpretResult({
+      translatedNL: 'Ik walg van mezelf.',
+      intent: 'venting',
+      themes: ['self_disgust'],
+      resolvedModule: 'M19',
+      matchedTheme: 'self_disgust',
+    }, 'Ik walg van mezelf.', 'elias');
+
+    expect(result.themes).toEqual(['self_disgust']);
+    expect(result.matchedTheme).toBe('self_disgust');
+  });
+
+  it('14. Kim cannot accept an Elias nano module', async () => {
+    const { normalizeClientNanoInterpretResult } = await import(
+      '@/lib/pipeline/nano-interpret-client'
+    );
+    const result = normalizeClientNanoInterpretResult({
+      translatedNL: 'Ik wil gewoon zeggen dat hij zijn plan moet trekken.',
+      intent: 'seeking_action',
+      themes: ['self_hatred', 'worthlessness'],
+      resolvedModule: 'E04',
+      matchedTheme: 'self_hatred',
+    }, 'Ik wil gewoon zeggen dat hij zijn plan moet trekken.', 'kim');
+
+    expect(result.resolvedModule).toBeNull();
+    expect(result.themes).toEqual([]);
+  });
+
+  it('14b. Broken trust alone does not retain self_hate_at_vulnerability', async () => {
+    const { normalizeClientNanoInterpretResult } = await import(
+      '@/lib/pipeline/nano-interpret-client'
+    );
+    const result = normalizeClientNanoInterpretResult({
+      translatedNL: 'Hij heeft al meerdere keren gelogen en mijn vertrouwen is kapot.',
+      intent: 'venting',
+      themes: ['broken_trust', 'self_hate_at_vulnerability'],
+      resolvedModule: null,
+      matchedTheme: 'broken_trust',
+    }, 'Hij heeft al meerdere keren gelogen en mijn vertrouwen is kapot.', 'kim');
+
+    expect(result.themes).toEqual(['broken_trust']);
+    expect(result.matchedTheme).toBe('broken_trust');
+  });
+
+  it('15. Exact Kim plan-trekken phrase activates existing K05 boundary detection', async () => {
+    const { detectK05CommunicationContext } = await import(
+      '@/lib/engine/kim/k05-communication'
+    );
+    const result = detectK05CommunicationContext(
+      'Ik wil gewoon zeggen dat hij zijn plan moet trekken en dat ik er klaar mee ben.'
+    );
+
+    expect(result.signals.some((signal) => signal.context === 'BOUNDARY_SETTING')).toBe(true);
+  });
+
+  it('16. Deterministic K05 block reaches Kim client prompt and never Elias prompt', async () => {
+    const { buildClientSystemPrompt } = await import(
+      '@/lib/ai/prompt/client-system-prompt-builder'
+    );
+    const k05Context = '[K05 COMMUNICATION — deterministic]\nUse a boundary with a repair path.';
+    const kimPrompt = buildClientSystemPrompt({
+      persona: 'kim',
+      crisisLevel: 0,
+      safetyLevel: 'none',
+      k05Context,
+    });
+    const eliasPrompt = buildClientSystemPrompt({
+      persona: 'elias',
+      crisisLevel: 0,
+      safetyLevel: 'none',
+      k05Context,
+    });
+
+    expect(kimPrompt.systemPrompt).toContain(k05Context);
+    expect(kimPrompt.debug?.includedSections).toContain('k05Context');
+    expect(eliasPrompt.systemPrompt).not.toContain(k05Context);
+  });
+
   // Structural test: verify the guard exists in pipeline.ts source
   it('pipeline.ts contains the feature flag guard', async () => {
     const fs = await import('fs');

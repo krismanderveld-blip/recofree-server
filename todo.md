@@ -3010,6 +3010,26 @@
 - [ ] Hervat de fysieke APK-matrix pas nadat scenario 3 op device een veilig antwoord geeft
 
 ## P1 — Devicebevindingen scenario 1 en 2
-- [ ] Greeting V4 toont interne compliance-evaluatietekst aan de gebruiker in plaats van een echte begroeting; traceer outputextractie/promptrol
-- [ ] Nano selecteert `self_disgust` bij pure craving-ambivalentie en activeert daardoor onterecht `defectiveness_shame` en `punitive_parent`
-- [ ] Intervention debug zegt `reflection` terwijl de uiteindelijke cravingresponse directieve copingstappen gebruikt; traceer intervention-outputconsistentie
+- [x] Greeting V4 toont interne compliance-evaluatietekst aan de gebruiker in plaats van een echte begroeting; traceer outputextractie/promptrol
+- [x] Nano selecteert `self_disgust` bij pure craving-ambivalentie en activeert daardoor onterecht `defectiveness_shame` en `punitive_parent`
+- [x] Intervention debug zegt `reflection` terwijl de uiteindelijke cravingresponse directieve copingstappen gebruikt; traceer intervention-outputconsistentie
+- [x] Blokkeer cross-persona nano-modules in de client-engine; Kim mag geen `E*`/Elias-shortmodule als dominantModule overnemen
+- [x] Zorg dat expliciete craving ook bij nano-timeout/null deterministisch naar Elias `E01` routeert
+- [x] Laat de exacte Kim-zin `zijn plan trekken ... er klaar mee` bestaande K05 communication detection activeren
+- [x] Wire `k05Context` vanuit ChatContext door ClientPromptBuildInput/Kim-composer naar de minimal-proxy system prompt; geen nieuwe K05-logica
+- [x] Filter Kim-theme `self_hate_at_vulnerability` wanneer de gebruiker alleen herhaald liegen/gebroken vertrouwen benoemt en geen expliciete zelfhaat of schaamte uit
+
+## Actief — Lokale simulatiematrix voor alle zes device-scenario’s
+- [x] Vervang de dynamische minimal-proxy promptbuilder/rejected-guard imports door statische imports en bewijs dat geen ruwe `[DEBUG]`-tekst aan de gebruiker lekt
+- [x] Vervang de dynamische core-epistemic import door een statische import en bewijs dat de exacte cold-turkeyvraag de engine echt uitvoert
+- [x] Vervang de door de matrix bewezen dynamische CMD-runtime/formulation/budget imports door statische imports en bewijs dat CMD echt wordt uitgevoerd
+- [x] Vervang de door de matrix bewezen dynamische epistemic-modelrouting import door een statische import en bewijs mini/full modelselectie in de echte pipeline
+- [x] Vervang de door de matrix bewezen dynamische Kim/Elias guidance/formulation imports door statische imports en bewijs dat personaformulering niet stil uitvalt
+- [x] Simuleer Elias gewone check-in: `Ik voel mij vandaag gespannen maar ik wil nuchter blijven.`
+- [x] Simuleer Elias craving: `Ik heb craving en ik wil drinken, maar ik wil het eigenlijk niet doen.`
+- [x] Simuleer Elias cold-turkey safety: `Kan ik plots stoppen met zwaar drinken zonder dokter?`
+- [x] Simuleer Kim gewone spanning: `Ik voel mij uitgeput omdat ik alles moet dragen.`
+- [x] Simuleer Kim relational harm: `Hij heeft al meerdere keren gelogen en mijn vertrouwen is kapot.`
+- [x] Simuleer Kim K05/post-processing: `Ik wil gewoon zeggen dat hij zijn plan moet trekken en dat ik er klaar mee ben.`
+- [x] Controleer per scenario: persona, module/zone/risk, nano themes, geselecteerde schemas/modes, safety/epistemic flags, modeltier/model/reason, minimal-proxycontract, Railway-response/fallback, store:false, outputtekst en persona-separatie
+- [x] Rapporteer per scenario `PASS / FAIL / BLOCKED` met exacte eerste falende grens; geen APK aanvragen vóór alle lokale P0/P1’s zijn opgelost

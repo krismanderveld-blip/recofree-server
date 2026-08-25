@@ -177,7 +177,8 @@ const BOUNDARY_SETTING_MARKERS = [
   'moet een grens stellen', 'hoe zeg ik nee', 'kan dit niet blijven doen',
   'moet het zeggen', 'wil communiceren', 'moeilijk gesprek',
   'hoe breng ik dit ter sprake', 'moet praten over',
-  'wil iets zeggen maar', 'bang om te zeggen',
+  'wil iets zeggen maar', 'wil gewoon zeggen', 'bang om te zeggen',
+  'zijn plan moet trekken', 'haar plan moet trekken', 'er klaar mee',
 ];
 
 const BAD_TIMING_MARKERS = [
