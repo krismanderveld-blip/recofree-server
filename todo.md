@@ -3038,3 +3038,9 @@
 - [x] Verifieer of Railway deployment voor GitHub commit `16c7bd9` succesvol is en welke commit productie werkelijk draait
 - [x] Controleer productie `/api/health`, nano en minimal-proxy zonder raw memory en met `store:false`
 - [x] Rapporteer `APK BUILD ELIGIBLE` versus blocker en geef het exacte finale deviceprotocol
+
+## Actief — Overdraagbaar integratiemodel dagstructuur en wizard
+- [x] Inventariseer de werkelijke RecoFree-schermen, componenten, types, opslagkeys en navigatie voor dagstructuur en wizard
+- [x] Reconstrueer uitsluitend validatie, lokale persistence, completion, notificaties en editorflow; geen AI, i18n, persona- of andere wizardinhoud
+- [x] Schrijf een projectonafhankelijk functioneel en technisch integratiemodel met TypeScript-contracten en implementatievolgorde
+- [x] Controleer het model tegen de actuele code en lever het als downloadbaar document
