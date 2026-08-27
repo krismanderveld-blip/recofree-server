@@ -30,6 +30,7 @@ import { enforceGreetingOutputRulesV3 } from './buildGreetingSynthesisPrompt';
 import { detectUserLanguageFromContent, getGreetingLanguageInstruction } from './detectUserLanguage';
 import { extractGreetingFacts, type GreetingFactExtractionResult } from './greetingFactExtractor';
 import { validateGreetingAgainstFacts } from './greetingFactValidator';
+import { callMinimalProxy } from '@/lib/ai/minimal-proxy-client';
 
 export interface SessionInitGreetingInput {
   backpack: Backpack;
@@ -148,7 +149,7 @@ export async function sessionInitGreetingStep(
   let rawGreeting: string;
   let connectionFailed = false;
   try {
-    rawGreeting = await callSessionGreetingEndpoint(apiBaseUrl, systemPrompt, userName, clinicalModeActive, vspInsightContext);
+      rawGreeting = await callSessionGreetingEndpoint(apiBaseUrl, systemPrompt, userName, clinicalModeActive, vspInsightContext, backpack.userType === 'kim' ? 'kim' : 'elias');
   } catch (error) {
     connectionFailed = true;
     console.warn('[SessionGreetingV3] GPT call failed, using contextual fallback:', error);
@@ -171,7 +172,7 @@ export async function sessionInitGreetingStep(
     try {
       // Retry with stricter prompt: append fact-only constraint
       const stricterPrompt = systemPrompt + `\n\n=== RETRY — VORIGE OUTPUT AFGEWEZEN (${validation.reason}) ===\nJe vorige output bevatte informatie die NIET in de brondata staat. Probeer opnieuw.\nGebruik UITSLUITEND de feiten die hierboven staan. Voeg NIETS toe.`;
-      const retryGreeting = await callSessionGreetingEndpoint(apiBaseUrl, stricterPrompt, userName, clinicalModeActive, vspInsightContext);
+      const retryGreeting = await callSessionGreetingEndpoint(apiBaseUrl, stricterPrompt, userName, clinicalModeActive, vspInsightContext, backpack.userType === 'kim' ? 'kim' : 'elias');
       validation = validateGreetingAgainstFacts(retryGreeting, factResult.facts);
       if (validation.valid) {
         greeting = retryGreeting;
@@ -199,36 +200,34 @@ export async function sessionInitGreetingStep(
 // ─── Server Call ────────────────────────────────────────────────────────────
 
 async function callSessionGreetingEndpoint(
-  apiBaseUrl: string,
+  _apiBaseUrl: string,
   systemPrompt: string,
   userName: string,
   clinicalModeActive: boolean = false,
   vspInsightContext: string | null = null,
+  persona: 'elias' | 'kim' = 'elias',
 ): Promise<string> {
-  const url = `${apiBaseUrl}/api/session-greeting`;
   // 15s timeout to accommodate Railway cold starts (typically 3-5s)
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 15000);
   try {
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({ systemPrompt, userName, clinicalModeActive, vspInsightContext }),
+    const result = await callMinimalProxy({
+      persona,
+      systemPrompt,
+      messages: [{ role: 'user', content: `Generate a personal greeting for ${userName}. Follow the final language rule exactly.` }],
+      model: 'gpt-4o-mini',
+      maxTokens: 1590,
+      temperature: 0.7,
+      promptBuildVersion: 'session-greeting-v3-client-v2',
       signal: controller.signal,
     });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Session greeting endpoint error: ${response.status} - ${errorText}`);
-    }
-
-    const data = await response.json() as { success: boolean; greeting: string };
-    if (!data.success || !data.greeting) {
+    const greeting = result.text.trim();
+    if (!greeting) {
       throw new Error('Invalid response from session greeting endpoint');
     }
-
-    return data.greeting;
+    if (!clinicalModeActive) return greeting;
+    const framework = vspInsightContext?.match(/Framework: (\w+)/)?.[1] ?? 'MI';
+    return `${greeting}\n<clinical>\nVSP-Framework: ${framework}\nMethod: Therapeutic greeting\nObservation: Session start\nIntervention: Warm opening + open question</clinical>`;
   } finally {
     clearTimeout(timeoutId);
   }

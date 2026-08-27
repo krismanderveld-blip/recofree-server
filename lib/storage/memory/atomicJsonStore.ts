@@ -1,39 +1,33 @@
 /**
- * Atomic JSON store using AsyncStorage.
- * Provides read/write with basic error handling.
+ * Canonical JSON persistence boundary.
  *
- * Memory store keys (recofree_memory/{persona}/*.dat) are sensitive and
- * routed through the SessionMemoryCache (session-based encryption timing).
- * Exception: logs.dat has its own dedicated encryption layer (encrypted envelope),
- * so it is NOT double-encrypted here.
+ * Sensitive RecoFree stores are always routed through SessionMemoryCache and
+ * AES-GCM storage. Read-modify-write mutations are serialized per key so
+ * concurrent extraction, chat and refresh updates cannot overwrite each other.
  */
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { SessionMemoryCache } from "@/lib/crypto/session-memory-cache";
+import { isSensitiveStorageKey } from "@/lib/crypto/storage-encryption";
 
-/**
- * Memory store keys that should be encrypted at the storage layer.
- * logs.dat is excluded because it has its own encryption envelope.
- */
 function isEncryptedMemoryKey(key: string): boolean {
-  return (
-    key.startsWith("recofree_memory/") &&
-    !key.endsWith("/logs.dat")
-  );
+  return key.startsWith("recofree_memory/") && !key.endsWith("/logs.dat");
 }
 
-/**
- * Read a JSON value from AsyncStorage.
- * Returns null if key doesn't exist or parse fails.
- * Encrypted memory keys route through SessionMemoryCache (in-memory during session).
- */
+function isSensitiveCoreKey(key: string): boolean {
+  return isSensitiveStorageKey(key) && !isEncryptedMemoryKey(key);
+}
+
+function isEncryptedKey(key: string): boolean {
+  return isEncryptedMemoryKey(key) || isSensitiveCoreKey(key);
+}
+
+const mutationQueues = new Map<string, Promise<void>>();
+
 export async function readJson<T>(key: string): Promise<T | null> {
   try {
-    if (isEncryptedMemoryKey(key)) {
-      const raw = await SessionMemoryCache.get(key);
-      if (raw === null) return null;
-      return JSON.parse(raw) as T;
-    }
-    const raw = await AsyncStorage.getItem(key);
+    const raw = isEncryptedKey(key)
+      ? await SessionMemoryCache.get(key)
+      : await AsyncStorage.getItem(key);
     if (raw === null) return null;
     return JSON.parse(raw) as T;
   } catch {
@@ -41,26 +35,60 @@ export async function readJson<T>(key: string): Promise<T | null> {
   }
 }
 
-/**
- * Write a JSON value to AsyncStorage atomically.
- * Encrypted memory keys route through SessionMemoryCache (written to memory, flushed on inactivity/background).
- */
 export async function writeJson<T>(key: string, value: T): Promise<void> {
   const serialized = JSON.stringify(value);
+  if (isSensitiveCoreKey(key)) {
+    await SessionMemoryCache.setPersisted(key, serialized);
+    return;
+  }
   if (isEncryptedMemoryKey(key)) {
     await SessionMemoryCache.set(key, serialized);
-  } else {
-    await AsyncStorage.setItem(key, serialized);
+    return;
   }
+  await AsyncStorage.setItem(key, serialized);
 }
 
 /**
- * Remove a key from AsyncStorage.
+ * Serialize read-modify-write operations for one key. The mutator receives the
+ * latest committed value and its result is encrypted before the next queued
+ * mutation starts.
  */
+export async function updateJson<T>(
+  key: string,
+  mutator: (current: T | null) => T,
+): Promise<T> {
+  const previous = mutationQueues.get(key) ?? Promise.resolve();
+  let resolveResult!: (value: T) => void;
+  let rejectResult!: (reason?: unknown) => void;
+  const result = new Promise<T>((resolve, reject) => {
+    resolveResult = resolve;
+    rejectResult = reject;
+  });
+
+  const queued = previous
+    .catch(() => undefined)
+    .then(async () => {
+      try {
+        const next = mutator(await readJson<T>(key));
+        await writeJson(key, next);
+        resolveResult(next);
+      } catch (error) {
+        rejectResult(error);
+      }
+    });
+
+  mutationQueues.set(key, queued);
+  void queued.finally(() => {
+    if (mutationQueues.get(key) === queued) mutationQueues.delete(key);
+  });
+
+  return result;
+}
+
 export async function removeJson(key: string): Promise<void> {
-  if (isEncryptedMemoryKey(key)) {
+  if (isEncryptedKey(key)) {
     await SessionMemoryCache.remove(key);
-  } else {
-    await AsyncStorage.removeItem(key);
+    return;
   }
+  await AsyncStorage.removeItem(key);
 }

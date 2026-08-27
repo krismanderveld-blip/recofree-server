@@ -175,6 +175,21 @@ export const SENSITIVE_KEYS = [
   '@recofree_projection_kim',
   '@recofree_extracted_entities',
   '@vsp_backpack_profile',
+  'emergencyContacts',
+  '@recofree:eigenRegiePlan',
+  '@recofree_eigenregie_notification_settings',
+  '@recofree_eigenregie_last_check',
+  '@recofree_daystructure_v1',
+  '@recofree_daystructure_completion_v1',
+] as const;
+
+/** Dynamic sensitive stores whose final key contains persona/user identity. */
+export const SENSITIVE_KEY_PREFIXES = [
+  'vsp_insight_profile_',
+  'vsp_discrepancy_events_',
+  'vsp_phase_transitions_',
+  'vsp_soothing_effects_',
+  'vsp_soothing_choice_',
 ] as const;
 
 /**
@@ -192,6 +207,14 @@ export const MEMORY_STORE_KEYS = [
 ] as const;
 
 export type SensitiveKey = typeof SENSITIVE_KEYS[number];
+
+export function isSensitiveStorageKey(key: string): boolean {
+  return (
+    (SENSITIVE_KEYS as readonly string[]).includes(key) ||
+    (MEMORY_STORE_KEYS as readonly string[]).includes(key) ||
+    SENSITIVE_KEY_PREFIXES.some((prefix) => key.startsWith(prefix))
+  );
+}
 
 /**
  * Read and decrypt a sensitive key from AsyncStorage.
@@ -281,8 +304,16 @@ export async function importStorageKey(keyBase64: string): Promise<void> {
 export async function migrateAllToEncrypted(): Promise<{ migrated: string[]; alreadyEncrypted: string[]; missing: string[] }> {
   const result = { migrated: [] as string[], alreadyEncrypted: [] as string[], missing: [] as string[] };
 
-  // Migrate both legacy sensitive keys and memory store keys
-  const allKeysToMigrate: readonly string[] = [...SENSITIVE_KEYS, ...MEMORY_STORE_KEYS];
+  // Migrate fixed keys and any dynamic per-user/persona VSP Insight keys.
+  const existingKeys = await AsyncStorage.getAllKeys();
+  const dynamicSensitiveKeys = existingKeys.filter((key) =>
+    SENSITIVE_KEY_PREFIXES.some((prefix) => key.startsWith(prefix))
+  );
+  const allKeysToMigrate = Array.from(new Set<string>([
+    ...SENSITIVE_KEYS,
+    ...MEMORY_STORE_KEYS,
+    ...dynamicSensitiveKeys,
+  ]));
 
   for (const key of allKeysToMigrate) {
     const raw = await AsyncStorage.getItem(key);

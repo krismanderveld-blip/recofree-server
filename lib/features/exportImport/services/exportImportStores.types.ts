@@ -73,6 +73,24 @@ export interface ExportableAppPreferencesStore {
   replaceAll(data: { language?: string | null; country?: string | null }): Promise<void>;
 }
 
+export interface ExportableVspInsightStore {
+  exportAllPersonas(): Promise<{ elias?: unknown | null; kim?: unknown | null }>;
+  replaceAllPersonas(data: { elias?: unknown | null; kim?: unknown | null }): Promise<void>;
+}
+
+export interface ExportableEigenRegieAuxiliaryStore {
+  exportAll(): Promise<{
+    legacyPlan?: unknown | null;
+    notificationSettings?: unknown | null;
+    lastCheckAt?: string | null;
+  }>;
+  replaceAll(data: {
+    legacyPlan?: unknown | null;
+    notificationSettings?: unknown | null;
+    lastCheckAt?: string | null;
+  }): Promise<void>;
+}
+
 // ─── Main Interface ─────────────────────────────────────────────────────────
 
 export interface ExportImportStores {
@@ -89,4 +107,8 @@ export interface ExportImportStores {
   derivedCacheStore: ExportableDerivedCacheStore;
   dayStructureStore: ExportableDayStructureStore;
   appPreferencesStore: ExportableAppPreferencesStore;
+  /** Optional for backward-compatible test adapters; production always supplies it. */
+  vspInsightStore?: ExportableVspInsightStore;
+  /** KERP is canonical in Backpack; this preserves legacy plan and reminder state. */
+  eigenRegieAuxiliaryStore?: ExportableEigenRegieAuxiliaryStore;
 }

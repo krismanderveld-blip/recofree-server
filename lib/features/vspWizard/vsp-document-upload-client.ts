@@ -2,7 +2,7 @@
  * VSP Document Upload Client
  *
  * Picks a document (PDF, DOCX, TXT) from the device, reads its text content,
- * sends it to the server for GPT-based extraction, and returns a VspStructuredPlan.
+ * sends minimized text through the generic minimal proxy, and returns a VspStructuredPlan.
  *
  * Gracefully handles:
  * - Incomplete documents (zones left empty)
@@ -10,12 +10,12 @@
  * - Network/server errors
  * - Web platform (FileSystem not available → uses fetch for blob reading)
  */
-import { Platform } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
-import { getApiBaseUrl } from '@/constants/oauth';
-import * as Auth from '@/lib/_core/auth';
+import { callMinimalProxyJson } from '@/lib/ai/minimal-proxy-client';
 import type { VspStructuredPlan } from '@/lib/ai/types';
 import { LocalDeviceTimeService } from "@/lib/core/time";
+import { extractLocalDocumentText } from '@/lib/features/document/local-document-text';
+import { minimizeAnalysisText } from '@/lib/privacy/analysis-text-minimizer';
 
 export interface VspUploadResult {
   success: boolean;
@@ -33,9 +33,7 @@ export async function pickAndParseVspDocument(): Promise<VspUploadResult> {
     // 1. Pick document
     const result = await DocumentPicker.getDocumentAsync({
       type: [
-        'application/pdf',
         'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        'application/msword',
         'text/plain',
       ],
       copyToCacheDirectory: true,
@@ -55,10 +53,9 @@ export async function pickAndParseVspDocument(): Promise<VspUploadResult> {
     }
 
     console.log(`[VspUpload] Text extracted successfully, length=${documentText.length}`);
-    console.log(`[VspUpload] Preview: ${documentText.slice(0, 150).replace(/\n/g, ' | ')}`);
 
     // 3. Send to server for GPT parsing
-    const vspPlan = await sendForParsing(documentText);
+    const vspPlan = await parseVspDocumentText(documentText);
     if (!vspPlan) {
       return { success: false, error: 'Het document kon niet verwerkt worden door GPT. Probeer het opnieuw.' };
     }
@@ -78,134 +75,60 @@ export async function pickAndParseVspDocument(): Promise<VspUploadResult> {
 
 /**
  * Read text content from a picked document asset.
- * For .txt files: read directly.
- * For .docx/.pdf: upload to server for text extraction (server-side).
+ * TXT and DOCX are extracted locally. Raw files never leave the device.
  */
 async function readDocumentText(asset: DocumentPicker.DocumentPickerAsset): Promise<string | null> {
   const { uri, mimeType, name } = asset;
-
-  // For plain text files, read directly
-  if (mimeType === 'text/plain' || name.endsWith('.txt')) {
-    return await readTextFile(uri);
-  }
-
-  // For DOCX/PDF: send the raw file to the server for text extraction
-  // We'll send it as base64 to avoid multipart complexity
-  const base64Content = await readFileAsBase64(uri);
-  if (!base64Content) return null;
-
-  const apiBaseUrl = getApiBaseUrl();
-  const token = await Auth.getSessionToken();
-  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-  if (token) headers['Authorization'] = `Bearer ${token}`;
-
-  const response = await fetch(`${apiBaseUrl}/api/vsp/extract-text`, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify({ base64Content, mimeType, fileName: name }),
-  });
-
-  if (!response.ok) {
-    console.error('[VspUpload] Text extraction failed:', response.status);
-    return null;
-  }
-
-  const data = await response.json();
-  return data.text || null;
-}
-
-/**
- * Read a text file from URI
- */
-async function readTextFile(uri: string): Promise<string | null> {
-  try {
-    if (Platform.OS === 'web') {
-      const response = await fetch(uri);
-      return await response.text();
-    }
-    // Native: use expo-file-system (legacy API for EncodingType)
-    const FileSystem = await import('expo-file-system/legacy');
-    const content = await FileSystem.readAsStringAsync(uri, {
-      encoding: FileSystem.EncodingType.UTF8,
-    });
-    return content;
-  } catch (err) {
-    console.error('[VspUpload] readTextFile error:', err);
-    return null;
-  }
-}
-
-/**
- * Read a file as base64 from URI
- */
-async function readFileAsBase64(uri: string): Promise<string | null> {
-  try {
-    if (Platform.OS === 'web') {
-      const response = await fetch(uri);
-      const blob = await response.blob();
-      return await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          const result = reader.result as string;
-          // Strip data:...;base64, prefix
-          const base64 = result.split(',')[1] || result;
-          resolve(base64);
-        };
-        reader.onerror = reject;
-        reader.readAsDataURL(blob);
-      });
-    }
-    // Native: use expo-file-system (legacy API for EncodingType)
-    const FileSystem = await import('expo-file-system/legacy');
-    const content = await FileSystem.readAsStringAsync(uri, {
-      encoding: FileSystem.EncodingType.Base64,
-    });
-    return content;
-  } catch (err) {
-    console.error('[VspUpload] readFileAsBase64 error:', err);
-    return null;
-  }
+  return extractLocalDocumentText({ uri, mimeType, name });
 }
 
 /**
  * Send document text to server for GPT-based VSP extraction
  */
-async function sendForParsing(documentText: string): Promise<VspStructuredPlan | null> {
+export async function parseVspDocumentText(documentText: string): Promise<VspStructuredPlan | null> {
   try {
-    const apiBaseUrl = getApiBaseUrl();
-    const token = await Auth.getSessionToken();
-    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-    if (token) headers['Authorization'] = `Bearer ${token}`;
-
-    console.log(`[VspUpload] Sending ${documentText.length} chars to ${apiBaseUrl}/api/vsp/parse-document`);
-
-    const response = await fetch(`${apiBaseUrl}/api/vsp/parse-document`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({ documentText }),
+    const analysisText = minimizeAnalysisText(documentText).text;
+    console.log(`[VspUpload] Sending minimized text through minimal proxy (${analysisText.length} chars)`);
+    const parsed = await callMinimalProxyJson<Record<string, any>>({
+      persona: 'elias',
+      systemPrompt: `Extract a personal safety plan (VSP) into JSON. Only copy explicitly written content; never diagnose, infer or add advice. Preserve the user's wording. Return zones green, yellow, orange, red, purple; each with signals, whatHelps, anchorSentence. Also return triggers with trigger/counterThought, recoveryRules, mainAnchorSentence. Missing fields must be empty strings or empty arrays.`,
+      messages: [{ role: 'user', content: analysisText }],
+      model: 'gpt-4o-2024-08-06',
+      maxTokens: 4000,
+      temperature: 0,
+      promptBuildVersion: 'vsp-document-extraction-client-v2',
     });
-
-    if (!response.ok) {
-      const errBody = await response.text().catch(() => 'no body');
-      console.error(`[VspUpload] Parse failed: HTTP ${response.status} — ${errBody.slice(0, 200)}`);
-      return null;
-    }
-
-    const data = await response.json();
-    console.log(`[VspUpload] Server response: success=${data.success}, hasVspPlan=${!!data.vspPlan}`);
-
-    if (!data.success || !data.vspPlan) {
-      console.error('[VspUpload] Server returned no vspPlan:', JSON.stringify(data).slice(0, 300));
-      return null;
-    }
-
-    // Add lastUpdated timestamp
+    const emptyZone = { signals: '', whatHelps: '', anchorSentence: '' };
+    const zone = (value: unknown) => {
+      const raw = value && typeof value === 'object' ? value as Record<string, unknown> : {};
+      return {
+        signals: typeof raw.signals === 'string' ? raw.signals : '',
+        whatHelps: typeof raw.whatHelps === 'string' ? raw.whatHelps : '',
+        anchorSentence: typeof raw.anchorSentence === 'string' ? raw.anchorSentence : '',
+      };
+    };
+    const zones = parsed.zones && typeof parsed.zones === 'object' ? parsed.zones as Record<string, unknown> : {};
     return {
-      ...data.vspPlan,
+      zones: {
+        green: { ...emptyZone, ...zone(zones.green) },
+        yellow: { ...emptyZone, ...zone(zones.yellow) },
+        orange: { ...emptyZone, ...zone(zones.orange) },
+        red: { ...emptyZone, ...zone(zones.red) },
+        purple: { ...emptyZone, ...zone(zones.purple) },
+      },
+      triggers: Array.isArray(parsed.triggers)
+        ? parsed.triggers.filter((item): item is Record<string, unknown> => Boolean(item) && typeof item === 'object')
+            .map((item) => ({ trigger: String(item.trigger ?? ''), counterThought: String(item.counterThought ?? '') }))
+            .filter((item) => item.trigger || item.counterThought)
+        : [],
+      recoveryRules: Array.isArray(parsed.recoveryRules)
+        ? parsed.recoveryRules.map(String).map((item) => item.trim()).filter(Boolean)
+        : [],
+      mainAnchorSentence: typeof parsed.mainAnchorSentence === 'string' ? parsed.mainAnchorSentence : '',
       lastUpdated: LocalDeviceTimeService.now().utcIso,
-    } as VspStructuredPlan;
+    };
   } catch (err) {
-    console.error('[VspUpload] sendForParsing error:', err);
+    console.error('[VspUpload] minimal-proxy parse error:', err);
     return null;
   }
 }

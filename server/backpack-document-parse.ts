@@ -11,6 +11,7 @@
  * Max tokens: 8000 (life stories can be long)
  */
 import type { Request, Response, Express } from 'express';
+import { minimizeAnalysisText } from '../lib/privacy/analysis-text-minimizer';
 
 const BACKPACK_PARSE_SYSTEM_PROMPT = `You are a clinical extraction tool for RecoFree, an addiction recovery app. You receive the full text of a user's personal life story document (levensverhaal / bilan).
 
@@ -133,7 +134,8 @@ export function registerBackpackDocumentParseRoute(app: Express): void {
         return;
       }
 
-      console.log(`[BackpackDocumentParse] Starting parse, textLength=${documentText.length}`);
+      const analysisText = minimizeAnalysisText(documentText).text;
+      console.log(`[BackpackDocumentParse] Starting minimized parse, textLength=${analysisText.length}`);
 
       // Determine output language based on user's chosen language
       const langMap: Record<string, string> = { nl: 'Dutch', en: 'English', fr: 'French' };
@@ -152,7 +154,7 @@ export function registerBackpackDocumentParseRoute(app: Express): void {
           max_tokens: 8000,
           messages: [
             { role: 'system', content: BACKPACK_PARSE_SYSTEM_PROMPT + `\n\nIMPORTANT: All extracted text content MUST be preserved in its original language. The user's app language is ${outputLanguage}. If you need to add any labels or context, use ${outputLanguage}.` },
-            { role: 'user', content: `Extract the life story / bilan into structured backpack format. Preserve the user's original language. Any added context must be in ${outputLanguage}.\n\n${documentText}` },
+            { role: 'user', content: `Extract the life story / bilan into structured backpack format. Preserve the user's original language. Any added context must be in ${outputLanguage}.\n\n${analysisText}` },
           ],
         }),
       });

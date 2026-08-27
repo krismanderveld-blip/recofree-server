@@ -19,6 +19,7 @@ import { analyzeAllSections } from '@/lib/backpack-extractor/section-analysis-se
 import { distillContextDat, serializeContextDatForGPT } from '@/lib/pipeline/context-dat-distiller';
 import { createDistillationStore } from '@/lib/engine/shared/dist01-store';
 import { SessionMemoryCache } from '@/lib/crypto/session-memory-cache';
+import { readJson, updateJson } from '@/lib/storage/memory/atomicJsonStore';
 import { LocalDeviceTimeService } from '@/lib/core/time';
 import type { Backpack } from '@/lib/ai/types';
 import { fillBalkmetafoorFromDeepAnalysis } from '@/lib/features/balkmetafoor/balkmetafoorFromDeepAnalysis';
@@ -108,28 +109,11 @@ export async function runManualDataRefresh(input: ManualDataRefreshInput): Promi
   try {
     // Load current backpack
     let backpack: Backpack | null = null;
-    try {
-      const bpJson = await SessionMemoryCache.get(BACKPACK_KEY);
-      if (bpJson) backpack = JSON.parse(bpJson);
-    } catch {
-      // Try direct AsyncStorage fallback
-      try {
-        const raw = await AsyncStorage.getItem(BACKPACK_KEY);
-        if (raw) backpack = JSON.parse(raw);
-      } catch { /* ignore */ }
-    }
+    try { backpack = await readJson<Backpack>(BACKPACK_KEY); } catch { /* ignore */ }
 
     // Load current userDat
     let userDat: any = null;
-    try {
-      const udJson = await SessionMemoryCache.get(USERDAT_KEY);
-      if (udJson) userDat = JSON.parse(udJson);
-    } catch {
-      try {
-        const raw = await AsyncStorage.getItem(USERDAT_KEY);
-        if (raw) userDat = JSON.parse(raw);
-      } catch { /* ignore */ }
-    }
+    try { userDat = await readJson<any>(USERDAT_KEY); } catch { /* ignore */ }
 
     // 1. Backpack analysis refresh
     if (input.refreshBackpack) {
@@ -147,18 +131,18 @@ export async function runManualDataRefresh(input: ManualDataRefreshInput): Promi
           if (entities) {
             // Update user.dat with extracted entities
             if (userDat) {
-              userDat.extractedEntities = entities;
-              // Also populate relationalAnchors from persons for personalAnchors block
-              if (entities.persons && entities.persons.length > 0) {
-                userDat.relationalAnchors = entities.persons.map((p: any) => ({
-                  name: p.name,
-                  role: p.relationshipNL || p.relationship || 'onbekend',
-                  roleEN: p.relationship || 'unknown',
-                  emotionalWeight: p.emotionalValence === 'positive' ? 0.8 : p.emotionalValence === 'negative' ? 0.4 : 0.6,
-                }));
-              }
-              await SessionMemoryCache.set(USERDAT_KEY, JSON.stringify(userDat));
-              await AsyncStorage.setItem(USERDAT_KEY, JSON.stringify(userDat));
+              userDat = await updateJson<any>(USERDAT_KEY, (latest) => ({
+                ...(latest ?? userDat ?? {}),
+                extractedEntities: entities,
+                relationalAnchors: entities.persons && entities.persons.length > 0
+                  ? entities.persons.map((p: any) => ({
+                      name: p.name,
+                      role: p.relationshipNL || p.relationship || 'onbekend',
+                      roleEN: p.relationship || 'unknown',
+                      emotionalWeight: p.emotionalValence === 'positive' ? 0.8 : p.emotionalValence === 'negative' ? 0.4 : 0.6,
+                    }))
+                  : (latest ?? userDat ?? {}).relationalAnchors,
+              }));
               console.log('[ManualRefresh] Extraction complete:', entities.persons.length, 'persons,', entities.events.length, 'events,', entities.patterns.length, 'patterns');
             }
           }
@@ -299,15 +283,7 @@ export async function runManualDataRefresh(input: ManualDataRefreshInput): Promi
       // Re-read userDat from storage to include deep analysis fields
       // written by analyzeAllSections/mergeAnalysisToUserDat above
       let freshUserDat = userDat;
-      try {
-        const udJson = await SessionMemoryCache.get(USERDAT_KEY);
-        if (udJson) freshUserDat = JSON.parse(udJson);
-      } catch {
-        try {
-          const raw = await AsyncStorage.getItem(USERDAT_KEY);
-          if (raw) freshUserDat = JSON.parse(raw);
-        } catch { /* keep stale as fallback */ }
-      }
+      try { freshUserDat = await readJson<any>(USERDAT_KEY) ?? userDat; } catch { /* keep stale */ }
       if (backpack && freshUserDat) {
         try {
           const contextDat = distillContextDat({
@@ -340,10 +316,7 @@ export async function runManualDataRefresh(input: ManualDataRefreshInput): Promi
     if (backpack && userDat) {
       try {
         let freshUd = userDat;
-        try {
-          const udJson = await SessionMemoryCache.get(USERDAT_KEY);
-          if (udJson) freshUd = JSON.parse(udJson);
-        } catch { /* use existing userDat */ }
+        try { freshUd = await readJson<any>(USERDAT_KEY) ?? userDat; } catch { /* use existing userDat */ }
         const risks = freshUd?.risks ?? [];
         const protectiveFactors = freshUd?.protectiveFactors ?? [];
         if (risks.length > 0 || protectiveFactors.length > 0) {
@@ -357,10 +330,12 @@ export async function runManualDataRefresh(input: ManualDataRefreshInput): Promi
             nowEpochMs: now.epochMs,
           });
           if (fillResult.updated) {
-            const updatedBackpack = { ...backpack, balkmetafoor: fillResult.balkmetafoor };
-            const BACKPACK_KEY = '@recofree_backpack';
-            await AsyncStorage.setItem(BACKPACK_KEY, JSON.stringify(updatedBackpack));
-            await SessionMemoryCache.set(BACKPACK_KEY, JSON.stringify(updatedBackpack));
+            const currentBackpack = backpack;
+            const updatedBackpack = await updateJson<Backpack>(BACKPACK_KEY, (latest) => ({
+              ...(latest ?? currentBackpack),
+              balkmetafoor: fillResult.balkmetafoor,
+            }));
+            backpack = updatedBackpack;
             console.log(`[ManualRefresh] Balkmetafoor auto-fill: +${fillResult.addedDraaglast} draaglast, +${fillResult.addedDraagkracht} draagkracht`);
           }
         }

@@ -25,6 +25,7 @@ vi.mock('@react-native-async-storage/async-storage', () => ({
       delete mockStorage[key];
       return Promise.resolve();
     }),
+    getAllKeys: vi.fn(() => Promise.resolve(Object.keys(mockStorage))),
   },
 }));
 
@@ -70,8 +71,8 @@ describe('storage-encryption', () => {
     expect(stored.startsWith('RF_ENC_V1:')).toBe(true);
   });
 
-  it('SENSITIVE_KEYS contains all 7 expected keys', async () => {
-    const { SENSITIVE_KEYS } = await import('@/lib/crypto/storage-encryption');
+  it('covers fixed and dynamic sensitive feature stores', async () => {
+    const { SENSITIVE_KEYS, SENSITIVE_KEY_PREFIXES, isSensitiveStorageKey } = await import('@/lib/crypto/storage-encryption');
     expect(SENSITIVE_KEYS).toContain('@recofree_userdat');
     expect(SENSITIVE_KEYS).toContain('@recofree_backpack');
     expect(SENSITIVE_KEYS).toContain('@recofree_diary');
@@ -79,7 +80,15 @@ describe('storage-encryption', () => {
     expect(SENSITIVE_KEYS).toContain('@recofree_projection_kim');
     expect(SENSITIVE_KEYS).toContain('@recofree_extracted_entities');
     expect(SENSITIVE_KEYS).toContain('@vsp_backpack_profile');
-    expect(SENSITIVE_KEYS.length).toBe(7);
+    expect(SENSITIVE_KEYS).toContain('emergencyContacts');
+    expect(SENSITIVE_KEYS).toContain('@recofree:eigenRegiePlan');
+    expect(SENSITIVE_KEYS).toContain('@recofree_eigenregie_notification_settings');
+    expect(SENSITIVE_KEYS).toContain('@recofree_eigenregie_last_check');
+    expect(SENSITIVE_KEYS).toContain('@recofree_daystructure_v1');
+    expect(SENSITIVE_KEYS).toContain('@recofree_daystructure_completion_v1');
+    expect(SENSITIVE_KEY_PREFIXES).toContain('vsp_insight_profile_');
+    expect(isSensitiveStorageKey('vsp_insight_profile_elias_local_user')).toBe(true);
+    expect(isSensitiveStorageKey('vsp_soothing_choice_kim_local_user')).toBe(true);
   });
 
   it('MEMORY_STORE_KEYS contains all 6 persona memory keys', async () => {
@@ -97,14 +106,17 @@ describe('storage-encryption', () => {
     const { migrateAllToEncrypted } = await import('@/lib/crypto/storage-encryption');
     mockStorage['@recofree_userdat'] = JSON.stringify({ name: 'test' });
     mockStorage['@recofree_diary'] = JSON.stringify([{ entry: 'dag 1' }]);
+    mockStorage['vsp_insight_profile_elias_local_user'] = JSON.stringify({ persona: 'elias' });
 
     const result = await migrateAllToEncrypted();
     expect(result.migrated).toContain('@recofree_userdat');
     expect(result.migrated).toContain('@recofree_diary');
+    expect(result.migrated).toContain('vsp_insight_profile_elias_local_user');
 
     // Verify encrypted
     expect(mockStorage['@recofree_userdat'].startsWith('RF_ENC_V1:')).toBe(true);
     expect(mockStorage['@recofree_diary'].startsWith('RF_ENC_V1:')).toBe(true);
+    expect(mockStorage['vsp_insight_profile_elias_local_user'].startsWith('RF_ENC_V1:')).toBe(true);
   });
 
   it('migrateAllToEncrypted skips already-encrypted keys', async () => {
@@ -173,6 +185,32 @@ describe('atomicJsonStore encryption routing', () => {
 
     const retrieved = await readJson('recofree_memory/kim/state.dat');
     expect(retrieved).toEqual(testData);
+  });
+
+  it('encrypts dynamic VSP Insight keys and restores their JSON value', async () => {
+    const { writeJson, readJson } = await import('@/lib/storage/memory/atomicJsonStore');
+    const key = 'vsp_insight_profile_elias_local_user';
+    const profile = { persona: 'elias', earlySigns: ['spanning'] };
+
+    await writeJson(key, profile);
+
+    expect(mockStorage[key].startsWith('RF_ENC_V1:')).toBe(true);
+    expect(await readJson(key)).toEqual(profile);
+  });
+
+  it.each([
+    'emergencyContacts',
+    '@recofree:eigenRegiePlan',
+    '@recofree_eigenregie_notification_settings',
+    '@recofree_daystructure_v1',
+  ])('encrypts feature store %s', async (key) => {
+    const { writeJson, readJson } = await import('@/lib/storage/memory/atomicJsonStore');
+    const value = { key, enabled: true };
+
+    await writeJson(key, value);
+
+    expect(mockStorage[key].startsWith('RF_ENC_V1:')).toBe(true);
+    expect(await readJson(key)).toEqual(value);
   });
 
   it('does NOT encrypt non-memory keys', async () => {

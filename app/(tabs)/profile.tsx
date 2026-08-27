@@ -32,6 +32,7 @@ import { createEmptyBalkmetafoor } from '@/lib/types/balkmetafoor.types';
 import type { BalkmetafoorData, BalkmetafoorEntry } from '@/lib/types/balkmetafoor.types';
 import { useTranslation } from '@/lib/i18n';
 import { LocalDeviceTimeService } from "@/lib/core/time";
+import { readJson, writeJson } from '@/lib/storage/memory/atomicJsonStore';
 
 // Stage labels now come from i18n: profile.stage.<key>
 
@@ -195,8 +196,8 @@ export default function ProfileScreen() {
   const [showContactForm, setShowContactForm] = useState(false);
 
   useEffect(() => {
-    AsyncStorage.getItem('emergencyContacts').then((data) => {
-      if (data) setEmergencyContacts(JSON.parse(data));
+    readJson<{ name: string; number: string }[]>('emergencyContacts').then((data) => {
+      if (Array.isArray(data)) setEmergencyContacts(data);
     });
   }, []);
 
@@ -204,7 +205,7 @@ export default function ProfileScreen() {
     if (!editingContact?.name.trim() || !editingContact?.number.trim()) return;
     const updated = [...emergencyContacts, { name: editingContact.name.trim(), number: editingContact.number.trim() }].slice(0, 2);
     setEmergencyContacts(updated);
-    await AsyncStorage.setItem('emergencyContacts', JSON.stringify(updated));
+    await writeJson('emergencyContacts', updated);
     setEditingContact(null);
     setShowContactForm(false);
     if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -213,7 +214,7 @@ export default function ProfileScreen() {
   const removeContact = useCallback(async (index: number) => {
     const updated = emergencyContacts.filter((_, i) => i !== index);
     setEmergencyContacts(updated);
-    await AsyncStorage.setItem('emergencyContacts', JSON.stringify(updated));
+    await writeJson('emergencyContacts', updated);
     if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   }, [emergencyContacts]);
 

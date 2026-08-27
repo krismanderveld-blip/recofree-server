@@ -63,6 +63,8 @@ export async function createEncryptedRecoFreeExport(input: {
       derivedCaches,
       dayStructureData,
       appPreferencesData,
+      vspInsightData,
+      eigenRegieAuxiliaryData,
     ] = await Promise.all([
       stores.userDatStore.exportAllPersonas(),
       stores.stateDatStore.exportAllPersonas(),
@@ -76,6 +78,8 @@ export async function createEncryptedRecoFreeExport(input: {
       stores.derivedCacheStore.exportAll(),
       stores.dayStructureStore.exportAll(),
       stores.appPreferencesStore.exportAll(),
+      stores.vspInsightStore?.exportAllPersonas() ?? Promise.resolve({ elias: null, kim: null }),
+      stores.eigenRegieAuxiliaryStore?.exportAll() ?? Promise.resolve({ legacyPlan: null, notificationSettings: null, lastCheckAt: null }),
     ]);
 
     // 2. Build persona bundles
@@ -123,6 +127,15 @@ export async function createEncryptedRecoFreeExport(input: {
         language: appPreferencesData.language ?? null,
         country: appPreferencesData.country ?? null,
       },
+      vspInsight: {
+        elias: vspInsightData.elias ?? null,
+        kim: vspInsightData.kim ?? null,
+      },
+      eigenRegieAuxiliary: {
+        legacyPlan: eigenRegieAuxiliaryData.legacyPlan ?? null,
+        notificationSettings: eigenRegieAuxiliaryData.notificationSettings ?? null,
+        lastCheckAt: eigenRegieAuxiliaryData.lastCheckAt ?? null,
+      },
     };
 
     // 4. Build scope metadata
@@ -141,6 +154,12 @@ export async function createEncryptedRecoFreeExport(input: {
       includesDerivedCaches: true,
       includesDayStructure: !!(dayStructureData.document || dayStructureData.completion),
       includesAppPreferences: !!(appPreferencesData.language || appPreferencesData.country),
+      includesVspInsight: !!(vspInsightData.elias || vspInsightData.kim),
+      includesEigenRegieAuxiliary: !!(
+        eigenRegieAuxiliaryData.legacyPlan ||
+        eigenRegieAuxiliaryData.notificationSettings ||
+        eigenRegieAuxiliaryData.lastCheckAt
+      ),
     };
 
     // 5. Build source device metadata
@@ -246,6 +265,8 @@ export function buildRecoFreeExportPlaintextPayload(
       includesDerivedCaches: true,
       includesDayStructure: !!data.shared?.dayStructure,
       includesAppPreferences: !!data.shared?.appPreferences,
+      includesVspInsight: !!data.shared?.vspInsight,
+      includesEigenRegieAuxiliary: !!data.shared?.eigenRegieAuxiliary,
     },
     data,
     integrity: { plaintextSha256Base64: integrityHash, datasetCounts },

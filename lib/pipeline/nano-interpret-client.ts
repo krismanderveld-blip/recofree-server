@@ -1,19 +1,19 @@
 /**
  * nano-interpret-client.ts — Client-side nano-interpret caller
  *
- * Calls the Railway /api/nano-interpret proxy to get semantic interpretation
- * of the user message (themes, intent, resolvedModule) from gpt-4.1-nano.
+ * Sends a client-built semantic prompt through the Railway minimal proxy.
  *
  * Used in the client pipeline BEFORE selectDominantState() to replace
  * keyword-based module detection with semantic understanding.
  */
 
-import { getApiBaseUrl } from '@/constants/oauth';
+import { callMinimalProxyJson } from '@/lib/ai/minimal-proxy-client';
 import {
   KIM_CRISIS_MODULE,
   KIM_MODULE_CATALOG,
   KIM_THERAPEUTIC_MODULES,
 } from '@/lib/engine/kim/module-catalog';
+import { buildNanoSystemPrompt, resolveNanoModuleClient } from '@/lib/pipeline/nano-interpret-routing';
 
 export interface ClientNanoInterpretResult {
   translatedNL: string;
@@ -73,31 +73,28 @@ export async function callNanoInterpret(
   const timeout = setTimeout(() => controller.abort(), 8000);
 
   try {
-    const baseUrl = getApiBaseUrl();
-    const response = await fetch(`${baseUrl}/api/nano-interpret`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userMessage, persona }),
+    const data = await callMinimalProxyJson<{
+      translatedNL?: string;
+      intent?: string;
+      themes?: string[];
+    }>({
+      persona,
+      systemPrompt: buildNanoSystemPrompt(persona),
+      messages: [{ role: 'user', content: userMessage }],
+      model: 'gpt-4o-mini',
+      maxTokens: 350,
+      temperature: 0.1,
+      promptBuildVersion: 'nano-interpret-client-v2',
       signal: controller.signal,
     });
-
-    if (!response.ok) {
-      console.warn(`[NanoInterpretClient] Proxy returned ${response.status}`);
-      return null;
-    }
-
-    const data = await response.json();
-    if (!data.success) {
-      console.warn('[NanoInterpretClient] Proxy returned success=false:', data.error);
-      return null;
-    }
+    const resolved = resolveNanoModuleClient(Array.isArray(data.themes) ? data.themes : [], persona);
 
     return normalizeClientNanoInterpretResult({
       translatedNL: data.translatedNL ?? userMessage,
       intent: data.intent ?? 'exploring',
-      themes: Array.isArray(data.themes) ? data.themes : [],
-      resolvedModule: data.resolvedModule ?? null,
-      matchedTheme: data.matchedTheme ?? null,
+      themes: resolved.themes,
+      resolvedModule: resolved.resolvedModule,
+      matchedTheme: resolved.matchedTheme,
     }, userMessage, persona);
   } catch (err: any) {
     if (err.name === 'AbortError') {

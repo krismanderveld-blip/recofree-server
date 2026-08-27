@@ -35,6 +35,10 @@ export interface ExportScopeMetadata {
   includesDerivedCaches: true;
   includesDayStructure: boolean;
   includesAppPreferences: boolean;
+  /** Optional in payload v1 for backward compatibility with older exports. */
+  includesVspInsight?: boolean;
+  /** Legacy KERP mirror plus Eigen-Regie reminder settings/checkpoint. */
+  includesEigenRegieAuxiliary?: boolean;
 }
 
 export interface RecoFreeExportData {
@@ -80,6 +84,17 @@ export interface RecoFreeSharedExportBundle {
   appPreferences?: {
     language: string | null;
     country: string | null;
+  } | null;
+  /** Local-only VSP Insight history for both personas. */
+  vspInsight?: {
+    elias: unknown | null;
+    kim: unknown | null;
+  } | null;
+  /** KERP is already in Backpack; this preserves the legacy mirror and reminders. */
+  eigenRegieAuxiliary?: {
+    legacyPlan: unknown | null;
+    notificationSettings: unknown | null;
+    lastCheckAt: string | null;
   } | null;
 }
 

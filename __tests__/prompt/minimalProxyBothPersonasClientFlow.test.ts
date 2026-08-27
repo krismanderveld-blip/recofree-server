@@ -1,7 +1,6 @@
 /**
  * FASE 4E-AUTO: Kim + Elias client route test via fetch mock + live Railway call.
- * Validates that openai-provider.ts selects /api/minimal-gpt-proxy when flag=true.
- * No production code changes. No server changes. No module changes.
+ * Validates that the production provider has only the minimal Railway route.
  */
 import { describe, it, expect, vi, beforeAll, afterAll } from 'vitest';
 import * as fs from 'fs';
@@ -30,61 +29,58 @@ describe('FASE 4E-AUTO: Both Personas Client Flow via Minimal Proxy', () => {
 
   // === ROUTE SELECTION PROOF ===
 
-  it('1. Flag=true: openai-provider selects /api/minimal-gpt-proxy', () => {
-    expect(providerSource).toContain("process.env.EXPO_PUBLIC_ENABLE_MINIMAL_GPT_PROXY === 'true'");
+  const productionBlock = providerSource.split('PRODUCTION ROUTE:')[1]?.split('} catch (error)')[0] ?? '';
+
+  it('1. Production provider unconditionally selects /api/minimal-gpt-proxy', () => {
+    expect(providerSource).not.toContain('EXPO_PUBLIC_ENABLE_MINIMAL_GPT_PROXY');
     expect(providerSource).toContain('/api/minimal-gpt-proxy');
+    expect(providerSource).not.toContain('/api/gpt-proxy');
+    expect(providerSource).not.toContain('/api/trpc/ai.chat');
   });
 
-  it('2. Flag=true: /api/gpt-proxy is NOT used in minimal path', () => {
-    const minimalBlock = providerSource.split('MINIMAL GPT PROXY ROUTE')[1]?.split('LEGACY ROUTE')[0] ?? '';
-    expect(minimalBlock).not.toContain("'/api/gpt-proxy'");
-    expect(minimalBlock).not.toContain('"/api/gpt-proxy"');
+  it('2. No legacy chat route exists in the production provider', () => {
+    expect(productionBlock).not.toContain('/api/gpt-proxy');
+    expect(productionBlock).not.toContain('/api/trpc/ai.chat');
   });
 
   it('3. Minimal request contains contractVersion=minimal_gpt_proxy_v1', () => {
-    expect(providerSource).toContain("contractVersion: 'minimal_gpt_proxy_v1'");
+    expect(productionBlock).toContain("contractVersion: 'minimal_gpt_proxy_v1'");
   });
 
   it('4. Minimal request contains store=false', () => {
-    const minimalBlock = providerSource.split('MINIMAL GPT PROXY ROUTE')[1]?.split('LEGACY ROUTE')[0] ?? '';
-    expect(minimalBlock).toContain('store: false');
+    expect(productionBlock).toContain('store: false');
   });
 
   it('5. Persona is set from context.userType (kim or elias)', () => {
-    expect(providerSource).toContain("persona: (context.userType as 'kim' | 'elias')");
+    expect(productionBlock).toContain("persona: (context.userType as 'kim' | 'elias')");
   });
 
   it('6. Elias persona defaults correctly', () => {
-    expect(providerSource).toContain("?? 'elias'");
+    expect(productionBlock).toContain("?? 'elias'");
   });
 
   it('7. buildClientSystemPrompt is used (not buildSystemPrompt)', () => {
-    const minimalBlock = providerSource.split('MINIMAL GPT PROXY ROUTE')[1]?.split('LEGACY ROUTE')[0] ?? '';
-    expect(minimalBlock).toContain('buildClientSystemPrompt');
-    expect(minimalBlock).not.toContain('buildSystemPrompt(');
+    expect(productionBlock).toContain('buildClientSystemPrompt');
+    expect(productionBlock).not.toContain('buildSystemPrompt(');
   });
 
   it('8. No invokeLLM in minimal path', () => {
-    const minimalBlock = providerSource.split('MINIMAL GPT PROXY ROUTE')[1]?.split('LEGACY ROUTE')[0] ?? '';
-    expect(minimalBlock).not.toContain('invokeLLM');
+    expect(productionBlock).not.toContain('invokeLLM');
   });
 
   it('9. No session cache in minimal path', () => {
-    const minimalBlock = providerSource.split('MINIMAL GPT PROXY ROUTE')[1]?.split('LEGACY ROUTE')[0] ?? '';
-    expect(minimalBlock).not.toContain('sessionCache');
-    expect(minimalBlock).not.toContain('SESSION_CACHE');
+    expect(productionBlock).not.toContain('sessionCache');
+    expect(productionBlock).not.toContain('SESSION_CACHE');
   });
 
-  it('10. No fallback to legacy in minimal path (code-level)', () => {
-    const minimalBlock = providerSource.split('MINIMAL GPT PROXY ROUTE')[1]?.split('LEGACY ROUTE')[0] ?? '';
-    const codeLines = minimalBlock.split('\n').filter(l => !l.trim().startsWith('//') && !l.trim().startsWith('*'));
-    const codeOnly = codeLines.join('\n');
-    expect(codeOnly).not.toContain('/api/gpt-proxy');
+  it('10. Proxy errors return locally without another backend route', () => {
+    expect(productionBlock).toContain('buildProviderFailureResponse');
+    expect(productionBlock).not.toContain('/api/gpt-proxy');
+    expect(productionBlock).not.toContain('/api/trpc/ai.chat');
   });
 
   it('11. No systemPrompt/messages/user content logging in minimal path', () => {
-    const minimalBlock = providerSource.split('MINIMAL GPT PROXY ROUTE')[1]?.split('LEGACY ROUTE')[0] ?? '';
-    const logLines = minimalBlock.split('\n').filter(l => l.includes('console.log') || l.includes('console.warn'));
+    const logLines = productionBlock.split('\n').filter(l => l.includes('console.log') || l.includes('console.warn'));
     for (const line of logLines) {
       expect(line).not.toContain('systemPrompt');
       expect(line).not.toContain('.message');

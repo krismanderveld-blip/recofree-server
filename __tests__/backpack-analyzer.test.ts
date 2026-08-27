@@ -8,6 +8,14 @@ vi.mock('@/lib/_core/auth', () => ({
 vi.mock('@/constants/oauth', () => ({
   getApiBaseUrl: vi.fn().mockReturnValue('http://localhost:3000'),
 }));
+vi.mock('@/lib/ai/minimal-proxy-client', () => ({
+  callMinimalProxyJson: async () => {
+    const response = await globalThis.fetch('/api/minimal-gpt-proxy', { method: 'POST' });
+    if (!response.ok) throw new Error(`http_${response.status}`);
+    const data = await response.json();
+    return data?.result?.data?.json?.analysis ?? data;
+  },
+}));
 
 // We test the merge logic by importing the trigger module
 // The actual server call is mocked via fetch
@@ -153,7 +161,8 @@ describe('BackpackAnalyzer — triggerBackpackAnalysisIfNeeded', () => {
       expect(result!.analyzedSectionIds).toContain('childhood');
       expect(result!.updatedUserDat.schemaTendencies!.length).toBeGreaterThan(0);
       expect(result!.updatedUserDat.modeTendencies!.length).toBeGreaterThan(0);
-      expect(result!.updatedUserDat.backpackAnalysisTimestamps!['childhood']).toBe('2026-06-15T12:00:00.000Z');
+      const analyzedAt = result!.updatedUserDat.backpackAnalysisTimestamps!['childhood'];
+      expect(Date.parse(analyzedAt)).toBeGreaterThan(Date.parse('2026-06-15T10:00:00.000Z'));
     });
 
     it('detects Kim sections that have never been analyzed', async () => {

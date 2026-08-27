@@ -5,14 +5,38 @@
   "build": {
     "development": {
       "developmentClient": true,
-      "distribution": "internal"
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_API_BASE_URL": "https://railwayappdashboard-production.up.railway.app",
+        "EXPO_PUBLIC_ENABLE_MINIMAL_GPT_PROXY": "true",
+        "EXPO_PUBLIC_ENABLE_CLINICAL_MEMORY_DISTILLATION": "true",
+        "EXPO_PUBLIC_ENABLE_CORE_EPISTEMIC_ENGINE": "true",
+        "EXPO_PUBLIC_ENABLE_EPISTEMIC_MODEL_ROUTING": "true",
+        "EXPO_PUBLIC_ENABLE_NANO_INTERPRET": "true"
+      }
     },
     "preview": {
-      "distribution": "internal"
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_API_BASE_URL": "https://railwayappdashboard-production.up.railway.app",
+        "EXPO_PUBLIC_ENABLE_MINIMAL_GPT_PROXY": "true",
+        "EXPO_PUBLIC_ENABLE_CLINICAL_MEMORY_DISTILLATION": "true",
+        "EXPO_PUBLIC_ENABLE_CORE_EPISTEMIC_ENGINE": "true",
+        "EXPO_PUBLIC_ENABLE_EPISTEMIC_MODEL_ROUTING": "true",
+        "EXPO_PUBLIC_ENABLE_NANO_INTERPRET": "true"
+      }
     },
     "production": {
       "distribution": "store",
-      "resourceClass": "medium"
+      "resourceClass": "medium",
+      "env": {
+        "EXPO_PUBLIC_API_BASE_URL": "https://railwayappdashboard-production.up.railway.app",
+        "EXPO_PUBLIC_ENABLE_MINIMAL_GPT_PROXY": "true",
+        "EXPO_PUBLIC_ENABLE_CLINICAL_MEMORY_DISTILLATION": "true",
+        "EXPO_PUBLIC_ENABLE_CORE_EPISTEMIC_ENGINE": "true",
+        "EXPO_PUBLIC_ENABLE_EPISTEMIC_MODEL_ROUTING": "true",
+        "EXPO_PUBLIC_ENABLE_NANO_INTERPRET": "true"
+      }
     }
   },
   "submit": {

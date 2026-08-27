@@ -308,7 +308,7 @@ export function buildTraceBlock(input: EngineTraceInput): string {
   lines.push('NANO-INTERPRET:');
   if (input.nanoInterpret) {
     const ni = input.nanoInterpret;
-    lines.push(`  route: railway (/api/nano-interpret)`);
+    lines.push(`  route: railway (/api/minimal-gpt-proxy; client nano contract)`);
     lines.push(`  status: succes`);
     lines.push(`  intent: ${ni.intent}`);
     lines.push(`  themes: [${ni.themes.join(', ')}]`);
@@ -318,7 +318,7 @@ export function buildTraceBlock(input: EngineTraceInput): string {
       lines.push(`  translatedNL: ${ni.translatedNL}`);
     }
   } else {
-    lines.push('  route: railway (/api/nano-interpret)');
+    lines.push('  route: railway (/api/minimal-gpt-proxy; client nano contract)');
     lines.push('  status: gefaald — fallback naar lokale keyword/backpack matching');
   }
   lines.push('');

@@ -1,6 +1,5 @@
 import type { AIProvider, AIResult, ChatContext } from './types';
 import { getApiBaseUrl } from '@/constants/oauth';
-import * as Auth from '@/lib/_core/auth';
 // superjson is dynamically imported only in tRPC fallback path
 import { analyzeBackpackRelevance } from '@/lib/rugzak/backpack-relevance-analyzer';
 import { buildGPTPayload } from '@/lib/rugzak/gpt-payload-builder';
@@ -12,6 +11,7 @@ import { LocalDeviceTimeService } from "@/lib/core/time";
 import type { MinimalGptProxyRequest, MinimalGptProxyResponse } from '@/lib/ai/prompt/minimal-gpt-proxy-contract';
 import { buildMedicalSafetyFailureResponse } from '@/lib/ai/medical-safety-fallback';
 import { buildClientSystemPrompt } from '@/lib/ai/prompt/client-system-prompt-builder';
+import { railwayFetch } from '@/lib/network/railway-client';
 import {
   buildRejectedSuggestionsBlock,
   detectRejectedSuggestions,
@@ -99,7 +99,7 @@ async function fetchWithRetry(
 
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
-      const response = await fetch(url, options);
+      const response = await railwayFetch(url, options);
 
       // Retry on server-side transient errors (cold start / gateway timeout)
       if (response.status === 502 || response.status === 503 || response.status === 504) {
@@ -127,7 +127,7 @@ async function fetchWithRetry(
 
 // ── Server Health Ping ──
 // Lightweight ping to wake up the server before the main API call.
-// Uses the tRPC health endpoint or a simple GET to trigger cold start.
+// Uses the public Railway health endpoint only to trigger a cold start.
 
 let lastHealthCheck = 0;
 const HEALTH_CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
@@ -140,7 +140,7 @@ async function ensureServerAwake(apiBaseUrl: string): Promise<void> {
 
   try {
     console.log('[OpenAIProvider] Pinging server to ensure it is awake...');
-    const response = await fetch(`${apiBaseUrl}/api/trpc/system.health`, {
+    const response = await fetch(`${apiBaseUrl}/api/health`, {
       method: 'GET',
       signal: AbortSignal.timeout(10000), // 10s timeout for wake-up
     });
@@ -740,10 +740,8 @@ export class OpenAIProvider implements AIProvider {
           selfAcceptanceContext: gptPayload.selfAcceptanceContext ?? null,
           kimPatternSupportContext: gptPayload.kimPatternSupportContext ?? null,
 
-          // Full data (SESSION_INIT only) — context.dat is ADDITIVE, memory layers always sent in full
-          backpack: gptPayload.backpack,
-          userDat: gptPayload.userDat,
-          diaryEntries: gptPayload.diaryEntries,
+          // Only client-built compact context is retained. Raw Backpack,
+          // raw user.dat and raw diary entries are forbidden at this boundary.
           ...(gptPayload.contextDat
             ? {
                 contextDat: gptPayload.contextDat,
@@ -794,7 +792,7 @@ export class OpenAIProvider implements AIProvider {
         }
       }
 
-      // ── STEP 4: Send to server via /api/gpt-proxy (plain JSON, no tRPC envelope) ──
+      // ── STEP 4: Build and send through Railway minimal proxy ──
       // ── STEP 3.5: CLIENT PROMPT MIRROR (debug only, behind feature flag) ──
       // Builds a client-side mirror prompt for debug comparison.
       // Does NOT replace the active GPT route. Does NOT send to OpenAI.
@@ -865,35 +863,10 @@ export class OpenAIProvider implements AIProvider {
         console.warn('[OpenAIProvider] CLIENT PROMPT MIRROR failed (non-blocking):', (mirrorError as Error)?.message);
       }
 
-      // Final sanitization: ensure all triggers arrays are clean before Zod validation
-      const sanitizedPayload = sanitizeChatPayload(inputPayload as Record<string, unknown>);
-
-      // Serialize loopDetected and languageRecovery to strings if they are objects
-      // (server Zod expects string | null, client builds objects)
-      if (sanitizedPayload.loopDetected && typeof sanitizedPayload.loopDetected === 'object') {
-        sanitizedPayload.loopDetected = (sanitizedPayload.loopDetected as any).instruction ?? JSON.stringify(sanitizedPayload.loopDetected);
-      }
-      if (sanitizedPayload.languageRecovery && typeof sanitizedPayload.languageRecovery === 'object') {
-        sanitizedPayload.languageRecovery = (sanitizedPayload.languageRecovery as any).instruction ?? JSON.stringify(sanitizedPayload.languageRecovery);
-      }
-
-      const token = await Auth.getSessionToken();
-      const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
-      };
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
-
-      // Primary: /api/gpt-proxy (plain JSON, works on Railway)
-      // ── STEP 4: ROUTE SELECTION ──
-      // Feature flag: EXPO_PUBLIC_ENABLE_MINIMAL_GPT_PROXY=true → use client-built prompt + minimal proxy
-      const minimalProxyEnabled = process.env.EXPO_PUBLIC_ENABLE_MINIMAL_GPT_PROXY === 'true';
-
-      if (minimalProxyEnabled) {
-        // ═══════════════════════════════════════════════════════════════════
-        // MINIMAL GPT PROXY ROUTE (client-built prompt, store:false, no legacy)
-        // ═══════════════════════════════════════════════════════════════════
+      // ═══════════════════════════════════════════════════════════════════
+      // PRODUCTION ROUTE: client-built prompt, store:false, no legacy path.
+      // This is intentionally unconditional and cannot be disabled by ENV.
+      // ═══════════════════════════════════════════════════════════════════
         const minimalProxyUrl = `${apiBaseUrl}/api/minimal-gpt-proxy`;
 
         // Build client system prompt
@@ -980,9 +953,7 @@ export class OpenAIProvider implements AIProvider {
         // Logging (no content)
         console.log(`[OpenAIProvider] MINIMAL PROXY: route=/api/minimal-gpt-proxy requestId=${requestId} model=${selectedModel} persona=${minimalRequest.persona}`);
 
-        const token = await Auth.getSessionToken();
         const minimalHeaders: Record<string, string> = { 'Content-Type': 'application/json' };
-        if (token) minimalHeaders['Authorization'] = `Bearer ${token}`;
 
         // Send to minimal proxy — NO fallback to legacy on failure
         const minimalResponse = await fetchWithRetry(minimalProxyUrl, {
@@ -1045,99 +1016,6 @@ export class OpenAIProvider implements AIProvider {
           } : undefined,
           selectedModel: minimalData.modelUsed,
         };
-      }
-
-      // ═══════════════════════════════════════════════════════════════════
-      // LEGACY ROUTE (default — flag OFF or absent)
-      // ═══════════════════════════════════════════════════════════════════
-      const proxyUrl = `${apiBaseUrl}/api/gpt-proxy`;
-
-      // Logging
-      console.log('[OpenAIProvider] Calling:', proxyUrl, isSessionStart ? '(SESSION_INIT)' : '(LIVE_MESSAGE)');
-      console.log('[OpenAIProvider] Dominant module:', gptPayload.dominantModule);
-      console.log('[OpenAIProvider] Risk score:', gptPayload.riskScore);
-      console.log('[OpenAIProvider] Selected triggers:', gptPayload.selectedTriggers.map(t => t.trigger).join(', ') || 'none');
-      console.log('[OpenAIProvider] Conversation window:', gptPayload.conversationWindow.length, 'messages');
-      if (gptPayload.bufferSnapshot) {
-        console.log(`[OpenAIProvider] Buffer snapshot: zone=${gptPayload.bufferSnapshot.zoneColor}(${gptPayload.bufferSnapshot.zoneScore}), intent=${gptPayload.bufferSnapshot.liveIntent}, direction=${gptPayload.bufferSnapshot.responseDirection}`);
-      }
-      if (isSessionStart && gptPayload.backpack) {
-        console.log('[OpenAIProvider] Full backpack included (SESSION_INIT)');
-      }
-
-      // Use fetchWithRetry for resilience against cold starts
-      let response: globalThis.Response;
-      let usedProxy = true;
-      try {
-        response = await fetchWithRetry(proxyUrl, {
-          method: 'POST',
-          headers,
-          body: JSON.stringify(sanitizedPayload),
-        });
-      } catch (proxyError) {
-        // Proxy unreachable — fallback to tRPC route (sandbox dev server)
-        console.warn('[OpenAIProvider] /api/gpt-proxy failed, falling back to tRPC:', (proxyError as Error)?.message);
-        usedProxy = false;
-        const superjson = await import('superjson');
-        const serialized = superjson.default.serialize(sanitizedPayload);
-        const trpcUrl = `${apiBaseUrl}/api/trpc/ai.chat`;
-        response = await fetchWithRetry(trpcUrl, {
-          method: 'POST',
-          headers,
-          credentials: 'include',
-          body: JSON.stringify(serialized),
-        });
-      }
-
-      console.log('[OpenAIProvider] Response status:', response.status, usedProxy ? '(gpt-proxy)' : '(tRPC fallback)');
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('[OpenAIProvider] Backend error:', response.status, errorText);
-        return {
-          response: buildProviderFailureResponse(context.locale),
-          advisoryEmotion: undefined,
-          advisoryConfidence: undefined,
-          tokenUsage: undefined,
-        };
-      }
-
-      const data = await response.json();
-
-      let result: any;
-      if (usedProxy) {
-        // /api/gpt-proxy returns plain JSON: { success, response, tokenUsage, selectedModel }
-        result = data;
-      } else {
-        // tRPC returns envelope: { result: { data: superjson } }
-        if (data?.result?.data) {
-          try {
-            const superjson = await import('superjson');
-            result = superjson.default.deserialize(data.result.data);
-          } catch {
-            result = data.result.data.json ?? data.result.data;
-          }
-        } else {
-          result = data;
-        }
-      }
-
-      if (result?.success === false) {
-        console.warn('[OpenAIProvider] Backend returned failure:', result.error || result.response);
-      }
-
-      // Log token usage
-      if (result?.tokenUsage) {
-        console.log(`[CostControl] Call tokens: ${result.tokenUsage.promptTokens} prompt + ${result.tokenUsage.completionTokens} completion = ${result.tokenUsage.totalTokens} total`);
-      }
-
-      return {
-        response: result?.response ?? "Something went wrong. I'm still here — please try again.",
-        advisoryEmotion: result?.advisoryEmotion,
-        advisoryConfidence: result?.advisoryConfidence,
-        tokenUsage: result?.tokenUsage,
-        selectedModel: result?.selectedModel,
-      };
     } catch (error) {
       console.error('[OpenAIProvider] Error after retries:', error);
 

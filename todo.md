@@ -3052,3 +3052,20 @@
 - [x] Test offline/degraded gedrag, lokale opslag, persona-isolatie, `store:false`, raw-memorygrenzen en productie-endpoints
 - [x] Classificeer bevindingen als P0/P1/P2/P3 en als actief, development-only, legacy/frozen of device-required
 - [x] Rapporteer exact wat nog ontbreekt voor zelfstandig gebruik met uitsluitend APK en minimale Railway-backend; wijzig geen productcode
+
+## Actief — Zelfstandige APK + minimale Railway herstelprogramma
+- [x] Maak minimal proxy, client-engine, CMD, core epistemic engine en epistemic modelrouting fail-closed in version-controlled productieconfig
+- [x] Elimineer legacy GPT/tRPC-chatfallback uit de gecompileerde productie-APK en voeg bundle-regressie toe
+- [x] Vervang alle directe plaintext writes naar gevoelige kernstores door één encrypted/atomair writepad
+- [x] Voeg concurrency-/lost-update-regressies toe voor parallelle backpackextractie en DeepAnalysis merges
+- [x] Verwijder raw Backpack, raw user.dat, raw DIST01/logs, raw birthdate en ongeredigeerde documentdump uit alle GPT-payloads
+- [x] Migreer noodzakelijke nano-, greeting-, pre-translate-, extraction- en documentfuncties naar client-built generieke minimal-proxyrequests zonder serverklinische logica
+- [x] Voeg Railway requestauth, rate limiting, replay-/quota-/payloadbescherming en restrictief originbeleid toe zonder externe platformafhankelijkheid
+- [x] Blokkeer legacy GPT-, server-engine-, tRPC-AI- en analyseroutes pas nadat iedere actieve clientcall een bewezen vervanging heeft
+- [x] Verwijder Manus OAuth-URLs, ownermetadata en ongebruikte template-auth uit de native Androidbundle zonder package-ID stil te wijzigen
+- [x] Versleutel VSP Insight, noodcontacten en actieve KERP-opslag en neem alle actieve stores op in export/import
+- [x] Bewijs export → wipe → import roundtrip voor beide persona’s en alle actieve lokale datalagen
+- [x] Herstel UK `SHOUT to 85258` als werkende `sms:`-actie met regressietest
+- [x] Documenteer signingkeyoverdracht, eigen EAS/projectbinding en reproduceerbare onafhankelijke updatebuild zonder een nieuwe key te genereren
+- [x] Breid releasegate uit met echte Androidbundle-, routeoppervlak-, privacy-, encryption- en backupscans
+- [ ] Draai zes scenario’s, volledige suite, releasegate en wide-range gate; rapporteer device-only reststatus eerlijk

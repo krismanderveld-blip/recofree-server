@@ -18,23 +18,24 @@ import type {
   ExtractionRequest,
 } from '../lib/backpack-extractor/types';
 import { EXTRACTION_SCHEMA_VERSION } from '../lib/backpack-extractor/types';
+import { minimizeAnalysisText } from '../lib/privacy/analysis-text-minimizer';
 
 // ─── Extraction Prompt ─────────────────────────────────────────
 
 function buildExtractionPrompt(request: ExtractionRequest): string {
-  const { userName, userType, sections, kimSections, intakeContext } = request;
+  const { userType, sections, kimSections, intakeContext } = request;
 
   let allText = '';
 
   // Intake context
   if (intakeContext && intakeContext.trim().length > 0) {
-    allText += `[Intake Context]: ${intakeContext.trim()}\n\n`;
+    allText += `[Intake Context]: ${minimizeAnalysisText(intakeContext, 1_500).text}\n\n`;
   }
 
   // Life-phase sections (Elias)
   for (const section of sections) {
     if (section.content && section.content.trim().length > 0) {
-      allText += `[${section.label}]: ${section.content.trim()}\n\n`;
+      allText += `[${section.label}]: ${minimizeAnalysisText(section.content, 6_000).text}\n\n`;
     }
   }
 
@@ -49,7 +50,7 @@ function buildExtractionPrompt(request: ExtractionRequest): string {
     ];
     for (const [title, content] of mapping) {
       if (content && content.trim().length > 0) {
-        allText += `[${title}]: ${content.trim()}\n\n`;
+        allText += `[${title}]: ${minimizeAnalysisText(content, 6_000).text}\n\n`;
       }
     }
   }
@@ -62,7 +63,7 @@ function buildExtractionPrompt(request: ExtractionRequest): string {
     ? 'This person is a loved one (naaste) of someone with addiction. They are NOT the person with the addiction themselves.'
     : 'This person is someone dealing with addiction recovery.';
 
-  return `You are a clinical entity extractor. Extract ALL structured information from the following personal narrative written by "${userName}".
+  return `You are a clinical entity extractor. Extract ALL structured information from the following minimized personal narrative.
 
 ${userTypeContext}
 

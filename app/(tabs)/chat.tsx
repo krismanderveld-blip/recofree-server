@@ -22,6 +22,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SessionMemoryCache } from '@/lib/crypto/session-memory-cache';
+import { updateJson } from '@/lib/storage/memory/atomicJsonStore';
 import { useRouter, useFocusEffect, useNavigation, type Href } from 'expo-router';
 
 // ── DEEP ANALYSIS PRESERVATION HELPER ──────────────────────────────────────
@@ -32,15 +33,10 @@ import { useRouter, useFocusEffect, useNavigation, type Href } from 'expo-router
 // that were written by Gegevens bijwerken / analyzeAllSections.
 const USERDAT_KEY = '@recofree_userdat';
 async function mergeToUserDatStorage(partial: Record<string, any>): Promise<void> {
-  let base: any = {};
-  try {
-    const raw = await SessionMemoryCache.get(USERDAT_KEY);
-    if (raw) base = JSON.parse(raw);
-  } catch { /* fallback to empty */ }
-  const merged = { ...base, ...partial };
-  await SessionMemoryCache.set(USERDAT_KEY, JSON.stringify(merged));
-  // Also sync to AsyncStorage for persistence across app restarts
-  try { await AsyncStorage.setItem(USERDAT_KEY, JSON.stringify(merged)); } catch { /* non-blocking */ }
+  await updateJson<Record<string, any>>(USERDAT_KEY, (base) => ({
+    ...(base ?? {}),
+    ...partial,
+  }));
 }
 
 import { useUser } from '@/lib/user-context';
@@ -780,7 +776,11 @@ function ChatScreenInner() {
     setIsTyping(true);
 
     try {
-      const preprocessed = await preprocessInput(rawText, locale as 'nl' | 'en' | 'fr');
+      const preprocessed = await preprocessInput(
+        rawText,
+        locale as 'nl' | 'en' | 'fr',
+        state.backpack?.userType === 'kim' ? 'kim' : 'elias',
+      );
       const processedText = preprocessed.processedText;
       // Load latest userDat from storage (may have been updated by greeting)
       const userDatJson = await SessionMemoryCache.get(USERDAT_KEY);

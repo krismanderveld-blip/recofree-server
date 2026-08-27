@@ -12,7 +12,7 @@
  * - Soothing effect records
  */
 
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { readJson, writeJson, updateJson, removeJson } from "@/lib/storage/memory/atomicJsonStore";
 import type {
   RecoFreePersona,
   VspInsightProfile,
@@ -56,9 +56,7 @@ export async function loadVspInsightProfile(
   persona: RecoFreePersona
 ): Promise<VspInsightProfile | null> {
   try {
-    const raw = await AsyncStorage.getItem(profileKey(userId, persona));
-    if (!raw) return null;
-    return JSON.parse(raw) as VspInsightProfile;
+    return await readJson<VspInsightProfile>(profileKey(userId, persona));
   } catch {
     return null;
   }
@@ -69,7 +67,7 @@ export async function saveVspInsightProfile(
   persona: RecoFreePersona,
   profile: VspInsightProfile
 ): Promise<void> {
-  await AsyncStorage.setItem(profileKey(userId, persona), JSON.stringify(profile));
+  await writeJson(profileKey(userId, persona), profile);
 }
 
 export async function applyVspInsightProfilePatch(
@@ -163,9 +161,7 @@ export async function loadDiscrepancyEvents(
   persona: RecoFreePersona
 ): Promise<VspSilentDiscrepancyEvent[]> {
   try {
-    const raw = await AsyncStorage.getItem(discrepancyKey(userId, persona));
-    if (!raw) return [];
-    return JSON.parse(raw) as VspSilentDiscrepancyEvent[];
+    return (await readJson<VspSilentDiscrepancyEvent[]>(discrepancyKey(userId, persona))) ?? [];
   } catch {
     return [];
   }
@@ -176,11 +172,10 @@ export async function appendDiscrepancyEvent(
   persona: RecoFreePersona,
   event: VspSilentDiscrepancyEvent
 ): Promise<void> {
-  const events = await loadDiscrepancyEvents(userId, persona);
-  events.push(event);
-  // Keep max 100
-  const trimmed = events.length > 100 ? events.slice(-100) : events;
-  await AsyncStorage.setItem(discrepancyKey(userId, persona), JSON.stringify(trimmed));
+  await updateJson<VspSilentDiscrepancyEvent[]>(discrepancyKey(userId, persona), (current) => {
+    const events = Array.isArray(current) ? [...current, event] : [event];
+    return events.length > 100 ? events.slice(-100) : events;
+  });
 }
 
 // ─── Phase Transitions ────────────────────────────────────────────────────────
@@ -190,9 +185,7 @@ export async function loadPhaseTransitions(
   persona: RecoFreePersona
 ): Promise<VspPhaseTransitionExample[]> {
   try {
-    const raw = await AsyncStorage.getItem(transitionsKey(userId, persona));
-    if (!raw) return [];
-    return JSON.parse(raw) as VspPhaseTransitionExample[];
+    return (await readJson<VspPhaseTransitionExample[]>(transitionsKey(userId, persona))) ?? [];
   } catch {
     return [];
   }
@@ -203,11 +196,10 @@ export async function appendPhaseTransition(
   persona: RecoFreePersona,
   transition: VspPhaseTransitionExample
 ): Promise<void> {
-  const transitions = await loadPhaseTransitions(userId, persona);
-  transitions.push(transition);
-  // Keep max 50
-  const trimmed = transitions.length > 50 ? transitions.slice(-50) : transitions;
-  await AsyncStorage.setItem(transitionsKey(userId, persona), JSON.stringify(trimmed));
+  await updateJson<VspPhaseTransitionExample[]>(transitionsKey(userId, persona), (current) => {
+    const transitions = Array.isArray(current) ? [...current, transition] : [transition];
+    return transitions.length > 50 ? transitions.slice(-50) : transitions;
+  });
 }
 
 // ─── Soothing Effect Records ──────────────────────────────────────────────────
@@ -217,9 +209,7 @@ export async function loadSoothingEffects(
   persona: RecoFreePersona
 ): Promise<VspSoothingEffectRecord[]> {
   try {
-    const raw = await AsyncStorage.getItem(soothingKey(userId, persona));
-    if (!raw) return [];
-    return JSON.parse(raw) as VspSoothingEffectRecord[];
+    return (await readJson<VspSoothingEffectRecord[]>(soothingKey(userId, persona))) ?? [];
   } catch {
     return [];
   }
@@ -230,11 +220,10 @@ export async function appendSoothingEffect(
   persona: RecoFreePersona,
   record: VspSoothingEffectRecord
 ): Promise<void> {
-  const records = await loadSoothingEffects(userId, persona);
-  records.push(record);
-  // Keep max 200
-  const trimmed = records.length > 200 ? records.slice(-200) : records;
-  await AsyncStorage.setItem(soothingKey(userId, persona), JSON.stringify(trimmed));
+  await updateJson<VspSoothingEffectRecord[]>(soothingKey(userId, persona), (current) => {
+    const records = Array.isArray(current) ? [...current, record] : [record];
+    return records.length > 200 ? records.slice(-200) : records;
+  });
 }
 
 // ─── Soothing Choice Events ───────────────────────────────────────────────────
@@ -245,12 +234,22 @@ function soothingChoiceKey(userId: string, persona: RecoFreePersona): string {
   return `${SOOTHING_CHOICE_KEY_PREFIX}${persona}_${userId}`;
 }
 
+export function getVspInsightStorageKeys(userId: string, persona: RecoFreePersona): string[] {
+  return [
+    profileKey(userId, persona),
+    discrepancyKey(userId, persona),
+    transitionsKey(userId, persona),
+    soothingKey(userId, persona),
+    soothingChoiceKey(userId, persona),
+  ];
+}
+
 export async function saveLastSoothingChoice(
   userId: string,
   persona: RecoFreePersona,
   event: VspSoothingChoiceEvent
 ): Promise<void> {
-  await AsyncStorage.setItem(soothingChoiceKey(userId, persona), JSON.stringify(event));
+  await writeJson(soothingChoiceKey(userId, persona), event);
 }
 
 export async function loadLastSoothingChoice(
@@ -258,9 +257,7 @@ export async function loadLastSoothingChoice(
   persona: RecoFreePersona
 ): Promise<VspSoothingChoiceEvent | null> {
   try {
-    const raw = await AsyncStorage.getItem(soothingChoiceKey(userId, persona));
-    if (!raw) return null;
-    return JSON.parse(raw) as VspSoothingChoiceEvent;
+    return await readJson<VspSoothingChoiceEvent>(soothingChoiceKey(userId, persona));
   } catch {
     return null;
   }
@@ -330,11 +327,50 @@ export async function clearVspInsightData(
   userId: string,
   persona: RecoFreePersona
 ): Promise<void> {
-  await AsyncStorage.multiRemove([
-    profileKey(userId, persona),
-    discrepancyKey(userId, persona),
-    transitionsKey(userId, persona),
-    soothingKey(userId, persona),
-    soothingChoiceKey(userId, persona),
+  await Promise.all([
+    removeJson(profileKey(userId, persona)),
+    removeJson(discrepancyKey(userId, persona)),
+    removeJson(transitionsKey(userId, persona)),
+    removeJson(soothingKey(userId, persona)),
+    removeJson(soothingChoiceKey(userId, persona)),
+  ]);
+}
+
+export interface VspInsightBackupBundle {
+  profile: VspInsightProfile | null;
+  discrepancyEvents: VspSilentDiscrepancyEvent[];
+  phaseTransitions: VspPhaseTransitionExample[];
+  soothingEffects: VspSoothingEffectRecord[];
+  lastSoothingChoice: VspSoothingChoiceEvent | null;
+}
+
+export async function exportVspInsightData(
+  userId: string,
+  persona: RecoFreePersona,
+): Promise<VspInsightBackupBundle> {
+  const [profile, discrepancyEvents, phaseTransitions, soothingEffects, lastSoothingChoice] = await Promise.all([
+    loadVspInsightProfile(userId, persona),
+    loadDiscrepancyEvents(userId, persona),
+    loadPhaseTransitions(userId, persona),
+    loadSoothingEffects(userId, persona),
+    loadLastSoothingChoice(userId, persona),
+  ]);
+  return { profile, discrepancyEvents, phaseTransitions, soothingEffects, lastSoothingChoice };
+}
+
+export async function replaceVspInsightData(
+  userId: string,
+  persona: RecoFreePersona,
+  data: Partial<VspInsightBackupBundle> | null | undefined,
+): Promise<void> {
+  if (!data) return;
+  await Promise.all([
+    data.profile ? writeJson(profileKey(userId, persona), data.profile) : removeJson(profileKey(userId, persona)),
+    writeJson(discrepancyKey(userId, persona), Array.isArray(data.discrepancyEvents) ? data.discrepancyEvents : []),
+    writeJson(transitionsKey(userId, persona), Array.isArray(data.phaseTransitions) ? data.phaseTransitions : []),
+    writeJson(soothingKey(userId, persona), Array.isArray(data.soothingEffects) ? data.soothingEffects : []),
+    data.lastSoothingChoice
+      ? writeJson(soothingChoiceKey(userId, persona), data.lastSoothingChoice)
+      : removeJson(soothingChoiceKey(userId, persona)),
   ]);
 }

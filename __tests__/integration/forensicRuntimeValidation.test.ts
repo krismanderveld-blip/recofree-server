@@ -25,8 +25,19 @@ vi.mock('@react-native-async-storage/async-storage', () => ({
 
 vi.mock('@/lib/crypto/session-memory-cache', () => ({
   SessionMemoryCache: {
-    get: vi.fn((key: string) => Promise.resolve(mockSessionCache[key] || null)),
+    get: vi.fn((key: string) => Promise.resolve(mockSessionCache[key] ?? mockAsyncStorage[key] ?? null)),
     set: vi.fn((key: string, value: string) => { mockSessionCache[key] = value; return Promise.resolve(); }),
+    getPersisted: vi.fn((key: string) => Promise.resolve(mockAsyncStorage[key] ?? null)),
+    setPersisted: vi.fn((key: string, value: string) => {
+      mockAsyncStorage[key] = value;
+      mockSessionCache[key] = value;
+      return Promise.resolve();
+    }),
+    remove: vi.fn((key: string) => {
+      delete mockAsyncStorage[key];
+      delete mockSessionCache[key];
+      return Promise.resolve();
+    }),
   },
 }));
 
@@ -41,8 +52,13 @@ vi.mock('@/constants/oauth', () => ({
 const mockFetch = vi.fn();
 global.fetch = mockFetch as any;
 
+vi.mock('@/lib/network/railway-client', () => ({
+  railwayFetch: (...args: Parameters<typeof fetch>) => globalThis.fetch(...args),
+}));
+
 import { analyzeAllSections, mergeAnalysisToUserDat } from '@/lib/backpack-extractor/section-analysis-service';
 import { CONTEXT_AWARE_APPLICATION_CONTRACT } from '@/lib/engine/shared/context-application-contract';
+import { readJson } from '@/lib/storage/memory/atomicJsonStore';
 
 // ── SENTINEL VALUES: unique per field, traceable end-to-end ──
 const SENTINELS = {
@@ -107,18 +123,17 @@ beforeEach(() => {
 });
 
 describe('POINT 9: Cold-start test — all in-memory cleared, read from persistent only', () => {
-  it('After analysis + cold start, all sentinel fields survive in AsyncStorage', async () => {
-    // Step 1: Run analysis (writes to AsyncStorage + SessionMemoryCache)
+  it('After analysis + cold start, all sentinel fields survive encrypted canonical storage', async () => {
+    // Step 1: Run analysis (writes once through encrypted canonical storage)
     mockGptResponse(SENTINEL_GPT_RESPONSE);
     await analyzeAllSections([{ id: 'test', label: 'Test', content: 'Moeder Marie Louise Steegmans overleden 22/09/2025. Ik woon bij Melissa.' }], 'elias');
     
     // Step 2: COLD START — clear all in-memory (simulate app kill)
     Object.keys(mockSessionCache).forEach(k => delete mockSessionCache[k]);
     
-    // Step 3: Read from persistent storage ONLY (AsyncStorage)
-    const raw = mockAsyncStorage['@recofree_userdat'];
-    expect(raw).toBeDefined();
-    const stored = JSON.parse(raw);
+    // Step 3: Read from persistent storage ONLY through the canonical store
+    const stored = await readJson<any>('@recofree_userdat');
+    expect(stored).toBeDefined();
     
     // Step 4: Verify ALL sentinel fields survived cold start
     expect(stored.schemas?.some((s: any) => s.schema === SENTINELS.schema)).toBe(true);
@@ -215,7 +230,8 @@ describe('POINT 11: Mother-anchor regression — deceased person handling', () =
     mockGptResponse(SENTINEL_GPT_RESPONSE);
     await analyzeAllSections([{ id: 'family', label: 'Familie', content: 'Marie Louise Steegmans moeder overleden 22/09/2025' }], 'elias');
     
-    const stored = JSON.parse(mockAsyncStorage['@recofree_userdat']);
+    const stored = await readJson<any>('@recofree_userdat');
+    expect(stored).toBeDefined();
     expect(stored.lifeStatusFacts).toBeDefined();
     expect(stored.lifeStatusFacts.length).toBeGreaterThan(0);
     expect(stored.lifeStatusFacts[0].person).toBe('Marie Louise Steegmans');

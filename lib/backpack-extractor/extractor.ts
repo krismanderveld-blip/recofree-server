@@ -16,6 +16,7 @@ import { computeBackpackHash, hasBackpackChanged } from './hash';
 import type { BackpackHashState, ExtractedEntities } from './types';
 import { BACKPACK_HASH_KEY, EXTRACTION_SCHEMA_VERSION as CURRENT_SCHEMA_VERSION } from './types';
 import type { Backpack } from '../ai/types';
+import { minimizeAnalysisText } from '@/lib/privacy/analysis-text-minimizer';
 
 // ─── Storage Keys ──────────────────────────────────────────────
 
@@ -106,19 +107,25 @@ export async function checkAndExtract(
 
     console.log('[BackpackExtractor] Manual change detected, triggering extraction...');
 
-    // 4. Call server extraction
+    // 4. Call server extraction with bounded, redacted analysis fragments.
     const sections = backpack.sections.map(s => ({
       id: s.id,
       label: s.label ?? s.id,
-      content: s.content,
+      content: minimizeAnalysisText(s.content, 6_000).text,
     }));
 
     const entities = await callExtraction({
-      userName: backpack.naam,
+      userName: 'Gebruiker',
       userType: backpack.userType,
       sections,
-      kimSections: backpack.kimBackpack,
-      intakeContext: backpack.intakeContext.initialContext,
+      kimSections: backpack.kimBackpack ? {
+        my_story: minimizeAnalysisText(backpack.kimBackpack.my_story, 6_000).text,
+        the_relationship: minimizeAnalysisText(backpack.kimBackpack.the_relationship, 6_000).text,
+        the_impact: minimizeAnalysisText(backpack.kimBackpack.the_impact, 6_000).text,
+        my_boundaries: minimizeAnalysisText(backpack.kimBackpack.my_boundaries, 6_000).text,
+        my_strength: minimizeAnalysisText(backpack.kimBackpack.my_strength, 6_000).text,
+      } : undefined,
+      intakeContext: minimizeAnalysisText(backpack.intakeContext.initialContext, 1_500).text,
       sourceHash: currentHash.combinedHash,
     });
 
@@ -159,15 +166,21 @@ export async function forceExtract(
     const sections = backpack.sections.map(s => ({
       id: s.id,
       label: s.label ?? s.id,
-      content: s.content,
+      content: minimizeAnalysisText(s.content, 6_000).text,
     }));
 
     const entities = await callExtraction({
-      userName: backpack.naam,
+      userName: 'Gebruiker',
       userType: backpack.userType,
       sections,
-      kimSections: backpack.kimBackpack,
-      intakeContext: backpack.intakeContext.initialContext,
+      kimSections: backpack.kimBackpack ? {
+        my_story: minimizeAnalysisText(backpack.kimBackpack.my_story, 6_000).text,
+        the_relationship: minimizeAnalysisText(backpack.kimBackpack.the_relationship, 6_000).text,
+        the_impact: minimizeAnalysisText(backpack.kimBackpack.the_impact, 6_000).text,
+        my_boundaries: minimizeAnalysisText(backpack.kimBackpack.my_boundaries, 6_000).text,
+        my_strength: minimizeAnalysisText(backpack.kimBackpack.my_strength, 6_000).text,
+      } : undefined,
+      intakeContext: minimizeAnalysisText(backpack.intakeContext.initialContext, 1_500).text,
       sourceHash: currentHash.combinedHash,
     });
 

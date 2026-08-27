@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Text, View, Pressable, Linking, Platform, Alert } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getCrisisContent, getPrimarySuicideLine, getEmergencyNumber, type CrisisContent, type CrisisResource } from '@/lib/crisis/resources';
+import { buildCrisisResourceUrl } from '@/lib/crisis/resource-link';
+import { readJson } from '@/lib/storage/memory/atomicJsonStore';
 import { useTranslation } from '@/lib/i18n/i18n-provider';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { colors as dc, spacing, radius } from '@/constants/design';
@@ -18,8 +19,8 @@ export function EmergencyCard({ visible, onDismiss }: EmergencyCardProps) {
 
   useEffect(() => {
     if (!visible) return;
-    AsyncStorage.getItem('emergencyContacts').then((data) => {
-      if (data) setPersonalContacts(JSON.parse(data));
+    readJson<{ name: string; number: string }[]>('emergencyContacts').then((data) => {
+      if (Array.isArray(data)) setPersonalContacts(data);
     });
   }, [visible]);
 
@@ -31,19 +32,12 @@ export function EmergencyCard({ visible, onDismiss }: EmergencyCardProps) {
   const primaryLine = getPrimarySuicideLine(effectiveCountry, effectiveLang);
 
   const handleCall = (number: string, isText?: boolean) => {
-    if (isText) {
-      // For text-based resources (SMS lines, websites), open URL if it looks like one
-      if (number.includes('.')) {
-        Linking.openURL(`https://${number}`);
-      }
-      return;
-    }
-    const cleaned = number.replace(/[^0-9+]/g, '');
-    if (cleaned) {
+    const url = buildCrisisResourceUrl(number, isText, Platform.OS);
+    if (url) {
       if (Platform.OS !== 'web') {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       }
-      Linking.openURL(`tel:${cleaned}`);
+      Linking.openURL(url);
     }
   };
 

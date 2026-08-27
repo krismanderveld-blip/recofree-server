@@ -4,10 +4,18 @@
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-// We test the internal functions by importing the module
-// Since greetingV4 makes a fetch call, we mock fetch for the proxy test
-const mockFetch = vi.fn();
-global.fetch = mockFetch;
+const { mockFetch } = vi.hoisted(() => ({ mockFetch: vi.fn() }));
+vi.mock('@/lib/ai/minimal-proxy-client', () => ({
+  callMinimalProxy: async (input: { systemPrompt: string; messages: Array<{ content: string }> }) => {
+    const userName = input.messages[0]?.content.match(/for ([^.]+)\./i)?.[1] ?? 'user';
+    const response = await mockFetch('/api/minimal-gpt-proxy', {
+      method: 'POST',
+      body: JSON.stringify({ ...input, userName }),
+    });
+    const data = await response.json();
+    return { text: data.greeting };
+  },
+}));
 
 // Import the module under test
 import { greetingV4, type GreetingV4Input } from '../lib/features/greetingV4/greetingV4';
@@ -101,7 +109,7 @@ describe('Greeting V4', () => {
       expect(result.greeting).toBe('Hey Kris, fijn je weer te zien. Hoe gaat het vandaag?');
       expect(result.usedFallback).toBe(false);
       expect(mockFetch).toHaveBeenCalledWith(
-        'https://test-api.example.com/api/session-greeting',
+        '/api/minimal-gpt-proxy',
         expect.objectContaining({ method: 'POST' }),
       );
     });

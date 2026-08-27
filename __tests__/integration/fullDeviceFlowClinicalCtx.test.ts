@@ -5,7 +5,7 @@
  * 1. User fills backpack with real clinical data
  * 2. User taps "Gegevens bijwerken" → analyzeAllSections
  * 3. GPT returns schemas/modes/triggers/lifeStatus
- * 4. mergeAnalysisToUserDat writes to AsyncStorage + SessionMemoryCache
+ * 4. mergeAnalysisToUserDat writes through the encrypted persistent cache boundary
  * 5. User opens chat → startSession reads from SessionMemoryCache
  * 6. handleSend reads userDat → passes to pipeline
  * 7. buildPersonalClinicalContext produces non-empty output
@@ -30,8 +30,15 @@ vi.mock('@react-native-async-storage/async-storage', () => ({
 
 vi.mock('@/lib/crypto/session-memory-cache', () => ({
   SessionMemoryCache: {
-    get: vi.fn((key: string) => Promise.resolve(mockSessionCache[key] || null)),
+    get: vi.fn((key: string) => Promise.resolve(mockSessionCache[key] ?? mockAsyncStorage[key] ?? null)),
     set: vi.fn((key: string, value: string) => { mockSessionCache[key] = value; return Promise.resolve(); }),
+    setPersisted: vi.fn((key: string, value: string) => {
+      mockSessionCache[key] = value;
+      // Represents the encrypted persisted copy; content encryption itself is
+      // covered by storage-encryption/atomic-store tests.
+      mockAsyncStorage[key] = value;
+      return Promise.resolve();
+    }),
   },
 }));
 
@@ -45,6 +52,10 @@ vi.mock('@/constants/oauth', () => ({
 
 const mockFetch = vi.fn();
 global.fetch = mockFetch as any;
+
+vi.mock('@/lib/network/railway-client', () => ({
+  railwayFetch: (...args: Parameters<typeof fetch>) => globalThis.fetch(...args),
+}));
 
 import { analyzeAllSections, mergeAnalysisToUserDat } from '@/lib/backpack-extractor/section-analysis-service';
 import type { BackpackSectionAnalysisResult } from '@/lib/backpack-extractor/section-analysis-types';

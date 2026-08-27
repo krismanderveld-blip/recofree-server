@@ -10,10 +10,10 @@
  * - Valid results are merged into user.dat following merge rules
  */
 
-import { getApiBaseUrl } from '@/constants/oauth';
-import * as Auth from '@/lib/_core/auth';
+import { railwayFetch } from '@/lib/network/railway-client';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { SessionMemoryCache } from '@/lib/crypto/session-memory-cache';
+import { readJson, updateJson } from '@/lib/storage/memory/atomicJsonStore';
+import { minimizeAnalysisText } from '@/lib/privacy/analysis-text-minimizer';
 import type {
   BackpackSectionAnalysisResult,
   PersonAnchor,
@@ -136,18 +136,16 @@ export async function analyzeSection(
   }
 
   try {
-    const apiBaseUrl = getApiBaseUrl();
-    const token = await Auth.getSessionToken();
     const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-    if (token) headers['Authorization'] = `Bearer ${token}`;
 
     const prompt = SECTION_ANALYSIS_PROMPT
       .replace('{{persona}}', persona)
       .replace('{{sectionId}}', sectionId)
       .replace('{{sectionTitle}}', sectionTitle);
 
-    const url = `${apiBaseUrl}/api/minimal-gpt-proxy`;
-    const response = await fetch(url, {
+    const analysisText = minimizeAnalysisText(sectionContent, 6_000).text;
+    const url = '/api/minimal-gpt-proxy';
+    const response = await railwayFetch(url, {
       method: 'POST',
       headers,
       body: JSON.stringify({
@@ -156,7 +154,7 @@ export async function analyzeSection(
         persona: persona,
         systemPrompt: prompt,
         messages: [
-          { role: 'user', content: sectionContent },
+          { role: 'user', content: analysisText },
         ],
         model: 'gpt-4o-mini',
         temperature: 0.1,
@@ -485,8 +483,8 @@ export async function mergeAnalysisToUserDat(
   analysisResult: BackpackSectionAnalysisResult,
 ): Promise<void> {
   try {
-    const raw = await AsyncStorage.getItem(USERDAT_KEY);
-    const userDat = raw ? JSON.parse(raw) : {};
+    await updateJson<any>(USERDAT_KEY, (current) => {
+      const userDat = current ?? {};
 
     // Ensure extractedEntities exists
     if (!userDat.extractedEntities) {
@@ -766,15 +764,8 @@ export async function mergeAnalysisToUserDat(
       }
     }
 
-    await AsyncStorage.setItem(USERDAT_KEY, JSON.stringify(userDat));
-    // CRITICAL: Also update SessionMemoryCache so the chat pipeline reads fresh data.
-    // Without this, handleSend() reads stale userDat from SessionMemoryCache
-    // and buildPersonalClinicalContext() returns undefined (ClinicalCtx=false).
-    try {
-      await SessionMemoryCache.set(USERDAT_KEY, JSON.stringify(userDat));
-    } catch (cacheErr) {
-      console.warn('[SectionAnalysis] SessionMemoryCache sync failed (non-blocking):', cacheErr);
-    }
+      return userDat;
+    });
   } catch (error) {
     console.error('[SectionAnalysis] Merge to user.dat failed:', error);
   }
@@ -795,9 +786,8 @@ export async function analyzeAllSections(
   // This handles: clean install, stale overwrite recovery, first-time analysis.
   let forceReanalyze = false;
   try {
-    const udRaw = await AsyncStorage.getItem(USERDAT_KEY);
-    if (udRaw) {
-      const ud = JSON.parse(udRaw);
+    const ud = await readJson<any>(USERDAT_KEY);
+    if (ud) {
       // Valid enum values — schemas/modes must contain at least one VALID entry
       const validSchemaIds = new Set([
         'abandonment', 'mistrust_abuse', 'emotional_deprivation', 'defectiveness_shame',

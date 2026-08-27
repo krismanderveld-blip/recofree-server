@@ -1,249 +1,127 @@
 /**
- * Pre-Translate Tests
- *
- * Validates the safety-critical pre-translate step:
- * - FR/EN messages are translated to NL before detection
- * - NL messages skip translation (no API call)
- * - Failures fall back to original text (never drop messages)
- * - Debug trace logging is present
+ * Safety-critical client-built pre-translation tests.
  */
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-// Mock fetch globally
-const mockFetch = vi.fn();
-vi.stubGlobal('fetch', mockFetch);
+const mockMinimalProxy = vi.hoisted(() => vi.fn());
+vi.mock('@/lib/ai/minimal-proxy-client', () => ({ callMinimalProxy: mockMinimalProxy }));
 
-// Mock getApiBaseUrl
-vi.mock('@/constants/oauth', () => ({
-  getApiBaseUrl: () => 'http://localhost:3000',
-}));
-
-// Import AFTER mocks are set up
 import { preprocessInput } from '@/lib/ai/preprocessor';
 
 describe('Pre-Translate Step', () => {
   beforeEach(() => {
-    mockFetch.mockReset();
+    mockMinimalProxy.mockReset();
     vi.spyOn(console, 'log').mockImplementation(() => {});
     vi.spyOn(console, 'error').mockImplementation(() => {});
     vi.spyOn(console, 'warn').mockImplementation(() => {});
   });
 
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
+  afterEach(() => vi.restoreAllMocks());
 
   describe('NL locale (skip)', () => {
-    it('should skip translation for NL locale — no API call', async () => {
+    it('skips translation for NL locale', async () => {
       const result = await preprocessInput('ik wil dood', 'nl');
-
-      expect(result.processedText).toBe('ik wil dood');
-      expect(result.wasTranslated).toBe(false);
-      expect(result.detectedLanguage).toBe('nl');
-      // No fetch call should be made
-      expect(mockFetch).not.toHaveBeenCalled();
+      expect(result).toMatchObject({ processedText: 'ik wil dood', wasTranslated: false, detectedLanguage: 'nl' });
+      expect(mockMinimalProxy).not.toHaveBeenCalled();
     });
 
-    it('should log skipped trace for NL', async () => {
+    it('logs the NL skip trace', async () => {
       const consoleSpy = vi.spyOn(console, 'log');
       await preprocessInput('hallo', 'nl');
       expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('[pre-translate] skipped (nl)'));
     });
   });
 
-  describe('FR locale (translate)', () => {
-    it('should translate FR crisis text "je veux mourir" to NL', async () => {
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          translatedText: 'ik wil dood',
-          originalText: 'je veux mourir',
-          wasTranslated: true,
-          locale: 'fr',
-        }),
-      });
-
+  describe('FR locale', () => {
+    it('translates crisis text and uses the versioned minimal-proxy prompt', async () => {
+      mockMinimalProxy.mockResolvedValueOnce({ text: 'ik wil dood' });
       const result = await preprocessInput('je veux mourir', 'fr');
-
-      expect(result.processedText).toBe('ik wil dood');
-      expect(result.wasTranslated).toBe(true);
-      expect(result.detectedLanguage).toBe('fr');
-      expect(mockFetch).toHaveBeenCalledTimes(1);
-      expect(mockFetch).toHaveBeenCalledWith(
-        'http://localhost:3000/api/pre-translate',
-        expect.objectContaining({
-          method: 'POST',
-          body: JSON.stringify({ text: 'je veux mourir', locale: 'fr' }),
-        })
-      );
+      expect(result).toMatchObject({ processedText: 'ik wil dood', wasTranslated: true, detectedLanguage: 'fr' });
+      expect(mockMinimalProxy).toHaveBeenCalledWith(expect.objectContaining({
+        persona: 'elias',
+        promptBuildVersion: 'pre-translate-client-v2',
+        messages: [{ role: 'user', content: 'je veux mourir' }],
+      }));
     });
 
-    it('should translate FR craving text "j\'ai envie de boire" to NL', async () => {
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          translatedText: 'ik heb zin om te drinken',
-          originalText: "j'ai envie de boire",
-          wasTranslated: true,
-          locale: 'fr',
-        }),
+    it('translates craving text', async () => {
+      mockMinimalProxy.mockResolvedValueOnce({ text: 'ik heb zin om te drinken' });
+      await expect(preprocessInput("j'ai envie de boire", 'fr')).resolves.toMatchObject({
+        processedText: 'ik heb zin om te drinken', wasTranslated: true,
       });
-
-      const result = await preprocessInput("j'ai envie de boire", 'fr');
-
-      expect(result.processedText).toBe('ik heb zin om te drinken');
-      expect(result.wasTranslated).toBe(true);
     });
 
-    it('should log debug trace with input and translation', async () => {
+    it('logs input and translated output', async () => {
       const consoleSpy = vi.spyOn(console, 'log');
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          translatedText: 'ik wil dood',
-          originalText: 'je veux mourir',
-          wasTranslated: true,
-          locale: 'fr',
-        }),
-      });
-
+      mockMinimalProxy.mockResolvedValueOnce({ text: 'ik wil dood' });
       await preprocessInput('je veux mourir', 'fr');
-
-      expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining('[pre-translate] input: "je veux mourir" → NL: "ik wil dood"')
-      );
+      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('[pre-translate] input: "je veux mourir" → NL: "ik wil dood"'));
     });
   });
 
-  describe('EN locale (translate)', () => {
-    it('should translate EN text to NL', async () => {
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          translatedText: 'ik wil niet meer leven',
-          originalText: 'I don\'t want to live anymore',
-          wasTranslated: true,
-          locale: 'en',
-        }),
-      });
-
-      const result = await preprocessInput('I don\'t want to live anymore', 'en');
-
-      expect(result.processedText).toBe('ik wil niet meer leven');
-      expect(result.wasTranslated).toBe(true);
-      expect(result.detectedLanguage).toBe('en');
+  it('translates EN text', async () => {
+    mockMinimalProxy.mockResolvedValueOnce({ text: 'ik wil niet meer leven' });
+    await expect(preprocessInput("I don't want to live anymore", 'en', 'kim')).resolves.toMatchObject({
+      processedText: 'ik wil niet meer leven', wasTranslated: true, detectedLanguage: 'en',
     });
+    expect(mockMinimalProxy).toHaveBeenCalledWith(expect.objectContaining({ persona: 'kim' }));
   });
 
-  describe('Fallback on failure (SAFETY-CRITICAL)', () => {
-    it('should pass through original text on network error — NEVER drop message', async () => {
-      mockFetch.mockRejectedValueOnce(new Error('Network timeout'));
-
+  describe('Fallback on failure', () => {
+    it.each([
+      new Error('Network timeout'),
+      new Error('minimal_proxy_HTTP_500'),
+      new DOMException('Aborted', 'AbortError'),
+    ])('never drops a message when translation fails: %s', async (error) => {
+      mockMinimalProxy.mockRejectedValueOnce(error);
       const result = await preprocessInput('je veux mourir', 'fr');
-
-      // CRITICAL: message must NOT be dropped
-      expect(result.processedText).toBe('je veux mourir');
-      expect(result.wasTranslated).toBe(false);
-      expect(result.detectedLanguage).toBe('fr');
+      expect(result).toMatchObject({ processedText: 'je veux mourir', wasTranslated: false, detectedLanguage: 'fr' });
     });
 
-    it('should pass through original text on server 500 error', async () => {
-      mockFetch.mockResolvedValueOnce({
-        ok: false,
-        status: 500,
-      });
-
-      const result = await preprocessInput('je veux mourir', 'fr');
-
-      // CRITICAL: message must NOT be dropped
-      expect(result.processedText).toBe('je veux mourir');
-      expect(result.wasTranslated).toBe(false);
-    });
-
-    it('should pass through original text on abort/timeout', async () => {
-      mockFetch.mockRejectedValueOnce(new DOMException('Aborted', 'AbortError'));
-
-      const result = await preprocessInput("j'ai envie de boire", 'fr');
-
-      // CRITICAL: message must NOT be dropped
-      expect(result.processedText).toBe("j'ai envie de boire");
-      expect(result.wasTranslated).toBe(false);
-    });
-
-    it('should log error on failure', async () => {
+    it('logs the failure reason', async () => {
       const consoleSpy = vi.spyOn(console, 'error');
-      mockFetch.mockRejectedValueOnce(new Error('Connection refused'));
-
+      mockMinimalProxy.mockRejectedValueOnce(new Error('Connection refused'));
       await preprocessInput('je veux mourir', 'fr');
-
-      expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining('[pre-translate] Exception: Connection refused')
-      );
+      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('[pre-translate] Exception: Connection refused'));
     });
   });
 
   describe('Edge cases', () => {
-    it('should handle empty input', async () => {
-      const result = await preprocessInput('', 'fr');
-      expect(result.processedText).toBe('');
+    it.each([
+      ['', ''],
+      ['   ', ''],
+    ])('handles empty input %j', async (input, expected) => {
+      const result = await preprocessInput(input, 'fr');
+      expect(result.processedText).toBe(expected);
       expect(result.wasTranslated).toBe(false);
-      expect(mockFetch).not.toHaveBeenCalled();
+      expect(mockMinimalProxy).not.toHaveBeenCalled();
     });
 
-    it('should handle whitespace-only input', async () => {
-      const result = await preprocessInput('   ', 'fr');
-      expect(result.processedText).toBe('');
-      expect(result.wasTranslated).toBe(false);
-      expect(mockFetch).not.toHaveBeenCalled();
-    });
-
-    it('should default to NL locale when not specified', async () => {
-      const result = await preprocessInput('hallo');
-      expect(result.processedText).toBe('hallo');
-      expect(result.wasTranslated).toBe(false);
-      expect(mockFetch).not.toHaveBeenCalled();
+    it('defaults to NL', async () => {
+      await expect(preprocessInput('hallo')).resolves.toMatchObject({ processedText: 'hallo', wasTranslated: false });
+      expect(mockMinimalProxy).not.toHaveBeenCalled();
     });
   });
 });
 
 describe('Pre-Translate → Crisis Detection Integration', () => {
-  /**
-   * These tests verify that AFTER pre-translate, the NL text
-   * correctly triggers crisis detection in detectInputSignals.
-   */
-  it('FR "je veux mourir" → NL "ik wil dood" → activeSuicidal = true', async () => {
-    // Import the detection function
+  it('FR crisis translation triggers activeSuicidal', async () => {
     const { detectInputSignals } = await import('@/lib/rugzak/state-analyzer');
-
-    // Simulate: pre-translate returned "ik wil dood"
-    const nlText = 'ik wil dood';
-    const signals = detectInputSignals(nlText);
-
-    expect(signals.activeSuicidal).toBe(true);
+    expect(detectInputSignals('ik wil dood').activeSuicidal).toBe(true);
   });
 
-  it('FR "j\'ai envie de boire" → NL "ik heb zin om te drinken" → cravingMention = true', async () => {
+  it('FR craving translation triggers cravingMention', async () => {
     const { detectInputSignals } = await import('@/lib/rugzak/state-analyzer');
-
-    // Simulate: pre-translate returned NL craving text
-    // The actual translation would be something like "ik heb trek om te drinken"
-    const nlText = 'ik heb trek om te drinken';
-    const signals = detectInputSignals(nlText);
-
-    expect(signals.cravingMention).toBe(true);
+    expect(detectInputSignals('ik heb trek om te drinken').cravingMention).toBe(true);
   });
 
-  it('NL "ik wil er niet meer zijn" → activeSuicidal = true (no translation needed)', async () => {
+  it('NL suicidal wording triggers activeSuicidal without translation', async () => {
     const { detectInputSignals } = await import('@/lib/rugzak/state-analyzer');
-
-    const signals = detectInputSignals('ik wil er niet meer zijn');
-    expect(signals.activeSuicidal).toBe(true);
+    expect(detectInputSignals('ik wil er niet meer zijn').activeSuicidal).toBe(true);
   });
 
-  it('NL "ik heb drang om te drinken" → cravingMention = true', async () => {
+  it('NL craving wording triggers cravingMention', async () => {
     const { detectInputSignals } = await import('@/lib/rugzak/state-analyzer');
-
-    const signals = detectInputSignals('ik heb drang om te drinken');
-    expect(signals.cravingMention).toBe(true);
+    expect(detectInputSignals('ik heb drang om te drinken').cravingMention).toBe(true);
   });
 });

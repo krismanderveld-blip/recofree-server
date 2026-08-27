@@ -30,6 +30,7 @@ vi.mock("expo-secure-store", () => ({
 
 // Mock storage-encryption to pass through (no actual encryption in test)
 vi.mock("@/lib/crypto/storage-encryption", () => ({
+  isSensitiveStorageKey: vi.fn(() => false),
   readEncrypted: vi.fn((key: string) => Promise.resolve(mockStorage.get(key) ?? null)),
   writeEncrypted: vi.fn((key: string, value: string) => {
     mockStorage.set(key, value);

@@ -40,6 +40,8 @@ function createMockStores(initial?: {
   let personaProjection = initial?.personaProjection ?? { elias: null, kim: null };
   let emergencyContacts = initial?.emergencyContacts ?? [];
   let derivedCaches = initial?.derivedCaches ?? { backpackHash: null, extractedEntities: null };
+  let vspInsight = { elias: null, kim: null };
+  let eigenRegieAuxiliary = { legacyPlan: null, notificationSettings: null, lastCheckAt: null };
 
   return {
     userDatStore: {
@@ -89,6 +91,14 @@ function createMockStores(initial?: {
     derivedCacheStore: {
       async exportAll() { return derivedCaches; },
       async replaceAll(data) { derivedCaches = data as any; },
+    },
+    vspInsightStore: {
+      async exportAllPersonas() { return vspInsight; },
+      async replaceAllPersonas(data) { vspInsight = data as any; },
+    },
+    eigenRegieAuxiliaryStore: {
+      async exportAll() { return eigenRegieAuxiliary; },
+      async replaceAll(data) { eigenRegieAuxiliary = data as any; },
     },
   };
 }

@@ -183,6 +183,19 @@ class SessionMemoryCacheImpl {
   }
 
   /**
+   * Persist immediately through AES-GCM and keep an unlocked cache coherent.
+   * Use this for canonical stores whose write must survive an app termination
+   * without ever mirroring plaintext to AsyncStorage.
+   */
+  async setPersisted(key: CacheKey, value: string): Promise<void> {
+    this.touchActivity();
+    await writeEncrypted(key, value);
+    if (this.state === 'unlocked') {
+      this.store.set(key, { value, dirty: false });
+    }
+  }
+
+  /**
    * Remove a key from cache and storage.
    */
   async remove(key: CacheKey): Promise<void> {

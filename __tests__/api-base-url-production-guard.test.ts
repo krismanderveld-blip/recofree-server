@@ -74,13 +74,13 @@ describe('P0 Railway-only native API routing guard', () => {
     expect(body).toMatchObject({ ok: true });
   }, 15_000);
 
-  it('keeps the native guard before any API_BASE_URL return branch', () => {
+  it('keeps the native guard before any optional development URL branch', () => {
     const source = fs.readFileSync(
       path.join(process.cwd(), 'constants/oauth.ts'),
       'utf8',
     );
     const nativeGuard = source.indexOf('if (platform !== "web")');
-    const injectedUrlBranch = source.indexOf('if (apiBaseUrl && apiBaseUrl.startsWith("http"))');
+    const injectedUrlBranch = source.indexOf('if (apiBaseUrl?.startsWith("http"))');
 
     expect(nativeGuard).toBeGreaterThan(-1);
     expect(injectedUrlBranch).toBeGreaterThan(-1);

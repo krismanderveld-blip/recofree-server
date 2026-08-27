@@ -12,6 +12,7 @@ import type { SessionLogSummary } from "@/lib/types/memory/logsDat.types";
 import type { RecoFreePersona } from "@/lib/types/memory/memoryCore.types";
 import { estimateTokens } from "@/lib/utils/tokens/estimateTokens";
 import { LocalDeviceTimeService } from "@/lib/core/time";
+import { callMinimalProxy } from '@/lib/ai/minimal-proxy-client';
 
 export interface SessionSummaryRequest {
   persona: RecoFreePersona;
@@ -116,24 +117,21 @@ export async function generateSessionSummary(
   const prompt = buildSessionSummaryPrompt(request.buffer);
 
   try {
-    const response = await fetch(`${request.apiBaseUrl}/api/signal-engine`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ prompt }),
+    const responseJson = await callMinimalProxy({
+      persona: request.persona,
+      systemPrompt: prompt,
+      messages: [{ role: 'user', content: 'Return the session summary JSON now.' }],
+      model: 'gpt-4o-mini',
+      maxTokens: 1200,
+      temperature: 0.1,
+      promptBuildVersion: 'session-end-summary-client-v2',
     });
-
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
-    }
-
-    const responseJson = await response.json();
-    // signal-engine returns { result: "..." } — parse the JSON string from GPT
     let data: any = {};
     try {
-      data = JSON.parse(responseJson.result || '{}');
+      data = JSON.parse(responseJson.text || '{}');
     } catch {
       // If GPT returned non-JSON, use it as narrative
-      data = { compressedNarrative: (responseJson.result || '').slice(0, 1500) };
+      data = { compressedNarrative: (responseJson.text || '').slice(0, 1500) };
     }
     const rawOutput = JSON.stringify(data);
 

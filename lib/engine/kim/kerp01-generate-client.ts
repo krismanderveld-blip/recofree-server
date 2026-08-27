@@ -1,11 +1,10 @@
 /**
  * KERP01 — Client-side call to AI-powered Eigen Regie Plan generation.
  *
- * Calls the server endpoint `/api/trpc/ai.generateEigenRegiePlan`
- * following the same pattern as `lib/backpack-extractor/client.ts`.
+ * Builds the plan prompt on the client and uses the generic Railway minimal proxy.
  */
-import { getApiBaseUrl } from '@/constants/oauth';
-import * as Auth from '@/lib/_core/auth';
+import { callMinimalProxyJson } from '@/lib/ai/minimal-proxy-client';
+import { minimizeAnalysisText } from '@/lib/privacy/analysis-text-minimizer';
 import type { EigenRegiePlan, EigenRegieZoneEntry, EigenRegieTrigger } from './kerp01-types';
 
 interface LifeStorySection {
@@ -56,55 +55,47 @@ interface GenerateResult {
  */
 export async function callGenerateEigenRegiePlan(input: GenerateInput): Promise<GenerateResult> {
   try {
-    const apiBaseUrl = getApiBaseUrl();
-    const token = await Auth.getSessionToken();
-
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-    };
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
+    const sections = input.lifeStorySections
+      .filter((section) => section.content.trim().length > 0)
+      .map((section) => `### ${section.title}\n${minimizeAnalysisText(section.content, 4_000).text}`)
+      .join('\n\n');
+    if (sections.trim().length < 50) {
+      return { success: false, error: 'Te weinig informatie in het levensverhaal om een plan te genereren. Vul eerst meer secties in.' };
     }
-
-    const url = `${apiBaseUrl}/api/trpc/ai.generateEigenRegiePlan`;
-    console.log('[KERP01-Client] Calling generation endpoint:', url);
-
-    const response = await fetch(url, {
-      method: 'POST',
-      headers,
-      credentials: 'include',
-      body: JSON.stringify({
-        json: input,
-      }),
+    const languageRule = input.language === 'en'
+      ? 'Write every value in English.'
+      : input.language === 'fr'
+        ? 'Écris toutes les valeurs en français.'
+        : 'Schrijf alle waarden in het Nederlands.';
+    const context = [
+      input.intakeContext ? `Context: ${minimizeAnalysisText(input.intakeContext, 1_200).text}` : '',
+      input.knownTriggers?.length ? `Bekende triggers: ${input.knownTriggers.slice(0, 20).join('; ')}` : '',
+      input.knownPatterns?.length ? `Bekende patronen: ${input.knownPatterns.slice(0, 20).join('; ')}` : '',
+    ].filter(Boolean).join('\n');
+    const result = await callMinimalProxyJson<Omit<GenerateResult, 'success' | 'error'>>({
+      persona: 'kim',
+      systemPrompt: `Build a Personal Autonomy/Eigen Regie plan for a loved one of someone with addiction. Never diagnose, blame, take sides, or treat the narrator as the person with addiction. ${languageRule} Return only JSON with five zones: donkergroen, lichtgroen, geel, oranje, rood. Each zone contains signals, bodySignals, thoughts, behaviour, whatHelps, boundaryActions and anchorSentence. Also return triggers and mainAnchorSentence.`,
+      messages: [{ role: 'user', content: `${context}\n\nLevensverhaal:\n${sections}` }],
+      model: 'gpt-4o-2024-08-06',
+      maxTokens: 2400,
+      temperature: 0.2,
+      promptBuildVersion: 'kerp01-plan-client-v2',
     });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('[KERP01-Client] Server error:', response.status, errorText.substring(0, 200));
-      return {
-        success: false,
-        error: `Server fout (${response.status}). Probeer later opnieuw.`,
-      };
+    if (!result.zones?.donkergroen || !result.zones?.rood) {
+      return { success: false, error: 'AI genereerde een onvolledig plan. Probeer opnieuw.' };
     }
-
-    const data = await response.json();
-    const result = data?.result?.data?.json;
-
-    if (!result) {
-      console.error('[KERP01-Client] Unexpected response structure:', JSON.stringify(data).substring(0, 200));
-      return {
-        success: false,
-        error: 'Onverwacht antwoord van server.',
-      };
-    }
-
-    return result as GenerateResult;
+    return {
+      success: true,
+      zones: result.zones,
+      triggers: Array.isArray(result.triggers) ? result.triggers : [],
+      mainAnchorSentence: result.mainAnchorSentence ?? '',
+    };
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
     console.error('[KERP01-Client] Call failed:', msg);
     return {
       success: false,
-      error: `Verbindingsfout: ${msg}`,
+      error: `Plan generatie mislukt: ${msg}`,
     };
   }
 }

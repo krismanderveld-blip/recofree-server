@@ -140,7 +140,7 @@ export function BackpackWizardScreen({ existingBackpack, userType: initialUserTy
     setUploadError(null);
     setStep('uploading');
 
-    const result = await pickAndParseBackpackDocument();
+    const result = await pickAndParseBackpackDocument(currentUserType);
 
     if (result.cancelled) {
       setStep('choose_method');
@@ -156,7 +156,7 @@ export function BackpackWizardScreen({ existingBackpack, userType: initialUserTy
     // Apply extracted data
     applyExtractedData(result.data);
     setStep('review_name');
-  }, []);
+  }, [currentUserType]);
 
   const applyExtractedData = useCallback((data: BackpackExtractedData) => {
     if (data.naam) setNaam(data.naam);

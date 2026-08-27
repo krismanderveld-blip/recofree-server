@@ -2,17 +2,16 @@
  * Backpack Document Upload Client
  *
  * Picks a document (DOCX, TXT) from the device, reads its text content,
- * sends it to the server for GPT-based extraction, and returns structured
+ * sends minimized text through the generic minimal proxy, and returns structured
  * backpack data ready for review.
  *
- * Reuses the existing /api/vsp/extract-text endpoint for DOCX→text conversion
- * and calls /api/backpack/parse-document for GPT extraction.
+ * Extracts TXT/DOCX locally and sends only bounded analysis text for parsing.
  */
-import { Platform } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
-import { getApiBaseUrl } from '@/constants/oauth';
-import * as Auth from '@/lib/_core/auth';
+import { callMinimalProxyJson } from '@/lib/ai/minimal-proxy-client';
 import { getCurrentLanguage } from '@/lib/i18n';
+import { extractLocalDocumentText } from '@/lib/features/document/local-document-text';
+import { minimizeAnalysisText } from '@/lib/privacy/analysis-text-minimizer';
 
 export interface BackpackExtractedData {
   naam: string;
@@ -50,13 +49,12 @@ export interface BackpackUploadResult {
  * Opens the document picker, reads the file, sends text to server for parsing.
  * Returns structured backpack data on success.
  */
-export async function pickAndParseBackpackDocument(): Promise<BackpackUploadResult> {
+export async function pickAndParseBackpackDocument(personaHint: 'elias' | 'kim' = 'elias'): Promise<BackpackUploadResult> {
   try {
     // 1. Pick document
     const result = await DocumentPicker.getDocumentAsync({
       type: [
         'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        'application/msword',
         'text/plain',
       ],
       copyToCacheDirectory: true,
@@ -78,7 +76,7 @@ export async function pickAndParseBackpackDocument(): Promise<BackpackUploadResu
     console.log(`[BackpackUpload] Text extracted, length=${documentText.length}`);
 
     // 3. Send to server for GPT parsing
-    const backpackData = await sendForParsing(documentText);
+    const backpackData = await parseBackpackDocumentText(documentText, personaHint);
     if (!backpackData) {
       return { success: false, error: 'The document could not be processed by GPT. Please try again.' };
     }
@@ -91,125 +89,58 @@ export async function pickAndParseBackpackDocument(): Promise<BackpackUploadResu
 }
 
 /**
- * Read text content from a picked document asset.
- * For .txt files: read directly.
- * For .docx: upload to server for text extraction (mammoth).
+ * Read supported text locally. Raw files never leave the device.
  */
 async function readDocumentText(asset: DocumentPicker.DocumentPickerAsset): Promise<string | null> {
   const { uri, mimeType, name } = asset;
-
-  // For plain text files, read directly
-  if (mimeType === 'text/plain' || name.endsWith('.txt')) {
-    return await readTextFile(uri);
-  }
-
-  // For DOCX: send the raw file to the server for text extraction
-  const base64Content = await readFileAsBase64(uri);
-  if (!base64Content) return null;
-
-  const apiBaseUrl = getApiBaseUrl();
-  const token = await Auth.getSessionToken();
-  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-  if (token) headers['Authorization'] = `Bearer ${token}`;
-
-  const response = await fetch(`${apiBaseUrl}/api/vsp/extract-text`, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify({ base64Content, mimeType, fileName: name }),
-  });
-
-  if (!response.ok) {
-    console.error('[BackpackUpload] Text extraction failed:', response.status);
-    return null;
-  }
-
-  const data = await response.json();
-  return data.text || null;
-}
-
-/**
- * Read a text file from URI
- */
-async function readTextFile(uri: string): Promise<string | null> {
-  try {
-    if (Platform.OS === 'web') {
-      const response = await fetch(uri);
-      return await response.text();
-    }
-    const FileSystem = await import('expo-file-system/legacy');
-    const content = await FileSystem.readAsStringAsync(uri, {
-      encoding: FileSystem.EncodingType.UTF8,
-    });
-    return content;
-  } catch (err) {
-    console.error('[BackpackUpload] readTextFile error:', err);
-    return null;
-  }
-}
-
-/**
- * Read a file as base64 from URI
- */
-async function readFileAsBase64(uri: string): Promise<string | null> {
-  try {
-    if (Platform.OS === 'web') {
-      const response = await fetch(uri);
-      const blob = await response.blob();
-      return await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          const result = reader.result as string;
-          const base64 = result.split(',')[1] || result;
-          resolve(base64);
-        };
-        reader.onerror = reject;
-        reader.readAsDataURL(blob);
-      });
-    }
-    const FileSystem = await import('expo-file-system/legacy');
-    const content = await FileSystem.readAsStringAsync(uri, {
-      encoding: FileSystem.EncodingType.Base64,
-    });
-    return content;
-  } catch (err) {
-    console.error('[BackpackUpload] readFileAsBase64 error:', err);
-    return null;
-  }
+  return extractLocalDocumentText({ uri, mimeType, name });
 }
 
 /**
  * Send document text to server for GPT-based backpack extraction
  */
-async function sendForParsing(documentText: string): Promise<BackpackExtractedData | null> {
+export async function parseBackpackDocumentText(
+  documentText: string,
+  personaHint: 'elias' | 'kim',
+): Promise<BackpackExtractedData | null> {
   try {
-    const apiBaseUrl = getApiBaseUrl();
-    const token = await Auth.getSessionToken();
-    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-    if (token) headers['Authorization'] = `Bearer ${token}`;
-
-    console.log(`[BackpackUpload] Sending ${documentText.length} chars to ${apiBaseUrl}/api/backpack/parse-document`);
-
-    const response = await fetch(`${apiBaseUrl}/api/backpack/parse-document`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({ documentText, language: getCurrentLanguage() }),
+    const analysisText = minimizeAnalysisText(documentText).text;
+    const language = getCurrentLanguage();
+    const languageName = language === 'fr' ? 'French' : language === 'en' ? 'English' : 'Dutch';
+    console.log(`[BackpackUpload] Sending minimized text through minimal proxy (${analysisText.length} chars)`);
+    const parsed = await callMinimalProxyJson<Record<string, any>>({
+      persona: personaHint,
+      systemPrompt: `Extract an explicitly written life story into RecoFree Backpack JSON. Never diagnose, infer missing content, or mix narrator roles. Preserve original wording. Persona hint is ${personaHint}; only change userType when the document explicitly shows the narrator is the other role. Added labels must use ${languageName}. Return naam, userType, sections(childhood, adolescence, adulthood, family, themes), kimSections(my_story, the_relationship, the_impact, my_boundaries, my_strength), intakeContext(startEmotion, urgency, initialContext, stageOfChange). Missing fields are empty strings.`,
+      messages: [{ role: 'user', content: analysisText }],
+      model: 'gpt-4o-2024-08-06',
+      maxTokens: 8000,
+      temperature: 0,
+      promptBuildVersion: 'backpack-document-extraction-client-v2',
     });
-
-    if (!response.ok) {
-      const errBody = await response.text().catch(() => 'no body');
-      console.error(`[BackpackUpload] Parse failed: HTTP ${response.status} — ${errBody.slice(0, 200)}`);
-      return null;
-    }
-
-    const data = await response.json();
-    if (!data.success || !data.backpackData) {
-      console.error('[BackpackUpload] Server returned no backpackData');
-      return null;
-    }
-
-    return data.backpackData as BackpackExtractedData;
+    const stringValue = (value: unknown) => typeof value === 'string' ? value : '';
+    const sections = parsed.sections && typeof parsed.sections === 'object' ? parsed.sections : {};
+    const kimSections = parsed.kimSections && typeof parsed.kimSections === 'object' ? parsed.kimSections : {};
+    const intake = parsed.intakeContext && typeof parsed.intakeContext === 'object' ? parsed.intakeContext : {};
+    const urgency = ['laag', 'midden', 'hoog'].includes(intake.urgency) ? intake.urgency : 'midden';
+    return {
+      naam: stringValue(parsed.naam),
+      userType: parsed.userType === 'kim' || parsed.userType === 'elias' ? parsed.userType : personaHint,
+      sections: {
+        childhood: stringValue(sections.childhood), adolescence: stringValue(sections.adolescence),
+        adulthood: stringValue(sections.adulthood), family: stringValue(sections.family), themes: stringValue(sections.themes),
+      },
+      kimSections: {
+        my_story: stringValue(kimSections.my_story), the_relationship: stringValue(kimSections.the_relationship),
+        the_impact: stringValue(kimSections.the_impact), my_boundaries: stringValue(kimSections.my_boundaries),
+        my_strength: stringValue(kimSections.my_strength),
+      },
+      intakeContext: {
+        startEmotion: stringValue(intake.startEmotion), urgency,
+        initialContext: stringValue(intake.initialContext), stageOfChange: stringValue(intake.stageOfChange) || 'contemplation',
+      },
+    };
   } catch (err) {
-    console.error('[BackpackUpload] sendForParsing error:', err);
+    console.error('[BackpackUpload] minimal-proxy parse error:', err);
     return null;
   }
 }

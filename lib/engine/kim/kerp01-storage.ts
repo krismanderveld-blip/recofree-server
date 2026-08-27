@@ -10,7 +10,7 @@
  * - Persisted via the same backpack AsyncStorage mechanism
  */
 
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { readJson, writeJson } from '@/lib/storage/memory/atomicJsonStore';
 import {
   EigenRegiePlan,
   EigenRegieZoneEntry,
@@ -29,9 +29,8 @@ const STORAGE_KEY = '@recofree:eigenRegiePlan';
  */
 export async function loadEigenRegiePlan(): Promise<EigenRegiePlan> {
   try {
-    const raw = await AsyncStorage.getItem(STORAGE_KEY);
-    if (!raw) return { ...DEFAULT_EIGEN_REGIE_PLAN };
-    const parsed = JSON.parse(raw) as EigenRegiePlan;
+    const parsed = await readJson<EigenRegiePlan>(STORAGE_KEY);
+    if (!parsed) return { ...DEFAULT_EIGEN_REGIE_PLAN };
     // Version migration guard
     if (!parsed.version || parsed.version < 1) {
       return { ...DEFAULT_EIGEN_REGIE_PLAN };
@@ -54,7 +53,7 @@ export async function saveEigenRegiePlan(plan: EigenRegiePlan): Promise<void> {
     ...plan,
     lastUpdated: new Date().toISOString(),
   };
-  await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+  await writeJson(STORAGE_KEY, updated);
 }
 
 // ─── Zone Operations ─────────────────────────────────────────
@@ -146,7 +145,7 @@ export async function replaceFullPlan(newPlan: Omit<EigenRegiePlan, 'version' | 
     persona: 'kim',
     lastUpdated: new Date().toISOString(),
   };
-  await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(plan));
+  await writeJson(STORAGE_KEY, plan);
   return plan;
 }
 

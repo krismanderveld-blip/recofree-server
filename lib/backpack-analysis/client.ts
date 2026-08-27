@@ -1,12 +1,13 @@
 /**
  * BackpackDeepAnalysis — Client
  *
- * Fire-and-forget call to POST /api/backpack/analyze after each backpack save.
+ * Fire-and-forget client-built analysis through the Railway minimal proxy.
  * Non-blocking: failures are logged but never crash the app or block the UI.
  */
 
-import { getApiBaseUrl } from '@/constants/oauth';
-import * as Auth from '@/lib/_core/auth';
+import { callMinimalProxyJson } from '@/lib/ai/minimal-proxy-client';
+import { LocalDeviceTimeService } from '@/lib/core/time';
+import { minimizeAnalysisText } from '@/lib/privacy/analysis-text-minimizer';
 
 export interface BackpackAnalysisResult {
   schemas: Array<{ name: string; confidence: number; evidence: string }>;
@@ -25,51 +26,51 @@ export interface BackpackAnalysisResult {
  * Non-blocking — failures are logged but don't crash the app.
  */
 export async function callBackpackAnalysis(
-  userId: string,
-  backpackText: string
+  _userId: string,
+  backpackText: string,
+  persona: 'elias' | 'kim',
 ): Promise<BackpackAnalysisResult | null> {
   try {
-    const apiBaseUrl = getApiBaseUrl();
-    const token = await Auth.getSessionToken();
-
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-    };
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-
-    const url = `${apiBaseUrl}/api/backpack/analyze`;
-
-    console.log('[BackpackAnalysis] Triggering deep analysis...');
-
-    const response = await fetch(url, {
-      method: 'POST',
-      headers,
-      credentials: 'include',
-      body: JSON.stringify({
-        userId,
-        backpackText,
-      }),
+    const minimized = minimizeAnalysisText(backpackText, 12_000).text;
+    const data = await callMinimalProxyJson<Partial<BackpackAnalysisResult>>({
+      persona,
+      systemPrompt: `Analyze the minimized narrative as working hypotheses, never diagnoses. Return only JSON with schemas, modi, triggers, coreBeliefs, copingPatterns. Each schema/mode item has name, confidence 0..1 and short evidence. Preserve persona separation.`,
+      messages: [{ role: 'user', content: minimized }],
+      model: 'gpt-4o-2024-08-06',
+      maxTokens: 2000,
+      temperature: 0,
+      promptBuildVersion: 'backpack-schema-mode-analysis-client-v2',
     });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('[BackpackAnalysis] Server error:', response.status, errorText.substring(0, 200));
-      return null;
-    }
-
-    const data = await response.json();
-
-    if (data?.success && data?.analysis) {
-      console.log(`[BackpackAnalysis] Success: ${data.analysis.schemas?.length ?? 0} schemas, ${data.analysis.triggers?.length ?? 0} triggers`);
-      return data.analysis as BackpackAnalysisResult;
-    }
-
-    console.warn('[BackpackAnalysis] Unexpected response format:', JSON.stringify(data).substring(0, 200));
-    return null;
+    const analysis: BackpackAnalysisResult = {
+      schemas: normalizeNamedItems(data.schemas),
+      modi: normalizeNamedItems(data.modi),
+      triggers: normalizeStrings(data.triggers),
+      coreBeliefs: normalizeStrings(data.coreBeliefs),
+      copingPatterns: normalizeStrings(data.copingPatterns),
+      analysisVersion: 1,
+      analyzedAt: typeof data.analyzedAt === 'string' ? data.analyzedAt : LocalDeviceTimeService.now().utcIso,
+      previousAnalyzedAt: null,
+    };
+    console.log(`[BackpackAnalysis] Success: ${analysis.schemas.length} schemas, ${analysis.triggers.length} triggers`);
+    return analysis;
   } catch (error) {
-    console.error('[BackpackAnalysis] Network error:', error);
+    console.error('[BackpackAnalysis] Minimal-proxy error:', error);
     return null;
   }
+}
+
+function normalizeStrings(raw: unknown): string[] {
+  return Array.isArray(raw) ? raw.map(String).map((item) => item.trim()).filter(Boolean).slice(0, 30) : [];
+}
+
+function normalizeNamedItems(raw: unknown): Array<{ name: string; confidence: number; evidence: string }> {
+  if (!Array.isArray(raw)) return [];
+  return raw.filter((item): item is Record<string, unknown> => Boolean(item) && typeof item === 'object')
+    .map((item) => ({
+      name: String(item.name ?? '').trim(),
+      confidence: Math.max(0, Math.min(1, Number(item.confidence) || 0)),
+      evidence: String(item.evidence ?? '').slice(0, 240),
+    }))
+    .filter((item) => item.name.length > 0)
+    .slice(0, 30);
 }

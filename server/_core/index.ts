@@ -2,24 +2,11 @@ import "dotenv/config";
 import express from "express";
 import { createServer } from "http";
 import net from "net";
-import { createExpressMiddleware } from "@trpc/server/adapters/express";
-import { registerOAuthRoutes } from "./oauth";
-import { registerSignalEngineRoute } from "../signal-engine";
-import { registerPreTranslateRoute } from "../pre-translate";
-import { registerBackpackAnalysisRoute } from "../backpack-analysis";
-import { registerVspBackpackAnalysisRoute } from "../vsp-backpack-analysis";
-import { registerVspDocumentParseRoute } from "../vsp-document-parse";
-import { registerBackpackDocumentParseRoute } from "../backpack-document-parse";
-import { registerVspTextExtractRoute } from "../vsp-text-extract";
-import { registerSessionGreetingRoute } from "../session-greeting";
-import { registerEngineProcessRoute } from "../engine-process";
-import { registerDebugPromptRoute, setSessionCacheGetter } from "../debug-prompt";
-import { registerGptProxyRoute } from "../gpt-proxy";
-import { registerNanoInterpretRoute } from "../nano-interpret-proxy";
-import { getSessionCache } from "../ai-chat";
 import { registerMinimalGptProxyRoute } from "../minimal-gpt-proxy";
-import { appRouter } from "../routers";
-import { createContext } from "./context";
+import {
+  registerRailwayClientSessionRoute,
+  requireRailwayClientSession,
+} from "../security/railway-client-security";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise((resolve) => {
@@ -43,19 +30,31 @@ async function findAvailablePort(startPort: number = 3000): Promise<number> {
 async function startServer() {
   const app = express();
   const server = createServer(app);
+  app.set('trust proxy', 1);
 
-  // Enable CORS for all routes - reflect the request origin to support credentials
+  const configuredOrigins = (process.env.RECOFREE_ALLOWED_ORIGINS || '')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+
+  // Native APK requests have no Origin. Browser origins must be explicitly allowed.
   app.use((req, res, next) => {
     const origin = req.headers.origin;
+    const isLocalDevelopmentOrigin = process.env.NODE_ENV !== 'production' &&
+      typeof origin === 'string' && /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
+    if (origin && !configuredOrigins.includes(origin) && !isLocalDevelopmentOrigin) {
+      res.status(403).json({ ok: false, errorCode: 'ORIGIN_NOT_ALLOWED' });
+      return;
+    }
     if (origin) {
       res.header("Access-Control-Allow-Origin", origin);
+      res.header('Vary', 'Origin');
     }
-    res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+    res.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
     res.header(
       "Access-Control-Allow-Headers",
-      "Origin, X-Requested-With, Content-Type, Accept, Authorization",
+      "Origin, Content-Type, Accept, Authorization, X-RecoFree-Request-Id, X-RecoFree-Client-Time",
     );
-    res.header("Access-Control-Allow-Credentials", "true");
 
     // Handle preflight requests
     if (req.method === "OPTIONS") {
@@ -65,24 +64,19 @@ async function startServer() {
     next();
   });
 
-  app.use(express.json({ limit: "50mb" }));
-  app.use(express.urlencoded({ limit: "50mb", extended: true }));
+  app.use(express.json({ limit: "512kb" }));
+  app.use(express.urlencoded({ limit: "512kb", extended: true }));
 
-  registerOAuthRoutes(app);
-  registerSignalEngineRoute(app);
-  registerPreTranslateRoute(app);
-  registerBackpackAnalysisRoute(app);
-  registerVspBackpackAnalysisRoute(app);
-  registerVspDocumentParseRoute(app);
-  registerVspTextExtractRoute(app);
-  registerBackpackDocumentParseRoute(app);
-  registerSessionGreetingRoute(app);
-  registerEngineProcessRoute(app);
-  registerGptProxyRoute(app);
-  registerNanoInterpretRoute(app);
-  registerDebugPromptRoute(app);
+  registerRailwayClientSessionRoute(app);
+  app.use('/api', (req, res, next) => {
+    if (req.path === '/health' || req.path === '/client/session') return next();
+    requireRailwayClientSession(req, res, next);
+  });
+
+  // Production backend freeze: the client engine decides; Railway only proxies GPT.
+  // Specialized AI/OAuth/tRPC/debug/server-engine modules remain in the repository as
+  // frozen migration history, but are intentionally not registered in production.
   registerMinimalGptProxyRoute(app);
-  setSessionCacheGetter(getSessionCache);
 
   // Root health check for Railway deploy verification
   app.get("/", (_req, res) => {
@@ -93,13 +87,9 @@ async function startServer() {
     res.json({ ok: true, timestamp: Date.now() });
   });
 
-  app.use(
-    "/api/trpc",
-    createExpressMiddleware({
-      router: appRouter,
-      createContext,
-    }),
-  );
+  app.use('/api', (_req, res) => {
+    res.status(404).json({ ok: false, errorCode: 'ROUTE_NOT_AVAILABLE' });
+  });
 
   const preferredPort = parseInt(process.env.PORT || "3000");
   const port = await findAvailablePort(preferredPort);

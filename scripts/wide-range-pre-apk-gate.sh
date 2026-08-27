@@ -63,25 +63,40 @@ if [ "${ALLOW_DIRTY:-0}" != "1" ] && [ "$DIRTY_COUNT" -ne 0 ]; then
   fail_gate "Git working tree is not clean; build source is not reproducible"
 fi
 
-if [ "${EXPO_PUBLIC_API_BASE_URL:-}" != "$EXPECTED_RAILWAY_URL" ]; then
-  fail_gate "EXPO_PUBLIC_API_BASE_URL is not the Railway production URL"
+if [ -n "${EXPO_PUBLIC_API_BASE_URL:-}" ] && [ "$EXPO_PUBLIC_API_BASE_URL" != "$EXPECTED_RAILWAY_URL" ]; then
+  fail_gate "Active EXPO_PUBLIC_API_BASE_URL overrides the version-controlled Railway URL"
 else
-  echo "  PASS: build API base is Railway"
+  echo "  PASS: no conflicting API base override"
 fi
 
-REQUIRED_TRUE_FLAGS=(
-  EXPO_PUBLIC_ENABLE_MINIMAL_GPT_PROXY
-  EXPO_PUBLIC_ENABLE_CLINICAL_MEMORY_DISTILLATION
-  EXPO_PUBLIC_ENABLE_CORE_EPISTEMIC_ENGINE
-  EXPO_PUBLIC_ENABLE_EPISTEMIC_MODEL_ROUTING
-)
-for flag in "${REQUIRED_TRUE_FLAGS[@]}"; do
-  if [ "${!flag:-}" != "true" ]; then
-    fail_gate "$flag is not true in the active build environment"
-  else
-    echo "  PASS: $flag=true"
-  fi
-done
+if ! node - <<'NODE'
+const fs = require('fs');
+const eas = JSON.parse(fs.readFileSync('eas.json', 'utf8'));
+const expectedUrl = 'https://railwayappdashboard-production.up.railway.app';
+const flags = [
+  'EXPO_PUBLIC_ENABLE_MINIMAL_GPT_PROXY',
+  'EXPO_PUBLIC_ENABLE_CLINICAL_MEMORY_DISTILLATION',
+  'EXPO_PUBLIC_ENABLE_CORE_EPISTEMIC_ENGINE',
+  'EXPO_PUBLIC_ENABLE_EPISTEMIC_MODEL_ROUTING',
+  'EXPO_PUBLIC_ENABLE_NANO_INTERPRET',
+];
+for (const profileName of ['development', 'preview', 'production']) {
+  const env = eas.build?.[profileName]?.env ?? {};
+  if (env.EXPO_PUBLIC_API_BASE_URL !== expectedUrl) process.exit(1);
+  if (flags.some((flag) => env[flag] !== 'true')) process.exit(1);
+}
+NODE
+then
+  fail_gate "EAS profiles do not pin Railway and all client-first flags"
+else
+  echo "  PASS: all EAS profiles pin Railway and client-first flags"
+fi
+
+if ! grep -q 'clientFirstArchitecture' app.config.ts || ! grep -q 'serverEngine: false' app.config.ts; then
+  fail_gate "Expo public config does not attest the client-first architecture"
+else
+  echo "  PASS: Expo config attests client-first architecture"
+fi
 
 if ! grep -q 'buildArchs: \["armeabi-v7a", "arm64-v8a"\]' app.config.ts; then
   fail_gate "Dual Android ABI configuration is missing"
@@ -163,8 +178,10 @@ if grep -q 'APK READY: YES' scripts/release-gate.sh; then
   fail_gate "Release gate still claims device readiness from local tests alone"
 fi
 
-if git grep -nE '/api/gpt-proxy|/api/trpc/ai\.chat' -- 'lib/ai/openai-provider.ts' >/dev/null; then
-  warn_gate "Legacy Railway chat routes remain in frozen fallback code; minimal-proxy tests must stay mandatory"
+if git grep -nE '/api/gpt-proxy|/api/trpc/ai\.chat|EXPO_PUBLIC_ENABLE_MINIMAL_GPT_PROXY' -- 'lib/ai/openai-provider.ts' >/dev/null; then
+  fail_gate "Production provider contains a legacy route or runtime minimal-proxy switch"
+else
+  echo "  PASS: production provider is fail-closed to minimal proxy"
 fi
 
 mkdir -p docs/release-gate

@@ -12,8 +12,9 @@
  * - Merges results into existing tendencies (moving average confidence)
  */
 
-import { getApiBaseUrl } from '@/constants/oauth';
-import * as Auth from '@/lib/_core/auth';
+import { callMinimalProxyJson } from '@/lib/ai/minimal-proxy-client';
+import { LocalDeviceTimeService } from '@/lib/core/time';
+import { minimizeAnalysisText } from '@/lib/privacy/analysis-text-minimizer';
 import type { Backpack, UserDat } from '@/lib/ai/types';
 
 // ─── Types ────────────────────────────────────────────────────────
@@ -123,11 +124,13 @@ export async function triggerBackpackAnalysisIfNeeded(
 
   console.log(`[SchemaModeTrigger] ${changedSections.length} sections need analysis:`, changedSections.map(s => s.id));
 
-  // Call server endpoint
+  // Call the generic minimal proxy with a client-built analysis prompt.
   const analysis = await callAnalyzeEndpoint({
-    userName: backpack.naam,
     userType,
-    sections: changedSections,
+    sections: changedSections.map((section) => ({
+      ...section,
+      content: minimizeAnalysisText(section.content, 6_000).text,
+    })),
     changedSectionIds: changedSections.map(s => s.id),
   });
 
@@ -148,53 +151,63 @@ export async function triggerBackpackAnalysisIfNeeded(
 // ─── Server Call ──────────────────────────────────────────────────
 
 async function callAnalyzeEndpoint(input: {
-  userName: string;
   userType: 'elias' | 'kim';
   sections: Array<{ id: string; label: string; content: string }>;
   changedSectionIds: string[];
 }): Promise<AnalysisResult | null> {
   try {
-    const apiBaseUrl = getApiBaseUrl();
-    const token = await Auth.getSessionToken();
-
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-    };
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-
-    const url = `${apiBaseUrl}/api/trpc/ai.analyzeBackpack`;
-
-    console.log('[SchemaModeTrigger] Calling analysis endpoint:', url);
-
-    const response = await fetch(url, {
-      method: 'POST',
-      headers,
-      credentials: 'include',
-      body: JSON.stringify({ json: input }),
+    const sectionText = input.sections
+      .filter((section) => input.changedSectionIds.includes(section.id))
+      .map((section) => `[${section.label} (${section.id})]: ${section.content}`)
+      .join('\n\n');
+    const personaContext = input.userType === 'kim'
+      ? 'The narrator is a loved one of someone with addiction. Never attribute the addiction to the narrator.'
+      : 'The narrator is describing their own addiction recovery context.';
+    const parsed = await callMinimalProxyJson<{ schemas?: unknown[]; modes?: unknown[] }>({
+      persona: input.userType,
+      systemPrompt: `You format schema-therapy working hypotheses. ${personaContext} Never diagnose. Use only explicit textual evidence. Return only JSON with schemas and modes.`,
+      messages: [{ role: 'user', content: `For each supported item return schemaId/modeId, confidence 0.3..0.95, short evidence and sourceSectionId.\n${sectionText}` }],
+      model: 'gpt-4o-mini',
+      maxTokens: 1400,
+      temperature: 0,
+      promptBuildVersion: 'schema-mode-trigger-client-v2',
     });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('[SchemaModeTrigger] Server error:', response.status, errorText.substring(0, 200));
-      return null;
-    }
-
-    const data = await response.json();
-    const result = data?.result?.data?.json;
-
-    if (result?.success && result?.analysis) {
-      console.log(`[SchemaModeTrigger] Analysis received: ${result.analysis.schemas?.length ?? 0} schemas, ${result.analysis.modes?.length ?? 0} modes`);
-      return result.analysis as AnalysisResult;
-    }
-
-    console.warn('[SchemaModeTrigger] Unexpected response format:', JSON.stringify(data).substring(0, 200));
-    return null;
+    const schemas = normalizeSchemas(parsed.schemas, input.changedSectionIds);
+    const modes = normalizeModes(parsed.modes, input.changedSectionIds);
+    console.log(`[SchemaModeTrigger] Analysis received: ${schemas.length} schemas, ${modes.length} modes`);
+    return {
+      schemas,
+      modes,
+      analysisTimestamp: LocalDeviceTimeService.now().utcIso,
+      analyzedSectionIds: input.changedSectionIds,
+    };
   } catch (error) {
-    console.error('[SchemaModeTrigger] Network error:', error);
+    console.error('[SchemaModeTrigger] Minimal-proxy error:', error);
     return null;
   }
+}
+
+function normalizeRecords(raw: unknown): Record<string, unknown>[] {
+  return Array.isArray(raw) ? raw.filter((item): item is Record<string, unknown> => Boolean(item) && typeof item === 'object') : [];
+}
+
+function normalizeSchemas(raw: unknown, sectionIds: string[]): AnalyzedSchema[] {
+  return normalizeRecords(raw).map((item) => ({
+    schemaId: String(item.schemaId ?? '').toLowerCase().replace(/\s+/g, '_'),
+    domain: String(item.domain ?? 'Unknown'),
+    confidence: Math.min(0.95, Math.max(0.1, Number(item.confidence) || 0.5)),
+    evidence: String(item.evidence ?? '').slice(0, 500),
+    sourceSectionId: String(item.sourceSectionId ?? sectionIds[0] ?? ''),
+  })).filter((item) => item.schemaId.length > 0 && item.evidence.length > 0);
+}
+
+function normalizeModes(raw: unknown, sectionIds: string[]): AnalyzedMode[] {
+  return normalizeRecords(raw).map((item) => ({
+    modeId: String(item.modeId ?? '').toLowerCase().replace(/\s+/g, '_'),
+    confidence: Math.min(0.95, Math.max(0.1, Number(item.confidence) || 0.5)),
+    evidence: String(item.evidence ?? '').slice(0, 500),
+    sourceSectionId: String(item.sourceSectionId ?? sectionIds[0] ?? ''),
+  })).filter((item) => item.modeId.length > 0 && item.evidence.length > 0);
 }
 
 // ─── Merge Logic ──────────────────────────────────────────────────

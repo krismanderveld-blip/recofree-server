@@ -16,7 +16,7 @@
  * A crisis message must NEVER be dropped or blocked.
  */
 
-import { getApiBaseUrl } from '@/constants/oauth';
+import { callMinimalProxy } from '@/lib/ai/minimal-proxy-client';
 
 export interface PreprocessedInput {
   /** The original raw input from the user */
@@ -37,7 +37,8 @@ export interface PreprocessedInput {
  */
 export async function preprocessInput(
   rawInput: string,
-  locale: 'nl' | 'en' | 'fr' = 'nl'
+  locale: 'nl' | 'en' | 'fr' = 'nl',
+  persona: 'elias' | 'kim' = 'elias',
 ): Promise<PreprocessedInput> {
   const trimmed = rawInput.trim();
 
@@ -61,57 +62,37 @@ export async function preprocessInput(
     };
   }
 
-  // Non-NL: call server to translate to Dutch via gpt-4o-mini
-  const apiBaseUrl = getApiBaseUrl();
-  if (!apiBaseUrl) {
-    console.warn('[pre-translate] No API base URL — fallback to original');
-    return {
-      originalText: rawInput,
-      processedText: trimmed,
-      detectedLanguage: locale,
-      wasTranslated: false,
-    };
-  }
-
+  // Non-NL: call Railway to translate to Dutch via gpt-4o-mini
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 8000); // 8s timeout
 
-    const response = await fetch(`${apiBaseUrl}/api/pre-translate`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text: trimmed, locale }),
+    const result = await callMinimalProxy({
+      persona,
+      systemPrompt: `Translate the user's ${locale === 'fr' ? 'French' : 'English'} message to Dutch. Preserve exact meaning, urgency, negation, substance-use language and crisis language. Return only the Dutch translation, with no explanation or labels.`,
+      messages: [{ role: 'user', content: trimmed }],
+      model: 'gpt-4o-mini',
+      maxTokens: 400,
+      temperature: 0,
+      promptBuildVersion: 'pre-translate-client-v2',
       signal: controller.signal,
     });
 
     clearTimeout(timeoutId);
-
-    if (!response.ok) {
-      console.error(`[pre-translate] Server error ${response.status} — fallback to original`);
+    const translatedText = result.text.trim();
+    if (translatedText) {
+      console.log(`[pre-translate] input: "${trimmed}" → NL: "${translatedText}"`);
       return {
         originalText: rawInput,
-        processedText: trimmed,
-        detectedLanguage: locale,
-        wasTranslated: false,
-      };
-    }
-
-    const data = await response.json();
-
-    if (data.wasTranslated && data.translatedText) {
-      console.log(`[pre-translate] input: "${trimmed}" → NL: "${data.translatedText}"`);
-      return {
-        originalText: rawInput,
-        processedText: data.translatedText,
+        processedText: translatedText,
         detectedLanguage: locale,
         wasTranslated: true,
       };
     }
 
-    // Server returned but didn't translate (e.g., error fallback on server side)
     return {
       originalText: rawInput,
-      processedText: data.translatedText || trimmed,
+      processedText: trimmed,
       detectedLanguage: locale,
       wasTranslated: false,
     };
@@ -134,7 +115,7 @@ export async function preprocessInput(
  */
 export async function preprocessInputViaBackend(
   rawInput: string,
-  apiBaseUrl: string
+  _apiBaseUrl: string
 ): Promise<PreprocessedInput> {
   return preprocessInput(rawInput, 'fr');
 }

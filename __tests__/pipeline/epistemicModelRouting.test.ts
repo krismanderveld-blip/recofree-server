@@ -33,13 +33,13 @@ function route(overrides: Partial<EpistemicModelRoutingInput> = {}): ReturnType<
 
 describe('FASE 9C: Deterministic Model Routing', () => {
   describe('Feature Flag', () => {
-    it('1. routing flag false preserves old model choice (pipeline has flag check)', () => {
-      expect(pipelineCode).toContain("EXPO_PUBLIC_ENABLE_EPISTEMIC_MODEL_ROUTING");
-      expect(pipelineCode).toContain("=== 'true'");
+    it('1. routing is fail-closed in the version-controlled client-first contract', () => {
+      expect(pipelineCode).toContain("isClientFirstFeatureEnabled('epistemicModelRouting')");
     });
-    it('2. routing flag missing preserves old model choice (provider has legacy fallback)', () => {
+    it('2. provider retains deterministic safety fallback without a legacy transport', () => {
       expect(providerCode).toContain("context.crisisLevel");
       expect(providerCode).toContain("clinicalModeActive");
+      expect(providerCode).not.toContain('/api/gpt-proxy');
     });
     it('3. routing flag true activates resolver', () => {
       expect(pipelineCode).toContain("resolveEpistemicModelRouting");
@@ -203,8 +203,9 @@ describe('FASE 9C: Deterministic Model Routing', () => {
     it('38. store:false stays active', () => {
       expect(providerCode).toContain("store: false");
     });
-    it('39. legacy route not used when minimal proxy active', () => {
-      expect(providerCode).toContain("EXPO_PUBLIC_ENABLE_MINIMAL_GPT_PROXY");
+    it('39. production provider is unconditionally minimal-proxy only', () => {
+      expect(providerCode).toContain('/api/minimal-gpt-proxy');
+      expect(providerCode).not.toContain('/api/gpt-proxy');
     });
     it('40. model in clinical dropdown matches routing output', () => {
       expect(pipelineCode).toContain('epistemicRoutingDebug.model');
@@ -270,8 +271,8 @@ describe('FASE 9C: Deterministic Model Routing', () => {
       const proxyFile = fs.readFileSync(path.resolve(__dirname, '../../server/minimal-gpt-proxy.ts'), 'utf-8');
       expect(proxyFile).toContain('minimal_gpt_proxy_v1');
     });
-    it('56. no CMD/DIST01 changes', () => {
-      expect(pipelineCode).toContain('CLINICAL_MEMORY_DISTILLATION');
+    it('56. CMD remains enabled through the fail-closed client-first contract', () => {
+      expect(pipelineCode).toContain("isClientFirstFeatureEnabled('clinicalMemoryDistillation')");
     });
     it('57. no prompt content changes (formulation block unchanged)', () => {
       expect(pipelineCode).toContain('buildKimRelationalFormulationContext');

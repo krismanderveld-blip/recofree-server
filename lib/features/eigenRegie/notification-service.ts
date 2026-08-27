@@ -8,7 +8,7 @@
  */
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { readEncrypted, writeEncrypted } from '@/lib/crypto/storage-encryption';
 
 // ─── Storage Keys ─────────────────────────────────────────────────────────────
 const STORAGE_KEY_SETTINGS = '@recofree_eigenregie_notification_settings';
@@ -41,7 +41,7 @@ const NOTIFICATION_BODY = 'Hoe gaat het met je regie? Neem even een moment om je
 // ─── Settings Persistence ─────────────────────────────────────────────────────
 export async function loadSettings(): Promise<EigenRegieNotificationSettings> {
   try {
-    const raw = await AsyncStorage.getItem(STORAGE_KEY_SETTINGS);
+    const raw = await readEncrypted(STORAGE_KEY_SETTINGS);
     if (!raw) return { ...DEFAULT_SETTINGS };
     return JSON.parse(raw) as EigenRegieNotificationSettings;
   } catch {
@@ -50,20 +50,20 @@ export async function loadSettings(): Promise<EigenRegieNotificationSettings> {
 }
 
 export async function saveSettings(settings: EigenRegieNotificationSettings): Promise<void> {
-  await AsyncStorage.setItem(STORAGE_KEY_SETTINGS, JSON.stringify(settings));
+  await writeEncrypted(STORAGE_KEY_SETTINGS, JSON.stringify(settings));
 }
 
 // ─── Last Check Timestamp ─────────────────────────────────────────────────────
 export async function getLastCheckTimestamp(): Promise<string | null> {
   try {
-    return await AsyncStorage.getItem(STORAGE_KEY_LAST_CHECK);
+    return await readEncrypted(STORAGE_KEY_LAST_CHECK);
   } catch {
     return null;
   }
 }
 
 export async function recordEigenRegieCheck(): Promise<void> {
-  await AsyncStorage.setItem(STORAGE_KEY_LAST_CHECK, new Date().toISOString());
+  await writeEncrypted(STORAGE_KEY_LAST_CHECK, new Date().toISOString());
 }
 
 /**

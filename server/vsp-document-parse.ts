@@ -11,6 +11,7 @@
  * Max tokens: 4000
  */
 import type { Request, Response, Express } from 'express';
+import { minimizeAnalysisText } from '../lib/privacy/analysis-text-minimizer';
 
 const VSP_PARSE_SYSTEM_PROMPT = `You are a clinical extraction tool for RecoFree. You receive the full text of a user's personal safety plan (Vroegsignaleringsplan / VSP).
 
@@ -103,7 +104,8 @@ export function registerVspDocumentParseRoute(app: Express): void {
         return;
       }
 
-      console.log(`[VspDocumentParse] Starting parse, textLength=${documentText.length}`);
+      const analysisText = minimizeAnalysisText(documentText).text;
+      console.log(`[VspDocumentParse] Starting minimized parse, textLength=${analysisText.length}`);
 
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
@@ -118,7 +120,7 @@ export function registerVspDocumentParseRoute(app: Express): void {
           max_tokens: 4000,
           messages: [
             { role: 'system', content: VSP_PARSE_SYSTEM_PROMPT },
-            { role: 'user', content: `Parse this VSP document into structured format:\n\n${documentText}` },
+            { role: 'user', content: `Parse this VSP document into structured format:\n\n${analysisText}` },
           ],
         }),
       });

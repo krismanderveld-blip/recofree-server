@@ -254,14 +254,15 @@ describe('FASE 5C: Nano-Interpret Feature Flag', () => {
     expect(eliasPrompt.systemPrompt).not.toContain(k05Context);
   });
 
-  // Structural test: verify the guard exists in pipeline.ts source
-  it('pipeline.ts contains the feature flag guard', async () => {
+  // Structural test: verify the fail-closed client-first guard exists in pipeline.ts source
+  it('pipeline.ts uses the version-controlled nano architecture guard', async () => {
     const fs = await import('fs');
     const source = fs.readFileSync(
       '/home/ubuntu/recofree-app/lib/rugzak/pipeline.ts',
       'utf-8'
     );
-    expect(source).toContain("process.env.EXPO_PUBLIC_ENABLE_NANO_INTERPRET !== 'false'");
+    expect(source).toContain("isClientFirstFeatureEnabled('nanoInterpret')");
+    expect(source).not.toContain("process.env.EXPO_PUBLIC_ENABLE_NANO_INTERPRET !== 'false'");
     expect(source).toContain('enableNanoInterpret && !isCrisisForNano');
     expect(source).toContain('disabled by feature flag');
   });

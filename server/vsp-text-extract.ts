@@ -91,8 +91,6 @@ export function registerVspTextExtractRoute(app: Express): void {
       }
 
       console.log(`[VspTextExtract] SUCCESS: Extracted ${text.length} chars from ${fileName}`);
-      // Log first 200 chars for debugging
-      console.log(`[VspTextExtract] Preview: ${text.slice(0, 200).replace(/\n/g, ' | ')}`);
       res.json({ success: true, text });
     } catch (error: any) {
       console.error('[VspTextExtract] Error:', error);

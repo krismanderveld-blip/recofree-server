@@ -2,10 +2,17 @@
 import "./scripts/load-env.js";
 import type { ExpoConfig } from "expo/config";
 
-// Bundle ID format: space.manus.<project_name_dots>.<timestamp>
-// e.g., "my-app" created at 2024-01-15 10:30:45 -> "space.manus.my.app.t20240115103045"
-// Bundle ID can only contain letters, numbers, and dots
-// Android requires each dot-separated segment to start with a letter
+const RAILWAY_PRODUCTION_URL = "https://railwayappdashboard-production.up.railway.app";
+const CLIENT_FIRST_FEATURES = {
+  minimalGptProxy: true,
+  clinicalMemoryDistillation: true,
+  coreEpistemicEngine: true,
+  epistemicModelRouting: true,
+  nanoInterpret: true,
+  serverEngine: false,
+} as const;
+
+// Keep the installed app identity stable so existing APK updates remain compatible.
 const rawBundleId = "space.manus.recofree.app.t20260405113127";
 const bundleId =
   rawBundleId
@@ -20,11 +27,7 @@ const bundleId =
       // Prefix with 'x' if segment starts with a digit
       return /^[a-zA-Z]/.test(segment) ? segment : "x" + segment;
     })
-    .join(".") || "space.manus.app";
-// Extract timestamp from bundle ID and prefix with "manus" for deep link scheme
-// e.g., "space.manus.my.app.t20240115103045" -> "manus20240115103045"
-const timestamp = bundleId.split(".").pop()?.replace(/^t/, "") ?? "";
-const schemeFromBundleId = `manus${timestamp}`;
+    .join(".") || "app.recofree.mobile";
 
 const env = {
   // App branding - update these values directly (do not use env vars)
@@ -32,8 +35,8 @@ const env = {
   appSlug: "recofree-app",
   // S3 URL of the app logo - set this to the URL returned by generate_image when creating custom logo
   // Leave empty to use the default icon from assets/images/icon.png
-  logoUrl: "https://d2xsxph8kpxj0f.cloudfront.net/98257799/VHSxu5uAj9NsPekXUvHBxZ/recofree-icon-YZLFXNtAAgNrrk88A9EQMx.png",
-  scheme: schemeFromBundleId,
+  logoUrl: "",
+  scheme: "recofree",
   iosBundleId: bundleId,
   androidPackage: bundleId,
 };
@@ -131,6 +134,12 @@ const config: ExpoConfig = {
   experiments: {
     typedRoutes: true,
     reactCompiler: true,
+  },
+  extra: {
+    clientFirstArchitecture: {
+      apiBaseUrl: RAILWAY_PRODUCTION_URL,
+      ...CLIENT_FIRST_FEATURES,
+    },
   },
 };
 

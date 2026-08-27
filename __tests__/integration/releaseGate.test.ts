@@ -399,11 +399,13 @@ describe('7. USERDAT WRITE SAFETY', () => {
     expect(directWrites.length).toBeLessThanOrEqual(1 + (helperDefs.length > 0 ? 0 : 0));
   });
 
-  it('7.3 section-analysis-service mergeAnalysisToUserDat writes to SessionMemoryCache', async () => {
+  it('7.3 section-analysis-service mergeAnalysisToUserDat uses the encrypted atomic store', async () => {
     const fs = await import('fs');
     const content = fs.readFileSync('/home/ubuntu/recofree-app/lib/backpack-extractor/section-analysis-service.ts', 'utf-8');
     const mergeFn = content.slice(content.indexOf('async function mergeAnalysisToUserDat'));
-    expect(mergeFn).toContain('SessionMemoryCache.set');
+    expect(mergeFn).toContain('updateJson<any>(USERDAT_KEY');
+    expect(mergeFn).not.toContain('AsyncStorage.setItem(USERDAT_KEY');
+    expect(mergeFn).not.toContain('SessionMemoryCache.set(USERDAT_KEY');
   });
 
   it('7.4 manual-data-refresh re-reads userDat after analyzeAllSections', async () => {
@@ -411,7 +413,7 @@ describe('7. USERDAT WRITE SAFETY', () => {
     const content = fs.readFileSync('/home/ubuntu/recofree-app/lib/rugzak/manual-data-refresh.ts', 'utf-8');
     // After analyzeAllSections, should re-read fresh userDat
     const afterAnalyze = content.slice(content.indexOf('analyzeAllSections'));
-    expect(afterAnalyze).toContain('SessionMemoryCache.get');
+    expect(afterAnalyze).toContain('readJson<any>(USERDAT_KEY)');
   });
 });
 
@@ -697,11 +699,12 @@ describe('15. REGRESSION — tests pass but device fails', () => {
     expect(validateFn).toContain('safeFormulationHints');
   });
 
-  it('15.4 REGRESSION: mergeAnalysisToUserDat writes to BOTH AsyncStorage and SessionMemoryCache', async () => {
+  it('15.4 REGRESSION: mergeAnalysisToUserDat writes once through encrypted atomic storage', async () => {
     const fs = await import('fs');
     const content = fs.readFileSync('/home/ubuntu/recofree-app/lib/backpack-extractor/section-analysis-service.ts', 'utf-8');
     const mergeFn = content.slice(content.indexOf('async function mergeAnalysisToUserDat'));
-    expect(mergeFn).toContain('AsyncStorage.setItem');
-    expect(mergeFn).toContain('SessionMemoryCache.set');
+    expect(mergeFn).toContain('updateJson<any>(USERDAT_KEY');
+    expect(mergeFn).not.toContain('AsyncStorage.setItem');
+    expect(mergeFn).not.toContain('SessionMemoryCache.set');
   });
 });

@@ -29,66 +29,50 @@ vi.mock('@react-native-async-storage/async-storage', () => ({
   },
 }));
 
-// ─── Mock fetch for SignalEngine API calls ─────────────────────
-// The GptSignalEngine POSTs to /api/signal-engine with { prompt }
-// and expects { result } containing the JSON string.
-const originalFetch = globalThis.fetch;
+// ─── Mock the client-built minimal proxy used by GptSignalEngine ─────────────
+const callMinimalProxyMock = vi.hoisted(() => vi.fn());
 
-function createMockFetch(options?: { withProjections?: boolean }) {
-  return vi.fn(async (url: string | URL | Request, init?: RequestInit) => {
-    const urlStr = typeof url === 'string' ? url : url instanceof URL ? url.toString() : url.url;
+vi.mock('@/lib/ai/minimal-proxy-client', () => ({
+  callMinimalProxy: callMinimalProxyMock,
+}));
 
-    if (urlStr.includes('/api/signal-engine')) {
-      const body = JSON.parse(init?.body as string || '{}');
-      const prompt: string = body.prompt || '';
+function configureMinimalProxy(options?: { withProjections?: boolean }) {
+  callMinimalProxyMock.mockReset();
+  callMinimalProxyMock.mockImplementation(async (input: { systemPrompt?: string }) => {
+    const prompt = input.systemPrompt || '';
 
-      // Detect which type of call this is based on prompt content
-      if (prompt.includes('Detect emotional signals') || prompt.includes('Detect recovery-relevant signals')) {
-        // Signal detection call — return context-aware results
-        const hasFearMessage = prompt.includes('bang') || prompt.includes('hervallen') || prompt.includes('geen uitweg');
-        const hasHopeMessage = prompt.includes('clean blijven') || prompt.includes('kinderen');
-        const hasProjections = prompt.includes('Active projections') && prompt.includes('Fear of relapse');
-
-        const fears = hasFearMessage
-          ? [{ keyword: 'angst voor herval', confidence: hasProjections ? 0.92 : 0.75 }]
-          : [];
-        const hopes = hasHopeMessage
-          ? [{ keyword: 'motivatie voor kinderen', confidence: 0.85 }]
-          : [];
-
-        return new Response(JSON.stringify({
-          result: JSON.stringify({ fears, hopes, goals: [], triggers: [] }),
-        }), { status: 200, headers: { 'Content-Type': 'application/json' } });
-      }
-
-      if (prompt.includes('backpackRelevance') || prompt.includes('Score how relevant')) {
-        // Relevance scoring call
-        return new Response(JSON.stringify({
-          result: JSON.stringify({
-            backpackRelevance: 0.7,
-            diaryRelevance: 0.4,
-            triggerRelevance: 0.6,
-            projectionRelevance: options?.withProjections ? 0.9 : 0.5,
-          }),
-        }), { status: 200, headers: { 'Content-Type': 'application/json' } });
-      }
-
-      if (prompt.includes('Summarize') || prompt.includes('summarize')) {
-        // Context summarization call
-        return new Response(JSON.stringify({
-          result: 'User is in recovery, expressing fear of relapse.',
-        }), { status: 200, headers: { 'Content-Type': 'application/json' } });
-      }
-
-      // Default fallback for unrecognized prompts
-      return new Response(JSON.stringify({
-        result: JSON.stringify({ fears: [], hopes: [], goals: [], triggers: [] }),
-      }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    if (prompt.includes('Detect emotional signals') || prompt.includes('Detect recovery-relevant signals')) {
+      const hasFearMessage = prompt.includes('bang') || prompt.includes('hervallen') || prompt.includes('geen uitweg');
+      const hasHopeMessage = prompt.includes('clean blijven') || prompt.includes('kinderen');
+      const hasProjections = prompt.includes('Active projections') && prompt.includes('Fear of relapse');
+      const fears = hasFearMessage
+        ? [{ keyword: 'angst voor herval', confidence: hasProjections ? 0.92 : 0.75 }]
+        : [];
+      const hopes = hasHopeMessage
+        ? [{ keyword: 'motivatie voor kinderen', confidence: 0.85 }]
+        : [];
+      return { ok: true, text: JSON.stringify({ fears, hopes, goals: [], triggers: [] }) };
     }
 
-    // Non-signal-engine calls: pass through or return 404
-    return new Response('Not Found', { status: 404 });
+    if (prompt.includes('backpackRelevance') || prompt.includes('Score how relevant')) {
+      return {
+        ok: true,
+        text: JSON.stringify({
+          backpackRelevance: 0.7,
+          diaryRelevance: 0.4,
+          triggerRelevance: 0.6,
+          projectionRelevance: options?.withProjections ? 0.9 : 0.5,
+        }),
+      };
+    }
+
+    if (prompt.includes('Summarize') || prompt.includes('summarize')) {
+      return { ok: true, text: 'User is in recovery, expressing fear of relapse.' };
+    }
+
+    return { ok: true, text: JSON.stringify({ fears: [], hopes: [], goals: [], triggers: [] }) };
   });
+  return callMinimalProxyMock;
 }
 
 // ─── Imports (after mocks) ─────────────────────────────────────
@@ -209,9 +193,8 @@ describe('SignalEngine Integration — Full Pipeline', () => {
   });
 
   afterEach(() => {
-    // Restore engine and fetch
+    // Restore engine
     resetEngine();
-    globalThis.fetch = originalFetch;
   });
 
   // ─── Assertion 1: GptSignalEngine is active (not NullEngine) ──
@@ -223,7 +206,7 @@ describe('SignalEngine Integration — Full Pipeline', () => {
 
   // ─── Assertion 2: Fear detection with confidence > 0.5 ────────
   it('2. Detects fears > 0 with confidence > 0.5 for emotionally loaded message', async () => {
-    globalThis.fetch = createMockFetch() as any;
+    configureMinimalProxy();
 
     const backpack = createEliasBackpack();
     const userDat = createEliasUserDat();
@@ -241,18 +224,17 @@ describe('SignalEngine Integration — Full Pipeline', () => {
     // Verify fears were detected (fears count > 0 in the reason string)
     expect(signalStep?.reason).toMatch(/fears=[1-9]/);
 
-    // Also verify via the mock that fetch was called (proving GptSignalEngine path)
-    expect(globalThis.fetch).toHaveBeenCalled();
-    const fetchCalls = (globalThis.fetch as any).mock.calls;
-    const signalCalls = fetchCalls.filter((c: any[]) =>
-      (typeof c[0] === 'string' ? c[0] : '').includes('/api/signal-engine')
+    // Verify the shared client-built minimal proxy was called.
+    expect(callMinimalProxyMock).toHaveBeenCalled();
+    const signalCalls = callMinimalProxyMock.mock.calls.filter((c: any[]) =>
+      c[0]?.systemPrompt?.includes('Detect emotional signals')
     );
     expect(signalCalls.length).toBeGreaterThan(0);
   });
 
   // ─── Assertion 3: Hope detection with confidence > 0.5 ────────
   it('3. Detects hopes > 0 with confidence > 0.5 for motivational message', async () => {
-    globalThis.fetch = createMockFetch() as any;
+    configureMinimalProxy();
 
     const backpack = createEliasBackpack();
     const userDat = createEliasUserDatGreen();
@@ -271,25 +253,20 @@ describe('SignalEngine Integration — Full Pipeline', () => {
     // Verify hopes were detected (hopes count > 0 in the reason string)
     expect(signalStep?.reason).toMatch(/hopes=[1-9]/);
 
-    // Verify fetch was called with the hope message
-    const fetchCalls = (globalThis.fetch as any).mock.calls;
-    const signalCalls = fetchCalls.filter((c: any[]) => {
-      const url = typeof c[0] === 'string' ? c[0] : '';
-      return url.includes('/api/signal-engine');
-    });
+    // Verify the minimal-proxy prompt includes the hope message.
+    const signalCalls = callMinimalProxyMock.mock.calls.filter((c: any[]) =>
+      c[0]?.systemPrompt?.includes('Detect emotional signals')
+    );
     expect(signalCalls.length).toBeGreaterThan(0);
 
     // Verify the prompt included the hope message keywords
-    const detectCall = signalCalls.find((c: any[]) => {
-      const body = JSON.parse(c[1]?.body || '{}');
-      return body.prompt?.includes('clean blijven');
-    });
+    const detectCall = signalCalls.find((c: any[]) => c[0]?.systemPrompt?.includes('clean blijven'));
     expect(detectCall).toBeDefined();
   });
 
   // ─── Assertion 4: VSP=ROOD → selectedModel = gpt-4o ──────────
   it('4. VSP=ROOD routes to gpt-4o model selection', async () => {
-    globalThis.fetch = createMockFetch() as any;
+    configureMinimalProxy();
 
     const backpack = createEliasBackpack();
     const userDat = createEliasUserDat(); // VSP = ROOD
@@ -305,8 +282,7 @@ describe('SignalEngine Integration — Full Pipeline', () => {
   // ─── Assertion 5: Active projections boost fear confidence ────
   it('5. Active projections with "Fear of relapse" boost fear confidence higher than without', async () => {
     // Run 1: WITHOUT projections — use GREEN VSP so projection layer doesn't auto-create fear entry
-    const fetchWithout = createMockFetch({ withProjections: false });
-    globalThis.fetch = fetchWithout as any;
+    const proxyWithout = configureMinimalProxy({ withProjections: false });
 
     const backpack1 = createEliasBackpack();
     const userDat1 = createEliasUserDatGreen(); // GROEN = no auto fear projection
@@ -319,13 +295,10 @@ describe('SignalEngine Integration — Full Pipeline', () => {
     const result1 = await processMessage(backpack1, FEAR_MESSAGE, provider1, userDat1, { isSessionStart: true });
 
     // Capture the prompt sent to signal engine WITHOUT projections
-    const calls1 = (fetchWithout as any).mock.calls.filter((c: any[]) => {
-      const url = typeof c[0] === 'string' ? c[0] : '';
-      if (!url.includes('/api/signal-engine')) return false;
-      const body = JSON.parse(c[1]?.body || '{}');
-      return body.prompt?.includes('Detect emotional signals') || body.prompt?.includes('Detect recovery-relevant signals');
-    });
-    const prompt1 = calls1.length > 0 ? JSON.parse(calls1[0][1]?.body || '{}').prompt : '';
+    const calls1 = proxyWithout.mock.calls.filter((c: any[]) =>
+      c[0]?.systemPrompt?.includes('Detect emotional signals')
+    );
+    const prompt1 = calls1.length > 0 ? calls1[0][0]?.systemPrompt || '' : '';
 
     // Run 2: WITH projections seeded
     resetSessionState();
@@ -333,8 +306,7 @@ describe('SignalEngine Integration — Full Pipeline', () => {
     resetSessionTracking();
     await saveEliasProjection(FEAR_PROJECTION);
 
-    const fetchWith = createMockFetch({ withProjections: true });
-    globalThis.fetch = fetchWith as any;
+    const proxyWith = configureMinimalProxy({ withProjections: true });
 
     const backpack2 = createEliasBackpack();
     const userDat2 = createEliasUserDat();
@@ -347,13 +319,10 @@ describe('SignalEngine Integration — Full Pipeline', () => {
     const result2 = await processMessage(backpack2, FEAR_MESSAGE, provider2, userDat2, { isSessionStart: true });
 
     // Capture the prompt sent to signal engine WITH projections
-    const calls2 = (fetchWith as any).mock.calls.filter((c: any[]) => {
-      const url = typeof c[0] === 'string' ? c[0] : '';
-      if (!url.includes('/api/signal-engine')) return false;
-      const body = JSON.parse(c[1]?.body || '{}');
-      return body.prompt?.includes('Detect emotional signals') || body.prompt?.includes('Detect recovery-relevant signals');
-    });
-    const prompt2 = calls2.length > 0 ? JSON.parse(calls2[0][1]?.body || '{}').prompt : '';
+    const calls2 = proxyWith.mock.calls.filter((c: any[]) =>
+      c[0]?.systemPrompt?.includes('Detect emotional signals')
+    );
+    const prompt2 = calls2.length > 0 ? calls2[0][0]?.systemPrompt || '' : '';
 
     // Key assertion: the prompt WITH projections includes the seeded "Fear of relapse" entry
     expect(prompt2).toContain('Active projections');

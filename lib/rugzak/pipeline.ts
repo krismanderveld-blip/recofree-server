@@ -73,6 +73,7 @@ import {
   buildEpistemicGuidanceSummary,
   validateEpistemicOutput,
 } from '../engine/shared/epistemic-reasoning';
+import { isClientFirstFeatureEnabled } from '../config/client-first-architecture';
 import { buildClinicalMemoryDistillationRuntimeContext } from '../engine/shared/clinical-memory-distillation/clinical-memory-distillation-runtime';
 import {
   getCMDMemoryForEliasFormulation,
@@ -367,8 +368,15 @@ import type { PsychoEducationActivation } from '../types/memory/memoryCore.types
 import { searchPastReferences } from '../pipeline/memory/pastReferenceSearch';
 import { buildDetectionBundle, runMemoryWriteBack, getSessionLifecycleManager, type PipelineResultForMemory } from '../pipeline/memory/memoryIntegration';
 import { LocalDeviceTimeService } from "@/lib/core/time";
-import { isServerEngineActive, callServerEngine, type ServerEngineCallInput } from '@/lib/migration';
 import { getApiBaseUrl } from '@/constants/oauth';
+// Frozen forensic compatibility only: production is permanently client-engine-first.
+// The unreachable source remains for history, but its migration bundle edge and
+// /api/engine-process raw-memory transport are severed.
+const SERVER_ENGINE_DISABLED = false as const;
+type ServerEngineCallInput = Record<string, unknown>;
+async function callServerEngine(_input: ServerEngineCallInput): Promise<any> {
+  throw new Error('SERVER_ENGINE_DISABLED_CLIENT_ONLY');
+}
 import { callNanoInterpret, type ClientNanoInterpretResult } from '@/lib/pipeline/nano-interpret-client';
 import { buildPrebuiltPromptBlocks } from '@/lib/pipeline/prebuilt-prompt-blocks';
 import { createDistillationStore } from '@/lib/engine/shared/dist01-store';
@@ -645,7 +653,7 @@ export async function processMessage(
   // On failure: graceful degradation to client pipeline below.
   // ══════════════════════════════════════════════════════════════
   let serverNanoInterpretData: any = null;
-  if (isServerEngineActive()) {
+  if (SERVER_ENGINE_DISABLED) {
     try {
       // Build conversation history (last 20 messages)
       const conversationHistory = (currentUserDat.chatHistory || []).slice(-20).map(m => ({
@@ -952,10 +960,10 @@ export async function processMessage(
             localUserId: 'local_user',
             candidateSignals: serverResult.signalDetections
               ? {
-                  fears: serverResult.signalDetections.fears.map(f => ({ label: f.keyword, confidence: f.confidence })),
+                  fears: serverResult.signalDetections.fears.map((f: any) => ({ label: f.keyword, confidence: f.confidence })),
                   hopes: serverResult.signalDetections.hopes.map((h: any) => ({ label: h.keyword, confidence: h.confidence })),
                   goals: [],
-                  triggers: serverResult.signalDetections.triggers.map(t => ({ label: t.keyword, confidence: t.confidence, triggerType: 'craving' })),
+                  triggers: serverResult.signalDetections.triggers.map((t: any) => ({ label: t.keyword, confidence: t.confidence, triggerType: 'craving' })),
                 }
               : null,
             schemaModeResult: null, // Not available server-side (schema/mode engine is client-only)
@@ -1239,7 +1247,7 @@ export async function processMessage(
   // On failure: falls back to keyword-based detection (existing behavior).
   let clientNanoResult: ClientNanoInterpretResult | null = null;
   const isCrisisForNano = sessionBuffer?.currentZoneColor === 'PURPLE' || sessionBuffer?.currentIntent === 'crisis';
-  const enableNanoInterpret = process.env.EXPO_PUBLIC_ENABLE_NANO_INTERPRET !== 'false';
+  const enableNanoInterpret = isClientFirstFeatureEnabled('nanoInterpret');
   if (enableNanoInterpret && !isCrisisForNano) {
     clientNanoResult = await callNanoInterpret(userMessage, backpack.userType as 'elias' | 'kim');
     if (clientNanoResult) {
@@ -3433,7 +3441,7 @@ export async function processMessage(
     memorySummaryChars: 0,
     warningsCount: 0,
   };
-  const enableCMD = process.env.EXPO_PUBLIC_ENABLE_CLINICAL_MEMORY_DISTILLATION === 'true';
+  const enableCMD = isClientFirstFeatureEnabled('clinicalMemoryDistillation');
   cmdDebug.featureFlag = enableCMD;
   if (enableCMD) {
     try {
@@ -3509,7 +3517,7 @@ export async function processMessage(
     }
   }
   // ── CORE EPISTEMIC REASONING ENGINE (runs after CMD, before formulation) ──
-  const enableEpistemic = process.env.EXPO_PUBLIC_ENABLE_CORE_EPISTEMIC_ENGINE === 'true';
+  const enableEpistemic = isClientFirstFeatureEnabled('coreEpistemicEngine');
   let epistemicGuidanceSummary: string | null = null;
   let epistemicModelRoutingHints: any = null;
   let epistemicDebug = { flag: false, run: false, claims: 0, hyp: 0, unc: 0, mindread: false, rescue: false, medUnc: false, tier: 'mini' as 'mini' | 'full' };
@@ -3552,7 +3560,7 @@ export async function processMessage(
     }
   }
   // ── DETERMINISTIC MODEL ROUTING (FASE 9C) ──
-  const enableModelRouting = process.env.EXPO_PUBLIC_ENABLE_EPISTEMIC_MODEL_ROUTING === 'true';
+  const enableModelRouting = isClientFirstFeatureEnabled('epistemicModelRouting');
   epistemicRoutingDebug.flag = enableModelRouting;
   if (enableModelRouting && enableEpistemic && epistemicModelRoutingHints) {
     try {
@@ -4443,7 +4451,7 @@ export async function processMessage(
       contextDat: contextDatSerialized
         ? `present=true src=${shouldBuildContextDat ? "rebuilt" : "cache"} chars=${contextDatSerialized.length}`
         : `present=false reason=${shouldBuildContextDat ? "build_failed" : (isSessionStart ? "never_built" : "cache_miss")}`,
-      route: process.env.EXPO_PUBLIC_ENABLE_MINIMAL_GPT_PROXY === 'true' ? 'minimal-proxy | store:false' : 'legacy-gpt-proxy',
+      route: 'minimal-proxy | store:false',
       anchors: (() => {
         const anchorsBlock = buildPersonalAnchorsBlock(currentUserDat);
         if (!anchorsBlock) return 'present=false';
@@ -5290,7 +5298,7 @@ export async function generateGreeting(
   // ══════════════════════════════════════════════════════════════
   // SERVER-LED GREETING (same pattern as processMessage server block)
   // ══════════════════════════════════════════════════════════════
-  if (isServerEngineActive()) {
+  if (SERVER_ENGINE_DISABLED) {
     try {
       const serverInput: ServerEngineCallInput = {
         persona: backpack.userType as any,

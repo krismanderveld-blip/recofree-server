@@ -23,6 +23,7 @@ import type {
   SummarizationContext,
   SignalContext,
 } from './signal-engine';
+import { callMinimalProxy } from '@/lib/ai/minimal-proxy-client';
 
 // ─── Prompts ────────────────────────────────────────────────────
 
@@ -157,7 +158,7 @@ export class GptSignalEngine implements LocalSignalEngine {
         ? SIGNAL_DETECTION_PROMPT_KIM(message, context)
         : SIGNAL_DETECTION_PROMPT_ELIAS(message, context);
 
-      const response = await this.callGptMini(prompt);
+      const response = await this.callGptMini(prompt, context?.userType === 'kim' ? 'kim' : 'elias');
       const parsed = JSON.parse(response);
 
       // Validate structure
@@ -174,7 +175,7 @@ export class GptSignalEngine implements LocalSignalEngine {
 
   async detectRelapseIntent(message: string): Promise<RelapseIntentResult> {
     try {
-      const response = await this.callGptMini(RELAPSE_INTENT_PROMPT(message));
+      const response = await this.callGptMini(RELAPSE_INTENT_PROMPT(message), 'elias');
       const parsed = JSON.parse(response);
 
       return {
@@ -189,7 +190,7 @@ export class GptSignalEngine implements LocalSignalEngine {
 
   async detectKimRelapseIntent(message: string): Promise<RelapseIntentResult> {
     try {
-      const response = await this.callGptMini(RELAPSE_INTENT_KIM_PROMPT(message));
+      const response = await this.callGptMini(RELAPSE_INTENT_KIM_PROMPT(message), 'kim');
       const parsed = JSON.parse(response);
 
       return {
@@ -204,7 +205,7 @@ export class GptSignalEngine implements LocalSignalEngine {
 
   async scoreRelevance(message: string, context: RelevanceContext): Promise<RelevanceScores> {
     try {
-      const response = await this.callGptMini(RELEVANCE_SCORING_PROMPT(message, context));
+      const response = await this.callGptMini(RELEVANCE_SCORING_PROMPT(message, context), 'elias');
       const parsed = JSON.parse(response);
 
       return {
@@ -220,7 +221,7 @@ export class GptSignalEngine implements LocalSignalEngine {
 
   async summarizeContext(context: SummarizationContext): Promise<ContextSummary> {
     try {
-      const response = await this.callGptMini(SUMMARIZE_CONTEXT_PROMPT(context));
+      const response = await this.callGptMini(SUMMARIZE_CONTEXT_PROMPT(context), 'elias');
       // Plain text response, trim and limit
       const text = response.trim().slice(0, 500);
       return { text };
@@ -231,24 +232,22 @@ export class GptSignalEngine implements LocalSignalEngine {
 
   // ─── Private helpers ────────────────────────────────────────────
 
-  private async callGptMini(prompt: string): Promise<string> {
+  private async callGptMini(prompt: string, persona: 'elias' | 'kim'): Promise<string> {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 3000);
 
     try {
-      const response = await fetch(`${this.apiBaseUrl}/api/signal-engine`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt }),
+      const result = await callMinimalProxy({
+        persona,
+        systemPrompt: `${prompt}\nReturn exactly the requested JSON or plain text, without markdown fences.`,
+        messages: [{ role: 'user', content: 'Perform the requested bounded analysis.' }],
+        model: 'gpt-4o-mini',
+        maxTokens: 400,
+        temperature: 0,
+        promptBuildVersion: 'signal-engine-client-v2',
         signal: controller.signal,
       });
-
-      if (!response.ok) {
-        throw new Error(`Signal engine API error: ${response.status}`);
-      }
-
-      const data = await response.json();
-      return data.result ?? '';
+      return result.text;
     } finally {
       clearTimeout(timeoutId);
     }

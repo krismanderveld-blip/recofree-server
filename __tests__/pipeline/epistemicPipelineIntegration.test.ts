@@ -22,8 +22,8 @@ describe('FASE 9B: Core Epistemic Engine Pipeline Integration', () => {
   // ─── Feature Flag (1-5) ────────────────────────────────────────────────────
 
   describe('Feature Flag', () => {
-    it('1. flag false does not run engine', () => {
-      expect(pipelineCode).toContain("EXPO_PUBLIC_ENABLE_CORE_EPISTEMIC_ENGINE === 'true'");
+    it('1. core epistemic engine is fail-closed in the client-first contract', () => {
+      expect(pipelineCode).toContain("isClientFirstFeatureEnabled('coreEpistemicEngine')");
     });
 
     it('2. flag missing does not run engine (strict equality)', () => {
@@ -76,8 +76,8 @@ describe('FASE 9B: Core Epistemic Engine Pipeline Integration', () => {
       expect(epistemicIdx).toBeLessThan(eliasIdx);
     });
 
-    it('11. CMD flow still exists', () => {
-      expect(pipelineCode).toContain('ENABLE_CLINICAL_MEMORY_DISTILLATION');
+    it('11. CMD flow still exists through the client-first contract', () => {
+      expect(pipelineCode).toContain("isClientFirstFeatureEnabled('clinicalMemoryDistillation')");
     });
 
     it('12. prompt flow still exists', () => {

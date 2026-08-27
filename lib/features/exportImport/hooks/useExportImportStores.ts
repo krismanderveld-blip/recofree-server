@@ -11,9 +11,15 @@
 
 import { useMemo } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { readEncrypted, writeEncrypted, removeEncrypted, SENSITIVE_KEYS, MEMORY_STORE_KEYS } from '@/lib/crypto/storage-encryption';
+import { readEncrypted, writeEncrypted, removeEncrypted, isSensitiveStorageKey } from '@/lib/crypto/storage-encryption';
 import { logImportDiag } from '@/lib/debug/import-diagnostics';
 import type { ExportImportStores } from '../services/exportImportStores.types';
+import {
+  exportVspInsightData,
+  replaceVspInsightData,
+  getVspInsightStorageKeys,
+  type VspInsightBackupBundle,
+} from '@/lib/features/vspInsight/vspInsightStorage';
 
 // AsyncStorage keys used by the app
 const LEGACY_USERDAT_KEY = '@recofree_userdat';
@@ -36,6 +42,10 @@ const DAYSTRUCTURE_STREAKS_ENABLED_KEY = '@recofree_daystructure_streaks_enabled
 // App preferences keys
 const LANGUAGE_KEY = '@recofree_language';
 const COUNTRY_KEY = '@recofree_country';
+const LEGACY_EIGEN_REGIE_PLAN_KEY = '@recofree:eigenRegiePlan';
+const EIGEN_REGIE_NOTIFICATION_SETTINGS_KEY = '@recofree_eigenregie_notification_settings';
+const EIGEN_REGIE_LAST_CHECK_KEY = '@recofree_eigenregie_last_check';
+const LOCAL_VSP_USER_ID = 'local_user';
 
 // Memory store keys
 function getUserDatKey(persona: string) { return `recofree_memory/${persona}/user.dat`; }
@@ -48,18 +58,33 @@ function getLogsDatKey(persona: string) { return `recofree_memory/${persona}/log
  * needs to go through the encrypted storage layer.
  * logs.dat is NOT in either list (it has its own envelope encryption).
  */
-// Keys that use readEncrypted/writeEncrypted but are NOT in SENSITIVE_KEYS or MEMORY_STORE_KEYS
-const EXTRA_ENCRYPTED_KEYS: readonly string[] = [
-  DAYSTRUCTURE_DOCUMENT_KEY,
-  DAYSTRUCTURE_COMPLETION_KEY,
-];
-
 function isKeyEncrypted(key: string): boolean {
-  return (
-    (SENSITIVE_KEYS as readonly string[]).includes(key) ||
-    (MEMORY_STORE_KEYS as readonly string[]).includes(key) ||
-    (EXTRA_ENCRYPTED_KEYS as readonly string[]).includes(key)
-  );
+  return isSensitiveStorageKey(key);
+}
+
+async function readEncryptedString(key: string): Promise<string | null> {
+  try {
+    return await readEncrypted(key);
+  } catch (err: any) {
+    logImportDiag(`READ ${key}`, 'FAIL', err?.message ?? 'unknown error');
+    return null;
+  }
+}
+
+async function writeEncryptedString(key: string, value: string | null | undefined): Promise<void> {
+  if (value == null) await removeEncrypted(key);
+  else await writeEncrypted(key, value);
+}
+
+function detectPersona(value: unknown): 'elias' | 'kim' | null {
+  if (!value || typeof value !== 'object') return null;
+  const record = value as Record<string, unknown>;
+  const candidate = record.persona ?? record.userType;
+  return candidate === 'kim' ? 'kim' : candidate === 'elias' ? 'elias' : null;
+}
+
+async function detectStoredBackpackPersona(): Promise<'elias' | 'kim'> {
+  return detectPersona(await readJson(LEGACY_BACKPACK_KEY)) ?? 'elias';
 }
 
 /**
@@ -162,7 +187,11 @@ function buildStoresAdapter(): ExportImportStores {
           readJson(getUserDatKey('kim')),
           readJson(LEGACY_USERDAT_KEY),
         ]);
-        return { elias: elias ?? legacy ?? null, kim: kim ?? null };
+        const legacyPersona = detectPersona(legacy);
+        return {
+          elias: elias ?? (legacyPersona !== 'kim' ? legacy : null) ?? null,
+          kim: kim ?? (legacyPersona === 'kim' ? legacy : null) ?? null,
+        };
       },
       async replaceAllPersonas(data) {
         await Promise.all([
@@ -225,9 +254,12 @@ function buildStoresAdapter(): ExportImportStores {
     },
     diaryStore: {
       async exportAllPersonas() {
-        const entries = await readJson(DIARY_KEY);
+        const [entries, persona] = await Promise.all([
+          readJson(DIARY_KEY),
+          detectStoredBackpackPersona(),
+        ]);
         const arr = Array.isArray(entries) ? entries : [];
-        return { elias: arr, kim: [] };
+        return persona === 'kim' ? { elias: [], kim: arr } : { elias: arr, kim: [] };
       },
       async replaceAllPersonas(data) {
         const entries = data.elias ?? data.kim ?? [];
@@ -236,10 +268,15 @@ function buildStoresAdapter(): ExportImportStores {
     },
     gratitudeStore: {
       async exportAllPersonas() {
-        const entries = await readJson(DIARY_KEY);
+        const [entries, persona] = await Promise.all([
+          readJson(DIARY_KEY),
+          detectStoredBackpackPersona(),
+        ]);
         const arr = Array.isArray(entries) ? entries : [];
         const gratitudeEntries = arr.filter((e: any) => e?.gratitude);
-        return { elias: gratitudeEntries, kim: [] };
+        return persona === 'kim'
+          ? { elias: [], kim: gratitudeEntries }
+          : { elias: gratitudeEntries, kim: [] };
       },
       async replaceAllPersonas(_data) {
         // Gratitude is part of diary entries — handled by diaryStore.replaceAllPersonas
@@ -259,7 +296,9 @@ function buildStoresAdapter(): ExportImportStores {
             }
           } catch { /* ignore fallback failure */ }
         }
-        return { elias: backpack ?? null, kim: null };
+        return detectPersona(backpack) === 'kim'
+          ? { elias: null, kim: backpack ?? null }
+          : { elias: backpack ?? null, kim: null };
       },
       async replaceAllPersonas(data) {
         // FIX: Only write if we actually have backpack data to write.
@@ -377,6 +416,44 @@ function buildStoresAdapter(): ExportImportStores {
         ]);
       },
     },
+
+    vspInsightStore: {
+      async exportAllPersonas() {
+        const [elias, kim] = await Promise.all([
+          exportVspInsightData(LOCAL_VSP_USER_ID, 'elias'),
+          exportVspInsightData(LOCAL_VSP_USER_ID, 'kim'),
+        ]);
+        return { elias, kim };
+      },
+      async replaceAllPersonas(data) {
+        const tasks: Promise<void>[] = [];
+        if ('elias' in data) {
+          tasks.push(replaceVspInsightData(LOCAL_VSP_USER_ID, 'elias', data.elias as VspInsightBackupBundle | null));
+        }
+        if ('kim' in data) {
+          tasks.push(replaceVspInsightData(LOCAL_VSP_USER_ID, 'kim', data.kim as VspInsightBackupBundle | null));
+        }
+        await Promise.all(tasks);
+      },
+    },
+
+    eigenRegieAuxiliaryStore: {
+      async exportAll() {
+        const [legacyPlan, notificationSettings, lastCheckAt] = await Promise.all([
+          readJson(LEGACY_EIGEN_REGIE_PLAN_KEY),
+          readJson(EIGEN_REGIE_NOTIFICATION_SETTINGS_KEY),
+          readEncryptedString(EIGEN_REGIE_LAST_CHECK_KEY),
+        ]);
+        return { legacyPlan, notificationSettings, lastCheckAt };
+      },
+      async replaceAll(data) {
+        await Promise.all([
+          data.legacyPlan !== undefined ? writeJson(LEGACY_EIGEN_REGIE_PLAN_KEY, data.legacyPlan) : Promise.resolve(),
+          data.notificationSettings !== undefined ? writeJson(EIGEN_REGIE_NOTIFICATION_SETTINGS_KEY, data.notificationSettings) : Promise.resolve(),
+          data.lastCheckAt !== undefined ? writeEncryptedString(EIGEN_REGIE_LAST_CHECK_KEY, data.lastCheckAt) : Promise.resolve(),
+        ]);
+      },
+    },
   };
 }
 
@@ -421,6 +498,13 @@ export async function createSafePreImportSnapshot(): Promise<SafePreImportSnapsh
     DAYSTRUCTURE_BELL_STATE_KEY, DAYSTRUCTURE_STREAKS_ENABLED_KEY,
     // App preferences keys
     LANGUAGE_KEY, COUNTRY_KEY,
+    // Kim Eigen-Regie legacy/notification stores
+    LEGACY_EIGEN_REGIE_PLAN_KEY,
+    EIGEN_REGIE_NOTIFICATION_SETTINGS_KEY,
+    EIGEN_REGIE_LAST_CHECK_KEY,
+    // VSP Insight per-persona stores
+    ...getVspInsightStorageKeys(LOCAL_VSP_USER_ID, 'elias'),
+    ...getVspInsightStorageKeys(LOCAL_VSP_USER_ID, 'kim'),
   ];
 
   const entries = await Promise.all(

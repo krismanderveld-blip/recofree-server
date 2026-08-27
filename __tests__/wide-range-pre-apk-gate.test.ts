@@ -12,14 +12,21 @@ describe('Wide-range pre-APK build and failure-boundary guards', () => {
     );
   });
 
-  it('has all required client-first production flags enabled', () => {
-    for (const flag of [
-      'EXPO_PUBLIC_ENABLE_MINIMAL_GPT_PROXY',
-      'EXPO_PUBLIC_ENABLE_CLINICAL_MEMORY_DISTILLATION',
-      'EXPO_PUBLIC_ENABLE_CORE_EPISTEMIC_ENGINE',
-      'EXPO_PUBLIC_ENABLE_EPISTEMIC_MODEL_ROUTING',
-    ]) {
-      expect(process.env[flag], `${flag} must be true in the build environment`).toBe('true');
+  it('version-controls all required client-first flags in every EAS profile', () => {
+    const eas = JSON.parse(read('eas.json'));
+    for (const profile of ['development', 'preview', 'production']) {
+      expect(eas.build[profile].env.EXPO_PUBLIC_API_BASE_URL).toBe(
+        'https://railwayappdashboard-production.up.railway.app',
+      );
+      for (const flag of [
+        'EXPO_PUBLIC_ENABLE_MINIMAL_GPT_PROXY',
+        'EXPO_PUBLIC_ENABLE_CLINICAL_MEMORY_DISTILLATION',
+        'EXPO_PUBLIC_ENABLE_CORE_EPISTEMIC_ENGINE',
+        'EXPO_PUBLIC_ENABLE_EPISTEMIC_MODEL_ROUTING',
+        'EXPO_PUBLIC_ENABLE_NANO_INTERPRET',
+      ]) {
+        expect(eas.build[profile].env[flag]).toBe('true');
+      }
     }
   });
 
@@ -57,13 +64,11 @@ describe('Wide-range pre-APK build and failure-boundary guards', () => {
 
   it('derives the active minimal route from getApiBaseUrl', () => {
     const source = read('lib/ai/openai-provider.ts');
-    const minimalBranch = source.indexOf('if (minimalProxyEnabled)');
-    const legacyProxy = source.indexOf('const proxyUrl = `${apiBaseUrl}/api/gpt-proxy`;');
-    expect(minimalBranch).toBeGreaterThan(-1);
-    expect(legacyProxy).toBeGreaterThan(minimalBranch);
-    expect(source.slice(minimalBranch, legacyProxy)).toContain('/api/minimal-gpt-proxy');
-    expect(source.slice(minimalBranch, legacyProxy)).toContain('return {');
-    expect(source.slice(minimalBranch, legacyProxy)).toContain('response: minimalData.text');
+    expect(source).toContain('const minimalProxyUrl = `${apiBaseUrl}/api/minimal-gpt-proxy`;');
+    expect(source).toContain('response: minimalData.text');
+    expect(source).not.toContain('/api/gpt-proxy');
+    expect(source).not.toContain('/api/trpc/ai.chat');
+    expect(source).not.toContain('EXPO_PUBLIC_ENABLE_MINIMAL_GPT_PROXY');
   });
 
   it('has all seven wide-range layer labels in the gate runner', () => {

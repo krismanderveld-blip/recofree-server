@@ -134,6 +134,16 @@ export async function replaceLocalDataFromStaging(input: {
   if (stagingPackage.shared?.appPreferences) {
     await stores.appPreferencesStore.replaceAll(stagingPackage.shared.appPreferences);
   }
+
+  // Optional payload-v1 extensions: old exports omit these fields and therefore
+  // preserve the current device data instead of deleting it.
+  if (stagingPackage.shared?.vspInsight && stores.vspInsightStore) {
+    await stores.vspInsightStore.replaceAllPersonas(stagingPackage.shared.vspInsight);
+  }
+
+  if (stagingPackage.shared?.eigenRegieAuxiliary && stores.eigenRegieAuxiliaryStore) {
+    await stores.eigenRegieAuxiliaryStore.replaceAll(stagingPackage.shared.eigenRegieAuxiliary);
+  }
 }
 
 // ─── Legacy Pre-Import Snapshot (kept for backward compatibility) ────────────

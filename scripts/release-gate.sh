@@ -90,19 +90,15 @@ else
   echo "  PASS: $INT_PASS"
 fi
 
-# 6. store:false check
+# 6. Active minimal-proxy store:false check
 echo ">>> GATE 6: Privacy store:false check..."
 MINIMAL_STORE=$(grep -c "store.*false" server/minimal-gpt-proxy.ts 2>/dev/null || echo "0")
-LLM_STORE=$(grep -c "store.*false" server/_core/llm.ts 2>/dev/null || echo "0")
-NANO_STORE=$(grep -c "store.*false" server/engine/nano-interpret.ts 2>/dev/null || echo "0")
-AI_CHAT_STORE=$(grep -c "store.*false" server/ai-chat.ts 2>/dev/null || echo "0")
+CLIENT_STORE=$(grep -c "store.*false" lib/ai/minimal-proxy-client.ts 2>/dev/null || echo "0")
 echo "  minimal-gpt-proxy: $MINIMAL_STORE (need >0)"
-echo "  llm.ts: $LLM_STORE (need >0)"
-echo "  nano-interpret.ts: $NANO_STORE (need >0)"
-echo "  ai-chat.ts (legacy frozen): $AI_CHAT_STORE (need >0)"
-if [ "$MINIMAL_STORE" -eq 0 ] || [ "$LLM_STORE" -eq 0 ] || [ "$NANO_STORE" -eq 0 ] || [ "$AI_CHAT_STORE" -eq 0 ]; then
+echo "  client minimal-proxy helper: $CLIENT_STORE (need >0)"
+if [ "$MINIMAL_STORE" -eq 0 ] || [ "$CLIENT_STORE" -eq 0 ]; then
   PASS=false
-  BLOCKERS="$BLOCKERS\n- store:false missing in one or more OpenAI call paths"
+  BLOCKERS="$BLOCKERS\n- store:false missing in active minimal-proxy path"
 fi
 
 # 7. Lockfile check
@@ -138,6 +134,19 @@ if [ "$WR_STATUS" -ne 0 ]; then
   BLOCKERS="$BLOCKERS\n- Wide-range pre-APK gate failed (exit $WR_STATUS)"
 else
   echo "  PASS: seven fault-boundary layers"
+fi
+
+# 10. Real Android bundle + minimal Railway independence gate
+echo ">>> GATE 10: Standalone APK + minimal Railway boundary..."
+SA_OUTPUT=$(RECOFREE_STANDALONE_GATE_REPORT="${RECOFREE_STANDALONE_GATE_REPORT:-/tmp/RECOFREE_STANDALONE_APK_RAILWAY_GATE.md}" bash scripts/standalone-apk-railway-gate.sh 2>&1)
+SA_STATUS=$?
+if [ "$SA_STATUS" -ne 0 ]; then
+  echo "  FAIL: standalone gate exited with status $SA_STATUS"
+  echo "$SA_OUTPUT" | strip_ansi | tail -80
+  PASS=false
+  BLOCKERS="$BLOCKERS\n- Standalone APK + minimal Railway gate failed (exit $SA_STATUS)"
+else
+  echo "  PASS: Android bundle, route, privacy, encryption and backup boundaries"
 fi
 
 # Summary
@@ -194,9 +203,10 @@ cat > "$REPORT" << EOF
 | Auto-Debug Tests | $AD_PASS |
 | Integration Tests | $INT_PASS |
 | store:false (minimal) | $MINIMAL_STORE |
-| store:false (llm/nano/legacy frozen) | $LLM_STORE / $NANO_STORE / $AI_CHAT_STORE |
+| store:false (client minimal helper) | $CLIENT_STORE |
 | Git working tree | $([ "$UNCOMMITTED" -eq 0 ] && echo "clean" || echo "$UNCOMMITTED uncommitted") |
 | Wide-range fault-boundary gate | $([ "$WR_STATUS" -eq 0 ] && echo "PASS" || echo "FAIL") |
+| Standalone APK + Railway gate | $([ "$SA_STATUS" -eq 0 ] && echo "PASS" || echo "FAIL") |
 
 ## VERDICT
 

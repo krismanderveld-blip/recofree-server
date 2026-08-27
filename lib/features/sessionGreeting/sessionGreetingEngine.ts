@@ -16,6 +16,7 @@ import { evaluateGreetingFreshness } from './evaluateGreetingFreshness';
 import { buildGreetingAnchorCandidates } from './buildGreetingAnchorCandidates';
 import { resolveGreetingAnchorPriority } from './resolveGreetingAnchorPriority';
 import { buildGreetingPromptPayload, enforceGreetingOutputRules } from './buildGreetingPromptPayload';
+import { callMinimalProxy } from '@/lib/ai/minimal-proxy-client';
 
 export interface SessionGreetingResult {
   greeting: string;
@@ -98,30 +99,23 @@ export async function runSessionGreetingEngine(
  * Calls the server endpoint POST /api/session-greeting.
  */
 async function callSessionGreetingEndpoint(
-  apiBaseUrl: string,
+  _apiBaseUrl: string,
   systemPrompt: string,
   userName: string,
 ): Promise<string> {
-  const url = `${apiBaseUrl}/api/session-greeting`;
-
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    body: JSON.stringify({ systemPrompt, userName }),
+  const result = await callMinimalProxy({
+    persona: 'elias',
+    systemPrompt,
+    messages: [{ role: 'user', content: `Generate a personal greeting for ${userName}.` }],
+    model: 'gpt-4o-mini',
+    maxTokens: 400,
+    temperature: 0.7,
+    promptBuildVersion: 'session-greeting-v1-client-v2',
   });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Session greeting endpoint error: ${response.status} - ${errorText}`);
-  }
-
-  const data = await response.json() as { success: boolean; greeting: string };
-  if (!data.success || !data.greeting) {
+  if (!result.text.trim()) {
     throw new Error('Invalid response from session greeting endpoint');
   }
-
-  return data.greeting;
+  return result.text.trim();
 }
 
 /**

@@ -7,14 +7,15 @@
  * 2. buildZoneArc() — determines start/end zone signals for tone.
  * 3. buildGreetingV4Prompt() — composes the system prompt including sources, zone-arc,
  *    and the last 8-10 messages for GPT to summarize inline.
- * 4. callGreetingProxy() — sends to Railway /api/session-greeting (gpt-4o-mini).
+ * 4. callGreetingProxy() — sends the client-built prompt through the minimal proxy.
  * 5. buildDeterministicFallbackV4() — noodgreep for proxy unreachability.
  *
- * Model: gpt-4o-mini via Railway proxy (/api/session-greeting).
+ * Model: gpt-4o-mini via Railway minimal proxy.
  * Fallback: deterministic, second-person, no raw logs.dat text.
  */
 
 import type { UserDat, DiaryEntry, MoodSnapshot, Backpack, KimMoodSliders, EliasMoodSliders } from '@/lib/ai/types';
+import { callMinimalProxy } from '@/lib/ai/minimal-proxy-client';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -107,7 +108,13 @@ export async function greetingV4(input: GreetingV4Input): Promise<GreetingV4Resu
   let greeting: string;
   let usedFallback = false;
   try {
-    greeting = await callGreetingProxy(input.apiBaseUrl, systemPrompt, userName, input.clinicalModeActive ?? false);
+    greeting = await callGreetingProxy(
+      input.apiBaseUrl,
+      systemPrompt,
+      userName,
+      input.clinicalModeActive ?? false,
+      persona,
+    );
   } catch (error) {
     console.warn('[GreetingV4] Proxy call failed, using deterministic fallback:', error);
     greeting = buildDeterministicFallbackV4(userName, locale, sources, zoneArc);
@@ -350,35 +357,37 @@ function getLanguageInstruction(locale: string): string {
 // ─── Proxy Call ─────────────────────────────────────────────────────────────
 
 async function callGreetingProxy(
-  apiBaseUrl: string,
+  _apiBaseUrl: string,
   systemPrompt: string,
   userName: string,
   clinicalModeActive: boolean,
+  persona: Persona,
 ): Promise<string> {
-  const url = `${apiBaseUrl}/api/session-greeting`;
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 15000);
 
   try {
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({ systemPrompt, userName, clinicalModeActive }),
+    const result = await callMinimalProxy({
+      persona,
+      systemPrompt,
+      messages: [{
+        role: 'user',
+        content: `Generate a personal greeting for ${userName}. Follow the language instruction in the system prompt exactly.`,
+      }],
+      model: 'gpt-4o-mini',
+      maxTokens: 1590,
+      temperature: 0.7,
+      promptBuildVersion: 'greeting-v4-client-v2',
       signal: controller.signal,
     });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Greeting proxy error: ${response.status} - ${errorText}`);
-    }
-
-    const data = await response.json() as { success: boolean; greeting: string };
-    if (!data.success || !data.greeting) {
+    if (!result.text.trim()) {
       throw new Error('Invalid response from greeting proxy');
     }
 
-    const greeting = data.greeting.trim();
+    const baseGreeting = result.text.trim();
+    const greeting = clinicalModeActive
+      ? `${baseGreeting}\n<clinical>\nVSP-Framework: MI\nMethod: Therapeutic greeting\nObservation: Session start\nIntervention: Warm opening + open question</clinical>`
+      : baseGreeting;
     const visibleGreeting = greeting.replace(/<clinical>[\s\S]*?<\/clinical>/gi, '').trim();
     const isInternalEvaluation = /\b(?:the greeting strategy|greeting strategy used|tone assessment|risk flags?|complies? with the engine instructions|clinical annotation|generated greeting)\b/i.test(visibleGreeting);
     if (!visibleGreeting || isInternalEvaluation) {
