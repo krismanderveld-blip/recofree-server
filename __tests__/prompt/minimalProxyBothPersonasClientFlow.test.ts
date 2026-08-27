@@ -5,6 +5,7 @@
 import { describe, it, expect, vi, beforeAll, afterAll } from 'vitest';
 import * as fs from 'fs';
 import * as path from 'path';
+import { callMinimalProxy } from '@/lib/ai/minimal-proxy-client';
 
 // Read source to validate route selection logic statically
 const providerSource = fs.readFileSync(
@@ -90,27 +91,18 @@ describe('FASE 4E-AUTO: Both Personas Client Flow via Minimal Proxy', () => {
 
   // === LIVE RAILWAY CALLS ===
 
-  const RAILWAY_URL = 'https://railwayappdashboard-production.up.railway.app/api/minimal-gpt-proxy';
-
-  const makeRequest = async (persona: 'elias' | 'kim', systemPrompt: string, userMessage: string, requestId: string) => {
-    const response = await fetch(RAILWAY_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contractVersion: 'minimal_gpt_proxy_v1',
-        requestId,
-        persona,
-        model: 'gpt-4o-mini',
-        systemPrompt,
-        messages: [{ role: 'user', content: userMessage }],
-        maxTokens: 300,
-        temperature: 0.4,
-        topP: 1,
-        store: false,
-        metadata: { clientBuildVersion: '1.2.63', promptBuildVersion: 'client_mirror_v1' },
-      }),
+  const makeRequest = async (persona: 'elias' | 'kim', systemPrompt: string, userMessage: string, _scenarioId: string) => {
+    const result = await callMinimalProxy({
+      persona,
+      systemPrompt,
+      messages: [{ role: 'user', content: userMessage }],
+      model: 'gpt-4o-mini',
+      maxTokens: 300,
+      temperature: 0.4,
+      topP: 1,
+      promptBuildVersion: 'client_mirror_v2',
     });
-    return response.json();
+    return { ok: true, ...result };
   };
 
   // Elias scenarios
@@ -124,7 +116,7 @@ describe('FASE 4E-AUTO: Both Personas Client Flow via Minimal Proxy', () => {
     expect(result.ok).toBe(true);
     expect(result.text).toBeTruthy();
     expect(result.text.toLowerCase()).not.toContain('kim');
-    expect(result.requestId).toBe('e2e-auto-elias-1');
+    expect(result.requestId).toMatch(/^mp-/);
   }, 30000);
 
   it('13. LIVE Elias craving: persona=elias, no approval of drinking', async () => {
