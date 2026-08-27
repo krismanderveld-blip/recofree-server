@@ -3044,3 +3044,11 @@
 - [x] Reconstrueer uitsluitend validatie, lokale persistence, completion, notificaties en editorflow; geen AI, i18n, persona- of andere wizardinhoud
 - [x] Schrijf een projectonafhankelijk functioneel en technisch integratiemodel met TypeScript-contracten en implementatievolgorde
 - [x] Controleer het model tegen de actuele code en lever het als downloadbaar document
+
+## Actief — Full audit APK + minimale Railway-onafhankelijkheid
+- [x] Inventariseer alle runtime-, build-, development- en legacydomeinen; identificeer iedere actieve Manus- of andere niet-Railway-route
+- [x] Controleer app.config, eas.json, Expo-public flags, secrets-resolutie, URL-builders, providers, fallbacks, tRPC en dynamische routes
+- [x] Verifieer dat alle persistente gebruikersdata client-side blijft en dat Railway uitsluitend minimale GPT-proxyfuncties uitvoert
+- [x] Test offline/degraded gedrag, lokale opslag, persona-isolatie, `store:false`, raw-memorygrenzen en productie-endpoints
+- [x] Classificeer bevindingen als P0/P1/P2/P3 en als actief, development-only, legacy/frozen of device-required
+- [x] Rapporteer exact wat nog ontbreekt voor zelfstandig gebruik met uitsluitend APK en minimale Railway-backend; wijzig geen productcode
