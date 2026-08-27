@@ -1,7 +1,7 @@
 # RECOFREE RELEASE GATE REPORT
 
-**Generated:** 2026-08-25 11:46 UTC
-**Commit:** c96b64a
+**Generated:** 2026-08-27 20:13 UTC
+**Commit:** 048d81e
 
 ---
 
@@ -10,14 +10,15 @@
 | Gate | Result |
 |------|--------|
 | TypeScript | 0 errors |
-| Full Test Suite | 4187 passed |
+| Full Test Suite | 4249 passed |
 | Release Gate Tests | 54 passed |
 | Auto-Debug Tests | 43 passed |
 | Integration Tests | 120 passed |
 | store:false (minimal) | 2 |
-| store:false (llm/nano/legacy frozen) | 1 / 1 / 8 |
+| store:false (client minimal helper) | 1 |
 | Git working tree | clean |
 | Wide-range fault-boundary gate | PASS |
+| Standalone APK + Railway gate | PASS |
 
 ## VERDICT
 

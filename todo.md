@@ -3068,4 +3068,4 @@
 - [x] Herstel UK `SHOUT to 85258` als werkende `sms:`-actie met regressietest
 - [x] Documenteer signingkeyoverdracht, eigen EAS/projectbinding en reproduceerbare onafhankelijke updatebuild zonder een nieuwe key te genereren
 - [x] Breid releasegate uit met echte Androidbundle-, routeoppervlak-, privacy-, encryption- en backupscans
-- [ ] Draai zes scenario’s, volledige suite, releasegate en wide-range gate; rapporteer device-only reststatus eerlijk
+- [x] Draai zes scenario’s, volledige suite, releasegate en wide-range gate; rapporteer device-only reststatus eerlijk

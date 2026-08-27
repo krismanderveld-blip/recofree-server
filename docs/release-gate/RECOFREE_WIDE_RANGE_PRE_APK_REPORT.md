@@ -1,7 +1,7 @@
 # RECOFREE WIDE-RANGE PRE-APK GATE REPORT
 
-**Generated:** 2026-08-25 11:46 UTC  
-**Commit:** c96b64a  
+**Generated:** 2026-08-27 20:16 UTC
+**Commit:** 048d81e
 **Working tree files:** 0
 
 ## Verdict
@@ -12,6 +12,4 @@
 
 No blockers.
 
-## Warnings
-
-- Legacy Railway chat routes remain in frozen fallback code; minimal-proxy tests must stay mandatory
+No warnings.
