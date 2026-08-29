@@ -34,6 +34,7 @@ const KIM_EXPLICIT_THEME_MAP: Record<string, string> = {
   social_isolation_caregiver: 'ISOL-K01', lost_own_contacts: 'ISOL-K01', caregiving_isolation: 'ISOL-K01',
   medical_concern_partner: 'K01', withdrawal_symptoms: 'K01', organ_damage_concern: 'K01',
   intent_attribution: 'K05', motive_assumption: 'K05', deliberate_harm_belief: 'K05',
+  boundary_statement: 'K05',
   greeting: 'K01', small_talk: 'K01', general_question: 'K01',
 };
 
@@ -84,4 +85,8 @@ intent: seeking_action | exploring | venting | crisis_signal | informational | g
 themes: zero to four labels, only from this controlled vocabulary, ordered by relevance:
 ${getNanoThemeVocabulary(persona).join(', ')}
 Do not infer self-hatred, shame, diagnosis or crisis unless explicitly supported by the message.`;
+}
+
+export function isDirectK05BoundaryMessage(message: string): boolean {
+  return /\b(?:zijn\s+plan\s+(?:moet\s+)?trekken|trek\s+je\s+plan|ik\s+ben\s+er\s+klaar\s+mee|i(?:'| a)m\s+done|deal\s+with\s+it\s+yourself)\b/i.test(message);
 }

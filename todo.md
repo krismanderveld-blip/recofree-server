@@ -3069,3 +3069,21 @@
 - [x] Documenteer signingkeyoverdracht, eigen EAS/projectbinding en reproduceerbare onafhankelijke updatebuild zonder een nieuwe key te genereren
 - [x] Breid releasegate uit met echte Androidbundle-, routeoppervlak-, privacy-, encryption- en backupscans
 - [x] Draai zes scenario’s, volledige suite, releasegate en wide-range gate; rapporteer device-only reststatus eerlijk
+
+## Actief — APK signer- en updatecompatibiliteitscontrole
+- [ ] Lokaliseer één bekende bestaande updatebare RecoFree-APK en de nieuwe APK zonder artefacten te wijzigen
+- [ ] Extraheer en vergelijk package-ID, versionCode/versionName en SHA-256 signing certificate
+- [ ] Rapporteer `SIGNING HANDOVER: PASS/FAIL/BLOCKED` en of een in-place update technisch mogelijk is
+
+## Actief — Nieuwe APK devicebevindingen Elias + Kim
+- [x] Herstel modeldebug/pass-through: E1 toont `ModelRoute=mini` maar bovenste modelregel en Cost tonen full
+- [x] Herstel DeepAnalysis debugsnapshot: beide persona’s tonen `stored schemas=0 modes=0 triggers=0` terwijl `ClinicalCtx source=canonical` gevulde context bevat
+- [x] Maak nano evidence-conservatief: E2 mag zonder bewijs geen `autonomous_defense` toevoegen en E3 geen `anxiety/existential_void/fear_of_error`
+- [x] Herstel cold-turkey coherentie: `medUnc=true` en safety/full mogen niet tegelijk als gewone `Zone=GREEN`, module `E02` worden weergegeven zonder safetyreden
+- [x] Onderzoek Kim overtriage: K1/K2 worden `ORANGE` met `crisis_active` en K3 full met `crisis_active` zonder crisisinhoud
+- [x] Herstel Kim K1 CMD relevance: caregiver-uitputting met aanwezige caregiver context mag niet stil `sel=0 sum=false` blijven zonder reason
+- [x] Herstel K05 nano fallback: directe K05-vraag mag niet `no_match_send_all` met alle schemas/modes activeren
+- [x] Behoud bewezen devicepasses: beide greetings, Elias cravingresponse, cold-turkey safetytekst, Kim K03/K04/K05 persona- en herstelpadgedrag
+- [x] Splits client-side modelredenen in `crisis_active`, `medical_safety`, `trauma_sensitive`, `relational_safety` en `high_clinical_sensitivity` zonder full-modelcapaciteit te verliezen
+- [x] Voeg regressies toe voor E1 modelcoherentie, E3 medical safety, Kim non-crisis, Kim relational safety, K05 match, gedeelde snapshots, nano-evidence en CMD zero-selection reason
+- [x] Bevestig via gitdiff dat `server/*`, Railwayroutes, proxycontract en OpenAI-transport in deze fase ongewijzigd blijven

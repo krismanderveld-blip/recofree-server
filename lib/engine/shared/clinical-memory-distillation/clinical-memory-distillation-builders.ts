@@ -121,6 +121,13 @@ export interface ModeTendencyInput {
   confidencePeak?: number;
 }
 
+export interface CaregiverPatternInput {
+  type: string;
+  description: string;
+  confidence?: number;
+  sourceSectionId?: string;
+}
+
 export interface DistillationSignalInput {
   id?: string;
   signalType: string;
@@ -447,8 +454,9 @@ export function buildRecurrentPatternsFromUserDat(input: {
   triggerPatterns: TriggerPatternInput[];
   schemaTendencies: SchemaTendencyInput[];
   modeTendencies: ModeTendencyInput[];
+  caregiverPatterns?: CaregiverPatternInput[];
 }): RecurrentPattern[] {
-  const { persona, triggerPatterns, schemaTendencies, modeTendencies } = input;
+  const { persona, triggerPatterns, schemaTendencies, modeTendencies, caregiverPatterns = [] } = input;
   const patterns: RecurrentPattern[] = [];
 
   for (const t of triggerPatterns) {
@@ -529,6 +537,33 @@ export function buildRecurrentPatternsFromUserDat(input: {
       certainty: mapConfidenceToClinicalMemoryCertainty((m.confidencePeak ?? 0) >= 0.7 ? 'high' : 'medium'),
       usePermissions: ['may_use_in_formulation', 'may_use_only_as_hypothesis', 'may_not_use_as_fact'],
     });
+  }
+
+  if (persona === 'kim') {
+    for (const pattern of caregiverPatterns) {
+      if (!pattern?.description?.trim()) continue;
+      const confidence = (pattern.confidence ?? 0) >= 0.7 ? 'high' : 'medium';
+      patterns.push({
+        id: `caregiver_${pattern.type}_${pattern.sourceSectionId ?? 'local'}`,
+        persona,
+        domain: 'relationship_trigger',
+        pattern: pattern.description,
+        frequency: 1,
+        trend: 'unknown',
+        sourceLayers: ['user_dat'],
+        evidence: [{
+          id: `ev_caregiver_${pattern.type}`,
+          sourceLayer: 'user_dat',
+          sourceField: 'caregiverPatterns',
+          text: pattern.description,
+          confidence,
+          persona,
+          isUserAuthored: false,
+        }],
+        certainty: mapConfidenceToClinicalMemoryCertainty(confidence),
+        usePermissions: ['may_use_in_formulation', 'may_use_only_as_hypothesis', 'may_not_use_as_fact'],
+      });
+    }
   }
 
   return patterns;

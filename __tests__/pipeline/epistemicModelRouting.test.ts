@@ -8,6 +8,10 @@ const pipelinePath = path.resolve(__dirname, '../../lib/rugzak/pipeline.ts');
 const providerPath = path.resolve(__dirname, '../../lib/ai/openai-provider.ts');
 const pipelineCode = fs.readFileSync(pipelinePath, 'utf-8');
 const providerCode = fs.readFileSync(providerPath, 'utf-8');
+const providerModelSelectionCode = providerCode.slice(
+  providerCode.indexOf('// The client engine is authoritative.'),
+  providerCode.indexOf('// Build messages array from conversation window'),
+);
 
 function route(overrides: Partial<EpistemicModelRoutingInput> = {}): ReturnType<typeof resolveEpistemicModelRouting> {
   return resolveEpistemicModelRouting({
@@ -38,7 +42,8 @@ describe('FASE 9C: Deterministic Model Routing', () => {
     });
     it('2. provider retains deterministic safety fallback without a legacy transport', () => {
       expect(providerCode).toContain("context.crisisLevel");
-      expect(providerCode).toContain("clinicalModeActive");
+      expect(providerCode).toContain("context.epistemicRoutedModel");
+      expect(providerModelSelectionCode).not.toContain("context.userDat?.clinicalModeActive");
       expect(providerCode).not.toContain('/api/gpt-proxy');
     });
     it('3. routing flag true activates resolver', () => {
@@ -149,6 +154,7 @@ describe('FASE 9C: Deterministic Model Routing', () => {
       const r = route({ persona: 'kim', crisisLevel: 1 });
       expect(r.mustUseFullModel).toBe(true);
       expect(r.selectedModel).toBe('gpt-4o-2024-08-06');
+      expect(r.reasonCodes[0]).toBe('high_clinical_sensitivity');
     });
     it('26. Kim medical/recovery claim with uncertainty chooses gpt-4o', () => {
       const r = route({ persona: 'kim', medicalUncertainty: true, responsibilityComplexityScore: 40 });
@@ -179,8 +185,36 @@ describe('FASE 9C: Deterministic Model Routing', () => {
       expect(r.selectedModel).toBe('gpt-4o-2024-08-06');
     });
     it('32. crisis Elias chooses gpt-4o', () => {
-      const r = route({ persona: 'elias', crisisLevel: 2 });
+      const r = route({ persona: 'elias', crisisLevel: 2, acuteCrisis: true });
       expect(r.selectedModel).toBe('gpt-4o-2024-08-06');
+      expect(r.reasonCodes[0]).toBe('crisis_active');
+    });
+
+    it('32b. medical safety is full without being labelled acute crisis', () => {
+      const r = route({ persona: 'elias', medicalUncertainty: true, safetyRelevant: true });
+      expect(r.selectedModel).toBe('gpt-4o-2024-08-06');
+      expect(r.reasonCodes[0]).toBe('medical_safety');
+      expect(r.reasonCodes).not.toContain('crisis_active');
+    });
+
+    it('32c. Kim relational safety stays full without crisis_active', () => {
+      const r = route({ persona: 'kim', relationalHarmRisk: true });
+      expect(r.selectedModel).toBe('gpt-4o-2024-08-06');
+      expect(r.reasonCodes[0]).toBe('relational_safety');
+      expect(r.reasonCodes).not.toContain('crisis_active');
+    });
+
+    it('32d. trauma sensitivity stays full without crisis_active', () => {
+      const r = route({ persona: 'elias', traumaSensitive: true });
+      expect(r.selectedModel).toBe('gpt-4o-2024-08-06');
+      expect(r.reasonCodes[0]).toBe('trauma_sensitive');
+      expect(r.reasonCodes).not.toContain('crisis_active');
+    });
+
+    it('32e. Dutch orange zone is scored like orange', () => {
+      const r = route({ persona: 'kim', currentZone: 'ORANJE', crisisLevel: 0 });
+      expect(r.reasonCodes).toContain('zone_orange');
+      expect(r.score).toBeGreaterThanOrEqual(30);
     });
   });
 
@@ -188,8 +222,9 @@ describe('FASE 9C: Deterministic Model Routing', () => {
     it('33. selectedModel comes from pipeline (pipeline has routing result)', () => {
       expect(pipelineCode).toContain('epistemicRoutedModel = routingResult.selectedModel');
     });
-    it('34. provider uses epistemicModelRoutingHints from context', () => {
-      expect(providerCode).toContain('context.epistemicModelRoutingHints');
+    it('34. provider uses the final deterministic routed model from context', () => {
+      expect(providerCode).toContain('context.epistemicRoutedModel');
+      expect(pipelineCode).toContain('epistemicRoutedModel: epistemicRoutedModel');
     });
     it('35. provider does not override with own clinical logic', () => {
       expect(providerCode).not.toMatch(/provider.*decides.*model/i);

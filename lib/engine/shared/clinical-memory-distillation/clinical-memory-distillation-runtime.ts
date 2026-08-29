@@ -40,6 +40,7 @@ import type {
   TriggerPatternInput,
   SchemaTendencyInput,
   ModeTendencyInput,
+  CaregiverPatternInput,
   RelapsePlanInput,
   DayStructureCompletionInput,
   ProjectionInput,
@@ -71,6 +72,7 @@ export interface CMDRuntimeInput {
   triggerPatterns?: TriggerPatternInput[] | null;
   schemaTendencies?: SchemaTendencyInput[] | null;
   modeTendencies?: ModeTendencyInput[] | null;
+  caregiverPatterns?: CaregiverPatternInput[] | null;
   dist01Entities?: Dist01BridgeEntityInput[] | null;
   dist01Signals?: Dist01BridgeSignalInput[] | null;
   dist01Contexts?: Dist01BridgeContextInput[] | null;
@@ -186,6 +188,7 @@ export function buildClinicalMemoryDistillationRuntimeContext(input: CMDRuntimeI
     triggerPatterns: input.triggerPatterns ?? [],
     schemaTendencies: input.schemaTendencies ?? [],
     modeTendencies: input.modeTendencies ?? [],
+    caregiverPatterns: input.caregiverPatterns ?? [],
   });
 
   // Build DIST01 bridge output

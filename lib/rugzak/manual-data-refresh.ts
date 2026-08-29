@@ -66,6 +66,18 @@ export interface ManualRefreshState {
   forceNextChatCMD: boolean;
 }
 
+export function getDeepAnalysisStoredTotals(userDat: any): {
+  totalSchemas: number;
+  totalModes: number;
+  totalTriggers: number;
+} {
+  return {
+    totalSchemas: Array.isArray(userDat?.schemas) ? userDat.schemas.length : 0,
+    totalModes: Array.isArray(userDat?.modes) ? userDat.modes.length : 0,
+    totalTriggers: Array.isArray(userDat?.triggers) ? userDat.triggers.length : 0,
+  };
+}
+
 // ─── Load/Save Refresh State ───────────────────────────────────────────────
 
 export async function loadManualRefreshState(): Promise<ManualRefreshState | null> {
@@ -193,6 +205,9 @@ export async function runManualDataRefresh(input: ManualDataRefreshInput): Promi
 
             if (sectionsForAnalysis.length > 0) {
               const analysisReport = await analyzeAllSections(sectionsForAnalysis, input.persona);
+              const deepAnalysisUserDat = await readJson<any>(USERDAT_KEY) ?? userDat ?? {};
+              userDat = deepAnalysisUserDat;
+              const storedTotals = getDeepAnalysisStoredTotals(deepAnalysisUserDat);
               console.log(`[ManualRefresh] Deep analysis: ${analysisReport.sectionsAnalyzed} sections, ${analysisReport.anchorsBuilt} anchors, ${analysisReport.relationEdgesBuilt} edges, ${analysisReport.schemasDetected} schemas`);
               // FIX 2: Store report in AsyncStorage so clinical dropdown can display it
               try {
@@ -210,9 +225,9 @@ export async function runManualDataRefresh(input: ManualDataRefreshInput): Promi
                   failureDetails: analysisReport.failureDetails || [],
                   ok: true,
                   // Cumulative totals from user.dat (not just this run)
-                  totalSchemas: await (async () => { try { const raw = await AsyncStorage.getItem('@recofree_userdat'); const ud = JSON.parse(raw || '{}'); return Array.isArray(ud.schemas) ? ud.schemas.length : 0; } catch { return 0; } })(),
-                  totalModes: await (async () => { try { const raw = await AsyncStorage.getItem('@recofree_userdat'); const ud = JSON.parse(raw || '{}'); return Array.isArray(ud.modes) ? ud.modes.length : 0; } catch { return 0; } })(),
-                  totalTriggers: await (async () => { try { const raw = await AsyncStorage.getItem('@recofree_userdat'); const ud = JSON.parse(raw || '{}'); return Array.isArray(ud.triggers) ? ud.triggers.length : 0; } catch { return 0; } })(),
+                  totalSchemas: storedTotals.totalSchemas,
+                  totalModes: storedTotals.totalModes,
+                  totalTriggers: storedTotals.totalTriggers,
                 }));
               } catch { /* non-blocking */ }
             }

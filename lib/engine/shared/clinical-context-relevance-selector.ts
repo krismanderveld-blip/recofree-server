@@ -742,7 +742,7 @@ export interface RelevanceSelection {
   /** Which modes are relevant for this message */
   relevantModes: string[] | 'all';
   /** Why this selection was made */
-  reason: 'direct_question_all' | 'theme_matched' | 'no_match_send_all' | 'informational_all';
+  reason: 'direct_question_all' | 'theme_matched' | 'no_match_send_all' | 'informational_all' | 'k05_boundary_direct';
   /** Matched themes that drove the selection */
   matchedThemes: string[];
 }
@@ -762,6 +762,10 @@ export function selectRelevantClinicalContext(
   userMessage: string,
 ): RelevanceSelection {
   const msgLower = userMessage.toLowerCase();
+
+  if (/\b(?:zijn\s+plan\s+(?:moet\s+)?trekken|trek\s+je\s+plan|ik\s+ben\s+er\s+klaar\s+mee|i(?:'| a)m\s+done)\b/i.test(userMessage)) {
+    return { relevantSchemas: [], relevantModes: [], reason: 'k05_boundary_direct', matchedThemes: ['boundary_statement'] };
+  }
   
   // 1. Direct question detection
   const isDirectQuestion = DIRECT_SCHEMA_MODE_KEYWORDS.some(kw => msgLower.includes(kw));

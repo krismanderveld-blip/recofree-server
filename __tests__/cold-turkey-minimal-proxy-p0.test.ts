@@ -49,7 +49,7 @@ describe('P0 cold-turkey Railway minimal-proxy regression', () => {
     expect(result.modelTier).toBe('full');
     expect(result.selectedModel).toBe('gpt-4o-2024-08-06');
     expect(result.mustUseFullModel).toBe(true);
-    expect(result.reasonCodes).toContain('safety_relevant');
+    expect(result.reasonCodes).toContain('medical_safety');
     expect(result.reasonCodes).toContain('medical_uncertainty');
   });
 

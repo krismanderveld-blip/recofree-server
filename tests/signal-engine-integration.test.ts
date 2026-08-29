@@ -133,17 +133,11 @@ function createEliasUserDatGreen(): UserDat {
   return ud;
 }
 
-/** Mock AI provider that returns a simple response and echoes model selection */
-function createMockProvider(modelToReturn: string = 'gpt-4o'): AIProvider {
+/** Mock AI provider that returns a simple response and echoes the client-routed model. */
+function createMockProvider(modelToReturn: string = 'gpt-4o-mini'): AIProvider {
   return {
     generateResponse: async (context: ChatContext): Promise<AIResult> => {
-      // The server normally selects model based on crisis/VSP.
-      // For this test we simulate the server returning the expected model.
-      const vsp = (context as any).vspLevel ?? null;
-      const isHighRisk = context.crisisLevel >= 2 ||
-        vsp === 'ROOD' ||
-        vsp === 'ORANJE';
-      const model = isHighRisk ? 'gpt-4o' : 'gpt-4o-mini';
+      const model = context.epistemicRoutedModel ?? modelToReturn;
       return {
         response: 'Ik hoor je. Het is begrijpelijk dat je bang bent.',
         selectedModel: model,
@@ -264,8 +258,8 @@ describe('SignalEngine Integration — Full Pipeline', () => {
     expect(detectCall).toBeDefined();
   });
 
-  // ─── Assertion 4: VSP=ROOD → selectedModel = gpt-4o ──────────
-  it('4. VSP=ROOD routes to gpt-4o model selection', async () => {
+  // ─── Assertion 4: VSP=ROOD → versioned full model ─────────────
+  it('4. VSP=ROOD routes to versioned full model selection', async () => {
     configureMinimalProxy();
 
     const backpack = createEliasBackpack();
@@ -276,7 +270,7 @@ describe('SignalEngine Integration — Full Pipeline', () => {
 
     // Model routing is in traceData
     expect(result.traceData?.modelRouting).toBeDefined();
-    expect(result.traceData?.modelRouting?.selectedModel).toBe('gpt-4o');
+    expect(result.traceData?.modelRouting?.selectedModel).toBe('gpt-4o-2024-08-06');
   });
 
   // ─── Assertion 5: Active projections boost fear confidence ────

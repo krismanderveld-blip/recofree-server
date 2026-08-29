@@ -200,8 +200,8 @@ describe('FASE 5C: Nano-Interpret Feature Flag', () => {
       matchedTheme: 'self_hatred',
     }, 'Ik wil gewoon zeggen dat hij zijn plan moet trekken.', 'kim');
 
-    expect(result.resolvedModule).toBeNull();
-    expect(result.themes).toEqual([]);
+    expect(result.resolvedModule).toBe('K05');
+    expect(result.themes).toEqual(['boundary_statement']);
   });
 
   it('14b. Broken trust alone does not retain self_hate_at_vulnerability', async () => {

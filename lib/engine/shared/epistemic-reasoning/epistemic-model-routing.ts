@@ -14,6 +14,8 @@ export interface EpistemicModelRoutingInput {
   currentZone?: string | null;
   riskScore?: number | null;
   crisisLevel?: number | null;
+  acuteCrisis?: boolean;
+  traumaSensitive?: boolean;
   cravingLevel?: number | null;
   stressLevel?: number | null;
   cmdSelectedItemsCount?: number;
@@ -46,8 +48,30 @@ export function resolveEpistemicModelRouting(input: EpistemicModelRoutingInput):
   let score = 0;
   const reasonCodes: string[] = [];
 
+  const medicalSafety = Boolean(input.medicalUncertainty && input.safetyRelevant);
+  const relationalSafety = Boolean(input.persona === 'kim' && input.relationalHarmRisk);
+
+  // ── Specific sensitivity reasons first; debug uses the first reason code. ──
+  if (input.acuteCrisis) {
+    score += 100;
+    reasonCodes.push('crisis_active');
+  } else if (medicalSafety) {
+    score += 100;
+    reasonCodes.push('medical_safety');
+  } else if (relationalSafety) {
+    score += 40;
+    reasonCodes.push('relational_safety');
+  } else if (input.traumaSensitive) {
+    score += 40;
+    reasonCodes.push('trauma_sensitive');
+  } else if ((input.crisisLevel ?? 0) >= 1) {
+    score += 100;
+    reasonCodes.push('high_clinical_sensitivity');
+  }
+
   // ── Base zone scoring ──
-  const zone = (input.currentZone ?? 'green').toLowerCase();
+  const rawZone = (input.currentZone ?? 'green').toLowerCase();
+  const zone = ({ groen: 'green', geel: 'yellow', oranje: 'orange', rood: 'red', paars: 'purple' } as Record<string, string>)[rawZone] ?? rawZone;
   if (zone === 'green') score += 0;
   else if (zone === 'yellow') score += 10;
   else if (zone === 'orange') { score += 30; reasonCodes.push('zone_orange'); }
@@ -55,8 +79,10 @@ export function resolveEpistemicModelRouting(input: EpistemicModelRoutingInput):
   else if (zone === 'purple') { score += 80; reasonCodes.push('zone_purple'); }
 
   // ── Safety scoring ──
-  if ((input.crisisLevel ?? 0) >= 1) { score += 100; reasonCodes.push('crisis_active'); }
-  if (input.safetyRelevant) { score += 100; reasonCodes.push('safety_relevant'); }
+  if (input.safetyRelevant && !medicalSafety && !relationalSafety && !input.acuteCrisis) {
+    score += 100;
+    reasonCodes.push('safety_relevant');
+  }
   if (input.medicalUncertainty) { score += 25; reasonCodes.push('medical_uncertainty'); }
   if (input.contradictionDetected) { score += 40; reasonCodes.push('contradiction_detected'); }
 
@@ -82,7 +108,7 @@ export function resolveEpistemicModelRouting(input: EpistemicModelRoutingInput):
   // ── Hard overrides ──
   let mustUseFullModel = false;
 
-  if ((input.crisisLevel ?? 0) >= 1) mustUseFullModel = true;
+  if ((input.crisisLevel ?? 0) >= 1 || input.acuteCrisis) mustUseFullModel = true;
   if (input.safetyRelevant) mustUseFullModel = true;
   if (zone === 'red' || zone === 'purple') mustUseFullModel = true;
   if (input.medicalUncertainty && (input.responsibilityComplexityScore ?? 0) >= 40) mustUseFullModel = true;

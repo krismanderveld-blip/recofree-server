@@ -81,6 +81,7 @@ import {
 } from '../engine/shared/clinical-memory-distillation/formulation-memory-adapter';
 import { buildSelectedCMDMemorySummary } from '../engine/shared/clinical-memory-distillation/clinical-memory-budget-selector';
 import { resolveEpistemicModelRouting } from '../engine/shared/epistemic-reasoning/epistemic-model-routing';
+import { resolveSafetyPresentation } from './runtime-safety-presentation';
 import { resolveGuidanceDepth } from '../engine/shared/guidance-depth-resolver';
 import {
   applyRelationalStanceFilter,
@@ -3440,6 +3441,7 @@ export async function processMessage(
     memorySummaryPresent: false,
     memorySummaryChars: 0,
     warningsCount: 0,
+    zeroSelectionReason: undefined as string | undefined,
   };
   const enableCMD = isClientFirstFeatureEnabled('clinicalMemoryDistillation');
   cmdDebug.featureFlag = enableCMD;
@@ -3461,6 +3463,7 @@ export async function processMessage(
         relapseEvents: (currentUserDat as any).sobriety?.relapseCount ?? undefined,
         recentRelapse: (currentUserDat as any).sobriety?.recentRelapse ?? false,
         relapsePlanAvailable: !!(currentUserDat as any).relapsePlan,
+        caregiverPatterns: backpack.userType === 'kim' ? (currentUserDat.caregiverPatterns ?? []) : undefined,
         dist01Entities: dist01LoadedEntities?.map((e: any) => ({
           id: e.id, type: e.entityType, label: e.name, text: e.name,
           relation: e.relation, confidence: e.confidence ?? 'medium',
@@ -3499,6 +3502,10 @@ export async function processMessage(
         cmdDebug.selectorOutputPresent = !!(cmdResult.selectorOutput && cmdResult.selectorOutput.selectedItems.length > 0);
         cmdDebug.selectedItemsCount = cmdResult.selectorOutput?.selectedItems?.length ?? 0;
         cmdDebug.selectedEstimatedTokens = cmdResult.selectorOutput?.estimatedTokens ?? 0;
+        if (cmdResult.selectorOutput && cmdResult.selectorOutput.selectedItems.length === 0) {
+          const reasons = [...new Set(cmdResult.selectorOutput.excludedItems.map((item) => item.reason))];
+          cmdDebug.zeroSelectionReason = reasons.length > 0 ? `excluded:${reasons.join(',')}` : 'no_eligible_candidates';
+        }
         cmdDebug.memorySummaryPresent = !!cmdMemorySummary;
         cmdDebug.memorySummaryChars = cmdMemorySummary?.length ?? 0;
         cmdDebug.warningsCount = cmdResult.warnings.length;
@@ -3566,9 +3573,13 @@ export async function processMessage(
     try {
       const routingInput = {
         persona: (backpack.userType || 'elias') as 'elias' | 'kim',
-        currentZone: sessionBuffer?.currentZoneColor || null,
+        currentZone: vspLevel ?? sessionBuffer?.currentZoneColor ?? null,
         riskScore: sessionBuffer?.currentZoneScore ?? null,
         crisisLevel: crisisLevel ?? null,
+        acuteCrisis: analysis.riskLevel === 'critical'
+          || analysis.activeTriggers.includes('suicidal_active')
+          || analysis.activeTriggers.includes('self_harm'),
+        traumaSensitive: /\b(?:trauma|ptss|ptsd|flashback|herbeleving|misbruik|geweldservaring)\b/i.test(userMessage),
         cravingLevel: (backpack.userType === 'elias' && currentUserDat?.currentMood) ? (currentUserDat.currentMood as any).craving ?? null : null,
         stressLevel: (backpack.userType === 'kim' && currentUserDat?.currentMood) ? (currentUserDat.currentMood as any).stress ?? null : null,
         cmdSelectedItemsCount: cmdDebug.selectedItemsCount ?? undefined,
@@ -3595,6 +3606,16 @@ export async function processMessage(
       console.warn('[Pipeline] Epistemic model routing failed (non-blocking):', e);
     }
   }
+
+  const defaultTurnModule = activeDecision ? activeDecision.dominantModule : preGPTDominantState.dominantModule;
+  const defaultTurnZone = sessionBuffer?.currentZoneColor ?? vspLevel ?? 'UNKNOWN';
+  const safetyPresentation = resolveSafetyPresentation({
+    persona: (backpack.userType || 'elias') as 'elias' | 'kim',
+    module: defaultTurnModule,
+    zone: defaultTurnZone,
+    medicalUncertainty: epistemicModelRoutingHints?.medicalUncertainty ?? false,
+    safetyRelevant: epistemicModelRoutingHints?.safetyRelevant ?? false,
+  });
 
 
   // ── CLIENT FALLBACK: ChatContext + GPT call (only reached when server-led block above fails) ──
@@ -3815,8 +3836,8 @@ export async function processMessage(
           stressLevel: (currentUserDat.currentMood as any)?.stress ?? null,
           moodLevel: (currentUserDat.currentMood as any)?.despondency ?? (currentUserDat.currentMood as any)?.mood ?? null,
           guidanceDepth: (currentUserDat.guidanceDepth ?? 'normal') as 'light' | 'normal' | 'deep',
-          currentZone: (sessionBuffer?.currentZoneColor ?? 'unknown').toLowerCase() as any,
-          moduleId: preGPTDominantState.dominantModule,
+          currentZone: safetyPresentation.zone.toLowerCase() as any,
+          moduleId: safetyPresentation.module,
           stageOfChange: (currentUserDat as any).stageOfChange ?? undefined,
           memoryFacts: currentUserDat.extractedEntities?.persons?.map((p: any) => `${p.name}: ${p.relationshipNL || p.relationship || ''}`).filter(Boolean) ?? [],
           engineSignals: candidateSignals ? Object.entries(candidateSignals).flatMap(([key, arr]: [string, any]) => Array.isArray(arr) ? arr.filter((s: any) => s.confidence > 0.5).map((s: any) => `${key}:${s.keyword}`) : []) : [],
@@ -3857,10 +3878,10 @@ export async function processMessage(
     diaryEntries: options?.diaryEntries ?? [],
     contextDatSerialized,
     deepeningBlock,
-    activeModules: [activeDecision ? activeDecision.dominantModule : preGPTDominantState.dominantModule],
+    activeModules: [safetyPresentation.module],
     crisisLevel: activeDecision ? activeDecision.crisisLevel : crisisLevel,
     isCrisis: (elisDecision?.zone.resolved?.isCrisis ?? false) || (kimDecision?.isKimCrisis ?? false),
-    vspLevel: elisDecision?.zone.resolved?.finalZoneLabel ?? vspLevel,
+    vspLevel: safetyPresentation.zone,
     engineDirective: engineDirective ?? undefined,
     detectedEmotion: analysis.emotionalState,
     therapeuticStance: buildTherapeuticStance(analysis),
@@ -4039,6 +4060,7 @@ export async function processMessage(
     kimFormulationBlock: kimFormulationBlock ?? undefined,
     epistemicGuidanceSummary: epistemicGuidanceSummary ?? undefined,
     epistemicModelRoutingHints: epistemicModelRoutingHints ?? undefined,
+    epistemicRoutedModel: epistemicRoutedModel as 'gpt-4o-mini' | 'gpt-4o-2024-08-06' | null,
     // CMD SELECTED MEMORY SUMMARY — compact budget-selected clinical memory block
     cmdMemorySummary: cmdMemorySummary ?? undefined,
     // PERSONAL ANCHORS — confirmed key figure facts (always sent to GPT, never hedged)
@@ -4430,10 +4452,10 @@ export async function processMessage(
     role: 'assistant',
     content: response,
     timestamp: LocalDeviceTimeService.now().utcIso,
-    modulesUsed: [activeDecision ? activeDecision.dominantModule : preGPTDominantState.dominantModule],
+    modulesUsed: [safetyPresentation.module],
     clinicalInfo: {
-      module: activeDecision ? activeDecision.dominantModule : preGPTDominantState.dominantModule,
-      zone: sessionBuffer.currentZoneColor ?? 'unknown',
+      module: safetyPresentation.module,
+      zone: safetyPresentation.zone,
       model: selectedModel ?? 'unknown',
       regulation: regulationResult.action !== 'reflect' ? `${regulationResult.action} (depth=${regulationResult.effectiveDepth})` : undefined,
       riskScore: preGPTDominantState.riskScore,
@@ -4441,12 +4463,12 @@ export async function processMessage(
       triggers: relevance.triggers.length > 0 ? relevance.triggers.map(t => `${t.trigger}(${t.score})`).join(', ') : undefined,
       projection: projectionResult.hasActiveEntries ? `+${projectionResult.newEntriesCount} active (${projectionResult.injectionBlock?.slice(0, 60) ?? ''})` : undefined,
       intervention: interventionContinuity
-        ? `continuity=${interventionContinuity.lastInterventionType} (goal=${interventionContinuity.interventionGoal}, turns=${interventionContinuity.turnsActive}, eff=${interventionContinuity.effectivenessScore}) | responseDriver=module:${activeDecision ? activeDecision.dominantModule : preGPTDominantState.dominantModule}+reg:${regulationResult.action}`
+        ? `continuity=${interventionContinuity.lastInterventionType} (goal=${interventionContinuity.interventionGoal}, turns=${interventionContinuity.turnsActive}, eff=${interventionContinuity.effectivenessScore}) | responseDriver=${safetyPresentation.responseDriver}+reg:${regulationResult.action}`
         : undefined,
       buffer: `msg#${sessionBuffer.messageCount} zone=${sessionBuffer.currentZoneColor}(${sessionBuffer.currentZoneScore}) intent=${(sessionBuffer as any).liveIntent ?? 'none'}`,
       k05Override: undefined as any,
       safetyFilters: undefined as any,
-      cmd: cmdDebug.featureFlag ? `flag=${cmdDebug.featureFlag} run=${cmdDebug.runtimeExecuted} ctx=${cmdDebug.contextBuilt} valid=${cmdDebug.validationOk} sel=${cmdDebug.selectedItemsCount} tok=${cmdDebug.selectedEstimatedTokens} sum=${cmdDebug.memorySummaryPresent}(${cmdDebug.memorySummaryChars}ch)` : undefined,
+      cmd: cmdDebug.featureFlag ? `flag=${cmdDebug.featureFlag} run=${cmdDebug.runtimeExecuted} ctx=${cmdDebug.contextBuilt} valid=${cmdDebug.validationOk} sel=${cmdDebug.selectedItemsCount} tok=${cmdDebug.selectedEstimatedTokens} sum=${cmdDebug.memorySummaryPresent}(${cmdDebug.memorySummaryChars}ch)${cmdDebug.selectedItemsCount === 0 ? ` reason=${cmdDebug.zeroSelectionReason ?? 'selector_unavailable'}` : ''}` : undefined,
       formulation: (eliasFormulationBlock || kimFormulationBlock) ? `${eliasFormulationBlock ? 'elias' : 'kim'}(${(eliasFormulationBlock || kimFormulationBlock || '').length}ch)` : undefined,
       contextDat: contextDatSerialized
         ? `present=true src=${shouldBuildContextDat ? "rebuilt" : "cache"} chars=${contextDatSerialized.length}`

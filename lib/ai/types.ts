@@ -1404,6 +1404,8 @@ export interface ChatContext {
   eliasFormulationBlock?: string | null;
   epistemicGuidanceSummary?: string | null;
   epistemicModelRoutingHints?: any;
+  /** Final deterministic client model decision. Provider must formulate with this exact model. */
+  epistemicRoutedModel?: 'gpt-4o-mini' | 'gpt-4o-2024-08-06' | null;
   /** CMD SELECTED MEMORY SUMMARY: compact budget-selected clinical memory block for GPT context */
   cmdMemorySummary?: string | null;
   /** PERSONAL ANCHORS: confirmed key figure facts (always sent, never hedged) */

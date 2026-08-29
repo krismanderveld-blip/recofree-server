@@ -911,13 +911,12 @@ export class OpenAIProvider implements AIProvider {
 
         const clientPromptResult = buildClientSystemPrompt(promptInput);
 
-        // Select model: epistemic routing > crisis fallback > default mini
-        let selectedModel = 'gpt-4o-mini';
-        if (context.epistemicModelRoutingHints?.recommendedModelTier === 'full') {
-          selectedModel = 'gpt-4o-2024-08-06';
-        } else if ((context.crisisLevel ?? 0) >= 2 || context.userDat?.clinicalModeActive) {
-          selectedModel = 'gpt-4o';
-        }
+        // The client engine is authoritative. Provider only formulates with the
+        // exact routed model; it may not add a second clinical-mode override.
+        const selectedModel = context.epistemicRoutedModel
+          ?? (context.epistemicModelRoutingHints?.recommendedModelTier === 'full' || (context.crisisLevel ?? 0) >= 2
+            ? 'gpt-4o-2024-08-06'
+            : 'gpt-4o-mini');
 
         // Build messages array from conversation window
         const messages: Array<{ role: 'user' | 'assistant'; content: string }> = 
@@ -1014,7 +1013,7 @@ export class OpenAIProvider implements AIProvider {
             completionTokens: minimalData.usage.outputTokens ?? 0,
             totalTokens: minimalData.usage.totalTokens ?? 0,
           } : undefined,
-          selectedModel: minimalData.modelUsed,
+          selectedModel,
         };
     } catch (error) {
       console.error('[OpenAIProvider] Error after retries:', error);
