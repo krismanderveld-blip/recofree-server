@@ -20,7 +20,10 @@ export const MINIMAL_GPT_PROXY_ALLOWED_MODELS = [
   'gpt-4.1-mini',
 ] as const;
 
-export type MinimalGptPersona = 'kim' | 'elias';
+/** Transport metadata only. Persona routing and prompt construction stay client-side. */
+export const MINIMAL_GPT_PROXY_ALLOWED_PERSONAS = ['elias', 'kim', 'juno'] as const;
+
+export type MinimalGptPersona = (typeof MINIMAL_GPT_PROXY_ALLOWED_PERSONAS)[number];
 
 export type MinimalGptRole = 'user' | 'assistant';
 
@@ -85,6 +88,7 @@ export interface MinimalGptProxyValidationResult {
 
 export interface MinimalGptProxyValidationOptions {
   allowedModels: string[];
+  allowedPersonas?: readonly MinimalGptPersona[];
   maxAllowedTokens: number;
   minTemperature: number;
   maxTemperature: number;
@@ -119,9 +123,13 @@ export function validateMinimalGptProxyRequest(
     errors.push('requestId must be a non-empty string');
   }
 
-  // persona
-  if (req.persona !== 'kim' && req.persona !== 'elias') {
-    errors.push('persona must be "kim" or "elias"');
+  // persona — transport allowlist only; no mapping or persona behavior lives here.
+  const allowedPersonas = options.allowedPersonas ?? MINIMAL_GPT_PROXY_ALLOWED_PERSONAS;
+  if (
+    typeof req.persona !== 'string' ||
+    !allowedPersonas.includes(req.persona as MinimalGptPersona)
+  ) {
+    errors.push(`persona must be one of: ${allowedPersonas.join(', ')}`);
   }
 
   // model

@@ -3095,3 +3095,22 @@
 - [x] Audit Juno safety-, modelreason-, prompt-, ClinicalCtx-, DeepAnalysis-, CMD-, debug- en persona-isolatievereisten
 - [x] Inventariseer vereiste tests, releasegates, migratierisico’s en open productbeslissingen
 - [x] Lever één volledig evidence-based Juno-implementatiecontract; geen Juno-code, featureflag, schema, backend, prompt of testwijziging
+
+## Actief — Juno Relational Recovery Dynamics Implementation V1
+- [x] Verifieer baseline `99a68fe` (runtime-identiek aan `80f93fa`): tests, TypeScript, releasegates, matrix, Railway minimal proxy, `store:false` en no-Manus bundle
+- [x] Lever vóór codewijziging een exacte files-to-change/files-not-to-change kaart met reden, risico en guard
+- [x] Breid uitsluitend de gedeelde transportpersona-allowlist en bestaande minimal-proxyvalidator uit met `juno`; bewijs geen mapping, geen klinische serverlogica en ongewijzigd `store:false`
+- [ ] Breid alle client persona-unions en switches exhaustief uit met `juno`; onbekende persona faalt gesloten
+- [ ] Voeg centrale `EXPO_PUBLIC_ENABLE_JUNO_PERSONA`-flag toe, standaard OFF, zonder verspreide ENV-checks
+- [ ] Bouw eigen encrypted Juno-memorynamespace, geneste Juno UserDat-contracten en persona-veilige export/import/wipe
+- [ ] Bouw feature-flagged duale Juno-intake met user-estimated provenance voor de andere persoon
+- [ ] Bouw zes Juno-sliders, check-inhistory en dual-axis Juno-zonecalculator
+- [ ] Bouw operationele J01–J05-catalogus/router; reserveer J06–J10 als niet-routeerbaar
+- [ ] Sluit Juno safety- en modelreasoncontract aan met own-recovery-first en shared-risk-prioriteit
+- [ ] Bouw eigen Juno promptcomposer, forbidden-language/post-check en veilige fallback zonder Elias/Kim identitylekkage
+- [ ] Breid DeepAnalysis uit met Juno section map, velden, validation, merge, provenance en contradictionbehoud
+- [ ] Bouw Juno ClinicalCtx/CMD allowlist en blokkeer cross-persona memory/selectie
+- [ ] Voeg Juno clinical debugcontract toe met persona, module, zone, redenen, state, context, CMD en route/privacyvelden
+- [ ] Voeg Juno unit-, integration-, stateful scenario-, cross-persona-, backup- en releasegatetests toe
+- [ ] Bevestig nul wijzigingen buiten de goedgekeurde servervalidator-allowlistuitzondering; Railway, providerarchitectuur, APK/EAS en lockfiles blijven ongewijzigd
+- [ ] Run TypeScript, volledige suite, Juno matrix, Elias/Kim non-regression, releasegate en wide-range gate; checkpoint/push alleen als alles groen is

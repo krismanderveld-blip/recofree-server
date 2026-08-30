@@ -25,6 +25,7 @@
 
 import type { Express, Request, Response } from "express";
 import {
+  MINIMAL_GPT_PROXY_ALLOWED_PERSONAS,
   MINIMAL_GPT_PROXY_ALLOWED_MODELS,
   validateMinimalGptProxyRequest,
   type MinimalGptProxyValidationOptions,
@@ -36,6 +37,7 @@ const CONTRACT_VERSION = "minimal_gpt_proxy_v1" as const;
 
 const VALIDATION_OPTIONS: MinimalGptProxyValidationOptions = {
   allowedModels: [...MINIMAL_GPT_PROXY_ALLOWED_MODELS],
+  allowedPersonas: [...MINIMAL_GPT_PROXY_ALLOWED_PERSONAS],
   maxAllowedTokens: 4000,
   minTemperature: 0,
   maxTemperature: 1,

@@ -31,6 +31,26 @@ describe('minimal proxy client helper', () => {
     expect(request).not.toHaveProperty('userDat');
   });
 
+  it('serializes Juno transport metadata exactly as juno without persona mapping', async () => {
+    railwayFetchMock.mockResolvedValue(new Response(JSON.stringify({
+      contractVersion: 'minimal_gpt_proxy_v1', requestId: 'juno-response-id', ok: true,
+      text: 'antwoord', modelUsed: 'gpt-4o-mini',
+    }), { status: 200 }));
+
+    await callMinimalProxy({
+      persona: 'juno',
+      systemPrompt: 'Client-built Juno transport test.',
+      messages: [{ role: 'user', content: 'test' }],
+      promptBuildVersion: 'juno-transport-test-v1',
+    });
+
+    const request = JSON.parse(railwayFetchMock.mock.calls[0][1].body);
+    expect(request.persona).toBe('juno');
+    expect(request.store).toBe(false);
+    expect(request).not.toHaveProperty('backpack');
+    expect(request).not.toHaveProperty('userDat');
+  });
+
   it('parses fenced JSON and rejects proxy errors', async () => {
     railwayFetchMock.mockResolvedValueOnce(new Response(JSON.stringify({
       contractVersion: 'minimal_gpt_proxy_v1', requestId: 'response-id', ok: true,
