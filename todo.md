@@ -3087,3 +3087,11 @@
 - [x] Splits client-side modelredenen in `crisis_active`, `medical_safety`, `trauma_sensitive`, `relational_safety` en `high_clinical_sensitivity` zonder full-modelcapaciteit te verliezen
 - [x] Voeg regressies toe voor E1 modelcoherentie, E3 medical safety, Kim non-crisis, Kim relational safety, K05 match, gedeelde snapshots, nano-evidence en CMD zero-selection reason
 - [x] Bevestig via gitdiff dat `server/*`, Railwayroutes, proxycontract en OpenAI-transport in deze fase ongewijzigd blijven
+
+## Actief — Juno Architecture Readiness Audit V1 (audit-only)
+- [x] Verifieer baseline, projectinvarianten en actuele APK/backendstatus zonder code- of runtimewijzigingen
+- [x] Documenteer Elias-, Kim- en gedeelde persona-, memory-, intake-, slider-, zone-, module- en routingarchitectuur
+- [x] Classificeer Elias/Kim-hergebruik voor Juno met expliciete guards en niet-overerfbare P0/P1/P2-risico’s
+- [x] Audit Juno safety-, modelreason-, prompt-, ClinicalCtx-, DeepAnalysis-, CMD-, debug- en persona-isolatievereisten
+- [x] Inventariseer vereiste tests, releasegates, migratierisico’s en open productbeslissingen
+- [x] Lever één volledig evidence-based Juno-implementatiecontract; geen Juno-code, featureflag, schema, backend, prompt of testwijziging
